@@ -5,159 +5,176 @@
 
 #define USE_FUTEX
 
-#include <mutex>
 #include <atomic>
-#include <thread>
 #include <condition_variable>
+#include <mutex>
+#include <thread>
+
 #include <immintrin.h>
 
 
-#if   defined(_WIN32)
-	#include "System/Platform/Win/CriticalSection.h"
+#if defined(_WIN32)
+#include "System/Platform/Win/CriticalSection.h"
 #elif defined(__APPLE__) || !defined(USE_FUTEX)
-	#include "System/Platform/Mac/Signal.h"
+#include "System/Platform/Mac/Signal.h"
 #elif !defined(__APPLE__) && defined(USE_FUTEX)
-	#include "System/Platform/Linux/Futex.h"
+#include "System/Platform/Linux/Futex.h"
 #endif
 
 
 #if defined(__MINGW32__) && !defined(_GLIBCXX_HAS_GTHREADS)
-	#include "System/Platform/Win/Future.h"
+#include "System/Platform/Win/Future.h"
 #else
-	#include <future>
+#include <future>
 #endif
 
 
 namespace spring {
-#if   defined(_WIN32)
-	typedef CriticalSection mutex;
-	typedef CriticalSection recursive_mutex;
-	typedef win_signal signal;
-	typedef std::condition_variable_any condition_variable;
+#if defined(_WIN32)
+typedef CriticalSection mutex;
+typedef CriticalSection recursive_mutex;
+typedef win_signal signal;
+typedef std::condition_variable_any condition_variable;
 #elif defined(__APPLE__) || !defined(USE_FUTEX)
-	typedef std::mutex mutex;
-	typedef std::recursive_mutex recursive_mutex;
-	typedef mac_signal signal;
-	typedef std::condition_variable condition_variable;
+typedef std::mutex mutex;
+typedef std::recursive_mutex recursive_mutex;
+typedef mac_signal signal;
+typedef std::condition_variable condition_variable;
 #elif !defined(__APPLE__) && defined(USE_FUTEX)
-	typedef spring_futex mutex;
-	//typedef recursive_futex recursive_mutex;
-	typedef std::recursive_mutex recursive_mutex;
-	typedef linux_signal signal;
-	typedef std::condition_variable_any condition_variable;
+typedef spring_futex mutex;
+// typedef recursive_futex recursive_mutex;
+typedef std::recursive_mutex recursive_mutex;
+typedef linux_signal signal;
+typedef std::condition_variable_any condition_variable;
 #endif
 
-	typedef std::thread thread;
-	namespace this_thread { using namespace std::this_thread; };
-	typedef std::cv_status cv_status;
-	typedef std::condition_variable_any condition_variable_any;
+typedef std::thread thread;
 
-	class noop_mutex {
-	public:
-		using native_handle_type = spring::mutex::native_handle_type;
+namespace this_thread {
+using namespace std::this_thread;
+};
 
-		noop_mutex() noexcept {}
-		~noop_mutex() {}
+typedef std::cv_status cv_status;
+typedef std::condition_variable_any condition_variable_any;
 
-		noop_mutex(const noop_mutex&) = delete;
-		noop_mutex& operator=(const noop_mutex&) = delete;
+class noop_mutex {
+public:
+	using native_handle_type = spring::mutex::native_handle_type;
 
-		void lock() {}
-		bool try_lock() { return true; }
-		void unlock() {}
+	noop_mutex() noexcept {}
 
-		native_handle_type native_handle() { return native_handle_type{}; }
-	};
+	~noop_mutex() {}
 
-	class mutex_wrapper_concept {
-	public:
-		mutex_wrapper_concept() noexcept {}
-		virtual ~mutex_wrapper_concept() {}
+	noop_mutex(const noop_mutex&) = delete;
+	noop_mutex& operator=(const noop_mutex&) = delete;
 
-		mutex_wrapper_concept(const mutex_wrapper_concept&) = delete;
-		mutex_wrapper_concept& operator=(const mutex_wrapper_concept&) = delete;
+	void lock() {}
 
-		virtual void lock() = 0;
-		virtual bool try_lock() noexcept = 0;
-		virtual void unlock() = 0;
-	};
+	bool try_lock() { return true; }
 
-	template<typename M>
-	class mutex_wrapper : public mutex_wrapper_concept {
-		static_assert(std::is_member_function_pointer<decltype(&M::lock)>::value);
-		static_assert(std::is_member_function_pointer<decltype(&M::try_lock)>::value);
-		static_assert(std::is_member_function_pointer<decltype(&M::unlock)>::value);
-		static_assert(std::is_member_function_pointer<decltype(&M::native_handle)>::value);
-	public:
-		mutex_wrapper() noexcept {};
+	void unlock() {}
 
-		mutex_wrapper(const mutex_wrapper&) = delete;
-		mutex_wrapper& operator=(const mutex_wrapper&) = delete;
+	native_handle_type native_handle() { return native_handle_type{}; }
+};
 
-		void lock() override { mut.lock(); }
-		bool try_lock() noexcept override { return mut.try_lock(); }
-		void unlock() override { mut.unlock(); }
+class mutex_wrapper_concept {
+public:
+	mutex_wrapper_concept() noexcept {}
 
-		auto native_handle() { return mut.native_handle(); }
-	protected:
-		M mut;
-	};
+	virtual ~mutex_wrapper_concept() {}
 
+	mutex_wrapper_concept(const mutex_wrapper_concept&) = delete;
+	mutex_wrapper_concept& operator=(const mutex_wrapper_concept&) = delete;
 
-	// updated as per https://rigtorp.se/spinlock/
-	class spinlock {
-	public:
-		using native_handle_type = uint32_t;
-		void lock()
-		{
-			// changed implementation from a test-and-set (TAS) to test and test-and-set (TTAS)
-			// this reduces cache coherency traffic on the processor
-			for(;;){
-				if (!state.exchange(true, std::memory_order_acquire)) {
-					break;
-				}
-				while (state.load(std::memory_order_relaxed)) {
-					// add a pause to allow yielding to an SMT/HT thread on the same core
-					_mm_pause();
-				}
-			}
-		}
-		bool try_lock() noexcept {
-			// First do a relaxed load to check if lock is free in order to prevent
-			// unnecessary cache misses if someone does while(!try_lock())
-			return !state.load(std::memory_order_relaxed) &&
-				!state.exchange(true, std::memory_order_acquire);
-		}
-		void unlock()
-		{
-			state.store(false, std::memory_order_release);
-		}
-		native_handle_type native_handle() { return native_handle_type{}; }
-	private:
-		std::atomic<bool> state = { false };
-	};
+	virtual void lock() = 0;
+	virtual bool try_lock() noexcept = 0;
+	virtual void unlock() = 0;
+};
 
+template<typename M> class mutex_wrapper : public mutex_wrapper_concept {
+	static_assert(std::is_member_function_pointer<decltype(&M::lock)>::value);
+	static_assert(std::is_member_function_pointer<decltype(&M::try_lock)>::value);
+	static_assert(std::is_member_function_pointer<decltype(&M::unlock)>::value);
+	static_assert(std::is_member_function_pointer<decltype(&M::native_handle)>::value);
 
-	// barrier from http://stackoverflow.com/a/24465624
-	//XXX make this based on semaphores? condition_vars only wakeup one thread at a time on notify_all (check wiki)
-	class barrier
+public:
+	mutex_wrapper() noexcept {};
+
+	mutex_wrapper(const mutex_wrapper&) = delete;
+	mutex_wrapper& operator=(const mutex_wrapper&) = delete;
+
+	void lock() override { mut.lock(); }
+
+	bool try_lock() noexcept override { return mut.try_lock(); }
+
+	void unlock() override { mut.unlock(); }
+
+	auto native_handle() { return mut.native_handle(); }
+
+protected:
+	M mut;
+};
+
+// updated as per https://rigtorp.se/spinlock/
+class spinlock {
+public:
+	using native_handle_type = uint32_t;
+
+	void lock()
 	{
-	private:
-		mutex _mutex;
-		condition_variable_any _cv;
-		std::size_t _count;
-	public:
-		explicit barrier(std::size_t count) : _count(count) { }
-		void wait()
-		{
-			std::unique_lock<mutex> lock(_mutex);
-			if (--_count == 0) {
-				_cv.notify_all();
-			} else {
-				_cv.wait(lock, [this] { return _count == 0; });
+		// changed implementation from a test-and-set (TAS) to test and test-and-set (TTAS)
+		// this reduces cache coherency traffic on the processor
+		for (;;) {
+			if (!state.exchange(true, std::memory_order_acquire)) {
+				break;
+			}
+			while (state.load(std::memory_order_relaxed)) {
+				// add a pause to allow yielding to an SMT/HT thread on the same core
+				_mm_pause();
 			}
 		}
-	};
-}
+	}
+
+	bool try_lock() noexcept
+	{
+		// First do a relaxed load to check if lock is free in order to prevent
+		// unnecessary cache misses if someone does while(!try_lock())
+		return !state.load(std::memory_order_relaxed) && !state.exchange(true, std::memory_order_acquire);
+	}
+
+	void unlock() { state.store(false, std::memory_order_release); }
+
+	native_handle_type native_handle() { return native_handle_type{}; }
+
+private:
+	std::atomic<bool> state = {false};
+};
+
+// barrier from http://stackoverflow.com/a/24465624
+// XXX make this based on semaphores? condition_vars only wakeup one thread at a time on notify_all (check wiki)
+class barrier {
+private:
+	mutex _mutex;
+	condition_variable_any _cv;
+	std::size_t _count;
+
+public:
+	explicit barrier(std::size_t count)
+	    : _count(count)
+	{
+	}
+
+	void wait()
+	{
+		std::unique_lock<mutex> lock(_mutex);
+		if (--_count == 0) {
+			_cv.notify_all();
+		}
+		else {
+			_cv.wait(lock, [this] { return _count == 0; });
+		}
+	}
+};
+} // namespace spring
 
 #endif // SPRINGTHREADING_H

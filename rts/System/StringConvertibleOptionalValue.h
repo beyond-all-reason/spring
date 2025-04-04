@@ -3,19 +3,25 @@
 #ifndef STRING_CONVERTIBLE_OPTIONAL_VALUE_H
 #define STRING_CONVERTIBLE_OPTIONAL_VALUE_H
 
-#include <string>
-#include <sstream>
 #include "System/Misc/NonCopyable.h"
+
+#include <sstream>
+#include <string>
 
 /**
  * @brief Untyped base class for TypedStringConvertibleOptionalValue.
  */
-class StringConvertibleOptionalValue : public spring::noncopyable
-{
+class StringConvertibleOptionalValue : public spring::noncopyable {
 public:
-	StringConvertibleOptionalValue() : isSet(false) {}
+	StringConvertibleOptionalValue()
+	    : isSet(false)
+	{
+	}
+
 	virtual ~StringConvertibleOptionalValue() {}
+
 	virtual std::string ToString() const = 0;
+
 	bool IsSet() const { return isSet; }
 
 protected:
@@ -25,15 +31,15 @@ protected:
 /**
  * @brief Wraps a value and detects whether it has been assigned to.
  */
-template<typename T>
-class TypedStringConvertibleOptionalValue : public StringConvertibleOptionalValue
-{
+template<typename T> class TypedStringConvertibleOptionalValue : public StringConvertibleOptionalValue {
 public:
-	TypedStringConvertibleOptionalValue<T>& operator=(const T& x) {
+	TypedStringConvertibleOptionalValue<T>& operator=(const T& x)
+	{
 		value = x;
 		isSet = true;
 		return *this;
 	}
+
 	const T& Get() const { return value; }
 
 	std::string ToString() const
@@ -62,16 +68,20 @@ protected:
  * and 2) converting from std::string to std::string using std::istringstream
  * will treat spaces as word boundaries, which we do not want.
  */
-template<>
-class TypedStringConvertibleOptionalValue<std::string> : public StringConvertibleOptionalValue
-{
+template<> class TypedStringConvertibleOptionalValue<std::string> : public StringConvertibleOptionalValue {
 	typedef std::string T;
 
 public:
-	void operator=(const T& x) { value = x; isSet = true; }
+	void operator=(const T& x)
+	{
+		value = x;
+		isSet = true;
+	}
+
 	const T& Get() const { return value; }
 
 	std::string ToString() const { return value; }
+
 	static T FromString(const std::string& value) { return value; }
 
 protected:

@@ -7,12 +7,14 @@
 
 struct UnitToolTipMap {
 public:
-	void Clear() {
+	void Clear()
+	{
 		tooltips.clear();
 		tooltips.reserve(256);
 	}
 
 	void Set(int id, std::string&& tip) { tooltips[id] = std::move(tip); }
+
 	const std::string& Get(int id) { return tooltips[id]; }
 
 private:
@@ -22,4 +24,3 @@ private:
 extern UnitToolTipMap unitToolTipMap;
 
 #endif
-

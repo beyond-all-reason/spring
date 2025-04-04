@@ -4,22 +4,21 @@
 #define _LOS_TEXTURE_H
 
 #include "PboInfoTexture.h"
+
 #include "Rendering/GL/FBO.h"
 
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
-
-class CLosTexture : public CPboInfoTexture
-{
+class CLosTexture : public CPboInfoTexture {
 public:
 	CLosTexture();
 	~CLosTexture() override;
 
 public:
 	void Update() override;
+
 	bool IsUpdateNeeded() override { return true; }
 
 private:

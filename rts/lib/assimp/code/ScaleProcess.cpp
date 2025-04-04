@@ -40,66 +40,66 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "ScaleProcess.h"
 
-#include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 namespace Assimp {
 
 ScaleProcess::ScaleProcess()
-: BaseProcess()
-, mScale( AI_CONFIG_GLOBAL_SCALE_FACTOR_DEFAULT ) {
-    // empty
+    : BaseProcess()
+    , mScale(AI_CONFIG_GLOBAL_SCALE_FACTOR_DEFAULT)
+{
+	// empty
 }
 
-ScaleProcess::~ScaleProcess() {
-    // empty
+ScaleProcess::~ScaleProcess()
+{
+	// empty
 }
 
-void ScaleProcess::setScale( ai_real scale ) {
-    mScale = scale;
+void ScaleProcess::setScale(ai_real scale) { mScale = scale; }
+
+ai_real ScaleProcess::getScale() const { return mScale; }
+
+bool ScaleProcess::IsActive(unsigned int pFlags) const { return (pFlags & aiProcess_GlobalScale) != 0; }
+
+void ScaleProcess::SetupProperties(const Importer* pImp)
+{
+	mScale = pImp->GetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 0);
 }
 
-ai_real ScaleProcess::getScale() const {
-    return mScale;
+void ScaleProcess::Execute(aiScene* pScene)
+{
+	if (nullptr == pScene) {
+		return;
+	}
+
+	if (nullptr == pScene->mRootNode) {
+		return;
+	}
+
+	traverseNodes(pScene->mRootNode);
 }
 
-bool ScaleProcess::IsActive( unsigned int pFlags ) const {
-    return ( pFlags & aiProcess_GlobalScale ) != 0;
+void ScaleProcess::traverseNodes(aiNode* node)
+{
+	applyScaling(node);
+
+	/*for ( unsigned int i = 0; i < node->mNumChildren; ++i ) {
+	    aiNode *currentNode = currentNode->mChildren[ i ];
+	    if ( nullptr != currentNode ) {
+	        traverseNodes( currentNode );
+	    }
+	}*/
 }
 
-void ScaleProcess::SetupProperties( const Importer* pImp ) {
-    mScale = pImp->GetPropertyFloat( AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 0 );
-}
-
-void ScaleProcess::Execute( aiScene* pScene ) {
-    if ( nullptr == pScene ) {
-        return;
-    }
-
-    if ( nullptr == pScene->mRootNode ) {
-        return;
-    }
-
-    traverseNodes( pScene->mRootNode );
-}
-
-void ScaleProcess::traverseNodes( aiNode *node ) {
-    applyScaling( node );
-
-    /*for ( unsigned int i = 0; i < node->mNumChildren; ++i ) {
-        aiNode *currentNode = currentNode->mChildren[ i ];
-        if ( nullptr != currentNode ) {
-            traverseNodes( currentNode );
-        }
-    }*/
-}
-
-void ScaleProcess::applyScaling( aiNode *currentNode ) {
-    if ( nullptr != currentNode ) {
-        currentNode->mTransformation.a1 = currentNode->mTransformation.a1 * mScale;
-        currentNode->mTransformation.b2 = currentNode->mTransformation.b2 * mScale;
-        currentNode->mTransformation.c3 = currentNode->mTransformation.c3 * mScale;
-    }
+void ScaleProcess::applyScaling(aiNode* currentNode)
+{
+	if (nullptr != currentNode) {
+		currentNode->mTransformation.a1 = currentNode->mTransformation.a1 * mScale;
+		currentNode->mTransformation.b2 = currentNode->mTransformation.b2 * mScale;
+		currentNode->mTransformation.c3 = currentNode->mTransformation.c3 * mScale;
+	}
 }
 
 } // Namespace Assimp

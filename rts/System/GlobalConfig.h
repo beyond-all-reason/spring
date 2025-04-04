@@ -3,7 +3,6 @@
 #ifndef _GLOBAL_CONFIG_H
 #define _GLOBAL_CONFIG_H
 
-
 class GlobalConfig {
 public:
 	void Init();
@@ -128,7 +127,7 @@ public:
 	 *
 	 * Defines how much percent of the time for simulation is minimum spend for
 	 * drawing. This is important when reconnecting,
-	 * 
+	 *
 	 * For example: if set to 0.15 then 15% of the total cpu time is exclusively
 	 * reserved for drawing and the remaining 85% for reconnecting/simulation.
 	 */

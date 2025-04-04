@@ -1,25 +1,28 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-#include <cstring>
-#include <cstdio>
-
 #include "SHA512.hpp"
 
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 
-static uint8_t hex2dec(uint8_t c) {
-	if (c >= '0' && c <= '9') return (     (c - '0'));
-	if (c >= 'a' && c <= 'f') return (10 + (c - 'a'));
-	if (c >= 'A' && c <= 'F') return (10 + (c - 'A'));
+static uint8_t hex2dec(uint8_t c)
+{
+	if (c >= '0' && c <= '9')
+		return ((c - '0'));
+	if (c >= 'a' && c <= 'f')
+		return (10 + (c - 'a'));
+	if (c >= 'A' && c <= 'F')
+		return (10 + (c - 'A'));
 	return 0;
 }
 
-static uint64_t rotr64(uint64_t x, uint64_t i) {
-	assert(i >=  1);
+static uint64_t rotr64(uint64_t x, uint64_t i)
+{
+	assert(i >= 1);
 	assert(i <= 63);
 	return ((x << (64 - i)) | (x >> i));
 }
-
 
 void sha512::read_digest(const std::string& hex, raw_digest& sha_bytes)
 {
@@ -41,7 +44,8 @@ sha512::raw_digest sha512::read_digest(const std::string& hex)
 	return raw;
 }
 
-void sha512::read_digest(const hex_digest& hex_chars, raw_digest& sha_bytes) {
+void sha512::read_digest(const hex_digest& hex_chars, raw_digest& sha_bytes)
+{
 	for (uint8_t i = 0; i < SHA_LEN; i++) {
 		const uint8_t c0 = hex2dec(hex_chars[i * 2 + 0]);
 		const uint8_t c1 = hex2dec(hex_chars[i * 2 + 1]);
@@ -49,7 +53,8 @@ void sha512::read_digest(const hex_digest& hex_chars, raw_digest& sha_bytes) {
 	}
 }
 
-void sha512::dump_digest(const raw_digest& sha_bytes, hex_digest& hex_chars) {
+void sha512::dump_digest(const raw_digest& sha_bytes, hex_digest& hex_chars)
+{
 	for (uint8_t i = 0; i < SHA_LEN; i++) {
 		snprintf(hex_chars.data() + (i * 2), hex_chars.size() - (i * 2), "%02x", sha_bytes[i]);
 	}
@@ -64,11 +69,13 @@ std::string sha512::dump_digest(const raw_digest& sha_bytes)
 	return std::string(hex_chars.data(), hex_chars.size() - 1);
 }
 
-void sha512::calc_digest(const std::vector<uint8_t>& msg_bytes, raw_digest& sha_bytes) {
+void sha512::calc_digest(const std::vector<uint8_t>& msg_bytes, raw_digest& sha_bytes)
+{
 	calc_digest(msg_bytes.data(), msg_bytes.size(), sha_bytes.data());
 }
 
-void sha512::calc_digest(const uint8_t msg_bytes[], size_t len, uint8_t sha_bytes[SHA_LEN]) {
+void sha512::calc_digest(const uint8_t msg_bytes[], size_t len, uint8_t sha_bytes[SHA_LEN])
+{
 	uint8_t block[BLK_LEN] = {0};
 	uint64_t state[NUM_STATE_CONSTS] = {0};
 
@@ -82,7 +89,7 @@ void sha512::calc_digest(const uint8_t msg_bytes[], size_t len, uint8_t sha_byte
 	if ((len - ofs) > 0)
 		std::memmove(block, &msg_bytes[ofs], len - ofs);
 
-	ofs  = len & (BLK_LEN - 1);
+	ofs = len & (BLK_LEN - 1);
 	ofs += 1;
 
 	block[ofs - 1] = 0x80;
@@ -109,30 +116,30 @@ void sha512::calc_digest(const uint8_t msg_bytes[], size_t len, uint8_t sha_byte
 	}
 }
 
-
-void sha512::dm_compress(uint64_t state[NUM_STATE_CONSTS], const uint8_t blocks[], size_t len) {
+void sha512::dm_compress(uint64_t state[NUM_STATE_CONSTS], const uint8_t blocks[], size_t len)
+{
 	assert(len == 0 || (len % BLK_LEN) == 0);
 
 	uint64_t schedule[NUM_ROUND_CONSTS] = {0};
 
-	for (size_t i = 0; i < len; ) {
+	for (size_t i = 0; i < len;) {
 		// initialize schedule
 		for (uint8_t j = 0; j < 16; j++, i += 8) {
-			schedule[j]  = 0;
+			schedule[j] = 0;
 			schedule[j] |= (static_cast<uint64_t>(blocks[i + 0]) << 56);
 			schedule[j] |= (static_cast<uint64_t>(blocks[i + 1]) << 48);
 			schedule[j] |= (static_cast<uint64_t>(blocks[i + 2]) << 40);
 			schedule[j] |= (static_cast<uint64_t>(blocks[i + 3]) << 32);
 			schedule[j] |= (static_cast<uint64_t>(blocks[i + 4]) << 24);
 			schedule[j] |= (static_cast<uint64_t>(blocks[i + 5]) << 16);
-			schedule[j] |= (static_cast<uint64_t>(blocks[i + 6]) <<  8);
-			schedule[j] |= (static_cast<uint64_t>(blocks[i + 7]) <<  0);
+			schedule[j] |= (static_cast<uint64_t>(blocks[i + 6]) << 8);
+			schedule[j] |= (static_cast<uint64_t>(blocks[i + 7]) << 0);
 		}
 
 		for (uint8_t j = 16; j < NUM_ROUND_CONSTS; j++) {
-			schedule[j]  = schedule[j - 16] + schedule[j - 7];
-			schedule[j] += (rotr64(schedule[j - 15],  1) ^ rotr64(schedule[j - 15],  8) ^ (schedule[j - 15] >> 7));
-			schedule[j] += (rotr64(schedule[j -  2], 19) ^ rotr64(schedule[j -  2], 61) ^ (schedule[j -  2] >> 6));
+			schedule[j] = schedule[j - 16] + schedule[j - 7];
+			schedule[j] += (rotr64(schedule[j - 15], 1) ^ rotr64(schedule[j - 15], 8) ^ (schedule[j - 15] >> 7));
+			schedule[j] += (rotr64(schedule[j - 2], 19) ^ rotr64(schedule[j - 2], 61) ^ (schedule[j - 2] >> 6));
 		}
 
 		// round constants
@@ -146,8 +153,9 @@ void sha512::dm_compress(uint64_t state[NUM_STATE_CONSTS], const uint8_t blocks[
 		uint64_t h = state[7];
 
 		for (uint8_t j = 0; j < NUM_ROUND_CONSTS; j++) {
-			const uint64_t t1 = h + (rotr64(e, 14) ^ rotr64(e, 18) ^ rotr64(e, 41)) + (g ^ (e & (f ^ g))) + ROUND_CONSTS[j] + schedule[j];
-			const uint64_t t2 =     (rotr64(a, 28) ^ rotr64(a, 34) ^ rotr64(a, 39)) + ((a & (b | c)) | (b & c));
+			const uint64_t t1 = h + (rotr64(e, 14) ^ rotr64(e, 18) ^ rotr64(e, 41)) + (g ^ (e & (f ^ g))) +
+			                    ROUND_CONSTS[j] + schedule[j];
+			const uint64_t t2 = (rotr64(a, 28) ^ rotr64(a, 34) ^ rotr64(a, 39)) + ((a & (b | c)) | (b & c));
 
 			h = g;
 			g = f;
@@ -170,8 +178,8 @@ void sha512::dm_compress(uint64_t state[NUM_STATE_CONSTS], const uint8_t blocks[
 	}
 }
 
-
-bool sha512::unit_test(const char* msg_str, const char* sha_str) {
+bool sha512::unit_test(const char* msg_str, const char* sha_str)
+{
 	std::vector<uint8_t> msg_bytes = {};
 	raw_digest sha_bytes = {0};
 
@@ -193,4 +201,3 @@ bool sha512::unit_test(const char* msg_str, const char* sha_str) {
 
 	return (k == SHA_LEN);
 }
-

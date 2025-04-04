@@ -5,16 +5,16 @@
 
 #include "ExternalAI/SkirmishAIData.h"
 
-class CAIScriptHandler
-{
+class CAIScriptHandler {
 public:
-	typedef std::vector< std::pair<std::string, SkirmishAIData> > ScriptMap;
+	typedef std::vector<std::pair<std::string, SkirmishAIData>> ScriptMap;
 
 	static CAIScriptHandler& Instance();
 
 	bool IsSkirmishAITestScript(const std::string& scriptName) const;
 
 	const SkirmishAIData& GetSkirmishAIData(const std::string& scriptName) const;
+
 	const ScriptMap& GetScriptMap() const { return scriptMap; }
 
 private:

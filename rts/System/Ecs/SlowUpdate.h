@@ -11,10 +11,10 @@
 
 #include "Sim/Misc/GlobalConstants.h"
 
-constexpr int REALTIME_SYSTEM_UPDATE = 1;   // 30 hz
-constexpr int FAST_SYSTEM_UPDATE = 3;       // 10 hz
-constexpr int SLOW_SYSTEM_UPDATE = 15;      //  2 hz
-//constexpr int BACKGROUND_SYSTEM_UPDATE = 30; // 1 hz
+constexpr int REALTIME_SYSTEM_UPDATE = 1; // 30 hz
+constexpr int FAST_SYSTEM_UPDATE = 3;     // 10 hz
+constexpr int SLOW_SYSTEM_UPDATE = 15;    //  2 hz
+// constexpr int BACKGROUND_SYSTEM_UPDATE = 30; // 1 hz
 
 
 // FAST SYSTEMS

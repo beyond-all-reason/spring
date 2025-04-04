@@ -3,24 +3,25 @@
 #ifndef SHADOW_HANDLER_H
 #define SHADOW_HANDLER_H
 
+#include "Rendering/GL/FBO.h"
+#include "System/Matrix44f.h"
+#include "System/float4.h"
+
 #include <array>
 #include <limits>
 
-#include "Rendering/GL/FBO.h"
-#include "System/float4.h"
-#include "System/Matrix44f.h"
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 class CCamera;
-class CShadowHandler
-{
+
+class CShadowHandler {
 public:
 	CShadowHandler()
-		:smOpaqFBO(true)
-	{}
+	    : smOpaqFBO(true)
+	{
+	}
 
 	void Init();
 	void Kill();
@@ -36,29 +37,31 @@ public:
 	void EnableColorOutput(bool enable) const;
 
 	enum ShadowGenerationBits {
-		SHADOWGEN_BIT_NONE  = 0,
-		SHADOWGEN_BIT_MAP   = 2,
+		SHADOWGEN_BIT_NONE = 0,
+		SHADOWGEN_BIT_MAP = 2,
 		SHADOWGEN_BIT_MODEL = 4,
-		SHADOWGEN_BIT_PROJ  = 8,
-		SHADOWGEN_BIT_TREE  = 16,
+		SHADOWGEN_BIT_PROJ = 8,
+		SHADOWGEN_BIT_TREE = 16,
 	};
+
 	enum ShadowProjectionMode {
 		SHADOWPROMODE_MAP_CENTER = 0, // use center of map-geometry as projection target (constant res.)
 		SHADOWPROMODE_CAM_CENTER = 1, // use center of camera-frustum as projection target (variable res.)
 		SHADOWPROMODE_MIX_CAMMAP = 2, // use whichever mode maximizes resolution this frame
 	};
+
 	enum ShadowMapSizes {
-		MIN_SHADOWMAP_SIZE =   512,
-		DEF_SHADOWMAP_SIZE =  2048,
+		MIN_SHADOWMAP_SIZE = 512,
+		DEF_SHADOWMAP_SIZE = 2048,
 		MAX_SHADOWMAP_SIZE = 16384,
 	};
 
 	enum ShadowGenProgram {
-		SHADOWGEN_PROGRAM_MODEL      = 0,
-		SHADOWGEN_PROGRAM_MODEL_GL4  = 1,
-		SHADOWGEN_PROGRAM_MAP        = 2,
+		SHADOWGEN_PROGRAM_MODEL = 0,
+		SHADOWGEN_PROGRAM_MODEL_GL4 = 1,
+		SHADOWGEN_PROGRAM_MAP = 2,
 		SHADOWGEN_PROGRAM_PROJECTILE = 3,
-		SHADOWGEN_PROGRAM_COUNT      = 4,
+		SHADOWGEN_PROGRAM_COUNT = 4,
 	};
 
 	enum ShadowMatrixType {
@@ -66,33 +69,45 @@ public:
 		SHADOWMAT_TYPE_DRAWING = 1,
 	};
 
-	Shader::IProgramObject* GetShadowGenProg(ShadowGenProgram p) {
-		return shadowGenProgs[p];
+	Shader::IProgramObject* GetShadowGenProg(ShadowGenProgram p) { return shadowGenProgs[p]; }
+
+	const CMatrix44f& GetShadowMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return viewMatrix[idx]; }
+
+	const float* GetShadowMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
+
+	const CMatrix44f& GetShadowViewMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return viewMatrix[idx]; }
+
+	const CMatrix44f& GetShadowProjMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return projMatrix[idx]; }
+
+	const float* GetShadowViewMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const
+	{
+		return &viewMatrix[idx].m[0];
 	}
 
-	const CMatrix44f& GetShadowMatrix   (unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx];      }
-	const      float* GetShadowMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
-
-	const CMatrix44f& GetShadowViewMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  viewMatrix[idx]; }
-	const CMatrix44f& GetShadowProjMatrix(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return  projMatrix[idx]; }
-	const      float* GetShadowViewMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &viewMatrix[idx].m[0]; }
-	const      float* GetShadowProjMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const { return &projMatrix[idx].m[0]; }
+	const float* GetShadowProjMatrixRaw(unsigned int idx = SHADOWMAT_TYPE_DRAWING) const
+	{
+		return &projMatrix[idx].m[0];
+	}
 
 	const float4& GetShadowParams() const { return shadowTexProjCenter; }
 
 	uint32_t GetShadowTextureID() const { return shadowDepthTexture; }
+
 	uint32_t GetColorTextureID() const { return shadowColorTexture; }
 
 	static bool ShadowsInitialized() { return firstInit; }
+
 	static bool ShadowsSupported() { return shadowsSupported; }
 
 	bool ShadowsLoaded() const { return shadowsLoaded; }
+
 	bool InShadowPass() const { return inShadowPass; }
 
 	void SaveShadowMapTextures() const;
 	void DrawFrustumDebug() const;
 
 	bool& DebugFrustumRef() { return debugFrustum; }
+
 private:
 	void FreeFBOAndTextures();
 	bool InitFBOAndTextures();
@@ -145,12 +160,12 @@ private:
 
 	/// xmid, ymid, p17, p18
 	static constexpr float4 shadowTexProjCenter = {
-		// .xy are used to bias the SM-space projection; the values
-		// of .z and .w are such that (invsqrt(xy + zz) + ww) ~= 1
-		0.5f                             , //x
-		0.5f                             , //y
-		std::numeric_limits<float>::max(), //z
-		1.0f                               //w
+	    // .xy are used to bias the SM-space projection; the values
+	    // of .z and .w are such that (invsqrt(xy + zz) + ww) ~= 1
+	    0.5f,                              // x
+	    0.5f,                              // y
+	    std::numeric_limits<float>::max(), // z
+	    1.0f                               // w
 	};
 };
 

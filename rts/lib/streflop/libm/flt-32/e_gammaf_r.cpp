@@ -20,40 +20,36 @@
    02111-1307 USA.  */
 
 #include "SMath.h"
+
 #include "math_private.h"
 
-
 namespace streflop_libm {
-Simple
-__ieee754_gammaf_r (Simple x, int *signgamp)
+Simple __ieee754_gammaf_r(Simple x, int* signgamp)
 {
-  /* We don't have a real gamma implementation now.  We'll use lgamma
-     and the exp function.  But due to the required boundary
-     conditions we must check some values separately.  */
-  int32_t hx;
+	/* We don't have a real gamma implementation now.  We'll use lgamma
+	   and the exp function.  But due to the required boundary
+	   conditions we must check some values separately.  */
+	int32_t hx;
 
-  GET_FLOAT_WORD (hx, x);
+	GET_FLOAT_WORD(hx, x);
 
-  if ((hx & 0x7fffffff) == 0)
-    {
-      /* Return value for x == 0 is Inf with divide by zero exception.  */
-      *signgamp = 0;
-      return 1.0f / x;
-    }
-  if (hx < 0 && (u_int32_t) hx < 0xff800000 && __rintf (x) == x)
-    {
-      /* Return value for integer x < 0 is NaN with invalid exception.  */
-      *signgamp = 0;
-      return (x - x) / (x - x);
-    }
-  if (hx == 0xff800000)
-    {
-      /* x == -Inf.  According to ISO this is NaN.  */
-      *signgamp = 0;
-      return x - x;
-    }
+	if ((hx & 0x7fffffff) == 0) {
+		/* Return value for x == 0 is Inf with divide by zero exception.  */
+		*signgamp = 0;
+		return 1.0f / x;
+	}
+	if (hx < 0 && (u_int32_t)hx < 0xff800000 && __rintf(x) == x) {
+		/* Return value for integer x < 0 is NaN with invalid exception.  */
+		*signgamp = 0;
+		return (x - x) / (x - x);
+	}
+	if (hx == 0xff800000) {
+		/* x == -Inf.  According to ISO this is NaN.  */
+		*signgamp = 0;
+		return x - x;
+	}
 
-  /* XXX FIXME.  */
-  return __ieee754_expf (__ieee754_lgammaf_r (x, signgamp));
+	/* XXX FIXME.  */
+	return __ieee754_expf(__ieee754_lgammaf_r(x, signgamp));
 }
-}
+} // namespace streflop_libm

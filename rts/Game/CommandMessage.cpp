@@ -1,27 +1,25 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-
-
 #include "CommandMessage.h"
 
 #include "Net/Protocol/BaseNetProtocol.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Net/PackPacket.h"
 #include "System/Net/UnpackPacket.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cassert>
 
 using namespace netcode;
 
 CommandMessage::CommandMessage(const std::string& cmd, int playerID)
-	: action(Action(cmd))
-	, playerID(playerID)
+    : action(Action(cmd))
+    , playerID(playerID)
 {
 }
 
 CommandMessage::CommandMessage(const Action& action, int playerID)
-	: action(action)
-	, playerID(playerID)
+    : action(action)
+    , playerID(playerID)
 {
 }
 
@@ -46,4 +44,3 @@ const netcode::RawPacket* CommandMessage::Pack() const
 	*buffer << action.extra;
 	return buffer;
 }
-

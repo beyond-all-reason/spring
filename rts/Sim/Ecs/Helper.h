@@ -8,10 +8,10 @@
 // Functions to help work around Lua header conflicts.
 
 namespace Sim {
-    void ClearRegistry();
+void ClearRegistry();
 
-    void LoadComponents(std::stringstream &iss);
-    void SaveComponents(std::stringstream &oss);
-}
+void LoadComponents(std::stringstream& iss);
+void SaveComponents(std::stringstream& oss);
+} // namespace Sim
 
 #endif

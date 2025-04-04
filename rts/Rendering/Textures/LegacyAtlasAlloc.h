@@ -5,12 +5,11 @@
 
 #include "IAtlasAllocator.h"
 
-
-class CLegacyAtlasAlloc : public IAtlasAllocator
-{
+class CLegacyAtlasAlloc : public IAtlasAllocator {
 public:
-	CLegacyAtlasAlloc() {
-		atlasSize = { 32, 32 };
+	CLegacyAtlasAlloc()
+	{
+		atlasSize = {32, 32};
 		numLevels = 1;
 	}
 

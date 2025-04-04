@@ -10,19 +10,19 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/FileSystem/VFSHandler.h"
-#include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
 
-CONFIG(std::string, DefaultLuaMenu).defaultValue("").description("Sets the default menu to be used when spring is started.");
+CONFIG(std::string, DefaultLuaMenu)
+    .defaultValue("")
+    .description("Sets the default menu to be used when spring is started.");
 
 CLuaMenuController* luaMenuController = nullptr;
 
-
 CLuaMenuController::CLuaMenuController(const std::string& menuName)
-	: menuArchive(menuName)
-	, lastDrawFrameTime(spring_gettime())
+    : menuArchive(menuName)
+    , lastDrawFrameTime(spring_gettime())
 {
 	if (!Valid())
 		menuArchive = configHandler->GetString("DefaultLuaMenu");
@@ -35,11 +35,7 @@ CLuaMenuController::CLuaMenuController(const std::string& menuName)
 	CLuaMenu::LoadFreeHandler();
 }
 
-CLuaMenuController::~CLuaMenuController()
-{
-	CLuaMenu::FreeHandler();
-}
-
+CLuaMenuController::~CLuaMenuController() { CLuaMenu::FreeHandler(); }
 
 bool CLuaMenuController::Reset()
 {
@@ -84,10 +80,7 @@ bool CLuaMenuController::ActivateInstance(const std::string& msg)
 	return (luaMenuController->Valid() && luaMenuController->Activate(msg));
 }
 
-void CLuaMenuController::ResizeEvent()
-{
-	eventHandler.ViewResize();
-}
+void CLuaMenuController::ResizeEvent() { eventHandler.ViewResize(); }
 
 bool CLuaMenuController::Update()
 {
@@ -132,7 +125,6 @@ bool CLuaMenuController::Draw()
 	spring_msecs(10).sleep(true); // no draw needed, sleep a bit
 	return false;
 }
-
 
 int CLuaMenuController::KeyReleased(int keyCode, int scanCode)
 {

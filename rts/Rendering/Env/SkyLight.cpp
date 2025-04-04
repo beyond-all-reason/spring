@@ -1,17 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "SkyLight.h"
+
 #include "Map/MapInfo.h"
 #include "System/FastMath.h"
-
 #include "System/Misc/TracyDefs.h"
 
-ISkyLight::ISkyLight() {
+ISkyLight::ISkyLight()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	SetLightDir(mapInfo->light.sunDir);
 }
 
-float3& ISkyLight::CalcPolarLightDir() {
+float3& ISkyLight::CalcPolarLightDir()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	lightDirZ = lightDir;
 	lightDirZ.y = 0.0f;
@@ -28,4 +30,3 @@ float3& ISkyLight::CalcPolarLightDir() {
 	modLightDir.z = fastmath::sqrt_sse(lightDir.dot2D(lightDir));
 	return modLightDir;
 }
-

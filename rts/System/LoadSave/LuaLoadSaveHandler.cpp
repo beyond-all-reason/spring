@@ -1,31 +1,30 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <string>
-#include <sstream>
-
 #include "LuaLoadSaveHandler.h"
 
 #include "zlib.h"
-#include "minizip/zip.h"
 
-#include "ExternalAI/SkirmishAIHandler.h"
 #include "ExternalAI/EngineOutHandler.h"
+#include "ExternalAI/SkirmishAIHandler.h"
 #include "Game/GameSetup.h"
 #include "Lua/LuaZip.h"
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
-#include "System/FileSystem/Archives/IArchive.h"
-#include "System/FileSystem/ArchiveLoader.h"
-#include "System/FileSystem/DataDirsAccess.h"
-#include "System/FileSystem/FileSystem.h"
-#include "System/FileSystem/FileQueryFlags.h"
-#include "System/Platform/byteorder.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
+#include "System/FileSystem/ArchiveLoader.h"
+#include "System/FileSystem/Archives/IArchive.h"
+#include "System/FileSystem/DataDirsAccess.h"
+#include "System/FileSystem/FileQueryFlags.h"
+#include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
-#include "System/StringUtil.h"
+#include "System/Platform/byteorder.h"
 #include "System/SafeUtil.h"
+#include "System/StringUtil.h"
+#include "minizip/zip.h"
 
+#include <sstream>
+#include <string>
 
 
 // Prefix for all files in the save file.
@@ -35,25 +34,19 @@
 // Names of files in save file for various components of engine.
 // They all have a version number as suffix. When breaking compatibility
 // in the respective file format, please increment its version number.
-static const char* FILE_STARTSCRIPT  = PREFIX"startscript.0";
-static const char* FILE_AIDATA       = PREFIX"aidata.0";
-static const char* FILE_HEIGHTMAP    = PREFIX"heightmap.0";
+static const char* FILE_STARTSCRIPT = PREFIX "startscript.0";
+static const char* FILE_AIDATA = PREFIX "aidata.0";
+static const char* FILE_HEIGHTMAP = PREFIX "heightmap.0";
 
 #undef PREFIX
 
-
 CLuaLoadSaveHandler::CLuaLoadSaveHandler()
-	: savefile(nullptr)
-	, loadfile(nullptr)
+    : savefile(nullptr)
+    , loadfile(nullptr)
 {
 }
 
-
-CLuaLoadSaveHandler::~CLuaLoadSaveHandler()
-{
-	delete loadfile;
-}
-
+CLuaLoadSaveHandler::~CLuaLoadSaveHandler() { delete loadfile; }
 
 void CLuaLoadSaveHandler::SaveGame(const std::string& file)
 {
@@ -67,8 +60,7 @@ void CLuaLoadSaveHandler::SaveGame(const std::string& file)
 		FileSystem::Remove(realname);
 
 		// Open the zip
-		if (realname.empty() ||
-				(savefile = zipOpen(realname.c_str(), APPEND_STATUS_CREATE)) == nullptr) {
+		if (realname.empty() || (savefile = zipOpen(realname.c_str(), APPEND_STATUS_CREATE)) == nullptr) {
 			throw content_error("Unable to open save file \"" + filename + "\"");
 		}
 
@@ -104,7 +96,6 @@ void CLuaLoadSaveHandler::SaveGame(const std::string& file)
 	}
 }
 
-
 void CLuaLoadSaveHandler::SaveEventClients()
 {
 	// FIXME: need some way to 'chroot' them into a single directory?
@@ -112,13 +103,11 @@ void CLuaLoadSaveHandler::SaveEventClients()
 	eventHandler.Save(savefile);
 }
 
-
 void CLuaLoadSaveHandler::SaveGameStartInfo()
 {
 	const std::string scriptText = gameSetup->setupText;
 	SaveEntireFile(FILE_STARTSCRIPT, "game setup", scriptText.data(), scriptText.size());
 }
-
 
 void CLuaLoadSaveHandler::SaveAIData()
 {
@@ -133,15 +122,14 @@ void CLuaLoadSaveHandler::SaveAIData()
 	}
 }
 
-
 void CLuaLoadSaveHandler::SaveHeightmap()
 {
 	// This implements a trivial compression algorithm (relying on zip):
 	// For every heightmap pixel the bits are XOR'ed with the orig bits,
 	// so that unmodified terrain comes out as 0.
 	// Big chunks of 0s are then very well compressed by zip.
-	const int* currHeightmap = (const int*) (const char*) readMap->GetCornerHeightMapSynced();
-	const int* origHeightmap = (const int*) (const char*) readMap->GetOriginalHeightMapSynced();
+	const int* currHeightmap = (const int*)(const char*)readMap->GetCornerHeightMapSynced();
+	const int* origHeightmap = (const int*)(const char*)readMap->GetOriginalHeightMapSynced();
 	const int size = mapDims.mapxp1 * mapDims.mapyp1;
 	int* temp = new int[size];
 	for (int i = 0; i < size; ++i) {
@@ -151,12 +139,16 @@ void CLuaLoadSaveHandler::SaveHeightmap()
 	delete[] temp;
 }
 
-
-void CLuaLoadSaveHandler::SaveEntireFile(const char* file, const char* what, const void* data, int size, bool throwOnError)
+void CLuaLoadSaveHandler::SaveEntireFile(const char* file,
+    const char* what,
+    const void* data,
+    int size,
+    bool throwOnError)
 {
 	std::string failedOperation;
 
-	if (Z_OK != zipOpenNewFileInZip(savefile, file, nullptr, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION)) {
+	if (Z_OK !=
+	    zipOpenNewFileInZip(savefile, file, nullptr, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION)) {
 		failedOperation = "open";
 	}
 	else if (Z_OK != zipWriteInFileInZip(savefile, data, size)) {
@@ -167,16 +159,16 @@ void CLuaLoadSaveHandler::SaveEntireFile(const char* file, const char* what, con
 	}
 
 	if (!failedOperation.empty()) {
-		const std::string error = "Unable to " + failedOperation + " " + what
-				+ " file in save file \"" + filename + "\"";
+		const std::string error =
+		    "Unable to " + failedOperation + " " + what + " file in save file \"" + filename + "\"";
 		if (throwOnError) {
 			throw content_error(error);
-		} else {
+		}
+		else {
 			LOG_L(L_ERROR, "%s", error.c_str());
 		}
 	}
 }
-
 
 bool CLuaLoadSaveHandler::LoadGameStartInfo(const std::string& file)
 {
@@ -190,7 +182,6 @@ bool CLuaLoadSaveHandler::LoadGameStartInfo(const std::string& file)
 	return true;
 }
 
-
 void CLuaLoadSaveHandler::LoadGame()
 {
 	ENTER_SYNCED_CODE();
@@ -201,13 +192,11 @@ void CLuaLoadSaveHandler::LoadGame()
 	LEAVE_SYNCED_CODE();
 }
 
-
 void CLuaLoadSaveHandler::LoadEventClients()
 {
 	// FIXME: need some way to 'chroot' them into a single directory? absolute-ify & check path-prefix?
 	eventHandler.Load(loadfile);
 }
-
 
 void CLuaLoadSaveHandler::LoadAIData()
 {
@@ -225,34 +214,33 @@ void CLuaLoadSaveHandler::LoadAIData()
 	LEAVE_SYNCED_CODE();
 }
 
-
 void CLuaLoadSaveHandler::LoadHeightmap()
 {
 	std::vector<std::uint8_t> buf;
 
 	if (loadfile->GetFile(FILE_HEIGHTMAP, buf)) {
 		const int size = mapDims.mapxp1 * mapDims.mapyp1;
-		const int* temp = (const int*) (const char*) &*buf.begin();
-		const int* origHeightmap = (const int*) (const char*) readMap->GetOriginalHeightMapSynced();
+		const int* temp = (const int*)(const char*)&*buf.begin();
+		const int* origHeightmap = (const int*)(const char*)readMap->GetOriginalHeightMapSynced();
 
 		for (int i = 0; i < size; ++i) {
 			const int newHeightBits = swabDWord(temp[i]) ^ origHeightmap[i];
-			const float newHeight = *(const float*) (const char*) &newHeightBits;
+			const float newHeight = *(const float*)(const char*)&newHeightBits;
 			readMap->SetHeight(i, newHeight);
 		}
 		mapDamage->RecalcArea(0, mapDims.mapx, 0, mapDims.mapy);
-	} else {
+	}
+	else {
 		LOG_L(L_ERROR, "Unable to load heightmap from save file \"%s\"", filename.c_str());
 	}
 }
-
 
 std::string CLuaLoadSaveHandler::LoadEntireFile(const std::string& file)
 {
 	std::vector<std::uint8_t> buf;
 
 	if (loadfile->GetFile(file, buf))
-		return std::string((char*) &*buf.begin(), buf.size());
+		return std::string((char*)&*buf.begin(), buf.size());
 
 	return "";
 }

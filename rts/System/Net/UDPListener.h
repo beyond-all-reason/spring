@@ -4,14 +4,15 @@
 #define _UDP_LISTENER_H
 
 #include "System/Misc/NonCopyable.h"
-#include <memory>
-#include <asio/ip/udp.hpp>
+
 #include <map>
+#include <memory>
 #include <queue>
 #include <string>
 
-namespace netcode
-{
+#include <asio/ip/udp.hpp>
+
+namespace netcode {
 class UDPConnection;
 
 /**
@@ -21,8 +22,7 @@ class UDPConnection;
  * You can Listen for new connections, initiate new ones and send/recieve data
  * to/from them.
  */
-class UDPListener : spring::noncopyable
-{
+class UDPListener : spring::noncopyable {
 public:
 	/**
 	 * @brief Open a socket and make it ready for listening
@@ -46,7 +46,8 @@ public:
 	 *         the default value "" results in the v6 any address "::",
 	 *         or the v4 equivalent "0.0.0.0", if v6 is no supported
 	 */
-	static std::string TryBindSocket(int port, std::shared_ptr<asio::ip::udp::socket>& sock, const std::string& ip = "");
+	static std::string
+	TryBindSocket(int port, std::shared_ptr<asio::ip::udp::socket>& sock, const std::string& ip = "");
 
 	/**
 	 * @brief Run this from time to time
@@ -60,7 +61,9 @@ public:
 	 * or drop all data from unconnected addresses.
 	 */
 	void SetAcceptingConnections(const bool enable) { acceptNewConnections = enable; }
+
 	bool IsAcceptingConnections() const { return acceptNewConnections; }
+
 	bool HasIncomingConnections() const { return (!waiting.empty()); }
 
 	/**
@@ -70,9 +73,11 @@ public:
 	std::shared_ptr<UDPConnection> SpawnConnection(const std::string& ip, const unsigned port);
 
 	std::weak_ptr<UDPConnection> PreviewConnection() { return (waiting.front()); }
+
 	std::shared_ptr<UDPConnection> AcceptConnection();
 
 	void RejectConnection() { waiting.pop(); }
+
 	void UpdateConnections(); // Updates connections when the endpoint has been reconnected
 
 private:
@@ -88,12 +93,12 @@ private:
 	std::vector<std::uint8_t> recvBuffer;
 
 	/// all connections
-	std::map< asio::ip::udp::endpoint, std::weak_ptr<UDPConnection> > connMap;
-	std::map< std::string, size_t> dropMap;
+	std::map<asio::ip::udp::endpoint, std::weak_ptr<UDPConnection>> connMap;
+	std::map<std::string, size_t> dropMap;
 
-	std::queue< std::shared_ptr<UDPConnection> > waiting;
+	std::queue<std::shared_ptr<UDPConnection>> waiting;
 };
 
-}
+} // namespace netcode
 
 #endif // _UDP_LISTENER_H

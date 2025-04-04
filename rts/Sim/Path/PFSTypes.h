@@ -4,11 +4,10 @@
 #define PFS_TYPES_HDR
 
 enum {
-	NOPFS_TYPE  = -1, // for editors
-	HAPFS_TYPE  =  0,
-	QTPFS_TYPE  =  1,
+	NOPFS_TYPE = -1, // for editors
+	HAPFS_TYPE = 0,
+	QTPFS_TYPE = 1,
 	PFS_TYPE_MAX = 1,
 };
 
 #endif
-

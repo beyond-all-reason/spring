@@ -2,16 +2,16 @@
 
 #include "LuaAIImplHandler.h"
 
-#include "Lua/LuaParser.h"
 #include "ExternalAI/Interface/SSkirmishAILibrary.h"
-//#include "ExternalAI/SkirmishAIKey.h"
+#include "Lua/LuaParser.h"
+// #include "ExternalAI/SkirmishAIKey.h"
 #include "System/Exceptions.h"
 
 #include <cassert>
 
-//CR_BIND(CLuaAIImplHandler,);
+// CR_BIND(CLuaAIImplHandler,);
 //
-//CR_REG_METADATA(CLuaAIImplHandler, (
+// CR_REG_METADATA(CLuaAIImplHandler, (
 //	CR_RESERVED(64)
 //));
 
@@ -44,7 +44,8 @@ CLuaAIImplHandler::InfoItemVector CLuaAIImplHandler::LoadInfoItems()
 		// Lua AIs can be specified in two different formats, string (name) or table (name & desc)
 		if (!shortName.empty()) {
 			description = "(please see game description, forum or homepage)";
-		} else {
+		}
+		else {
 			const LuaTable& optTbl = root.SubTable(i);
 
 			if (!optTbl.IsValid())

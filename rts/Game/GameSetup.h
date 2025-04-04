@@ -3,32 +3,35 @@
 #ifndef _GAME_SETUP_H
 #define _GAME_SETUP_H
 
-#include <functional>
-#include <string>
-#include <vector>
-
-#include "Players/PlayerBase.h"
-#include "Sim/Misc/TeamBase.h"
-#include "Sim/Misc/AllyTeam.h"
 #include "ExternalAI/SkirmishAIData.h"
+#include "Players/PlayerBase.h"
+#include "Sim/Misc/AllyTeam.h"
+#include "Sim/Misc/TeamBase.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
 #include "System/creg/creg_cond.h"
 
+#include <functional>
+#include <string>
+#include <vector>
+
 class MapParser;
 class TdfParser;
 
-class CGameSetup
-{
+class CGameSetup {
 	CR_DECLARE_STRUCT(CGameSetup)
 
 public:
 	CGameSetup() { ResetState(); }
+
 	CGameSetup(const CGameSetup& gs) = delete;
+
 	CGameSetup(CGameSetup&& gs) noexcept { *this = std::move(gs); }
 
-	CGameSetup& operator = (const CGameSetup& gs) = delete;
-	CGameSetup& operator = (CGameSetup&& gs) noexcept {
+	CGameSetup& operator=(const CGameSetup& gs) = delete;
+
+	CGameSetup& operator=(CGameSetup&& gs) noexcept
+	{
 		initBlank = gs.initBlank;
 
 		fixedAllies = gs.fixedAllies;
@@ -111,9 +114,11 @@ public:
 	 * @brief Load startpositions from map
 	 * @pre mapName, numTeams, teamStartNum initialized and the map loaded (LoadMap())
 	 */
-	void LoadStartPositionsFromMap(int numTeams, const std::function<bool(MapParser& mapParser, int teamNum)>& startPosPred);
+	void LoadStartPositionsFromMap(int numTeams,
+	    const std::function<bool(MapParser& mapParser, int teamNum)>& startPosPred);
 
-	int GetRestrictedUnitLimit(const std::string& name, int defLimit) const {
+	int GetRestrictedUnitLimit(const std::string& name, int defLimit) const
+	{
 		const auto it = restrictedUnits.find(name);
 		if (it == restrictedUnits.end())
 			return defLimit;
@@ -121,11 +126,17 @@ public:
 	}
 
 	const spring::unordered_map<std::string, std::string>& GetMapOptionsCont() const { return mapOptions; }
+
 	const spring::unordered_map<std::string, std::string>& GetModOptionsCont() const { return modOptions; }
+
 	const std::vector<PlayerBase>& GetPlayerStartingDataCont() const { return playerStartingData; }
+
 	const std::vector<TeamBase>& GetTeamStartingDataCont() const { return teamStartingData; }
+
 	const std::vector<AllyTeam>& GetAllyStartingDataCont() const { return allyStartingData; }
+
 	const std::vector<SkirmishAIData>& GetAIStartingDataCont() const { return skirmishAIStartingData; }
+
 	const std::vector<std::string>& GetMutatorsCont() const { return mutatorsList; }
 
 	std::string MapFileName() const;
@@ -169,11 +180,11 @@ private:
 
 public:
 	enum StartPosType {
-		StartPos_Fixed            = 0,
-		StartPos_Random           = 1,
-		StartPos_ChooseInGame     = 2,
+		StartPos_Fixed = 0,
+		StartPos_Random = 1,
+		StartPos_ChooseInGame = 2,
 		StartPos_ChooseBeforeGame = 3,
-		StartPos_Last             = 3  // last entry in enum (for user input check)
+		StartPos_Last = 3 // last entry in enum (for user input check)
 	};
 
 	uint32_t fixedRNGSeed;
@@ -220,6 +231,7 @@ public:
 	std::string demoName;
 
 	inline static bool forceOnlyLocal = false;
+
 private:
 	spring::unordered_map<int, int> playerRemap;
 	spring::unordered_map<int, int> teamRemap;

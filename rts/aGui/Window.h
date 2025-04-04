@@ -3,14 +3,13 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <string>
-
 #include "GuiElement.h"
+
+#include <string>
 
 namespace agui {
 
-class Window : public GuiElement
-{
+class Window : public GuiElement {
 public:
 	Window(const std::string& title = "", GuiElement* parent = NULL);
 
@@ -30,6 +29,6 @@ private:
 	float titleHeight;
 };
 
-}
+} // namespace agui
 
 #endif

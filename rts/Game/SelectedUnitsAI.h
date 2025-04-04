@@ -10,7 +10,6 @@
 
 class CUnit;
 
-
 /// handles giving commands to the currently selected group of units.
 class CSelectedUnitsHandlerAI {
 public:
@@ -19,9 +18,14 @@ public:
 private:
 	void CalculateGroupData(int playerNum, bool queueing);
 	void MakeFormationFrontOrder(Command* c, int playerNum);
-	void CreateUnitOrder(std::vector< std::pair<float, int> >& out, int playerNum);
+	void CreateUnitOrder(std::vector<std::pair<float, int>>& out, int playerNum);
 
-	float3 MoveToPos(float3 nextCornerPos, float3 dir, const CUnit* unit, Command* command, std::vector<std::pair<int, Command> >* frontcmds, bool* newline);
+	float3 MoveToPos(float3 nextCornerPos,
+	    float3 dir,
+	    const CUnit* unit,
+	    Command* command,
+	    std::vector<std::pair<int, Command>>* frontcmds,
+	    bool* newline);
 
 	void SetUnitWantedMaxSpeedNet(CUnit* unit);
 	void SetUnitGroupWantedMaxSpeedNet(CUnit* unit);
@@ -47,10 +51,10 @@ private:
 	int formationNumColumns = 0;
 
 
-	std::vector< std::pair<float, int> > sortedUnitPairs; // <priority, unitID>
-	std::vector< std::pair<float, std::vector<int>> > sortedUnitGroups;
-	std::vector< std::pair<int, Command> > frontMoveCommands;
-	std::vector< std::pair<int, Command> > allFrontMoveCommands;
+	std::vector<std::pair<float, int>> sortedUnitPairs; // <priority, unitID>
+	std::vector<std::pair<float, std::vector<int>>> sortedUnitGroups;
+	std::vector<std::pair<int, Command>> frontMoveCommands;
+	std::vector<std::pair<int, Command>> allFrontMoveCommands;
 
 	std::vector<size_t> mixedUnitIDs;
 	std::vector<size_t> mixedGroupSizes;
@@ -58,12 +62,13 @@ private:
 
 	struct UnitReference {
 		UnitReference(int _unitId, int _unitDefId, float3& _pos)
-			: unitId(_unitId)
-			, unitDefId(_unitDefId)
-			, pos(_pos)
-		{}
+		    : unitId(_unitId)
+		    , unitDefId(_unitDefId)
+		    , pos(_pos)
+		{
+		}
 
-		UnitReference()	{};
+		UnitReference() {};
 
 		int unitId = -1;
 		int unitDefId = -1;

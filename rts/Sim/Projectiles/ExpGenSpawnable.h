@@ -3,23 +3,22 @@
 #ifndef EXP_GEN_SPAWNABLE_H
 #define EXP_GEN_SPAWNABLE_H
 
-#include <memory>
-#include <array>
-#include <tuple>
-
+#include "Rendering/GL/RenderBuffersFwd.h"
 #include "Sim/Objects/WorldObject.h"
 #include "System/Threading/ThreadPool.h"
-#include "Rendering/GL/RenderBuffersFwd.h"
+
+#include <array>
+#include <memory>
+#include <tuple>
 
 struct SExpGenSpawnableMemberInfo;
 class CUnit;
 
-class CExpGenSpawnable : public CWorldObject
-{
+class CExpGenSpawnable : public CWorldObject {
 	CR_DECLARE(CExpGenSpawnable)
 public:
-	using AllocFunc = CExpGenSpawnable*(*)();
-	using GetMemberInfoFunc = bool(*)(SExpGenSpawnableMemberInfo&);
+	using AllocFunc = CExpGenSpawnable* (*)();
+	using GetMemberInfoFunc = bool (*)(SExpGenSpawnableMemberInfo&);
 	using SpawnableTuple = std::tuple<std::string, GetMemberInfoFunc, AllocFunc>;
 
 	CExpGenSpawnable(const float3& pos, const float3& spd);
@@ -32,13 +31,14 @@ public:
 
 	static void InitSpawnables();
 
-	//Memory handled in projectileHandler
+	// Memory handled in projectileHandler
 	static CExpGenSpawnable* CreateSpawnable(int spawnableID);
 	static TypedRenderBuffer<VA_TYPE_PROJ>& GetPrimaryRenderBuffer();
+
 protected:
 	CExpGenSpawnable();
 
-	//update in Draw() of CGroundFlash or CProjectile
+	// update in Draw() of CGroundFlash or CProjectile
 	void UpdateRotation();
 	void UpdateAnimParams();
 
@@ -46,15 +46,21 @@ protected:
 
 	void AddEffectsQuad(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl) const;
 
-	static void AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl, const float3& ap, const float& p);
-	static void AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl);
+	static void AddEffectsQuadImpl(const VA_TYPE_TC& tl,
+	    const VA_TYPE_TC& tr,
+	    const VA_TYPE_TC& br,
+	    const VA_TYPE_TC& bl,
+	    const float3& ap,
+	    const float& p);
+	static void
+	AddEffectsQuadImpl(const VA_TYPE_TC& tl, const VA_TYPE_TC& tr, const VA_TYPE_TC& br, const VA_TYPE_TC& bl);
 
 	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo);
 
-	float3 animParams = { 1.0f, 1.0f, 30.0f }; // numX, numY, animLength, 
-	float animProgress = 0.0f; // animProgress = (gf_dt % animLength) / animLength
+	float3 animParams = {1.0f, 1.0f, 30.0f}; // numX, numY, animLength,
+	float animProgress = 0.0f;               // animProgress = (gf_dt % animLength) / animLength
 
-	float3 rotParams = { 0.0f, 0.0f, 0.0f }; // speed, accel, startRot |deg/s, deg/s2, deg|
+	float3 rotParams = {0.0f, 0.0f, 0.0f}; // speed, accel, startRot |deg/s, deg/s2, deg|
 
 	float rotVal;
 	float rotVel;
@@ -64,4 +70,4 @@ protected:
 	static std::array<SpawnableTuple, 14> spawnables;
 };
 
-#endif //EXP_GEN_SPAWNABLE_H
+#endif // EXP_GEN_SPAWNABLE_H

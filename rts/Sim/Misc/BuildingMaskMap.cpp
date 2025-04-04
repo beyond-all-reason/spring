@@ -1,15 +1,12 @@
 #include "BuildingMaskMap.h"
-#include "Map/ReadMap.h"
 
+#include "Map/ReadMap.h"
 #include "System/Misc/TracyDefs.h"
 
 BuildingMaskMap buildingMaskMap;
 
 CR_BIND(BuildingMaskMap, ())
-CR_REG_METADATA(BuildingMaskMap, (
-	CR_MEMBER(maskMap)
-))
-
+CR_REG_METADATA(BuildingMaskMap, (CR_MEMBER(maskMap)))
 
 bool BuildingMaskMap::CheckBounds(unsigned int x, unsigned int z) const
 {

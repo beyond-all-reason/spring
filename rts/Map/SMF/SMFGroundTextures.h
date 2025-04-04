@@ -3,22 +3,22 @@
 #ifndef _SMF_GROUND_TEXTURES_H_
 #define _SMF_GROUND_TEXTURES_H_
 
-#include <vector>
-
 #include "Map/BaseGroundTextures.h"
 #include "Rendering/GL/PBO.h"
+
+#include <vector>
 
 class CSMFMapFile;
 class CSMFReadMap;
 
-class CSMFGroundTextures: public CBaseGroundTextures
-{
+class CSMFGroundTextures : public CBaseGroundTextures {
 public:
 	CSMFGroundTextures(CSMFReadMap* rm);
 
 	void DrawUpdate();
 	bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID);
-	bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax);
+	bool
+	GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax);
 	void BindSquareTexture(int texSquareX, int texSquareY);
 
 protected:
@@ -42,19 +42,31 @@ private:
 			LUA_TEX_IDX = 1,
 		};
 
-		GroundSquare(): textureIDs{0, 0}, texMipLevel(0), texDrawFrame(1) {}
+		GroundSquare()
+		    : textureIDs{0, 0}
+		    , texMipLevel(0)
+		    , texDrawFrame(1)
+		{
+		}
+
 		~GroundSquare();
 
 		bool HasLuaTexture() const { return (textureIDs[LUA_TEX_IDX] != 0); }
 
 		void SetRawTexture(unsigned int id) { textureIDs[RAW_TEX_IDX] = id; }
+
 		void SetLuaTexture(unsigned int id) { textureIDs[LUA_TEX_IDX] = id; }
+
 		void SetMipLevel(unsigned int l) { texMipLevel = l; }
+
 		void SetDrawFrame(unsigned int f) { texDrawFrame = f; }
 
 		unsigned int* GetTextureIDPtr() { return &textureIDs[RAW_TEX_IDX]; }
+
 		unsigned int GetTextureID() const { return textureIDs[HasLuaTexture()]; }
+
 		unsigned int GetMipLevel() const { return texMipLevel; }
+
 		unsigned int GetDrawFrame() const { return texDrawFrame; }
 
 	private:

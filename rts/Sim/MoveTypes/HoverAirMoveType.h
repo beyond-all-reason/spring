@@ -7,13 +7,12 @@
 
 struct float4;
 
-class CHoverAirMoveType: public AAirMoveType
-{
+class CHoverAirMoveType : public AAirMoveType {
 	CR_DECLARE_DERIVED(CHoverAirMoveType)
 public:
 	CHoverAirMoveType(CUnit* owner);
 
-	void* GetPreallocContainer() { return owner; }  // creg
+	void* GetPreallocContainer() { return owner; } // creg
 
 	// MoveType interface
 	bool Update() override;
@@ -44,6 +43,7 @@ public:
 	float GetGoalRadius(float s = 0.0f) const override { return (SQUARE_SIZE * SQUARE_SIZE); }
 
 	short GetWantedHeading() const { return wantedHeading; }
+
 	short GetForcedHeading() const { return forcedHeading; }
 
 	bool GetAllowLanding() const { return !dontLand; }
@@ -58,6 +58,7 @@ private:
 	void UpdateVerticalSpeed(const float4& spd, float curRelHeight, float curVertSpeed) const;
 
 	bool CanLand(bool busy) const { return (!busy && (!dontLand && autoLand)); }
+
 	bool CanLandAt(const float3& pos) const;
 
 	void ExecuteStop();

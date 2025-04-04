@@ -1,14 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm>
 #include "HorizontalLayout.h"
 
 #include "Rendering/GL/myGL.h"
 
-namespace agui
-{
+#include <algorithm>
 
-HorizontalLayout::HorizontalLayout(GuiElement* parent) : GuiElement(parent)
+namespace agui {
+
+HorizontalLayout::HorizontalLayout(GuiElement* parent)
+    : GuiElement(parent)
 {
 }
 
@@ -21,7 +22,7 @@ void HorizontalLayout::DrawSelf()
 		return;
 
 	glLineWidth(borderWidth);
-	DrawBox(GL_LINE_LOOP, { 1.0f, 1.0f, 1.0f, Opacity() });
+	DrawBox(GL_LINE_LOOP, {1.0f, 1.0f, 1.0f, Opacity()});
 }
 #endif
 
@@ -48,8 +49,9 @@ void HorizontalLayout::GeometryChangeSelf()
 	}
 
 	const float hspaceBorder = 2.0f * borderSpacing;
-	const float hspaceTotal  = std::max(1.0f, float(sumObjWeight - numFixedObjs));
-	const float hspacePerObj = (size[0] - float(sumObjWeight - 1) * itemSpacing - hspaceBorder - totalFixedSize) / hspaceTotal;
+	const float hspaceTotal = std::max(1.0f, float(sumObjWeight - numFixedObjs));
+	const float hspacePerObj =
+	    (size[0] - float(sumObjWeight - 1) * itemSpacing - hspaceBorder - totalFixedSize) / hspaceTotal;
 
 	float startX = pos[0] + borderSpacing;
 
@@ -59,11 +61,12 @@ void HorizontalLayout::GeometryChangeSelf()
 		if (child->SizeFixed()) {
 			child->SetSize(child->GetSize()[0], size[1] - hspaceBorder, true);
 			startX += child->GetSize()[0] + itemSpacing;
-		} else {
+		}
+		else {
 			child->SetSize(hspacePerObj * float(child->Weight()), size[1] - hspaceBorder);
-			startX += hspacePerObj*float(child->Weight()) + itemSpacing;
+			startX += hspacePerObj * float(child->Weight()) + itemSpacing;
 		}
 	}
 }
 
-}
+} // namespace agui

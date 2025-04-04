@@ -1,18 +1,17 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/Input/InputHandler.h"
 #include "Gui.h"
+
+#include "GuiElement.h"
+
+#include "Rendering/GL/myGL.h"
+#include "Rendering/GlobalRendering.h"
+#include "System/Input/InputHandler.h"
+#include "System/Log/ILog.h"
 
 #include <SDL_events.h>
 
-#include "GuiElement.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/GL/myGL.h"
-#include "System/Log/ILog.h"
-
-
-namespace agui
-{
+namespace agui {
 
 Gui::Gui()
 {
@@ -40,21 +39,18 @@ void Gui::Draw()
 }
 #endif
 
-void Gui::Clean() {
-	for (ElList::iterator it = toBeAdded.begin(); it != toBeAdded.end(); ++it)
-	{
+void Gui::Clean()
+{
+	for (ElList::iterator it = toBeAdded.begin(); it != toBeAdded.end(); ++it) {
 		bool duplicate = false;
-		for (ElList::iterator elIt = elements.begin(); elIt != elements.end(); ++elIt)
-		{
-			if (it->element == elIt->element)
-			{
+		for (ElList::iterator elIt = elements.begin(); elIt != elements.end(); ++elIt) {
+			if (it->element == elIt->element) {
 				LOG_L(L_DEBUG, "Gui::AddElement: skipping duplicated object");
 				duplicate = true;
 				break;
 			}
 		}
-		if (!duplicate)
-		{
+		if (!duplicate) {
 			if (it->asBackground)
 				elements.push_back(*it);
 			else
@@ -63,12 +59,9 @@ void Gui::Clean() {
 	}
 	toBeAdded.clear();
 
-	for (ElList::iterator it = toBeRemoved.begin(); it != toBeRemoved.end(); ++it)
-	{
-		for (ElList::iterator elIt = elements.begin(); elIt != elements.end(); ++elIt)
-		{
-			if (it->element == elIt->element)
-			{
+	for (ElList::iterator it = toBeRemoved.begin(); it != toBeRemoved.end(); ++it) {
+		for (ElList::iterator elIt = elements.begin(); elIt != elements.end(); ++elIt) {
+			if (it->element == elIt->element) {
 				delete (elIt->element);
 				elements.erase(elIt);
 				break;
@@ -78,21 +71,16 @@ void Gui::Clean() {
 	toBeRemoved.clear();
 }
 
-Gui::~Gui() {
-	Clean();
-}
+Gui::~Gui() { Clean(); }
 
-void Gui::AddElement(GuiElement* elem, bool asBackground)
-{
-	toBeAdded.push_back(GuiItem(elem,asBackground));
-}
+void Gui::AddElement(GuiElement* elem, bool asBackground) { toBeAdded.push_back(GuiItem(elem, asBackground)); }
 
 void Gui::RmElement(GuiElement* elem)
 {
 	// has to be delayed, otherwise deleting a button during a callback would segfault
 	for (ElList::iterator it = elements.begin(); it != elements.end(); ++it) {
 		if ((*it).element == elem) {
-			toBeRemoved.push_back(GuiItem(elem,true));
+			toBeRemoved.push_back(GuiItem(elem, true));
 			break;
 		}
 	}
@@ -105,10 +93,8 @@ void Gui::UpdateScreenGeometry(int screenx, int screeny, int screenOffsetX, int 
 
 bool Gui::MouseOverElement(const GuiElement* elem, int x, int y) const
 {
-	for (ElList::const_iterator it = elements.begin(); it != elements.end(); ++it)
-	{
-		if (it->element->MouseOver(x, y))
-		{
+	for (ElList::const_iterator it = elements.begin(); it != elements.end(); ++it) {
+		if (it->element->MouseOver(x, y)) {
 			if (it->element == elem)
 				return true;
 			else
@@ -121,16 +107,13 @@ bool Gui::MouseOverElement(const GuiElement* elem, int x, int y) const
 bool Gui::HandleEvent(const SDL_Event& ev)
 {
 	ElList::iterator handler = elements.end();
-	for (ElList::iterator it = elements.begin(); it != elements.end(); ++it)
-	{
-		if (it->element->HandleEvent(ev))
-		{
+	for (ElList::iterator it = elements.begin(); it != elements.end(); ++it) {
+		if (it->element->HandleEvent(ev)) {
 			handler = it;
 			break;
 		}
 	}
-	if (handler != elements.end() && !handler->asBackground)
-	{
+	if (handler != elements.end() && !handler->asBackground) {
 		elements.push_front(*handler);
 		elements.erase(handler);
 	}
@@ -139,5 +122,4 @@ bool Gui::HandleEvent(const SDL_Event& ev)
 
 Gui* gui = nullptr;
 
-}
-
+} // namespace agui

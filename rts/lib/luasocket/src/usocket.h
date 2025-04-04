@@ -27,13 +27,13 @@
 /* sigpipe handling */
 #include <signal.h>
 /* IP stuff*/
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 /* TCP options (nagle algorithm disable) */
 #include <netinet/tcp.h>
 
 typedef int t_socket;
-typedef t_socket *p_socket;
+typedef t_socket* p_socket;
 
 #define SOCKET_INVALID (-1)
 

@@ -1,22 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "BasicMeshDrawer.h"
+
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/TraceRay.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Map/SMF/SMFGroundDrawer.h"
-#include "Rendering/GlobalRendering.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "System/EventHandler.h"
-
 #include "System/Misc/TracyDefs.h"
 
-
 CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
-	: CEventClient("[CBasicMeshDrawer]", 717171, false)
-	, smfGroundDrawer(gd)
+    : CEventClient("[CBasicMeshDrawer]", 717171, false)
+    , smfGroundDrawer(gd)
 {
 	eventHandler.AddClient(this);
 
@@ -29,18 +28,19 @@ CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 
 	// const auto& lodDistFunc = [](uint32_t i) { return (125.0f * i * i        ); }; // f(x)=125.0*x^2
 	// const auto& lodDistFunc = [](uint32_t i) { return ( 25.0f * i * i * i    ); }; // f(x)=25.0*x^3
-	const auto& lodDistFunc = [](uint32_t i) { return (  5.0f * i * i * i * i); }; // f(x)=5.0*x^4
+	const auto& lodDistFunc = [](uint32_t i) { return (5.0f * i * i * i * i); }; // f(x)=5.0*x^4
 
 	for (uint32_t n = 0; n < LOD_LEVELS; n++) {
 		lodDistTable[n] = lodDistFunc(n + 1);
 	}
 
 	uint32_t lod = 0;
-	for (auto& meshRenderBuffer : meshRenderBuffers) {
+	for (auto& meshRenderBuffer: meshRenderBuffers) {
 		const uint32_t lodStep = 1 << lod;
 		const size_t numVert = Square(PATCH_SIZE / lodStep + 1);
-		const size_t numIndx = Square(PATCH_SIZE / lodStep    ) * 6;
-		meshRenderBuffer = std::make_unique<MeshRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA, false);
+		const size_t numIndx = Square(PATCH_SIZE / lodStep) * 6;
+		meshRenderBuffer =
+		    std::make_unique<MeshRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA, false);
 		UploadPatchSquareGeometry(meshRenderBuffer, lodStep);
 		meshRenderBuffer->SetReadonly();
 		lod++;
@@ -49,17 +49,19 @@ CBasicMeshDrawer::CBasicMeshDrawer(CSMFGroundDrawer* gd)
 	for (uint32_t lod = 0; lod < LOD_LEVELS; lod++) {
 		const uint32_t lodStep = 1 << lod;
 		const size_t numVert = (PATCH_SIZE / lodStep + 1) * 2;
-		const size_t numIndx = (PATCH_SIZE / lodStep    ) * 6;
+		const size_t numIndx = (PATCH_SIZE / lodStep) * 6;
 		for (uint32_t b = MAP_BORDER_L; b < MAP_BORDER_C; b++) {
-			auto& borderRenderBuffer = borderRenderBuffers[lod * static_cast<uint32_t>(MAP_BORDER_C) + static_cast<uint32_t>(b)];
-			borderRenderBuffer = std::make_unique<BordRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA, false);
+			auto& borderRenderBuffer =
+			    borderRenderBuffers[lod * static_cast<uint32_t>(MAP_BORDER_C) + static_cast<uint32_t>(b)];
+			borderRenderBuffer =
+			    std::make_unique<BordRenderBuffer>(numVert, numIndx, IStreamBufferConcept::SB_BUFFERSUBDATA, false);
 			UploadPatchBorderGeometry(borderRenderBuffer, static_cast<MAP_BORDERS>(b), lodStep);
 			borderRenderBuffer->SetReadonly();
 		}
 	}
 
 	meshVisPatches.resize(numPatchesX * numPatchesY);
-	for (auto& meshVisPatch : meshVisPatches) {
+	for (auto& meshVisPatch: meshVisPatches) {
 		meshVisPatch.visUpdateFrames.fill(0);
 	}
 }
@@ -72,8 +74,6 @@ CBasicMeshDrawer::~CBasicMeshDrawer()
 	meshRenderBuffers = {};
 	borderRenderBuffers = {};
 }
-
-
 
 void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 {
@@ -89,10 +89,10 @@ void CBasicMeshDrawer::Update(const DrawPass::e& drawPass)
 		for (int z = 0; z < drawQuadsZ; ++z) {
 			const auto& uhmi = readMap->GetUnsyncedHeightInfo(x, z);
 
-			AABB aabb {
-				{ (x + 0) * wsEdge, uhmi.x, (z + 0) * wsEdge },
-				{ (x + 1) * wsEdge, uhmi.y, (z + 1) * wsEdge }
-			};
+			AABB aabb{
+			    {(x + 0) * wsEdge, uhmi.x, (z + 0) * wsEdge},
+                {(x + 1) * wsEdge, uhmi.y, (z + 1) * wsEdge}
+            };
 
 			if (!activeCam->InView(aabb))
 				continue;
@@ -108,65 +108,81 @@ void CBasicMeshDrawer::UploadPatchSquareGeometry(std::unique_ptr<MeshRenderBuffe
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	meshRenderBuffer->MakeQuadsTriangles(
-		{ { 0.0f                    , 0.0f ,       0.0f               } },
-		{ { PATCH_SIZE * SQUARE_SIZE, 0.0f ,       0.0f               } },
-		{ { PATCH_SIZE * SQUARE_SIZE, 0.0f , PATCH_SIZE * SQUARE_SIZE } },
-		{ { 0.0f                    , 0.0f , PATCH_SIZE * SQUARE_SIZE } },
-		PATCH_SIZE / lodStep,
-		PATCH_SIZE / lodStep
-	);
+	    {
+	        {0.0f, 0.0f, 0.0f}
+    },
+	    {{PATCH_SIZE * SQUARE_SIZE, 0.0f, 0.0f}}, {{PATCH_SIZE * SQUARE_SIZE, 0.0f, PATCH_SIZE * SQUARE_SIZE}},
+	    {{0.0f, 0.0f, PATCH_SIZE * SQUARE_SIZE}}, PATCH_SIZE / lodStep, PATCH_SIZE / lodStep);
 }
 
-void CBasicMeshDrawer::UploadPatchBorderGeometry(std::unique_ptr<BordRenderBuffer>& borderRenderBuffer, MAP_BORDERS b, uint32_t lodStep)
+void CBasicMeshDrawer::UploadPatchBorderGeometry(std::unique_ptr<BordRenderBuffer>& borderRenderBuffer,
+    MAP_BORDERS b,
+    uint32_t lodStep)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	auto tl = VA_TYPE_C{ {0.0f,  0.0f ,0.0f}, { 255, 255, 255, 255 } };
-	auto tr = VA_TYPE_C{ {0.0f,  0.0f ,0.0f}, { 255, 255, 255, 255 } };
-	auto bl = VA_TYPE_C{ {0.0f, -1.0f ,0.0f}, { 255, 255, 255,   0 } };
-	auto br = VA_TYPE_C{ {0.0f, -1.0f ,0.0f}, { 255, 255, 255,   0 } };
+	auto tl = VA_TYPE_C{
+	    {0.0f, 0.0f, 0.0f},
+        {255, 255, 255, 255}
+    };
+	auto tr = VA_TYPE_C{
+	    {0.0f, 0.0f, 0.0f},
+        {255, 255, 255, 255}
+    };
+	auto bl = VA_TYPE_C{
+	    {0.0f, -1.0f, 0.0f},
+        {255, 255, 255, 0}
+    };
+	auto br = VA_TYPE_C{
+	    {0.0f, -1.0f, 0.0f},
+        {255, 255, 255, 0}
+    };
 
-	switch (b)
-	{
+	switch (b) {
 	case CBasicMeshDrawer::MAP_BORDER_L: {
-		tl.pos.x = 0.0f; tl.pos.z = 0.0f;
-		bl.pos.x = 0.0f; bl.pos.z = 0.0f;
-		tr.pos.x = 0.0f; tr.pos.z = PATCH_SIZE * SQUARE_SIZE;
-		br.pos.x = 0.0f; br.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		tl.pos.x = 0.0f;
+		tl.pos.z = 0.0f;
+		bl.pos.x = 0.0f;
+		bl.pos.z = 0.0f;
+		tr.pos.x = 0.0f;
+		tr.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		br.pos.x = 0.0f;
+		br.pos.z = PATCH_SIZE * SQUARE_SIZE;
 	} break;
 	case CBasicMeshDrawer::MAP_BORDER_R: {
-		tl.pos.x = PATCH_SIZE * SQUARE_SIZE; tl.pos.z = PATCH_SIZE * SQUARE_SIZE;
-		bl.pos.x = PATCH_SIZE * SQUARE_SIZE; bl.pos.z = PATCH_SIZE * SQUARE_SIZE;
-		tr.pos.x = PATCH_SIZE * SQUARE_SIZE; tr.pos.z = 0.0f;
-		br.pos.x = PATCH_SIZE * SQUARE_SIZE; br.pos.z = 0.0f;
+		tl.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		tl.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		bl.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		bl.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		tr.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		tr.pos.z = 0.0f;
+		br.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		br.pos.z = 0.0f;
 	} break;
 	case CBasicMeshDrawer::MAP_BORDER_T: {
-		tl.pos.x = PATCH_SIZE * SQUARE_SIZE; tl.pos.z = 0.0f;
-		bl.pos.x = PATCH_SIZE * SQUARE_SIZE; bl.pos.z = 0.0f;
-		tr.pos.x = 0.0f;                     tr.pos.z = 0.0f;
-		br.pos.x = 0.0f;                     br.pos.z = 0.0f;
+		tl.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		tl.pos.z = 0.0f;
+		bl.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		bl.pos.z = 0.0f;
+		tr.pos.x = 0.0f;
+		tr.pos.z = 0.0f;
+		br.pos.x = 0.0f;
+		br.pos.z = 0.0f;
 	} break;
 	case CBasicMeshDrawer::MAP_BORDER_B: {
-		tl.pos.x = 0.0f;                     tl.pos.z = PATCH_SIZE * SQUARE_SIZE;
-		bl.pos.x = 0.0f;                     bl.pos.z = PATCH_SIZE * SQUARE_SIZE;
-		tr.pos.x = PATCH_SIZE * SQUARE_SIZE; tr.pos.z = PATCH_SIZE * SQUARE_SIZE;
-		br.pos.x = PATCH_SIZE * SQUARE_SIZE; br.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		tl.pos.x = 0.0f;
+		tl.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		bl.pos.x = 0.0f;
+		bl.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		tr.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		tr.pos.z = PATCH_SIZE * SQUARE_SIZE;
+		br.pos.x = PATCH_SIZE * SQUARE_SIZE;
+		br.pos.z = PATCH_SIZE * SQUARE_SIZE;
 	} break;
-	default:
-		assert(false);
-		break;
+	default: assert(false); break;
 	}
 
-	borderRenderBuffer->MakeQuadsTriangles(
-		tl,
-		tr,
-		br,
-		bl,
-		PATCH_SIZE / lodStep,
-		1
-	);
+	borderRenderBuffer->MakeQuadsTriangles(tl, tr, br, bl, PATCH_SIZE / lodStep, 1);
 }
-
-
 
 uint32_t CBasicMeshDrawer::CalcDrawPassLOD(const CCamera* cam, const DrawPass::e& drawPass) const
 {
@@ -186,8 +202,10 @@ uint32_t CBasicMeshDrawer::CalcDrawPassLOD(const CCamera* cam, const DrawPass::e
 
 		float mapRayDist = 0.0f;
 
-		if ((mapRayDist = TraceRay::GuiTraceRay(cam->GetPos(), cam->GetDir(), cam->GetFarPlaneDist(), nullptr, hitUnit, hitFeature, false, true, true)) < 0.0f)
-			mapRayDist = CGround::LinePlaneCol(cam->GetPos(), cam->GetDir(), cam->GetFarPlaneDist(), readMap->GetCurrMinHeight());
+		if ((mapRayDist = TraceRay::GuiTraceRay(cam->GetPos(), cam->GetDir(), cam->GetFarPlaneDist(), nullptr, hitUnit,
+		         hitFeature, false, true, true)) < 0.0f)
+			mapRayDist = CGround::LinePlaneCol(
+			    cam->GetPos(), cam->GetDir(), cam->GetFarPlaneDist(), readMap->GetCurrMinHeight());
 		if (mapRayDist < 0.0f)
 			return lodIndx;
 
@@ -200,17 +218,22 @@ uint32_t CBasicMeshDrawer::CalcDrawPassLOD(const CCamera* cam, const DrawPass::e
 	}
 
 	switch (drawPass) {
-		case DrawPass::Normal         : { return (std::max(lodIndx - lodBias, 0)); } break;
-		case DrawPass::Shadow         : { return (std::max(lodIndx - lodBias, 0)); } break;
-		case DrawPass::TerrainDeferred: { return (std::max(lodIndx - lodBias, 0)); } break;
-		default: {} break;
+	case DrawPass::Normal: {
+		return (std::max(lodIndx - lodBias, 0));
+	} break;
+	case DrawPass::Shadow: {
+		return (std::max(lodIndx - lodBias, 0));
+	} break;
+	case DrawPass::TerrainDeferred: {
+		return (std::max(lodIndx - lodBias, 0));
+	} break;
+	default: {
+	} break;
 	}
 
 	// prevent reflections etc from becoming too low-res
 	return (std::clamp(lodIndx - lodBias, 0, LOD_LEVELS - 4));
 }
-
-
 
 void CBasicMeshDrawer::DrawSquareMeshPatch() const
 {
@@ -239,8 +262,6 @@ void CBasicMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 	}
 }
 
-
-
 void CBasicMeshDrawer::DrawBorderMeshPatch(const CCamera* activeCam, uint32_t borderSide) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -254,10 +275,10 @@ void CBasicMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 	const uint32_t npxm1 = numPatchesX - 1;
 	const uint32_t npym1 = numPatchesY - 1;
 
-	const CCamera* activeCam  = CCameraHandler::GetActiveCamera();
+	const CCamera* activeCam = CCameraHandler::GetActiveCamera();
 	const uint32_t actCamType = activeCam->GetCamType();
 
-	//glFrontFace(GL_CW);
+	// glFrontFace(GL_CW);
 	for (uint32_t px = 0; px < numPatchesX; px++) {
 		if (meshVisPatches[0 * numPatchesX + px].visUpdateFrames[actCamType] < globalRendering->drawFrame)
 			continue;
@@ -273,7 +294,7 @@ void CBasicMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 		DrawBorderMeshPatch(activeCam, MAP_BORDER_R);
 	}
 
-	//glFrontFace(GL_CCW);
+	// glFrontFace(GL_CCW);
 	for (uint32_t px = 0; px < numPatchesX; px++) {
 		if (meshVisPatches[npym1 * numPatchesX + px].visUpdateFrames[actCamType] < globalRendering->drawFrame)
 			continue;

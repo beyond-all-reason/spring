@@ -5,12 +5,12 @@
 
 #include "WeaponProjectile.h"
 
-class CTorpedoProjectile : public CWeaponProjectile
-{
+class CTorpedoProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CTorpedoProjectile)
 public:
 	// creg only
-	CTorpedoProjectile() { }
+	CTorpedoProjectile() {}
+
 	CTorpedoProjectile(const ProjectileParams& params);
 
 	void Update() override;

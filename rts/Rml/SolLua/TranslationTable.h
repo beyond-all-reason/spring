@@ -6,13 +6,12 @@
 #include <string>
 #include <unordered_map>
 
-class TranslationTable
-{
+class TranslationTable {
 public:
 	TranslationTable() = default;
 
 	// no-copy
-	TranslationTable(const TranslationTable &) = delete;
+	TranslationTable(const TranslationTable&) = delete;
 
 	bool addTranslation(const std::string& key, const std::string& translation)
 	{
@@ -21,19 +20,11 @@ public:
 		return existed;
 	};
 
-	bool exists(std::string key) {
-		return translations.contains(key);
-	}
+	bool exists(std::string key) { return translations.contains(key); }
 
-	std::string getTranslationString(const std::string& key)
-	{
-		return translations[key];
-	};
+	std::string getTranslationString(const std::string& key) { return translations[key]; };
 
-	void clear()
-	{
-		translations.clear();
-	};
+	void clear() { translations.clear(); };
 
 private:
 	std::unordered_map<std::string, std::string> translations;

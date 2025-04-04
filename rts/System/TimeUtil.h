@@ -3,9 +3,9 @@
 #ifndef TIME_UTIL_H
 #define TIME_UTIL_H
 
-#include <string>
-#include <ctime>
 #include <cstdint>
+#include <ctime>
+#include <string>
 
 #ifdef __GNUC__
 #define __time64_t time_t
@@ -13,8 +13,7 @@
 #define _localtime64(x) localtime(x)
 #endif
 
-class CTimeUtil
-{
+class CTimeUtil {
 public:
 	/**
 	 * Returns the current time as a long integer

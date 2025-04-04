@@ -3,15 +3,13 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-#include <string>
-
 #include "GuiElement.h"
 
-namespace agui
-{
+#include <string>
 
-class Button : public GuiElement
-{
+namespace agui {
+
+class Button : public GuiElement {
 public:
 	Button(const std::string& label = "", GuiElement* parent = NULL);
 
@@ -29,6 +27,6 @@ private:
 	std::string label;
 };
 
-}
+} // namespace agui
 
 #endif

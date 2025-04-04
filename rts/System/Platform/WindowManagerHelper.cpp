@@ -2,8 +2,6 @@
 
 #include "WindowManagerHelper.h"
 
-#include <SDL_video.h>
-
 #include "Game/GameVersion.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/Bitmap.h"
@@ -11,6 +9,7 @@
 #include "System/Platform/Threading.h"
 #include "System/QueueToMain.h"
 
+#include <SDL_video.h>
 
 namespace WindowManagerHelper {
 
@@ -22,22 +21,22 @@ struct WindowIcon {
 	SDL_Surface* surf = nullptr;
 };
 
-
 // LuaUnsyncedCtrl only
-void SetIcon(CBitmap* bmp, bool forceResolution) {
+void SetIcon(CBitmap* bmp, bool forceResolution)
+{
 	if (SpringVersion::IsHeadless())
 		return;
 
 	// 24bit RGB or 32bit RGBA
 	if (((bmp->channels != 3) && (bmp->channels != 4))
-//#ifdef    _WIN32
-		// on windows, the icon has to be 32x32
-		// ^^ no longer true, allow override
-		|| (!forceResolution && bmp->xsize != 32)
-		|| (!forceResolution && bmp->ysize != 32)
-//#endif
+	    // #ifdef    _WIN32
+	    //  on windows, the icon has to be 32x32
+	    //  ^^ no longer true, allow override
+	    || (!forceResolution && bmp->xsize != 32) || (!forceResolution && bmp->ysize != 32)
+	    // #endif
 	) {
-		LOG_L(L_WARNING, "[WindowManager::%s] icon-format has to be RGB or RGBA, and 32x32 pixels on Windows", __func__);
+		LOG_L(
+		    L_WARNING, "[WindowManager::%s] icon-format has to be RGB or RGBA, and 32x32 pixels on Windows", __func__);
 		return;
 	}
 
@@ -45,8 +44,8 @@ void SetIcon(CBitmap* bmp, bool forceResolution) {
 	SetIconSurface(globalRendering->GetWindow(), bmp);
 }
 
-
-bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
+bool SetIconSurface(SDL_Window* win, CBitmap* bmp)
+{
 	static WindowIcon windowIcon;
 
 	if (windowIcon.bmp == nullptr)
@@ -66,7 +65,8 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 
 	if (surf == nullptr) {
 		// keep any previous surface in case of failure
-		LOG_L(L_WARNING, "[WindowManagerHelper::%s] failed to create SDL surface, reason: %s", __func__, SDL_GetError());
+		LOG_L(
+		    L_WARNING, "[WindowManagerHelper::%s] failed to create SDL surface, reason: %s", __func__, SDL_GetError());
 		return false;
 	}
 
@@ -86,4 +86,3 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 
 
 }; // namespace WindowManagerHelper
-

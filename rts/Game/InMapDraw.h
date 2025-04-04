@@ -3,14 +3,14 @@
 #ifndef IN_MAP_DRAW_H
 #define IN_MAP_DRAW_H
 
-#include <string>
-#include <array>
-#include <vector>
-#include <memory>
-
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/float3.h"
 #include "System/Net/RawPacket.h"
+#include "System/float3.h"
+
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 class CPlayer;
 class CNotificationPeeper;
@@ -23,8 +23,8 @@ struct LineMarker;
  * @see CInMapDrawView for V
  */
 class CNotificationPeeper;
-class CInMapDraw
-{
+
+class CInMapDraw {
 public:
 	CInMapDraw();
 	~CInMapDraw();
@@ -46,16 +46,20 @@ public:
 	void GetLines(std::vector<LineMarker>& lines, size_t maxLines, const std::array<int, MAX_TEAMS>& teamIDs);
 
 	void SetDrawMode(bool drawMode) { this->drawMode = drawMode; }
+
 	bool IsDrawMode() const { return drawMode; }
 
 	// TODO choose a better name for these or refactor this away if possible (even better)
 	void SetWantLabel(bool wantLabel) { this->wantLabel = wantLabel; }
+
 	bool IsWantLabel() const { return wantLabel; }
 
 	void SetSpecMapDrawingAllowed(bool state);
+
 	bool GetSpecMapDrawingAllowed() const { return allowSpecMapDrawing; }
 
 	void SetLuaMapDrawingAllowed(bool state);
+
 	bool GetLuaMapDrawingAllowed() const { return allowLuaMapDrawing; }
 
 private:

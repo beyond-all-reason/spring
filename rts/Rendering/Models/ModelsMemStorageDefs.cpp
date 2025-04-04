@@ -1,32 +1,29 @@
 #include "ModelsMemStorageDefs.h"
 
-#include <map>
-#include <string>
-#include <sstream>
-#include <optional>
-
+#include "System/Misc/TracyDefs.h"
 #include "fmt/format.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <map>
+#include <optional>
+#include <sstream>
+#include <string>
 
 CR_BIND(ModelUniformData, )
-CR_REG_METADATA(ModelUniformData, (
-	CR_MEMBER_BEGINFLAG(CM_NoSerialize),
+CR_REG_METADATA(ModelUniformData,
+    (CR_MEMBER_BEGINFLAG(CM_NoSerialize),
 
-		CR_MEMBER(composite),
-		CR_MEMBER(unused2),
-		CR_MEMBER(unused3),
-		CR_MEMBER(unused4),
-		CR_MEMBER(maxHealth),
-		CR_MEMBER(health),
-		CR_MEMBER(unused5),
-		CR_MEMBER(unused6),
-		CR_MEMBER(drawPos),
-		CR_MEMBER(speed),
-		CR_MEMBER(userDefined),
-	CR_MEMBER_ENDFLAG(CM_NoSerialize)
-))
-
+        CR_MEMBER(composite),
+        CR_MEMBER(unused2),
+        CR_MEMBER(unused3),
+        CR_MEMBER(unused4),
+        CR_MEMBER(maxHealth),
+        CR_MEMBER(health),
+        CR_MEMBER(unused5),
+        CR_MEMBER(unused6),
+        CR_MEMBER(drawPos),
+        CR_MEMBER(speed),
+        CR_MEMBER(userDefined),
+        CR_MEMBER_ENDFLAG(CM_NoSerialize)))
 
 void ModelUniformData::SetGLSLDefinition(int binding)
 {
@@ -34,15 +31,16 @@ void ModelUniformData::SetGLSLDefinition(int binding)
 	const ModelUniformData dummy{};
 
 	std::map<uint32_t, std::pair<std::string, std::string>> membersMap;
-	for (const auto& member : dummy.GetClass()->members) {
-		membersMap[member.offset] = std::make_pair(std::string{ member.name }, member.type->GetName());
+	for (const auto& member: dummy.GetClass()->members) {
+		membersMap[member.offset] = std::make_pair(std::string{member.name}, member.type->GetName());
 	}
 
 	std::ostringstream output;
 
-	output << fmt::format("layout(std140, binding = {}) readonly buffer {} {{\n", binding, dummy.GetClass()->name); // {{ - escaped {
+	output << fmt::format(
+	    "layout(std140, binding = {}) readonly buffer {} {{\n", binding, dummy.GetClass()->name); // {{ - escaped {
 
-	for (const auto& [offset, info] : membersMap) {
+	for (const auto& [offset, info]: membersMap) {
 		const auto& [name, tname] = info;
 
 		std::string glslType;

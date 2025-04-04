@@ -12,37 +12,34 @@
 #define ASIO_DETAIL_SIGNAL_OP_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 #include "asio/detail/operation.hpp"
-
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
 namespace detail {
 
-class signal_op
-  : public operation
-{
+class signal_op : public operation {
 public:
-  // The error code to be passed to the completion handler.
-  asio::error_code ec_;
+	// The error code to be passed to the completion handler.
+	asio::error_code ec_;
 
-  // The operation key used for targeted cancellation.
-  void* cancellation_key_;
+	// The operation key used for targeted cancellation.
+	void* cancellation_key_;
 
-  // The signal number to be passed to the completion handler.
-  int signal_number_;
+	// The signal number to be passed to the completion handler.
+	int signal_number_;
 
 protected:
-  signal_op(func_type func)
-    : operation(func),
-      cancellation_key_(0),
-      signal_number_(0)
-  {
-  }
+	signal_op(func_type func)
+	    : operation(func)
+	    , cancellation_key_(0)
+	    , signal_number_(0)
+	{
+	}
 };
 
 } // namespace detail

@@ -3,14 +3,15 @@
 #ifndef _BITMAP_H
 #define _BITMAP_H
 
-#include <stdint.h>
 #include <string>
 #include <vector>
+
+#include <stdint.h>
 #ifndef HEADLESS
-	#include "nv_dds.h"
+#include "nv_dds.h"
 #endif // !HEADLESS
-#include "System/float3.h"
 #include "System/Color.h"
+#include "System/float3.h"
 
 
 struct SDL_Surface;
@@ -30,8 +31,19 @@ class CBitmap {
 public:
 	CBitmap();
 	CBitmap(const uint8_t* data, int xsize, int ysize, int channels = 4, uint32_t reqDataType = 0);
-	CBitmap(const CBitmap& bmp): CBitmap() { *this = bmp; }
-	CBitmap(CBitmap&& bmp) noexcept : CBitmap() { *this = std::move(bmp); }
+
+	CBitmap(const CBitmap& bmp)
+	    : CBitmap()
+	{
+		*this = bmp;
+	}
+
+	CBitmap(CBitmap&& bmp) noexcept
+	    : CBitmap()
+	{
+		*this = std::move(bmp);
+	}
+
 	CBitmap& operator=(const CBitmap& bmp);
 	CBitmap& operator=(CBitmap&& bmp) noexcept;
 
@@ -45,25 +57,35 @@ public:
 	static void KillPool();
 
 	void Alloc(int w, int h, int c, uint32_t glType);
-	void Alloc(int w, int h, int c) { Alloc(w, h, c, 0x1401/*GL_UNSIGNED_BYTE*/); }
+
+	void Alloc(int w, int h, int c) { Alloc(w, h, c, 0x1401 /*GL_UNSIGNED_BYTE*/); }
+
 	void Alloc(int w, int h) { Alloc(w, h, channels); }
+
 	void AllocDummy(const SColor fill = SColor(255, 0, 0, 255));
 
 	int32_t GetReqNumLevels() const;
 
 	int32_t GetIntFmt() const;
+
 	int32_t GetExtFmt() const { return GetExtFmt(channels); }
+
 	static int32_t GetExtFmt(uint32_t ch);
 	static int32_t ExtFmtToChannels(int32_t extFmt);
 	static uint32_t GetDataTypeSize(uint32_t glType);
+
 	uint32_t GetDataTypeSize() const { return GetDataTypeSize(dataType); }
 
 	bool CondReinterpret(int w, int h, int c, uint32_t dt);
 
 	/// Load data from a file on the VFS
-	bool Load(std::string const& filename, float defaultAlpha = 1.0f, uint32_t reqChannel = 4, uint32_t reqDataType = 0x1401/*GL_UNSIGNED_BYTE*/, bool forceReplaceAlpha = false);
+	bool Load(std::string const & filename,
+	    float defaultAlpha = 1.0f,
+	    uint32_t reqChannel = 4,
+	    uint32_t reqDataType = 0x1401 /*GL_UNSIGNED_BYTE*/,
+	    bool forceReplaceAlpha = false);
 	/// Load data from a gray-scale file on the VFS
-	bool LoadGrayscale(std::string const& filename);
+	bool LoadGrayscale(std::string const & filename);
 
 	bool Save(const std::string& filename, bool dontSaveAlpha, bool logged = false, uint32_t quality = 80) const;
 	bool SaveGrayScale(const std::string& filename) const;
@@ -72,7 +94,8 @@ public:
 	bool Empty() const { return (memIdx == size_t(-1)); } // implies size=0
 
 	uint32_t CreateTexture(const TextureCreationParams& tcp = TextureCreationParams{}) const;
-	uint32_t CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f, int32_t reqNumLevels = 0, uint32_t texID = 0) const;
+	uint32_t
+	CreateMipMapTexture(float aniso = 0.0f, float lodBias = 0.0f, int32_t reqNumLevels = 0, uint32_t texID = 0) const;
 	uint32_t CreateDDSTexture(const TextureCreationParams& tcp = TextureCreationParams{}) const;
 
 	void CreateAlpha(uint8_t red, uint8_t green, uint8_t blue);
@@ -100,7 +123,7 @@ public:
 	SDL_Surface* CreateSDLSurface();
 
 	const uint8_t* GetRawMem() const;
-	      uint8_t* GetRawMem()      ;
+	uint8_t* GetRawMem();
 
 	size_t GetMemSize() const { return (xsize * ysize * channels * GetDataTypeSize()); }
 
@@ -117,9 +140,9 @@ public:
 	// GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, ...
 	// not set to anything until Load is called
 	int32_t textype = 0;
-	#ifndef HEADLESS
+#ifndef HEADLESS
 	nv_dds::CDDSImage ddsimage;
-	#endif
+#endif
 
 	bool compressed = false;
 };

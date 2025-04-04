@@ -3,18 +3,17 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include <list>
 #include "System/Input/InputHandler.h"
+
+#include <list>
 
 union SDL_Event;
 
-namespace agui
-{
+namespace agui {
 
 class GuiElement;
 
-class Gui
-{
+class Gui {
 public:
 	Gui();
 	~Gui();
@@ -30,15 +29,18 @@ public:
 	bool MouseOverElement(const GuiElement*, int x, int y) const;
 
 	bool HandleEvent(const SDL_Event& ev);
+
 private:
 	InputHandler::HandlerTokenT inputCon;
 
-	struct GuiItem
-	{
-		GuiItem(GuiElement* el, bool back) : element(el), asBackground(back) {};
+	struct GuiItem {
+		GuiItem(GuiElement* el, bool back)
+		    : element(el)
+		    , asBackground(back) {};
 		GuiElement* element;
 		bool asBackground;
 	};
+
 	typedef std::list<GuiItem> ElList;
 	ElList elements;
 	ElList toBeRemoved;
@@ -47,6 +49,6 @@ private:
 
 extern Gui* gui;
 
-}
+} // namespace agui
 
 #endif

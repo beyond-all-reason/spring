@@ -3,19 +3,18 @@
 #include "EmgCannon.h"
 
 #include "WeaponDef.h"
+
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/Team.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND_DERIVED(CEmgCannon, CWeapon, )
 CR_REG_METADATA(CEmgCannon, )
-
 
 void CEmgCannon::FireImpl(const bool scriptCall)
 {

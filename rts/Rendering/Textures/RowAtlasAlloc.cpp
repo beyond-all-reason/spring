@@ -2,31 +2,36 @@
 
 #include "RowAtlasAlloc.h"
 
-#include <algorithm>
-#include <vector>
-#include <set>
-#include <bit>
-
 #include "System/Misc/TracyDefs.h"
+
+#include <algorithm>
+#include <bit>
+#include <set>
+#include <vector>
 
 inline bool CRowAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// sort by large to small
 
-	if (tex1->size.y > tex2->size.y) return true;
-	if (tex2->size.y > tex1->size.y) return false;
+	if (tex1->size.y > tex2->size.y)
+		return true;
+	if (tex2->size.y > tex1->size.y)
+		return false;
 
-	if (tex1->size.x > tex2->size.x) return true;
-	if (tex2->size.x > tex1->size.x) return false;
+	if (tex1->size.x > tex2->size.x)
+		return true;
+	if (tex2->size.x > tex1->size.x)
+		return false;
 
 	// silly but will help stabilizing the placement on reload
-	if (tex1->name > tex2->name) return true;
-	if (tex2->name > tex1->name) return false;
+	if (tex1->name > tex2->name)
+		return true;
+	if (tex2->name > tex1->name)
+		return false;
 
 	return false;
 }
-
 
 void CRowAtlasAlloc::EstimateNeededSize()
 {
@@ -57,7 +62,6 @@ void CRowAtlasAlloc::EstimateNeededSize()
 	}
 }
 
-
 CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -65,7 +69,7 @@ CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 
 	while (atlasSize.y < (nextRowPos + wantedRowHeight)) {
 		if (atlasSize.x >= maxsize.x && atlasSize.y >= maxsize.y) {
-			//throw texture_size_exception();
+			// throw texture_size_exception();
 			return nullptr;
 		}
 
@@ -80,7 +84,6 @@ CRowAtlasAlloc::Row* CRowAtlasAlloc::AddRow(int glyphWidth, int glyphHeight)
 	return &imageRows.back();
 }
 
-
 bool CRowAtlasAlloc::Allocate()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -90,7 +93,7 @@ bool CRowAtlasAlloc::Allocate()
 	// else for the case when Allocate() is called multiple times, the
 	// width would grow faster than height
 	// also AddRow() only works with PowerOfTwo values.
-	atlasSize.y = std::bit_ceil <uint32_t>(atlasSize.y);
+	atlasSize.y = std::bit_ceil<uint32_t>(atlasSize.y);
 
 	// it gives much better results when we resize the available space before starting allocation
 	// esp. allocation is more horizontal and so we can clip more free space at bottom
@@ -101,11 +104,11 @@ bool CRowAtlasAlloc::Allocate()
 	memtextures.reserve(entries.size());
 
 	std::set<std::string> sortedNames;
-	for (auto& entry : entries) {
+	for (auto& entry: entries) {
 		sortedNames.insert(entry.first);
 	}
 
-	for (auto& name : sortedNames) {
+	for (auto& name: sortedNames) {
 		memtextures.push_back(&entries[name]);
 	}
 	std::stable_sort(memtextures.begin(), memtextures.end(), CRowAtlasAlloc::CompareTex);
@@ -137,22 +140,18 @@ bool CRowAtlasAlloc::Allocate()
 int CRowAtlasAlloc::GetNumTexLevels() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::min(
-		std::bit_width(static_cast<uint32_t>(GetMinDim())),
-		numLevels
-	);
+	return std::min(std::bit_width(static_cast<uint32_t>(GetMinDim())), numLevels);
 }
-
 
 CRowAtlasAlloc::Row* CRowAtlasAlloc::FindRow(int glyphWidth, int glyphHeight)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	int   bestWidth = atlasSize.x;
+	int bestWidth = atlasSize.x;
 	float bestRatio = 10000.0f;
-	Row*  bestRow   = nullptr;
+	Row* bestRow = nullptr;
 
 	// first try to find a row with similar height
-	for(auto& row: imageRows) {
+	for (auto& row: imageRows) {
 		// Check if there is enough space in this row
 		if (glyphWidth > (atlasSize.x - row.width))
 			continue;
@@ -163,7 +162,7 @@ CRowAtlasAlloc::Row* CRowAtlasAlloc::FindRow(int glyphWidth, int glyphHeight)
 		if ((ratio < bestRatio) || ((ratio == bestRatio) && (row.width < bestWidth))) {
 			bestWidth = row.width;
 			bestRatio = ratio;
-			bestRow   = &row;
+			bestRow = &row;
 		}
 	}
 

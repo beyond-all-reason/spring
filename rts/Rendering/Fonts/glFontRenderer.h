@@ -1,12 +1,13 @@
 #pragma once
 
-#include <memory>
-
-#include "Rendering/GL/VertexArrayTypes.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/VertexArrayTypes.h"
+
+#include <memory>
 
 class CglFont;
 class CFontTexture;
+
 class CglFontRenderer {
 public:
 	virtual ~CglFontRenderer() = default;
@@ -24,6 +25,7 @@ public:
 
 	static std::unique_ptr<CglFontRenderer> CreateInstance();
 	static void DeleteInstance(std::unique_ptr<CglFontRenderer>& instance);
+
 protected:
 	GLint currProgID = 0;
 
@@ -34,9 +36,10 @@ protected:
 };
 
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 };
-class CglShaderFontRenderer final: public CglFontRenderer {
+
+class CglShaderFontRenderer final : public CglFontRenderer {
 public:
 	CglShaderFontRenderer();
 	~CglShaderFontRenderer() override;
@@ -49,8 +52,11 @@ public:
 	void PopGLState() override;
 
 	bool IsLegacy() const override { return false; }
+
 	bool IsValid() const override { return fontShader->IsValid(); }
+
 	void GetStats(std::array<size_t, 8>& stats) const override;
+
 private:
 	TypedRenderBuffer<VA_TYPE_TC> primaryBufferTC;
 	TypedRenderBuffer<VA_TYPE_TC> outlineBufferTC;
@@ -59,7 +65,7 @@ private:
 	static inline std::unique_ptr<Shader::IProgramObject> fontShader = nullptr;
 };
 
-class CglNoShaderFontRenderer final: public CglFontRenderer {
+class CglNoShaderFontRenderer final : public CglFontRenderer {
 public:
 	CglNoShaderFontRenderer();
 	~CglNoShaderFontRenderer() override;
@@ -72,13 +78,16 @@ public:
 	void PopGLState() override;
 
 	bool IsLegacy() const override { return true; }
+
 	bool IsValid() const override { return true; }
+
 	void GetStats(std::array<size_t, 8>& stats) const override;
+
 private:
 	void AddQuadTrianglesImpl(bool primary, VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl);
 
 	std::array<std::vector<VA_TYPE_TC>, 2> verts; // OL, PM
-	std::array<std::vector<uint16_t  >, 2> indcs; // OL, PM
+	std::array<std::vector<uint16_t>, 2> indcs;   // OL, PM
 
 	uint32_t textureSpaceMatrix = 0u;
 };
@@ -86,12 +95,20 @@ private:
 class CglNullFontRenderer final : public CglFontRenderer {
 	// Inherited via CglFontRenderer
 	void AddQuadTrianglesPB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {}
+
 	void AddQuadTrianglesOB(VA_TYPE_TC&& tl, VA_TYPE_TC&& tr, VA_TYPE_TC&& br, VA_TYPE_TC&& bl) override {}
+
 	void DrawTraingleElements() override {}
+
 	void HandleTextureUpdate(CFontTexture& font, bool onlyUpload) override {}
+
 	void PushGLState(const CglFont& font) override {}
+
 	void PopGLState() override {}
+
 	bool IsLegacy() const override { return true; }
+
 	bool IsValid() const override { return true; }
+
 	void GetStats(std::array<size_t, 8>& stats) const override;
 };

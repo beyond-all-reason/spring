@@ -5,8 +5,9 @@
 
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
 
-#include <iostream>
 #include "SyncedPrimitive.h"
+
+#include <iostream>
 
 /* I put these in a separate header to save the project from
 #including the large iostream headers in every file. */

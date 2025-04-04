@@ -1,16 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #ifndef AI_LIBRARY_MANAGER_H
-#define	AI_LIBRARY_MANAGER_H
+#define AI_LIBRARY_MANAGER_H
 
 #include "AIInterfaceLibrary.h"
 #include "AIInterfaceLibraryInfo.h"
 #include "SkirmishAILibraryInfo.h"
 
-#include <memory>
 #include <map>
-#include <vector>
+#include <memory>
 #include <set>
+#include <vector>
 
 class AIInterfaceKey;
 class SkirmishAIKey;
@@ -31,15 +31,17 @@ public:
 	typedef std::map<const AIInterfaceKey, CAIInterfaceLibraryInfo> T_interfaceInfos;
 	typedef std::map<const SkirmishAIKey, CSkirmishAILibraryInfo> T_skirmishAIInfos;
 
-	typedef std::map<const AIInterfaceKey, std::set<std::string> > T_dupInt;
-	typedef std::map<const SkirmishAIKey, std::set<std::string> > T_dupSkirm;
+	typedef std::map<const AIInterfaceKey, std::set<std::string>> T_dupInt;
+	typedef std::map<const SkirmishAIKey, std::set<std::string>> T_dupSkirm;
 
 
 public:
 	static AILibraryManager* GetInstance(bool init = true);
 
 	static void Create() { GetInstance(false); }
+
 	static void Destroy() { GetInstance(false)->Kill(); }
+
 	static void OutputAIInterfacesInfo();
 	static void OutputSkirmishAIInfo();
 
@@ -58,11 +60,12 @@ public:
 	 */
 	SkirmishAIKey ResolveSkirmishAIKey(const SkirmishAIKey& skirmishAIKey) const;
 
-
 	const T_interfaceSpecs& GetInterfaceKeys() const { return interfaceKeys; }
+
 	const T_skirmishAIKeys& GetSkirmishAIKeys() const { return skirmishAIKeys; }
 
 	const T_interfaceInfos& GetInterfaceInfos() const { return interfaceInfos; }
+
 	const T_skirmishAIInfos& GetSkirmishAIInfos() const { return skirmishAIInfos; }
 
 	/**
@@ -132,7 +135,9 @@ private:
 
 	void GatherSkirmishAILibInfoFromLuaFiles(T_dupSkirm& duplicateSkirmishAIInfoCheck);
 	void GatherSkirmishAILibInfoFromInterfaceLib(T_dupSkirm& duplicateSkirmishAIInfoCheck);
-	void StoreSkirmishAILibInfo(T_dupSkirm& duplicateSkirmishAIInfoCheck, CSkirmishAILibraryInfo& skirmishAIInfo, const std::string& sourceDesc);
+	void StoreSkirmishAILibInfo(T_dupSkirm& duplicateSkirmishAIInfoCheck,
+	    CSkirmishAILibraryInfo& skirmishAIInfo,
+	    const std::string& sourceDesc);
 	/// Filter out Skirmish AIs that are specified multiple times
 	void FilterDuplicateSkirmishAILibInfo(const T_dupSkirm& duplicateSkirmishAIInfoCheck);
 
@@ -154,11 +159,8 @@ private:
 	 *
 	 * @see AILibraryManager::VersionCompare()
 	 */
-	static AIInterfaceKey FindFittingInterfaceKey(
-		const std::string& shortName,
-		const std::string& minVersion,
-		const T_interfaceSpecs& specs
-	);
+	static AIInterfaceKey
+	FindFittingInterfaceKey(const std::string& shortName, const std::string& minVersion, const T_interfaceSpecs& specs);
 
 	/**
 	 * Compares two version strings.
@@ -181,7 +183,7 @@ private:
 	static int VersionCompare(const std::string& version1, const std::string& version2);
 
 private:
-	std::map<const AIInterfaceKey, std::unique_ptr<CAIInterfaceLibrary> > loadedAIInterfaceLibs;
+	std::map<const AIInterfaceKey, std::unique_ptr<CAIInterfaceLibrary>> loadedAIInterfaceLibs;
 
 	T_interfaceSpecs interfaceKeys;
 	T_skirmishAIKeys skirmishAIKeys;
@@ -197,4 +199,3 @@ private:
 
 #define aiLibManager AILibraryManager::GetInstance(true)
 #endif // AI_LIBRARY_MANAGER_H
-

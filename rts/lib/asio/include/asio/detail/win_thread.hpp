@@ -12,20 +12,18 @@
 #define ASIO_DETAIL_WIN_THREAD_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 
-#if defined(ASIO_WINDOWS) \
-  && !defined(ASIO_WINDOWS_APP) \
-  && !defined(UNDER_CE)
+#if defined(ASIO_WINDOWS) && !defined(ASIO_WINDOWS_APP) && !defined(UNDER_CE)
 
-#include <cstddef>
 #include "asio/detail/noncopyable.hpp"
+#include "asio/detail/push_options.hpp"
 #include "asio/detail/socket_types.hpp"
 
-#include "asio/detail/push_options.hpp"
+#include <cstddef>
 
 namespace asio {
 namespace detail {
@@ -38,97 +36,79 @@ ASIO_DECL void __stdcall apc_function(ULONG data);
 ASIO_DECL void __stdcall apc_function(ULONG_PTR data);
 #endif
 
-template <typename T>
-class win_thread_base
-{
+template<typename T> class win_thread_base {
 public:
-  static bool terminate_threads()
-  {
-    return ::InterlockedExchangeAdd(&terminate_threads_, 0) != 0;
-  }
+	static bool terminate_threads() { return ::InterlockedExchangeAdd(&terminate_threads_, 0) != 0; }
 
-  static void set_terminate_threads(bool b)
-  {
-    ::InterlockedExchange(&terminate_threads_, b ? 1 : 0);
-  }
+	static void set_terminate_threads(bool b) { ::InterlockedExchange(&terminate_threads_, b ? 1 : 0); }
 
 private:
-  static long terminate_threads_;
+	static long terminate_threads_;
 };
 
-template <typename T>
-long win_thread_base<T>::terminate_threads_ = 0;
+template<typename T> long win_thread_base<T>::terminate_threads_ = 0;
 
-class win_thread
-  : private noncopyable,
-    public win_thread_base<win_thread>
-{
+class win_thread : private noncopyable, public win_thread_base<win_thread> {
 public:
-  // Constructor.
-  template <typename Function>
-  win_thread(Function f, unsigned int stack_size = 0)
-    : thread_(0),
-      exit_event_(0)
-  {
-    start_thread(new func<Function>(f), stack_size);
-  }
+	// Constructor.
+	template<typename Function>
+	win_thread(Function f, unsigned int stack_size = 0)
+	    : thread_(0)
+	    , exit_event_(0)
+	{
+		start_thread(new func<Function>(f), stack_size);
+	}
 
-  // Destructor.
-  ASIO_DECL ~win_thread();
+	// Destructor.
+	ASIO_DECL ~win_thread();
 
-  // Wait for the thread to exit.
-  ASIO_DECL void join();
+	// Wait for the thread to exit.
+	ASIO_DECL void join();
 
-  // Get number of CPUs.
-  ASIO_DECL static std::size_t hardware_concurrency();
+	// Get number of CPUs.
+	ASIO_DECL static std::size_t hardware_concurrency();
 
 private:
-  friend ASIO_DECL unsigned int __stdcall win_thread_function(void* arg);
+	friend ASIO_DECL unsigned int __stdcall win_thread_function(void* arg);
 
 #if defined(WINVER) && (WINVER < 0x0500)
-  friend ASIO_DECL void __stdcall apc_function(ULONG);
+	friend ASIO_DECL void __stdcall apc_function(ULONG);
 #else
-  friend ASIO_DECL void __stdcall apc_function(ULONG_PTR);
+	friend ASIO_DECL void __stdcall apc_function(ULONG_PTR);
 #endif
 
-  class func_base
-  {
-  public:
-    virtual ~func_base() {}
-    virtual void run() = 0;
-    ::HANDLE entry_event_;
-    ::HANDLE exit_event_;
-  };
+	class func_base {
+	public:
+		virtual ~func_base() {}
 
-  struct auto_func_base_ptr
-  {
-    func_base* ptr;
-    ~auto_func_base_ptr() { delete ptr; }
-  };
+		virtual void run() = 0;
+		::HANDLE entry_event_;
+		::HANDLE exit_event_;
+	};
 
-  template <typename Function>
-  class func
-    : public func_base
-  {
-  public:
-    func(Function f)
-      : f_(f)
-    {
-    }
+	struct auto_func_base_ptr {
+		func_base* ptr;
 
-    virtual void run()
-    {
-      f_();
-    }
+		~auto_func_base_ptr() { delete ptr; }
+	};
 
-  private:
-    Function f_;
-  };
+	template<typename Function> class func : public func_base {
+	public:
+		func(Function f)
+		    : f_(f)
+		{
+		}
 
-  ASIO_DECL void start_thread(func_base* arg, unsigned int stack_size);
+		virtual void run() { f_(); }
 
-  ::HANDLE thread_;
-  ::HANDLE exit_event_;
+	private:
+		Function f_;
+	};
+
+	ASIO_DECL void start_thread(func_base* arg, unsigned int stack_size);
+
+	::HANDLE thread_;
+	::HANDLE exit_event_;
 };
 
 } // namespace detail
@@ -137,7 +117,7 @@ private:
 #include "asio/detail/pop_options.hpp"
 
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/detail/impl/win_thread.ipp"
+#include "asio/detail/impl/win_thread.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // defined(ASIO_WINDOWS)

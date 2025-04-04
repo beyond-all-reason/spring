@@ -1,23 +1,27 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LoopbackConnection.h"
+
 #include "Net/Protocol/NetMessageTypes.h"
 
 namespace netcode {
 
-void CLoopbackConnection::SendData(std::shared_ptr<const RawPacket> pkt) {
+void CLoopbackConnection::SendData(std::shared_ptr<const RawPacket> pkt)
+{
 	numPings += (pkt->data[0] == NETMSG_PING);
 	pktQueue.push_back(pkt);
 }
 
-std::shared_ptr<const RawPacket> CLoopbackConnection::Peek(unsigned ahead) const {
+std::shared_ptr<const RawPacket> CLoopbackConnection::Peek(unsigned ahead) const
+{
 	if (ahead >= pktQueue.size())
 		return {};
 
 	return pktQueue[ahead];
 }
 
-void CLoopbackConnection::DeleteBufferPacketAt(unsigned index) {
+void CLoopbackConnection::DeleteBufferPacketAt(unsigned index)
+{
 	if (index >= pktQueue.size())
 		return;
 
@@ -25,7 +29,8 @@ void CLoopbackConnection::DeleteBufferPacketAt(unsigned index) {
 	pktQueue.erase(pktQueue.begin() + index);
 }
 
-std::shared_ptr<const RawPacket> CLoopbackConnection::GetData() {
+std::shared_ptr<const RawPacket> CLoopbackConnection::GetData()
+{
 	if (pktQueue.empty())
 		return {};
 
@@ -37,4 +42,3 @@ std::shared_ptr<const RawPacket> CLoopbackConnection::GetData() {
 }
 
 } // namespace netcode
-

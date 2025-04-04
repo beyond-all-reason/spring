@@ -13,8 +13,7 @@
  * polymorphic loading. Platform-specifics should
  * derive from this.
  */
-class SharedLib
-{
+class SharedLib {
 public:
 	/**
 	 * @brief instantiate
@@ -63,12 +62,16 @@ public:
 	 *
 	 * Abstract so it must be implemented specifically by all platforms.
 	 */
-	template<typename FuncPtr> FuncPtr FindAddressTyped(const char* symbol) { return reinterpret_cast<FuncPtr>(FindAddress(symbol)); }
+	template<typename FuncPtr> FuncPtr FindAddressTyped(const char* symbol)
+	{
+		return reinterpret_cast<FuncPtr>(FindAddress(symbol));
+	}
 
 	virtual ~SharedLib();
 
 protected:
-	static void reportError(const char* errorMsg, const char* fileName = "???", int lineNumber = -1, const char* function = "???");
+	static void
+	reportError(const char* errorMsg, const char* fileName = "???", int lineNumber = -1, const char* function = "???");
 };
 
 #endif // SHAREDLIB_H

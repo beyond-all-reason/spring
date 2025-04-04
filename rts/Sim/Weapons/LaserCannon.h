@@ -5,8 +5,7 @@
 
 #include "Weapon.h"
 
-class CLaserCannon: public CWeapon
-{
+class CLaserCannon : public CWeapon {
 	CR_DECLARE_DERIVED(CLaserCannon)
 public:
 	CLaserCannon(CUnit* owner = nullptr, const WeaponDef* def = nullptr);

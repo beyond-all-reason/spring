@@ -1,6 +1,6 @@
 #include "ModelsMemStorage.h"
-#include "Sim/Objects/WorldObject.h"
 
+#include "Sim/Objects/WorldObject.h"
 #include "System/Misc/TracyDefs.h"
 
 MatricesMemStorage matricesMemStorage;

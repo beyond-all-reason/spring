@@ -2,6 +2,7 @@
 
 
 #include "BeamLaserProjectile.h"
+
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -9,32 +10,31 @@
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
-#include <cstring> //memset
-
 #include "System/Misc/TracyDefs.h"
+
+#include <cstring> //memset
 
 CR_BIND_DERIVED(CBeamLaserProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CBeamLaserProjectile,(
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(coreColStart),
-	CR_MEMBER(coreColEnd),
-	CR_MEMBER(edgeColStart),
-	CR_MEMBER(edgeColEnd),
-	CR_MEMBER(thickness),
-	CR_MEMBER(corethickness),
-	CR_MEMBER(flaresize),
-	CR_MEMBER(decay),
-	CR_MEMBER(midtexx)
-))
+CR_REG_METADATA(CBeamLaserProjectile,
+    (CR_SETFLAG(CF_Synced),
+        CR_MEMBER(coreColStart),
+        CR_MEMBER(coreColEnd),
+        CR_MEMBER(edgeColStart),
+        CR_MEMBER(edgeColEnd),
+        CR_MEMBER(thickness),
+        CR_MEMBER(corethickness),
+        CR_MEMBER(flaresize),
+        CR_MEMBER(decay),
+        CR_MEMBER(midtexx)))
 
-
-CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWeaponProjectile(params)
-	, thickness(0.0f)
-	, corethickness(0.0f)
-	, flaresize(0.0f)
-	, decay(0.0f)
-	, midtexx(0.0f)
+CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params)
+    : CWeaponProjectile(params)
+    , thickness(0.0f)
+    , corethickness(0.0f)
+    , flaresize(0.0f)
+    , decay(0.0f)
+    , midtexx(0.0f)
 {
 	projectileType = WEAPON_BEAMLASER_PROJECTILE;
 
@@ -46,9 +46,8 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 		flaresize = weaponDef->visuals.laserflaresize;
 		decay = weaponDef->visuals.beamdecay;
 
-		midtexx =
-			(weaponDef->visuals.texture2->xstart +
-			(weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
+		midtexx = (weaponDef->visuals.texture2->xstart +
+		           (weaponDef->visuals.texture2->xend - weaponDef->visuals.texture2->xstart) * 0.5f);
 
 		coreColStart[0] = (weaponDef->visuals.color2.x * params.startAlpha);
 		coreColStart[1] = (weaponDef->visuals.color2.y * params.startAlpha);
@@ -75,22 +74,22 @@ CBeamLaserProjectile::CBeamLaserProjectile(const ProjectileParams& params): CWea
 	}
 }
 
-
-
 void CBeamLaserProjectile::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if ((--ttl) <= 0) {
 		deleteMe = true;
-	} else {
+	}
+	else {
 		for (int i = 0; i < 3; i++) {
 			coreColStart[i] *= decay;
-			coreColEnd[i]   *= decay;
+			coreColEnd[i] *= decay;
 			edgeColStart[i] *= decay;
-			edgeColEnd[i]   *= decay;
+			edgeColEnd[i] *= decay;
 		}
 
-		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f, flaresize, 0.0f, owner(), nullptr);
+		explGenHandler.GenExplosion(cegID, startPos + ((targetPos - startPos) / ttl), (targetPos - startPos), 0.0f,
+		    flaresize, 0.0f, owner(), nullptr);
 	}
 
 	UpdateInterception();
@@ -129,99 +128,84 @@ void CBeamLaserProjectile::Draw()
 
 	if (playerCamDistSq < Square(1000.0f)) {
 		if (validTextures[2]) {
-			AddWeaponEffectsQuad<2>(
-				{ pos1 - xdir * beamEdgeSize,                       midtexx  , WT2->ystart, edgeColStart },
-				{ pos1 - xdir * beamEdgeSize - ydir * beamEdgeSize, WT2->xend, WT2->ystart, edgeColStart },
-				{ pos1 + xdir * beamEdgeSize - ydir * beamEdgeSize, WT2->xend, WT2->yend  , edgeColStart },
-				{ pos1 + xdir * beamEdgeSize,                       midtexx  , WT2->yend  , edgeColStart }
-			);
-			AddWeaponEffectsQuad<2>(
-				{ pos1 - xdir * beamCoreSize,                       midtexx  , WT2->ystart, coreColStart },
-				{ pos1 - xdir * beamCoreSize - ydir * beamCoreSize, WT2->xend, WT2->ystart, coreColStart },
-				{ pos1 + xdir * beamCoreSize - ydir * beamCoreSize, WT2->xend, WT2->yend  , coreColStart },
-				{ pos1 + xdir * beamCoreSize,                       midtexx  , WT2->yend  , coreColStart }
-			);
-
+			AddWeaponEffectsQuad<2>({pos1 - xdir * beamEdgeSize, midtexx, WT2->ystart, edgeColStart},
+			    {pos1 - xdir * beamEdgeSize - ydir * beamEdgeSize, WT2->xend, WT2->ystart, edgeColStart},
+			    {pos1 + xdir * beamEdgeSize - ydir * beamEdgeSize, WT2->xend, WT2->yend, edgeColStart},
+			    {pos1 + xdir * beamEdgeSize, midtexx, WT2->yend, edgeColStart});
+			AddWeaponEffectsQuad<2>({pos1 - xdir * beamCoreSize, midtexx, WT2->ystart, coreColStart},
+			    {pos1 - xdir * beamCoreSize - ydir * beamCoreSize, WT2->xend, WT2->ystart, coreColStart},
+			    {pos1 + xdir * beamCoreSize - ydir * beamCoreSize, WT2->xend, WT2->yend, coreColStart},
+			    {pos1 + xdir * beamCoreSize, midtexx, WT2->yend, coreColStart});
 		}
 		if (validTextures[1]) {
-			AddWeaponEffectsQuad<1>(
-				{ pos1 - xdir * beamEdgeSize,                       WT1->xstart, WT1->ystart, edgeColStart },
-				{ pos2 - xdir * beamEdgeSize,                       WT1->xend  , WT1->ystart, edgeColEnd   },
-				{ pos2 + xdir * beamEdgeSize,                       WT1->xend  , WT1->yend  , edgeColEnd   },
-				{ pos1 + xdir * beamEdgeSize,                       WT1->xstart, WT1->yend  , edgeColStart }
-			);
+			AddWeaponEffectsQuad<1>({pos1 - xdir * beamEdgeSize, WT1->xstart, WT1->ystart, edgeColStart},
+			    {pos2 - xdir * beamEdgeSize, WT1->xend, WT1->ystart, edgeColEnd},
+			    {pos2 + xdir * beamEdgeSize, WT1->xend, WT1->yend, edgeColEnd},
+			    {pos1 + xdir * beamEdgeSize, WT1->xstart, WT1->yend, edgeColStart});
 
-			AddWeaponEffectsQuad<1>(
-				{ pos1 - xdir * beamCoreSize,                       WT1->xstart, WT1->ystart, coreColStart },
-				{ pos2 - xdir * beamCoreSize,                       WT1->xend  , WT1->ystart, coreColEnd   },
-				{ pos2 + xdir * beamCoreSize,                       WT1->xend  , WT1->yend  , coreColEnd   },
-				{ pos1 + xdir * beamCoreSize,                       WT1->xstart, WT1->yend  , coreColStart }
-			);
+			AddWeaponEffectsQuad<1>({pos1 - xdir * beamCoreSize, WT1->xstart, WT1->ystart, coreColStart},
+			    {pos2 - xdir * beamCoreSize, WT1->xend, WT1->ystart, coreColEnd},
+			    {pos2 + xdir * beamCoreSize, WT1->xend, WT1->yend, coreColEnd},
+			    {pos1 + xdir * beamCoreSize, WT1->xstart, WT1->yend, coreColStart});
 		}
 		if (validTextures[2]) {
-			AddWeaponEffectsQuad<2>(
-				{ pos2 - xdir * beamEdgeSize,                       midtexx  , WT2->ystart, edgeColStart },
-				{ pos2 - xdir * beamEdgeSize + ydir * beamEdgeSize, WT2->xend, WT2->ystart, edgeColStart },
-				{ pos2 + xdir * beamEdgeSize + ydir * beamEdgeSize, WT2->xend, WT2->yend  , edgeColStart },
-				{ pos2 + xdir * beamEdgeSize,                       midtexx  , WT2->yend  , edgeColStart }
-			);
+			AddWeaponEffectsQuad<2>({pos2 - xdir * beamEdgeSize, midtexx, WT2->ystart, edgeColStart},
+			    {pos2 - xdir * beamEdgeSize + ydir * beamEdgeSize, WT2->xend, WT2->ystart, edgeColStart},
+			    {pos2 + xdir * beamEdgeSize + ydir * beamEdgeSize, WT2->xend, WT2->yend, edgeColStart},
+			    {pos2 + xdir * beamEdgeSize, midtexx, WT2->yend, edgeColStart});
 
-			AddWeaponEffectsQuad<2>(
-				{ pos2 - xdir * beamCoreSize,                       midtexx  , WT2->ystart, coreColStart },
-				{ pos2 - xdir * beamCoreSize + ydir * beamCoreSize, WT2->xend, WT2->ystart, coreColStart },
-				{ pos2 + xdir * beamCoreSize + ydir * beamCoreSize, WT2->xend, WT2->yend  , coreColStart },
-				{ pos2 + xdir * beamCoreSize,                       midtexx  , WT2->yend  , coreColStart }
-			);
+			AddWeaponEffectsQuad<2>({pos2 - xdir * beamCoreSize, midtexx, WT2->ystart, coreColStart},
+			    {pos2 - xdir * beamCoreSize + ydir * beamCoreSize, WT2->xend, WT2->ystart, coreColStart},
+			    {pos2 + xdir * beamCoreSize + ydir * beamCoreSize, WT2->xend, WT2->yend, coreColStart},
+			    {pos2 + xdir * beamCoreSize, midtexx, WT2->yend, coreColStart});
 		}
-	} else {
+	}
+	else {
 		if (validTextures[1]) {
-			AddWeaponEffectsQuad<1>(
-				{ pos1 - xdir * beamEdgeSize,                       WT1->xstart, WT1->ystart, edgeColStart },
-				{ pos2 - xdir * beamEdgeSize,                       WT1->xend  , WT1->ystart, edgeColEnd   },
-				{ pos2 + xdir * beamEdgeSize,                       WT1->xend  , WT1->yend  , edgeColEnd   },
-				{ pos1 + xdir * beamEdgeSize,                       WT1->xstart, WT1->yend  , edgeColStart }
-			);
+			AddWeaponEffectsQuad<1>({pos1 - xdir * beamEdgeSize, WT1->xstart, WT1->ystart, edgeColStart},
+			    {pos2 - xdir * beamEdgeSize, WT1->xend, WT1->ystart, edgeColEnd},
+			    {pos2 + xdir * beamEdgeSize, WT1->xend, WT1->yend, edgeColEnd},
+			    {pos1 + xdir * beamEdgeSize, WT1->xstart, WT1->yend, edgeColStart});
 
-			AddWeaponEffectsQuad<1>(
-				{ pos1 - xdir * beamCoreSize,                       WT1->xstart, WT1->ystart, coreColStart },
-				{ pos2 - xdir * beamCoreSize,                       WT1->xend  , WT1->ystart, coreColEnd   },
-				{ pos2 + xdir * beamCoreSize,                       WT1->xend  , WT1->yend  , coreColEnd   },
-				{ pos1 + xdir * beamCoreSize,                       WT1->xstart, WT1->yend  , coreColStart }
-			);
+			AddWeaponEffectsQuad<1>({pos1 - xdir * beamCoreSize, WT1->xstart, WT1->ystart, coreColStart},
+			    {pos2 - xdir * beamCoreSize, WT1->xend, WT1->ystart, coreColEnd},
+			    {pos2 + xdir * beamCoreSize, WT1->xend, WT1->yend, coreColEnd},
+			    {pos1 + xdir * beamCoreSize, WT1->xstart, WT1->yend, coreColStart});
 		}
 	}
 
 	// draw flare
 	if (validTextures[3]) {
-		AddWeaponEffectsQuad<3>(
-			{ pos1 - camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->ystart, edgeColStart },
-			{ pos1 + camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xend,   WT3->ystart, edgeColStart },
-			{ pos1 + camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xend,   WT3->yend,   edgeColStart },
-			{ pos1 - camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->yend,   edgeColStart }
-		);
+		AddWeaponEffectsQuad<3>({pos1 - camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize,
+		                            WT3->xstart, WT3->ystart, edgeColStart},
+		    {pos1 + camera->GetRight() * flareEdgeSize - camera->GetUp() * flareEdgeSize, WT3->xend, WT3->ystart,
+		        edgeColStart},
+		    {pos1 + camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xend, WT3->yend,
+		        edgeColStart},
+		    {pos1 - camera->GetRight() * flareEdgeSize + camera->GetUp() * flareEdgeSize, WT3->xstart, WT3->yend,
+		        edgeColStart});
 
-		AddWeaponEffectsQuad<3>(
-			{ pos1 - camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xstart, WT3->ystart, coreColStart },
-			{ pos1 + camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xend,   WT3->ystart, coreColStart },
-			{ pos1 + camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xend,   WT3->yend,   coreColStart },
-			{ pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,   coreColStart }
-		);
+		AddWeaponEffectsQuad<3>({pos1 - camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize,
+		                            WT3->xstart, WT3->ystart, coreColStart},
+		    {pos1 + camera->GetRight() * flareCoreSize - camera->GetUp() * flareCoreSize, WT3->xend, WT3->ystart,
+		        coreColStart},
+		    {pos1 + camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xend, WT3->yend,
+		        coreColStart},
+		    {pos1 - camera->GetRight() * flareCoreSize + camera->GetUp() * flareCoreSize, WT3->xstart, WT3->yend,
+		        coreColStart});
 	}
 }
 
 void CBeamLaserProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const SColor color = { edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u };
+	const SColor color = {edgeColStart[0], edgeColStart[1], edgeColStart[2], 255u};
 
-	AddMiniMapVertices({ startPos , color }, { targetPos, color });
+	AddMiniMapVertices({startPos, color}, {targetPos, color});
 }
 
 int CBeamLaserProjectile::GetProjectilesCount() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return
-		2 * validTextures[1] +
-		4 * validTextures[2] +
-		2 * validTextures[3];
+	return 2 * validTextures[1] + 4 * validTextures[2] + 2 * validTextures[3];
 }

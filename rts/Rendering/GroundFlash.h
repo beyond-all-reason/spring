@@ -12,8 +12,7 @@ struct GroundFlashInfo;
 class CColorMap;
 class CVertexArray;
 
-class CGroundFlash : public CExpGenSpawnable
-{
+class CGroundFlash : public CExpGenSpawnable {
 public:
 	CR_DECLARE(CGroundFlash)
 
@@ -21,9 +20,12 @@ public:
 	CGroundFlash();
 
 	virtual ~CGroundFlash() {}
+
 	virtual void Draw() {}
+
 	/// @return false when it should be deleted
 	virtual bool Update() { return false; }
+
 	virtual void Init(const CUnit* owner, const float3& offset) {}
 
 	float3 CalcNormal(const float3 midPos, const float3 camDir, float quadSize) const;
@@ -37,24 +39,19 @@ public:
 	bool depthMask;
 };
 
-
-
-class CStandardGroundFlash : public CGroundFlash
-{
+class CStandardGroundFlash : public CGroundFlash {
 public:
 	CR_DECLARE_DERIVED(CStandardGroundFlash)
 
 	CStandardGroundFlash();
 	CStandardGroundFlash(const float3& pos, const GroundFlashInfo& info);
-	CStandardGroundFlash(
-		const float3& pos,
-		float _circleAlpha,
-		float _flashAlpha,
-		float _flashSize,
-		float _circleGrowth,
-		float _ttl,
-		const float3& _color = float3(1.0f, 1.0f, 0.7f)
-	);
+	CStandardGroundFlash(const float3& pos,
+	    float _circleAlpha,
+	    float _flashAlpha,
+	    float _flashSize,
+	    float _circleGrowth,
+	    float _ttl,
+	    const float3& _color = float3(1.0f, 1.0f, 0.7f));
 
 	void InitCommon(const float3& _pos, const float3& _color);
 
@@ -86,8 +83,7 @@ private:
  * A simple groundflash, using a texture and a colormap, used in
  * the custom explosion-generator (unlike CStandardGroundFlash)
  */
-class CSimpleGroundFlash : public CGroundFlash
-{
+class CSimpleGroundFlash : public CGroundFlash {
 public:
 	CR_DECLARE_DERIVED(CSimpleGroundFlash)
 
@@ -120,20 +116,17 @@ private:
  * seismic effect, so do not use it (or fix it) for things that should
  * be affected by LOS.
  */
-class CSeismicGroundFlash : public CGroundFlash
-{
+class CSeismicGroundFlash : public CGroundFlash {
 public:
 	CR_DECLARE_DERIVED(CSeismicGroundFlash)
 
-	CSeismicGroundFlash(
-		const float3& _pos,
-		int _ttl,
-		int _fade,
-		float _size,
-		float _sizeGrowth,
-		float _alpha,
-		const float3& _color
-	);
+	CSeismicGroundFlash(const float3& _pos,
+	    int _ttl,
+	    int _fade,
+	    float _size,
+	    float _sizeGrowth,
+	    float _alpha,
+	    const float3& _color);
 
 	void Serialize(creg::ISerializer* s);
 

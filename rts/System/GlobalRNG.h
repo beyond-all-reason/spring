@@ -3,14 +3,15 @@
 #ifndef _GLOBAL_RNG_H
 #define _GLOBAL_RNG_H
 
+#include "System/float3.h"
+#include "lib/streflop/streflop_cond.h"
+
 #include <limits>
 
-#include "lib/streflop/streflop_cond.h"
-#include "System/float3.h"
-
 #if defined(SYNCCHECK) && defined(DEBUG)
-#include <cassert>
 #include "System/Sync/SyncChecker.h"
+
+#include <cassert>
 #endif
 
 
@@ -51,9 +52,11 @@ public:
 	typedef uint64_t val_type;
 
 	PCG32(const val_type _val = def_val, const val_type _seq = def_seq) { seed(_val, _seq); }
+
 	PCG32(const PCG32& rng) { *this = rng; }
 
-	void seed(const val_type initval, const val_type initseq) {
+	void seed(const val_type initval, const val_type initseq)
+	{
 		val = 0u;
 		seq = (initseq << 1u) | 1u;
 
@@ -62,7 +65,8 @@ public:
 		next();
 	}
 
-	res_type next() {
+	res_type next()
+	{
 		const val_type oldval = val;
 
 		// advance internal state
@@ -74,7 +78,8 @@ public:
 		return ((xsh >> rot) | (xsh << ((-rot) & 31)));
 	}
 
-	res_type bnext(const res_type bound) {
+	res_type bnext(const res_type bound)
+	{
 		const res_type threshold = -bound % bound;
 		res_type r = 0;
 
@@ -106,48 +111,84 @@ public:
 
 	static_assert(std::numeric_limits<float>::digits == 24, "sign plus mantissa bits should be 24");
 
-	#if defined(SYNCCHECK) && defined(DEBUG)
-	inline void AssureSyncedness() const {
+#if defined(SYNCCHECK) && defined(DEBUG)
+	inline void AssureSyncedness() const
+	{
 		if constexpr (assuresynced) {
 			assert(CSyncChecker::InSyncedCode() == synced);
 		}
 	}
-	#else
+#else
 	inline void AssureSyncedness() const {}
-	#endif
+#endif
 
 	void Seed(rng_val_type seed) { SetSeed(seed); }
-	void SetSeed(rng_val_type seed, bool init = false) {
+
+	void SetSeed(rng_val_type seed, bool init = false)
+	{
 		AssureSyncedness();
 		// use address of this object as sequence-id for unsynced RNG, modern systems have ASLR
 		if (init) {
 			gen.seed(initSeed = seed, static_cast<rng_val_type>(size_t(this)) * (1 - synced) + RNG::def_seq * synced);
-		} else {
+		}
+		else {
 			gen.seed(lastSeed = seed, static_cast<rng_val_type>(size_t(this)) * (1 - synced) + RNG::def_seq * synced);
 		}
 	}
 
-	rng_val_type GetInitSeed() const { AssureSyncedness(); return initSeed; }
-	rng_val_type GetLastSeed() const { AssureSyncedness(); return lastSeed; }
-	rng_val_type GetGenState() const { AssureSyncedness(); return (gen.state()); }
+	rng_val_type GetInitSeed() const
+	{
+		AssureSyncedness();
+		return initSeed;
+	}
+
+	rng_val_type GetLastSeed() const
+	{
+		AssureSyncedness();
+		return lastSeed;
+	}
+
+	rng_val_type GetGenState() const
+	{
+		AssureSyncedness();
+		return (gen.state());
+	}
 
 	// needed for std::{random_}shuffle
-	rng_res_type operator()(              ) { AssureSyncedness(); return (this->*gnext )( ); }
-	rng_res_type operator()(rng_res_type N) { AssureSyncedness(); return (this->*gbnext)(N); }
+	rng_res_type operator()()
+	{
+		AssureSyncedness();
+		return (this->*gnext)();
+	}
 
-	static constexpr rng_res_type  min() { return RNG::min_res; }
-	static constexpr rng_res_type  max() { return RNG::max_res; }
+	rng_res_type operator()(rng_res_type N)
+	{
+		AssureSyncedness();
+		return (this->*gbnext)(N);
+	}
+
+	static constexpr rng_res_type min() { return RNG::min_res; }
+
+	static constexpr rng_res_type max() { return RNG::max_res; }
+
 	static constexpr rng_res_type ndig() { return std::numeric_limits<float>::digits; }
 
 	// [0, N)
 	rng_res_type NextInt(rng_res_type N = max()) { return ((*this)(N)); }
 
 	float NextFloat() { return (NextFloat01(1 << ndig())); }
+
 	float NextFloat01(rng_res_type N) { return static_cast<float>(NextInt(N)) / N; } // [0,1) rounded to multiple of 1/N
-	float NextFloat24() { return math::ldexp(static_cast<float>(NextInt(1 << ndig())), -ndig()); } // [0,1) rounded to multiple of 1/(2^#digits)
+
+	float NextFloat24()
+	{
+		return math::ldexp(static_cast<float>(NextInt(1 << ndig())), -ndig());
+	} // [0,1) rounded to multiple of 1/(2^#digits)
 
 	float3 NextVector2D() { return (NextVector(0.0f)); }
-	float3 NextVector(float y = 1.0f) {
+
+	float3 NextVector(float y = 1.0f)
+	{
 		float3 ret;
 
 		do {
@@ -159,22 +200,37 @@ public:
 		return ret;
 	}
 
-	void SetDebug(FuncCB fcb = nullptr) {
+	void SetDebug(FuncCB fcb = nullptr)
+	{
 		this->fcb = fcb;
-		gnext  = (fcb == nullptr) ? &CGlobalRNG::gnext_r  : &CGlobalRNG::gnext_d;
+		gnext = (fcb == nullptr) ? &CGlobalRNG::gnext_r : &CGlobalRNG::gnext_d;
 		gbnext = (fcb == nullptr) ? &CGlobalRNG::gbnext_r : &CGlobalRNG::gbnext_d;
 	}
+
 private:
 	RNG gen;
 
 	FuncCB fcb = nullptr;
 
 	inline rng_res_type gnext_r() { return gen.next(); }
-	inline rng_res_type gnext_d() { rng_res_type R = gen.next(); fcb(0, R); return R; }
-	inline rng_res_type gbnext_r(rng_res_type N) { return gen.bnext(N); }
-	inline rng_res_type gbnext_d(rng_res_type N) { rng_res_type R = gen.bnext(N); fcb(N, R); return R; }
 
-	decltype(&CGlobalRNG::gnext_r )  gnext = &CGlobalRNG::gnext_r;
+	inline rng_res_type gnext_d()
+	{
+		rng_res_type R = gen.next();
+		fcb(0, R);
+		return R;
+	}
+
+	inline rng_res_type gbnext_r(rng_res_type N) { return gen.bnext(N); }
+
+	inline rng_res_type gbnext_d(rng_res_type N)
+	{
+		rng_res_type R = gen.bnext(N);
+		fcb(N, R);
+		return R;
+	}
+
+	decltype(&CGlobalRNG::gnext_r) gnext = &CGlobalRNG::gnext_r;
 	decltype(&CGlobalRNG::gbnext_r) gbnext = &CGlobalRNG::gbnext_r;
 
 	// initial and last-set seed
@@ -182,10 +238,8 @@ private:
 	rng_val_type lastSeed = 0;
 };
 
-
 // synced and unsynced RNG's no longer need to be different types
-typedef CGlobalRNG<PCG32, true , true > CGlobalSyncedRNG;
+typedef CGlobalRNG<PCG32, true, true> CGlobalSyncedRNG;
 typedef CGlobalRNG<PCG32, false, false> CGlobalUnsyncedRNG;
 
 #endif
-

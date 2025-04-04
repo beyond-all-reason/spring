@@ -6,9 +6,9 @@
 #include "ExternalAI/AILegacySupport.h"
 #include "System/float3.h"
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 struct Command;
 struct UnitDef;
@@ -21,8 +21,7 @@ class CGroup;
 class CUnit;
 
 /** Generalized legacy callback interface backend */
-class CAICallback
-{
+class CAICallback {
 private:
 	int team = -1;
 
@@ -74,7 +73,7 @@ public:
 	const std::vector<const SCommandDescription*>* GetGroupCommands(int groupId);
 	int GiveGroupOrder(int unitId, Command* c);
 
-	int GiveOrder(int unitId,Command* c);
+	int GiveOrder(int unitId, Command* c);
 	const std::vector<const SCommandDescription*>* GetUnitCommands(int unitId);
 	const CCommandQueue* GetCurrentUnitCommands(int unitId);
 
@@ -98,7 +97,7 @@ public:
 	float GetUnitExperience(int unitId);
 	/// Returns the furthest distance any weapon of the unit can fire
 	float GetUnitMaxRange(int unitId);
-	bool IsUnitActivated (int unitId);
+	bool IsUnitActivated(int unitId);
 	bool UnitBeingBuilt(int unitId);
 	const UnitDef* GetUnitDef(int unitId);
 	float3 GetUnitPos(int unitId);
@@ -110,10 +109,11 @@ public:
 	bool GetUnitResourceInfo(int unitId, UnitResourceInfo* resourceInfo);
 
 	const UnitDef* GetUnitDef(const char* unitName);
+
 private:
 	const UnitDef* GetUnitDefById(int unitDefId);
-public:
 
+public:
 	int InitPath(const float3& start, const float3& end, int pathType, float goalRadius);
 	float3 GetNextWaypoint(int pathId);
 	void FreePath(int pathId);
@@ -139,16 +139,24 @@ public:
 	float GetMaxHeight();
 	const float* GetSlopeMap();
 	const unsigned short* GetLosMap();
-	int GetLosMapResolution() { return -1; }          // never called, implemented in CAIAICallback
+
+	int GetLosMapResolution() { return -1; } // never called, implemented in CAIAICallback
+
 	const unsigned short* GetRadarMap();
 	const unsigned short* GetJammerMap();
 	const unsigned char* GetMetalMap();
-	int GetMapHash() { return 0; }                    // never called, implemented in SSkirmishAICallbackImpl
-	const char* GetMapName() { return NULL; }         // never called, implemented in SSkirmishAICallbackImpl
-	const char* GetMapHumanName() { return NULL; }    // never called, implemented in SSkirmishAICallbackImpl
-	int GetModHash() { return 0; }                    // never called, implemented in SSkirmishAICallbackImpl
-	const char* GetModName() { return NULL; }         // never called, implemented in SSkirmishAICallbackImpl
-	const char* GetModHumanName() { return NULL; }    // never called, implemented in SSkirmishAICallbackImpl
+
+	int GetMapHash() { return 0; } // never called, implemented in SSkirmishAICallbackImpl
+
+	const char* GetMapName() { return NULL; } // never called, implemented in SSkirmishAICallbackImpl
+
+	const char* GetMapHumanName() { return NULL; } // never called, implemented in SSkirmishAICallbackImpl
+
+	int GetModHash() { return 0; } // never called, implemented in SSkirmishAICallbackImpl
+
+	const char* GetModName() { return NULL; } // never called, implemented in SSkirmishAICallbackImpl
+
+	const char* GetModHumanName() { return NULL; } // never called, implemented in SSkirmishAICallbackImpl
 
 	float GetMaxMetal() const;
 	float GetExtractorRadius() const;
@@ -169,31 +177,56 @@ public:
 	void LineDrawerRestart();
 	void LineDrawerRestartSameColor();
 
-	int CreateSplineFigure(const float3& pos1, const float3& pos2, const float3& pos3, const float3& pos4, float width, int arrow, int lifetime, int figureGroupId);
-	int CreateLineFigure(const float3& pos1, const float3& pos2, float width, int arrow, int lifetime, int figureGroupId);
-	void SetFigureColor(int figureGroupId,float red, float green, float blue, float alpha);
+	int CreateSplineFigure(const float3& pos1,
+	    const float3& pos2,
+	    const float3& pos3,
+	    const float3& pos4,
+	    float width,
+	    int arrow,
+	    int lifetime,
+	    int figureGroupId);
+	int
+	CreateLineFigure(const float3& pos1, const float3& pos2, float width, int arrow, int lifetime, int figureGroupId);
+	void SetFigureColor(int figureGroupId, float red, float green, float blue, float alpha);
 	void DeleteFigureGroup(int figureGroupId);
 
-	void DrawUnit(const char* unitName, const float3& pos, float rotation, int lifetime, int teamId, bool transparent, bool drawBorder, int facing);
+	void DrawUnit(const char* unitName,
+	    const float3& pos,
+	    float rotation,
+	    int lifetime,
+	    int teamId,
+	    bool transparent,
+	    bool drawBorder,
+	    int facing);
 
 
 	bool IsDebugDrawerEnabled() const;
+
 	// not implemented as members, but as commands via HandleCommand
 	void DebugDrawerAddGraphPoint(int, float, float) {}
+
 	void DebugDrawerDelGraphPoints(int, int) {}
+
 	void DebugDrawerSetGraphPos(float, float) {}
+
 	void DebugDrawerSetGraphSize(float, float) {}
+
 	void DebugDrawerSetGraphLineColor(int, const float3&) {}
+
 	void DebugDrawerSetGraphLineLabel(int, const char*) {}
 
 	// these are also not implemented as members
 	int DebugDrawerAddOverlayTexture(const float*, int, int) { return 0; }
-	void DebugDrawerUpdateOverlayTexture(int, const float*, int, int, int, int) {}
-	void DebugDrawerDelOverlayTexture(int) {}
-	void DebugDrawerSetOverlayTexturePos(int, float, float) {}
-	void DebugDrawerSetOverlayTextureSize(int, float, float) {}
-	void DebugDrawerSetOverlayTextureLabel(int, const char*) {}
 
+	void DebugDrawerUpdateOverlayTexture(int, const float*, int, int, int, int) {}
+
+	void DebugDrawerDelOverlayTexture(int) {}
+
+	void DebugDrawerSetOverlayTexturePos(int, float, float) {}
+
+	void DebugDrawerSetOverlayTextureSize(int, float, float) {}
+
+	void DebugDrawerSetOverlayTextureLabel(int, const char*) {}
 
 	bool CanBuildAt(const UnitDef* unitDef, const float3& pos, int facing);
 	float3 ClosestBuildSite(const UnitDef* unitdef, const float3& pos, float searchRadius, int minDist, int facing);
@@ -211,24 +244,26 @@ public:
 	int GetFeatures(int* featureIds, int max);
 	int GetFeatures(int* featureIds, int max, const float3& pos, float radius, bool spherical = true);
 	const FeatureDef* GetFeatureDef(int featureId);
+
 private:
 	const FeatureDef* GetFeatureDefById(int featureDefId);
+
 public:
 	float GetFeatureHealth(int featureId);
 	float GetFeatureReclaimLeft(int featureId);
-	float3 GetFeaturePos (int featureId);
+	float3 GetFeaturePos(int featureId);
 
 	bool GetProperty(int unitId, int property, void* dst);
 	bool GetValue(int id, void* dst);
 	int HandleCommand(int commandId, void* data);
 
 	int GetFileSize(const char* filename);
-	bool ReadFile(const char* filename, void* buffer,int bufferLen);
+	bool ReadFile(const char* filename, void* buffer, int bufferLen);
 	int GetFileSize(const char* filename, const char* modes);
 	bool ReadFile(const char* filename, const char* modes, void* buffer, int bufferLen);
 
 	int GetNumUnitDefs();
-	void GetUnitDefList (const UnitDef** list);
+	void GetUnitDefList(const UnitDef** list);
 
 	int GetSelectedUnits(int* unitIds, int unitIds_max = -1);
 	float3 GetMousePos();
@@ -239,10 +274,11 @@ public:
 	float GetUnitDefHeight(int unitDefId);
 
 	const WeaponDef* GetWeapon(const char* weaponName);
+
 private:
 	const WeaponDef* GetWeaponDefById(int weaponDefId);
-public:
 
+public:
 	// false if a unit cannot currently be created
 	bool CanBuildUnit(int unitDefID);
 
@@ -258,6 +294,7 @@ public:
 
 	// never called, implemented in SSkirmishAICallbackImpl
 	std::map<std::string, std::string> GetMyInfo() { return std::map<std::string, std::string>(); }
+
 	std::map<std::string, std::string> GetMyOptionValues() { return std::map<std::string, std::string>(); }
 };
 

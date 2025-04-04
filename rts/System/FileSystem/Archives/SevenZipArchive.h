@@ -3,17 +3,17 @@
 #ifndef _7ZIP_ARCHIVE_H
 #define _7ZIP_ARCHIVE_H
 
-#include <vector>
+#include "BufferedArchive.h"
+#include "IArchiveFactory.h"
+
 #include <array>
-#include <string>
-#include <optional>
 #include <bitset>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include <7z.h>
 #include <7zFile.h>
-
-#include "IArchiveFactory.h"
-#include "BufferedArchive.h"
 
 /**
  * Creates LZMA/7zip compressed, single-file archives.
@@ -21,18 +21,21 @@
  */
 class CSevenZipArchiveFactory : public IArchiveFactory {
 public:
-	CSevenZipArchiveFactory(): IArchiveFactory("sd7") {}
+	CSevenZipArchiveFactory()
+	    : IArchiveFactory("sd7")
+	{
+	}
+
 	bool CheckForSolid() const { return true; }
+
 private:
 	IArchive* DoCreateArchive(const std::string& filePath) const;
 };
 
-
 /**
  * An LZMA/7zip compressed, single-file archive.
  */
-class CSevenZipArchive : public CBufferedArchive
-{
+class CSevenZipArchive : public CBufferedArchive {
 public:
 	CSevenZipArchive(const std::string& name);
 	virtual ~CSevenZipArchive();
@@ -42,6 +45,7 @@ public:
 	bool IsOpen() override { return isOpen.any(); }
 
 	uint32_t NumFiles() const override { return (fileEntries.size()); }
+
 	const std::string& FileName(uint32_t fid) const override;
 	int32_t FileSize(uint32_t fid) const override;
 	SFileInfo FileInfo(uint32_t fid) const override;
@@ -49,8 +53,10 @@ public:
 	bool CheckForSolid() const override { return considerSolid; }
 
 	static constexpr int MAX_THREADS = 32;
+
 protected:
 	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
+
 private:
 	struct PerThreadData {
 		CFileInStream archiveStream;
@@ -81,7 +87,7 @@ private:
 	ISzAlloc allocImp;
 	ISzAlloc allocTempImp;
 
-	std::bitset<MAX_THREADS> isOpen = { false };
+	std::bitset<MAX_THREADS> isOpen = {false};
 	bool considerSolid = false;
 };
 

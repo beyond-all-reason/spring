@@ -47,209 +47,77 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "BlenderDNA.h"
 #include "BlenderScene.h"
 
-namespace Assimp    {
+namespace Assimp {
 namespace Blender {
 
-template <> void Structure :: Convert<Object> (
-    Object& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Object>(Object& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Group> (
-    Group& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Group>(Group& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MTex> (
-    MTex& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MTex>(MTex& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<TFace> (
-    TFace& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<TFace>(TFace& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<SubsurfModifierData> (
-    SubsurfModifierData& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<SubsurfModifierData>(SubsurfModifierData& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MFace> (
-    MFace& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MFace>(MFace& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Lamp> (
-    Lamp& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Lamp>(Lamp& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MDeformWeight> (
-    MDeformWeight& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MDeformWeight>(MDeformWeight& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<PackedFile> (
-    PackedFile& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<PackedFile>(PackedFile& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Base> (
-    Base& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Base>(Base& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MTFace> (
-    MTFace& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MTFace>(MTFace& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Material> (
-    Material& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Material>(Material& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MTexPoly> (
-    MTexPoly& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MTexPoly>(MTexPoly& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Mesh> (
-    Mesh& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Mesh>(Mesh& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MDeformVert> (
-    MDeformVert& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MDeformVert>(MDeformVert& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<World> (
-    World& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<World>(World& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MLoopCol> (
-    MLoopCol& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MLoopCol>(MLoopCol& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MVert> (
-    MVert& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MVert>(MVert& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MEdge> (
-    MEdge& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MEdge>(MEdge& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MLoopUV> (
-    MLoopUV& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MLoopUV>(MLoopUV& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<GroupObject> (
-    GroupObject& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<GroupObject>(GroupObject& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<ListBase> (
-    ListBase& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<ListBase>(ListBase& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MLoop> (
-    MLoop& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MLoop>(MLoop& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<ModifierData> (
-    ModifierData& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<ModifierData>(ModifierData& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<ID> (
-    ID& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<ID>(ID& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MCol> (
-    MCol& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MCol>(MCol& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MPoly> (
-    MPoly& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MPoly>(MPoly& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Scene> (
-    Scene& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Scene>(Scene& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Library> (
-    Library& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Library>(Library& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Tex> (
-    Tex& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Tex>(Tex& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Camera> (
-    Camera& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Camera>(Camera& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<MirrorModifierData> (
-    MirrorModifierData& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<MirrorModifierData>(MirrorModifierData& dest, const FileDatabase& db) const;
 
-template <> void Structure :: Convert<Image> (
-    Image& dest,
-    const FileDatabase& db
-    ) const
-;
+template<> void Structure ::Convert<Image>(Image& dest, const FileDatabase& db) const;
 
 
-    }
-}
+} // namespace Blender
+} // namespace Assimp
 
 #endif

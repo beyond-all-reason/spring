@@ -12,21 +12,18 @@
 #define ASIO_DETAIL_REGEX_FWD_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #if defined(ASIO_HAS_BOOST_REGEX)
 
 namespace boost {
 
-template <class BidiIterator>
-struct sub_match;
+template<class BidiIterator> struct sub_match;
 
-template <class BidiIterator, class Allocator>
-class match_results;
+template<class BidiIterator, class Allocator> class match_results;
 
-template <class CharT, class Traits>
-class basic_regex;
+template<class CharT, class Traits> class basic_regex;
 
 } // namespace boost
 

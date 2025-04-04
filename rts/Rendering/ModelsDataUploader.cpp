@@ -1,39 +1,43 @@
 #include "ModelsDataUploader.h"
 
-#include <limits>
-#include <cassert>
-
-#include "System/float4.h"
-#include "System/Matrix44f.h"
-#include "System/Log/ILog.h"
-#include "System/SpringMath.h"
-#include "System/TimeProfiler.h"
+#include "Game/GlobalUnsynced.h"
+#include "Rendering/Features/FeatureDrawer.h"
+#include "Rendering/GL/VBO.h"
+#include "Rendering/Models/3DModel.h"
+#include "Rendering/Models/ModelsLock.h"
+#include "Rendering/Models/ModelsMemStorage.h"
+#include "Rendering/Units/UnitDrawer.h"
+#include "Sim/Features/Feature.h"
+#include "Sim/Features/FeatureDef.h"
+#include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Features/FeatureHandler.h"
+#include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
-#include "Sim/Features/Feature.h"
-#include "Sim/Features/FeatureHandler.h"
-#include "Sim/Features/FeatureDef.h"
-#include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Units/Unit.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
-#include "Rendering/GL/VBO.h"
-#include "Rendering/Models/3DModel.h"
-#include "Rendering/Models/ModelsMemStorage.h"
-#include "Rendering/Models/ModelsLock.h"
-#include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/Features/FeatureDrawer.h"
-#include "Sim/Misc/GlobalSynced.h"
-#include "Game/GlobalUnsynced.h"
+#include "Sim/Units/UnitHandler.h"
+#include "System/Log/ILog.h"
+#include "System/Matrix44f.h"
+#include "System/SpringMath.h"
+#include "System/TimeProfiler.h"
+#include "System/float4.h"
 
+#include <cassert>
+#include <limits>
 
 ////////////////////////////////////////////////////////////////////
 
 template<typename T, typename Derived>
-void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_, uint32_t elemCount0_, uint32_t elemCountIncr_, uint8_t type, bool coherent, uint32_t numBuffers)
+void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_,
+    uint32_t elemCount0_,
+    uint32_t elemCountIncr_,
+    uint8_t type,
+    bool coherent,
+    uint32_t numBuffers)
 {
 	if (!globalRendering->haveGL4)
 		return;
@@ -58,8 +62,7 @@ void TypedStorageBufferUploader<T, Derived>::InitImpl(uint32_t bindingIdx_, uint
 	ssbo->BindBufferRange(bindingIdx);
 }
 
-template<typename T, typename Derived>
-void TypedStorageBufferUploader<T, Derived>::KillImpl()
+template<typename T, typename Derived> void TypedStorageBufferUploader<T, Derived>::KillImpl()
 {
 	if (!globalRendering->haveGL4)
 		return;
@@ -68,8 +71,7 @@ void TypedStorageBufferUploader<T, Derived>::KillImpl()
 	ssbo = nullptr;
 }
 
-template<typename T, typename Derived>
-inline uint32_t TypedStorageBufferUploader<T, Derived>::GetElemsCount() const
+template<typename T, typename Derived> inline uint32_t TypedStorageBufferUploader<T, Derived>::GetElemsCount() const
 {
 	return ssbo->GetByteSize() / sizeof(T);
 }
@@ -109,17 +111,20 @@ void MatrixUploader::InitDerived()
 	if (!globalRendering->haveGL4)
 		return;
 
-	const auto sbType = globalRendering->supportPersistentMapping
-		? IStreamBufferConcept::Types::SB_PERSISTENTMAP
-		: IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
+	const auto sbType = globalRendering->supportPersistentMapping ? IStreamBufferConcept::Types::SB_PERSISTENTMAP :
+	                                                                IStreamBufferConcept::Types::SB_BUFFERSUBDATA;
 
 	InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, sbType, true, MatricesMemStorage::BUFFERING);
 	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
 		// some potato driver overestimated its support for SB_PERSISTENTMAP
 		// Redo with good old SB_BUFFERSUBDATA
-		LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but initial mapping of buffer failed. Falling back.", __func__);
+		LOG_L(L_ERROR,
+		    "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but initial mapping of buffer "
+		    "failed. Falling back.",
+		    __func__);
 		KillImpl();
-		InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
+		InitImpl(MATRIX_SSBO_BINDING_IDX, ELEM_COUNT0, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true,
+		    MatricesMemStorage::BUFFERING);
 	}
 }
 
@@ -141,28 +146,34 @@ void MatrixUploader::UpdateDerived()
 
 	auto lock = CModelsLock::GetScopedLock();
 
-	//resize
+	// resize
 	const uint32_t elemCount = GetElemsCount();
 	const uint32_t storageElemCount = matricesMemStorage.GetSize();
 	if (storageElemCount > elemCount) {
 		const uint32_t newElemCount = AlignUp(storageElemCount, elemCountIncr);
-		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, __func__, "up", newElemCount, elemCount, storageElemCount);
+		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u",
+		    className, __func__, "up", newElemCount, elemCount, storageElemCount);
 		ssbo->Resize(newElemCount);
 
 		if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && !ssbo->IsValid()) {
-			LOG_L(L_ERROR, "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but mapping of buffer of %u size failed. Falling back.", __func__, uint32_t(newElemCount * sizeof(CMatrix44f)));
+			LOG_L(L_ERROR,
+			    "[MatrixUploader::%s] OpenGL reported persistent mapping to be available, but mapping of buffer of %u "
+			    "size failed. Falling back.",
+			    __func__, uint32_t(newElemCount * sizeof(CMatrix44f)));
 			KillImpl();
-			InitImpl(MATRIX_SSBO_BINDING_IDX, newElemCount, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA, true, MatricesMemStorage::BUFFERING);
+			InitImpl(MATRIX_SSBO_BINDING_IDX, newElemCount, ELEM_COUNTI, IStreamBufferConcept::Types::SB_BUFFERSUBDATA,
+			    true, MatricesMemStorage::BUFFERING);
 		}
 
-		matricesMemStorage.SetAllDirty(); //Resize doesn't copy the data
+		matricesMemStorage.SetAllDirty(); // Resize doesn't copy the data
 	}
 
-	//update on the GPU
+	// update on the GPU
 	const CMatrix44f* clientPtr = matricesMemStorage.GetData().data();
 
 	constexpr bool ENABLE_UPLOAD_OPTIMIZATION = true;
-	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP && ENABLE_UPLOAD_OPTIMIZATION) {
+	if (ssbo->GetBufferImplementation() == IStreamBufferConcept::Types::SB_PERSISTENTMAP &&
+	    ENABLE_UPLOAD_OPTIMIZATION) {
 		const auto stt = matricesMemStorage.GetDirtyMap().begin();
 		const auto fin = matricesMemStorage.GetDirtyMap().end();
 
@@ -171,7 +182,7 @@ void MatrixUploader::UpdateDerived()
 
 		static const auto dirtyPred = [](uint8_t m) -> bool { return m > 0u; };
 		while (beg != fin) {
-			beg = std::find_if    (beg, fin, dirtyPred);
+			beg = std::find_if(beg, fin, dirtyPred);
 			end = std::find_if_not(beg, fin, dirtyPred);
 
 			if (beg != fin) {
@@ -182,10 +193,10 @@ void MatrixUploader::UpdateDerived()
 				memcpy(mappedPtr, clientPtr + offs, size * sizeof(CMatrix44f));
 				ssbo->Unmap();
 
-				std::transform(beg, end, beg, [](uint8_t v) { return (v - 1); }); //make it less dirty
+				std::transform(beg, end, beg, [](uint8_t v) { return (v - 1); }); // make it less dirty
 			}
 
-			beg = end; //rewind
+			beg = end; // rewind
 		}
 	}
 	else {
@@ -238,7 +249,8 @@ std::size_t MatrixUploader::GetElemOffsetImpl(const CUnit* unit) const
 		return MatricesMemStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = CUnitDrawer::GetMatricesMemAlloc(unit).GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
+	if (std::size_t offset = CUnitDrawer::GetMatricesMemAlloc(unit).GetOffset(false);
+	    offset != MatricesMemStorage::INVALID_INDEX) {
 		return offset;
 	}
 
@@ -253,7 +265,8 @@ std::size_t MatrixUploader::GetElemOffsetImpl(const CFeature* feature) const
 		return MatricesMemStorage::INVALID_INDEX;
 	}
 
-	if (std::size_t offset = CFeatureDrawer::GetMatricesMemAlloc(feature).GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
+	if (std::size_t offset = CFeatureDrawer::GetMatricesMemAlloc(feature).GetOffset(false);
+	    offset != MatricesMemStorage::INVALID_INDEX) {
 		return offset;
 	}
 
@@ -279,7 +292,7 @@ std::size_t MatrixUploader::GetElemOffsetImpl(const CProjectile* p) const
 	}
 	/*
 	if (std::size_t offset = p->GetMatAlloc().GetOffset(false); offset != MatricesMemStorage::INVALID_INDEX) {
-		return offset;
+	    return offset;
 	}
 	*/
 
@@ -311,16 +324,17 @@ void ModelsUniformsUploader::UpdateDerived()
 	SCOPED_TIMER("ModelsUniformsUploader::Update");
 	ssbo->UnbindBufferRange(bindingIdx);
 
-	//resize
+	// resize
 	const uint32_t elemCount = GetElemsCount();
 	const uint32_t storageElemCount = modelsUniformsStorage.Size();
 	if (storageElemCount > elemCount) {
 		const uint32_t newElemCount = AlignUp(storageElemCount, elemCountIncr);
-		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u", className, __func__, "up", newElemCount, elemCount, storageElemCount);
+		LOG_L(L_DEBUG, "[%s::%s] sizing SSBO %s. New elements count = %u, elemCount = %u, storageElemCount = %u",
+		    className, __func__, "up", newElemCount, elemCount, storageElemCount);
 		ssbo->Resize(newElemCount);
 	}
 
-	//update on the GPU
+	// update on the GPU
 	const ModelUniformData* clientPtr = modelsUniformsStorage.GetData().data();
 	ModelUniformData* mappedPtr = ssbo->Map(clientPtr, 0, storageElemCount);
 
@@ -352,7 +366,6 @@ std::size_t ModelsUniformsUploader::GetDefElemOffsetImpl(const FeatureDef* def) 
 	LOG_L(L_ERROR, "[%s::%s] Invalid call", className, __func__);
 	return ModelsUniformsStorage::INVALID_INDEX;
 }
-
 
 std::size_t ModelsUniformsUploader::GetElemOffsetImpl(const CUnit* unit) const
 {

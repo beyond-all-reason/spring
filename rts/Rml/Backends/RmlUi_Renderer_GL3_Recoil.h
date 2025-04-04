@@ -33,26 +33,25 @@
 
 #include "Rendering/Shaders/Shader.h"
 
+#include <bitset>
+
 #include <RmlUi/Core/RenderInterface.h>
 #include <RmlUi/Core/Types.h>
-#include <bitset>
 
 enum class ProgramId;
 enum class UniformId;
 
 namespace Gfx {
-	struct ProgramData;
-	struct FramebufferData;
-}
+struct ProgramData;
+struct FramebufferData;
+} // namespace Gfx
 
-namespace Shader
-{
-	struct IShaderObject;
-	struct IProgramObject;
-}
+namespace Shader {
+struct IShaderObject;
+struct IProgramObject;
+} // namespace Shader
 
-class RenderInterface_GL3_Recoil : public Rml::RenderInterface
-{
+class RenderInterface_GL3_Recoil : public Rml::RenderInterface {
 public:
 	RenderInterface_GL3_Recoil();
 	~RenderInterface_GL3_Recoil() override;
@@ -72,25 +71,32 @@ public:
 
 	// -- Inherited from Rml::RenderInterface --
 
-	Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> vertices, Rml::Span<const int> indices) override;
-	void RenderGeometry(Rml::CompiledGeometryHandle handle, Rml::Vector2f translation, Rml::TextureHandle texture) override;
+	Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> vertices,
+	    Rml::Span<const int> indices) override;
+	void
+	RenderGeometry(Rml::CompiledGeometryHandle handle, Rml::Vector2f translation, Rml::TextureHandle texture) override;
 	void ReleaseGeometry(Rml::CompiledGeometryHandle handle) override;
 
 	Rml::TextureHandle LoadTexture(Rml::Vector2i& texture_dimensions, const Rml::String& source) override;
-	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> source_data, Rml::Vector2i source_dimensions) override;
+	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> source_data,
+	    Rml::Vector2i source_dimensions) override;
 	void ReleaseTexture(Rml::TextureHandle texture_handle) override;
 
 	void EnableScissorRegion(bool enable) override;
 	void SetScissorRegion(Rml::Rectanglei region) override;
 
 	void EnableClipMask(bool enable) override;
-	void RenderToClipMask(Rml::ClipMaskOperation mask_operation, Rml::CompiledGeometryHandle geometry, Rml::Vector2f translation) override;
+	void RenderToClipMask(Rml::ClipMaskOperation mask_operation,
+	    Rml::CompiledGeometryHandle geometry,
+	    Rml::Vector2f translation) override;
 
 	void SetTransform(const Rml::Matrix4f* transform) override;
 
 	Rml::LayerHandle PushLayer() override;
-	void CompositeLayers(Rml::LayerHandle source, Rml::LayerHandle destination, Rml::BlendMode blend_mode,
-						 Rml::Span<const Rml::CompiledFilterHandle> filters) override;
+	void CompositeLayers(Rml::LayerHandle source,
+	    Rml::LayerHandle destination,
+	    Rml::BlendMode blend_mode,
+	    Rml::Span<const Rml::CompiledFilterHandle> filters) override;
 	void PopLayer() override;
 
 	Rml::TextureHandle SaveLayerAsTexture() override;
@@ -101,8 +107,10 @@ public:
 	void ReleaseFilter(Rml::CompiledFilterHandle filter) override;
 
 	Rml::CompiledShaderHandle CompileShader(const Rml::String& name, const Rml::Dictionary& parameters) override;
-	void RenderShader(Rml::CompiledShaderHandle shader_handle, Rml::CompiledGeometryHandle geometry_handle, Rml::Vector2f translation,
-					  Rml::TextureHandle texture) override;
+	void RenderShader(Rml::CompiledShaderHandle shader_handle,
+	    Rml::CompiledGeometryHandle geometry_handle,
+	    Rml::Vector2f translation,
+	    Rml::TextureHandle texture) override;
 	void ReleaseShader(Rml::CompiledShaderHandle effect_handle) override;
 
 	// Can be passed to RenderGeometry() to enable texture rendering without changing the bound texture.
@@ -123,7 +131,10 @@ private:
 	void DrawFullscreenQuad();
 	void DrawFullscreenQuad(Rml::Vector2f uv_offset, Rml::Vector2f uv_scaling = Rml::Vector2f(1.f));
 
-	void RenderBlur(float sigma, const Gfx::FramebufferData& source_destination, const Gfx::FramebufferData& temp, Rml::Rectanglei window_flipped);
+	void RenderBlur(float sigma,
+	    const Gfx::FramebufferData& source_destination,
+	    const Gfx::FramebufferData& temp,
+	    Rml::Rectanglei window_flipped);
 
 	static constexpr size_t MaxNumPrograms = 32;
 	std::bitset<MaxNumPrograms> program_transform_dirty;
@@ -166,8 +177,11 @@ private:
 		[[nodiscard]] Rml::LayerHandle GetTopLayerHandle() const;
 
 		const Gfx::FramebufferData& GetPostprocessPrimary() { return EnsureFramebufferPostprocess(0); }
+
 		const Gfx::FramebufferData& GetPostprocessSecondary() { return EnsureFramebufferPostprocess(1); }
+
 		const Gfx::FramebufferData& GetPostprocessTertiary() { return EnsureFramebufferPostprocess(2); }
+
 		const Gfx::FramebufferData& GetBlendMask() { return EnsureFramebufferPostprocess(3); }
 
 		void SwapPostprocessPrimarySecondary();
@@ -181,7 +195,8 @@ private:
 
 		int width = 0, height = 0;
 
-		// The number of active layers is manually tracked since we re-use the framebuffers stored in the fb_layers stack.
+		// The number of active layers is manually tracked since we re-use the framebuffers stored in the fb_layers
+		// stack.
 		int layers_size = 0;
 
 		Rml::Vector<Gfx::FramebufferData> fb_layers;
@@ -222,9 +237,11 @@ private:
 			int pass_depth_fail;
 			int pass_depth_pass;
 		};
+
 		Stencil stencil_front;
 		Stencil stencil_back;
 	};
+
 	GLStateBackup glstate_backup = {};
 };
 

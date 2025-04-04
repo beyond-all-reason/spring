@@ -3,17 +3,17 @@
 #ifndef GEOMETRIC_OBJECTS_H
 #define GEOMETRIC_OBJECTS_H
 
-#include <vector>
 #include "System/Misc/NonCopyable.h"
+#include "System/UnorderedMap.hpp"
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
-#include "System/UnorderedMap.hpp"
+
+#include <vector>
 
 
 class CGeoSquareProjectile;
 
-class CGeometricObjects : public spring::noncopyable
-{
+class CGeometricObjects : public spring::noncopyable {
 	CR_DECLARE_STRUCT(CGeometricObjects)
 	CR_DECLARE_SUB(GeoGroup)
 
@@ -25,6 +25,7 @@ private:
 
 public:
 	CGeometricObjects() { firstFreeGroup = 1; }
+
 	~CGeometricObjects();
 
 	int AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, float width, int arrow, int lifeTime = -1, int group = 0);
@@ -37,7 +38,7 @@ public:
 
 private:
 	spring::unordered_map<int, GeoGroup> geoGroups;
-	spring::unordered_map<int, std::vector<int> > timedGroups;
+	spring::unordered_map<int, std::vector<int>> timedGroups;
 
 	int firstFreeGroup;
 };

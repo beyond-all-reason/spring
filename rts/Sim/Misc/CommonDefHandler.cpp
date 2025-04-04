@@ -1,23 +1,23 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm>
-#include <array>
-
 #include "CommonDefHandler.h"
 
 #include "Sim/Misc/GuiSoundSet.h"
-#include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Sound/ISound.h"
+#include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISound.h"
 
-static const std::array<std::string, 2> soundExts = {{"wav", "ogg"}};
+#include <algorithm>
+#include <array>
+
+static const std::array<std::string, 2> soundExts = {
+    {"wav", "ogg"}
+};
 
 // UnitDef and WeaponDef sound-sets; [0] is always a dummy
 static std::vector<GuiSoundSetData> soundSetData;
-
 
 void CommonDefHandler::InitStatic()
 {
@@ -32,7 +32,6 @@ void CommonDefHandler::KillStatic()
 	RECOIL_DETAILED_TRACY_ZONE;
 	LOG_L(L_INFO, "[CommonDefHandler::%s] %u sound-set data items added", __func__, uint32_t(soundSetData.size()));
 }
-
 
 void CommonDefHandler::AddSoundSetData(GuiSoundSet& soundSet, const std::string& fileName, float volume)
 {
@@ -54,7 +53,6 @@ size_t CommonDefHandler::SoundSetDataCount()
 	return (soundSetData.size());
 }
 
-
 int CommonDefHandler::LoadSoundFile(const std::string& fileName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -71,7 +69,7 @@ int CommonDefHandler::LoadSoundFile(const std::string& fileName)
 		if (haveItem)
 			return (sound->GetSoundId(fileName));
 
-		const std::string soundFile = "sounds/" + fileName + ((soundExt.empty())? ".wav": "");
+		const std::string soundFile = "sounds/" + fileName + ((soundExt.empty()) ? ".wav" : "");
 
 		if (CFileHandler::FileExists(soundFile, SPRING_VFS_RAW_FIRST))
 			return (sound->GetSoundId(soundFile));

@@ -1,17 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #ifndef _WIN32
-	#include <unistd.h>
-	#include <sys/stat.h>
-	#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #else
-	#include <io.h>
-	#include <direct.h>
-	#include <windows.h>
+#include <direct.h>
+#include <io.h>
+#include <windows.h>
 #endif
-#include <cstdlib>
-
 #include "ConfigLocater.h"
+
 #include "Game/GameVersion.h"
 #include "System/Exceptions.h"
 #include "System/FileSystem/DataDirLocater.h"
@@ -19,6 +18,8 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/Misc.h"
 #include "System/Platform/Win/win32.h"
+
+#include <cstdlib>
 
 static void AddCfgFile(std::vector<std::string>& locations, const std::string& filepath)
 {
@@ -29,7 +30,6 @@ static void AddCfgFile(std::vector<std::string>& locations, const std::string& f
 
 	locations.push_back(filepath);
 }
-
 
 static void LoadCfgs(std::vector<std::string>& locations, const std::string& defCfg, const std::string& verCfg)
 {
@@ -43,11 +43,11 @@ static void LoadCfgs(std::vector<std::string>& locations, const std::string& def
 		// warn user if the file is not both readable and writable
 		// (otherwise it can fail/segfault/end up in virtualstore/...)
 		if (access(defCfg.c_str(), R_OK | W_OK) == -1) {
-			#ifndef _WIN32
+#ifndef _WIN32
 			LOG_L(L_WARNING, "default config-file \"%s\" not both readable and writeable", defCfg.c_str());
-			#else
+#else
 			throw content_error(std::string("default config-file \"") + defCfg + "\" not both readable and writeable");
-			#endif
+#endif
 		}
 	}
 
@@ -57,7 +57,6 @@ static void LoadCfgs(std::vector<std::string>& locations, const std::string& def
 	if (access(defCfg.c_str(), R_OK) != -1)
 		AddCfgFile(locations, defCfg);
 }
-
 
 static void LoadCfgsInFolder(std::vector<std::string>& locations, const std::string& path, const bool hidden = false)
 {
@@ -75,8 +74,6 @@ static void LoadCfgsInFolder(std::vector<std::string>& locations, const std::str
 #endif
 }
 
-
-
 /**
  * @brief Get the names of the default configuration files
  */
@@ -90,4 +87,3 @@ void ConfigLocater::GetDefaultLocations(std::vector<std::string>& locations)
 		LoadCfgsInFolder(locations, path);
 	}
 }
-

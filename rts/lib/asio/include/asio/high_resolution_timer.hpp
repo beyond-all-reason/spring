@@ -12,12 +12,12 @@
 #define ASIO_HIGH_RESOLUTION_TIMER_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio/detail/config.hpp"
 #include "asio/basic_waitable_timer.hpp"
 #include "asio/detail/chrono.hpp"
+#include "asio/detail/config.hpp"
 
 namespace asio {
 
@@ -30,9 +30,7 @@ namespace asio {
  * typedef basic_waitable_timer<boost::chrono::high_resolution_clock> timer;
  * @endcode
  */
-typedef basic_waitable_timer<
-    chrono::high_resolution_clock>
-  high_resolution_timer;
+typedef basic_waitable_timer<chrono::high_resolution_clock> high_resolution_timer;
 
 } // namespace asio
 

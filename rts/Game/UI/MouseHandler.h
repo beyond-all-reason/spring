@@ -3,14 +3,15 @@
 #ifndef MOUSEHANDLER_H
 #define MOUSEHANDLER_H
 
-#include <string>
-#include <vector>
+#include "MouseCursor.h"
 
 #include "Rendering/GL/RenderBuffersFwd.h"
+#include "System/UnorderedMap.hpp"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/UnorderedMap.hpp"
-#include "MouseCursor.h"
+
+#include <string>
+#include <vector>
 
 static const int NUM_BUTTONS = 10;
 
@@ -18,8 +19,7 @@ class CInputReceiver;
 class CCameraController;
 class CUnit;
 
-class CMouseHandler
-{
+class CMouseHandler {
 public:
 	CMouseHandler();
 	~CMouseHandler();
@@ -29,7 +29,9 @@ public:
 
 	void ChangeCursor(const std::string& cmdName, const float scale = 1.0f);
 	void ReloadCursors();
-	void ResetCursor() {
+
+	void ResetCursor()
+	{
 		ChangeCursor("");
 		Update();
 	}
@@ -41,7 +43,9 @@ public:
 	void HideMouse();
 	void ShowMouse();
 	void ToggleMiddleClickScroll(); /// lock+hide
+
 	void CancelButtonMovement(int button) { buttons[button].movement = 0; }
+
 	void WarpMouse(int x, int y);
 
 	void DrawSelectionBox() const; /// draw mousebox (selection box)
@@ -55,14 +59,13 @@ public:
 	void WindowEnter();
 
 	bool AssignMouseCursor(const std::string& cmdName,
-	                       const std::string& fileName,
-	                       CMouseCursor::HotSpot hotSpot,
-	                       bool overwrite);
-	bool ReplaceMouseCursor(const std::string& oldName,
-	                        const std::string& newName,
-	                        CMouseCursor::HotSpot hotSpot);
+	    const std::string& fileName,
+	    CMouseCursor::HotSpot hotSpot,
+	    bool overwrite);
+	bool ReplaceMouseCursor(const std::string& oldName, const std::string& newName, CMouseCursor::HotSpot hotSpot);
 
-	const CMouseCursor* FindCursor(const std::string& cursorName) const {
+	const CMouseCursor* FindCursor(const std::string& cursorName) const
+	{
 		const auto it = cursorCommandMap.find(cursorName);
 
 		if (it != cursorCommandMap.end())
@@ -77,6 +80,7 @@ public:
 	std::string GetCurrentTooltip() const;
 
 	const std::string& GetCurrentCursor() const { return queuedCursorName; }
+
 	float GetCurrentCursorScale() const { return cursorScale; }
 
 	void ToggleHwCursor(bool enable);
@@ -96,14 +100,12 @@ private:
 	void DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const;
 	void DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const;
 
-	static void GetSelectionBoxCoeff(
-		const float3& pos1,
-		const float3& dir1,
-		const float3& pos2,
-		const float3& dir2,
-		float2& topright,
-		float2& bttmleft
-	);
+	static void GetSelectionBoxCoeff(const float3& pos1,
+	    const float3& dir1,
+	    const float3& pos2,
+	    const float3& dir2,
+	    float2& topright,
+	    float2& bttmleft);
 
 public:
 	int lastx = -1;
@@ -148,7 +150,6 @@ public:
 	int dragBoxCommandThreshold = 0;
 	int dragCircleCommandThreshold = 0;
 	int dragFrontCommandThreshold = 0;
-
 
 	struct ButtonPressEvt {
 		bool pressed = false;

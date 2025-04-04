@@ -7,10 +7,7 @@ GL::DebugGroupImpl::DebugGroupImpl(uint32_t id, const char* messsage)
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id, -1, messsage);
 }
 
-GL::DebugGroupImpl::~DebugGroupImpl()
-{
-	glPopDebugGroup();
-}
+GL::DebugGroupImpl::~DebugGroupImpl() { glPopDebugGroup(); }
 
 std::unique_ptr<GL::DebugGroup> GL::DebugGroup::GetScoped(uint32_t id, const char* messsage)
 {

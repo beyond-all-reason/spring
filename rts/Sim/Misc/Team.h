@@ -3,21 +3,21 @@
 #ifndef TEAM_H
 #define TEAM_H
 
-#include <string>
-#include <vector>
-#include <list>
-
 #include "TeamBase.h"
 #include "TeamStatistics.h"
-#include "Sim/Misc/Resource.h"
-#include "System/Color.h"
+
 #include "ExternalAI/SkirmishAIKey.h"
 #include "Lua/LuaRulesParams.h"
+#include "Sim/Misc/Resource.h"
+#include "System/Color.h"
+
+#include <list>
+#include <string>
+#include <vector>
 
 class CUnit;
 
-class CTeam : public TeamBase
-{
+class CTeam : public TeamBase {
 	CR_DECLARE_DERIVED(CTeam)
 public:
 	CTeam();
@@ -46,15 +46,20 @@ public:
 	void ClampStartPosInStartBox(float3* pos) const;
 
 	void SetMaxUnits(unsigned int n) { maxUnits = n; }
+
 	unsigned int GetMaxUnits() const { return maxUnits; }
+
 	unsigned int GetNumUnits() const { return numUnits; }
+
 	bool AtUnitLimit() const { return (numUnits >= maxUnits); }
 
 	const TeamStatistics& GetCurrentStats() const { return statHistory.back(); }
-	      TeamStatistics& GetCurrentStats()       { return statHistory.back(); }
 
-	CTeam& operator = (const TeamBase& base) {
-		TeamBase::operator = (base);
+	TeamStatistics& GetCurrentStats() { return statHistory.back(); }
+
+	CTeam& operator=(const TeamBase& base)
+	{
+		TeamBase::operator=(base);
 		return *this;
 	}
 
@@ -84,12 +89,12 @@ public:
 	SResourcePack res;
 	SResourcePack resStorage;
 
-	SResourcePack resPull,    resPrevPull;
-	SResourcePack resIncome,  resPrevIncome;
+	SResourcePack resPull, resPrevPull;
+	SResourcePack resIncome, resPrevIncome;
 	SResourcePack resExpense, resPrevExpense;
 	SResourcePack resShare;
 	SResourcePack resDelayedShare; //< excess that might be shared next SlowUpdate
-	SResourcePack resSent,     resPrevSent;
+	SResourcePack resSent, resPrevSent;
 	SResourcePack resReceived, resPrevReceived;
 	SResourcePack resPrevExcess;
 
@@ -97,7 +102,7 @@ public:
 	std::vector<TeamStatistics> statHistory;
 
 	/// mod controlled parameters
-	LuaRulesParams::Params  modParams;
+	LuaRulesParams::Params modParams;
 
 	/// unsynced
 	float highlight;

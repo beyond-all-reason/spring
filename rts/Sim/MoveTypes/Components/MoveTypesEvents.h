@@ -12,85 +12,92 @@ class CGroundMoveType;
 namespace MoveTypes {
 
 struct FeatureCollisionEvent {
-    CUnit* collider;
-    CFeature* collidee;
+	CUnit* collider;
+	CFeature* collidee;
 
-    FeatureCollisionEvent(CUnit* _collider, CFeature* _collidee)
-    : collider(_collider)
-    , collidee(_collidee)
-    {}
+	FeatureCollisionEvent(CUnit* _collider, CFeature* _collidee)
+	    : collider(_collider)
+	    , collidee(_collidee)
+	{
+	}
 };
 
 struct FeatureCrushEvent {
-    CUnit* collider;
-    CFeature* collidee;
-    float3 crushImpulse;
+	CUnit* collider;
+	CFeature* collidee;
+	float3 crushImpulse;
 
-    FeatureCrushEvent(CUnit* _collider, CFeature* _collidee, float3 _crushImpulse)
-    : collider(_collider)
-    , collidee(_collidee)
-    , crushImpulse(_crushImpulse)
-    {}
+	FeatureCrushEvent(CUnit* _collider, CFeature* _collidee, float3 _crushImpulse)
+	    : collider(_collider)
+	    , collidee(_collidee)
+	    , crushImpulse(_crushImpulse)
+	{
+	}
 };
 
 struct FeatureMoveEvent {
-    CUnit* collider;
-    CFeature* collidee;
-    float3 moveImpulse;
+	CUnit* collider;
+	CFeature* collidee;
+	float3 moveImpulse;
 
-    FeatureMoveEvent(CUnit* _collider, CFeature* _collidee, float3 _moveImpulse)
-    : collider(_collider)
-    , collidee(_collidee)
-    , moveImpulse(_moveImpulse)
-    {}
+	FeatureMoveEvent(CUnit* _collider, CFeature* _collidee, float3 _moveImpulse)
+	    : collider(_collider)
+	    , collidee(_collidee)
+	    , moveImpulse(_moveImpulse)
+	{
+	}
 };
 
 struct UnitCollisionEvent {
-    CUnit* collider;
-    CUnit* collidee;
+	CUnit* collider;
+	CUnit* collidee;
 
-    UnitCollisionEvent(CUnit* _collider, CUnit* _collidee)
-    : collider(_collider)
-    , collidee(_collidee)
-    {}
+	UnitCollisionEvent(CUnit* _collider, CUnit* _collidee)
+	    : collider(_collider)
+	    , collidee(_collidee)
+	{
+	}
 };
 
 struct UnitCrushEvent {
-    CUnit* collider;
-    CUnit* collidee;
-    float3 crushImpulse;
+	CUnit* collider;
+	CUnit* collidee;
+	float3 crushImpulse;
 
-    UnitCrushEvent(CUnit* _collider, CUnit* _collidee, float3 _crushImpulse)
-    : collider(_collider)
-    , collidee(_collidee)
-    , crushImpulse(_crushImpulse)
-    {}
+	UnitCrushEvent(CUnit* _collider, CUnit* _collidee, float3 _crushImpulse)
+	    : collider(_collider)
+	    , collidee(_collidee)
+	    , crushImpulse(_crushImpulse)
+	{
+	}
 };
 
 struct UnitMovedEvent {
-    CUnit* unit = nullptr;
-    bool moved = false;
+	CUnit* unit = nullptr;
+	bool moved = false;
 };
 
 struct ChangeHeadingEvent {
-    int unitId;
-    short deltaHeading = 0;
-    bool changed = false;
+	int unitId;
+	short deltaHeading = 0;
+	bool changed = false;
 
-    ChangeHeadingEvent(int _unitId)
-    : unitId(_unitId)
-    {}
+	ChangeHeadingEvent(int _unitId)
+	    : unitId(_unitId)
+	{
+	}
 };
 
 struct ChangeMainHeadingEvent {
-    int unitId;
-    bool changed = false;
+	int unitId;
+	bool changed = false;
 
-    ChangeMainHeadingEvent(int _unitId)
-    : unitId(_unitId)
-    {}
+	ChangeMainHeadingEvent(int _unitId)
+	    : unitId(_unitId)
+	{
+	}
 };
 
-}
+} // namespace MoveTypes
 
 #endif

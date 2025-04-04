@@ -1,40 +1,44 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 /**
-	\mainpage
-	This is the documentation of the Spring RTS Engine.
-	https://springrts.com/
+    \mainpage
+    This is the documentation of the Spring RTS Engine.
+    https://springrts.com/
 */
 
-#include "System/ExportDefines.h"
-#include "System/SpringApp.h"
 #include "System/Exceptions.h"
+#include "System/ExportDefines.h"
 #include "System/FileSystem/FileSystem.h"
-#include "System/Platform/errorhandler.h"
-#include "System/Platform/Threading.h"
-#include "System/Platform/Misc.h"
 #include "System/Log/ILog.h"
+#include "System/Platform/Misc.h"
+#include "System/Platform/Threading.h"
+#include "System/Platform/errorhandler.h"
+#include "System/SpringApp.h"
 
 #include <clocale>
-#include <cstdlib>
 #include <cstdint>
+#include <cstdlib>
 
 #ifdef _WIN32
-	#include "lib/SOP/SOP.hpp" // NvOptimus
+#include "lib/SOP/SOP.hpp" // NvOptimus
 #endif
 
 // https://stackoverflow.com/a/27881472/9819318
-EXTERNALIZER_B EXPORT_CLAUSE uint32_t NvOptimusEnablement =                  1; EXTERNALIZER_E //Optimus/NV use discrete GPU hint
-EXTERNALIZER_B EXPORT_CLAUSE uint32_t AmdPowerXpressRequestHighPerformance = 1; EXTERNALIZER_E // AMD use discrete GPU hint
+EXTERNALIZER_B EXPORT_CLAUSE uint32_t NvOptimusEnablement = 1;
+EXTERNALIZER_E // Optimus/NV use discrete GPU hint
+    EXTERNALIZER_B EXPORT_CLAUSE uint32_t AmdPowerXpressRequestHighPerformance = 1;
 
-int Run(int argc, char* argv[])
+EXTERNALIZER_E // AMD use discrete GPU hint
+
+    int
+    Run(int argc, char* argv[])
 {
 #ifdef __MINGW32__
 	// For the MinGW backtrace() implementation we need to know the stack end.
 	{
 		extern void* stack_end;
 		char here;
-		stack_end = (void*) &here;
+		stack_end = (void*)&here;
 	}
 #endif
 
@@ -49,7 +53,6 @@ int Run(int argc, char* argv[])
 	LOG("%s: thread affinity %x", __func__, Threading::GetAffinity());
 	return (app.Run());
 }
-
 
 /**
  * Always run on dedicated GPU
@@ -70,7 +73,6 @@ static bool SetNvOptimusProfile(const std::string& processFileName)
 #endif
 
 
-
 /**
  * @brief main
  * @return exit code
@@ -89,8 +91,7 @@ int main(int argc, char* argv[])
 		// prepare for restart
 		std::array<std::string, MAX_ARGS> args;
 
-		for (int i = 0, n = std::min(argc, MAX_ARGS); i < n; i++)
-			args[i] = argv[i];
+		for (int i = 0, n = std::min(argc, MAX_ARGS); i < n; i++) args[i] = argv[i];
 
 		// ExecProc normally does not return; if it does the retval is an error-string
 		ErrorMessageBox(Platform::ExecuteProcess(args), "Execv error:", MBF_OK | MBF_EXCL);
@@ -102,11 +103,9 @@ int main(int argc, char* argv[])
 }
 
 
-
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstanceIn, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	return main(__argc, __argv);
 }
 #endif
-

@@ -3,39 +3,44 @@
 #ifndef TEAM_BASE_H
 #define TEAM_BASE_H
 
+#include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
+#include "System/float3.h"
+
 #include <algorithm>
 #include <string>
 
-#include "System/float3.h"
-#include "System/UnorderedMap.hpp"
-#include "System/creg/creg_cond.h"
-
-
-class TeamBase
-{
+class TeamBase {
 	CR_DECLARE(TeamBase)
 
 public:
 	typedef spring::unordered_map<std::string, std::string> customOpts;
 
 	TeamBase();
+
 	virtual ~TeamBase() {}
+
 	virtual void UpdateControllerName() {}
 
 	void SetValue(const std::string& key, const std::string& value);
+
 	const customOpts& GetAllValues() const { return customValues; }
 
 	const char* GetSideName() const { return sideName; }
-	const char* GetControllerName(bool update = true) const {
+
+	const char* GetControllerName(bool update = true) const
+	{
 		if (update)
 			const_cast<TeamBase*>(this)->UpdateControllerName();
 		return controllerName;
 	}
 
 	void SetStartPos(const float3& pos) { startPos = pos; }
+
 	const float3& GetStartPos() const { return startPos; }
 
-	bool HasValidStartPos() const {
+	bool HasValidStartPos() const
+	{
 		// if a player never chose (net-sent) a position
 		if (startPos == ZeroVector)
 			return false;
@@ -50,9 +55,10 @@ public:
 	}
 
 	bool HasLeader() const { return (leader != -1); }
-	void SetLeader(int leadPlayer) { leader = leadPlayer; }
-	int GetLeader() const { return leader; }
 
+	void SetLeader(int leadPlayer) { leader = leadPlayer; }
+
+	int GetLeader() const { return leader; }
 
 	/**
 	 * Sets the (dis-)advantage.
@@ -73,9 +79,11 @@ public:
 	void SetAdvantage(float advantage) { SetIncomeMultiplier(std::max(-1.0f, advantage) + 1.0f); }
 
 	void SetIncomeMultiplier(float incomeMult) { incomeMultiplier = std::max(0.0f, incomeMult); }
+
 	float GetIncomeMultiplier() const { return incomeMultiplier; }
 
-	void SetDefaultColor(int teamNum) {
+	void SetDefaultColor(int teamNum)
+	{
 		for (size_t colorIdx = 0; colorIdx < 3; ++colorIdx) {
 			color[colorIdx] = teamDefaultColor[teamNum % NUM_DEFAULT_TEAM_COLORS][colorIdx];
 		}

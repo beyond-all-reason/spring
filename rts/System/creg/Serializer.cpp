@@ -7,26 +7,27 @@
 
 #define LOG_SECTION_CREG_SERIALIZER "CregSerializer"
 
-#include "creg_cond.h"
 #include "Serializer.h"
 
+#include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/byteorder.h"
-#include "System/Exceptions.h"
 
 #include <algorithm>
-#include <fstream>
 #include <cassert>
-#include <stdexcept>
-#include <map>
-#include <vector>
-#include <string>
-#include <cstring>
 #include <cinttypes>
+#include <cstring>
+#include <fstream>
+#include <map>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "creg_cond.h"
 
 using namespace creg;
-using std::string;
 using std::map;
+using std::string;
 using std::vector;
 
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_CREG_SERIALIZER)
@@ -35,8 +36,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_CREG_SERIALIZER)
 #define CREG_PACKAGE_FILE_ID "CRPK"
 
 // File format structures
-struct PackageHeader
-{
+struct PackageHeader {
 	char magic[4];
 	int objDataOffset = 0;
 	int objTableOffset = 0;
@@ -54,6 +54,7 @@ struct PackageHeader
 		swabDWordInPlace(numObjects);
 		swabDWordInPlace(metadataChecksum);
 	}
+
 	PackageHeader()
 	{
 		magic[0] = 0;
@@ -62,8 +63,6 @@ struct PackageHeader
 		magic[3] = 0;
 	}
 };
-
-
 
 static std::string ReadZStr(std::istream& file)
 {
@@ -78,9 +77,7 @@ static void WriteZStr(std::ostream& file, const std::string& str)
 	file.write(str.c_str(), str.length() + 1);
 }
 
-
-template<typename T>
-void ReadVarSizeUInt(std::istream* stream, T* buf)
+template<typename T> void ReadVarSizeUInt(std::istream* stream, T* buf)
 {
 	std::uint64_t val = 0;
 	unsigned offset = 0;
@@ -98,8 +95,7 @@ void ReadVarSizeUInt(std::istream* stream, T* buf)
 	*buf = val;
 }
 
-template<typename T>
-void WriteVarSizeUInt(std::ostream* stream, T val)
+template<typename T> void WriteVarSizeUInt(std::ostream* stream, T val)
 {
 	std::uint64_t v = val;
 	do {
@@ -113,30 +109,19 @@ void WriteVarSizeUInt(std::ostream* stream, T val)
 	} while (v > 0);
 }
 
-void creg::ReadUInt(std::istream* stream, std::uint64_t* buf)
-{
-	ReadVarSizeUInt(stream, buf);
-}
+void creg::ReadUInt(std::istream* stream, std::uint64_t* buf) { ReadVarSizeUInt(stream, buf); }
 
-void creg::WriteUInt(std::ostream* stream, uint64_t val)
-{
-	WriteVarSizeUInt(stream, val);
-}
+void creg::WriteUInt(std::ostream* stream, uint64_t val) { WriteVarSizeUInt(stream, val); }
 
 //-------------------------------------------------------------------------
 // Base output serializer
 //-------------------------------------------------------------------------
-COutputStreamSerializer::COutputStreamSerializer()
-{
-	stream = nullptr;
-}
+COutputStreamSerializer::COutputStreamSerializer() { stream = nullptr; }
 
-bool COutputStreamSerializer::IsWriting()
-{
-	return true;
-}
+bool COutputStreamSerializer::IsWriting() { return true; }
 
-COutputStreamSerializer::ObjectRef* COutputStreamSerializer::FindObjectRef(void* inst, creg::Class* objClass, bool isEmbedded)
+COutputStreamSerializer::ObjectRef*
+COutputStreamSerializer::FindObjectRef(void* inst, creg::Class* objClass, bool isEmbedded)
 {
 	std::vector<ObjectRef*>& refs = ptrToId[inst];
 	for (auto& obj: refs) {
@@ -157,8 +142,7 @@ void COutputStreamSerializer::SerializeObject(Class* c, void* ptr, ObjectRef* ob
 	omg.membersClass = c;
 	omg.size = 0;
 
-	for (uint a = 0; a < c->members.size(); a++)
-	{
+	for (uint a = 0; a < c->members.size(); a++) {
 		creg::Class::Member* m = &c->members[a];
 		if (m->flags & CM_NoSerialize)
 			continue;
@@ -168,13 +152,15 @@ void COutputStreamSerializer::SerializeObject(Class* c, void* ptr, ObjectRef* ob
 		om.memberId = a;
 		void* memberAddr = ((char*)ptr) + m->offset;
 		unsigned mstart = stream->tellp();
-		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Serialized %s::%s type:%s", c->name, m->name, m->type->GetName().c_str());
+		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Serialized %s::%s type:%s", c->name, m->name,
+		    m->type->GetName().c_str());
 		m->type->Serialize(this, memberAddr);
 		unsigned mend = stream->tellp();
 		om.size = mend - mstart;
 		omg.members.push_back(om);
 		omg.size += om.size;
-		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Serialized %s::%s type:%s size:%d", c->name, m->name, m->type->GetName().c_str(), om.size);
+		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Serialized %s::%s type:%s size:%d", c->name, m->name,
+		    m->type->GetName().c_str(), om.size);
 	}
 
 
@@ -206,13 +192,16 @@ void COutputStreamSerializer::SerializeObjectInstance(void* inst, creg::Class* o
 		objects.emplace_back(inst, objects.size(), true, objClass);
 		obj = &objects.back();
 		ptrToId[inst].push_back(obj);
-	} else if (obj->isEmbedded) {
+	}
+	else if (obj->isEmbedded) {
 		throw std::string("Reserialization of embedded object (") + objClass->name + ")";
-	} else {
+	}
+	else {
 		std::vector<ObjectRef*>::iterator it = std::find(pendingObjects.begin(), pendingObjects.end(), obj);
 		if (it == pendingObjects.end()) {
 			throw std::string("Object pointer was serialized (") + objClass->name + ")";
-		} else {
+		}
+		else {
 			pendingObjects.erase(it);
 		}
 	}
@@ -241,16 +230,14 @@ void COutputStreamSerializer::SerializeObjectPtr(void** ptr, creg::Class* objCla
 		id = obj->id;
 
 		WriteVarSizeUInt(stream, id);
-	} else {
+	}
+	else {
 		// null pointer, write a zero
 		WriteVarSizeUInt(stream, 0);
 	}
 }
 
-void COutputStreamSerializer::Serialize(void* data, int byteSize)
-{
-	stream->write((char*)data, byteSize);
-}
+void COutputStreamSerializer::Serialize(void* data, int byteSize) { stream->write((char*)data, byteSize); }
 
 void COutputStreamSerializer::SerializeInt(void* data, int byteSize)
 {
@@ -259,20 +246,30 @@ void COutputStreamSerializer::SerializeInt(void* data, int byteSize)
 	// to make savegames compatible between those we need to so
 	std::uint64_t x = 0;
 	switch (byteSize) {
-		case 1: { x = *(std::uint8_t* )data; break; }
-		case 2: { x = *(std::uint16_t*)data; break; }
-		case 4: { x = *(std::uint32_t*)data; break; }
-		case 8: { x = *(std::uint64_t*)data; break; }
-		default: {
-			throw "Unknown int type";
-		}
+	case 1: {
+		x = *(std::uint8_t*)data;
+		break;
+	}
+	case 2: {
+		x = *(std::uint16_t*)data;
+		break;
+	}
+	case 4: {
+		x = *(std::uint32_t*)data;
+		break;
+	}
+	case 8: {
+		x = *(std::uint64_t*)data;
+		break;
+	}
+	default: {
+		throw "Unknown int type";
+	}
 	}
 	WriteVarSizeUInt(stream, x);
 }
 
-
-struct COutputStreamSerializer::ClassRef
-{
+struct COutputStreamSerializer::ClassRef {
 	int index;
 	creg::Class* class_;
 };
@@ -299,14 +296,13 @@ void COutputStreamSerializer::SavePackage(std::ostream* s, void* rootObj, Class*
 	pendingObjects.push_back(obj);
 
 	// Save until all the referenced objects have been stored
-	while (!pendingObjects.empty())
-	{
+	while (!pendingObjects.empty()) {
 		const std::vector<ObjectRef*> po = pendingObjects;
 		pendingObjects.clear();
 
 		for (ObjectRef* obj: po) {
 			SerializeObject(obj->class_, obj->ptr, obj);
-			//LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Serialized %s size:%i", obj->class_->name.c_str(), sz);
+			// LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Serialized %s size:%i", obj->class_->name.c_str(), sz);
 		}
 	}
 
@@ -335,11 +331,8 @@ void COutputStreamSerializer::SavePackage(std::ostream* s, void* rootObj, Class*
 
 
 	if (LOG_IS_ENABLED(L_DEBUG)) {
-		for (auto &it: classSizes) {
-			LOG_L(L_DEBUG, "%30s %10u %10u",
-					it.first->name,
-					classCounts[it.first],
-					it.second);
+		for (auto& it: classSizes) {
+			LOG_L(L_DEBUG, "%30s %10u %10u", it.first->name, classCounts[it.first], it.second);
 			it.second = 0;
 			classCounts[it.first] = 0;
 		}
@@ -394,8 +387,8 @@ void COutputStreamSerializer::SavePackage(std::ostream* s, void* rootObj, Class*
 	stream->write((const char*)&ph, sizeof(PackageHeader));
 
 	LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG,
-			"Checksum: %X\nNumber of objects saved: %i\nNumber of classes involved: %i",
-			ph.metadataChecksum, int(objects.size()), int(classRefs.size()));
+	    "Checksum: %X\nNumber of objects saved: %i\nNumber of classes involved: %i", ph.metadataChecksum,
+	    int(objects.size()), int(classRefs.size()));
 
 	stream->seekp(endOffset);
 	ptrToId.clear();
@@ -409,7 +402,7 @@ void COutputStreamSerializer::SavePackage(std::ostream* s, void* rootObj, Class*
 //-------------------------------------------------------------------------
 
 CInputStreamSerializer::CInputStreamSerializer()
-	: stream(nullptr)
+    : stream(nullptr)
 {
 }
 
@@ -422,18 +415,14 @@ CInputStreamSerializer::~CInputStreamSerializer()
 	}
 }
 
-bool CInputStreamSerializer::IsWriting()
-{
-	return false;
-}
+bool CInputStreamSerializer::IsWriting() { return false; }
 
 void CInputStreamSerializer::SerializeObject(Class* c, void* ptr)
 {
 	if (c->base())
 		SerializeObject(c->base(), ptr);
 
-	for (uint a = 0; a < c->members.size(); a++)
-	{
+	for (uint a = 0; a < c->members.size(); a++) {
 		creg::Class::Member* m = &c->members[a];
 		if (m->flags & CM_NoSerialize)
 			continue;
@@ -441,7 +430,8 @@ void CInputStreamSerializer::SerializeObject(Class* c, void* ptr)
 		const unsigned oldPos = stream->tellg();
 		void* memberAddr = ((char*)ptr) + m->offset;
 		m->type->Serialize(this, memberAddr);
-		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Deserialized %s::%s type:%s size:%u", c->name, m->name, m->type->GetName().c_str(), unsigned(stream->tellg()) - oldPos);
+		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Deserialized %s::%s type:%s size:%u", c->name, m->name,
+		    m->type->GetName().c_str(), unsigned(stream->tellg()) - oldPos);
 	}
 
 	if (c->HasSerialize()) {
@@ -449,10 +439,7 @@ void CInputStreamSerializer::SerializeObject(Class* c, void* ptr)
 	}
 }
 
-void CInputStreamSerializer::Serialize(void* data, int byteSize)
-{
-	stream->read((char*)data, byteSize);
-}
+void CInputStreamSerializer::Serialize(void* data, int byteSize) { stream->read((char*)data, byteSize); }
 
 void CInputStreamSerializer::SerializeInt(void* data, int byteSize)
 {
@@ -462,13 +449,25 @@ void CInputStreamSerializer::SerializeInt(void* data, int byteSize)
 	std::uint64_t x = 0;
 	ReadVarSizeUInt(stream, &x);
 	switch (byteSize) {
-		case 1: { *(std::uint8_t* )data = x; break; }
-		case 2: { *(std::uint16_t*)data = x; break; }
-		case 4: { *(std::uint32_t*)data = x; break; }
-		case 8: { *(std::uint64_t*)data = x; break; }
-		default: {
-			throw "Unknown int type";
-		}
+	case 1: {
+		*(std::uint8_t*)data = x;
+		break;
+	}
+	case 2: {
+		*(std::uint16_t*)data = x;
+		break;
+	}
+	case 4: {
+		*(std::uint32_t*)data = x;
+		break;
+	}
+	case 8: {
+		*(std::uint64_t*)data = x;
+		break;
+	}
+	default: {
+		throw "Unknown int type";
+	}
 	}
 }
 
@@ -477,17 +476,19 @@ void CInputStreamSerializer::SerializeObjectPtr(void** ptr, creg::Class* cls)
 	unsigned int id;
 	ReadVarSizeUInt(stream, &id);
 	if (id) {
-		StoredObject& o = objects [id];
-		if (o.obj) *ptr = o.obj;
+		StoredObject& o = objects[id];
+		if (o.obj)
+			*ptr = o.obj;
 		else {
 			// The object is not yet available, so it needs fixing afterwards
-			*ptr = (void*) 1;
+			*ptr = (void*)1;
 			UnfixedPtr ufp;
 			ufp.objID = id;
 			ufp.ptrAddr = ptr;
 			unfixedPointers.push_back(ufp);
 		}
-	} else {
+	}
+	else {
 		*ptr = nullptr;
 	}
 }
@@ -555,8 +556,7 @@ void CInputStreamSerializer::LoadPackage(std::istream* s, void*& root, creg::Cla
 		// Calculate metadata checksum and compare with stored checksum
 		unsigned int checksum = 0;
 
-		for (const auto& classRef: classRefs)
-			classRef->CalculateChecksum(checksum);
+		for (const auto& classRef: classRefs) classRef->CalculateChecksum(checksum);
 
 		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Checksum: %X (savegame: %X)\n", checksum, ph.metadataChecksum);
 
@@ -573,7 +573,8 @@ void CInputStreamSerializer::LoadPackage(std::istream* s, void*& root, creg::Cla
 		int contID;
 		size_t offset;
 	};
-	std::map<int, PreallocObj> preallocObjs;  // objID -> PreallocObj
+
+	std::map<int, PreallocObj> preallocObjs; // objID -> PreallocObj
 
 	for (int a = 0; a < ph.numObjects; a++) {
 		unsigned int classRefIndex;
@@ -598,7 +599,8 @@ void CInputStreamSerializer::LoadPackage(std::istream* s, void*& root, creg::Cla
 				ReadVarSizeUInt(stream, &po.offset);
 				// Postpone objects with placement-new
 				preallocObjs[a] = po;
-			} else {
+			}
+			else {
 				// Allocate and construct
 				objects[a].obj = c->CreateInstance(size);
 			}
@@ -608,14 +610,14 @@ void CInputStreamSerializer::LoadPackage(std::istream* s, void*& root, creg::Cla
 		objects[a].classRef = classRefIndex;
 	}
 
-	size_t numPreallocs = 0;  // in case of nested preallocation containers
+	size_t numPreallocs = 0; // in case of nested preallocation containers
 	while (numPreallocs != preallocObjs.size()) {
 		numPreallocs = preallocObjs.size();
 		const auto pro = preallocObjs;
-		for (const auto& kv : pro) {
+		for (const auto& kv: pro) {
 			const PreallocObj& po = kv.second;
 			void* container = objects[po.contID].obj;
-			if (container == nullptr)  // parent container wasn't created yet
+			if (container == nullptr) // parent container wasn't created yet
 				continue;
 			StoredObject& so = objects[kv.first];
 			Class* c = classRefs[so.classRef];
@@ -663,8 +665,8 @@ void CInputStreamSerializer::LoadPackage(std::istream* s, void*& root, creg::Cla
 	rootCls = classRefs[objects[1].classRef];
 
 	LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG,
-			"SaveGame loaded.\nNumber of objects loaded: %i\nNumber of classes involved: %i\n",
-			int(objects.size()), int(classRefs.size()));
+	    "SaveGame loaded.\nNumber of objects loaded: %i\nNumber of classes involved: %i\n", int(objects.size()),
+	    int(classRefs.size()));
 
 	s->seekg(endOffset);
 

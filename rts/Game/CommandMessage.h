@@ -3,18 +3,17 @@
 #ifndef COMMAND_MESSAGE_H
 #define COMMAND_MESSAGE_H
 
-#include <string>
-#include <memory>
-
 #include "Action.h"
 
+#include <memory>
+#include <string>
+
 namespace netcode {
-	class RawPacket;
+class RawPacket;
 }
 
 /// send console commands over network
-class CommandMessage
-{
+class CommandMessage {
 public:
 	CommandMessage(const std::string& cmd, int playerID);
 	CommandMessage(const Action& action, int playerID);
@@ -23,6 +22,7 @@ public:
 	const netcode::RawPacket* Pack() const;
 
 	const Action& GetAction() const { return action; }
+
 	int GetPlayerID() const { return playerID; }
 
 private:
@@ -31,4 +31,3 @@ private:
 };
 
 #endif // COMMAND_MESSAGE_H
-

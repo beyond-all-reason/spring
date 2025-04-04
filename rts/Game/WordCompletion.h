@@ -6,8 +6,7 @@
 #include <string>
 #include <vector>
 
-class CWordCompletion
-{
+class CWordCompletion {
 public:
 	void Init();
 	void Sort();
@@ -22,21 +21,24 @@ public:
 
 private:
 	class WordProperties {
-		public:
-			WordProperties()
-				: startOfLine(false)
-				, unitName(false)
-				, miniMap(false)
-			{}
-			WordProperties(bool startOfLine, bool unitName, bool miniMap)
-				: startOfLine(startOfLine)
-				, unitName(unitName)
-				, miniMap(miniMap)
-			{}
+	public:
+		WordProperties()
+		    : startOfLine(false)
+		    , unitName(false)
+		    , miniMap(false)
+		{
+		}
 
-			bool startOfLine;
-			bool unitName;
-			bool miniMap;
+		WordProperties(bool startOfLine, bool unitName, bool miniMap)
+		    : startOfLine(startOfLine)
+		    , unitName(unitName)
+		    , miniMap(miniMap)
+		{
+		}
+
+		bool startOfLine;
+		bool unitName;
+		bool miniMap;
 	};
 
 	typedef std::pair<std::string, WordProperties> WordEntry;

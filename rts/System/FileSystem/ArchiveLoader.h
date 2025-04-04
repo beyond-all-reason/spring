@@ -3,10 +3,10 @@
 #ifndef _ARCHIVE_LOADER_H
 #define _ARCHIVE_LOADER_H
 
+#include "Archives/ArchiveTypes.h"
+
 #include <array>
 #include <string>
-
-#include "Archives/ArchiveTypes.h"
 
 class IArchive;
 class IArchiveFactory;
@@ -16,8 +16,7 @@ class IArchiveFactory;
  * This loader is responsible for offering access to different archive types,
  * without the rest of the engine having to know anything about those types.
  */
-class CArchiveLoader
-{
+class CArchiveLoader {
 	CArchiveLoader();
 
 public:
@@ -31,7 +30,7 @@ public:
 
 private:
 	/// maps the default-extension to the corresponding archive factory
-	std::array< std::pair<std::string, IArchiveFactory*>, ARCHIVE_TYPE_CNT> archiveFactories;
+	std::array<std::pair<std::string, IArchiveFactory*>, ARCHIVE_TYPE_CNT> archiveFactories;
 };
 
 #define archiveLoader CArchiveLoader::GetInstance()

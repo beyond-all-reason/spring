@@ -4,20 +4,20 @@
 #define _METAL_TEXTURE_H
 
 #include "PboInfoTexture.h"
+
 #include "System/EventHandler.h"
 
-
-class CMetalTexture : public CPboInfoTexture, public CEventClient
-{
+class CMetalTexture : public CPboInfoTexture, public CEventClient {
 public:
 	CMetalTexture();
+
 public:
 	// CEventClient interface
-	bool WantsEvent(const std::string& eventName) override {
-		return (eventName == "MetalMapChanged");
-	}
+	bool WantsEvent(const std::string& eventName) override { return (eventName == "MetalMapChanged"); }
+
 	bool GetFullRead() const override { return true; }
-	int  GetReadAllyTeam() const override { return AllAccessTeam; }
+
+	int GetReadAllyTeam() const override { return AllAccessTeam; }
 
 	void MetalMapChanged(const int x, const int z) override;
 

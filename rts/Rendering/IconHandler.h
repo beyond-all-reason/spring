@@ -3,158 +3,172 @@
 #ifndef ICON_HANDLER_H
 #define ICON_HANDLER_H
 
+#include "Icon.h"
+
+#include "Rendering/GL/RenderBuffersFwd.h"
+#include "System/UnorderedMap.hpp"
+#include "System/float3.h"
+
 #include <array>
 #include <string>
 
-#include "Icon.h"
-#include "System/float3.h"
-#include "System/UnorderedMap.hpp"
-#include "Rendering/GL/RenderBuffersFwd.h"
-
 namespace icon {
-	class CIconData {
-		public:
-			CIconData() = default;
-			CIconData(CIconData&& id) { *this = std::move(id); }
-			CIconData(
-				const std::string& name,
-				unsigned int texID,
-				float size,
-				float distance,
-				bool radiusAdjust,
-				bool ownTexture,
-				unsigned int xsize,
-				unsigned int ysize
-			);
-			~CIconData();
+class CIconData {
+public:
+	CIconData() = default;
 
-			CIconData& operator = (CIconData&& id) {
-				std::swap(name, id.name);
+	CIconData(CIconData&& id) { *this = std::move(id); }
 
-				std::swap(refCount, id.refCount);
-				std::swap(texID, id.texID);
+	CIconData(const std::string& name,
+	    unsigned int texID,
+	    float size,
+	    float distance,
+	    bool radiusAdjust,
+	    bool ownTexture,
+	    unsigned int xsize,
+	    unsigned int ysize);
+	~CIconData();
 
-				xsize = id.xsize;
-				ysize = id.ysize;
+	CIconData& operator=(CIconData&& id)
+	{
+		std::swap(name, id.name);
 
-				size = id.size;
-				distance = id.distance;
-				distSqr = id.distSqr;
+		std::swap(refCount, id.refCount);
+		std::swap(texID, id.texID);
 
-				std::swap(ownTexture, id.ownTexture);
+		xsize = id.xsize;
+		ysize = id.ysize;
 
-				radiusAdjust = id.radiusAdjust;
-				return *this;
-			}
+		size = id.size;
+		distance = id.distance;
+		distSqr = id.distSqr;
 
-			void Ref() { refCount++; }
-			void UnRef() {
-				if ((--refCount) > 0)
-					return;
+		std::swap(ownTexture, id.ownTexture);
 
-				// trigger texture deletion
-				*this = {};
-			}
+		radiusAdjust = id.radiusAdjust;
+		return *this;
+	}
 
-			void CopyData(const CIconData* iconData);
-			void SwapOwner(CIconData* iconData) {
-				ownTexture = true;
-				iconData->ownTexture = false;
-			}
+	void Ref() { refCount++; }
 
-			void BindTexture() const;
-			void Draw(float x0, float y0, float x1, float y1) const;
+	void UnRef()
+	{
+		if ((--refCount) > 0)
+			return;
 
-			const std::string& GetName()   const { return name;         }
+		// trigger texture deletion
+		*this = {};
+	}
 
-			unsigned int GetTextureID()    const { return texID;        }
-			int          GetSizeX()        const { return xsize;        }
-			int          GetSizeY()        const { return ysize;        }
+	void CopyData(const CIconData* iconData);
 
-			float        GetSize()         const { return size;         }
-			float        GetDistance()     const { return distance;     }
-			float        GetDistanceSqr()  const { return distSqr;      }
-			float        GetRadiusScale()  const { return 30.0f;        }
+	void SwapOwner(CIconData* iconData)
+	{
+		ownTexture = true;
+		iconData->ownTexture = false;
+	}
 
-			bool         GetRadiusAdjust() const { return radiusAdjust; }
+	void BindTexture() const;
+	void Draw(float x0, float y0, float x1, float y1) const;
 
-		private:
-			std::string name;
+	const std::string& GetName() const { return name; }
 
-			int refCount = 123456;
-			unsigned int texID = 0;
-			int xsize = 1;
-			int ysize = 1;
+	unsigned int GetTextureID() const { return texID; }
 
-			float size = 1.0f;
-			float distance = 1.0f;
-			float distSqr = 1.0f;
+	int GetSizeX() const { return xsize; }
 
-			bool ownTexture = false;
-			bool radiusAdjust = false;
-	};
+	int GetSizeY() const { return ysize; }
 
+	float GetSize() const { return size; }
 
-	class CIconHandler {
-		friend class CIcon;
+	float GetDistance() const { return distance; }
 
-		public:
-			CIconHandler() = default;
-			CIconHandler(const CIconHandler&) = delete; // no-copy
+	float GetDistanceSqr() const { return distSqr; }
 
-			void Init() { LoadIcons("gamedata/icontypes.lua"); }
-			void Kill();
+	float GetRadiusScale() const { return 30.0f; }
 
-			bool AddIcon(
-				const std::string& iconName,
-				const std::string& texName,
-				float size,
-				float distance,
-				bool radiusAdjust
-			);
+	bool GetRadiusAdjust() const { return radiusAdjust; }
 
-			bool FreeIcon(const std::string& iconName);
+private:
+	std::string name;
 
-			CIcon GetIcon(const std::string& iconName) const;
-			CIcon GetSafetyIcon() const { return CIcon(SAFETY_DATA_IDX); }
-			CIcon GetDefaultIcon() const { return CIcon(DEFAULT_DATA_IDX); }
+	int refCount = 123456;
+	unsigned int texID = 0;
+	int xsize = 1;
+	int ysize = 1;
 
-			static const CIconData* GetSafetyIconData();
-			static const CIconData* GetDefaultIconData();
+	float size = 1.0f;
+	float distance = 1.0f;
+	float distSqr = 1.0f;
 
-		private:
-			CIconData* GetIconDataMut(unsigned int idx) { return (const_cast<CIconData*>(GetIconData(idx))); }
+	bool ownTexture = false;
+	bool radiusAdjust = false;
+};
 
-			const CIconData* GetIconData(unsigned int idx) const {
-				switch (idx) {
-					case  SAFETY_DATA_IDX: { return (GetSafetyIconData());  } break;
-					case DEFAULT_DATA_IDX: { return (GetDefaultIconData()); } break;
-					default              : {                                } break;
-				}
+class CIconHandler {
+	friend class CIcon;
 
-				return &iconData[idx - ICON_DATA_OFFSET];
-			}
+public:
+	CIconHandler() = default;
+	CIconHandler(const CIconHandler&) = delete; // no-copy
 
-			bool LoadIcons(const std::string& filename);
-			unsigned int GetDefaultTexture();
+	void Init() { LoadIcons("gamedata/icontypes.lua"); }
 
-		public:
-			static constexpr unsigned int  SAFETY_DATA_IDX = 0;
-			static constexpr unsigned int DEFAULT_DATA_IDX = 1;
-			static constexpr unsigned int ICON_DATA_OFFSET = 2;
+	void Kill();
 
-			static constexpr unsigned int DEFAULT_TEX_SIZE_X = 128;
-			static constexpr unsigned int DEFAULT_TEX_SIZE_Y = 128;
+	bool
+	AddIcon(const std::string& iconName, const std::string& texName, float size, float distance, bool radiusAdjust);
 
-		private:
-			unsigned int defTexID = 0;
-			unsigned int numIcons = 0;
+	bool FreeIcon(const std::string& iconName);
 
-			spring::unordered_map<std::string, CIcon> iconMap;
-			std::array<CIconData, 2048> iconData;
-	};
+	CIcon GetIcon(const std::string& iconName) const;
 
-	extern CIconHandler iconHandler;
-}
+	CIcon GetSafetyIcon() const { return CIcon(SAFETY_DATA_IDX); }
+
+	CIcon GetDefaultIcon() const { return CIcon(DEFAULT_DATA_IDX); }
+
+	static const CIconData* GetSafetyIconData();
+	static const CIconData* GetDefaultIconData();
+
+private:
+	CIconData* GetIconDataMut(unsigned int idx) { return (const_cast<CIconData*>(GetIconData(idx))); }
+
+	const CIconData* GetIconData(unsigned int idx) const
+	{
+		switch (idx) {
+		case SAFETY_DATA_IDX: {
+			return (GetSafetyIconData());
+		} break;
+		case DEFAULT_DATA_IDX: {
+			return (GetDefaultIconData());
+		} break;
+		default: {
+		} break;
+		}
+
+		return &iconData[idx - ICON_DATA_OFFSET];
+	}
+
+	bool LoadIcons(const std::string& filename);
+	unsigned int GetDefaultTexture();
+
+public:
+	static constexpr unsigned int SAFETY_DATA_IDX = 0;
+	static constexpr unsigned int DEFAULT_DATA_IDX = 1;
+	static constexpr unsigned int ICON_DATA_OFFSET = 2;
+
+	static constexpr unsigned int DEFAULT_TEX_SIZE_X = 128;
+	static constexpr unsigned int DEFAULT_TEX_SIZE_Y = 128;
+
+private:
+	unsigned int defTexID = 0;
+	unsigned int numIcons = 0;
+
+	spring::unordered_map<std::string, CIcon> iconMap;
+	std::array<CIconData, 2048> iconData;
+};
+
+extern CIconHandler iconHandler;
+} // namespace icon
 
 #endif // ICON_HANDLER_H

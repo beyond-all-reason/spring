@@ -12,78 +12,88 @@
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 using namespace MoveTypes;
 
 CR_BIND_DERIVED_INTERFACE(AAirMoveType, AMoveType)
 
-CR_REG_METADATA(AAirMoveType, (
-	CR_MEMBER(aircraftState),
-	CR_MEMBER(collisionState),
+CR_REG_METADATA(AAirMoveType,
+    (CR_MEMBER(aircraftState),
+        CR_MEMBER(collisionState),
 
-	CR_MEMBER(oldGoalPos),
-	CR_MEMBER(reservedLandingPos),
+        CR_MEMBER(oldGoalPos),
+        CR_MEMBER(reservedLandingPos),
 
-	CR_MEMBER(landRadiusSq),
-	CR_MEMBER(wantedHeight),
-	CR_MEMBER(orgWantedHeight),
+        CR_MEMBER(landRadiusSq),
+        CR_MEMBER(wantedHeight),
+        CR_MEMBER(orgWantedHeight),
 
-	CR_MEMBER(accRate),
-	CR_MEMBER(decRate),
-	CR_MEMBER(altitudeRate),
+        CR_MEMBER(accRate),
+        CR_MEMBER(decRate),
+        CR_MEMBER(altitudeRate),
 
-	CR_MEMBER(collide),
-	CR_MEMBER(autoLand),
-	CR_MEMBER(dontLand),
-	CR_MEMBER(useSmoothMesh),
-	CR_MEMBER(canSubmerge),
-	CR_MEMBER(floatOnWater),
+        CR_MEMBER(collide),
+        CR_MEMBER(autoLand),
+        CR_MEMBER(dontLand),
+        CR_MEMBER(useSmoothMesh),
+        CR_MEMBER(canSubmerge),
+        CR_MEMBER(floatOnWater),
 
-	CR_MEMBER(lastCollidee),
+        CR_MEMBER(lastCollidee),
 
-	CR_MEMBER(crashExpGenID)
-))
-
-
+        CR_MEMBER(crashExpGenID)))
 
 static inline float AAMTGetGroundHeightAW(float x, float z) { return CGround::GetHeightAboveWater(x, z); }
-static inline float AAMTGetGroundHeight  (float x, float z) { return CGround::GetHeightReal      (x, z); }
-static inline float AAMTGetSmoothGroundHeightAW(float x, float z) { return smoothGround.GetHeightAboveWater(x, z); }
-static inline float AAMTGetSmoothGroundHeight  (float x, float z) { return smoothGround.GetHeight          (x, z); }
-static inline float HAMTGetMaxGroundHeight(float x, float z) { return std::max(smoothGround.GetHeight(x, z), CGround::GetApproximateHeight(x, z)); }
-static inline float SAMTGetMaxGroundHeight(float x, float z) { return std::max(smoothGround.GetHeight(x, z), CGround::GetHeightAboveWater(x, z)); }
 
-static inline void AAMTEmitEngineTrail(CUnit* owner, unsigned int) {
-	projMemPool.alloc<CSmokeProjectile>(owner, owner->midPos, guRNG.NextVector() * 0.08f, (100.0f + guRNG.NextFloat() * 50.0f), 5.0f, 0.2f, 0.4f);
+static inline float AAMTGetGroundHeight(float x, float z) { return CGround::GetHeightReal(x, z); }
+
+static inline float AAMTGetSmoothGroundHeightAW(float x, float z) { return smoothGround.GetHeightAboveWater(x, z); }
+
+static inline float AAMTGetSmoothGroundHeight(float x, float z) { return smoothGround.GetHeight(x, z); }
+
+static inline float HAMTGetMaxGroundHeight(float x, float z)
+{
+	return std::max(smoothGround.GetHeight(x, z), CGround::GetApproximateHeight(x, z));
 }
-static inline void AAMTEmitCustomTrail(CUnit* owner, unsigned int id) {
+
+static inline float SAMTGetMaxGroundHeight(float x, float z)
+{
+	return std::max(smoothGround.GetHeight(x, z), CGround::GetHeightAboveWater(x, z));
+}
+
+static inline void AAMTEmitEngineTrail(CUnit* owner, unsigned int)
+{
+	projMemPool.alloc<CSmokeProjectile>(
+	    owner, owner->midPos, guRNG.NextVector() * 0.08f, (100.0f + guRNG.NextFloat() * 50.0f), 5.0f, 0.2f, 0.4f);
+}
+
+static inline void AAMTEmitCustomTrail(CUnit* owner, unsigned int id)
+{
 	explGenHandler.GenExplosion(id, owner->midPos, owner->frontdir, 1.0f, 0.0f, 1.0f, owner, nullptr);
 }
 
-
 AAirMoveType::GetGroundHeightFunc amtGetGroundHeightFuncs[6] = {
-	AAMTGetGroundHeightAW,       // canSubmerge=0 useSmoothMesh=0
-	AAMTGetGroundHeight  ,       // canSubmerge=1 useSmoothMesh=0
-	AAMTGetSmoothGroundHeightAW, // canSubmerge=0 useSmoothMesh=1
-	AAMTGetSmoothGroundHeightAW, // canSubmerge=1 useSmoothMesh=1 : needs AW version to solve Seaplanes/SmoothHeightMesh bug - ref: https://github.com/beyond-all-reason/Beyond-All-Reason/issues/495
-	HAMTGetMaxGroundHeight,      // HoverAirMoveType::UpdateFlying
-	SAMTGetMaxGroundHeight,      // StrafeAirMoveType::UpdateFlying
+    AAMTGetGroundHeightAW,       // canSubmerge=0 useSmoothMesh=0
+    AAMTGetGroundHeight,         // canSubmerge=1 useSmoothMesh=0
+    AAMTGetSmoothGroundHeightAW, // canSubmerge=0 useSmoothMesh=1
+    AAMTGetSmoothGroundHeightAW, // canSubmerge=1 useSmoothMesh=1 : needs AW version to solve Seaplanes/SmoothHeightMesh
+                                 // bug - ref: https://github.com/beyond-all-reason/Beyond-All-Reason/issues/495
+    HAMTGetMaxGroundHeight,      // HoverAirMoveType::UpdateFlying
+    SAMTGetMaxGroundHeight,      // StrafeAirMoveType::UpdateFlying
 };
 
 AAirMoveType::EmitCrashTrailFunc amtEmitCrashTrailFuncs[2] = {
-	AAMTEmitEngineTrail,
-	AAMTEmitCustomTrail,
+    AAMTEmitEngineTrail,
+    AAMTEmitCustomTrail,
 };
 
-
-
-AAirMoveType::AAirMoveType(CUnit* unit): AMoveType(unit)
+AAirMoveType::AAirMoveType(CUnit* unit)
+    : AMoveType(unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// creg
@@ -116,24 +126,26 @@ AAirMoveType::AAirMoveType(CUnit* unit): AMoveType(unit)
 	Sim::registry.emplace_or_replace<GeneralMoveType>(owner->entityReference, owner->id);
 }
 
-
-bool AAirMoveType::UseSmoothMesh() const {
+bool AAirMoveType::UseSmoothMesh() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!useSmoothMesh)
 		return false;
 
 	const CCommandAI* cai = owner->commandAI;
 	const CCommandQueue& cq = cai->commandQue;
-	const Command& fc = (cq.empty())? Command(CMD_STOP): cq.front();
+	const Command& fc = (cq.empty()) ? Command(CMD_STOP) : cq.front();
 
 	const bool closeGoalPos = (goalPos.SqDistance2D(owner->pos) < Square(landRadiusSq * 2.0f));
 	const bool transportCmd = ((fc.GetID() == CMD_LOAD_UNITS) || (fc.GetID() == CMD_UNLOAD_UNIT));
-	const bool forceDisable = ((transportCmd && closeGoalPos) || (aircraftState != AIRCRAFT_FLYING && aircraftState != AIRCRAFT_HOVERING));
+	const bool forceDisable =
+	    ((transportCmd && closeGoalPos) || (aircraftState != AIRCRAFT_FLYING && aircraftState != AIRCRAFT_HOVERING));
 
 	return !forceDisable;
 }
 
-void AAirMoveType::DependentDied(CObject* o) {
+void AAirMoveType::DependentDied(CObject* o)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == lastCollidee) {
 		lastCollidee = nullptr;
@@ -141,7 +153,8 @@ void AAirMoveType::DependentDied(CObject* o) {
 	}
 }
 
-bool AAirMoveType::Update() {
+bool AAirMoveType::Update()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE: useHeading is never true by default for aircraft (AAirMoveType
 	// forces it to false, while only CUnit::{Attach,Detach}Unit manipulate
@@ -174,10 +187,12 @@ void AAirMoveType::UpdateLanded()
 	if (curHeight > minHeight) {
 		if (curHeight > 0.0f) {
 			owner->speed.y += mapInfo->map.gravity;
-		} else {
+		}
+		else {
 			owner->speed.y = mapInfo->map.gravity;
 		}
-	} else {
+	}
+	else {
 		owner->speed.y = 0.0f;
 	}
 
@@ -205,17 +220,17 @@ void AAirMoveType::LandAt(float3 pos, float distanceSq)
 	owner->Block();
 	owner->Move(originalPos, false);
 
-	wantedHeight = reservedLandingPos.y - amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](reservedLandingPos.x, reservedLandingPos.z);
+	wantedHeight = reservedLandingPos.y -
+	               amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](reservedLandingPos.x, reservedLandingPos.z);
 }
-
 
 void AAirMoveType::UpdateLandingHeight(float newWantedHeight)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	wantedHeight = newWantedHeight;
-	reservedLandingPos.y = wantedHeight + amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](reservedLandingPos.x, reservedLandingPos.z);
+	reservedLandingPos.y =
+	    wantedHeight + amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](reservedLandingPos.x, reservedLandingPos.z);
 }
-
 
 void AAirMoveType::UpdateLanding()
 {
@@ -227,14 +242,14 @@ void AAirMoveType::UpdateLanding()
 	const float distSq = reservedLandingPos.SqDistance(pos);
 
 
-	const float localAltitude = pos.y - amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](owner->pos.x, owner->pos.z);
+	const float localAltitude =
+	    pos.y - amtGetGroundHeightFuncs[owner->unitDef->canSubmerge](owner->pos.x, owner->pos.z);
 
 	if (distSq <= radiusSq || (distSq < landRadiusSq && localAltitude < wantedHeight + radius)) {
 		SetState(AIRCRAFT_LANDED);
 		owner->SetVelocityAndSpeed(UpVector * owner->speed);
 	}
 }
-
 
 void AAirMoveType::CheckForCollision()
 {

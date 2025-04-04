@@ -12,12 +12,11 @@
 #define ASIO_EXPERIMENTAL_CO_COMPOSED_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio/detail/config.hpp"
 #include "asio/async_result.hpp"
-
+#include "asio/detail/config.hpp"
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
@@ -130,16 +129,13 @@ namespace experimental {
  *       token, std::ref(socket));
  * } @endcode
  */
-template <completion_signature... Signatures,
-    typename Implementation, typename... IoObjectsOrExecutors>
-auto co_composed(Implementation&& implementation,
-    IoObjectsOrExecutors&&... io_objects_or_executors);
+template<completion_signature... Signatures, typename Implementation, typename... IoObjectsOrExecutors>
+auto co_composed(Implementation&& implementation, IoObjectsOrExecutors&&... io_objects_or_executors);
 
 } // namespace experimental
 } // namespace asio
 
 #include "asio/detail/pop_options.hpp"
-
 #include "asio/experimental/impl/co_composed.hpp"
 
 #endif // ASIO_EXPERIMENTAL_CO_COMPOSED_HPP

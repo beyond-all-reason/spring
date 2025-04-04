@@ -7,11 +7,10 @@
 #include <string>
 
 namespace netcode {
-	class RawPacket;
+class RawPacket;
 }
 
-class ChatMessage
-{
+class ChatMessage {
 public:
 	ChatMessage(int from, int dest, const std::string& chat);
 	ChatMessage(std::shared_ptr<const netcode::RawPacket> packet);
@@ -20,9 +19,9 @@ public:
 
 	static constexpr size_t MAX_MSG_SIZE = UINT8_MAX / 2;
 
-	static constexpr int TO_ALLIES     = 252;
+	static constexpr int TO_ALLIES = 252;
 	static constexpr int TO_SPECTATORS = 253;
-	static constexpr int TO_EVERYONE   = 254;
+	static constexpr int TO_EVERYONE = 254;
 
 	int fromPlayer = -1;
 	/// can be TO_ALLIES, TO_SPECTATORS, TO_EVERYONE, or a player number

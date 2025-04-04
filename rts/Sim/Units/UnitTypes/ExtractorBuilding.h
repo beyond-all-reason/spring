@@ -3,19 +3,22 @@
 #ifndef _EXTRACTOR_BUILDING_H
 #define _EXTRACTOR_BUILDING_H
 
-#include <vector>
-
 #include "Building.h"
+
+#include <vector>
 
 class CExtractorBuilding : public CBuilding {
 public:
 	CR_DECLARE_DERIVED(CExtractorBuilding)
 	CR_DECLARE_SUB(MetalSquareOfControl)
 
-	CExtractorBuilding(): CBuilding() {
+	CExtractorBuilding()
+	    : CBuilding()
+	{
 		extractionRange = 0.0f;
 		extractionDepth = 0.0f;
 	}
+
 	~CExtractorBuilding();
 
 	void PreInit(const UnitLoadParams& params) override;
@@ -28,6 +31,7 @@ public:
 	void RemoveNeighbour(CExtractorBuilding* neighbour);
 
 	float GetExtractionRange() const { return extractionRange; }
+
 	float GetExtractionDepth() const { return extractionDepth; }
 
 	void Activate() override;

@@ -2,25 +2,26 @@
 
 #include "Screenshot.h"
 
-#include <vector>
-
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/StringUtil.h"
 #include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
-#include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileHandler.h"
+#include "System/FileSystem/FileSystem.h"
+#include "System/Log/ILog.h"
+#include "System/StringUtil.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeUtil.h"
 
+#include <vector>
+
 #undef CreateDirectory
 
-CONFIG(int, ScreenshotCounter).description("Deprecated, does nothing, but not marked as such to keep compatibility with older engine versions").defaultValue(0);
+CONFIG(int, ScreenshotCounter)
+    .description("Deprecated, does nothing, but not marked as such to keep compatibility with older engine versions")
+    .defaultValue(0);
 
-struct FunctionArgs
-{
+struct FunctionArgs {
 	std::vector<uint8_t> pixelbuf;
 	std::string filename;
 	unsigned quality;
@@ -44,8 +45,8 @@ void TakeScreenshot(std::string type, unsigned quality)
 	}
 
 	FunctionArgs args;
-	args.x  = globalRendering->winSizeX;
-	args.y  = globalRendering->winSizeY;
+	args.x = globalRendering->winSizeX;
+	args.y = globalRendering->winSizeY;
 	args.x += ((4 - (args.x % 4)) * int((args.x % 4) != 0));
 
 	// note: we no longer increment the counter until a "file not found" occurs

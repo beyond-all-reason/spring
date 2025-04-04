@@ -43,12 +43,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INCLUDED_AI_IRRXML_WRAPPER
 
 // some long includes ....
-#include <irrXML.h>
-#include "./../include/assimp/IOStream.hpp"
 #include "BaseImporter.h"
+
+#include "./../include/assimp/IOStream.hpp"
+
 #include <vector>
 
-namespace Assimp    {
+#include <irrXML.h>
+
+namespace Assimp {
 
 // ---------------------------------------------------------------------------------
 /** @brief Utility class to make IrrXML work together with our custom IO system
@@ -70,76 +73,71 @@ namespace Assimp    {
  * }
  * @endcode
  **/
-class CIrrXML_IOStreamReader
-    : public irr::io::IFileReadCallBack
-{
+class CIrrXML_IOStreamReader : public irr::io::IFileReadCallBack {
 public:
+	// ----------------------------------------------------------------------------------
+	//! Construction from an existing IOStream
+	explicit CIrrXML_IOStreamReader(IOStream* _stream)
+	    : stream(_stream)
+	    , t(0)
+	{
+		// Map the buffer into memory and convert it to UTF8. IrrXML provides its
+		// own conversion, which is merely a cast from uintNN_t to uint8_t. Thus,
+		// it is not suitable for our purposes and we have to do it BEFORE IrrXML
+		// gets the buffer. Sadly, this forces us to map the whole file into
+		// memory.
 
-    // ----------------------------------------------------------------------------------
-    //! Construction from an existing IOStream
-    explicit CIrrXML_IOStreamReader(IOStream* _stream)
-        : stream (_stream)
-        , t (0)
-    {
+		data.resize(stream->FileSize());
+		stream->Read(&data[0], data.size(), 1);
 
-        // Map the buffer into memory and convert it to UTF8. IrrXML provides its
-        // own conversion, which is merely a cast from uintNN_t to uint8_t. Thus,
-        // it is not suitable for our purposes and we have to do it BEFORE IrrXML
-        // gets the buffer. Sadly, this forces us to map the whole file into
-        // memory.
+		// Remove null characters from the input sequence otherwise the parsing will utterly fail
+		unsigned int size = 0;
+		unsigned int size_max = static_cast<unsigned int>(data.size());
+		for (unsigned int i = 0; i < size_max; i++) {
+			if (data[i] != '\0') {
+				data[size++] = data[i];
+			}
+		}
+		data.resize(size);
 
-        data.resize(stream->FileSize());
-        stream->Read(&data[0],data.size(),1);
+		BaseImporter::ConvertToUTF8(data);
+	}
 
-        // Remove null characters from the input sequence otherwise the parsing will utterly fail
-        unsigned int size = 0;
-        unsigned int size_max = static_cast<unsigned int>(data.size());
-        for(unsigned int i = 0; i < size_max; i++) {
-            if(data[i] != '\0') {
-                data[size++] = data[i];
-            }
-        }
-        data.resize(size);
+	// ----------------------------------------------------------------------------------
+	//! Virtual destructor
+	virtual ~CIrrXML_IOStreamReader() {}
 
-        BaseImporter::ConvertToUTF8(data);
-    }
+	// ----------------------------------------------------------------------------------
+	//!   Reads an amount of bytes from the file.
+	/**  @param buffer:       Pointer to output buffer.
+	 *   @param sizeToRead:   Amount of bytes to read
+	 *   @return              Returns how much bytes were read.  */
+	virtual int read(void* buffer, int sizeToRead)
+	{
+		if (sizeToRead < 0) {
+			return 0;
+		}
+		if (t + sizeToRead > data.size()) {
+			sizeToRead = static_cast<int>(data.size() - t);
+		}
 
-    // ----------------------------------------------------------------------------------
-    //! Virtual destructor
-    virtual ~CIrrXML_IOStreamReader() {}
+		memcpy(buffer, &data.front() + t, sizeToRead);
 
-    // ----------------------------------------------------------------------------------
-    //!   Reads an amount of bytes from the file.
-    /**  @param buffer:       Pointer to output buffer.
-     *   @param sizeToRead:   Amount of bytes to read
-     *   @return              Returns how much bytes were read.  */
-    virtual int read(void* buffer, int sizeToRead)  {
-        if(sizeToRead<0) {
-            return 0;
-        }
-        if(t+sizeToRead>data.size()) {
-            sizeToRead = static_cast<int>(data.size()-t);
-        }
+		t += sizeToRead;
+		return sizeToRead;
+	}
 
-        memcpy(buffer,&data.front()+t,sizeToRead);
-
-        t += sizeToRead;
-        return sizeToRead;
-    }
-
-    // ----------------------------------------------------------------------------------
-    //! Returns size of file in bytes
-    virtual int getSize()   {
-        return (int)data.size();
-    }
+	// ----------------------------------------------------------------------------------
+	//! Returns size of file in bytes
+	virtual int getSize() { return (int)data.size(); }
 
 private:
-    IOStream* stream;
-    std::vector<char> data;
-    size_t t;
+	IOStream* stream;
+	std::vector<char> data;
+	size_t t;
 
 }; // ! class CIrrXML_IOStreamReader
 
-} // ! Assimp
+} // namespace Assimp
 
 #endif // !! INCLUDED_AI_IRRXML_WRAPPER

@@ -3,27 +3,27 @@
 #ifndef _SOUND_H_
 #define _SOUND_H_
 
+#include "SoundItem.h"
+
+#include "System/Sound/ISound.h"
+#include "System/Threading/SpringThreading.h"
+#include "System/UnorderedMap.hpp"
+#include "System/UnorderedSet.hpp"
+#include "System/float3.h"
+
 #include <atomic>
 #include <string>
 #include <vector>
+
 #include <al.h>
 #include <alc.h>
-
-#include "System/Sound/ISound.h"
-#include "System/float3.h"
-#include "System/UnorderedMap.hpp"
-#include "System/UnorderedSet.hpp"
-#include "System/Threading/SpringThreading.h"
-
-#include "SoundItem.h"
 
 class CSoundSource;
 class SoundBuffer;
 class SoundItem;
 
 /// Default sound system implementation (OpenAL)
-class CSound : public ISound
-{
+class CSound : public ISound {
 public:
 	CSound();
 	~CSound();
@@ -40,10 +40,12 @@ public:
 	CSoundSource* GetNextBestSource(bool lock = true) override;
 
 	void NewFrame() override;
-	void UpdateListener(const float3& campos, const float3& camdir, const float3& camup) override {
-		myPos  = campos;
+
+	void UpdateListener(const float3& campos, const float3& camdir, const float3& camup) override
+	{
+		myPos = campos;
 		camDir = camdir;
-		camUp  = camup;
+		camUp = camup;
 
 		// schedule UpdateListenerReal
 		updateListener = true;
@@ -54,6 +56,7 @@ public:
 	void PitchAdjust(const float newPitch) override;
 
 	bool Mute() override;
+
 	bool IsMuted() const override { return mute; }
 
 	void DeviceChanged(uint32_t sdlDeviceIndex) override;
@@ -63,15 +66,19 @@ public:
 	void PrintDebugInfo() override;
 
 	bool SoundThreadQuit() const override { return soundThreadQuit; }
+
 	bool CanLoadSoundDefs() const override { return canLoadDefs; }
 
 	bool LoadSoundDefsImpl(LuaParser* defsParser);
+
 	const float3& GetListenerPos() const override { return myPos; }
 
 	ALCdevice* GetCurrentDevice() { return curDevice; }
+
 	int GetFrameSize() const { return frameSize; }
 
 	std::vector<std::string> GetSoundDevices() override;
+
 private:
 	typedef spring::unordered_map<std::string, std::string> SoundItemNameMap;
 	typedef spring::unordered_map<std::string, SoundItemNameMap> SoundItemDefsMap;

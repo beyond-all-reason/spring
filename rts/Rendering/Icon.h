@@ -4,28 +4,29 @@
 #define ICON_H
 
 namespace icon {
-	class CIconData;
-	class CIconHandler;
-	class CIcon {
-		friend class CIconHandler;
+class CIconData;
+class CIconHandler;
 
-		public:
-			CIcon();
-			CIcon(unsigned int idx);
-			CIcon(const CIcon& ic);
+class CIcon {
+	friend class CIconHandler;
 
-			CIcon& operator=(const CIcon& ic);
+public:
+	CIcon();
+	CIcon(unsigned int idx);
+	CIcon(const CIcon& ic);
 
-			~CIcon();
+	CIcon& operator=(const CIcon& ic);
 
-			void UnRefData(CIconHandler* ih);
+	~CIcon();
 
-			const CIconData* operator->()  const;
-			const CIconData* GetIconData() const;
+	void UnRefData(CIconHandler* ih);
 
-		private:
-			unsigned int dataIdx = 0;
-	};
-}
+	const CIconData* operator->() const;
+	const CIconData* GetIconData() const;
+
+private:
+	unsigned int dataIdx = 0;
+};
+} // namespace icon
 
 #endif // ICON_H

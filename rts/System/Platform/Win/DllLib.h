@@ -6,6 +6,7 @@
 #ifdef _WIN32
 
 #include "System/Platform/SharedLib.h"
+
 #include <windows.h>
 
 /**
@@ -15,8 +16,7 @@
  * This class loads Win32 DLLs.
  * Derived from the abstract SharedLib.
  */
-class DllLib: public SharedLib
-{
+class DllLib : public SharedLib {
 public:
 	/**
 	 * @brief Constructor
@@ -43,6 +43,7 @@ public:
 	 * @return void pointer to the function if found, NULL otherwise
 	 */
 	void* FindAddress(const char* symbol) override;
+
 private:
 	/**
 	 * @brief dll pointer

@@ -3,17 +3,18 @@
 #ifndef _FIRE_BALL_PROJECTILE_H
 #define _FIRE_BALL_PROJECTILE_H
 
-#include <algorithm>
 #include "WeaponProjectile.h"
 
-class CFireBallProjectile : public CWeaponProjectile
-{
+#include <algorithm>
+
+class CFireBallProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CFireBallProjectile)
 	CR_DECLARE_SUB(Spark)
 
 public:
 	// creg only
-	CFireBallProjectile() { }
+	CFireBallProjectile() {}
+
 	CFireBallProjectile(const ProjectileParams& params);
 
 	void Draw() override;

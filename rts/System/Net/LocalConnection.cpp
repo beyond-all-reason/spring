@@ -1,9 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LocalConnection.h"
-#include "Net/Protocol/BaseNetProtocol.h"
+
 #include "Exception.h"
 #include "ProtocolDef.h"
+
+#include "Net/Protocol/BaseNetProtocol.h"
 #include "System/Log/ILog.h"
 #include "System/SpringFormat.h"
 
@@ -12,7 +14,7 @@ namespace netcode {
 // static stuff
 unsigned int CLocalConnection::numInstances = 0;
 
-std::deque< std::shared_ptr<const RawPacket> > CLocalConnection::pktQueues[CLocalConnection::MAX_INSTANCES];
+std::deque<std::shared_ptr<const RawPacket>> CLocalConnection::pktQueues[CLocalConnection::MAX_INSTANCES];
 spring::mutex CLocalConnection::mutexes[CLocalConnection::MAX_INSTANCES];
 CLocalConnection* CLocalConnection::instancePtrs[MAX_INSTANCES] = {nullptr, nullptr};
 
@@ -37,7 +39,6 @@ CLocalConnection::~CLocalConnection()
 	numInstances--;
 }
 
-
 void CLocalConnection::Close(bool flush)
 {
 	if (!flush)
@@ -51,7 +52,8 @@ void CLocalConnection::SendData(std::shared_ptr<const RawPacket> pkt)
 {
 	if (!ProtocolDef::GetInstance()->IsValidPacket(pkt->data, pkt->length)) {
 		// having this check here makes it easier to find networking bugs, also when testing locally
-		LOG_L(L_ERROR, "[LocalConn::%s] discarding invalid packet: ID %d, LEN %d", __func__, (pkt->length > 0) ? (int)pkt->data[0] : -1, pkt->length);
+		LOG_L(L_ERROR, "[LocalConn::%s] discarding invalid packet: ID %d, LEN %d", __func__,
+		    (pkt->length > 0) ? (int)pkt->data[0] : -1, pkt->length);
 		return;
 	}
 
@@ -108,7 +110,6 @@ void CLocalConnection::DeleteBufferPacketAt(unsigned index)
 	pktQueue.erase(pktQueue.begin() + index);
 }
 
-
 std::string CLocalConnection::Statistics() const
 {
 	std::string msg = "[LocalConnection::Statistics]\n";
@@ -116,7 +117,6 @@ std::string CLocalConnection::Statistics() const
 	msg += spring::format("\t%u bytes recv'd\n", dataRecv);
 	return msg;
 }
-
 
 bool CLocalConnection::HasIncomingData() const
 {
@@ -131,4 +131,3 @@ unsigned int CLocalConnection::GetPacketQueueSize() const
 }
 
 } // namespace netcode
-

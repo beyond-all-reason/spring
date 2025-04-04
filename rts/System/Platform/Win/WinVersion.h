@@ -6,8 +6,8 @@
 #include <string>
 
 namespace windows {
-	std::string GetDisplayString(bool getName, bool getVersion, bool getExtra);
-	std::string GetHardwareString();
-};
+std::string GetDisplayString(bool getName, bool getVersion, bool getExtra);
+std::string GetHardwareString();
+}; // namespace windows
 
 #endif

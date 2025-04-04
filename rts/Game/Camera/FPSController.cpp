@@ -9,9 +9,8 @@
 #include "Map/ReadMap.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CONFIG(int, FPSScrollSpeed).defaultValue(10);
 CONFIG(float, FPSMouseScale).defaultValue(0.01f);
@@ -19,8 +18,9 @@ CONFIG(bool, FPSEnabled).defaultValue(true);
 CONFIG(float, FPSFOV).defaultValue(45.0f);
 CONFIG(bool, FPSClampPos).defaultValue(true);
 
-
-CFPSController::CFPSController(): oldHeight(300.0f), rot(2.677f, 0.0f, 0.0f)
+CFPSController::CFPSController()
+    : oldHeight(300.0f)
+    , rot(2.677f, 0.0f, 0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
@@ -51,15 +51,13 @@ void CFPSController::ConfigNotify(const std::string& key, const std::string& val
 	ConfigUpdate();
 }
 
-
 void CFPSController::KeyMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	move *= move.z * 400;
-	pos  += (camera->GetDir() * move.y + camera->GetRight() * move.x) * scrollSpeed;
+	pos += (camera->GetDir() * move.y + camera->GetRight() * move.x) * scrollSpeed;
 	Update();
 }
-
 
 void CFPSController::MouseMove(float3 move)
 {
@@ -69,14 +67,12 @@ void CFPSController::MouseMove(float3 move)
 	Update();
 }
 
-
 void CFPSController::MouseWheelMove(float move, const float3& newDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	pos += (newDir * move);
 	Update();
 }
-
 
 void CFPSController::Update()
 {
@@ -101,7 +97,6 @@ void CFPSController::Update()
 	oldHeight = pos.y - gndHeight;
 }
 
-
 void CFPSController::SetPos(const float3& newPos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -112,7 +107,6 @@ void CFPSController::SetPos(const float3& newPos)
 
 	Update();
 }
-
 
 void CFPSController::SetDir(const float3& newDir)
 {
@@ -127,7 +121,6 @@ void CFPSController::SetRot(const float3& newRot)
 	rot = newRot;
 	dir = CCamera::GetFwdFromRot(newRot);
 }
-
 
 void CFPSController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
@@ -145,28 +138,24 @@ void CFPSController::SwitchTo(const CCameraController* oldCam, const bool showTe
 	pos = newPos;
 }
 
-
 void CFPSController::GetState(StateMap& sm) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 	sm["oldHeight"] = oldHeight;
-	sm["rx"]   = rot.x;
-	sm["ry"]   = rot.y;
-	sm["rz"]   = rot.z;
+	sm["rx"] = rot.x;
+	sm["ry"] = rot.y;
+	sm["rz"] = rot.z;
 }
-
 
 bool CFPSController::SetState(const StateMap& sm)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::SetState(sm);
 	SetStateFloat(sm, "oldHeight", oldHeight);
-	SetStateFloat(sm, "rx",   rot.x);
-	SetStateFloat(sm, "ry",   rot.y);
-	SetStateFloat(sm, "rz",   rot.z);
+	SetStateFloat(sm, "rx", rot.x);
+	SetStateFloat(sm, "ry", rot.y);
+	SetStateFloat(sm, "rz", rot.z);
 
 	return true;
 }
-
-

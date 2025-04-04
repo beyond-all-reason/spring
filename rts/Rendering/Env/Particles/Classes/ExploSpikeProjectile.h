@@ -5,27 +5,25 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CExploSpikeProjectile : public CProjectile
-{
+class CExploSpikeProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CExploSpikeProjectile)
 
 public:
 	CExploSpikeProjectile();
 
-	CExploSpikeProjectile(
-		CUnit* owner,
-		const float3& pos,
-		const float3& spd,
-		float length,
-		float width,
-		float alpha,
-		float alphaDecay
-	);
+	CExploSpikeProjectile(CUnit* owner,
+	    const float3& pos,
+	    const float3& spd,
+	    float length,
+	    float width,
+	    float alpha,
+	    float alphaDecay);
 
 	void Draw() override;
 	void Update() override;
 
 	void Init(const CUnit* owner, const float3& offset) override;
+
 	// override this so the projectile does not instantly disappear
 	// after creation if it also happened to collide with something
 	void Collision() override {}

@@ -9,24 +9,23 @@
 
 CR_BIND_DERIVED(CExpGenSpawner, CProjectile, )
 CR_REG_METADATA(CExpGenSpawner,
-(
-	CR_MEMBER_BEGINFLAG(CM_Config),
-		CR_MEMBER(delay),
-		CR_MEMBER(damage),
-		CR_IGNORED(explosionGenerator),
-	CR_MEMBER_ENDFLAG(CM_Config),
-	CR_SERIALIZER(Serialize)
-))
+    (CR_MEMBER_BEGINFLAG(CM_Config),
+        CR_MEMBER(delay),
+        CR_MEMBER(damage),
+        CR_IGNORED(explosionGenerator),
+        CR_MEMBER_ENDFLAG(CM_Config),
+        CR_SERIALIZER(Serialize)))
 
-
-CExpGenSpawner::CExpGenSpawner() : CProjectile()
+CExpGenSpawner::CExpGenSpawner()
+    : CProjectile()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	checkCol = false;
 	deleteMe = false;
 }
 
-void CExpGenSpawner::Serialize(creg::ISerializer* s) {
+void CExpGenSpawner::Serialize(creg::ISerializer* s)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	int generatorID;
 
@@ -49,9 +48,8 @@ void CExpGenSpawner::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if ((deleteMe |= ((delay--) <= 0)))
-		explosionGenerator->Explosion(pos, dir,  damage, 0.0f, 0.0f,  owner(), nullptr, true);
+		explosionGenerator->Explosion(pos, dir, damage, 0.0f, 0.0f, owner(), nullptr, true);
 }
-
 
 bool CExpGenSpawner::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
@@ -59,10 +57,10 @@ bool CExpGenSpawner::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_INT  (CExpGenSpawner, delay )
+	CHECK_MEMBER_INFO_INT(CExpGenSpawner, delay)
 	CHECK_MEMBER_INFO_FLOAT(CExpGenSpawner, damage)
 	// TODO: much nicer to load cegID directly via LoadGeneratorID callback
-	CHECK_MEMBER_INFO_PTR  (CExpGenSpawner, explosionGenerator, explGenHandler.LoadGenerator)
+	CHECK_MEMBER_INFO_PTR(CExpGenSpawner, explosionGenerator, explGenHandler.LoadGenerator)
 
 	return false;
 }

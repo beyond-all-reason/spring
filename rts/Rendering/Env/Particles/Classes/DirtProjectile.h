@@ -7,21 +7,18 @@
 
 struct AtlasedTexture;
 
-class CDirtProjectile : public CProjectile
-{
+class CDirtProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CDirtProjectile)
 public:
 	CDirtProjectile();
-	CDirtProjectile(
-		CUnit* owner,
-		const float3& pos,
-		const float3& speed,
-		float ttl,
-		float size,
-		float expansion,
-		float slowdown,
-		const float3& color
-	);
+	CDirtProjectile(CUnit* owner,
+	    const float3& pos,
+	    const float3& speed,
+	    float ttl,
+	    float size,
+	    float expansion,
+	    float slowdown,
+	    const float3& color);
 
 	void Serialize(creg::ISerializer* s);
 

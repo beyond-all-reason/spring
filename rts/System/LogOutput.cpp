@@ -2,7 +2,6 @@
 
 #include "System/LogOutput.h"
 
-#include "System/StringUtil.h"
 #include "Game/GameVersion.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/FileSystem.h"
@@ -13,59 +12,61 @@
 #include "System/Log/LogUtil.h"
 #include "System/Platform/Misc.h"
 #include "System/Platform/Threading.h"
+#include "System/StringUtil.h"
 #include "System/UnorderedMap.hpp"
-
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <ranges>
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
+#include <ranges>
+#include <sstream>
+#include <string>
 
 
 /******************************************************************************/
 /******************************************************************************/
 
 CONFIG(bool, RotateLogFiles)
-	.defaultValue(false)
-	.description("Rotate logfiles, old logfiles will be moved into the subfolder \"log\".");
+    .defaultValue(false)
+    .description("Rotate logfiles, old logfiles will be moved into the subfolder \"log\".");
 
 CONFIG(std::string, LogSections)
-	.defaultValue("")
-	.description("Comma-separated list of enabled logsections, see infolog.txt / console output for possible values.");
+    .defaultValue("")
+    .description("Comma-separated list of enabled logsections, see infolog.txt / console output for possible values.");
 
 
 CONFIG(int, LogFlushLevel)
-	.defaultValue(LOG_LEVEL_ERROR)
-	.description("Flush the logfile when a message's level exceeds this value. ERROR is flushed by default, WARNING is not.");
+    .defaultValue(LOG_LEVEL_ERROR)
+    .description(
+        "Flush the logfile when a message's level exceeds this value. ERROR is flushed by default, WARNING is not.");
 
 CONFIG(int, LogRepeatLimit)
-	.defaultValue(10)
-	.description("Allow at most this many consecutive identical messages to be logged.");
+    .defaultValue(10)
+    .description("Allow at most this many consecutive identical messages to be logged.");
 
 /******************************************************************************/
 /******************************************************************************/
 
-static spring::unordered_map<std::string, int> GetEnabledSections() {
+static spring::unordered_map<std::string, int> GetEnabledSections()
+{
 	spring::unordered_map<std::string, int> sectionLevelMap;
 
 	std::string enabledSections = "";
 
 #if defined(UNITSYNC)
-	#if defined(DEBUG)
+#if defined(DEBUG)
 	// unitsync logging in debug mode always on
 	// configHandler cannot be accessed here in unitsync, as it may not exist.
 	enabledSections += "unitsync,ArchiveScanner,";
-	#endif
+#endif
 #else
-	#if defined(DEDICATED)
+#if defined(DEDICATED)
 	enabledSections += "DedicatedServer,";
-	#endif
-	#if !defined(DEBUG)
+#endif
+#if !defined(DEBUG)
 	// Always show at least INFO level of these sections
 	enabledSections += "Sound:35,VFS:30,";
-	#endif
+#endif
 	enabledSections += StringToLower(configHandler->GetString("LogSections"));
 	enabledSections += ",";
 #endif
@@ -75,7 +76,8 @@ static spring::unordered_map<std::string, int> GetEnabledSections() {
 		std::string envSections = StringToLower(envVar);
 		if (envSections == "none") {
 			enabledSections = "";
-		} else {
+		}
+		else {
 			enabledSections += envSections;
 		}
 	}
@@ -92,38 +94,38 @@ static spring::unordered_map<std::string, int> GetEnabledSections() {
 		if (const size_t sepChr = sub.find(':'); sepChr != std::string_view::npos) {
 			logSec = sub.substr(0, sepChr);
 			logLvl = sub.substr(sepChr + 1, std::string_view::npos);
-		} else {
+		}
+		else {
 			logSec = sub;
 			logLvl = "";
 		}
 
 		if (!logLvl.empty()) {
 			sectionLevelMap[logSec] = StringToInt(logLvl);
-		} else {
-			#if defined(DEBUG)
+		}
+		else {
+#if defined(DEBUG)
 			sectionLevelMap[logSec] = LOG_LEVEL_DEBUG;
-			#else
+#else
 			sectionLevelMap[logSec] = DEFAULT_LOG_LEVEL;
-			#endif
+#endif
 		}
 	}
 
 	return sectionLevelMap;
 }
 
-
 CLogOutput logOutput;
 
 CLogOutput::CLogOutput()
-	: fileName("")
-	, filePath("")
+    : fileName("")
+    , filePath("")
 {
 	// multiple infologs can't exist together!
 	assert(this == &logOutput);
 
 	SetFileName("infolog.txt");
 }
-
 
 void CLogOutput::SetFileName(std::string fname)
 {
@@ -136,14 +138,14 @@ std::string CLogOutput::CreateFilePath(const std::string& fileName)
 	return (FileSystem::EnsurePathSepAtEnd(FileSystem::GetCwd()) + fileName);
 }
 
-
 void CLogOutput::RotateLogFile() const
 {
 	if (!FileSystem::FileExists(filePath))
 		return;
 
 	// logArchiveDir: /absolute/writeable/data/dir/log/
-	const std::string logArchiveDir = filePath.substr(0, filePath.find_last_of("/\\") + 1) + "log" + FileSystem::GetNativePathSeparator();
+	const std::string logArchiveDir =
+	    filePath.substr(0, filePath.find_last_of("/\\") + 1) + "log" + FileSystem::GetNativePathSeparator();
 	const std::string archivedLogFile = logArchiveDir + FileSystem::GetFileModificationDate(filePath) + "_" + fileName;
 
 	// create the log archive dir if it does not exist yet
@@ -156,8 +158,6 @@ void CLogOutput::RotateLogFile() const
 		std::cerr << "Failed rotating the log file" << std::endl;
 	}
 }
-
-
 
 void CLogOutput::Initialize()
 {
@@ -176,7 +176,6 @@ void CLogOutput::Initialize()
 
 	LOG("LogOutput initialized. Logging to %s", filePath.c_str());
 }
-
 
 /**
  * @brief initialize the log sections
@@ -201,7 +200,7 @@ void CLogOutput::LogSectionInfo()
 	const auto& enabledSections = GetEnabledSections();
 
 	std::stringstream availableLogSectionsStr;
-	std::stringstream   enabledLogSectionsStr;
+	std::stringstream enabledLogSectionsStr;
 
 	for (int i = 0, n = log_filter_section_getNumRegisteredSections(); i < n; i++) {
 		const char* regSec = registeredSections[i];
@@ -257,7 +256,6 @@ void CLogOutput::LogConfigInfo()
 	}
 
 	LOG("============== </User Config> ==============\n");
-
 }
 
 void CLogOutput::LogSystemInfo()
@@ -279,4 +277,3 @@ void CLogOutput::LogExceptionInfo(const char* src, const char* msg)
 {
 	LOG_L(L_ERROR, "[%s] exception \"%s\"", src, msg);
 }
-

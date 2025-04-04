@@ -4,11 +4,11 @@
 #define SIGNAL_H
 
 
-#include <mutex>
-#include <atomic>
-#include <condition_variable>
 #include "System/Misc/SpringTime.h"
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 class mac_signal {
 public:

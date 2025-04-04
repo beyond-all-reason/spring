@@ -6,9 +6,9 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
-#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/GlobalConfig.h"
 #include "System/UnorderedMap.hpp"
@@ -41,7 +41,7 @@ void CTeamHighlight::Enable(unsigned currentTime)
 		c *= t->highlight;
 
 		for (int n = 0; n < 3; ++n) {
-			t->color[n] = std::max(0, std::min(t->color[n] + c , 255));
+			t->color[n] = std::max(0, std::min(t->color[n] + c, 255));
 		}
 	}
 }
@@ -59,13 +59,15 @@ void CTeamHighlight::Disable()
 	oldColors.clear();
 }
 
-void CTeamHighlight::Update(int frameNum) {
+void CTeamHighlight::Update(int frameNum)
+{
 	if ((frameNum % TEAM_SLOWUPDATE_RATE))
 		return;
 
 	bool hl = false;
 
-	if ((globalConfig.teamHighlight == HIGHLIGHT_PLAYERS && !gu->spectatingFullView) || globalConfig.teamHighlight == HIGHLIGHT_ALL) {
+	if ((globalConfig.teamHighlight == HIGHLIGHT_PLAYERS && !gu->spectatingFullView) ||
+	    globalConfig.teamHighlight == HIGHLIGHT_ALL) {
 		const int maxhl = 1000 * (globalConfig.networkTimeout + 1);
 
 		for (int ti = 0; ti < teamHandler.ActiveTeams(); ++ti) {
@@ -104,7 +106,8 @@ void CTeamHighlight::Update(int frameNum) {
 			}
 			if (!hasPlayers || !t->HasLeader()) {
 				teamhighlight = 1.0f;
-			} else if (minPing != INT_MAX && minPing > 1000) {
+			}
+			else if (minPing != INT_MAX && minPing > 1000) {
 				teamhighlight = std::max(0, std::min(minPing, maxhl)) / float(maxhl);
 			}
 
@@ -115,4 +118,3 @@ void CTeamHighlight::Update(int frameNum) {
 
 	highlight = hl;
 }
-

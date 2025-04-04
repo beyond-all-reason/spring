@@ -2,24 +2,24 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
-#include <tuple>
-#include <variant>
-#include <limits>
-#include <optional>
-
-#include "Rendering/Env/IGroundDecalDrawer.h"
-#include "Rendering/GL/VBO.h"
-#include "Rendering/GL/VAO.h"
-#include "Rendering/DepthBufferCopy.h"
-#include "Rendering/Textures/TextureRenderAtlas.h"
 #include "Rendering/Common/UpdateList.h"
+#include "Rendering/DepthBufferCopy.h"
+#include "Rendering/Env/IGroundDecalDrawer.h"
+#include "Rendering/GL/VAO.h"
+#include "Rendering/GL/VBO.h"
+#include "Rendering/Textures/TextureRenderAtlas.h"
+#include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Projectiles/ExplosionListener.h"
 #include "System/EventClient.h"
 #include "System/UnorderedMap.hpp"
 #include "System/creg/creg.h"
-#include "Sim/Misc/GlobalConstants.h"
-#include "Sim/Projectiles/ExplosionListener.h"
+
+#include <limits>
+#include <optional>
+#include <string>
+#include <tuple>
+#include <variant>
+#include <vector>
 
 class CSolidObject;
 class CUnit;
@@ -30,16 +30,16 @@ class GhostSolidObject;
 class CColorMap;
 
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
-class CGroundDecalHandler: public IGroundDecalDrawer, public CEventClient, public IExplosionListener
-{
+class CGroundDecalHandler : public IGroundDecalDrawer, public CEventClient, public IExplosionListener {
 	CR_DECLARE_DERIVED(CGroundDecalHandler)
 	CR_DECLARE_SUB(UnitMinMaxHeight)
 public:
 	CGroundDecalHandler();
 	~CGroundDecalHandler() override;
+
 private:
 	struct AddExplosionInfo {
 		float3 pos;
@@ -49,31 +49,28 @@ private:
 		float maxHeightDiff;
 		const WeaponDef* wd;
 	};
+
 private:
 	void BindAtlasTextures();
 	void BindCommonTextures();
 	void UnbindTextures();
 	void AddExplosion(AddExplosionInfo&& explInfo);
 	void MoveSolidObject(const CSolidObject* object, const float3& pos);
+
 public:
 	// CEventClient
-	bool WantsEvent(const std::string& eventName) override {
-		return
-			   (eventName == "RenderUnitCreated")
-			|| (eventName == "RenderUnitDestroyed")
-			|| (eventName == "RenderFeatureCreated")
-			|| (eventName == "RenderFeatureDestroyed")
-			|| (eventName == "UnitMoved")
-			|| (eventName == "UnitLoaded")
-			|| (eventName == "UnitUnloaded")
-			|| (eventName == "GameFramePost")
-			|| (eventName == "SunChanged")
-			|| (eventName == "ViewResize");
+	bool WantsEvent(const std::string& eventName) override
+	{
+		return (eventName == "RenderUnitCreated") || (eventName == "RenderUnitDestroyed") ||
+		       (eventName == "RenderFeatureCreated") || (eventName == "RenderFeatureDestroyed") ||
+		       (eventName == "UnitMoved") || (eventName == "UnitLoaded") || (eventName == "UnitUnloaded") ||
+		       (eventName == "GameFramePost") || (eventName == "SunChanged") || (eventName == "ViewResize");
 	}
 
 	void ConfigNotify(const std::string& key, const std::string& value);
 
 	bool GetFullRead() const override { return true; }
+
 	int GetReadAllyTeam() const override { return AllAccessTeam; }
 
 	void RenderUnitCreated(const CUnit*, int cloaked) override;
@@ -107,7 +104,7 @@ public:
 
 	uint32_t CreateLuaDecal() override;
 	bool DeleteLuaDecal(uint32_t id) override;
-	      GroundDecal* GetDecalById(uint32_t id)       override;
+	GroundDecal* GetDecalById(uint32_t id) override;
 	const GroundDecal* GetDecalById(uint32_t id) const override;
 	bool SetDecalTexture(uint32_t id, const std::string& texName, bool mainTex) override;
 	std::string GetDecalTexture(uint32_t id, bool mainTex) const override;
@@ -117,6 +114,7 @@ public:
 	void SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) override;
 
 	void PostLoad();
+
 private:
 	static void BindVertexAtrribs();
 	static void UnbindVertexAtrribs();
@@ -142,16 +140,21 @@ private:
 	void AddFallbackTextures();
 
 	uint32_t GetNextId();
+
 private:
 	struct UnitMinMaxHeight {
 		CR_DECLARE_STRUCT(UnitMinMaxHeight)
+
 		UnitMinMaxHeight()
-			: min(std::numeric_limits<float>::max()   )
-			, max(std::numeric_limits<float>::lowest())
-		{}
+		    : min(std::numeric_limits<float>::max())
+		    , max(std::numeric_limits<float>::lowest())
+		{
+		}
+
 		float min;
 		float max;
 	};
+
 	int maxUniqueScars;
 
 	std::unique_ptr<CTextureRenderAtlas> atlasMain;
@@ -161,7 +164,7 @@ private:
 
 	using DecalOwner = std::variant<const CSolidObject*, const GhostSolidObject*>;
 	spring::unordered_map<DecalOwner, size_t, std::hash<DecalOwner>> decalOwners; // for tracks, plates and ghosts
-	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights; // for tracks
+	spring::unordered_map<int, UnitMinMaxHeight> unitMinMaxHeights;               // for tracks
 	spring::unordered_map<uint32_t, size_t> idToPos;
 	spring::unordered_map<uint32_t, std::tuple<const CColorMap*, std::pair<size_t, size_t>>> idToCmInfo;
 

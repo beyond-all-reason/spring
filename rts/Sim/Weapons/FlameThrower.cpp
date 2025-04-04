@@ -3,21 +3,17 @@
 #include "FlameThrower.h"
 
 #include "WeaponDef.h"
+
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND_DERIVED(CFlameThrower, CWeapon, )
 
-CR_REG_METADATA(CFlameThrower,(
-	CR_MEMBER(color),
-	CR_MEMBER(color2)
-))
-
+CR_REG_METADATA(CFlameThrower, (CR_MEMBER(color), CR_MEMBER(color2)))
 
 void CFlameThrower::FireImpl(const bool scriptCall)
 {
@@ -25,9 +21,7 @@ void CFlameThrower::FireImpl(const bool scriptCall)
 	float3 dir = currentTargetPos - weaponMuzzlePos;
 
 	const float dist = dir.LengthNormalize();
-	const float3 spread =
-		(gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience()) -
-		(dir * 0.001f);
+	const float3 spread = (gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience()) - (dir * 0.001f);
 
 	ProjectileParams params = GetProjectileParams();
 	params.pos = weaponMuzzlePos;
@@ -37,4 +31,3 @@ void CFlameThrower::FireImpl(const bool scriptCall)
 
 	WeaponProjectileFactory::LoadProjectile(params);
 }
-

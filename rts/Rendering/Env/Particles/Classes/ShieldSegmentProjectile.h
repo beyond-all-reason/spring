@@ -4,9 +4,9 @@
 #define SHIELD_PROJECTILE_H
 
 #include "Sim/Projectiles/Projectile.h"
+#include "System/Color.h"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/Color.h"
 
 class CUnit;
 class CPlasmaRepulser;
@@ -15,15 +15,16 @@ struct WeaponDef;
 struct AtlasedTexture;
 class ShieldSegmentProjectile;
 
-
-class ShieldSegmentCollection
-{
+class ShieldSegmentCollection {
 	CR_DECLARE_STRUCT(ShieldSegmentCollection)
 public:
 	// creg only
 	ShieldSegmentCollection() = default;
+
 	explicit ShieldSegmentCollection(CPlasmaRepulser* shield) { Init(shield); }
+
 	ShieldSegmentCollection(ShieldSegmentCollection&& ssc) noexcept { *this = std::move(ssc); }
+
 	~ShieldSegmentCollection() { Kill(); }
 
 	ShieldSegmentCollection& operator=(ShieldSegmentCollection&& ssc) noexcept;
@@ -36,11 +37,13 @@ public:
 	bool AllowDrawing();
 
 	const CPlasmaRepulser* GetShield() const { return shield; }
+
 	const AtlasedTexture* GetShieldTexture() const { return shieldTexture; }
 
 	float3 GetShieldDrawPos() const;
 
 	SColor GetColor() const { return color; }
+
 	float GetSize() const { return size; }
 
 	void PostLoad();
@@ -62,35 +65,29 @@ private:
 	SColor color;
 
 	// NOTE: these are also registered in ProjectileHandler
-	std::vector<ShieldSegmentProjectile*> shieldSegments; //FIXME deque
+	std::vector<ShieldSegmentProjectile*> shieldSegments; // FIXME deque
 };
 
-
-
-class ShieldSegmentProjectile: public CProjectile
-{
+class ShieldSegmentProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(ShieldSegmentProjectile)
 public:
 	ShieldSegmentProjectile() = default;
-	ShieldSegmentProjectile(
-		ShieldSegmentCollection* collection,
-		const WeaponDef* shieldWeaponDef,
-		const float3& shieldSegmentPos,
-		int xpart,
-		int ypart
-	);
+	ShieldSegmentProjectile(ShieldSegmentCollection* collection,
+	    const WeaponDef* shieldWeaponDef,
+	    const float3& shieldSegmentPos,
+	    int xpart,
+	    int ypart);
 
 	void Draw() override;
 	void Update() override;
-	void PreDelete() {
+
+	void PreDelete()
+	{
 		collection = nullptr;
 		deleteMe = true;
 	}
-	void Reload(
-		ShieldSegmentCollection* collection,
-		const int xpart,
-		const int ypart
-	);
+
+	void Reload(ShieldSegmentCollection* collection, const int xpart, const int ypart);
 
 	int GetProjectilesCount() const override { return ((NUM_VERTICES_Y - 1) * (NUM_VERTICES_X - 1)); }
 
@@ -108,4 +105,3 @@ private:
 };
 
 #endif
-

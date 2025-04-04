@@ -6,9 +6,7 @@
 #include <string>
 #include <vector>
 
-
 class DataDirsAccess {
-
 	/**
 	 * @brief find files
 	 * @param dir path in which to start looking (tried relative to each data directory)
@@ -85,7 +83,6 @@ public:
 	///@}
 
 private:
-
 	/**
 	 * @brief internal find-files-in-a-single-datadir-function
 	 * @param datadir root of the VFS data directory. This part of the path IS NOT included in returned matches.
@@ -96,7 +93,11 @@ private:
 	 * Will search for dirs given a particular pattern.
 	 * Starts from dir, descending down if FileSystem::ONLY_DIRS is set in flags.
 	 */
-	void FindFilesSingleDir(std::vector<std::string>& matches, const std::string& datadir, const std::string& dir, const std::string &pattern, int flags) const;
+	void FindFilesSingleDir(std::vector<std::string>& matches,
+	    const std::string& datadir,
+	    const std::string& dir,
+	    const std::string& pattern,
+	    int flags) const;
 };
 
 extern DataDirsAccess dataDirsAccess;

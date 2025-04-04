@@ -3,9 +3,10 @@
 #ifndef MAPDIMENSIONS_H
 #define MAPDIMENSIONS_H
 
+#include "System/creg/creg_cond.h"
+
 #include <bit>
 #include <cassert>
-#include "System/creg/creg_cond.h"
 
 struct MapDimensions {
 public:
@@ -14,16 +15,16 @@ public:
 	MapDimensions()
 	{
 		// set in SMFReadMap::ParseHeader
-		mapx   = 0;
+		mapx = 0;
 		mapxm1 = 0;
 		mapxp1 = 0;
 
-		mapy   = 0;
+		mapy = 0;
 		mapym1 = 0;
 		mapyp1 = 0;
 
-		hmapx  = 0;
-		hmapy  = 0;
+		hmapx = 0;
+		hmapy = 0;
 
 		pwr2mapx = 0;
 		pwr2mapy = 0;
@@ -44,72 +45,70 @@ public:
 		hmapx = mapx >> 1;
 		hmapy = mapy >> 1;
 
-		pwr2mapx = std::bit_ceil <uint32_t> (mapx);
-		pwr2mapy = std::bit_ceil <uint32_t> (mapy);
+		pwr2mapx = std::bit_ceil<uint32_t>(mapx);
+		pwr2mapy = std::bit_ceil<uint32_t>(mapy);
 
 		mapSquares = mapx * mapy;
 	}
 
-
 	/**
-	* @brief map x
-	*
-	* The map's number of squares in the x direction
-	* (note that the number of vertices is one more)
-	*/
+	 * @brief map x
+	 *
+	 * The map's number of squares in the x direction
+	 * (note that the number of vertices is one more)
+	 */
 	int mapx;
 	int mapxm1; // mapx minus one
 	int mapxp1; // mapx plus one
 
 	/**
-	* @brief map y
-	*
-	* The map's number of squares in the y direction
-	*/
+	 * @brief map y
+	 *
+	 * The map's number of squares in the y direction
+	 */
 	int mapy;
 	int mapym1; // mapy minus one
 	int mapyp1; // mapy plus one
 
 
 	/**
-	* @brief half map x
-	*
-	* Contains half of the number of squares in the x direction
-	*/
+	 * @brief half map x
+	 *
+	 * Contains half of the number of squares in the x direction
+	 */
 	int hmapx;
 
 	/**
-	* @brief half map y
-	*
-	* Contains half of the number of squares in the y direction
-	*/
+	 * @brief half map y
+	 *
+	 * Contains half of the number of squares in the y direction
+	 */
 	int hmapy;
 
 
 	/**
-	* @brief map x power of 2
-	*
-	* Map's size in the x direction rounded
-	* up to the next power of 2
-	*/
+	 * @brief map x power of 2
+	 *
+	 * Map's size in the x direction rounded
+	 * up to the next power of 2
+	 */
 	int pwr2mapx;
 
 	/**
-	* @brief map y power of 2
-	*
-	* Map's size in the y direction rounded
-	* up to the next power of 2
-	*/
+	 * @brief map y power of 2
+	 *
+	 * Map's size in the y direction rounded
+	 * up to the next power of 2
+	 */
 	int pwr2mapy;
 
 
 	/**
-	* @brief map squares
-	*
-	* Total number of squares on the map
-	*/
+	 * @brief map squares
+	 *
+	 * Total number of squares on the map
+	 */
 	int mapSquares;
 };
 
 #endif
-

@@ -2,24 +2,21 @@
 
 #include "PlayerStatistics.h"
 
+#include "System/Misc/TracyDefs.h"
 #include "System/Platform/byteorder.h"
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND(PlayerStatistics, )
-CR_REG_METADATA(PlayerStatistics, (
-	CR_MEMBER(mousePixels),
-	CR_MEMBER(mouseClicks),
-	CR_MEMBER(keyPresses),
-	CR_MEMBER(numCommands),
-	CR_MEMBER(unitCommands)
-))
-
+CR_REG_METADATA(PlayerStatistics,
+    (CR_MEMBER(mousePixels),
+        CR_MEMBER(mouseClicks),
+        CR_MEMBER(keyPresses),
+        CR_MEMBER(numCommands),
+        CR_MEMBER(unitCommands)))
 
 PlayerStatistics::PlayerStatistics()
-	: mousePixels(0)
-	, mouseClicks(0)
-	, keyPresses(0)
+    : mousePixels(0)
+    , mouseClicks(0)
+    , keyPresses(0)
 {
 }
 

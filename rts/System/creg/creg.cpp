@@ -5,14 +5,15 @@
  * Classes for serialization of registered class instances
  */
 
-#include <vector>
-#include <string>
+#include "System/SpringHash.h"
+#include "System/StringUtil.h"
+#include "System/UnorderedMap.hpp"
+
 #include <cstring>
+#include <string>
+#include <vector>
 
 #include "creg_cond.h"
-#include "System/UnorderedMap.hpp"
-#include "System/StringUtil.h"
-#include "System/SpringHash.h"
 
 
 using namespace creg;
@@ -21,7 +22,7 @@ using namespace creg;
 // some local statics, needed cause we work with global static vars
 // -------------------------------------------------------------------
 
-//FIXME - Allow synced order traversal
+// FIXME - Allow synced order traversal
 static spring::unsynced_map<const Class*, std::vector<Class*>>& derivedClasses()
 {
 	// note: we cannot save this in `class Class`, cause those are created with
@@ -51,23 +52,32 @@ static std::vector<Class*>& classes()
 // Class
 // -------------------------------------------------------------------
 
-Class::Class(const char* className, ClassFlags cf,
-		Class* baseCls, void (*memberRegistrator)(creg::Class*), int instanceSize, int instanceAlignment, bool hasVTable, bool isCregStruct,
-		void (*constructorProc)(void* inst), void (*destructorProc)(void* inst), void* (*allocProc)(size_t size), void (*freeProc)(void* instance))
-	: baseClass(baseCls)
-	, flags(cf)
-	, hasVTable(hasVTable)
-	, isCregStruct(isCregStruct)
-	, name(className)
-	, size(instanceSize)
-	, alignment(instanceAlignment)
-	, constructor(constructorProc)
-	, destructor(destructorProc)
-	, poolAlloc(allocProc)
-	, poolFree(freeProc)
-	, serializeProc(nullptr)
-	, postLoadProc(nullptr)
-	, getSizeProc(nullptr)
+Class::Class(const char* className,
+    ClassFlags cf,
+    Class* baseCls,
+    void (*memberRegistrator)(creg::Class*),
+    int instanceSize,
+    int instanceAlignment,
+    bool hasVTable,
+    bool isCregStruct,
+    void (*constructorProc)(void* inst),
+    void (*destructorProc)(void* inst),
+    void* (*allocProc)(size_t size),
+    void (*freeProc)(void* instance))
+    : baseClass(baseCls)
+    , flags(cf)
+    , hasVTable(hasVTable)
+    , isCregStruct(isCregStruct)
+    , name(className)
+    , size(instanceSize)
+    , alignment(instanceAlignment)
+    , constructor(constructorProc)
+    , destructor(destructorProc)
+    , poolAlloc(allocProc)
+    , poolFree(freeProc)
+    , serializeProc(nullptr)
+    , postLoadProc(nullptr)
+    , getSizeProc(nullptr)
 {
 	System::AddClass(this);
 
@@ -93,7 +103,6 @@ Class::Class(const char* className, ClassFlags cf,
 	memberRegistrator(this);
 }
 
-
 void Class::PropagatePoolFuncs()
 {
 	for (Class* dc: derivedClasses()[this]) {
@@ -106,7 +115,6 @@ void Class::PropagatePoolFuncs()
 		dc->PropagatePoolFuncs();
 	}
 }
-
 
 bool Class::IsSubclassOf(Class* other) const
 {
@@ -133,19 +141,15 @@ std::vector<Class*> Class::GetImplementations()
 	return classes;
 }
 
+const std::vector<Class*>& Class::GetDerivedClasses() const { return derivedClasses()[this]; }
 
-const std::vector<Class*>& Class::GetDerivedClasses() const
-{
-	return derivedClasses()[this];
-}
+void Class::SetFlag(ClassFlags flag) { flags = (ClassFlags)(flags | flag); }
 
-
-void Class::SetFlag(ClassFlags flag)
-{
-	flags = (ClassFlags) (flags | flag);
-}
-
-void Class::AddMember(const char* name, std::unique_ptr<IType> type, unsigned int offset, int alignment, ClassMemberFlag flags)
+void Class::AddMember(const char* name,
+    std::unique_ptr<IType> type,
+    unsigned int offset,
+    int alignment,
+    ClassMemberFlag flags)
 {
 	assert(!FindMember(name, false));
 
@@ -187,7 +191,8 @@ void* Class::CreateInstance(size_t size)
 	void* inst;
 	if (poolAlloc != nullptr) {
 		inst = poolAlloc(size);
-	} else {
+	}
+	else {
 		inst = ::operator new(size);
 	}
 
@@ -214,7 +219,8 @@ void Class::DeleteInstance(void* inst)
 
 	if (poolFree != nullptr) {
 		poolFree(inst);
-	} else {
+	}
+	else {
 		::operator delete(inst);
 	}
 }
@@ -231,15 +237,11 @@ void Class::CalculateChecksum(unsigned int& checksum)
 		base()->CalculateChecksum(checksum);
 }
 
-
 // -------------------------------------------------------------------
 // System
 // -------------------------------------------------------------------
 
-const std::vector<Class*>& System::GetClasses()
-{
-	return classes();
-}
+const std::vector<Class*>& System::GetClasses() { return classes(); }
 
 Class* System::GetClass(const std::string& name)
 {
@@ -256,9 +258,6 @@ void System::AddClass(Class* c)
 	mapNameToClass()[c->name] = c;
 }
 
-
 // ------------------------------------------------------------------
 // creg::Class: Class description
 // ------------------------------------------------------------------
-
-

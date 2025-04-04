@@ -4,17 +4,16 @@
 #define DEBUG_DRAWER_QUAD_FIELD
 
 #include "System/EventClient.h"
-
 #include "System/float4.h"
 
-class DebugDrawerQuadField : public CEventClient
-{
+class DebugDrawerQuadField : public CEventClient {
 public:
 	// CEventClient interface
 	virtual void DrawInMiniMapBackground() override;
 	virtual void DrawWorldPreUnit() override;
 
 	static void SetEnabled(bool enable);
+
 	static bool IsEnabled() { return (instance != nullptr); }
 
 private:

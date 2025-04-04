@@ -12,41 +12,36 @@
 #define ASIO_DETAIL_STD_FENCED_BLOCK_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include <atomic>
 #include "asio/detail/noncopyable.hpp"
-
 #include "asio/detail/push_options.hpp"
+
+#include <atomic>
 
 namespace asio {
 namespace detail {
 
-class std_fenced_block
-  : private noncopyable
-{
+class std_fenced_block : private noncopyable {
 public:
-  enum half_t { half };
-  enum full_t { full };
+	enum half_t {
+		half
+	};
 
-  // Constructor for a half fenced block.
-  explicit std_fenced_block(half_t)
-  {
-  }
+	enum full_t {
+		full
+	};
 
-  // Constructor for a full fenced block.
-  explicit std_fenced_block(full_t)
-  {
-    std::atomic_thread_fence(std::memory_order_acquire);
-  }
+	// Constructor for a half fenced block.
+	explicit std_fenced_block(half_t) {}
 
-  // Destructor.
-  ~std_fenced_block()
-  {
-    std::atomic_thread_fence(std::memory_order_release);
-  }
+	// Constructor for a full fenced block.
+	explicit std_fenced_block(full_t) { std::atomic_thread_fence(std::memory_order_acquire); }
+
+	// Destructor.
+	~std_fenced_block() { std::atomic_thread_fence(std::memory_order_release); }
 };
 
 } // namespace detail

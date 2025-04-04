@@ -3,10 +3,10 @@
 #ifndef SOUNDITEM_H
 #define SOUNDITEM_H
 
-#include <string>
-#include <memory>
-
 #include "System/UnorderedMap.hpp"
+
+#include <memory>
+#include <string>
 
 class SoundBuffer;
 
@@ -18,8 +18,7 @@ class SoundBuffer;
  * You can adjust various playing parameters within this class, so you can have 1 buffer and multiple SoundItems
  * which differ in pitch, volume etc.
  */
-class SoundItem
-{
+class SoundItem {
 	friend class CSoundSource;
 
 public:
@@ -27,7 +26,7 @@ public:
 	SoundItem(size_t itemID, size_t bufferID, const spring::unordered_map<std::string, std::string>& items);
 	SoundItem(SoundItem&& s) = default;
 
-	SoundItem& operator = (SoundItem&& s) = default;
+	SoundItem& operator=(SoundItem&& s) = default;
 
 	bool PlayNow();
 	void StopPlay();
@@ -35,7 +34,9 @@ public:
 	size_t GetSoundBufferID() const { return soundBufferID; }
 
 	float MaxDistance() const { return maxDist; }
+
 	const std::string& Name() const { return name; }
+
 	int GetPriority() const { return priority; }
 
 	float GetGain() const;

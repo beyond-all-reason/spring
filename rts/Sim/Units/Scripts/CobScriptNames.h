@@ -3,32 +3,32 @@
 #ifndef COBSCRIPTNAMES_H
 #define COBSCRIPTNAMES_H
 
-#include <string>
-#include <array>
-
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/UnorderedMap.hpp"
 
+#include <array>
+#include <string>
 
-//These are mapped by the CCobFile at startup to make common function calls faster
+// These are mapped by the CCobFile at startup to make common function calls faster
 enum {
-	COBFN_Create,               // -
-	COBFN_Destroy,              // -
-	COBFN_StartMoving,          // in: reversing
-	COBFN_StopMoving,           // -
-	COBFN_Activate,             // -
-	COBFN_Killed,               // in: recentDamage / maxHealth * 100, out: delayedWreckLevel
-	COBFN_Deactivate,           // -
-	COBFN_SetDirection,         // in: heading
-	COBFN_SetSpeed,             // in: windStrength * 3000  OR  in: metalExtract * 500
-	COBFN_RockUnit,             // in: 500 * rockDir.z, in: 500 * rockDir.x
-	COBFN_HitByWeapon,          // in: 500 * hitDir.z, in: 500 * hitDir.x
-	COBFN_MoveRate0,            // -
-	COBFN_MoveRate1,            // -
-	COBFN_MoveRate2,            // -
-	COBFN_MoveRate3,            // FIXME: unused (see CHoverAirMoveType::UpdateMoveRate)
-	COBFN_SetSFXOccupy,         // in: curTerrainType
-	COBFN_HitByWeaponId,        // in: 500 * hitDir.z, in: 500 * hitDir.x, in: weaponDefs[weaponId].id, in: 100 * damage, return value: 100 * weaponHitMod
+	COBFN_Create,        // -
+	COBFN_Destroy,       // -
+	COBFN_StartMoving,   // in: reversing
+	COBFN_StopMoving,    // -
+	COBFN_Activate,      // -
+	COBFN_Killed,        // in: recentDamage / maxHealth * 100, out: delayedWreckLevel
+	COBFN_Deactivate,    // -
+	COBFN_SetDirection,  // in: heading
+	COBFN_SetSpeed,      // in: windStrength * 3000  OR  in: metalExtract * 500
+	COBFN_RockUnit,      // in: 500 * rockDir.z, in: 500 * rockDir.x
+	COBFN_HitByWeapon,   // in: 500 * hitDir.z, in: 500 * hitDir.x
+	COBFN_MoveRate0,     // -
+	COBFN_MoveRate1,     // -
+	COBFN_MoveRate2,     // -
+	COBFN_MoveRate3,     // FIXME: unused (see CHoverAirMoveType::UpdateMoveRate)
+	COBFN_SetSFXOccupy,  // in: curTerrainType
+	COBFN_HitByWeaponId, // in: 500 * hitDir.z, in: 500 * hitDir.x, in: weaponDefs[weaponId].id, in: 100 * damage,
+	                     // return value: 100 * weaponHitMod
 	COBFN_QueryLandingPadCount, // out: landingPadCount (default 16)
 	COBFN_QueryLandingPad,      // landingPadCount times (out: piecenum)
 	COBFN_Falling,              // -
@@ -62,14 +62,12 @@ enum {
 	COBFN_NumUnitFuncs = COBFN_Last + (MAX_WEAPONS_PER_UNIT * COBFN_Weapon_Funcs),
 };
 
-
-class CCobUnitScriptNames
-{
+class CCobUnitScriptNames {
 public:
 	static void InitScriptNames();
 
 	static const std::array<std::string, COBFN_NumUnitFuncs>& GetScriptNames(); // COBFN_* -> string
-	static const spring::unordered_map<std::string, int>& GetScriptMap(); // string -> COBFN_*
+	static const spring::unordered_map<std::string, int>& GetScriptMap();       // string -> COBFN_*
 
 	static int GetScriptNumber(const std::string& fname);
 	static const std::string& GetScriptName(unsigned int num);

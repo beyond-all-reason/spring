@@ -12,50 +12,42 @@
 #define ASIO_DETAIL_STD_THREAD_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include <thread>
 #include "asio/detail/noncopyable.hpp"
-
 #include "asio/detail/push_options.hpp"
+
+#include <thread>
 
 namespace asio {
 namespace detail {
 
-class std_thread
-  : private noncopyable
-{
+class std_thread : private noncopyable {
 public:
-  // Constructor.
-  template <typename Function>
-  std_thread(Function f, unsigned int = 0)
-    : thread_(f)
-  {
-  }
+	// Constructor.
+	template<typename Function>
+	std_thread(Function f, unsigned int = 0)
+	    : thread_(f)
+	{
+	}
 
-  // Destructor.
-  ~std_thread()
-  {
-    join();
-  }
+	// Destructor.
+	~std_thread() { join(); }
 
-  // Wait for the thread to exit.
-  void join()
-  {
-    if (thread_.joinable())
-      thread_.join();
-  }
+	// Wait for the thread to exit.
+	void join()
+	{
+		if (thread_.joinable())
+			thread_.join();
+	}
 
-  // Get number of CPUs.
-  static std::size_t hardware_concurrency()
-  {
-    return std::thread::hardware_concurrency();
-  }
+	// Get number of CPUs.
+	static std::size_t hardware_concurrency() { return std::thread::hardware_concurrency(); }
 
 private:
-  std::thread thread_;
+	std::thread thread_;
 };
 
 } // namespace detail

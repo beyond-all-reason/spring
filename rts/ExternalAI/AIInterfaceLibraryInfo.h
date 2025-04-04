@@ -3,15 +3,16 @@
 #ifndef AI_INTERFACE_LIBRARY_INFO_H
 #define AI_INTERFACE_LIBRARY_INFO_H
 
-#include <vector>
 #include <map>
 #include <string>
+#include <vector>
 
 class AIInterfaceKey;
 
 class CAIInterfaceLibraryInfo {
 public:
 	CAIInterfaceLibraryInfo() {}
+
 	CAIInterfaceLibraryInfo(const CAIInterfaceLibraryInfo& interfaceInfo);
 	CAIInterfaceLibraryInfo(const std::string& interfaceInfoFile);
 	~CAIInterfaceLibraryInfo();

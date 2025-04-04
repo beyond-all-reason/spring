@@ -18,7 +18,6 @@ int log_util_getNearestLevel(int level);
  */
 const char* log_util_prepareSection(const char* section);
 
-
 struct log_record_t {
 	char msg[32768];
 
@@ -35,4 +34,3 @@ struct log_record_t {
 #endif
 
 #endif // LOG_UTIL_H
-

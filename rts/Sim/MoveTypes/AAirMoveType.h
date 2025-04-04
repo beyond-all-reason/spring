@@ -10,12 +10,11 @@
  * Do not create an instance of this class.
  * Use either CHoverAirMoveType or CStrafeAirMoveType instead.
  */
-class AAirMoveType : public AMoveType
-{
+class AAirMoveType : public AMoveType {
 	CR_DECLARE(AAirMoveType)
 public:
-	typedef float(*GetGroundHeightFunc)(float, float);
-	typedef void(*EmitCrashTrailFunc)(CUnit*, unsigned int);
+	typedef float (*GetGroundHeightFunc)(float, float);
+	typedef void (*EmitCrashTrailFunc)(CUnit*, unsigned int);
 
 	enum AircraftState {
 		AIRCRAFT_LANDED,
@@ -26,6 +25,7 @@ public:
 		/// this is what happens to aircraft with dontLand=1 in fbi
 		AIRCRAFT_HOVERING
 	};
+
 	enum CollisionState {
 		COLLISION_NOUNIT = 0,
 		COLLISION_DIRECT = 1, // "directly on path"
@@ -33,17 +33,24 @@ public:
 	};
 
 	AAirMoveType(CUnit* unit);
+
 	virtual ~AAirMoveType() {}
 
 	virtual bool Update();
 	virtual void UpdateLanded();
+
 	virtual void Takeoff() {}
+
 	virtual void Land() {}
+
 	virtual void SetState(AircraftState state) {}
+
 	virtual AircraftState GetLandingState() const { return AIRCRAFT_LANDING; }
 
 	void SetWantedAltitude(float altitude) { wantedHeight = mix(orgWantedHeight, altitude, altitude != 0.0f); }
-	void SetDefaultAltitude(float altitude) {
+
+	void SetDefaultAltitude(float altitude)
+	{
 		wantedHeight = altitude;
 		orgWantedHeight = altitude;
 	}
@@ -51,11 +58,14 @@ public:
 	bool HaveLandingPos() const { return (reservedLandingPos.x != -1.0f); }
 
 	void LandAt(float3 pos, float distanceSq);
+
 	void ClearLandingPos() { reservedLandingPos = -OnesVector; }
+
 	void UpdateLandingHeight(float newWantedHeight);
 	void UpdateLanding();
 
 	bool CanApplyImpulse(const float3&) { return true; }
+
 	bool UseSmoothMesh() const;
 
 	void DependentDied(CObject* o);

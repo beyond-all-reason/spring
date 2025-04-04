@@ -15,6 +15,7 @@ extern void LuaMutexYield(lua_State* L);
 extern const char* spring_lua_get_handle_name(lua_State* L);
 
 struct SLuaAllocState;
+
 struct SLuaAllocError {
 	// includes space for multiple messages, since we do not record them immediately
 	char msgBuf[16384] = {0};
@@ -28,8 +29,8 @@ extern bool spring_lua_alloc_skip_gc(float gcLoadMult);
 extern void spring_lua_alloc_update_stats(int clearStatsFrame);
 
 
-extern void spring_lua_ftoa(float f, char *buf, int precision = -1);
-extern void spring_lua_format(float f, const char* fmt, char *buf);
+extern void spring_lua_ftoa(float f, char* buf, int precision = -1);
+extern void spring_lua_format(float f, const char* fmt, char* buf);
 
 // (these should) never (be) called from synced Lua states
 extern int spring_lua_unsynced_rand(lua_State* L);

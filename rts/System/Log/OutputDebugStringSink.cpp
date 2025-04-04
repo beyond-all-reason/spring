@@ -39,20 +39,16 @@ static void log_sink_record_outputDebugString(int level, const char* section, co
 
 
 namespace {
-	/// Auto-registers the sink defined in this file before main() is called
-	struct OutputDebugStringSinkRegistrator {
-		OutputDebugStringSinkRegistrator() {
-			log_backend_registerSink(&log_sink_record_outputDebugString);
-		}
-		~OutputDebugStringSinkRegistrator() {
-			log_backend_unregisterSink(&log_sink_record_outputDebugString);
-		}
-	} outputDebugStringSinkRegistrator;
-}
+/// Auto-registers the sink defined in this file before main() is called
+struct OutputDebugStringSinkRegistrator {
+	OutputDebugStringSinkRegistrator() { log_backend_registerSink(&log_sink_record_outputDebugString); }
+
+	~OutputDebugStringSinkRegistrator() { log_backend_unregisterSink(&log_sink_record_outputDebugString); }
+} outputDebugStringSinkRegistrator;
+} // namespace
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
 #endif // _MSC_VER
-

@@ -6,38 +6,47 @@
 #include <string>
 
 namespace CNamedTextures {
-	void Init();
-	void Kill(bool shutdown = false);
-	void Reload();
+void Init();
+void Kill(bool shutdown = false);
+void Reload();
 
-	static bool Load(const std::string& texName, unsigned int texID, bool genInsert = true);
+static bool Load(const std::string& texName, unsigned int texID, bool genInsert = true);
 
-	/**
-	 * Reload textures we could not load because Bind() was called
-	 * when compiling a DList.
-	 * Otherwise, it would re-upload the texture-data on each call
-	 * of the DList, so we delay it and load them here.
-	 */
-	void Update();
+/**
+ * Reload textures we could not load because Bind() was called
+ * when compiling a DList.
+ * Otherwise, it would re-upload the texture-data on each call
+ * of the DList, so we delay it and load them here.
+ */
+void Update();
 
-	bool Bind(const std::string& texName);
-	bool Free(const std::string& texName);
+bool Bind(const std::string& texName);
+bool Free(const std::string& texName);
 
-	struct TexInfo {
-		TexInfo()
-			: id(0), xsize(-1), ysize(-1), texType(0), alpha(false), persist(false) {}
-		unsigned int id;
-		int xsize;
-		int ysize;
-		unsigned int texType;
-		bool alpha;
-		bool persist;
-	};
+struct TexInfo {
+	TexInfo()
+	    : id(0)
+	    , xsize(-1)
+	    , ysize(-1)
+	    , texType(0)
+	    , alpha(false)
+	    , persist(false)
+	{
+	}
 
-	size_t GetInfoIndex(const std::string& texName);
+	unsigned int id;
+	int xsize;
+	int ysize;
+	unsigned int texType;
+	bool alpha;
+	bool persist;
+};
 
-	const TexInfo* GetInfo(const std::string& texName, bool forceLoad = false, bool persist = false, bool secondaryGLContext = false);
-	const TexInfo* GetInfo(size_t texIdx);
-}
+size_t GetInfoIndex(const std::string& texName);
+
+const TexInfo*
+GetInfo(const std::string& texName, bool forceLoad = false, bool persist = false, bool secondaryGLContext = false);
+const TexInfo* GetInfo(size_t texIdx);
+} // namespace CNamedTextures
 
 #endif /* NAMED_TEXTURES_H */

@@ -12,6 +12,7 @@ public:
 	bool IsCapturingSupported() const override { return false; }
 
 	void StartCapturing() override;
+
 	void StopCapturing() override {}
 
 	void RenderFrame() override {}

@@ -3,11 +3,10 @@
 #ifndef CONSOLE_HISTORY_H
 #define CONSOLE_HISTORY_H
 
-#include <string>
 #include <deque>
+#include <string>
 
-class CConsoleHistory
-{
+class CConsoleHistory {
 public:
 	CConsoleHistory() { Init(); }
 
@@ -30,4 +29,3 @@ protected:
 extern CConsoleHistory gameConsoleHistory;
 
 #endif
-

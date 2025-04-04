@@ -1,16 +1,18 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "ConfigVariable.h"
+
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
+
 #include <iostream>
 
 /**
  * @brief Log an error about a ConfigVariableMetaData
  */
-#define LOG_VAR(data, fmt, ...) \
-	LOG_L(L_ERROR, "%s:%d: " fmt, data->GetDeclarationFile().Get().c_str(), data->GetDeclarationLine().Get(), ## __VA_ARGS__) \
-
+#define LOG_VAR(data, fmt, ...)                                                                               \
+	LOG_L(L_ERROR, "%s:%d: " fmt, data->GetDeclarationFile().Get().c_str(), data->GetDeclarationLine().Get(), \
+	    ##__VA_ARGS__)
 
 ConfigVariable::MetaDataMap& ConfigVariable::GetMutableMetaDataMap()
 {
@@ -18,10 +20,7 @@ ConfigVariable::MetaDataMap& ConfigVariable::GetMutableMetaDataMap()
 	return vars;
 }
 
-const ConfigVariable::MetaDataMap& ConfigVariable::GetMetaDataMap()
-{
-	return GetMutableMetaDataMap();
-}
+const ConfigVariable::MetaDataMap& ConfigVariable::GetMetaDataMap() { return GetMutableMetaDataMap(); }
 
 void ConfigVariable::AddMetaData(const ConfigVariableMetaData* data)
 {
@@ -51,9 +50,7 @@ const ConfigVariableMetaData* ConfigVariable::GetMetaData(const std::string& key
 }
 
 #ifdef DEBUG
-CONFIG(std::string, test)
-	.defaultValue("x y z")
-	.description("\"quoted\", escaped: \\, \b, \f, \n, \r, \t");
+CONFIG(std::string, test).defaultValue("x y z").description("\"quoted\", escaped: \\, \b, \f, \n, \r, \t");
 #endif
 
 
@@ -73,7 +70,7 @@ static inline std::string Quote(const std::string& type, const std::string& valu
 /**
  * @brief Write a ConfigVariableMetaData to a stream.
  */
-static std::ostream& operator<< (std::ostream& out, const ConfigVariableMetaData* d)
+static std::ostream& operator<<(std::ostream& out, const ConfigVariableMetaData* d)
 {
 	const char* const OUTER_INDENT = "  ";
 	const char* const INDENT = "    ";

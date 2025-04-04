@@ -14,4 +14,4 @@ struct ProcessorMasks {
 // OS-specific implementation to get the processor masks.
 ProcessorMasks GetProcessorMasks();
 
-}
+} // namespace cpu_topology

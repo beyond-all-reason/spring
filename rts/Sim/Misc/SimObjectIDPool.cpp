@@ -1,24 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "SimObjectIDPool.h"
+
 #include "GlobalConstants.h"
 #include "GlobalSynced.h"
+
 #include "Sim/Objects/SolidObject.h"
 #include "System/Cpp11Compat.hpp"
-#include "System/creg/STL_Map.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/creg/STL_Map.h"
 
 
 CR_BIND(SimObjectIDPool, )
-CR_REG_METADATA(SimObjectIDPool, (
-	CR_MEMBER(poolIDs),
-	CR_MEMBER(freeIDs),
-	CR_MEMBER(tempIDs)
-))
+CR_REG_METADATA(SimObjectIDPool, (CR_MEMBER(poolIDs), CR_MEMBER(freeIDs), CR_MEMBER(tempIDs)))
 
-
-void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs) {
+void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<uint32_t> newIDs(numIDs);
 
@@ -46,18 +43,19 @@ void SimObjectIDPool::Expand(uint32_t baseID, uint32_t numIDs) {
 	}
 }
 
-
-
-void SimObjectIDPool::AssignID(CSolidObject* object) {
+void SimObjectIDPool::AssignID(CSolidObject* object)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (object->id < 0) {
 		object->id = ExtractID();
-	} else {
+	}
+	else {
 		ReserveID(object->id);
 	}
 }
 
-uint32_t SimObjectIDPool::ExtractID() {
+uint32_t SimObjectIDPool::ExtractID()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// extract a random ID from the pool
 	//
@@ -76,7 +74,8 @@ uint32_t SimObjectIDPool::ExtractID() {
 	return uid;
 }
 
-void SimObjectIDPool::ReserveID(uint32_t uid) {
+void SimObjectIDPool::ReserveID(uint32_t uid)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// reserve a chosen ID from the pool
 	assert(HasID(uid));
@@ -93,7 +92,8 @@ void SimObjectIDPool::ReserveID(uint32_t uid) {
 	RecycleIDs();
 }
 
-void SimObjectIDPool::FreeID(uint32_t uid, bool delayed) {
+void SimObjectIDPool::FreeID(uint32_t uid, bool delayed)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// put an ID back into the pool either immediately
 	// or after all remaining free ID's run out (which
@@ -103,16 +103,18 @@ void SimObjectIDPool::FreeID(uint32_t uid, bool delayed) {
 
 	if (delayed) {
 		tempIDs.emplace(poolIDs[uid], uid);
-	} else {
+	}
+	else {
 		freeIDs.emplace(poolIDs[uid], uid);
 	}
 
-	//handle the corner case of maximum allocation
+	// handle the corner case of maximum allocation
 	if (IsEmpty())
 		RecycleIDs();
 }
 
-bool SimObjectIDPool::RecycleID(uint32_t uid) {
+bool SimObjectIDPool::RecycleID(uint32_t uid)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(poolIDs.find(uid) != poolIDs.end());
 
@@ -127,15 +129,16 @@ bool SimObjectIDPool::RecycleID(uint32_t uid) {
 	return true;
 }
 
-void SimObjectIDPool::RecycleIDs() {
+void SimObjectIDPool::RecycleIDs()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// throw each ID recycled up until now back into the pool
 	freeIDs.insert(tempIDs.begin(), tempIDs.end());
 	tempIDs.clear();
 }
 
-
-bool SimObjectIDPool::HasID(uint32_t uid) const {
+bool SimObjectIDPool::HasID(uint32_t uid) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(poolIDs.find(uid) != poolIDs.end());
 
@@ -145,4 +148,3 @@ bool SimObjectIDPool::HasID(uint32_t uid) const {
 
 	return (freeIDs.find(idx) != freeIDs.end());
 }
-

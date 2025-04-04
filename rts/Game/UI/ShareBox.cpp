@@ -2,25 +2,25 @@
 
 #include "ShareBox.h"
 
-#include <cmath>
-
 #include "MouseHandler.h"
+
 #include "Game/GlobalUnsynced.h"
-#include "Game/SelectedUnitsHandler.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
+#include "Game/SelectedUnitsHandler.h"
+#include "Net/Protocol/NetProtocol.h"
 #include "Rendering/Fonts/glFont.h"
-#include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/myGL.h"
 #include "Rendering/GlobalRendering.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Net/Protocol/NetProtocol.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/MsgStrings.h"
 
-#include <SDL_keycode.h>
+#include <cmath>
 
-#include "System/Misc/TracyDefs.h"
+#include <SDL_keycode.h>
 
 #define MAX_SHARE_TEAMS (teamHandler.ActiveTeams() - 1)
 int CShareBox::lastShareTeam = 0;
@@ -77,12 +77,12 @@ CShareBox::CShareBox()
 	metalBox.x2 = 0.30f;
 	metalBox.y2 = 0.215f;
 
-	metalShare  = 0.0f;
+	metalShare = 0.0f;
 	energyShare = 0.0f;
-	shareUnits  = false;
-	moveBox     = false;
-	metalMove   = false;
-	energyMove  = false;
+	shareUnits = false;
+	moveBox = false;
+	metalMove = false;
+	energyMove = false;
 
 	// find a default team to share to that is not gu->myTeam and is not dead.
 	shareTeam = lastShareTeam;
@@ -139,26 +139,27 @@ void CShareBox::Draw()
 
 		// cancel-box on mouse over
 		if (InBox(mx, my, box + cancelBox))
-			gleDrawQuadC(box + cancelBox, SColor{0.7f,0.2f,0.2f,alpha}, rb);
+			gleDrawQuadC(box + cancelBox, SColor{0.7f, 0.2f, 0.2f, alpha}, rb);
 
 		gleDrawQuadC(box + teamBox, SColor{0.2f, 0.2f, 0.2f, alpha}, rb);
 
 		if (hasScroll) {
-			const float  sz = scrollbarBox.y2 - scrollbarBox.y1;
-			const float tsz =  sz / float(MAX_SHARE_TEAMS);
+			const float sz = scrollbarBox.y2 - scrollbarBox.y1;
+			const float tsz = sz / float(MAX_SHARE_TEAMS);
 			const float psz = tsz * float(numTeamsDisp);
 
 			scrollBox.y2 = scrollbarBox.y2 - startTeam * tsz;
 			scrollBox.y1 = scrollBox.y2 - psz;
 
 			gleDrawQuadC(box + scrollbarBox, SColor{0.1f, 0.1f, 0.1f, alpha}, rb);
-			gleDrawQuadC(box + scrollBox   , SColor{0.8f, 0.8f, 0.8f, alpha}, rb);
+			gleDrawQuadC(box + scrollBox, SColor{0.8f, 0.8f, 0.8f, alpha}, rb);
 		}
 
 
-		gleDrawQuadC(box +   unitBox, InBox(mx, my, box + unitBox)? SColor{0.7f, 0.2f, 0.2f, alpha}: SColor{0.2f, 0.2f, 0.2f, alpha}, rb);
-		gleDrawQuadC(box +  metalBox,                                                                SColor{0.8f, 0.8f, 0.9f,  0.7f}, rb);
-		gleDrawQuadC(box + energyBox,                                                                SColor{0.9f, 0.9f, 0.2f,  0.7f}, rb);
+		gleDrawQuadC(box + unitBox,
+		    InBox(mx, my, box + unitBox) ? SColor{0.7f, 0.2f, 0.2f, alpha} : SColor{0.2f, 0.2f, 0.2f, alpha}, rb);
+		gleDrawQuadC(box + metalBox, SColor{0.8f, 0.8f, 0.9f, 0.7f}, rb);
+		gleDrawQuadC(box + energyBox, SColor{0.9f, 0.9f, 0.2f, 0.7f}, rb);
 	}
 	{
 		// draw share-indicators in metal/energy bars
@@ -175,7 +176,7 @@ void CShareBox::Draw()
 		energyShareBox.y1 = energyBox.y1 - 0.005f;
 		energyShareBox.y2 = energyBox.y2 + 0.005f;
 
-		gleDrawQuadC(box +  metalShareBox, SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
+		gleDrawQuadC(box + metalShareBox, SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
 		gleDrawQuadC(box + energyShareBox, SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
 	}
 	{
@@ -185,9 +186,18 @@ void CShareBox::Draw()
 		// show "share units" tickmark
 		if (shareUnits) {
 			glLineWidth(3.0f);
-			rb.AddVertex({{box.x1 + unitBox.x1 + 0.01f, box.y1 + unitBox.y1 + 0.025f, 0.0f}, {0.9f, 0.2f, 0.2f, 0.7f}});
-			rb.AddVertex({{box.x1 + unitBox.x1 + 0.02f, box.y1 + unitBox.y1 + 0.010f, 0.0f}, {0.9f, 0.2f, 0.2f, 0.7f}});
-			rb.AddVertex({{box.x1 + unitBox.x1 + 0.03f, box.y1 + unitBox.y1 + 0.040f, 0.0f}, {0.9f, 0.2f, 0.2f, 0.7f}});
+			rb.AddVertex({
+			    {box.x1 + unitBox.x1 + 0.01f, box.y1 + unitBox.y1 + 0.025f, 0.0f},
+                {0.9f, 0.2f, 0.2f, 0.7f}
+            });
+			rb.AddVertex({
+			    {box.x1 + unitBox.x1 + 0.02f, box.y1 + unitBox.y1 + 0.010f, 0.0f},
+                {0.9f, 0.2f, 0.2f, 0.7f}
+            });
+			rb.AddVertex({
+			    {box.x1 + unitBox.x1 + 0.03f, box.y1 + unitBox.y1 + 0.040f, 0.0f},
+                {0.9f, 0.2f, 0.2f, 0.7f}
+            });
 
 			rb.DrawArrays(GL_LINE_STRIP);
 			glLineWidth(1.0f);
@@ -197,27 +207,36 @@ void CShareBox::Draw()
 	}
 
 	font->SetTextColor(1.0f, 1.0f, 1.0f, 0.8f);
-	font->glPrint(box.x1 + (okBox.x1 + okBox.x2) * 0.5f, box.y1 + (okBox.y1 + okBox.y2) * 0.5f, 1.0f, FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Ok");
-	font->glPrint(box.x1 + (applyBox.x1 + applyBox.x2) * 0.5f, box.y1 + (applyBox.y1 + applyBox.y2) * 0.5f, 1.0f, FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Apply");
-	font->glPrint(box.x1 + (cancelBox.x1 + cancelBox.x2) * 0.5f, box.y1 + (cancelBox.y1 + cancelBox.y2) * 0.5f, 1.0f, FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Cancel");
+	font->glPrint(box.x1 + (okBox.x1 + okBox.x2) * 0.5f, box.y1 + (okBox.y1 + okBox.y2) * 0.5f, 1.0f,
+	    FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Ok");
+	font->glPrint(box.x1 + (applyBox.x1 + applyBox.x2) * 0.5f, box.y1 + (applyBox.y1 + applyBox.y2) * 0.5f, 1.0f,
+	    FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Apply");
+	font->glPrint(box.x1 + (cancelBox.x1 + cancelBox.x2) * 0.5f, box.y1 + (cancelBox.y1 + cancelBox.y2) * 0.5f, 1.0f,
+	    FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Cancel");
 
-	font->glPrint(box.x1 + 0.06f, box.y1 + 0.085f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Share selected units");
+	font->glPrint(
+	    box.x1 + 0.06f, box.y1 + 0.085f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Share selected units");
 
 	font->SetTextColor(1.0f, 1.0f, 0.4f, 0.8f);
 	font->glPrint(box.x1 + 0.01f, box.y1 + 0.16f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Share Energy");
 
 	font->SetTextColor(1.0f, 1.0f, 1.0f, 0.8f);
-	font->glFormat(box.x1 + 0.25f, box.y1 + 0.12f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f", float(teamHandler.Team(gu->myTeam)->res.energy));
-	font->glFormat(box.x1 + 0.14f, box.y1 + 0.12f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f", teamHandler.Team(gu->myTeam)->res.energy * energyShare);
+	font->glFormat(box.x1 + 0.25f, box.y1 + 0.12f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f",
+	    float(teamHandler.Team(gu->myTeam)->res.energy));
+	font->glFormat(box.x1 + 0.14f, box.y1 + 0.12f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f",
+	    teamHandler.Team(gu->myTeam)->res.energy * energyShare);
 
 	font->SetTextColor(0.8f, 0.8f, 0.9f, 0.8f);
 	font->glPrint(box.x1 + 0.01f, box.y1 + 0.22f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Share Metal");
 
 	font->SetTextColor(1.0f, 1.0f, 1.0f, 0.8f);
-	font->glFormat(box.x1 + 0.25f, box.y1 + 0.18f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f", float(teamHandler.Team(gu->myTeam)->res.metal));
-	font->glFormat(box.x1 + 0.14f, box.y1 + 0.18f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f", teamHandler.Team(gu->myTeam)->res.metal * metalShare);
+	font->glFormat(box.x1 + 0.25f, box.y1 + 0.18f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f",
+	    float(teamHandler.Team(gu->myTeam)->res.metal));
+	font->glFormat(box.x1 + 0.14f, box.y1 + 0.18f, 0.7f, FONT_SCALE | FONT_NORM | FONT_BUFFERED, "%.0f",
+	    teamHandler.Team(gu->myTeam)->res.metal * metalShare);
 
-	for (int teamNum = startTeam, teamPos = 0; teamNum < MAX_SHARE_TEAMS && teamPos < numTeamsDisp; ++teamNum, ++teamPos) {
+	for (int teamNum = startTeam, teamPos = 0; teamNum < MAX_SHARE_TEAMS && teamPos < numTeamsDisp;
+	    ++teamNum, ++teamPos) {
 		const int actualTeam = teamNum + (teamNum >= gu->myTeam);
 
 		const CTeam* team = teamHandler.Team(actualTeam);
@@ -229,7 +248,8 @@ void CShareBox::Draw()
 		if (teamHandler.Ally(gu->myAllyTeam, teamHandler.AllyTeam(actualTeam))) {
 			font->SetTextColor(0.5f, 1.0f, 0.5f, 0.4f + 0.4f * (shareTeam == actualTeam));
 			ally = " <Ally>";
-		} else {
+		}
+		else {
 			font->SetTextColor(1.0f, 0.5f, 0.5f, 0.4f + 0.4f * (shareTeam == actualTeam));
 			ally = " <Enemy>";
 		}
@@ -243,17 +263,8 @@ void CShareBox::Draw()
 			ally = " <Gaia>";
 		}
 
-		font->glFormat(
-			box.x1 + teamBox.x1 + 0.002f,
-			box.y1 + teamBox.y2 - 0.025f - teamPos * 0.025f,
-			0.7f,
-			FONT_SCALE | FONT_NORM | FONT_BUFFERED,
-			"Team %02i (%s)%s%s",
-			actualTeam,
-			name,
-			ally,
-			dead
-		);
+		font->glFormat(box.x1 + teamBox.x1 + 0.002f, box.y1 + teamBox.y2 - 0.025f - teamPos * 0.025f, 0.7f,
+		    FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Team %02i (%s)%s%s", actualTeam, name, ally, dead);
 	}
 
 	font->DrawBuffered();
@@ -276,25 +287,35 @@ std::string CShareBox::GetTooltip(int x, int y)
 
 	if (InBox(mx, my, box + okBox)) {
 		return "Shares the selected stuff and close dialog";
-	} else if (InBox(mx, my, box + applyBox)) {
+	}
+	else if (InBox(mx, my, box + applyBox)) {
 		return "Shares the selected stuff";
-	} else if (InBox(mx, my, box + cancelBox)) {
+	}
+	else if (InBox(mx, my, box + cancelBox)) {
 		return "Close this dialog without sharing";
-	} else if (InBox(mx, my, box + unitBox)) {
+	}
+	else if (InBox(mx, my, box + unitBox)) {
 		return "Toggles if you want to share your\ncurrently selected units";
-	} else if (InBox(mx, my, box + metalBox)) {
+	}
+	else if (InBox(mx, my, box + metalBox)) {
 		return "Click here to select how much metal to share";
-	} else if (InBox(mx, my, box + energyBox)) {
+	}
+	else if (InBox(mx, my, box + energyBox)) {
 		return "Click here to select how much energy to share";
-	} else if (hasScroll && InBox(mx, my, box + scrollBox)) {
+	}
+	else if (hasScroll && InBox(mx, my, box + scrollBox)) {
 		return "Scroll the team list here";
-	} else if (hasScroll && InBox(mx, my, box + scrollbarBox)) {
+	}
+	else if (hasScroll && InBox(mx, my, box + scrollbarBox)) {
 		return "Scroll the team list here";
-	} else if (InBox(mx, my, box + teamBox)) {
+	}
+	else if (InBox(mx, my, box + teamBox)) {
 		return "Select which team to share to";
-	} else if (InBox(mx, my, box)) {
+	}
+	else if (InBox(mx, my, box)) {
 		return " ";
-	} else {
+	}
+	else {
 		return "";
 	}
 }
@@ -307,37 +328,32 @@ bool CShareBox::MousePress(int x, int y, int button)
 
 	if (InBox(mx, my, box)) {
 		moveBox = true;
-		if (InBox(mx, my, box + okBox) ||
-				InBox(mx, my, box + applyBox) ||
-				InBox(mx, my, box + cancelBox) ||
-				InBox(mx, my, box + unitBox) ||
-				InBox(mx, my, box + metalBox) ||
-				InBox(mx, my, box + energyBox) ||
-				InBox(mx, my, box + teamBox) ||
-				InBox(mx, my, box + scrollbarBox) ||
-				InBox(mx, my, box + scrollBox)) {
+		if (InBox(mx, my, box + okBox) || InBox(mx, my, box + applyBox) || InBox(mx, my, box + cancelBox) ||
+		    InBox(mx, my, box + unitBox) || InBox(mx, my, box + metalBox) || InBox(mx, my, box + energyBox) ||
+		    InBox(mx, my, box + teamBox) || InBox(mx, my, box + scrollbarBox) || InBox(mx, my, box + scrollBox)) {
 			moveBox = false;
 		}
 		if (InBox(mx, my, box + metalBox)) {
 			metalMove = true;
-			metalShare = std::max(0.f, std::min(1.f, (mx-box.x1-metalBox.x1)/(metalBox.x2-metalBox.x1)));
+			metalShare = std::max(0.f, std::min(1.f, (mx - box.x1 - metalBox.x1) / (metalBox.x2 - metalBox.x1)));
 		}
 		if (InBox(mx, my, box + energyBox)) {
 			energyMove = true;
-			energyShare = std::max(0.f, std::min(1.f, (mx-box.x1-energyBox.x1)/(energyBox.x2-energyBox.x1)));
+			energyShare = std::max(0.f, std::min(1.f, (mx - box.x1 - energyBox.x1) / (energyBox.x2 - energyBox.x1)));
 		}
 		if (hasScroll && InBox(mx, my, box + scrollBox)) {
 			scrolling = true;
 			scrollGrab = (box + scrollBox).y2 - my;
 		}
 		else if (hasScroll && InBox(mx, my, box + scrollbarBox)) {
-			if(my < (box + scrollBox).y1)
-				*(volatile int *)&startTeam = startTeam + std::min(MAX_SHARE_TEAMS - numTeamsDisp - startTeam, numTeamsDisp);
-			if(my > (box + scrollBox).y2)
-				*(volatile int *)&startTeam = startTeam - std::min(startTeam, numTeamsDisp);
+			if (my < (box + scrollBox).y1)
+				*(volatile int*)&startTeam =
+				    startTeam + std::min(MAX_SHARE_TEAMS - numTeamsDisp - startTeam, numTeamsDisp);
+			if (my > (box + scrollBox).y2)
+				*(volatile int*)&startTeam = startTeam - std::min(startTeam, numTeamsDisp);
 		}
 		else if (InBox(mx, my, box + teamBox)) {
-			int team = startTeam + (int)((box.y1 + teamBox.y2-my)/0.025f);
+			int team = startTeam + (int)((box.y1 + teamBox.y2 - my) / 0.025f);
 			if (team >= gu->myTeam) {
 				team++;
 			}
@@ -361,14 +377,16 @@ void CShareBox::MouseRelease(int x, int y, int button)
 	if (InBox(mx, my, box + unitBox)) {
 		shareUnits = !shareUnits;
 	}
-	if ((InBox(mx, my, box + okBox) || InBox(mx, my, box + applyBox)) &&
-			 shareTeam != -1 && !teamHandler.Team(shareTeam)->isDead && !teamHandler.Team(gu->myTeam)->isDead) {
+	if ((InBox(mx, my, box + okBox) || InBox(mx, my, box + applyBox)) && shareTeam != -1 &&
+	    !teamHandler.Team(shareTeam)->isDead && !teamHandler.Team(gu->myTeam)->isDead) {
 		if (shareUnits) {
 			Command c(CMD_STOP);
 			// make sure the units are stopped and that the selection is transmitted
 			selectedUnitsHandler.GiveCommand(c, false);
 		}
-		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, shareTeam, shareUnits, metalShare * teamHandler.Team(gu->myTeam)->res.metal, energyShare * teamHandler.Team(gu->myTeam)->res.energy));
+		clientNet->Send(CBaseNetProtocol::Get().SendShare(gu->myPlayerNum, shareTeam, shareUnits,
+		    metalShare * teamHandler.Team(gu->myTeam)->res.metal,
+		    energyShare * teamHandler.Team(gu->myTeam)->res.energy));
 		if (shareUnits) {
 			selectedUnitsHandler.ClearSelected();
 		}
@@ -378,8 +396,8 @@ void CShareBox::MouseRelease(int x, int y, int button)
 		delete this;
 		return;
 	}
-	moveBox    = false;
-	metalMove  = false;
+	moveBox = false;
+	metalMove = false;
 	energyMove = false;
 }
 
@@ -389,13 +407,13 @@ void CShareBox::MouseMove(int x, int y, int dx, int dy, int button)
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
-	if(scrolling) {
-		float scr = (box+scrollbarBox).y2 - (my + scrollGrab);
+	if (scrolling) {
+		float scr = (box + scrollbarBox).y2 - (my + scrollGrab);
 		float sz = scrollbarBox.y2 - scrollbarBox.y1;
 		float tsz = sz / float(MAX_SHARE_TEAMS);
 
 		// ??
-		*(volatile int*) &startTeam = std::max(0, std::min((int)std::lround(scr / tsz), MAX_SHARE_TEAMS - numTeamsDisp));
+		*(volatile int*)&startTeam = std::max(0, std::min((int)std::lround(scr / tsz), MAX_SHARE_TEAMS - numTeamsDisp));
 		return;
 	}
 
@@ -406,13 +424,14 @@ void CShareBox::MouseMove(int x, int y, int dx, int dy, int button)
 		box.y2 += MouseMoveY(dy);
 	}
 	if (metalMove) {
-		metalShare  = std::max(0.0f, std::min(1.0f, (mx - box.x1 - metalBox.x1)  / (metalBox.x2 - metalBox.x1)));
+		metalShare = std::max(0.0f, std::min(1.0f, (mx - box.x1 - metalBox.x1) / (metalBox.x2 - metalBox.x1)));
 	}
 	if (energyMove) {
 		energyShare = std::max(0.0f, std::min(1.0f, (mx - box.x1 - energyBox.x1) / (energyBox.x2 - energyBox.x1)));
 	}
-	if (!(hasScroll && (InBox(mx, my, box + scrollBox) || InBox(mx, my, box + scrollbarBox))) && InBox(mx, my, box + teamBox)) {
-		int team = startTeam + (int) ((box.y1 + teamBox.y2 - my) / 0.025f);
+	if (!(hasScroll && (InBox(mx, my, box + scrollBox) || InBox(mx, my, box + scrollbarBox))) &&
+	    InBox(mx, my, box + teamBox)) {
+		int team = startTeam + (int)((box.y1 + teamBox.y2 - my) / 0.025f);
 		if (team >= gu->myTeam) {
 			team++;
 		}
@@ -431,7 +450,3 @@ bool CShareBox::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	}
 	return false;
 }
-
-
-
-

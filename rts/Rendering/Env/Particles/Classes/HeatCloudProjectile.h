@@ -7,19 +7,16 @@
 
 struct AtlasedTexture;
 
-class CHeatCloudProjectile : public CProjectile
-{
+class CHeatCloudProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CHeatCloudProjectile)
 public:
 	CHeatCloudProjectile();
 	/// projectile starts at size 0 and ends at size \<size\>
-	CHeatCloudProjectile(
-		CUnit* owner,
-		const float3& pos,
-		const float3& speed,
-		const float temperature,
-		const float size
-	);
+	CHeatCloudProjectile(CUnit* owner,
+	    const float3& pos,
+	    const float3& speed,
+	    const float temperature,
+	    const float size);
 
 	void Serialize(creg::ISerializer* s);
 
@@ -36,8 +33,10 @@ private:
 	float heat;
 	float maxheat;
 	float heatFalloff;
+
 public:
 	float size;
+
 private:
 	float sizeGrowth;
 	float sizemod;

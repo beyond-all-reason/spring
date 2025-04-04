@@ -1,10 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-
-
 #include "Player.h"
+
 #include "PlayerHandler.h"
+
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/GlobalUnsynced.h"
@@ -13,40 +12,34 @@
 #include "Game/UI/UnitTracker.h"
 #include "Lua/LuaUI.h"
 #include "Map/ReadMap.h"
-#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
-#include "System/SpringMath.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 #include "System/creg/STL_Set.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cassert>
 
 
 CR_BIND_DERIVED(CPlayer, PlayerBase, )
-CR_REG_METADATA(CPlayer, (
-	CR_MEMBER(active),
-	CR_MEMBER(playerNum),
-	CR_IGNORED(ping),
-	CR_MEMBER(currentStats),
-	CR_IGNORED(fpsController),
-	CR_MEMBER(modParams),
-	CR_MEMBER(controlledTeams)
-))
-
+CR_REG_METADATA(CPlayer,
+    (CR_MEMBER(active),
+        CR_MEMBER(playerNum),
+        CR_IGNORED(ping),
+        CR_MEMBER(currentStats),
+        CR_IGNORED(fpsController),
+        CR_MEMBER(modParams),
+        CR_MEMBER(controlledTeams)))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CPlayer::CPlayer()
-{
-	fpsController.SetControllerPlayer(this);
-}
-
-
+CPlayer::CPlayer() { fpsController.SetControllerPlayer(this); }
 
 void CPlayer::SetControlledTeams()
 {
@@ -57,7 +50,7 @@ void CPlayer::SetControlledTeams()
 	if (gs->godMode != 0) {
 		// anyone can control any (friendly and/or enemy) unit
 		for (int t = 0; t < teamHandler.ActiveTeams(); t++) {
-			if ((gs->godMode & GODMODE_ATC_BIT) != 0 &&  teamHandler.AlliedTeams(team, t))
+			if ((gs->godMode & GODMODE_ATC_BIT) != 0 && teamHandler.AlliedTeams(team, t))
 				controlledTeams.insert(t);
 			if ((gs->godMode & GODMODE_ETC_BIT) != 0 && !teamHandler.AlliedTeams(team, t))
 				controlledTeams.insert(t);
@@ -79,7 +72,6 @@ void CPlayer::SetControlledTeams()
 	controlledTeams.insert(team);
 }
 
-
 void CPlayer::UpdateControlledTeams()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -93,7 +85,6 @@ void CPlayer::UpdateControlledTeams()
 	}
 }
 
-
 void CPlayer::StartSpectating()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -104,11 +95,11 @@ void CPlayer::StartSpectating()
 
 	if (gu->myPlayerNum == this->playerNum) {
 		// HACK: unsynced code should just listen for the PlayerChanged event
-		gu->spectating           = true;
-		gu->spectatingFullView   = true;
+		gu->spectating = true;
+		gu->spectatingFullView = true;
 		gu->spectatingFullSelect = true;
 
-		//FIXME use eventHandler?
+		// FIXME use eventHandler?
 		CLuaUI::UpdateTeams();
 		selectedUnitsHandler.ClearSelected();
 		if (readMap != nullptr)
@@ -132,8 +123,8 @@ void CPlayer::JoinTeam(int newTeam)
 		gu->myPlayingTeam = gu->myTeam = newTeam;
 		gu->myPlayingAllyTeam = gu->myAllyTeam = teamHandler.AllyTeam(gu->myTeam);
 
-		gu->spectating           = false;
-		gu->spectatingFullView   = false;
+		gu->spectating = false;
+		gu->spectatingFullView = false;
 		gu->spectatingFullSelect = false;
 
 		CLuaUI::UpdateTeams();
@@ -153,8 +144,6 @@ void CPlayer::GameFrame(int frameNum)
 	fpsController.Update();
 }
 
-
-
 void CPlayer::StartControllingUnit()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -164,7 +153,8 @@ void CPlayer::StartControllingUnit()
 	if (curControlleeUnit != nullptr) {
 		// player released control
 		StopControllingUnit();
-	} else {
+	}
+	else {
 		// player took control
 		const std::vector<int>& ourSelectedUnits = selectedUnitsHandler.netSelected[this->playerNum];
 
@@ -179,11 +169,9 @@ void CPlayer::StartControllingUnit()
 
 		if (newControlleeUnit->fpsControlPlayer != nullptr) {
 			if (this->playerNum == gu->myPlayerNum) {
-				LOG_L(L_WARNING,
-						"player %d (%s) is already controlling unit %d",
-						newControlleeUnit->fpsControlPlayer->playerNum,
-						newControlleeUnit->fpsControlPlayer->name.c_str(),
-						newControlleeUnit->id);
+				LOG_L(L_WARNING, "player %d (%s) is already controlling unit %d",
+				    newControlleeUnit->fpsControlPlayer->playerNum, newControlleeUnit->fpsControlPlayer->name.c_str(),
+				    newControlleeUnit->id);
 			}
 
 			return;

@@ -12,7 +12,6 @@ class LuaParser;
 class CSoundSource;
 class SoundItem;
 
-
 /**
  * @brief sound system interface
  * This is used in other parts of the engine, whenever sound should be played.
@@ -23,12 +22,15 @@ class ISound {
 public:
 	static void Initialize(bool reload, bool forceNullSound = false);
 	static void Shutdown(bool reload);
+
 	static bool IsInitialized() { return (singleton != nullptr); }
+
 	static inline ISound* GetInstance() { return singleton; }
 
-
 	virtual ~ISound() {}
+
 	virtual void Init() {}
+
 	virtual void Kill() {}
 
 	virtual bool HasSoundItem(const std::string& name) const = 0;
@@ -57,7 +59,7 @@ public:
 
 	virtual void DeviceChanged(uint32_t sdlDeviceIndex) = 0;
 
-	///change current output device
+	/// change current output device
 	static bool ChangeOutput(bool forceNullSound = false);
 
 	virtual void Iconified(bool state) = 0;
@@ -72,6 +74,7 @@ public:
 	virtual const float3& GetListenerPos() const = 0;
 
 	virtual std::vector<std::string> GetSoundDevices() = 0;
+
 public:
 	unsigned numEmptyPlayRequests = 0;
 	unsigned numAbortedPlays = 0;

@@ -1,33 +1,34 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Command.h"
+
 #include "CommandParamsPool.hpp"
 
 CommandParamsPool cmdParamsPool;
 
 CR_BIND(Command, )
-CR_REG_METADATA(Command, (
-	CR_MEMBER(id),
+CR_REG_METADATA(Command,
+    (CR_MEMBER(id),
 
-	CR_MEMBER(timeOut),
-	CR_IGNORED(pageIndex),
-	CR_MEMBER(numParams),
-	CR_MEMBER(tag),
-	CR_MEMBER(options),
+        CR_MEMBER(timeOut),
+        CR_IGNORED(pageIndex),
+        CR_MEMBER(numParams),
+        CR_MEMBER(tag),
+        CR_MEMBER(options),
 
-	CR_IGNORED(params),
-	CR_SERIALIZER(Serialize)
-))
+        CR_IGNORED(params),
+        CR_SERIALIZER(Serialize)))
 
-Command::~Command() {
+Command::~Command()
+{
 	if (!IsPooledCommand())
 		return;
 
 	cmdParamsPool.ReleasePage(pageIndex);
 }
 
-
-const float* Command::GetParams(unsigned int idx) const {
+const float* Command::GetParams(unsigned int idx) const
+{
 	if (idx >= numParams)
 		return nullptr;
 
@@ -36,10 +37,11 @@ const float* Command::GetParams(unsigned int idx) const {
 		return (cmdParamsPool.GetPtr(pageIndex, idx));
 	}
 
-	return ((idx < MAX_COMMAND_PARAMS)? &params[idx]: nullptr);
+	return ((idx < MAX_COMMAND_PARAMS) ? &params[idx] : nullptr);
 }
 
-float Command::GetParam(unsigned int idx) const {
+float Command::GetParam(unsigned int idx) const
+{
 	const float* ptr = GetParams(idx);
 
 	if (ptr != nullptr)
@@ -48,8 +50,8 @@ float Command::GetParam(unsigned int idx) const {
 	return 0.0f;
 }
 
-
-bool Command::SetParam(unsigned int idx, float param) {
+bool Command::SetParam(unsigned int idx, float param)
+{
 	float* ptr = const_cast<float*>(GetParams(idx));
 
 	if (ptr != nullptr)
@@ -58,7 +60,8 @@ bool Command::SetParam(unsigned int idx, float param) {
 	return false;
 }
 
-bool Command::PushParam(float param) {
+bool Command::PushParam(float param)
+{
 	if (numParams < MAX_COMMAND_PARAMS) {
 		// no need to make this a pooled command just yet
 		params[numParams++] = param;
@@ -82,7 +85,8 @@ bool Command::PushParam(float param) {
 	return true;
 }
 
-void Command::CopyParams(const Command& c) {
+void Command::CopyParams(const Command& c)
+{
 	// clear existing params
 	if (IsPooledCommand())
 		cmdParamsPool.ReleasePage(pageIndex);
@@ -97,13 +101,15 @@ void Command::CopyParams(const Command& c) {
 	}
 }
 
-void Command::Serialize(creg::ISerializer* s) {
+void Command::Serialize(creg::ISerializer* s)
+{
 	if (s->IsWriting()) {
 		for (unsigned int i = 0; i < numParams; i++) {
 			float p = GetParam(i);
 			s->Serialize(&p, sizeof(p));
 		}
-	} else {
+	}
+	else {
 		const unsigned int tempNumParams = numParams;
 		for (numParams = 0; numParams < tempNumParams;) {
 			float p;

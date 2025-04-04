@@ -3,8 +3,9 @@
 #ifndef SELECT_MENU
 #define SELECT_MENU
 
-#include "aGui/GuiElement.h"
 #include "Game/GameController.h"
+#include "aGui/GuiElement.h"
+
 #include <memory>
 
 class SelectionWidget;
@@ -13,7 +14,6 @@ class SettingsWindow;
 class ListSelectWnd;
 class ClientSetup;
 
-
 /**
 @brief User prompt for options when no script is given
 
@@ -21,8 +21,7 @@ When no setupscript is given, this will show a menu to select server address (wh
 If in host mode, it will show lists for Map, Game and Script.
 When everything is selected, it will generate a gamesetup-script and start CPreGame
 */
-class SelectMenu : public CGameController, public agui::GuiElement
-{
+class SelectMenu : public CGameController, public agui::GuiElement {
 public:
 	SelectMenu(std::shared_ptr<ClientSetup> setup);
 	~SelectMenu();

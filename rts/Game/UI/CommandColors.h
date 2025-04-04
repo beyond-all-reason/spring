@@ -3,8 +3,9 @@
 #ifndef _COMMAND_COLORS_H
 #define _COMMAND_COLORS_H
 
-#include <string>
 #include "System/UnorderedMap.hpp"
+
+#include <string>
 
 class CCommandColors {
 public:
@@ -14,31 +15,47 @@ public:
 	bool LoadConfigFromString(const std::string& cfg);
 
 	// for command queue lines
-	bool         AlwaysDrawQueue()   const { return alwaysDrawQueue;   }
-	bool         UseQueueIcons()     const { return useQueueIcons;     }
-	float        QueueIconAlpha()    const { return queueIconAlpha;    }
-	float        QueueIconScale()    const { return queueIconScale;    }
-	bool         UseColorRestarts()  const { return useColorRestarts;  }
-	bool         UseRestartColor()   const { return useRestartColor;   }
-	float        RestartAlpha()      const { return restartAlpha;      }
+	bool AlwaysDrawQueue() const { return alwaysDrawQueue; }
 
-	float        QueuedLineWidth()   const { return queuedLineWidth;   }
-	unsigned int QueuedBlendSrc()    const { return queuedBlendSrc;    }
-	unsigned int QueuedBlendDst()    const { return queuedBlendDst;    }
-	unsigned int StipplePattern()    const { return stipplePattern;    }
-	unsigned int StippleFactor()     const { return stippleFactor;     }
-	float        StippleSpeed()      const { return stippleSpeed;      }
+	bool UseQueueIcons() const { return useQueueIcons; }
 
-	float        SelectedLineWidth() const { return selectedLineWidth; }
-	unsigned int SelectedBlendSrc()  const { return selectedBlendSrc;  }
-	unsigned int SelectedBlendDst()  const { return selectedBlendDst;  }
-	bool         BuildBoxesOnShift() const { return buildBoxesOnShift; }
+	float QueueIconAlpha() const { return queueIconAlpha; }
 
-	float        MouseBoxLineWidth() const { return mouseBoxLineWidth; }
-	unsigned int MouseBoxBlendSrc()  const { return mouseBoxBlendSrc;  }
-	unsigned int MouseBoxBlendDst()  const { return mouseBoxBlendDst;  }
+	float QueueIconScale() const { return queueIconScale; }
 
-	float        UnitBoxLineWidth()  const { return unitBoxLineWidth;  }
+	bool UseColorRestarts() const { return useColorRestarts; }
+
+	bool UseRestartColor() const { return useRestartColor; }
+
+	float RestartAlpha() const { return restartAlpha; }
+
+	float QueuedLineWidth() const { return queuedLineWidth; }
+
+	unsigned int QueuedBlendSrc() const { return queuedBlendSrc; }
+
+	unsigned int QueuedBlendDst() const { return queuedBlendDst; }
+
+	unsigned int StipplePattern() const { return stipplePattern; }
+
+	unsigned int StippleFactor() const { return stippleFactor; }
+
+	float StippleSpeed() const { return stippleSpeed; }
+
+	float SelectedLineWidth() const { return selectedLineWidth; }
+
+	unsigned int SelectedBlendSrc() const { return selectedBlendSrc; }
+
+	unsigned int SelectedBlendDst() const { return selectedBlendDst; }
+
+	bool BuildBoxesOnShift() const { return buildBoxesOnShift; }
+
+	float MouseBoxLineWidth() const { return mouseBoxLineWidth; }
+
+	unsigned int MouseBoxBlendSrc() const { return mouseBoxBlendSrc; }
+
+	unsigned int MouseBoxBlendDst() const { return mouseBoxBlendDst; }
+
+	float UnitBoxLineWidth() const { return unitBoxLineWidth; }
 
 	// custom command queue rendering
 	struct DrawData {
@@ -48,22 +65,33 @@ public:
 
 		DrawData()
 		{
-			for (int i = 0; i < 4; ++i) { color[i] = 1.0f; }
+			for (int i = 0; i < 4; ++i) {
+				color[i] = 1.0f;
+			}
 		}
 
-		DrawData(int cii, const float c[4], bool area) : cmdIconID(cii), showArea(area)
+		DrawData(int cii, const float c[4], bool area)
+		    : cmdIconID(cii)
+		    , showArea(area)
 		{
-			for (int i = 0; i < 4; ++i) { color[i] = c[i]; }
+			for (int i = 0; i < 4; ++i) {
+				color[i] = c[i];
+			}
 		}
 	};
 
-	void SetCustomCmdData(int cmdID, int cmdIconID, const float color[4], bool showArea) { customCmds[cmdID] = DrawData(cmdIconID, color, showArea); }
+	void SetCustomCmdData(int cmdID, int cmdIconID, const float color[4], bool showArea)
+	{
+		customCmds[cmdID] = DrawData(cmdIconID, color, showArea);
+	}
+
 	void ClearCustomCmdData(int cmdID) { customCmds.erase(cmdID); }
 
 	/// get custom command line parameters
 	/// @return NULL if no line defined, a pointer to a DrawData otherwise
 	/// NB: do not call {Set,Clear}CustomCmdData while holding this pointer
-	const DrawData* GetCustomCmdData(int cmdID) const {
+	const DrawData* GetCustomCmdData(int cmdID) const
+	{
 		const auto it = customCmds.find(cmdID);
 
 		if (it == customCmds.end())
@@ -163,21 +191,21 @@ private:
 	float colors[ColorCount][4];
 
 	// for command queue lines
-	bool alwaysDrawQueue   = false;
-	bool  useQueueIcons    = true;
-	bool  useColorRestarts = true;
-	bool  useRestartColor  = true;
+	bool alwaysDrawQueue = false;
+	bool useQueueIcons = true;
+	bool useColorRestarts = true;
+	bool useRestartColor = true;
 	bool buildBoxesOnShift = true;
 
 	float queueIconAlpha = 0.5f;
 	float queueIconScale = 1.0f;
-	float   restartAlpha = 0.25f;
+	float restartAlpha = 0.25f;
 
-	float   queuedLineWidth = 1.49f;
+	float queuedLineWidth = 1.49f;
 	float selectedLineWidth = 1.49f;
 	float mouseBoxLineWidth = 1.49f;
-	float  unitBoxLineWidth = 1.49f;
-	float      stippleSpeed = 1.0f;
+	float unitBoxLineWidth = 1.49f;
+	float stippleSpeed = 1.0f;
 
 	unsigned int stipplePattern = 0xffffffff;
 	unsigned int stippleFactor = 1;
@@ -194,7 +222,6 @@ private:
 	spring::unordered_map<std::string, int> colorNames;
 	spring::unordered_map<int, DrawData> customCmds;
 };
-
 
 extern CCommandColors cmdColors;
 

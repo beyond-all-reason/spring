@@ -4,8 +4,8 @@
 #define AI_INTERFACE_KEY_H
 
 #include "System/creg/creg_cond.h"
-#include <string>
 
+#include <string>
 
 /**
  * Used to uniquely identify an AI Interface within the engine.
@@ -14,9 +14,7 @@ class AIInterfaceKey {
 	CR_DECLARE_STRUCT(AIInterfaceKey)
 
 public:
-	AIInterfaceKey(
-			const std::string& shortName = "",
-			const std::string& version = "");
+	AIInterfaceKey(const std::string& shortName = "", const std::string& version = "");
 	AIInterfaceKey(const AIInterfaceKey& toCopy);
 	~AIInterfaceKey();
 

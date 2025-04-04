@@ -9,25 +9,22 @@
 struct WeaponDef;
 struct CExplosionParams;
 
-
-class IExplosionListener
-{
+class IExplosionListener {
 public:
 	/**
 	 * Informs listeners about an explosion that has occurred.
 	 * @see EventClient#Explosion
 	 */
 	virtual void ExplosionOccurred(const CExplosionParams& event) = 0;
+
 protected:
 	~IExplosionListener();
 };
 
-
 /**
  * Base
  */
-class CExplosionCreator
-{
+class CExplosionCreator {
 public:
 	static void AddExplosionListener(IExplosionListener* listener);
 	static void RemoveExplosionListener(IExplosionListener* listener);

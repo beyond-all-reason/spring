@@ -3,8 +3,8 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 class Action;
 
@@ -13,12 +13,12 @@ class Action;
  * @brief this class can receive commands (actions)
  * @deprecated Use IUnsyncedActionExecutor instead
  */
-class CommandReceiver
-{
+class CommandReceiver {
 public:
 	CommandReceiver() {}
+
 	virtual ~CommandReceiver() {}
-	
+
 	/**
 	 * @brief callback function for all registered commands
 	 */
@@ -34,14 +34,13 @@ protected:
 	void SortRegisteredActions();
 };
 
-
 /**
  * @brief handles and forwards commands
  */
-class CommandConsole
-{
+class CommandConsole {
 public:
 	typedef std::pair<std::string, CommandReceiver*> CmdPair;
+
 	// typedef std::function<bool(const CmdPair& a, const CmdPair& b)> SortPred;
 
 	/**
@@ -50,16 +49,18 @@ public:
 	 * @param rec the CommandReceiver who want to receive the command
 	 */
 	void AddCommandReceiver(const std::string& name, CommandReceiver* rec) { commandMap.emplace_back(name, rec); }
+
 	void SortCommandMap();
 
 	const std::vector<CmdPair>& GetCommandMap() const { return commandMap; }
-	
+
 	/**
 	 * @brief Execute an action
 	 */
 	bool ExecuteAction(const Action&);
 
-	void ResetState() {
+	void ResetState()
+	{
 		commandMap.clear();
 		commandMap.reserve(32);
 	}
@@ -70,4 +71,3 @@ private:
 
 extern CommandConsole gameCommandConsole;
 #endif // CONSOLE_H
-

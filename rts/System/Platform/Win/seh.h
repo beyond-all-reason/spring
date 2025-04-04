@@ -6,4 +6,3 @@
 void InitializeSEH();
 
 #endif // _SEH_H_
-

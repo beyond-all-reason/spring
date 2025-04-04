@@ -3,31 +3,35 @@
 
 #ifdef SYNCDEBUG
 
+#include "Logger.h"
+
+#include "System/SafeCStrings.h"
+#include "System/StringUtil.h"
+
+#include <sstream>
+
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <string.h>
-#include <sstream>
-#include <time.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include "Logger.h"
-#include "System/StringUtil.h"
-#include "System/SafeCStrings.h"
+#include <sys/types.h>
+#include <time.h>
 
 #ifdef _MSC_VER
+#include "System/Platform/CrashHandler.h"
+
 #include <Windows.h>
 #include <imagehlp.h>
-#include "System/Platform/CrashHandler.h"
 #endif
 
 #ifdef _WIN32
 // msvcrt doesn't have thread safe ctime_r
-# define ctime_r(tm, buf) ctime(tm)
+#define ctime_r(tm, buf) ctime(tm)
 #endif
 
 
-extern "C" void get_executable_name(char *output, int size);
+extern "C" void get_executable_name(char* output, int size);
 
 
 /**
@@ -42,7 +46,6 @@ extern "C" void get_executable_name(char *output, int size);
  * Only used on MinGW to work around an addr2line bug.
  */
 #define CPPFILT "c++filt"
-
 
 /**
  * @brief log function
@@ -75,7 +78,6 @@ void CLogger::AddLine(const char* fmt, ...)
 		FlushBuffer();
 }
 
-
 /**
  * @brief close one logging session
  *
@@ -91,7 +93,6 @@ void CLogger::CloseSession()
 		logfile = NULL;
 	}
 }
-
 
 /**
  * @brief flushes the buffer
@@ -117,7 +118,8 @@ void CLogger::FlushBuffer()
 		time_t t;
 		time(&t);
 		char* ct = ctime_r(&t, buf1);
-		if ((nl = strchr(ct, '\n'))) *nl = 0;
+		if ((nl = strchr(ct, '\n')))
+			*nl = 0;
 		fprintf(logfile, "\n===> %s <===\n", ct);
 	}
 
@@ -127,9 +129,9 @@ void CLogger::FlushBuffer()
 		get_executable_name(buf1, sizeof(buf1));
 		int len = strlen(buf1);
 		strncpy(buf2, buf1, sizeof(buf2));
-		buf2[sizeof(buf2)-1] = '\0'; // make sure the string is terminated
-		if (len > 4 && buf2[len-4] == '.')
-			buf2[len-4] = 0;
+		buf2[sizeof(buf2) - 1] = '\0'; // make sure the string is terminated
+		if (len > 4 && buf2[len - 4] == '.')
+			buf2[len - 4] = 0;
 		// NOTE STRCAT_T: will always terminate destination with '/0'
 		//   2nd param: destination buffer size
 		STRCAT_T(buf2, sizeof(buf2), ".dbg");
@@ -139,7 +141,8 @@ void CLogger::FlushBuffer()
 		struct stat tmp;
 		if (stat(buf2, &tmp) == 0) {
 			exename = buf2;
-		} else {
+		}
+		else {
 			exename = buf1;
 		}
 
@@ -164,17 +167,17 @@ void CLogger::FlushBuffer()
 			pSym->SizeOfStruct = sizeof(SYMBOL_INFO);
 			pSym->MaxNameLen = SYMLENGTH;
 
-			if (CrashHandler::InitImageHlpDll() &&
-				SymFromAddr(GetCurrentProcess(), (DWORD64)p, nullptr, pSym)) {
-
+			if (CrashHandler::InitImageHlpDll() && SymFromAddr(GetCurrentProcess(), (DWORD64)p, nullptr, pSym)) {
 				IMAGEHLP_LINE64 line;
 				DWORD displacement;
 				line.SizeOfStruct = sizeof(line);
-				SymGetLineFromAddr64(GetCurrentProcess(), (DWORD64) p, &displacement, &line);
+				SymGetLineFromAddr64(GetCurrentProcess(), (DWORD64)p, &displacement, &line);
 
-				fprintf(logfile, "%s%s:%d [%p]%s\n", it->substr(0, open).c_str(), pSym->Name, line.LineNumber, p, it->substr(close + 1).c_str());
+				fprintf(logfile, "%s%s:%d [%p]%s\n", it->substr(0, open).c_str(), pSym->Name, line.LineNumber, p,
+				    it->substr(close + 1).c_str());
 			}
-		} else {
+		}
+		else {
 			fprintf(logfile, "%s\n", it->c_str());
 		}
 	}
@@ -209,7 +212,8 @@ void CLogger::FlushBuffer()
 		if (!p) {
 			fprintf(logfile, "  %s\n", strerror(errno));
 			runTheCommand = false;
-		} else {
+		}
+		else {
 			// Pipe the buffer through the addr2line command.
 			for (it = buffer.begin(); it != buffer.end(); ++it) {
 				const int open = it->find('{');
@@ -218,10 +222,14 @@ void CLogger::FlushBuffer()
 					fgets(buf1, sizeof(buf1), p);
 					fgets(buf2, sizeof(buf2), p);
 					CppFilt(buf1, sizeof(buf1));
-					if ((nl = strchr(buf1, '\n'))) *nl = 0;
-					if ((nl = strchr(buf2, '\n'))) *nl = 0;
-					fprintf(logfile, "%s%s [%s]%s\n", it->substr(0, open).c_str(), buf1, buf2, it->substr(close + 1).c_str());
-				} else {
+					if ((nl = strchr(buf1, '\n')))
+						*nl = 0;
+					if ((nl = strchr(buf2, '\n')))
+						*nl = 0;
+					fprintf(logfile, "%s%s [%s]%s\n", it->substr(0, open).c_str(), buf1, buf2,
+					    it->substr(close + 1).c_str());
+				}
+				else {
 					fprintf(logfile, "%s\n", it->c_str());
 				}
 			}
@@ -242,7 +250,6 @@ void CLogger::FlushBuffer()
 
 	buffer.clear();
 }
-
 
 /**
  * @brief demangles sym

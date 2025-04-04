@@ -44,8 +44,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef AI_POLYTOOLS_H_INCLUDED
 #define AI_POLYTOOLS_H_INCLUDED
 
-#include <assimp/material.h>
 #include <assimp/ai_assert.h>
+#include <assimp/material.h>
 
 namespace Assimp {
 
@@ -53,121 +53,110 @@ namespace Assimp {
 /** Compute the signed area of a triangle.
  *  The function accepts an unconstrained template parameter for use with
  *  both aiVector3D and aiVector2D, but generally ignores the third coordinate.*/
-template <typename T>
-inline float GetArea2D(const T& v1, const T& v2, const T& v3)
+template<typename T> inline float GetArea2D(const T& v1, const T& v2, const T& v3)
 {
-    return 0.5 * (v1.x * ((float)v3.y - v2.y) + v2.x * ((float)v1.y - v3.y) + v3.x * ((float)v2.y - v1.y));
+	return 0.5 * (v1.x * ((float)v3.y - v2.y) + v2.x * ((float)v1.y - v3.y) + v3.x * ((float)v2.y - v1.y));
 }
 
 // -------------------------------------------------------------------------------
 /** Test if a given point p2 is on the left side of the line formed by p0-p1.
  *  The function accepts an unconstrained template parameter for use with
  *  both aiVector3D and aiVector2D, but generally ignores the third coordinate.*/
-template <typename T>
-inline bool OnLeftSideOfLine2D(const T& p0, const T& p1,const T& p2)
+template<typename T> inline bool OnLeftSideOfLine2D(const T& p0, const T& p1, const T& p2)
 {
-    return GetArea2D(p0,p2,p1) > 0;
+	return GetArea2D(p0, p2, p1) > 0;
 }
 
 // -------------------------------------------------------------------------------
 /** Test if a given point is inside a given triangle in R2.
  * The function accepts an unconstrained template parameter for use with
  *  both aiVector3D and aiVector2D, but generally ignores the third coordinate.*/
-template <typename T>
-inline bool PointInTriangle2D(const T& p0, const T& p1,const T& p2, const T& pp)
+template<typename T> inline bool PointInTriangle2D(const T& p0, const T& p1, const T& p2, const T& pp)
 {
-    // Point in triangle test using baryzentric coordinates
-    const aiVector2D v0 = p1 - p0;
-    const aiVector2D v1 = p2 - p0;
-    const aiVector2D v2 = pp - p0;
+	// Point in triangle test using baryzentric coordinates
+	const aiVector2D v0 = p1 - p0;
+	const aiVector2D v1 = p2 - p0;
+	const aiVector2D v2 = pp - p0;
 
-    float dot00 = v0 * v0;
-    float dot01 = v0 * v1;
-    float dot02 = v0 * v2;
-    float dot11 = v1 * v1;
-    float dot12 = v1 * v2;
+	float dot00 = v0 * v0;
+	float dot01 = v0 * v1;
+	float dot02 = v0 * v2;
+	float dot11 = v1 * v1;
+	float dot12 = v1 * v2;
 
-    const float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-    dot11 = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    dot00 = (dot00 * dot12 - dot01 * dot02) * invDenom;
+	const float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+	dot11 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	dot00 = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
-    return (dot11 > 0) && (dot00 > 0) && (dot11 + dot00 < 1);
+	return (dot11 > 0) && (dot00 > 0) && (dot11 + dot00 < 1);
 }
-
 
 // -------------------------------------------------------------------------------
 /** Check whether the winding order of a given polygon is counter-clockwise.
  *  The function accepts an unconstrained template parameter, but is intended
  *  to be used only with aiVector2D and aiVector3D (z axis is ignored, only
  *  x and y are taken into account).
- * @note Code taken from http://cgm.cs.mcgill.ca/~godfried/teaching/cg-projects/97/Ian/applet1.html and translated to C++
+ * @note Code taken from http://cgm.cs.mcgill.ca/~godfried/teaching/cg-projects/97/Ian/applet1.html and translated to
+ * C++
  */
-template <typename T>
-inline bool IsCCW(T* in, size_t npoints) {
-    float aa, bb, cc, b, c, theta;
-    float convex_turn;
-    float convex_sum = 0;
+template<typename T> inline bool IsCCW(T* in, size_t npoints)
+{
+	float aa, bb, cc, b, c, theta;
+	float convex_turn;
+	float convex_sum = 0;
 
-    ai_assert(npoints >= 3);
+	ai_assert(npoints >= 3);
 
-    for (size_t i = 0; i < npoints - 2; i++) {
-        aa = ((in[i+2].x - in[i].x) * (in[i+2].x - in[i].x)) +
-            ((-in[i+2].y + in[i].y) * (-in[i+2].y + in[i].y));
+	for (size_t i = 0; i < npoints - 2; i++) {
+		aa =
+		    ((in[i + 2].x - in[i].x) * (in[i + 2].x - in[i].x)) + ((-in[i + 2].y + in[i].y) * (-in[i + 2].y + in[i].y));
 
-        bb = ((in[i+1].x - in[i].x) * (in[i+1].x - in[i].x)) +
-            ((-in[i+1].y + in[i].y) * (-in[i+1].y + in[i].y));
+		bb =
+		    ((in[i + 1].x - in[i].x) * (in[i + 1].x - in[i].x)) + ((-in[i + 1].y + in[i].y) * (-in[i + 1].y + in[i].y));
 
-        cc = ((in[i+2].x - in[i+1].x) *
-            (in[i+2].x - in[i+1].x)) +
-            ((-in[i+2].y + in[i+1].y) *
-            (-in[i+2].y + in[i+1].y));
+		cc = ((in[i + 2].x - in[i + 1].x) * (in[i + 2].x - in[i + 1].x)) +
+		     ((-in[i + 2].y + in[i + 1].y) * (-in[i + 2].y + in[i + 1].y));
 
-        b = math::sqrt(bb);
-        c = math::sqrt(cc);
-        theta = math::acos((bb + cc - aa) / (2 * b * c));
+		b = math::sqrt(bb);
+		c = math::sqrt(cc);
+		theta = math::acos((bb + cc - aa) / (2 * b * c));
 
-        if (OnLeftSideOfLine2D(in[i],in[i+2],in[i+1])) {
-            //  if (convex(in[i].x, in[i].y,
-            //      in[i+1].x, in[i+1].y,
-            //      in[i+2].x, in[i+2].y)) {
-            convex_turn = AI_MATH_PI_F - theta;
-            convex_sum += convex_turn;
-        }
-        else {
-            convex_sum -= AI_MATH_PI_F - theta;
-        }
-    }
-    aa = ((in[1].x - in[npoints-2].x) *
-        (in[1].x - in[npoints-2].x)) +
-        ((-in[1].y + in[npoints-2].y) *
-        (-in[1].y + in[npoints-2].y));
+		if (OnLeftSideOfLine2D(in[i], in[i + 2], in[i + 1])) {
+			//  if (convex(in[i].x, in[i].y,
+			//      in[i+1].x, in[i+1].y,
+			//      in[i+2].x, in[i+2].y)) {
+			convex_turn = AI_MATH_PI_F - theta;
+			convex_sum += convex_turn;
+		}
+		else {
+			convex_sum -= AI_MATH_PI_F - theta;
+		}
+	}
+	aa = ((in[1].x - in[npoints - 2].x) * (in[1].x - in[npoints - 2].x)) +
+	     ((-in[1].y + in[npoints - 2].y) * (-in[1].y + in[npoints - 2].y));
 
-    bb = ((in[0].x - in[npoints-2].x) *
-        (in[0].x - in[npoints-2].x)) +
-        ((-in[0].y + in[npoints-2].y) *
-        (-in[0].y + in[npoints-2].y));
+	bb = ((in[0].x - in[npoints - 2].x) * (in[0].x - in[npoints - 2].x)) +
+	     ((-in[0].y + in[npoints - 2].y) * (-in[0].y + in[npoints - 2].y));
 
-    cc = ((in[1].x - in[0].x) * (in[1].x - in[0].x)) +
-        ((-in[1].y + in[0].y) * (-in[1].y + in[0].y));
+	cc = ((in[1].x - in[0].x) * (in[1].x - in[0].x)) + ((-in[1].y + in[0].y) * (-in[1].y + in[0].y));
 
-    b = math::sqrt(bb);
-    c = math::sqrt(cc);
-    theta = math::acos((bb + cc - aa) / (2 * b * c));
+	b = math::sqrt(bb);
+	c = math::sqrt(cc);
+	theta = math::acos((bb + cc - aa) / (2 * b * c));
 
-    //if (convex(in[npoints-2].x, in[npoints-2].y,
-    //  in[0].x, in[0].y,
-    //  in[1].x, in[1].y)) {
-    if (OnLeftSideOfLine2D(in[npoints-2],in[1],in[0])) {
-        convex_turn = AI_MATH_PI_F - theta;
-        convex_sum += convex_turn;
-    }
-    else {
-        convex_sum -= AI_MATH_PI_F - theta;
-    }
+	// if (convex(in[npoints-2].x, in[npoints-2].y,
+	//   in[0].x, in[0].y,
+	//   in[1].x, in[1].y)) {
+	if (OnLeftSideOfLine2D(in[npoints - 2], in[1], in[0])) {
+		convex_turn = AI_MATH_PI_F - theta;
+		convex_sum += convex_turn;
+	}
+	else {
+		convex_sum -= AI_MATH_PI_F - theta;
+	}
 
-    return convex_sum >= (2 * AI_MATH_PI_F);
+	return convex_sum >= (2 * AI_MATH_PI_F);
 }
-
 
 // -------------------------------------------------------------------------------
 /** Compute the normal of an arbitrary polygon in R3.
@@ -184,45 +173,45 @@ inline bool IsCCW(T* in, size_t npoints) {
  *  @note The data arrays must have storage for at least num+2 elements. Using
  *  this method is much faster than the 'other' NewellNormal()
  */
-template <int ofs_x, int ofs_y, int ofs_z, typename TReal>
-inline void NewellNormal (aiVector3t<TReal>& out, int num, TReal* x, TReal* y, TReal* z)
+template<int ofs_x, int ofs_y, int ofs_z, typename TReal>
+inline void NewellNormal(aiVector3t<TReal>& out, int num, TReal* x, TReal* y, TReal* z)
 {
-    // Duplicate the first two vertices at the end
-    x[(num+0)*ofs_x] = x[0];
-    x[(num+1)*ofs_x] = x[ofs_x];
+	// Duplicate the first two vertices at the end
+	x[(num + 0) * ofs_x] = x[0];
+	x[(num + 1) * ofs_x] = x[ofs_x];
 
-    y[(num+0)*ofs_y] = y[0];
-    y[(num+1)*ofs_y] = y[ofs_y];
+	y[(num + 0) * ofs_y] = y[0];
+	y[(num + 1) * ofs_y] = y[ofs_y];
 
-    z[(num+0)*ofs_z] = z[0];
-    z[(num+1)*ofs_z] = z[ofs_z];
+	z[(num + 0) * ofs_z] = z[0];
+	z[(num + 1) * ofs_z] = z[ofs_z];
 
-    TReal sum_xy = 0.0, sum_yz = 0.0, sum_zx = 0.0;
+	TReal sum_xy = 0.0, sum_yz = 0.0, sum_zx = 0.0;
 
-    TReal *xptr = x +ofs_x, *xlow = x, *xhigh = x + ofs_x*2;
-    TReal *yptr = y +ofs_y, *ylow = y, *yhigh = y + ofs_y*2;
-    TReal *zptr = z +ofs_z, *zlow = z, *zhigh = z + ofs_z*2;
+	TReal *xptr = x + ofs_x, *xlow = x, *xhigh = x + ofs_x * 2;
+	TReal *yptr = y + ofs_y, *ylow = y, *yhigh = y + ofs_y * 2;
+	TReal *zptr = z + ofs_z, *zlow = z, *zhigh = z + ofs_z * 2;
 
-    for (int tmp=0; tmp < num; tmp++) {
-        sum_xy += (*xptr) * ( (*yhigh) - (*ylow) );
-        sum_yz += (*yptr) * ( (*zhigh) - (*zlow) );
-        sum_zx += (*zptr) * ( (*xhigh) - (*xlow) );
+	for (int tmp = 0; tmp < num; tmp++) {
+		sum_xy += (*xptr) * ((*yhigh) - (*ylow));
+		sum_yz += (*yptr) * ((*zhigh) - (*zlow));
+		sum_zx += (*zptr) * ((*xhigh) - (*xlow));
 
-        xptr  += ofs_x;
-        xlow  += ofs_x;
-        xhigh += ofs_x;
+		xptr += ofs_x;
+		xlow += ofs_x;
+		xhigh += ofs_x;
 
-        yptr  += ofs_y;
-        ylow  += ofs_y;
-        yhigh += ofs_y;
+		yptr += ofs_y;
+		ylow += ofs_y;
+		yhigh += ofs_y;
 
-        zptr  += ofs_z;
-        zlow  += ofs_z;
-        zhigh += ofs_z;
-    }
-    out = aiVector3t<TReal>(sum_yz,sum_zx,sum_xy);
+		zptr += ofs_z;
+		zlow += ofs_z;
+		zhigh += ofs_z;
+	}
+	out = aiVector3t<TReal>(sum_yz, sum_zx, sum_xy);
 }
 
-} // ! Assimp
+} // namespace Assimp
 
 #endif

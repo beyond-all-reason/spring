@@ -3,16 +3,15 @@
 #ifndef _RESOURCEHANDLER_H
 #define _RESOURCEHANDLER_H
 
-#include <vector>
-
-#include "System/Misc/NonCopyable.h"
-#include "System/creg/creg_cond.h"
 #include "Resource.h"
 #include "ResourceMapAnalyzer.h"
 
+#include "System/Misc/NonCopyable.h"
+#include "System/creg/creg_cond.h"
 
-class CResourceHandler : public spring::noncopyable
-{
+#include <vector>
+
+class CResourceHandler : public spring::noncopyable {
 	CR_DECLARE_STRUCT(CResourceHandler)
 
 public:
@@ -22,12 +21,15 @@ public:
 	static void FreeInstance();
 
 	void Init() { AddResources(); }
-	void Kill() {
+
+	void Kill()
+	{
 		resourceDescriptions.clear();
 		resourceMapAnalyzers.clear();
 	}
 
 	void PostLoad() { AddResources(); }
+
 	void AddResources();
 
 	/**
@@ -107,6 +109,7 @@ public:
 	size_t GetNumResources() const { return resourceDescriptions.size(); }
 
 	int GetMetalId() const { return metalResourceId; }
+
 	int GetEnergyId() const { return energyResourceId; }
 
 	bool IsValidId(int resourceId) const { return (static_cast<size_t>(resourceId) < GetNumResources()); }

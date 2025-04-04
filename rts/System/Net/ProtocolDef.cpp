@@ -2,10 +2,11 @@
 
 #include "ProtocolDef.h"
 
-#include <string.h>
+#include "Exception.h"
+
 #include "System/SpringFormat.h"
 
-#include "Exception.h"
+#include <string.h>
 
 namespace netcode {
 
@@ -15,15 +16,9 @@ ProtocolDef* ProtocolDef::GetInstance()
 	return &instance;
 }
 
-ProtocolDef::ProtocolDef()
-{
-	memset(msg, '\0', sizeof(MsgType) * 256);
-}
+ProtocolDef::ProtocolDef() { memset(msg, '\0', sizeof(MsgType) * 256); }
 
-void ProtocolDef::AddType(const unsigned char id, const int msgLength)
-{
-	msg[id].length = msgLength;
-}
+void ProtocolDef::AddType(const unsigned char id, const int msgLength) { msg[id].length = msgLength; }
 
 int ProtocolDef::PacketLength(const unsigned char* const buf, const unsigned bufLength) const
 {
@@ -53,7 +48,7 @@ int ProtocolDef::PacketLength(const unsigned char* const buf, const unsigned buf
 		return (slen >= 3) ? slen : -1;
 	}
 
-	throw network_error(spring::format("Invalid Message Length: %u", (unsigned int)msgid ));
+	throw network_error(spring::format("Invalid Message Length: %u", (unsigned int)msgid));
 }
 
 bool ProtocolDef::IsValidLength(const int pktLength, const unsigned bufLength) const

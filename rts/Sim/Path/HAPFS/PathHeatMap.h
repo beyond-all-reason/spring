@@ -3,8 +3,9 @@
 #ifndef HAPFS_PATH_HEATMAP_HDR
 #define HAPFS_PATH_HEATMAP_HDR
 
-#include <vector>
 #include "System/type2.h"
+
+#include <vector>
 
 
 class CSolidObject;
@@ -13,8 +14,9 @@ struct MoveDef;
 namespace HAPFS {
 
 class CPathManager;
+
 /**
- * Heat mapping makes the pathfinder favor unused paths more. 
+ * Heat mapping makes the pathfinder favor unused paths more.
  * Less path overlap should make units behave more intelligently.
  */
 class PathHeatMap {
@@ -22,20 +24,22 @@ public:
 	static void FreeInstance(PathHeatMap*);
 
 	void Init(unsigned int sizex, unsigned int sizez);
-	void Kill() {
+
+	void Kill()
+	{
 		heatMap.clear();
 		pathSquares.clear();
 	}
 
 	void Update() { ++heatMapOffset; }
 
-
 	unsigned int GetHeatMapIndex(unsigned int x, unsigned int y) const;
 
 	void AddHeat(const CSolidObject* owner, const CPathManager* pm, unsigned int pathID);
 	void UpdateHeatValue(unsigned int x, unsigned int y, unsigned int value, unsigned int ownerID);
 
-	const int GetHeatValue(unsigned int x, unsigned int y) const {
+	const int GetHeatValue(unsigned int x, unsigned int y) const
+	{
 		const unsigned int idx = GetHeatMapIndex(x, y);
 		const unsigned int val = heatMap[idx].value;
 
@@ -50,7 +54,6 @@ private:
 		unsigned int ownerID = 0;
 	};
 
-
 	// resolution is hmapx*hmapy
 	std::vector<HeatCell> heatMap;
 	std::vector<int2> pathSquares;
@@ -64,6 +67,6 @@ private:
 
 extern PathHeatMap gPathHeatMap;
 
-}
+} // namespace HAPFS
 
 #endif

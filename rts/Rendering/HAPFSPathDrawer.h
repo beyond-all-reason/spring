@@ -14,9 +14,9 @@ class CPathManager;
 class CPathFinder;
 class CPathEstimator;
 
-}
+} // namespace HAPFS
 
-struct HAPFSPathDrawer: public IPathDrawer {
+struct HAPFSPathDrawer : public IPathDrawer {
 public:
 	HAPFSPathDrawer();
 
@@ -25,9 +25,9 @@ public:
 	void UpdateExtraTexture(int, int, int, int, unsigned char*) const;
 
 	enum BuildSquareStatus {
-		NOLOS          = 0,
-		FREE           = 1,
-		OBJECTBLOCKED  = 2,
+		NOLOS = 0,
+		FREE = 1,
+		OBJECTBLOCKED = 2,
 		TERRAINBLOCKED = 3,
 	};
 
@@ -42,4 +42,3 @@ private:
 };
 
 #endif
-

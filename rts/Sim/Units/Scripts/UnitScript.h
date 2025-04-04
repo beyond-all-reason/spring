@@ -5,22 +5,26 @@
 #ifndef UNIT_SCRIPT_H
 #define UNIT_SCRIPT_H
 
-#include <string>
-#include <vector>
-
 #include "Rendering/Models/3DModel.h"
 #include "System/creg/creg_cond.h"
+
+#include <string>
+#include <vector>
 
 
 class CUnit;
 class CPlasmaRepulser;
 
-class CUnitScript
-{
+class CUnitScript {
 	CR_DECLARE(CUnitScript)
 	CR_DECLARE_SUB(AnimInfo)
 public:
-	enum AnimType {ANone = -1, ATurn = 0, ASpin = 1, AMove = 2};
+	enum AnimType {
+		ANone = -1,
+		ATurn = 0,
+		ASpin = 1,
+		AMove = 2
+	};
 
 protected:
 	CUnit* unit;
@@ -31,8 +35,8 @@ protected:
 		int axis;
 		int piece;
 		float speed;
-		float dest;     // means final position when turning or moving, final speed when spinning
-		float accel;    // used for spinning, can be negative
+		float dest;  // means final position when turning or moving, final speed when spinning
+		float accel; // used for spinning, can be negative
 		bool done;
 		bool hasWaiting;
 	};
@@ -40,7 +44,7 @@ protected:
 	typedef std::vector<AnimInfo> AnimContainerType;
 	typedef AnimContainerType::iterator AnimContainerTypeIt;
 
-	typedef bool(CUnitScript::*TickAnimFunc)(int, LocalModelPiece&, AnimInfo&);
+	typedef bool (CUnitScript::*TickAnimFunc)(int, LocalModelPiece&, AnimInfo&);
 
 	std::array<AnimContainerType, AMove + 1> anims;
 	std::array<AnimContainerType, AMove + 1> doneAnims;
@@ -65,12 +69,14 @@ public:
 	// subclass is responsible for populating this with script pieces
 	std::vector<LocalModelPiece*> pieces;
 
-	bool PieceExists(unsigned int scriptPieceNum) const {
+	bool PieceExists(unsigned int scriptPieceNum) const
+	{
 		// NOTE: there can be NULL pieces present from the remapping in CobInstance
 		return ((scriptPieceNum < pieces.size()) && (pieces[scriptPieceNum] != nullptr));
 	}
 
-	LocalModelPiece* GetScriptLocalModelPiece(unsigned int scriptPieceNum) const {
+	LocalModelPiece* GetScriptLocalModelPiece(unsigned int scriptPieceNum) const
+	{
 		assert(PieceExists(scriptPieceNum));
 		return pieces[scriptPieceNum];
 	}
@@ -78,18 +84,20 @@ public:
 	int ScriptToModel(int scriptPieceNum) const;
 	int ModelToScript(int lmodelPieceNum) const;
 
-#define SCRIPT_TO_LOCALPIECE_FUNC(RetType, ScriptFunc, PieceFunc)       \
-	RetType ScriptFunc(int scriptPieceNum) const {                      \
-		if (!PieceExists(scriptPieceNum))                               \
-			return {};                                                  \
-		LocalModelPiece* p = GetScriptLocalModelPiece(scriptPieceNum);  \
-		return (p->PieceFunc());                                        \
+#define SCRIPT_TO_LOCALPIECE_FUNC(RetType, ScriptFunc, PieceFunc)      \
+	RetType ScriptFunc(int scriptPieceNum) const                       \
+	{                                                                  \
+		if (!PieceExists(scriptPieceNum))                              \
+			return {};                                                 \
+		LocalModelPiece* p = GetScriptLocalModelPiece(scriptPieceNum); \
+		return (p->PieceFunc());                                       \
 	}
 
-	SCRIPT_TO_LOCALPIECE_FUNC(    float3, GetPiecePos,    GetAbsolutePos     )
+	SCRIPT_TO_LOCALPIECE_FUNC(float3, GetPiecePos, GetAbsolutePos)
 	SCRIPT_TO_LOCALPIECE_FUNC(CMatrix44f, GetPieceMatrix, GetModelSpaceMatrix)
 
-	bool GetEmitDirPos(int scriptPieceNum, float3& pos, float3& dir) const {
+	bool GetEmitDirPos(int scriptPieceNum, float3& pos, float3& dir) const
+	{
 		if (!PieceExists(scriptPieceNum))
 			return true;
 
@@ -103,15 +111,39 @@ public:
 
 	bool IsBusy() const { return busy; }
 
-	      CUnit* GetUnit()       { return unit; }
+	CUnit* GetUnit() { return unit; }
+
 	const CUnit* GetUnit() const { return unit; }
 
 	void TickAllAnims(int tickRate);
 	bool TickAnimFinished(int tickRate);
+
 	// note: must copy-and-set here (LMP dirty flag, etc)
-	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 pos = lmp.GetPosition(); const bool ret = MoveToward(pos[ai.axis], ai.dest, ai.speed / tickRate); lmp.SetPosition(pos); return ret; }
-	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret = TurnToward(rot[ai.axis], ai.dest, ai.speed / tickRate         ); lmp.SetRotation(rot); return ret; }
-	bool TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai) { float3 rot = lmp.GetRotation(); rot[ai.axis] = ClampRad(rot[ai.axis]); const bool ret =     DoSpin(rot[ai.axis], ai.dest, ai.speed, ai.accel, tickRate); lmp.SetRotation(rot); return ret; }
+	bool TickMoveAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai)
+	{
+		float3 pos = lmp.GetPosition();
+		const bool ret = MoveToward(pos[ai.axis], ai.dest, ai.speed / tickRate);
+		lmp.SetPosition(pos);
+		return ret;
+	}
+
+	bool TickTurnAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai)
+	{
+		float3 rot = lmp.GetRotation();
+		rot[ai.axis] = ClampRad(rot[ai.axis]);
+		const bool ret = TurnToward(rot[ai.axis], ai.dest, ai.speed / tickRate);
+		lmp.SetRotation(rot);
+		return ret;
+	}
+
+	bool TickSpinAnim(int tickRate, LocalModelPiece& lmp, AnimInfo& ai)
+	{
+		float3 rot = lmp.GetRotation();
+		rot[ai.axis] = ClampRad(rot[ai.axis]);
+		const bool ret = DoSpin(rot[ai.axis], ai.dest, ai.speed, ai.accel, tickRate);
+		lmp.SetRotation(rot);
+		return ret;
+	}
 
 	// animation, used by CCobThread
 	void Spin(int piece, int axis, float speed, float accel);
@@ -138,19 +170,22 @@ public:
 	int GetUnitVal(int val, int p1, int p2, int p3, int p4);
 	void SetUnitVal(int val, int param);
 
-	bool IsInAnimation(AnimType type, int piece, int axis) {
+	bool IsInAnimation(AnimType type, int piece, int axis)
+	{
 		return (FindAnim(type, piece, axis) != anims[type].end());
 	}
-	bool HaveAnimations() const {
-		return (!anims[ATurn].empty() || !anims[ASpin].empty() || !anims[AMove].empty());
-	}
+
+	bool HaveAnimations() const { return (!anims[ATurn].empty() || !anims[ASpin].empty() || !anims[AMove].empty()); }
 
 	// checks for callin existence
-	bool HasSetSFXOccupy () const { return hasSetSFXOccupy; }
-	bool HasRockUnit     () const { return hasRockUnit; }
+	bool HasSetSFXOccupy() const { return hasSetSFXOccupy; }
+
+	bool HasRockUnit() const { return hasRockUnit; }
+
 	bool HasStartBuilding() const { return hasStartBuilding; }
 
-	virtual bool HasBlockShot   (int weaponNum) const { return false; }
+	virtual bool HasBlockShot(int weaponNum) const { return false; }
+
 	virtual bool HasTargetWeight(int weaponNum) const { return false; }
 
 	// callins, called throughout sim
@@ -170,12 +205,12 @@ public:
 	// in Lua, we can just count the number of return values
 	virtual void QueryLandingPads(std::vector<int>& out_pieces) = 0;
 	virtual void BeginTransport(const CUnit* unit) = 0;
-	virtual int  QueryTransport(const CUnit* unit) = 0; // returns piece
+	virtual int QueryTransport(const CUnit* unit) = 0; // returns piece
 	virtual void TransportPickup(const CUnit* unit) = 0;
 	virtual void TransportDrop(const CUnit* unit, const float3& pos) = 0;
 	virtual void StartBuilding(float heading, float pitch) = 0;
-	virtual int  QueryNanoPiece() = 0; // returns piece
-	virtual int  QueryBuildInfo() = 0; // returns piece
+	virtual int QueryNanoPiece() = 0; // returns piece
+	virtual int QueryBuildInfo() = 0; // returns piece
 
 	virtual void Destroy() = 0;
 	virtual void StartMoving(bool reversing) = 0;
@@ -196,12 +231,13 @@ public:
 	virtual void EndBurst(int weaponNum) = 0;
 
 	// weapon callins
-	virtual int   QueryWeapon(int weaponNum) = 0; // returns piece, former QueryPrimary
-	virtual void  AimWeapon(int weaponNum, float heading, float pitch) = 0;
-	virtual void  AimShieldWeapon(CPlasmaRepulser* weapon) = 0;
-	virtual int   AimFromWeapon(int weaponNum) = 0; // returns piece, former AimFromPrimary
-	virtual void  Shot(int weaponNum) = 0;
-	virtual bool  BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget) = 0; // returns whether shot should be blocked
+	virtual int QueryWeapon(int weaponNum) = 0; // returns piece, former QueryPrimary
+	virtual void AimWeapon(int weaponNum, float heading, float pitch) = 0;
+	virtual void AimShieldWeapon(CPlasmaRepulser* weapon) = 0;
+	virtual int AimFromWeapon(int weaponNum) = 0; // returns piece, former AimFromPrimary
+	virtual void Shot(int weaponNum) = 0;
+	virtual bool
+	BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget) = 0; // returns whether shot should be blocked
 	virtual float TargetWeight(int weaponNum, const CUnit* targetUnit) = 0; // returns target weight
 	virtual void AnimFinished(AnimType type, int piece, int axis) = 0;
 };

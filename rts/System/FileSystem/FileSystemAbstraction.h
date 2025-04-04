@@ -3,15 +3,15 @@
 #ifndef FILE_SYSTEM_ABSTACTION_H
 #define FILE_SYSTEM_ABSTACTION_H
 
-#include <vector>
-#include <string>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #if defined(CreateDirectory)
-	#undef CreateDirectory
+#undef CreateDirectory
 #endif
 #if defined(DeleteFile)
-	#undef DeleteFile
+#undef DeleteFile
 #endif
 
 /**
@@ -21,10 +21,8 @@
  * @note do not use this directly, but use FileSystem instead
  * @see FileSystem
  */
-class FileSystemAbstraction
-{
+class FileSystemAbstraction {
 public:
-
 	// almost direct wrappers to system calls
 	static bool MkDir(const std::string& dir);
 	static bool DeleteFile(const std::string& file);
@@ -130,7 +128,11 @@ public:
 	static char GetNativePathSeparator();
 	static bool IsAbsolutePath(const std::string& path);
 
-	static void FindFiles(std::vector<std::string>& matches, const std::string& dataDir, const std::string& dir, const std::string& regex, int flags);
+	static void FindFiles(std::vector<std::string>& matches,
+	    const std::string& dataDir,
+	    const std::string& dir,
+	    const std::string& regex,
+	    int flags);
 };
 
 #endif // !FILE_SYSTEM_ABSTACTION_H

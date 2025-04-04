@@ -171,26 +171,26 @@ The general 'rule' to get from Assimp headers to the serialized layout is:
 #define ASSBIN_HEADER_LENGTH 512
 
 // these are the magic chunk identifiers for the binary ASS file format
-#define ASSBIN_CHUNK_AICAMERA                   0x1234
-#define ASSBIN_CHUNK_AILIGHT                    0x1235
-#define ASSBIN_CHUNK_AITEXTURE                  0x1236
-#define ASSBIN_CHUNK_AIMESH                     0x1237
-#define ASSBIN_CHUNK_AINODEANIM                 0x1238
-#define ASSBIN_CHUNK_AISCENE                    0x1239
-#define ASSBIN_CHUNK_AIBONE                     0x123a
-#define ASSBIN_CHUNK_AIANIMATION                0x123b
-#define ASSBIN_CHUNK_AINODE                     0x123c
-#define ASSBIN_CHUNK_AIMATERIAL                 0x123d
-#define ASSBIN_CHUNK_AIMATERIALPROPERTY         0x123e
+#define ASSBIN_CHUNK_AICAMERA 0x1234
+#define ASSBIN_CHUNK_AILIGHT 0x1235
+#define ASSBIN_CHUNK_AITEXTURE 0x1236
+#define ASSBIN_CHUNK_AIMESH 0x1237
+#define ASSBIN_CHUNK_AINODEANIM 0x1238
+#define ASSBIN_CHUNK_AISCENE 0x1239
+#define ASSBIN_CHUNK_AIBONE 0x123a
+#define ASSBIN_CHUNK_AIANIMATION 0x123b
+#define ASSBIN_CHUNK_AINODE 0x123c
+#define ASSBIN_CHUNK_AIMATERIAL 0x123d
+#define ASSBIN_CHUNK_AIMATERIALPROPERTY 0x123e
 
-#define ASSBIN_MESH_HAS_POSITIONS                   0x1
-#define ASSBIN_MESH_HAS_NORMALS                     0x2
-#define ASSBIN_MESH_HAS_TANGENTS_AND_BITANGENTS     0x4
-#define ASSBIN_MESH_HAS_TEXCOORD_BASE               0x100
-#define ASSBIN_MESH_HAS_COLOR_BASE                  0x10000
+#define ASSBIN_MESH_HAS_POSITIONS 0x1
+#define ASSBIN_MESH_HAS_NORMALS 0x2
+#define ASSBIN_MESH_HAS_TANGENTS_AND_BITANGENTS 0x4
+#define ASSBIN_MESH_HAS_TEXCOORD_BASE 0x100
+#define ASSBIN_MESH_HAS_COLOR_BASE 0x10000
 
 #define ASSBIN_MESH_HAS_TEXCOORD(n) (ASSBIN_MESH_HAS_TEXCOORD_BASE << n)
-#define ASSBIN_MESH_HAS_COLOR(n)    (ASSBIN_MESH_HAS_COLOR_BASE << n)
+#define ASSBIN_MESH_HAS_COLOR(n) (ASSBIN_MESH_HAS_COLOR_BASE << n)
 
 
 #endif // INCLUDED_ASSBIN_CHUNKS_H

@@ -18,22 +18,20 @@ class IMeshDrawer;
 struct ISMFRenderState;
 
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 enum {
 	SMF_MESHDRAWER_LEGACY = 0,
-	SMF_MESHDRAWER_BASIC  = 1,
-	SMF_MESHDRAWER_ROAM   = 2,
-	SMF_MESHDRAWER_LAST   = 3,
+	SMF_MESHDRAWER_BASIC = 1,
+	SMF_MESHDRAWER_ROAM = 2,
+	SMF_MESHDRAWER_LAST = 3,
 };
-
 
 /**
  * Map drawer implementation for the CSMFReadMap map system.
  */
-class CSMFGroundDrawer : public CBaseGroundDrawer
-{
+class CSMFGroundDrawer : public CBaseGroundDrawer {
 public:
 	CSMFGroundDrawer(CSMFReadMap* rm);
 	~CSMFGroundDrawer();
@@ -50,7 +48,9 @@ public:
 	void SunChanged();
 
 	void SetLuaShader(const LuaMapShaderData*);
-	void SetDrawDeferredPass(bool b) {
+
+	void SetDrawDeferredPass(bool b)
+	{
 		if ((drawDeferred = b)) {
 			drawDeferred &= UpdateGeometryBuffer(false);
 		}
@@ -58,19 +58,23 @@ public:
 
 	void SetupBigSquare(const DrawPass::e& drawPass, int bigSquareX, int bigSquareY);
 
-
 	void IncreaseDetail() { SetDetail(groundDetail + 1); }
+
 	void DecreaseDetail() { SetDetail(groundDetail - 1); }
+
 	void SetDetail(int newGroundDetail);
 	int GetGroundDetail(const DrawPass::e& drawPass = DrawPass::Normal) const;
 
 	const CSMFReadMap* GetReadMap() const { return smfMap; }
-	      CSMFReadMap* GetReadMap()       { return smfMap; }
+
+	CSMFReadMap* GetReadMap() { return smfMap; }
 
 	const GL::GeometryBuffer* GetGeometryBuffer() const { return &geomBuffer; }
-	      GL::GeometryBuffer* GetGeometryBuffer()       { return &geomBuffer; }
+
+	GL::GeometryBuffer* GetGeometryBuffer() { return &geomBuffer; }
 
 	IMeshDrawer* GetMeshDrawer() { return meshDrawer; }
+
 	IMeshDrawer* SwitchMeshDrawer(int wantedMode = -1);
 
 private:
@@ -82,6 +86,7 @@ private:
 	bool UpdateGeometryBuffer(bool init);
 
 	bool alwaysDispatchEvents = false;
+
 protected:
 	CSMFReadMap* smfMap;
 	IMeshDrawer* meshDrawer;

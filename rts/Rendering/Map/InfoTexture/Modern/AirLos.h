@@ -4,22 +4,21 @@
 #define _AIRLOS_TEXTURE_H
 
 #include "PboInfoTexture.h"
+
 #include "Rendering/GL/FBO.h"
 
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
-
-class CAirLosTexture : public CPboInfoTexture
-{
+class CAirLosTexture : public CPboInfoTexture {
 public:
 	CAirLosTexture();
 	~CAirLosTexture();
 
 public:
 	void Update() override;
+
 	bool IsUpdateNeeded() override { return true; }
 
 private:

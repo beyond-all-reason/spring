@@ -3,14 +3,14 @@
 #ifndef MOVEDEF_HANDLER_H
 #define MOVEDEF_HANDLER_H
 
+#include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
+#include "System/float3.h"
+#include "System/type2.h"
+
 #include <array>
 #include <limits>
 #include <string>
-
-#include "System/float3.h"
-#include "System/type2.h"
-#include "System/UnorderedMap.hpp"
-#include "System/creg/creg_cond.h"
 
 class MoveDefHandler;
 class CSolidObject;
@@ -18,17 +18,17 @@ class CUnit;
 class LuaTable;
 
 namespace MoveTypes {
-	class CheckCollisionQuery;
+class CheckCollisionQuery;
 }
 
 namespace MoveDefs {
-	struct CollisionQueryStateTrack {
-		float lastPosY = std::numeric_limits<float>::infinity();
-		int lastInWater = -2;
-		int lastWaterCollisions = -2;
-		bool refreshCollisionCache = false;
-	};
-}
+struct CollisionQueryStateTrack {
+	float lastPosY = std::numeric_limits<float>::infinity();
+	int lastInWater = -2;
+	int lastWaterCollisions = -2;
+	bool refreshCollisionCache = false;
+};
+} // namespace MoveDefs
 
 struct MoveDef {
 	CR_DECLARE_STRUCT(MoveDef)
@@ -38,56 +38,54 @@ struct MoveDef {
 	MoveDef(const MoveDef& moveDef) = delete;
 	MoveDef(MoveDef&& moveDef) = default;
 
-	MoveDef& operator = (const MoveDef& moveDef) = delete;
-	MoveDef& operator = (MoveDef&& moveDef) = default;
+	MoveDef& operator=(const MoveDef& moveDef) = delete;
+	MoveDef& operator=(MoveDef&& moveDef) = default;
 
 	// nearestSquare is given a meaningful value only when the result is true.
-	bool DoRawSearch(
-		const CSolidObject* collider,
-		const MoveDef* md,
-		const float3 startPos,
-		const float3 endPos,
-		float goalRadius,
-		bool testTerrain,
-		bool testObjects,
-		bool centerOnly,
-		float* minSpeedModPtr,
-		int* maxBlockBitPtr,
-		int2* nearestSquare,
-		int thread = 0
-	) const;
-	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider, MoveDefs::CollisionQueryStateTrack& state, const int2 pos) const;
-	bool TestMoveSquareRange(
-		const MoveTypes::CheckCollisionQuery& collider,
-		const float3 rangeMins,
-		const float3 rangeMaxs,
-		const float3 testMoveDir,
-		bool testTerrain = true,
-		bool testObjects = true,
-		bool centerOnly = false,
-		float* minSpeedModPtr = nullptr,
-		int* maxBlockBitPtr = nullptr,
-		int thread = 0
-	) const;
-	bool TestMoveSquare(
-		const MoveTypes::CheckCollisionQuery& collider,
-		const float3 testMovePos,
-		const float3 testMoveDir,
-		bool testTerrain = true,
-		bool testObjects = true,
-		bool centerOnly = false,
-		float* minSpeedModPtr = nullptr,
-		int* maxBlockBitPtr = nullptr,
-		int thread = 0
-	) const {
-		return (TestMoveSquareRange(collider, testMovePos, testMovePos, testMoveDir, testTerrain, testObjects, centerOnly, minSpeedModPtr, maxBlockBitPtr, thread));
+	bool DoRawSearch(const CSolidObject* collider,
+	    const MoveDef* md,
+	    const float3 startPos,
+	    const float3 endPos,
+	    float goalRadius,
+	    bool testTerrain,
+	    bool testObjects,
+	    bool centerOnly,
+	    float* minSpeedModPtr,
+	    int* maxBlockBitPtr,
+	    int2* nearestSquare,
+	    int thread = 0) const;
+	void UpdateCheckCollisionQuery(MoveTypes::CheckCollisionQuery& collider,
+	    MoveDefs::CollisionQueryStateTrack& state,
+	    const int2 pos) const;
+	bool TestMoveSquareRange(const MoveTypes::CheckCollisionQuery& collider,
+	    const float3 rangeMins,
+	    const float3 rangeMaxs,
+	    const float3 testMoveDir,
+	    bool testTerrain = true,
+	    bool testObjects = true,
+	    bool centerOnly = false,
+	    float* minSpeedModPtr = nullptr,
+	    int* maxBlockBitPtr = nullptr,
+	    int thread = 0) const;
+
+	bool TestMoveSquare(const MoveTypes::CheckCollisionQuery& collider,
+	    const float3 testMovePos,
+	    const float3 testMoveDir,
+	    bool testTerrain = true,
+	    bool testObjects = true,
+	    bool centerOnly = false,
+	    float* minSpeedModPtr = nullptr,
+	    int* maxBlockBitPtr = nullptr,
+	    int thread = 0) const
+	{
+		return (TestMoveSquareRange(collider, testMovePos, testMovePos, testMoveDir, testTerrain, testObjects,
+		    centerOnly, minSpeedModPtr, maxBlockBitPtr, thread));
 	}
-	bool TestMovePositionForObjects(
-		const MoveTypes::CheckCollisionQuery* collider,
-		const float3 testMovePos,
-		int magicNum,
-		int thread
-	) const;
+
+	bool TestMovePositionForObjects(const MoveTypes::CheckCollisionQuery* collider,
+	    const float3 testMovePos,
+	    int magicNum,
+	    int thread) const;
 
 	bool IsInExitOnly(float3 testMovePos) const;
 	bool IsInExitOnly(int x, int z) const;
@@ -99,41 +97,44 @@ struct MoveDef {
 
 	float CalcFootPrintMinExteriorRadius(float scale = 1.0f) const; // radius minimally bounding the footprint
 	float CalcFootPrintMaxInteriorRadius(float scale = 1.0f) const; // radius maximally bounded by the footprint
-	float CalcFootPrintAxisStretchFactor() const; // 0 for square-shaped footprints, 1 for (impossible) line-shaped footprints
+	float
+	CalcFootPrintAxisStretchFactor() const; // 0 for square-shaped footprints, 1 for (impossible) line-shaped footprints
 
 	float GetDepthMod(float height) const;
 
 	unsigned int CalcCheckSum() const;
 
-	bool IsComplexSubmersible() const {
-		return isSubmersible && overrideUnitWaterline;
-	};
+	bool IsComplexSubmersible() const { return isSubmersible && overrideUnitWaterline; };
 
 	static float GetDefaultMinWaterDepth() { return -1e6f; }
+
 	static float GetDefaultMaxWaterDepth() { return +1e6f; }
 
 	/// determines which of the {tank,kbot,hover,ship}Speed
 	/// modifiers this MoveDef receives from a terrain-type
 	enum SpeedModClass {
-		Tank  = 0,
-		KBot  = 1,
+		Tank = 0,
+		KBot = 1,
 		Hover = 2,
-		Ship  = 3
+		Ship = 3
 	};
+
 	enum TerrainClass {
-		Land  = 0, /// we are restricted to "land" (terrain with height >= 0)
+		Land = 0,  /// we are restricted to "land" (terrain with height >= 0)
 		Water = 1, /// we are restricted to "water" (terrain with height < 0)
 		Mixed = 2, /// we can exist at heights both greater and smaller than 0
 	};
+
 	enum DepthModParams {
 		DEPTHMOD_MIN_HEIGHT = 0,
 		DEPTHMOD_MAX_HEIGHT = 1,
-		DEPTHMOD_MAX_SCALE  = 2,
-		DEPTHMOD_QUA_COEFF  = 3,
-		DEPTHMOD_LIN_COEFF  = 4,
-		DEPTHMOD_CON_COEFF  = 5,
+		DEPTHMOD_MAX_SCALE = 2,
+		DEPTHMOD_QUA_COEFF = 3,
+		DEPTHMOD_LIN_COEFF = 4,
+		DEPTHMOD_CON_COEFF = 5,
 		DEPTHMOD_NUM_PARAMS = 6,
 	};
+
 	enum SpeedModMults {
 		SPEEDMOD_MOBILE_IDLE_MULT = 0,
 		SPEEDMOD_MOBILE_BUSY_MULT = 1,
@@ -208,30 +209,38 @@ struct MoveDef {
 };
 
 
-
 class LuaParser;
-class MoveDefHandler
-{
+
+class MoveDefHandler {
 	CR_DECLARE_STRUCT(MoveDefHandler)
 public:
 	constexpr static size_t MAX_MOVE_DEFS = 256;
 
 	void Init(LuaParser* defsParser);
 	void PostSimInit();
-	void Kill() {
+
+	void Kill()
+	{
 		nameMap.clear(); // never iterated
 
 		mdCounter = 0;
 		mdChecksum = 0;
 	}
 
-	MoveDef* GetMoveDefByPathType(unsigned int pathType) { assert(pathType < mdCounter); return &moveDefs[pathType]; }
+	MoveDef* GetMoveDefByPathType(unsigned int pathType)
+	{
+		assert(pathType < mdCounter);
+		return &moveDefs[pathType];
+	}
+
 	MoveDef* GetMoveDefByName(const std::string& name);
 
 	unsigned int GetNumMoveDefs() const { return mdCounter; }
+
 	unsigned int GetCheckSum() const { return mdChecksum; }
 
 	int GetLargestFootPrintXSize() { return largestSize; };
+
 	int GetLargestFootPrintSizeH() { return largestSizeH; };
 
 private:
@@ -248,4 +257,3 @@ private:
 extern MoveDefHandler moveDefHandler;
 
 #endif // MOVEDEF_HANDLER_H
-

@@ -2,7 +2,9 @@
 
 
 #include "Factory.h"
+
 #include "Game/GameHelper.h"
+#include "Game/GlobalUnsynced.h"
 #include "Game/WaitCommandsAI.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
@@ -10,61 +12,58 @@
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
+#include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
-#include "Sim/Units/Scripts/UnitScript.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/CommandAI/FactoryCAI.h"
 #include "Sim/Units/CommandAI/MobileCAI.h"
+#include "Sim/Units/Scripts/UnitScript.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitLoader.h"
 #include "System/EventHandler.h"
 #include "System/Matrix44f.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISoundChannels.h"
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
-#include "System/Sound/ISoundChannels.h"
-
-#include "Game/GlobalUnsynced.h"
-
-#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CFactory, CBuilding, )
-CR_REG_METADATA(CFactory, (
-	CR_MEMBER(buildSpeed),
+CR_REG_METADATA(CFactory,
+    (CR_MEMBER(buildSpeed),
 
-	CR_MEMBER(boOffset),
-	CR_MEMBER(boRadius),
-	CR_MEMBER(boRelHeading),
-	CR_MEMBER(boSherical),
-	CR_MEMBER(boForced),
-	CR_MEMBER(boPerform),
+        CR_MEMBER(boOffset),
+        CR_MEMBER(boRadius),
+        CR_MEMBER(boRelHeading),
+        CR_MEMBER(boSherical),
+        CR_MEMBER(boForced),
+        CR_MEMBER(boPerform),
 
-	CR_MEMBER(lastBuildUpdateFrame),
-	CR_MEMBER(curBuildDef),
-	CR_MEMBER(curBuild),
-	CR_MEMBER(finishedBuildCommand),
-	CR_MEMBER(nanoPieceCache)
-))
+        CR_MEMBER(lastBuildUpdateFrame),
+        CR_MEMBER(curBuildDef),
+        CR_MEMBER(curBuild),
+        CR_MEMBER(finishedBuildCommand),
+        CR_MEMBER(nanoPieceCache)))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 CFactory::CFactory()
-	: CBuilding()
-	, buildSpeed(100.0f)
-	, boOffset(0.0f) //can't set here
-	, boRadius(0.0f) //can't set here
-	, boRelHeading(0)
-	, boSherical(true)
-	, boForced(true)
-	, boPerform(true)
-	, curBuild(nullptr)
-	, curBuildDef(nullptr)
-	, lastBuildUpdateFrame(-1)
-{ }
+    : CBuilding()
+    , buildSpeed(100.0f)
+    , boOffset(0.0f) // can't set here
+    , boRadius(0.0f) // can't set here
+    , boRelHeading(0)
+    , boSherical(true)
+    , boForced(true)
+    , boPerform(true)
+    , curBuild(nullptr)
+    , curBuildDef(nullptr)
+    , lastBuildUpdateFrame(-1)
+{
+}
 
 void CFactory::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID)
 {
@@ -85,22 +84,18 @@ void CFactory::PreInit(const UnitLoadParams& params)
 
 	CBuilding::PreInit(params);
 
-	//radius is defined after CUnit::PreInit()
+	// radius is defined after CUnit::PreInit()
 	boOffset = radius * 0.5f;
 	boRadius = radius * 0.5f;
 }
 
-
-
 float3 CFactory::CalcBuildPos(int buildPiece)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float3 relBuildPos = script->GetPiecePos((buildPiece < 0)? script->QueryBuildInfo() : buildPiece);
+	const float3 relBuildPos = script->GetPiecePos((buildPiece < 0) ? script->QueryBuildInfo() : buildPiece);
 	const float3 absBuildPos = this->GetObjectSpacePos(relBuildPos);
 	return absBuildPos;
 }
-
-
 
 void CFactory::Update()
 {
@@ -131,14 +126,15 @@ void CFactory::Update()
 		// the radius can not be too large or assisting (mobile)
 		// builders around the factory will be disturbed by this
 		if ((gs->frameNum & (UNIT_SLOWUPDATE_RATE >> 1)) == 0 && boPerform) {
-			float3 boDir = (boRelHeading == 0) ? static_cast<float3>(frontdir) : GetVectorFromHeading((heading + boRelHeading) % SPRING_MAX_HEADING);
+			float3 boDir = (boRelHeading == 0) ? static_cast<float3>(frontdir) :
+			                                     GetVectorFromHeading((heading + boRelHeading) % SPRING_MAX_HEADING);
 			CGameHelper::BuggerOff(pos + boDir * boOffset, boRadius, boSherical, boForced, team, this);
 		}
 
 		if (!yardOpen && !IsStunned()) {
 			if (groundBlockingObjectMap.CanOpenYard(this)) {
 				groundBlockingObjectMap.OpenBlockingYard(this); // set yardOpen
-				script->Activate(); // set buildStance
+				script->Activate();                             // set buildStance
 
 				// make sure the idle-check does not immediately trigger
 				// (scripts have 7 seconds to set inBuildStance to true)
@@ -156,7 +152,8 @@ void CFactory::Update()
 		FinishBuild(curBuild);
 	}
 
-	const bool wantClose = (!IsStunned() && yardOpen && (gs->frameNum >= (lastBuildUpdateFrame + GAME_SPEED * (UNIT_SLOWUPDATE_RATE >> 1))));
+	const bool wantClose = (!IsStunned() && yardOpen &&
+	                        (gs->frameNum >= (lastBuildUpdateFrame + GAME_SPEED * (UNIT_SLOWUPDATE_RATE >> 1))));
 	const bool closeYard = (wantClose && curBuild == nullptr && groundBlockingObjectMap.CanCloseYard(this));
 
 	if (closeYard) {
@@ -168,9 +165,8 @@ void CFactory::Update()
 	CBuilding::Update();
 }
 
-
-
-void CFactory::StartBuild(const UnitDef* buildeeDef) {
+void CFactory::StartBuild(const UnitDef* buildeeDef)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
 		return;
@@ -206,7 +202,8 @@ void CFactory::StartBuild(const UnitDef* buildeeDef) {
 	}
 }
 
-void CFactory::UpdateBuild(CUnit* buildee) {
+void CFactory::UpdateBuild(CUnit* buildee)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (IsStunned())
 		return;
@@ -249,7 +246,8 @@ void CFactory::UpdateBuild(CUnit* buildee) {
 	CreateNanoParticle();
 }
 
-void CFactory::FinishBuild(CUnit* buildee) {
+void CFactory::FinishBuild(CUnit* buildee)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (buildee->beingBuilt)
 		return;
@@ -277,8 +275,6 @@ void CFactory::FinishBuild(CUnit* buildee) {
 	eventHandler.UnitFromFactory(buildee, this, !buildeeIdle);
 	StopBuild();
 }
-
-
 
 unsigned int CFactory::QueueBuild(const UnitDef* buildeeDef, const Command& buildCmd)
 {
@@ -332,8 +328,6 @@ void CFactory::DependentDied(CObject* o)
 
 	CUnit::DependentDied(o);
 }
-
-
 
 void CFactory::SendToEmptySpot(CUnit* unit)
 {
@@ -429,7 +423,8 @@ void CFactory::SendToEmptySpot(CUnit* unit)
 	unit->commandAI->GiveCommand(Command(CMD_MOVE, SHIFT_KEY, foundPos));
 }
 
-void CFactory::AssignBuildeeOrders(CUnit* unit) {
+void CFactory::AssignBuildeeOrders(CUnit* unit)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandAI* unitCAI = unit->commandAI;
 	CCommandQueue& unitCmdQue = unitCAI->commandQue;
@@ -467,7 +462,8 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 		}
 
 		c.PushPos(tmpPos.cClampInBounds());
-	} else {
+	}
+	else {
 		// dummy rallypoint for aircraft
 		c.PushPos(unit->pos);
 	}
@@ -497,12 +493,11 @@ void CFactory::AssignBuildeeOrders(CUnit* unit) {
 
 			unitCAI->GiveCommand(c);
 		}
-	} else if (modInfo.insertBuiltUnitMoveCommand) {
+	}
+	else if (modInfo.insertBuiltUnitMoveCommand) {
 		unitCmdQue.push_front(c);
 	}
 }
-
-
 
 bool CFactory::ChangeTeam(int newTeam, ChangeType type)
 {
@@ -515,7 +510,6 @@ bool CFactory::ChangeTeam(int newTeam, ChangeType type)
 
 	return true;
 }
-
 
 void CFactory::CreateNanoParticle(bool highPriority)
 {

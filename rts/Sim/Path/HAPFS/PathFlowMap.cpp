@@ -1,39 +1,40 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "PathFlowMap.hpp"
+
 #include "PathConstants.h"
+
 #include "Map/ReadMap.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Objects/SolidObject.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 
-#include "System/Misc/TracyDefs.h"
-
-#define FLOW_EPSILON         0.01f
-#define FLOW_DECAY_ENABLED   0
-#define FLOW_DECAY_FACTOR    0.86f
-#define FLOW_COST_MULT      32.00f
-#define FLOW_NGB_PROJECTION  0
+#define FLOW_EPSILON 0.01f
+#define FLOW_DECAY_ENABLED 0
+#define FLOW_DECAY_FACTOR 0.86f
+#define FLOW_COST_MULT 32.00f
+#define FLOW_NGB_PROJECTION 0
 
 // not extern'ed, so static
 static PathFlowMap gPathFlowMap;
 
-
-PathFlowMap* PathFlowMap::GetInstance() {
+PathFlowMap* PathFlowMap::GetInstance()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	gPathFlowMap.Init(PATH_FLOWMAP_XSCALE, PATH_FLOWMAP_ZSCALE);
 	return &gPathFlowMap;
 }
 
-void PathFlowMap::FreeInstance(PathFlowMap* pfm) {
+void PathFlowMap::FreeInstance(PathFlowMap* pfm)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(pfm == &gPathFlowMap);
 	pfm->Kill();
 }
 
-
-
-void PathFlowMap::Init(unsigned int scalex, unsigned int scalez) {
+void PathFlowMap::Init(unsigned int scalex, unsigned int scalez)
+{
 	// const float s = 1.0f / math::sqrt(2.0f);
 
 	fBufferIdx = 0;
@@ -41,10 +42,10 @@ void PathFlowMap::Init(unsigned int scalex, unsigned int scalez) {
 
 	xscale = std::clamp(int(scalex), 1, mapDims.mapx);
 	zscale = std::clamp(int(scalez), 1, mapDims.mapy);
-	xsize  = mapDims.mapx / xscale;
-	zsize  = mapDims.mapy / zscale;
-	xfact  = SQUARE_SIZE * xscale;
-	zfact  = SQUARE_SIZE * zscale;
+	xsize = mapDims.mapx / xscale;
+	zsize = mapDims.mapy / zscale;
+	xfact = SQUARE_SIZE * xscale;
+	zfact = SQUARE_SIZE * zscale;
 
 	maxFlow[fBufferIdx] = 0.0f;
 	maxFlow[bBufferIdx] = 0.0f;
@@ -77,8 +78,8 @@ void PathFlowMap::Init(unsigned int scalex, unsigned int scalez) {
 #endif
 }
 
-
-void PathFlowMap::Update() {
+void PathFlowMap::Update()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return;
 #if 0
@@ -91,7 +92,7 @@ void PathFlowMap::Update() {
 	spring::unordered_set<unsigned int>::iterator it;
 	spring::unordered_set<unsigned int>::iterator nit;
 
-	#if (FLOW_DECAY_ENABLED == 0)
+#if (FLOW_DECAY_ENABLED == 0)
 		for (it = fIndices.begin(); it != fIndices.end(); ++it) {
 			FlowCell& fCell = fCells[*it];
 
@@ -100,7 +101,7 @@ void PathFlowMap::Update() {
 		}
 
 		fIndices.clear();
-	#else
+#else
 		for (it = fIndices.begin(); it != fIndices.end(); ) {
 			nit = it; ++nit;
 
@@ -130,7 +131,7 @@ void PathFlowMap::Update() {
 
 			it = nit;
 		}
-	#endif
+#endif
 
 	for (it = bIndices.begin(); it != bIndices.end(); ++it) {
 		FlowCell& bCell = bCells[*it];
@@ -160,7 +161,8 @@ void PathFlowMap::Update() {
 #endif
 }
 
-void PathFlowMap::AddFlow(const CSolidObject* o) {
+void PathFlowMap::AddFlow(const CSolidObject* o)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return;
 #if 0
@@ -187,7 +189,7 @@ void PathFlowMap::AddFlow(const CSolidObject* o) {
 
 	bIndices.insert(cellIdx);
 
-	#if (FLOW_NGB_PROJECTION == 1)
+#if (FLOW_NGB_PROJECTION == 1)
 	{
 		const unsigned int x = cellIdx % xsize;
 		const unsigned int z = cellIdx / xsize;
@@ -216,15 +218,14 @@ void PathFlowMap::AddFlow(const CSolidObject* o) {
 		if (ngbs[1] != NULL) {  ngbs[1]->flowVector += float3(flowVec.x, o->mass * o->moveDef->flowMod * 0.666f, flowVec.z);  ngbs[1]->numObjects += 1;  }
 		if (ngbs[2] != NULL) {  ngbs[2]->flowVector += float3(flowVec.x, o->mass * o->moveDef->flowMod * 0.333f, flowVec.z);  ngbs[2]->numObjects += 1;  }
 	}
-	#endif
+#endif
 
 	maxFlow[bBufferIdx] = std::max(maxFlow[bBufferIdx], bCell.flowVector.y);
 #endif
 }
 
-
-
-unsigned int PathFlowMap::GetCellIdx(const CSolidObject* o) const {
+unsigned int PathFlowMap::GetCellIdx(const CSolidObject* o) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int xcell = o->pos.x / xfact;
 	const unsigned int zcell = o->pos.z / zfact;
@@ -232,7 +233,8 @@ unsigned int PathFlowMap::GetCellIdx(const CSolidObject* o) const {
 	return (zcell * xsize + xcell);
 }
 
-const float3& PathFlowMap::GetFlowVec(unsigned int hmx, unsigned int hmz) const {
+const float3& PathFlowMap::GetFlowVec(unsigned int hmx, unsigned int hmz) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return ZeroVector;
 #if 0
@@ -243,7 +245,8 @@ const float3& PathFlowMap::GetFlowVec(unsigned int hmx, unsigned int hmz) const 
 #endif
 }
 
-float PathFlowMap::GetFlowCost(unsigned int x, unsigned int z, const MoveDef& md, unsigned int pathOpt) const {
+float PathFlowMap::GetFlowCost(unsigned int x, unsigned int z, const MoveDef& md, unsigned int pathOpt) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return 0.0f;
 #if 0

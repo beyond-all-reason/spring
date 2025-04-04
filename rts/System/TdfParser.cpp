@@ -1,23 +1,23 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm>
-#include <cctype>
-#include <climits>
-#include <stdexcept>
-#include <sstream>
-#include <vector>
-#include <regex>
-
+#include "System/TdfParser.h"
 
 #include "Lua/LuaParser.h"
-#include "System/TdfParser.h"
-#include "System/StringUtil.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/VFSHandler.h"
 #include "System/Log/ILog.h"
+#include "System/StringUtil.h"
 
-void TdfParser::TdfSection::print(std::ostream & out) const
+#include <algorithm>
+#include <cctype>
+#include <climits>
+#include <regex>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+
+void TdfParser::TdfSection::print(std::ostream& out) const
 {
 	for (const auto& section: sections) {
 		out << "[" << section.first << "]\n{\n";
@@ -51,14 +51,16 @@ bool TdfParser::TdfSection::remove(const std::string& key, bool caseSensitive)
 		if ((ret = (it != values.end()))) {
 			values.erase(it);
 		}
-	} else {
+	}
+	else {
 		// don't assume <key> is already in lowercase
 		const std::string lowerKey = StringToLower(key);
-		for (valueMap_t::iterator it = values.begin(); it != values.end(); ) {
+		for (valueMap_t::iterator it = values.begin(); it != values.end();) {
 			if (StringToLower(it->first) == lowerKey) {
 				it = values.erase(it);
 				ret = true;
-			} else {
+			}
+			else {
 				++it;
 			}
 		}
@@ -80,52 +82,41 @@ TdfParser::TdfSection::~TdfSection()
 	}
 }
 
+TdfParser::TdfParser(const char* buf, size_t size) { LoadBuffer(buf, size); }
 
-
-TdfParser::TdfParser(const char* buf, size_t size)
-{
-	LoadBuffer(buf, size);
-}
-
-TdfParser::TdfParser(const std::string& filename)
-{
-	LoadFile(filename);
-}
+TdfParser::TdfParser(const std::string& filename) { LoadFile(filename); }
 
 TdfParser::~TdfParser() = default;
 
-void TdfParser::print(std::ostream & out) const {
-	root_section.print(out);
-}
+void TdfParser::print(std::ostream& out) const { root_section.print(out); }
 
-
-void TdfParser::ParseLuaTable(const LuaTable& table, TdfSection* currentSection) {
+void TdfParser::ParseLuaTable(const LuaTable& table, TdfSection* currentSection)
+{
 	std::vector<std::string> keys;
 	table.GetKeys(keys);
 
 	for (const std::string& key: keys) {
 		LuaTable::DataType dt = table.GetType(key);
 		switch (dt) {
-			case LuaTable::DataType::TABLE: {
-				ParseLuaTable(table.SubTable(key), currentSection->construct_subsection(key));
-			} break;
-			case LuaTable::DataType::BOOLEAN: {
-				currentSection->AddPair(key, table.Get(key, false));
-			} break;
-			case LuaTable::DataType::NUMBER: {
-				currentSection->AddPair(key, table.Get(key, 0.0f));
-			} break;
-			case LuaTable::DataType::STRING: {
-				currentSection->AddPair(key, table.Get(key, std::string("")));
-			} break;
-			default:
-				throw content_error("invalid datatype for key " + key);
+		case LuaTable::DataType::TABLE: {
+			ParseLuaTable(table.SubTable(key), currentSection->construct_subsection(key));
+		} break;
+		case LuaTable::DataType::BOOLEAN: {
+			currentSection->AddPair(key, table.Get(key, false));
+		} break;
+		case LuaTable::DataType::NUMBER: {
+			currentSection->AddPair(key, table.Get(key, 0.0f));
+		} break;
+		case LuaTable::DataType::STRING: {
+			currentSection->AddPair(key, table.Get(key, std::string("")));
+		} break;
+		default: throw content_error("invalid datatype for key " + key);
 		}
 	}
 }
 
-
-void TdfParser::ParseBuffer(const char* buf, size_t size) {
+void TdfParser::ParseBuffer(const char* buf, size_t size)
+{
 	CVFSHandler::GrabLock();
 
 	vfsHandler->SetName("TDFParserVFS");
@@ -134,24 +125,25 @@ void TdfParser::ParseBuffer(const char* buf, size_t size) {
 		std::string sbuf = std::string(buf);
 		EscapeSpecial(sbuf);
 
-		const std::string script = std::string("local TDF = VFS.Include('gamedata/parse_tdf.lua'); return TDF.ParseText([[") + sbuf + "]])";
+		const std::string script =
+		    std::string("local TDF = VFS.Include('gamedata/parse_tdf.lua'); return TDF.ParseText([[") + sbuf + "]])";
 
 		LuaParser luaParser(script, SPRING_VFS_BASE);
 		luaParser.Execute();
 
 		ParseLuaTable(luaParser.GetRoot(), GetRootSection());
 
-		std::vector<TdfSection*> allSections = { GetRootSection() };
+		std::vector<TdfSection*> allSections = {GetRootSection()};
 		{
 			for (size_t i = 0; i < allSections.size(); ++i) {
-				for (auto& [name, sec] : allSections[i]->sections) {
+				for (auto& [name, sec]: allSections[i]->sections) {
 					allSections.push_back(sec);
 				}
 			}
 		}
 
-		for (TdfSection* section : allSections) {
-			for (auto& [k, v] : section->values) {
+		for (TdfSection* section: allSections) {
+			for (auto& [k, v]: section->values) {
 				UnescapeSpecial(v);
 			}
 		}
@@ -180,10 +172,8 @@ void TdfParser::UnescapeSpecial(std::string& buffer)
 	buffer = std::regex_replace(buffer, std::regex("\\\\\\[\\\\\\["), "[[");
 }
 
-
 void TdfParser::LoadFile(const std::string& filename)
 {
-
 	CFileHandler file(this->filename = filename);
 	std::vector<unsigned char> fileBuf;
 
@@ -193,13 +183,13 @@ void TdfParser::LoadFile(const std::string& filename)
 	if (!file.IsBuffered()) {
 		fileBuf.resize(file.FileSize(), 0);
 		file.Read(fileBuf.data(), fileBuf.size());
-	} else {
+	}
+	else {
 		fileBuf = std::move(file.GetBuffer());
 	}
 
 	ParseBuffer(reinterpret_cast<const char*>(fileBuf.data()), fileBuf.size());
 }
-
 
 std::string TdfParser::SGetValueDef(const std::string& defaultValue, const std::string& location) const
 {
@@ -229,8 +219,8 @@ bool TdfParser::SGetValue(std::string& value, const std::string& location) const
 	TdfSection* sectionptr = sit->second;
 	searchpath = loclist[0];
 
-	for (unsigned int i=1; i < loclist.size()-1; ++i) {
-		//const char *arg = loclist[i].c_str();
+	for (unsigned int i = 1; i < loclist.size() - 1; ++i) {
+		// const char *arg = loclist[i].c_str();
 		searchpath += '\\';
 		searchpath += loclist[i];
 
@@ -243,7 +233,7 @@ bool TdfParser::SGetValue(std::string& value, const std::string& location) const
 	}
 
 	searchpath += '\\';
-	searchpath += loclist[loclist.size()-1];
+	searchpath += loclist[loclist.size() - 1];
 
 	const valueMap_t::const_iterator vit = sectionptr->values.find(loclist.back());
 
@@ -355,7 +345,7 @@ bool TdfParser::SectionExist(const std::string& location) const
 		if ((sit = sectionptr->sections.find(loclist[i])) == sectionptr->sections.end())
 			return false;
 
-		sectionptr = sectionptr->sections[ loclist[i] ];
+		sectionptr = sectionptr->sections[loclist[i]];
 	}
 
 	return true;

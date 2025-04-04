@@ -2,64 +2,56 @@
 
 
 #include "FireProjectile.h"
+
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
-#include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "Sim/Misc/GlobalSynced.h"
-#include "Sim/Misc/QuadField.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/DamageArray.h"
+#include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/Unit.h"
-#include "System/creg/STL_Deque.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/creg/STL_Deque.h"
 
 CR_BIND_DERIVED(CFireProjectile, CProjectile, )
 CR_BIND(CFireProjectile::SubParticle, )
 
-CR_REG_METADATA(CFireProjectile,(
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(ttl),
-	CR_MEMBER(emitPos),
-	CR_MEMBER(emitRadius),
-	CR_MEMBER(particleTime),
-	CR_MEMBER(particleSize),
-	CR_MEMBER(ageSpeed),
-	CR_MEMBER(subParticles2),
-	CR_MEMBER(subParticles)
-))
+CR_REG_METADATA(CFireProjectile,
+    (CR_SETFLAG(CF_Synced),
+        CR_MEMBER(ttl),
+        CR_MEMBER(emitPos),
+        CR_MEMBER(emitRadius),
+        CR_MEMBER(particleTime),
+        CR_MEMBER(particleSize),
+        CR_MEMBER(ageSpeed),
+        CR_MEMBER(subParticles2),
+        CR_MEMBER(subParticles)))
 
-CR_REG_METADATA_SUB(CFireProjectile, SubParticle, (
-	CR_MEMBER(pos),
-	CR_MEMBER(posDif),
-	CR_MEMBER(age),
-	CR_MEMBER(maxSize),
-	CR_MEMBER(rotSpeed),
-	CR_MEMBER(smokeType)
-))
+CR_REG_METADATA_SUB(CFireProjectile,
+    SubParticle,
+    (CR_MEMBER(pos), CR_MEMBER(posDif), CR_MEMBER(age), CR_MEMBER(maxSize), CR_MEMBER(rotSpeed), CR_MEMBER(smokeType)))
 
-CFireProjectile::CFireProjectile(
-	const float3& pos,
-	const float3& spd,
-	CUnit* owner,
-	int emitTtl,
-	int particleTtl,
-	float emitRadius,
-	float particleSize
-):
-	// these are synced, but neither weapon nor piece
-	// (only burning features create instances of them)
-	CProjectile(pos, speed, owner, true, false, false),
-	ttl(emitTtl),
-	emitPos(pos),
-	emitRadius(emitRadius),
-	particleTime(particleTtl),
-	particleSize(particleSize)
+CFireProjectile::CFireProjectile(const float3& pos,
+    const float3& spd,
+    CUnit* owner,
+    int emitTtl,
+    int particleTtl,
+    float emitRadius,
+    float particleSize)
+    : // these are synced, but neither weapon nor piece
+      // (only burning features create instances of them)
+    CProjectile(pos, speed, owner, true, false, false)
+    , ttl(emitTtl)
+    , emitPos(pos)
+    , emitRadius(emitRadius)
+    , particleTime(particleTtl)
+    , particleSize(particleSize)
 {
 	drawRadius = emitRadius + particleTime * speed.w;
 	checkCol = false;
@@ -80,7 +72,7 @@ void CFireProjectile::Update()
 			// unsynced code
 			SubParticle sub;
 			sub.age = 0;
-			sub.maxSize = (0.7f + guRNG.NextFloat()*0.3f) * particleSize;
+			sub.maxSize = (0.7f + guRNG.NextFloat() * 0.3f) * particleSize;
 			sub.posDif = guRNG.NextVector() * emitRadius;
 			sub.pos = emitPos;
 			sub.pos.y += sub.posDif.y;
@@ -89,12 +81,12 @@ void CFireProjectile::Update()
 			sub.smokeType = guRNG.NextInt(projectileDrawer->NumSmokeTextures());
 			subParticles.push_front(sub);
 
-			sub.maxSize = (0.7f + guRNG.NextFloat()*0.3f) * particleSize;
+			sub.maxSize = (0.7f + guRNG.NextFloat() * 0.3f) * particleSize;
 			sub.posDif = guRNG.NextVector() * emitRadius;
 			sub.pos = emitPos;
-			sub.pos.y += sub.posDif.y - radius*0.3f;
+			sub.pos.y += sub.posDif.y - radius * 0.3f;
 			sub.posDif.y = 0;
-			sub.rotSpeed=(guRNG.NextFloat() - 0.5f) * 4;
+			sub.rotSpeed = (guRNG.NextFloat() - 0.5f) * 4;
 			subParticles2.push_front(sub);
 		}
 		if (!(ttl & 31)) {
@@ -150,35 +142,9 @@ void CFireProjectile::Draw()
 	uint8_t col2[4];
 
 	for (const SubParticle& pi: subParticles2) {
-		const float  age = pi.age + ageSpeed * globalRendering->timeOffset;
+		const float age = pi.age + ageSpeed * globalRendering->timeOffset;
 		const float size = pi.maxSize * age;
-		const float  rot = pi.rotSpeed * age;
-
-		const float sinRot = fastmath::sin(rot);
-		const float cosRot = fastmath::cos(rot);
-
-		float3 dir1 = (camera->GetRight()*cosRot + camera->GetUp()*sinRot) * size;
-		float3 dir2 = (camera->GetRight()*sinRot - camera->GetUp()*cosRot) * size;
-
-		float3 interPos = pi.pos;
-
-		col[0] = (uint8_t) ((1 - age) * 255);
-		col[1] = (uint8_t) ((1 - age) * 255);
-		col[2] = (uint8_t) ((1 - age) * 255);
-
-		AddEffectsQuad(
-			{ interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col },
-			{ interPos + dir1 - dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->ystart, col },
-			{ interPos + dir1 + dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->yend,   col },
-			{ interPos - dir1 + dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->yend,   col }
-		);
-	}
-	for (const SubParticle& pi: subParticles) {
-		const AtlasedTexture* at = projectileDrawer->GetSmokeTexture(pi.smokeType);
-
-		const float  age = pi.age + ageSpeed * globalRendering->timeOffset;
-		const float size = pi.maxSize * fastmath::apxsqrt(age);
-		const float  rot = pi.rotSpeed * age;
+		const float rot = pi.rotSpeed * age;
 
 		const float sinRot = fastmath::sin(rot);
 		const float cosRot = fastmath::cos(rot);
@@ -188,44 +154,64 @@ void CFireProjectile::Draw()
 
 		float3 interPos = pi.pos;
 
-		if (age < 1/1.31f) {
-			col[0] = (uint8_t) ((1 - age * 1.3f) * 255);
-			col[1] = (uint8_t) ((1 - age * 1.3f) * 255);
-			col[2] = (uint8_t) ((1 - age * 1.3f) * 255);
+		col[0] = (uint8_t)((1 - age) * 255);
+		col[1] = (uint8_t)((1 - age) * 255);
+		col[2] = (uint8_t)((1 - age) * 255);
+
+		AddEffectsQuad(
+		    {interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col},
+		    {interPos + dir1 - dir2, projectileDrawer->explotex->xend, projectileDrawer->explotex->ystart, col},
+		    {interPos + dir1 + dir2, projectileDrawer->explotex->xend, projectileDrawer->explotex->yend, col},
+		    {interPos - dir1 + dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->yend, col});
+	}
+	for (const SubParticle& pi: subParticles) {
+		const AtlasedTexture* at = projectileDrawer->GetSmokeTexture(pi.smokeType);
+
+		const float age = pi.age + ageSpeed * globalRendering->timeOffset;
+		const float size = pi.maxSize * fastmath::apxsqrt(age);
+		const float rot = pi.rotSpeed * age;
+
+		const float sinRot = fastmath::sin(rot);
+		const float cosRot = fastmath::cos(rot);
+
+		float3 dir1 = (camera->GetRight() * cosRot + camera->GetUp() * sinRot) * size;
+		float3 dir2 = (camera->GetRight() * sinRot - camera->GetUp() * cosRot) * size;
+
+		float3 interPos = pi.pos;
+
+		if (age < 1 / 1.31f) {
+			col[0] = (uint8_t)((1 - age * 1.3f) * 255);
+			col[1] = (uint8_t)((1 - age * 1.3f) * 255);
+			col[2] = (uint8_t)((1 - age * 1.3f) * 255);
 			col[3] = 1;
 
 			AddEffectsQuad(
-				{ interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col },
-				{ interPos + dir1 - dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->ystart, col },
-				{ interPos + dir1 + dir2, projectileDrawer->explotex->xend,   projectileDrawer->explotex->yend,   col },
-				{ interPos - dir1 + dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->yend,   col }
-			);
+			    {interPos - dir1 - dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->ystart, col},
+			    {interPos + dir1 - dir2, projectileDrawer->explotex->xend, projectileDrawer->explotex->ystart, col},
+			    {interPos + dir1 + dir2, projectileDrawer->explotex->xend, projectileDrawer->explotex->yend, col},
+			    {interPos - dir1 + dir2, projectileDrawer->explotex->xstart, projectileDrawer->explotex->yend, col});
 		}
 
 		uint8_t c;
 		if (age < 0.5f) {
-			c = (uint8_t)        (age * 510);
-		} else {
-			c = (uint8_t) (510 - (age * 510));
+			c = (uint8_t)(age * 510);
 		}
-		col2[0] = (uint8_t) (c * 0.6f);
-		col2[1] = (uint8_t) (c * 0.6f);
-		col2[2] = (uint8_t) (c * 0.6f);
+		else {
+			c = (uint8_t)(510 - (age * 510));
+		}
+		col2[0] = (uint8_t)(c * 0.6f);
+		col2[1] = (uint8_t)(c * 0.6f);
+		col2[2] = (uint8_t)(c * 0.6f);
 		col2[3] = c;
 
-		AddEffectsQuad(
-			{ interPos - dir1 - dir2, at->xstart, at->ystart, col2 },
-			{ interPos + dir1 - dir2, at->xend,   at->ystart, col2 },
-			{ interPos + dir1 + dir2, at->xend,   at->yend,   col2 },
-			{ interPos - dir1 + dir2, at->xstart, at->yend,   col2 }
-		);
+		AddEffectsQuad({interPos - dir1 - dir2, at->xstart, at->ystart, col2},
+		    {interPos + dir1 - dir2, at->xend, at->ystart, col2}, {interPos + dir1 + dir2, at->xend, at->yend, col2},
+		    {interPos - dir1 + dir2, at->xstart, at->yend, col2});
 	}
 }
-
 
 int CFireProjectile::GetProjectilesCount() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return subParticles2.size() + subParticles.size() * 2;
 }
-

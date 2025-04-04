@@ -3,11 +3,11 @@
 #include "StartScriptGen.h"
 
 #include "AIScriptHandler.h"
+
 #include "FileSystem/ArchiveNameResolver.h"
-#include "System/TdfParser.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
-
+#include "System/TdfParser.h"
 
 namespace StartScriptGen {
 
@@ -18,13 +18,14 @@ namespace StartScriptGen {
 
 
 /**
-	* helper function that covers the fields that need to be set for every minimal or default startup-script
-	* 
-	* @param game resolved name of the game
-	* @param map resolved name of the map
-	* @return a minimal config section containing general required fields
-	*/
-void CreateMinimalSetupSections(TdfParser::TdfSection& setup, const std::string& map, const std::string& game) {
+ * helper function that covers the fields that need to be set for every minimal or default startup-script
+ *
+ * @param game resolved name of the game
+ * @param map resolved name of the map
+ * @return a minimal config section containing general required fields
+ */
+void CreateMinimalSetupSections(TdfParser::TdfSection& setup, const std::string& map, const std::string& game)
+{
 	const std::string playername = configHandler->GetString("name");
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	g->add_name_value("Mapname", map);
@@ -52,7 +53,7 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 	// section already present, using this method to get acces to GAME section
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
-	modopts->AddPair("MinimalSetup", 1); //use for ingame detecting this type of start
+	modopts->AddPair("MinimalSetup", 1); // use for ingame detecting this type of start
 
 	std::ostringstream str;
 	setup.print(str);
@@ -60,15 +61,16 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 	return str.str();
 }
 
-
-std::string CreateDefaultSetup(const std::string& map, const std::string& game, const std::string& ai,
-			const std::string& playername)
+std::string CreateDefaultSetup(const std::string& map,
+    const std::string& game,
+    const std::string& ai,
+    const std::string& playername)
 {
 	TdfParser::TdfSection setup;
 	CreateMinimalSetupSections(setup, map, game);
 	// section already present, using this method to get acces to GAME section
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
-	
+
 
 	const bool isSkirmishAITestScript = CAIScriptHandler::Instance().IsSkirmishAITestScript(ai);
 	if (isSkirmishAITestScript) {
@@ -79,13 +81,15 @@ std::string CreateDefaultSetup(const std::string& map, const std::string& game, 
 		ai->add_name_value("Version", aiData.version);
 		ai->AddPair("Host", 0);
 		ai->AddPair("Team", 1);
-	} else if (!ai.empty()) { // is no native ai, try lua ai
+	}
+	else if (!ai.empty()) { // is no native ai, try lua ai
 		TdfParser::TdfSection* aisec = g->construct_subsection("AI0");
 		aisec->add_name_value("Name", "AI: " + ai);
 		aisec->add_name_value("ShortName", ai);
 		aisec->AddPair("Host", 0);
 		aisec->AddPair("Team", 1);
-	} else {
+	}
+	else {
 		TdfParser::TdfSection* player1 = g->construct_subsection("PLAYER1");
 		player1->add_name_value("Name", "Enemy");
 		player1->AddPair("Team", 1);
@@ -94,7 +98,8 @@ std::string CreateDefaultSetup(const std::string& map, const std::string& game, 
 	TdfParser::TdfSection* team1 = g->construct_subsection("TEAM1");
 	if (isSkirmishAITestScript || !ai.empty()) {
 		team1->AddPair("TeamLeader", 0);
-	} else {
+	}
+	else {
 		team1->AddPair("TeamLeader", 1);
 	}
 	team1->AddPair("AllyTeam", 1);
@@ -108,4 +113,4 @@ std::string CreateDefaultSetup(const std::string& map, const std::string& game, 
 	return str.str();
 }
 
-} //namespace StartScriptGen
+} // namespace StartScriptGen

@@ -2,11 +2,12 @@
 
 
 #include "MapDamage.h"
-#include "BasicMapDamage.h"
-#include "NoMapDamage.h"
-#include "MapInfo.h"
-#include "Game/GameSetup.h"
 
+#include "BasicMapDamage.h"
+#include "MapInfo.h"
+#include "NoMapDamage.h"
+
+#include "Game/GameSetup.h"
 #include "System/Misc/TracyDefs.h"
 
 static CDummyMapDamage dummyMapDamage;
@@ -37,4 +38,3 @@ void IMapDamage::FreeMapDamage(IMapDamage* p)
 	assert(p == mapDamage);
 	mapDamage = &dummyMapDamage;
 }
-

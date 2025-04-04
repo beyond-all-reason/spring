@@ -3,14 +3,14 @@
 #ifndef _FEATURE_HANDLER_H
 #define _FEATURE_HANDLER_H
 
-#include <vector>
-
-#include "System/float3.h"
-#include "System/Misc/NonCopyable.h"
-#include "System/creg/creg_cond.h"
-#include "System/UnorderedSet.hpp"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/SimObjectIDPool.h"
+#include "System/Misc/NonCopyable.h"
+#include "System/UnorderedSet.hpp"
+#include "System/creg/creg_cond.h"
+#include "System/float3.h"
+
+#include <vector>
 
 class CSolidObject;
 struct UnitDef;
@@ -39,19 +39,23 @@ struct FeatureLoadParams {
 
 
 class CFeature;
-class CFeatureHandler : public spring::noncopyable
-{
+
+class CFeatureHandler : public spring::noncopyable {
 	CR_DECLARE_STRUCT(CFeatureHandler)
 
 public:
-	CFeatureHandler(): idPool(MAX_FEATURES) {}
+	CFeatureHandler()
+	    : idPool(MAX_FEATURES)
+	{
+	}
 
 	void Init();
 	void Kill();
 
 	CFeature* LoadFeature(const FeatureLoadParams& params);
 	CFeature* CreateWreckage(const FeatureLoadParams& params);
-	CFeature* GetFeature(unsigned int id) { return ((id < features.size())? features[id]: nullptr); }
+
+	CFeature* GetFeature(unsigned int id) { return ((id < features.size()) ? features[id] : nullptr); }
 
 	void Update();
 
@@ -68,7 +72,8 @@ public:
 	const spring::unordered_set<int>& GetActiveFeatureIDs() const { return activeFeatureIDs; }
 
 private:
-	bool CanAddFeature(int id) const {
+	bool CanAddFeature(int id) const
+	{
 		// do we want to be assigned a random ID and are any left in pool?
 		if (id < 0)
 			return true;

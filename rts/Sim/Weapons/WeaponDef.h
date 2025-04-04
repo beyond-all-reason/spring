@@ -4,20 +4,19 @@
 #define _WEAPON_DEF_H
 
 #include "Sim/Misc/DamageArray.h"
-#include "Sim/Misc/GuiSoundSet.h"
-#include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileTypes.h"
-#include "System/float4.h"
-#include "System/UnorderedMap.hpp"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/GuiSoundSet.h"
 #include "Sim/Misc/Resource.h"
+#include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileTypes.h"
+#include "System/UnorderedMap.hpp"
+#include "System/float4.h"
 
 struct AtlasedTexture;
 class CColorMap;
 struct S3DModel;
 class LuaTable;
 
-struct WeaponDef
-{
+struct WeaponDef {
 public:
 	WeaponDef();
 	WeaponDef(const LuaTable& wdTable, const std::string& name, int id);
@@ -27,21 +26,35 @@ public:
 	void PreloadModel() const;
 	void PreloadModel();
 
-	bool IsAircraftWeapon() const {
+	bool IsAircraftWeapon() const
+	{
 		switch (projectileType) {
-			case WEAPON_TORPEDO_PROJECTILE:   { return (                 true); } break;
-			case WEAPON_EXPLOSIVE_PROJECTILE: { return (defInterceptType == 8); } break;
-			default: {} break;
+		case WEAPON_TORPEDO_PROJECTILE: {
+			return (true);
+		} break;
+		case WEAPON_EXPLOSIVE_PROJECTILE: {
+			return (defInterceptType == 8);
+		} break;
+		default: {
+		} break;
 		}
 		return false;
 	}
 
-	bool IsHitScanWeapon() const {
+	bool IsHitScanWeapon() const
+	{
 		switch (projectileType) {
-			case WEAPON_BEAMLASER_PROJECTILE:      { return true; } break;
-			case WEAPON_LARGEBEAMLASER_PROJECTILE: { return true; } break;
-			case WEAPON_LIGHTNING_PROJECTILE:      { return true; } break;
-			default: {} break;
+		case WEAPON_BEAMLASER_PROJECTILE: {
+			return true;
+		} break;
+		case WEAPON_LARGEBEAMLASER_PROJECTILE: {
+			return true;
+		} break;
+		case WEAPON_LIGHTNING_PROJECTILE: {
+			return true;
+		} break;
+		default: {
+		} break;
 		}
 
 		return false;
@@ -63,14 +76,14 @@ public:
 
 	float range;
 	float heightmod;
-	float accuracy;            ///< INaccuracy (!) of whole burst
-	float sprayAngle;          ///< INaccuracy of individual shots inside burst
-	float movingAccuracy;      ///< INaccuracy (!) while owner moving
-	float ownerExpAccWeight;   ///< if 0, accuracy is not increased with owner experience (max. 1)
-	float targetMoveError;     ///< fraction of targets move speed that is used as error offset
-	float leadLimit;           ///< maximum distance the weapon will lead the target
-	float leadBonus;           ///< factor for increasing the leadLimit with experience
-	float predictBoost;        ///< replaces hardcoded behaviour for burnblow cannons
+	float accuracy;          ///< INaccuracy (!) of whole burst
+	float sprayAngle;        ///< INaccuracy of individual shots inside burst
+	float movingAccuracy;    ///< INaccuracy (!) while owner moving
+	float ownerExpAccWeight; ///< if 0, accuracy is not increased with owner experience (max. 1)
+	float targetMoveError;   ///< fraction of targets move speed that is used as error offset
+	float leadLimit;         ///< maximum distance the weapon will lead the target
+	float leadBonus;         ///< factor for increasing the leadLimit with experience
+	float predictBoost;      ///< replaces hardcoded behaviour for burnblow cannons
 
 	DynDamageArray damages;
 
@@ -110,26 +123,26 @@ public:
 	bool onlyForward;
 	bool allowNonBlockingAim;
 	bool fixedLauncher;
-	bool waterweapon;           ///< can target underwater objects/positions if true
-	bool fireSubmersed;         ///< can fire even when underwater if true
-	bool submissile;            ///< Lets a torpedo travel above water like it does below water
+	bool waterweapon;   ///< can target underwater objects/positions if true
+	bool fireSubmersed; ///< can fire even when underwater if true
+	bool submissile;    ///< Lets a torpedo travel above water like it does below water
 	bool tracks;
-	bool paralyzer;             ///< weapon will only paralyze not do real damage
-	bool impactOnly;            ///< The weapon damages by impacting, not by exploding
+	bool paralyzer;  ///< weapon will only paralyze not do real damage
+	bool impactOnly; ///< The weapon damages by impacting, not by exploding
 
-	bool noAutoTarget;          ///< cant target stuff (for antinuke,dgun)
-	bool manualfire;            ///< if true, slave us to the ManualFire button
+	bool noAutoTarget; ///< cant target stuff (for antinuke,dgun)
+	bool manualfire;   ///< if true, slave us to the ManualFire button
 
 	bool sweepFire;
 	bool canAttackGround;
 
 	bool interceptSolo;
-	int interceptor;            ///< if >= 1, weapon will fire at any interceptable projectiles
-	int targetable;             ///< nuke (can be shot by interceptor)
+	int interceptor; ///< if >= 1, weapon will fire at any interceptable projectiles
+	int targetable;  ///< nuke (can be shot by interceptor)
 	bool stockpile;
-	float coverageRange;        ///< range of anti nuke
+	float coverageRange; ///< range of anti nuke
 
-	float stockpileTime;        ///< builtime of a missile
+	float stockpileTime; ///< builtime of a missile
 
 	///< determines alpha-fading for BeamLasers (UNSYNCED);
 	///< combines with falloffRate for Lasers to determine
@@ -144,7 +157,7 @@ public:
 
 	bool selfExplode;
 	bool gravityAffected;
-	int highTrajectory;              ///< Per-weapon high traj setting, 0=low, 1=high, 2=unit
+	int highTrajectory; ///< Per-weapon high traj setting, 0=low, 1=high, 2=unit
 	float myGravity;
 	bool noExplode;
 	float startvelocity;
@@ -153,20 +166,22 @@ public:
 
 	float projectilespeed;
 
-	float wobble;                    ///< how much the missile will wobble around its course
-	float dance;                     ///< how much the missile will dance
-	float trajectoryHeight;          ///< how high trajectory missiles will try to fly in
+	float wobble;           ///< how much the missile will wobble around its course
+	float dance;            ///< how much the missile will dance
+	float trajectoryHeight; ///< how high trajectory missiles will try to fly in
 
-	bool largeBeamLaser;             // whether a BeamLaser should spawn LargeBeamLaserProjectile's or regular ones
-	bool laserHardStop;              // whether the shot should fade out or stop and contract at max-range (applies to LaserCannons only)
+	bool largeBeamLaser; // whether a BeamLaser should spawn LargeBeamLaserProjectile's or regular ones
+	bool laserHardStop;  // whether the shot should fade out or stop and contract at max-range (applies to LaserCannons
+	                     // only)
 
-	bool isShield;                   // if the weapon is a shield rather than a weapon //FIXME REMOVE! (this information is/should be saved in the weapontype)
+	bool isShield; // if the weapon is a shield rather than a weapon //FIXME REMOVE! (this information is/should be
+	               // saved in the weapontype)
 	bool shieldRepulser;             // if the weapon should be repulsed or absorbed
 	bool smartShield;                // only affect enemy projectiles
 	bool exteriorShield;             // only affect stuff coming from outside shield radius
 	bool visibleShield;              // if the shield should be graphically shown
 	bool visibleShieldRepulse;       // if a small graphic should be shown at each repulse
-	int  visibleShieldHitFrames;     // number of frames to draw the shield after it has been hit
+	int visibleShieldHitFrames;      // number of frames to draw the shield after it has been hit
 	float shieldEnergyUse;           // energy use per shot or per second depending on projectile
 	float shieldRadius;              // size of shielded area
 	float shieldForce;               // shield acceleration on plasma stuff
@@ -175,22 +190,23 @@ public:
 	float shieldPowerRegen;          // how fast the power regenerates per second
 	float shieldPowerRegenEnergy;    // how much energy is needed to regenerate power per second
 	float shieldStartingPower;       // how much power the shield has when first created
-	int   shieldRechargeDelay;       // number of frames to delay recharging by after each hit
+	int shieldRechargeDelay;         // number of frames to delay recharging by after each hit
 	float4 shieldGoodColor;          // color when shield at full power
 	float4 shieldBadColor;           // color when shield is empty
 	float shieldAlpha;               // shield alpha value
 	int shieldArmorType;             // armor type for the damage table
 	std::string shieldArmorTypeName; // name of the armor type
 
-	unsigned int shieldInterceptType;      // type of shield (bitfield)
-	unsigned int interceptedByShieldType;  // weapon can be affected by shields where (shieldInterceptType & interceptedByShieldType) is not zero
+	unsigned int shieldInterceptType;     // type of shield (bitfield)
+	unsigned int interceptedByShieldType; // weapon can be affected by shields where (shieldInterceptType &
+	                                      // interceptedByShieldType) is not zero
 	unsigned int defInterceptType;
 
-	bool avoidFriendly;     // if true, try to avoid friendly units while aiming
-	bool avoidFeature;      // if true, try to avoid features while aiming
-	bool avoidNeutral;      // if true, try to avoid neutral units while aiming
-	bool avoidGround;       // if true, try to avoid ground while aiming
-	bool avoidCloaked;      // if true, try to avoid cloaked units while aiming
+	bool avoidFriendly; // if true, try to avoid friendly units while aiming
+	bool avoidFeature;  // if true, try to avoid features while aiming
+	bool avoidNeutral;  // if true, try to avoid neutral units while aiming
+	bool avoidGround;   // if true, try to avoid ground while aiming
+	bool avoidCloaked;  // if true, try to avoid cloaked units while aiming
 
 	/**
 	 * If nonzero, targeting units will TryTarget at the edge of collision sphere
@@ -214,7 +230,7 @@ public:
 	 * default: -1: automatically calculate a more or less sane value
 	 */
 	float heightBoostFactor;
-	float proximityPriority;     // multiplier for the distance to the target for priority calculations
+	float proximityPriority; // multiplier for the distance to the target for priority calculations
 
 	unsigned int projectileType;
 	unsigned int collisionFlags;
@@ -269,8 +285,8 @@ public:
 		float scarTtl = 0.0f;
 		float scarGlowTtl = 0.0f;
 		float scarDotElimination = 0.0f;
-		float4 scarProjVector = float4{ 0.0f }; // use last float to indicate if the vector is non-zero
-		float4 scarColorTint = float4{ 0.5f, 0.5f, 0.5f, 0.5f };
+		float4 scarProjVector = float4{0.0f}; // use last float to indicate if the vector is non-zero
+		float4 scarColorTint = float4{0.5f, 0.5f, 0.5f, 0.5f};
 
 		std::vector<int> scarIdcs;
 
@@ -284,6 +300,7 @@ public:
 		bool noGap = true;
 		bool alwaysVisible = true;
 	};
+
 	Visuals visuals;
 
 private:

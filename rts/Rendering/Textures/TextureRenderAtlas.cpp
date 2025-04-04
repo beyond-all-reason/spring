@@ -1,25 +1,24 @@
 #include "TextureRenderAtlas.h"
 
-#include <algorithm>
-
 #include "LegacyAtlasAlloc.h"
 #include "QuadtreeAtlasAlloc.h"
 #include "RowAtlasAlloc.h"
 
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/GL/myGL.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/GL/TexBind.h"
-#include "Rendering/GL/SubState.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/Textures/Bitmap.h"
+#include "Rendering/GL/SubState.h"
+#include "Rendering/GL/TexBind.h"
+#include "Rendering/GL/myGL.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringUtil.h"
 #include "fmt/format.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <algorithm>
 
 namespace {
 static constexpr const char* vsTRA = R"(
@@ -49,33 +48,41 @@ void main() {
 	outColor = textureLod(tex, vUV, lod);
 }
 )";
-};
+}; // namespace
 
-CTextureRenderAtlas::CTextureRenderAtlas(
-	CTextureAtlas::AllocatorType allocType_,
-	int atlasSizeX_,
-	int atlasSizeY_,
-	uint32_t glInternalType_,
-	const std::string& atlasName_
-	)
-	: atlasSizeX(atlasSizeX_)
-	, atlasSizeY(atlasSizeY_)
-	, allocType(allocType_)
-	, glInternalType(glInternalType_)
-	, texID(0)
-	, atlasName(atlasName_)
-	, finalized(false)
+CTextureRenderAtlas::CTextureRenderAtlas(CTextureAtlas::AllocatorType allocType_,
+    int atlasSizeX_,
+    int atlasSizeY_,
+    uint32_t glInternalType_,
+    const std::string& atlasName_)
+    : atlasSizeX(atlasSizeX_)
+    , atlasSizeY(atlasSizeY_)
+    , allocType(allocType_)
+    , glInternalType(glInternalType_)
+    , texID(0)
+    , atlasName(atlasName_)
+    , finalized(false)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (allocType) {
-		case CTextureAtlas::ATLAS_ALLOC_LEGACY:   { atlasAllocator = std::make_unique<  CLegacyAtlasAlloc>(); } break;
-		case CTextureAtlas::ATLAS_ALLOC_QUADTREE: { atlasAllocator = std::make_unique<CQuadtreeAtlasAlloc>(); } break;
-		case CTextureAtlas::ATLAS_ALLOC_ROW:      { atlasAllocator = std::make_unique<     CRowAtlasAlloc>(); } break;
-		default:                                  {                                            assert(false); } break;
+	case CTextureAtlas::ATLAS_ALLOC_LEGACY: {
+		atlasAllocator = std::make_unique<CLegacyAtlasAlloc>();
+	} break;
+	case CTextureAtlas::ATLAS_ALLOC_QUADTREE: {
+		atlasAllocator = std::make_unique<CQuadtreeAtlasAlloc>();
+	} break;
+	case CTextureAtlas::ATLAS_ALLOC_ROW: {
+		atlasAllocator = std::make_unique<CRowAtlasAlloc>();
+	} break;
+	default: {
+		assert(false);
+	} break;
 	}
 
-	atlasSizeX = std::min(globalRendering->maxTextureSize, (atlasSizeX > 0) ? atlasSizeX : configHandler->GetInt("MaxTextureAtlasSizeX"));
-	atlasSizeY = std::min(globalRendering->maxTextureSize, (atlasSizeY > 0) ? atlasSizeY : configHandler->GetInt("MaxTextureAtlasSizeY"));
+	atlasSizeX = std::min(
+	    globalRendering->maxTextureSize, (atlasSizeX > 0) ? atlasSizeX : configHandler->GetInt("MaxTextureAtlasSizeX"));
+	atlasSizeY = std::min(
+	    globalRendering->maxTextureSize, (atlasSizeY > 0) ? atlasSizeY : configHandler->GetInt("MaxTextureAtlasSizeY"));
 
 	atlasAllocator->SetMaxSize(atlasSizeX, atlasSizeY);
 
@@ -105,7 +112,7 @@ CTextureRenderAtlas::~CTextureRenderAtlas()
 	if (shaderRef == 0)
 		shaderHandler->ReleaseProgramObjects("[TextureRenderAtlas]");
 
-	for (auto& [_, tID] : nameToTexID) {
+	for (auto& [_, tID]: nameToTexID) {
 		if (tID) {
 			glDeleteTextures(1, &tID);
 			tID = 0;
@@ -161,16 +168,14 @@ bool CTextureRenderAtlas::AddTexFromBitmap(const std::string& name, const CBitma
 	return AddTexFromBitmapRaw(name, bm);
 }
 
-
 bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	atlasAllocator->AddEntry(name, int2{ bm.xsize, bm.ysize });
+	atlasAllocator->AddEntry(name, int2{bm.xsize, bm.ysize});
 	nameToTexID[name] = bm.CreateMipMapTexture();
 
 	return true;
 }
-
 
 bool CTextureRenderAtlas::AddTex(const std::string& name, int xsize, int ysize, const SColor& color)
 {
@@ -267,11 +272,7 @@ bool CTextureRenderAtlas::Finalize()
 	}
 	{
 		using namespace GL::State;
-		auto state = GL::SubState(
-			DepthTest(GL_FALSE),
-			Blending(GL_FALSE),
-			DepthMask(GL_FALSE)
-		);
+		auto state = GL::SubState(DepthTest(GL_FALSE), Blending(GL_FALSE), DepthMask(GL_FALSE));
 
 		auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
 
@@ -294,13 +295,13 @@ bool CTextureRenderAtlas::Finalize()
 			auto shEnToken = shader->EnableScoped();
 			shader->SetUniform("lod", static_cast<float>(level));
 			// draw
-			for (auto& [name, entry] : atlasAllocator->GetEntries()) {
+			for (auto& [name, entry]: atlasAllocator->GetEntries()) {
 				const auto tc = atlasAllocator->GetTexCoords(name);
 
-				VA_TYPE_2DT posTL = { .x = Norm2SNorm(tc.x1), .y = Norm2SNorm(tc.y1), .s = 0.0f, .t = 0.0f };
-				VA_TYPE_2DT posTR = { .x = Norm2SNorm(tc.x2), .y = Norm2SNorm(tc.y1), .s = 1.0f, .t = 0.0f };
-				VA_TYPE_2DT posBL = { .x = Norm2SNorm(tc.x1), .y = Norm2SNorm(tc.y2), .s = 0.0f, .t = 1.0f };
-				VA_TYPE_2DT posBR = { .x = Norm2SNorm(tc.x2), .y = Norm2SNorm(tc.y2), .s = 1.0f, .t = 1.0f };
+				VA_TYPE_2DT posTL = {.x = Norm2SNorm(tc.x1), .y = Norm2SNorm(tc.y1), .s = 0.0f, .t = 0.0f};
+				VA_TYPE_2DT posTR = {.x = Norm2SNorm(tc.x2), .y = Norm2SNorm(tc.y1), .s = 1.0f, .t = 0.0f};
+				VA_TYPE_2DT posBL = {.x = Norm2SNorm(tc.x1), .y = Norm2SNorm(tc.y2), .s = 0.0f, .t = 1.0f};
+				VA_TYPE_2DT posBR = {.x = Norm2SNorm(tc.x2), .y = Norm2SNorm(tc.y2), .s = 1.0f, .t = 1.0f};
 
 				const auto texID = nameToTexID[name];
 				if (texID == 0)
@@ -313,12 +314,7 @@ bool CTextureRenderAtlas::Finalize()
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-				rb.AddQuadTriangles(
-					std::move(posTL),
-					std::move(posTR),
-					std::move(posBR),
-					std::move(posBL)
-				);
+				rb.AddQuadTriangles(std::move(posTL), std::move(posTR), std::move(posBR), std::move(posBL));
 
 				rb.DrawElements(GL_TRIANGLES);
 			}
@@ -332,14 +328,14 @@ bool CTextureRenderAtlas::Finalize()
 	if (!finalized)
 		return false;
 
-	for (auto& [_, texID] : nameToTexID) {
+	for (auto& [_, texID]: nameToTexID) {
 		if (texID) {
 			glDeleteTextures(1, &texID);
 			texID = 0;
 		}
 	}
 
-	//DumpTexture();
+	// DumpTexture();
 
 	return true;
 }

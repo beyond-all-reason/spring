@@ -12,7 +12,7 @@
 #define ASIO_VERSION_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 // ASIO_VERSION % 100 is the sub-minor version

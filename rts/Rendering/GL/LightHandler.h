@@ -3,40 +3,50 @@
 #ifndef _GL_LIGHTHANDLER_H
 #define _GL_LIGHTHANDLER_H
 
-#include <vector>
-
 #include "Light.h"
 
+#include <vector>
+
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 namespace GL {
-	struct LightHandler {
-	public:
-		LightHandler(): baseLight(0), maxLights(0), numLights(0), lightHandle(0) {}
-		~LightHandler() { Kill(); }
+struct LightHandler {
+public:
+	LightHandler()
+	    : baseLight(0)
+	    , maxLights(0)
+	    , numLights(0)
+	    , lightHandle(0)
+	{
+	}
 
-		void Init(unsigned int, unsigned int);
-		void Kill() { lights.clear(); }
-		void Update(Shader::IProgramObject*);
+	~LightHandler() { Kill(); }
 
-		unsigned int AddLight(const GL::Light&);
-		unsigned int SetLight(unsigned int lgtIndex, const GL::Light&);
+	void Init(unsigned int, unsigned int);
 
-		GL::Light* GetLight(unsigned int lgtHandle);
+	void Kill() { lights.clear(); }
 
-		unsigned int GetBaseLight() const { return baseLight; }
-		unsigned int GetMaxLights() const { return maxLights; }
+	void Update(Shader::IProgramObject*);
 
-	private:
-		std::vector<GL::Light> lights;
+	unsigned int AddLight(const GL::Light&);
+	unsigned int SetLight(unsigned int lgtIndex, const GL::Light&);
 
-		unsigned int baseLight;
-		unsigned int maxLights;
-		unsigned int numLights;
-		unsigned int lightHandle;
-	};
-}
+	GL::Light* GetLight(unsigned int lgtHandle);
+
+	unsigned int GetBaseLight() const { return baseLight; }
+
+	unsigned int GetMaxLights() const { return maxLights; }
+
+private:
+	std::vector<GL::Light> lights;
+
+	unsigned int baseLight;
+	unsigned int maxLights;
+	unsigned int numLights;
+	unsigned int lightHandle;
+};
+} // namespace GL
 
 #endif // _GL_LIGHTHANDLER_H

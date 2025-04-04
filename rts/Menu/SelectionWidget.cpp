@@ -3,19 +3,20 @@
 #include "SelectionWidget.h"
 
 ///[maint]#ifndef HEADLESS
-#include <functional>
-#include <algorithm>
-
+#include "ExternalAI/Interface/SSkirmishAILibrary.h"
+#include "ExternalAI/LuaAIImplHandler.h"
+#include "System/AIScriptHandler.h"
+#include "System/Config/ConfigHandler.h"
+#include "System/Exceptions.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/VFSHandler.h"
-#include "System/Exceptions.h"
-#include "System/Config/ConfigHandler.h"
-#include "System/AIScriptHandler.h"
-#include "ExternalAI/LuaAIImplHandler.h"
-#include "ExternalAI/Interface/SSkirmishAILibrary.h"
 #include "System/Info.h"
+
+#include <algorithm>
+#include <functional>
+
 #include "alphanum.hpp"
 
 const std::string SelectionWidget::NoDemoSelect = "No demo selected";
@@ -25,12 +26,19 @@ const std::string SelectionWidget::NoMapSelect = "No map selected";
 const std::string SelectionWidget::NoScriptSelect = "No script selected";
 const std::string SelectionWidget::SandboxAI = "Player Only: Testing Sandbox";
 
-CONFIG(std::string, LastSelectedMod).defaultValue(SelectionWidget::NoModSelect).description("Stores the previously played game.");
-CONFIG(std::string, LastSelectedMap).defaultValue(SelectionWidget::NoMapSelect).description("Stores the previously played map.");
-CONFIG(std::string, LastSelectedScript).defaultValue(SelectionWidget::NoScriptSelect).description("Stores the previously played AI.");
+CONFIG(std::string, LastSelectedMod)
+    .defaultValue(SelectionWidget::NoModSelect)
+    .description("Stores the previously played game.");
+CONFIG(std::string, LastSelectedMap)
+    .defaultValue(SelectionWidget::NoMapSelect)
+    .description("Stores the previously played map.");
+CONFIG(std::string, LastSelectedScript)
+    .defaultValue(SelectionWidget::NoScriptSelect)
+    .description("Stores the previously played AI.");
 
 // returns absolute filename for given archive name, empty if not found
-static const std::string GetAbsFileName(const std::string& name) {
+static const std::string GetAbsFileName(const std::string& name)
+{
 	if (name.empty())
 		return name;
 
@@ -42,8 +50,8 @@ static const std::string GetAbsFileName(const std::string& name) {
 	return (archiveScanner->GetArchivePath(filename) + filename);
 }
 
-
-SelectionWidget::SelectionWidget(agui::GuiElement* parent) : agui::GuiElement(parent)
+SelectionWidget::SelectionWidget(agui::GuiElement* parent)
+    : agui::GuiElement(parent)
 {
 	SetPos(0.5f, 0.2f);
 	SetSize(0.4f, 0.2f);
@@ -85,11 +93,7 @@ SelectionWidget::SelectionWidget(agui::GuiElement* parent) : agui::GuiElement(pa
 	UpdateAvailableScripts();
 }
 
-SelectionWidget::~SelectionWidget()
-{
-	CleanWindow();
-}
-
+SelectionWidget::~SelectionWidget() { CleanWindow(); }
 
 void SelectionWidget::ShowDemoList(const std::function<void(const std::string&)>& demoSelectCB)
 {
@@ -126,19 +130,19 @@ void SelectionWidget::ShowSavegameList(const std::function<void(const std::strin
 	// FIXME: names overflow the box
 	/*
 	std::set_union(v1.begin(), v1.end(),
-		v2.begin(), v2.end(),
-		std::back_inserter(dest1));
+	    v2.begin(), v2.end(),
+	    std::back_inserter(dest1));
 	*/
 	std::vector<std::string> files;
 	{
-		auto ssf  = dataDirsAccess.FindFiles(cwd + dir, "*.ssf" , 0);
+		auto ssf = dataDirsAccess.FindFiles(cwd + dir, "*.ssf", 0);
 		auto sslf = dataDirsAccess.FindFiles(cwd + dir, "*.sslf", 0);
-		files.insert(files.end(),  ssf.begin(),  ssf.end());
+		files.insert(files.end(), ssf.begin(), ssf.end());
 		files.insert(files.end(), sslf.begin(), sslf.end());
 		std::sort(files.begin(), files.end());
 	}
 
-	for (const std::string& save : files) {
+	for (const std::string& save: files) {
 		curSelect->list->AddItem(save.substr(save.find(dir) + 6), "");
 	}
 
@@ -155,7 +159,8 @@ void SelectionWidget::ShowModList()
 	curSelect->WantClose = std::bind(&SelectionWidget::CleanWindow, this);
 
 	std::vector<CArchiveScanner::ArchiveData> found = archiveScanner->GetPrimaryMods();
-	std::sort(found.begin(), found.end(), [](const CArchiveScanner::ArchiveData& a, const CArchiveScanner::ArchiveData& b) {
+	std::sort(
+	    found.begin(), found.end(), [](const CArchiveScanner::ArchiveData& a, const CArchiveScanner::ArchiveData& b) {
 		return (doj::alphanum_less<std::string>()(a.GetNameVersioned(), b.GetNameVersioned()));
 	});
 
@@ -187,7 +192,7 @@ void SelectionWidget::ShowMapList()
 
 void SelectionWidget::AddAIScriptsFromArchive()
 {
-	if (userMod == SelectionWidget::NoModSelect || userMap == SelectionWidget::NoMapSelect )
+	if (userMod == SelectionWidget::NoModSelect || userMap == SelectionWidget::NoMapSelect)
 		return;
 
 	vfsHandler->GrabLock();
@@ -214,8 +219,8 @@ void SelectionWidget::AddAIScriptsFromArchive()
 
 void SelectionWidget::UpdateAvailableScripts()
 {
-	//FIXME: lua ai's should be handled in AIScriptHandler.cpp, too respecting the selected game and map
-	// maybe also merge it with StartScriptGen.cpp
+	// FIXME: lua ai's should be handled in AIScriptHandler.cpp, too respecting the selected game and map
+	//  maybe also merge it with StartScriptGen.cpp
 
 	availableScripts.clear();
 	availableScripts.reserve(16);
@@ -254,8 +259,6 @@ void SelectionWidget::ShowScriptList()
 	curSelect->list->SetCurrentItem(userScript);
 }
 
-
-
 void SelectionWidget::SelectDemo(const std::string& demo)
 {
 	CleanWindow();
@@ -278,7 +281,7 @@ void SelectionWidget::SelectMod(const std::string& mod)
 	configHandler->SetString("LastSelectedMod", userMod = mod);
 	modT->SetText(userMod);
 
-	//SelectScript(SelectionWidget::NoScriptSelect); //reset AI as LuaAI maybe doesn't exist in this game
+	// SelectScript(SelectionWidget::NoScriptSelect); //reset AI as LuaAI maybe doesn't exist in this game
 	UpdateAvailableScripts();
 	CleanWindow();
 }
@@ -300,7 +303,6 @@ void SelectionWidget::SelectMap(const std::string& map)
 	CleanWindow();
 }
 
-
 void SelectionWidget::CleanWindow()
 {
 	if (curSelect == nullptr)
@@ -309,5 +311,5 @@ void SelectionWidget::CleanWindow()
 	agui::gui->RmElement(curSelect);
 	curSelect = nullptr;
 }
-///[maint]#endif
 
+///[maint]#endif

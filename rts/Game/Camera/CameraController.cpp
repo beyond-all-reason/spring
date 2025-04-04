@@ -2,17 +2,16 @@
 
 
 #include "CameraController.h"
+
 #include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Config/ConfigHandler.h"
-
 #include "System/Misc/TracyDefs.h"
 
 
 CONFIG(float, UseDistToGroundForIcons).defaultValue(0.95f);
-
 
 CCameraController::CCameraController()
 {
@@ -32,8 +31,8 @@ CCameraController::CCameraController()
 }
 
 float3 CCameraController::GetRot() const { return CCamera::GetRotFromDir(GetDir()); }
-void CCameraController::SetRot(const float3& newRot) { dir = CCamera::GetFwdFromRot(newRot); }
 
+void CCameraController::SetRot(const float3& newRot) { dir = CCamera::GetFwdFromRot(newRot); }
 
 bool CCameraController::SetStateBool(const StateMap& sm, const std::string& name, bool& var)
 {
@@ -61,12 +60,12 @@ bool CCameraController::SetStateFloat(const StateMap& sm, const std::string& nam
 	return false;
 }
 
-
 // Uses distance to ground for large angles (near 90 degree),
 // and distance to unit for flat angles (near 0 degree),
 // when comparing the camera direction to the map surface,
 // assuming the map is flat.
-bool CCameraController::GetUseDistToGroundForIcons() {
+bool CCameraController::GetUseDistToGroundForIcons()
+{
 	// dir should already be normalized
 	const float rawDot = UpVector.dot(GetDir());
 	const float absDot = std::clamp(math::fabs(rawDot), 0.0f, 1.0f);
@@ -75,8 +74,6 @@ bool CCameraController::GetUseDistToGroundForIcons() {
 	// dot>=switch: steep angle (typical for overhead camera)
 	return (absDot >= switchVal);
 }
-
-
 
 bool CCameraController::SetState(const StateMap& sm)
 {
@@ -108,7 +105,8 @@ void CCameraController::GetState(StateMap& sm) const
 	sm["dz"] = dir.z;
 }
 
-float CCameraController::DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight) {
+float CCameraController::DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float newGroundDist = CGround::LineGroundCol(from, from + dir * 150000.0f, false);
 

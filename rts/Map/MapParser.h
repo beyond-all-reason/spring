@@ -9,9 +9,7 @@
 
 class float3;
 
-
-class MapParser
-{
+class MapParser {
 public:
 	static std::string GetMapConfigName(const std::string& mapFileName);
 
@@ -21,12 +19,14 @@ public:
 	// no-copy
 	MapParser(const MapParser&) = delete;
 
-	LuaTable GetRoot() {
+	LuaTable GetRoot()
+	{
 		errorLog.clear();
 		return parser.GetRoot();
 	}
 
 	bool IsValid() const { return parser.IsValid(); }
+
 	bool GetStartPos(int team, float3& pos);
 
 	const std::string& GetErrorLog() const { return errorLog; }

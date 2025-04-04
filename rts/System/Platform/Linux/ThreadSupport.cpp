@@ -1,29 +1,29 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-#include <functional>
-#include <pthread.h>
-#include <unistd.h>
-#include <csignal>
-#include <fstream>
-#include <sys/syscall.h>
-
 #include "System/Log/ILog.h"
 #include "System/Platform/Threading.h"
+
+#include <cassert>
+#include <csignal>
+#include <fstream>
+#include <functional>
+
+#include <pthread.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 
 #define LOG_SECTION_CRASHHANDLER "CrashHandler"
 
 
 // already registered in CrashHandler.cpp
-//LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_CRASHHANDLER);
+// LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_CRASHHANDLER);
 
 // use the specific section for all LOG*() calls in this source file
 #ifdef LOG_SECTION_CURRENT
-        #undef LOG_SECTION_CURRENT
+#undef LOG_SECTION_CURRENT
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_CRASHHANDLER
-
 
 namespace Threading {
 
@@ -41,9 +41,7 @@ enum LinuxThreadState {
 /**
  * There is no glibc wrapper for this system call, so you have to write one:
  */
-static int gettid() {
-	return syscall(SYS_gettid);
-}
+static int gettid() { return syscall(SYS_gettid); }
 
 /**
  * This method requires at least a 2.6 kernel in order to access the file /proc/<pid>/task/<tid>/status.
@@ -66,21 +64,20 @@ static LinuxThreadState GetLinuxThreadState(int tid)
 	}
 	char statestr[64];
 	char flags[64];
-	sfile.getline(statestr,64); // first line isn't needed
-	sfile.getline(statestr,64); // second line contains thread running state
+	sfile.getline(statestr, 64); // first line isn't needed
+	sfile.getline(statestr, 64); // second line contains thread running state
 	sscanf(statestr, "State: %s", flags);
 
 	switch (flags[0]) {
-		case 'R': return LTS_RUNNING;
-		case 'S': return LTS_SLEEP;
-		case 'D': return LTS_DISK_SLEEP;
-		case 'T': return LTS_STOPPED;
-		case 'W': return LTS_PAGING;
-		case 'Z': return LTS_ZOMBIE;
+	case 'R': return LTS_RUNNING;
+	case 'S': return LTS_SLEEP;
+	case 'D': return LTS_DISK_SLEEP;
+	case 'T': return LTS_STOPPED;
+	case 'W': return LTS_PAGING;
+	case 'Z': return LTS_ZOMBIE;
 	}
 	return LTS_UNKNOWN;
 }
-
 
 static void ThreadSIGUSR1Handler(int signum, siginfo_t* info, void* pCtx)
 {
@@ -110,7 +107,6 @@ static void ThreadSIGUSR1Handler(int signum, siginfo_t* info, void* pCtx)
 	LOG_L(L_DEBUG, "[%s][3]", __func__);
 }
 
-
 static bool SetThreadSignalHandler()
 {
 	// Installing new ThreadControls object, so install signal handler also
@@ -139,16 +135,16 @@ static bool SetThreadSignalHandler()
 	return true;
 }
 
-
 void SetupCurrentThreadControls(std::shared_ptr<ThreadControls>& threadCtls)
 {
 	assert(!Threading::IsWatchDogThread());
 
-	#ifndef _WIN32
+#ifndef _WIN32
 	if (threadCtls.get() != nullptr) {
 		// old shared_ptr will be deleted by the reset below
 		LOG_L(L_WARNING, "[%s] thread already has ThreadControls installed", __func__);
-	} else {
+	}
+	else {
 		// new ThreadControls object, so install SIGUSR1 signal handler also
 		if (!SetThreadSignalHandler())
 			return;
@@ -161,19 +157,16 @@ void SetupCurrentThreadControls(std::shared_ptr<ThreadControls>& threadCtls)
 		threadCtls->thread_id = gettid();
 		threadCtls->running.store(true);
 	}
-	#endif
+#endif
 }
 
-
 /**
- * @brief ThreadStart Entry point for wrapped pthread. Allows us to register signal handlers specific to that thread, enabling suspend/resume functionality.
+ * @brief ThreadStart Entry point for wrapped pthread. Allows us to register signal handlers specific to that thread,
+ * enabling suspend/resume functionality.
  * @param ptr Points to a platform-specific ThreadControls object.
  */
-void ThreadStart(
-	std::function<void()> taskFunc,
-	std::shared_ptr<ThreadControls>* threadCtls,
-	ThreadControls* tempCtls
-) {
+void ThreadStart(std::function<void()> taskFunc, std::shared_ptr<ThreadControls>* threadCtls, ThreadControls* tempCtls)
+{
 	// install the SIGUSR1 handler
 	SetupCurrentThreadControls(localThreadControls);
 
@@ -204,13 +197,14 @@ void ThreadStart(
 	localThreadControls->mutSuspend.unlock();
 }
 
-
-
 SuspendResult ThreadControls::Suspend()
 {
 	// Return an error if the running flag is false.
 	if (!running) {
-		LOG_L(L_ERROR, "[ThreadControls::%s] cannot suspend if a thread's running flag is set to false, refusing to use pthread_kill", __func__);
+		LOG_L(L_ERROR,
+		    "[ThreadControls::%s] cannot suspend if a thread's running flag is set to false, refusing to use "
+		    "pthread_kill",
+		    __func__);
 		return Threading::THREADERR_NOT_RUNNING;
 	}
 
@@ -222,13 +216,16 @@ SuspendResult ThreadControls::Suspend()
 	const int err = pthread_kill(handle, SIGUSR1);
 
 	if (err != 0) {
-		LOG_L(L_ERROR, "[ThreadControls::%s] error while trying to send signal to suspend thread: %s", __func__, strerror(err));
+		LOG_L(L_ERROR, "[ThreadControls::%s] error while trying to send signal to suspend thread: %s", __func__,
+		    strerror(err));
 		return Threading::THREADERR_MISC;
 	}
 
-	// Before leaving this function, we need some kind of guarantee that the stalled thread is suspended, so spinwait until it is guaranteed.
+	// Before leaving this function, we need some kind of guarantee that the stalled thread is suspended, so spinwait
+	// until it is guaranteed.
 	// FIXME: this sort of spin-waiting inside the watchdog loop could be avoided by creating another worker thread
-	//        inside SuspendedStacktrace itself to do the work of checking that the stalled thread has been suspended and performing the trace there.
+	//        inside SuspendedStacktrace itself to do the work of checking that the stalled thread has been suspended
+	//        and performing the trace there.
 	LinuxThreadState tstate;
 	constexpr int max_attempts = 40; // 40 attempts * 0.025s = 1 sec max.
 	for (int a = 0; a < max_attempts; a++) {
@@ -246,4 +243,4 @@ SuspendResult ThreadControls::Resume()
 	return Threading::THREADERR_NONE;
 }
 
-}
+} // namespace Threading

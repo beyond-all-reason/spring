@@ -8,18 +8,12 @@
 extern "C" {
 #endif
 
-void streflop_init_Simple() {
-	streflop::streflop_init<streflop::Simple>();
-}
+void streflop_init_Simple() { streflop::streflop_init<streflop::Simple>(); }
 
-void streflop_init_Double() {
-	streflop::streflop_init<streflop::Double>();
-}
+void streflop_init_Double() { streflop::streflop_init<streflop::Double>(); }
 
 #if defined(Extended)
-void streflop_init_Extended() {
-	streflop::streflop_init<streflop::Extended>();
-}
+void streflop_init_Extended() { streflop::streflop_init<streflop::Extended>(); }
 #endif // defined(Extended)
 
 #ifdef __cplusplus

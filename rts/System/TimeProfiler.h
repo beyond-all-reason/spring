@@ -3,40 +3,51 @@
 #ifndef TIME_PROFILER_H
 #define TIME_PROFILER_H
 
-#include <atomic>
-#include <string>
-#include <deque>
-#include <vector>
-#include <array>
-
-#include "System/Misc/SpringTime.h"
 #include "System/Misc/NonCopyable.h"
-#include "System/float3.h"
+#include "System/Misc/SpringTime.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringHash.h"
 #include "System/UnorderedMap.hpp"
+#include "System/float3.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <array>
+#include <atomic>
+#include <deque>
+#include <string>
+#include <vector>
 
 // disable these for minimal profiling; all special
 // timers contribute even when profiler is disabled
 // NB: names are assumed to be compile-time literals
-#define SCOPED_TIMER(      name)  ZoneScopedNC(name, tracy::Color::Goldenrod); static TimerNameRegistrar __tnr(name); ScopedTimer __scopedTimer(hashString(name));
-#define SCOPED_TIMER_NOREG(name)  ZoneScopedNC(name, tracy::Color::Goldenrod);                                        ScopedTimer __scopedTimer(hashString(name));
+#define SCOPED_TIMER(name)                       \
+	ZoneScopedNC(name, tracy::Color::Goldenrod); \
+	static TimerNameRegistrar __tnr(name);       \
+	ScopedTimer __scopedTimer(hashString(name));
+#define SCOPED_TIMER_NOREG(name)                 \
+	ZoneScopedNC(name, tracy::Color::Goldenrod); \
+	ScopedTimer __scopedTimer(hashString(name));
 
-#define SCOPED_SPECIAL_TIMER(      name)  static TimerNameRegistrar __stnr(name); ScopedTimer __scopedTimer(hashString(name), false, true);
-#define SCOPED_SPECIAL_TIMER_NOREG(name)                                          ScopedTimer __scopedTimer(hashString(name), false, true);
+#define SCOPED_SPECIAL_TIMER(name)                            \
+	static TimerNameRegistrar __stnr(name);                   \
+	ScopedTimer __scopedTimer(hashString(name), false, true);
+#define SCOPED_SPECIAL_TIMER_NOREG(name) ScopedTimer __scopedTimer(hashString(name), false, true);
 
-#define SCOPED_MT_TIMER(name)  ScopedMtTimer __scopedTimer(hashString(name));
+#define SCOPED_MT_TIMER(name) ScopedMtTimer __scopedTimer(hashString(name));
 
-#define SCOPED_ONCE_TIMER(name) ZoneScopedNC(name, tracy::Color::Purple); ScopedOnceTimer __timer(name);
+#define SCOPED_ONCE_TIMER(name)               \
+	ZoneScopedNC(name, tracy::Color::Purple); \
+	ScopedOnceTimer __timer(name);
 
 static constexpr float MAX_THREAD_HIST_TIME = 0.5f; // secs
 
-class BasicTimer : public spring::noncopyable
-{
+class BasicTimer : public spring::noncopyable {
 public:
-	//BasicTimer(const spring_time time): nameHash(0), startTime(time) {}
-	BasicTimer(unsigned _nameHash) : nameHash(_nameHash), startTime(spring_gettime()) { }
+	// BasicTimer(const spring_time time): nameHash(0), startTime(time) {}
+	BasicTimer(unsigned _nameHash)
+	    : nameHash(_nameHash)
+	    , startTime(spring_gettime())
+	{
+	}
 
 	spring_time GetDuration() const;
 
@@ -45,15 +56,13 @@ protected:
 	const spring_time startTime;
 };
 
-
 /**
  * @brief Time profiling helper class
  *
  * Construct an instance of this class where you want to begin time measuring,
  * and destruct it at the end (or let it be autodestructed).
  */
-class ScopedTimer : public BasicTimer
-{
+class ScopedTimer : public BasicTimer {
 public:
 	ScopedTimer(const unsigned _nameHash, bool _autoShowGraph = false, bool _specialTimer = false);
 	~ScopedTimer();
@@ -63,9 +72,7 @@ private:
 	const bool specialTimer;
 };
 
-
-class ScopedMtTimer : public BasicTimer
-{
+class ScopedMtTimer : public BasicTimer {
 public:
 	ScopedMtTimer(const unsigned _nameHash, bool _autoShowGraph = false);
 	~ScopedMtTimer();
@@ -74,13 +81,10 @@ private:
 	const bool autoShowGraph;
 };
 
-
-
 /**
  * @brief print passed time to infolog
  */
-class ScopedOnceTimer
-{
+class ScopedOnceTimer {
 public:
 	ScopedOnceTimer(const std::string& name, const char* frmt = "[%s][%s] %ims");
 	ScopedOnceTimer(const char* name, const char* frmt = "[%s][%s] %ims");
@@ -95,10 +99,7 @@ protected:
 	char frmt[128];
 };
 
-
-
-class CTimeProfiler
-{
+class CTimeProfiler {
 public:
 	CTimeProfiler();
 	~CTimeProfiler();
@@ -109,9 +110,7 @@ public:
 	static bool UnRegisterTimer(const char* name);
 
 	struct TimeRecord {
-		TimeRecord() {
-			frames.fill(spring_time(0));
-		}
+		TimeRecord() { frames.fill(spring_time(0)); }
 
 		static constexpr unsigned numFrames = 128;
 
@@ -130,29 +129,35 @@ public:
 
 	enum SortType {
 		ST_ALPHABETICAL = 0,
-		ST_TOTALTIME    = 1,
-		ST_CURRENTTIME  = 2,
-		ST_MAXTIME      = 3,
-		ST_LAG          = 4,
-		ST_COUNT        = 5
+		ST_TOTALTIME = 1,
+		ST_CURRENTTIME = 2,
+		ST_MAXTIME = 3,
+		ST_LAG = 4,
+		ST_COUNT = 5
 	};
 
 	using TimeRecordPair = std::pair<std::string, TimeRecord>;
-	using ProfileSortFunc = bool(*)(const TimeRecordPair&, const TimeRecordPair&);
+	using ProfileSortFunc = bool (*)(const TimeRecordPair&, const TimeRecordPair&);
 
 	static const std::array<ProfileSortFunc, SortType::ST_COUNT> SortingFunctions;
+
 public:
-	std::vector< std::pair<std::string, TimeRecord> >& GetSortedProfiles() { return sortedProfiles; }
-	std::vector< std::deque< std::pair<spring_time, spring_time> > >& GetThreadProfiles() { return threadProfiles; }
+	std::vector<std::pair<std::string, TimeRecord>>& GetSortedProfiles() { return sortedProfiles; }
+
+	std::vector<std::deque<std::pair<spring_time, spring_time>>>& GetThreadProfiles() { return threadProfiles; }
 
 	size_t GetNumSortedProfiles() const { return (sortedProfiles.size()); }
+
 	size_t GetNumThreadProfiles() const { return (threadProfiles.size()); }
 
 	float GetTimePercentage(const char* name) const { return (GetTimeRecord(name).stats.y); }
+
 	float GetTimePercentageRaw(const char* name) const { return (GetTimeRecordRaw(name).stats.y); }
 
 	const TimeRecord& GetTimeRecord(const char* name) const;
-	const TimeRecord& GetTimeRecordRaw(const char* name) const {
+
+	const TimeRecord& GetTimeRecordRaw(const char* name) const
+	{
 		// do not default-create keys, breaks resorting
 		const auto it = profiles.find(hashString(name));
 		const static TimeRecord tr;
@@ -165,16 +170,18 @@ public:
 
 	void ToggleLock(bool lock);
 	void ResetState();
-	void ResetPeaks() {
+
+	void ResetPeaks()
+	{
 		ToggleLock(true);
 
-		for (auto& p: profiles)
-			p.second.stats.z = 0.0f;
+		for (auto& p: profiles) p.second.stats.z = 0.0f;
 
 		ToggleLock(false);
 	}
 
-	void SetSortingType(SortType st) {
+	void SetSortingType(SortType st)
+	{
 		sortingType = st;
 		++resortProfiles;
 	}
@@ -188,30 +195,27 @@ public:
 	void CleanupOldThreadProfiles();
 
 	void SetEnabled(bool b) { enabled = b; }
+
 	void PrintProfilingInfo() const;
 
-	void AddTime(
-		unsigned nameHash,
-		const spring_time startTime,
-		const spring_time deltaTime,
-		const bool showGraph = false,
-		const bool specialTimer = false,
-		const bool threadTimer = false
-	);
-	void AddTimeRaw(
-		unsigned nameHash,
-		const spring_time startTime,
-		const spring_time deltaTime,
-		const bool showGraph,
-		const bool threadTimer
-	);
+	void AddTime(unsigned nameHash,
+	    const spring_time startTime,
+	    const spring_time deltaTime,
+	    const bool showGraph = false,
+	    const bool specialTimer = false,
+	    const bool threadTimer = false);
+	void AddTimeRaw(unsigned nameHash,
+	    const spring_time startTime,
+	    const spring_time deltaTime,
+	    const bool showGraph,
+	    const bool threadTimer);
 
 private:
 	SortType sortingType = SortType::ST_ALPHABETICAL;
 	spring::unordered_map<unsigned, TimeRecord> profiles;
 
-	std::vector< std::pair<std::string, TimeRecord> > sortedProfiles;
-	std::vector< std::deque< std::pair<spring_time, spring_time> > > threadProfiles;
+	std::vector<std::pair<std::string, TimeRecord>> sortedProfiles;
+	std::vector<std::deque<std::pair<spring_time, spring_time>>> threadProfiles;
 
 	spring_time lastBigUpdate;
 
@@ -223,13 +227,9 @@ private:
 	std::atomic<bool> enabled;
 };
 
-
-class TimerNameRegistrar : public spring::noncopyable
-{
+class TimerNameRegistrar : public spring::noncopyable {
 public:
-	TimerNameRegistrar(const char* timerName) {
-		CTimeProfiler::RegisterTimer(timerName);
-	}
+	TimerNameRegistrar(const char* timerName) { CTimeProfiler::RegisterTimer(timerName); }
 };
 
 #endif // TIME_PROFILER_H

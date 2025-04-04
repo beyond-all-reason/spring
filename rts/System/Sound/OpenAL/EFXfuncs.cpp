@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "EFXfuncs.h"
+
 #include "System/StringUtil.h"
 
 
@@ -38,7 +39,6 @@ LPALGETAUXILIARYEFFECTSLOTIV alGetAuxiliaryEffectSlotiv = NULL;
 LPALGETAUXILIARYEFFECTSLOTF alGetAuxiliaryEffectSlotf = NULL;
 LPALGETAUXILIARYEFFECTSLOTFV alGetAuxiliaryEffectSlotfv = NULL;
 
-
 static void InitEfxProcAddr()
 {
 	alGenEffects = (LPALGENEFFECTS)alGetProcAddress("alGenEffects");
@@ -60,9 +60,9 @@ static void InitEfxProcAddr()
 	alFilterf = (LPALFILTERF)alGetProcAddress("alFilterf");
 	alFilterfv = (LPALFILTERFV)alGetProcAddress("alFilterfv");
 	alGetFilteri = (LPALGETFILTERI)alGetProcAddress("alGetFilteri");
-	alGetFilteriv= (LPALGETFILTERIV)alGetProcAddress("alGetFilteriv");
+	alGetFilteriv = (LPALGETFILTERIV)alGetProcAddress("alGetFilteriv");
 	alGetFilterf = (LPALGETFILTERF)alGetProcAddress("alGetFilterf");
-	alGetFilterfv= (LPALGETFILTERFV)alGetProcAddress("alGetFilterfv");
+	alGetFilterfv = (LPALGETFILTERFV)alGetProcAddress("alGetFilterfv");
 	alGenAuxiliaryEffectSlots = (LPALGENAUXILIARYEFFECTSLOTS)alGetProcAddress("alGenAuxiliaryEffectSlots");
 	alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)alGetProcAddress("alDeleteAuxiliaryEffectSlots");
 	alIsAuxiliaryEffectSlot = (LPALISAUXILIARYEFFECTSLOT)alGetProcAddress("alIsAuxiliaryEffectSlot");

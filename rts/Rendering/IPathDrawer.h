@@ -7,22 +7,27 @@
 
 struct MoveDef;
 
-struct IPathDrawer: public CEventClient {
+struct IPathDrawer : public CEventClient {
 public:
 	IPathDrawer();
 
 	virtual ~IPathDrawer();
+
 	virtual void DrawAll() const {}
+
 	virtual void DrawInMiniMap() {}
 
 	virtual void UpdateExtraTexture(int, int, int, int, unsigned char*) const {}
 
 	// CEventClient interface
-	bool WantsEvent(const std::string& eventName) {
-		return (eventName == "DrawInMiniMap");
+	bool WantsEvent(const std::string& eventName) { return (eventName == "DrawInMiniMap"); }
+
+	bool ToggleEnabled()
+	{
+		enabled = !enabled;
+		return enabled;
 	}
 
-	bool ToggleEnabled() { enabled = !enabled; return enabled; }
 	bool IsEnabled() const { return enabled; }
 
 	static IPathDrawer* GetInstance();
@@ -39,4 +44,3 @@ protected:
 extern IPathDrawer* pathDrawer;
 
 #endif
-

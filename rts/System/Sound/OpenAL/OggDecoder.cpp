@@ -2,49 +2,53 @@
 
 #include "System/Sound/OpenAL/OggDecoder.h"
 
-#include <cstring> //memset
-#include <cassert>
+#include "VorbisShared.h"
 
 #include "System/FileSystem/FileHandler.h"
 #include "System/Sound/SoundLog.h"
-#include "VorbisShared.h"
 
+#include <cassert>
+#include <cstring> //memset
 
 namespace {
 namespace VorbisCallbacks {
-	size_t VorbisStreamReadCB(void* ptr, size_t size, size_t nmemb, void* datasource)
-	{
-		CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
-		return mem->Read(ptr, size * nmemb);
-	}
-
-	int VorbisStreamCloseCB(void* datasource)
-	{
-		return 0;
-	}
-
-	int VorbisStreamSeekCB(void* datasource, ogg_int64_t offset, int whence)
-	{
-		CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
-		switch (whence) {
-			case SEEK_SET: { mem->Seek(offset); } break;
-			case SEEK_CUR: { mem->Seek(offset + mem->GetPos()); } break;
-			case SEEK_END: { mem->Seek(offset + mem->size); } break;
-			default: {} break;
-		}
-
-		return 0;
-	}
-
-	long VorbisStreamTellCB(void* datasource)
-	{
-		CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
-		return (mem->GetPos());
-	}
-}
+size_t VorbisStreamReadCB(void* ptr, size_t size, size_t nmemb, void* datasource)
+{
+	CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
+	return mem->Read(ptr, size * nmemb);
 }
 
-long OggDecoder::Read(uint8_t *buffer,int length, int bigendianp,int word,int sgned,int *bitstream)
+int VorbisStreamCloseCB(void* datasource) { return 0; }
+
+int VorbisStreamSeekCB(void* datasource, ogg_int64_t offset, int whence)
+{
+	CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
+	switch (whence) {
+	case SEEK_SET: {
+		mem->Seek(offset);
+	} break;
+	case SEEK_CUR: {
+		mem->Seek(offset + mem->GetPos());
+	} break;
+	case SEEK_END: {
+		mem->Seek(offset + mem->size);
+	} break;
+	default: {
+	} break;
+	}
+
+	return 0;
+}
+
+long VorbisStreamTellCB(void* datasource)
+{
+	CStreamBuffer* mem = static_cast<CStreamBuffer*>(datasource);
+	return (mem->GetPos());
+}
+} // namespace VorbisCallbacks
+} // namespace
+
+long OggDecoder::Read(uint8_t* buffer, int length, int bigendianp, int word, int sgned, int* bitstream)
 {
 	return ov_read(&ovFile, reinterpret_cast<char*>(buffer), length, bigendianp, word, sgned, bitstream);
 }
@@ -55,10 +59,10 @@ bool OggDecoder::LoadData(const uint8_t* mem, size_t len)
 	stream = CStreamBuffer(mem, len);
 
 	ov_callbacks vorbisCallbacks;
-	vorbisCallbacks.read_func  = VorbisCallbacks::VorbisStreamReadCB;
+	vorbisCallbacks.read_func = VorbisCallbacks::VorbisStreamReadCB;
 	vorbisCallbacks.close_func = VorbisCallbacks::VorbisStreamCloseCB;
-	vorbisCallbacks.seek_func  = VorbisCallbacks::VorbisStreamSeekCB;
-	vorbisCallbacks.tell_func  = VorbisCallbacks::VorbisStreamTellCB;
+	vorbisCallbacks.seek_func = VorbisCallbacks::VorbisStreamSeekCB;
+	vorbisCallbacks.tell_func = VorbisCallbacks::VorbisStreamTellCB;
 
 	const int result = ov_open_callbacks(&stream, &ovFile, nullptr, 0, vorbisCallbacks);
 
@@ -73,21 +77,15 @@ bool OggDecoder::LoadData(const uint8_t* mem, size_t len)
 	return true;
 }
 
-int OggDecoder::GetChannels() const
-{
-	return vorbisInfo->channels;
-}
+int OggDecoder::GetChannels() const { return vorbisInfo->channels; }
 
-long OggDecoder::GetRate() const
-{
-	return vorbisInfo->rate;
-}
+long OggDecoder::GetRate() const { return vorbisInfo->rate; }
 
 float OggDecoder::GetTotalTime()
 {
 	// for non-seekable streams, ov_time_total returns OV_EINVAL (-131) while
 	// ov_time_tell always[?] returns the decoding time offset relative to EOS
-	return (ov_seekable(&ovFile) == 0) ? ov_time_tell(&ovFile): ov_time_total(&ovFile, -1);
+	return (ov_seekable(&ovFile) == 0) ? ov_time_tell(&ovFile) : ov_time_total(&ovFile, -1);
 }
 
 // display Ogg info and comments
@@ -128,12 +126,9 @@ void OggDecoder::Clear()
 	}
 }
 
-OggDecoder::~OggDecoder()
-{
-	Clear();
-}
+OggDecoder::~OggDecoder() { Clear(); }
 
-OggDecoder& OggDecoder::operator = (OggDecoder&& src) noexcept
+OggDecoder& OggDecoder::operator=(OggDecoder&& src) noexcept
 {
 	std::swap(ovFile, src.ovFile);
 	std::swap(vorbisInfo, src.vorbisInfo);

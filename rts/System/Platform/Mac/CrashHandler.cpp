@@ -68,12 +68,14 @@ static void TranslateStackTrace(StackTrace& stacktrace, const int logLevel)
 		if (count > 0) {
 			path[count] = '\0';
 			stackFrame.path = path;
-		} else {
+		}
+		else {
 			// dyld_shared_cache ? whats that ?
 			stackFrame.path = "";
 		}
 
-		LOG_L(L_DEBUG, "\tsymbol = \"%s\", path = \"%s\", addr = 0x%lx", stackFrame.symbol.c_str(), path, stackFrame.ip);
+		LOG_L(
+		    L_DEBUG, "\tsymbol = \"%s\", path = \"%s\", addr = 0x%lx", stackFrame.symbol.c_str(), path, stackFrame.ip);
 	}
 
 	LOG_L(L_DEBUG, "[%s][2]", __func__);
@@ -100,7 +102,8 @@ static void TranslateStackTrace(StackTrace& stacktrace, const int logLevel)
 	}
 
 	// sort by address
-	std::sort(addrPathMap.begin(), addrPathMap.begin() + numAddrPairs, [](const AddrPathPair& a, const AddrPathPair& b) { return (a.first < b.first); });
+	std::sort(addrPathMap.begin(), addrPathMap.begin() + numAddrPairs,
+	    [](const AddrPathPair& a, const AddrPathPair& b) { return (a.first < b.first); });
 
 	LOG_L(L_DEBUG, "[%s][4]", __func__);
 
@@ -175,15 +178,18 @@ static void LogStacktrace(const int logLevel, StackTrace& stacktrace)
 #warning Fallback CrashHandler used
 
 namespace CrashHandler {
-	void Install() {}
-	void Remove() {}
+void Install() {}
 
-	void Stacktrace(Threading::NativeThreadHandle thread, const std::string& threadName) {}
-	void PrepareStacktrace() {}
-	void CleanupStacktrace() {}
+void Remove() {}
 
-	void OutputStacktrace() {}
-};
+void Stacktrace(Threading::NativeThreadHandle thread, const std::string& threadName) {}
+
+void PrepareStacktrace() {}
+
+void CleanupStacktrace() {}
+
+void OutputStacktrace() {}
+}; // namespace CrashHandler
 
 // ### Fallback CrashHandler (old Apple) END
 #endif

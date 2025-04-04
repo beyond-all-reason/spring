@@ -4,6 +4,7 @@
 #define _FACTORY_H
 
 #include "Building.h"
+
 #include "Sim/Misc/NanoPieceCache.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "System/float3.h"
@@ -12,8 +13,7 @@ struct UnitDef;
 struct Command;
 class CFactory;
 
-class CFactory : public CBuilding
-{
+class CFactory : public CBuilding {
 public:
 	CR_DECLARE(CFactory)
 
@@ -39,7 +39,8 @@ public:
 	bool ChangeTeam(int newTeam, ChangeType type);
 
 	const NanoPieceCache& GetNanoPieceCache() const { return nanoPieceCache; }
-	      NanoPieceCache& GetNanoPieceCache()       { return nanoPieceCache; }
+
+	NanoPieceCache& GetNanoPieceCache() { return nanoPieceCache; }
 
 private:
 	void SendToEmptySpot(CUnit* unit);
@@ -48,7 +49,7 @@ private:
 public:
 	float buildSpeed;
 
-	//BuggerOff fine tuning
+	// BuggerOff fine tuning
 	float boOffset;
 	float boRadius;
 	int boRelHeading;

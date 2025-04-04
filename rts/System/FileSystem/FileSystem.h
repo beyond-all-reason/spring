@@ -9,10 +9,10 @@
 
 // Win-API redifines these, which breaks things
 #if defined(CreateDirectory)
-	#undef CreateDirectory
+#undef CreateDirectory
 #endif
 #if defined(DeleteFile)
-	#undef DeleteFile
+#undef DeleteFile
 #endif
 
 /**
@@ -21,10 +21,8 @@
  * Abstracts locating of content on different platforms.
  * Use this from the rest of the spring code, not FileSystemHandler!
  */
-class FileSystem : public FileSystemAbstraction
-{
+class FileSystem : public FileSystemAbstraction {
 public:
-
 	/**
 	 * @brief remove a file
 	 *
@@ -123,7 +121,7 @@ public:
 	 * @brief does a little checking of a filename
 	 */
 	static bool CheckFile(const std::string& file);
-//	static bool CheckDir(const std::string& dir) const;
+	//	static bool CheckDir(const std::string& dir) const;
 
 	static const std::string& GetCacheBaseDir();
 	static const std::string& GetCacheDir();

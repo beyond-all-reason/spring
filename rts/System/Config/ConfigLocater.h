@@ -7,10 +7,10 @@
 #include <vector>
 
 namespace ConfigLocater {
-	/**
-	 * @brief Get the names of the default configuration files
-	 */
-	void GetDefaultLocations(std::vector<std::string>& locations);
-}
+/**
+ * @brief Get the names of the default configuration files
+ */
+void GetDefaultLocations(std::vector<std::string>& locations);
+} // namespace ConfigLocater
 
 #endif // CONFIG_LOCATER_H

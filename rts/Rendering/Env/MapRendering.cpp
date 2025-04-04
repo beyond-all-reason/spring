@@ -1,13 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-
 #include "MapRendering.h"
 
 #include "Map/MapInfo.h"
 #include "System/EventHandler.h"
-
 #include "System/Misc/TracyDefs.h"
+
+#include <cassert>
 
 /**
  * @brief mapRenderingInst
@@ -16,7 +15,8 @@
  */
 CMapRendering mapRenderingInst;
 
-void CMapRendering::Init() {
+void CMapRendering::Init()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mapInfo != nullptr);
 	assert(IsGlobalInstance());
@@ -28,7 +28,8 @@ void CMapRendering::Init() {
 	voidGround = mapInfo->map.voidGround;
 }
 
-bool CMapRendering::IsGlobalInstance() const {
+bool CMapRendering::IsGlobalInstance() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (this == &mapRenderingInst);
 }

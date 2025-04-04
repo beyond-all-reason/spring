@@ -12,6 +12,7 @@
 #define DEMO_FILE_H
 
 #include "System/Platform/byteorder.h"
+
 #include <cinttypes>
 
 /** The first 16 bytes of each demofile. */
@@ -50,30 +51,29 @@
  * If Spring did not cleanup properly (crashed), the demoStreamSize is 0 and it
  * can be assumed the demo stream continues until the end of the file.
  */
-struct DemoFileHeader
-{
-	char magic[16];               ///< DEMOFILE_MAGIC
-	int version;                  ///< DEMOFILE_VERSION
-	int headerSize;               ///< Size of the DemoFileHeader, minor version number.
-	char versionString[256];      ///< Spring version string, e.g. "0.75b2", "0.75b2+svn4123"
-	std::uint8_t gameID[16];    ///< Unique game identifier. Identical for each player of the game.
-	std::uint64_t unixTime;     ///< Unix time when game was started.
-	int scriptSize;               ///< Size of startscript.
-	int demoStreamSize;           ///< Size of the demo stream.
-	int gameTime;                 ///< Total number of seconds game time.
-	int wallclockTime;            ///< Total number of seconds wallclock time.
-	int numPlayers;               ///< Number of players for which stats are saved. (this contains also later joined spectators!)
-	int playerStatSize;           ///< Size of the entire player statistics chunk.
-	int playerStatElemSize;       ///< sizeof(CPlayer::Statistics)
-	int numTeams;                 ///< Number of teams for which stats are saved.
-	int teamStatSize;             ///< Size of the entire team statistics chunk.
-	int teamStatElemSize;         ///< sizeof(CTeam::Statistics)
-	int teamStatPeriod;           ///< Interval (in seconds) between team stats.
-	int winningAllyTeamsSize;     ///< The size of the vector of the winning ally teams
-
+struct DemoFileHeader {
+	char magic[16];          ///< DEMOFILE_MAGIC
+	int version;             ///< DEMOFILE_VERSION
+	int headerSize;          ///< Size of the DemoFileHeader, minor version number.
+	char versionString[256]; ///< Spring version string, e.g. "0.75b2", "0.75b2+svn4123"
+	std::uint8_t gameID[16]; ///< Unique game identifier. Identical for each player of the game.
+	std::uint64_t unixTime;  ///< Unix time when game was started.
+	int scriptSize;          ///< Size of startscript.
+	int demoStreamSize;      ///< Size of the demo stream.
+	int gameTime;            ///< Total number of seconds game time.
+	int wallclockTime;       ///< Total number of seconds wallclock time.
+	int numPlayers;     ///< Number of players for which stats are saved. (this contains also later joined spectators!)
+	int playerStatSize; ///< Size of the entire player statistics chunk.
+	int playerStatElemSize;   ///< sizeof(CPlayer::Statistics)
+	int numTeams;             ///< Number of teams for which stats are saved.
+	int teamStatSize;         ///< Size of the entire team statistics chunk.
+	int teamStatElemSize;     ///< sizeof(CTeam::Statistics)
+	int teamStatPeriod;       ///< Interval (in seconds) between team stats.
+	int winningAllyTeamsSize; ///< The size of the vector of the winning ally teams
 
 	/// Change structure from host endian to little endian or vice versa.
-	void swab() {
+	void swab()
+	{
 		swabDWordInPlace(version);
 		swabDWordInPlace(headerSize);
 		// FIXME endian: unixTime = swabQWordInPlace(unixTime);
@@ -103,13 +103,13 @@ struct DemoFileHeader
  * - length bytes raw data from network stream
  * - ...
  */
-struct DemoStreamChunkHeader
-{
-	float modGameTime;      ///< Gametime at which this chunk was written/should be read.
+struct DemoStreamChunkHeader {
+	float modGameTime;    ///< Gametime at which this chunk was written/should be read.
 	std::uint32_t length; ///< Length of the chunk of data following this header.
 
 	/// Change structure from host endian to little endian or vice versa.
-	void swab() {
+	void swab()
+	{
 		swabFloatInPlace(modGameTime);
 		swabDWordInPlace(length);
 	}

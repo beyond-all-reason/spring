@@ -5,15 +5,16 @@
 
 #include "System/EventClient.h"
 
-class ProfileDrawer : public CEventClient
-{
+class ProfileDrawer : public CEventClient {
 public:
 	// CEventClient interface
 	bool GetFullRead() const override { return true; }
-	int  GetReadAllyTeam() const override { return AllAccessTeam; }
+
+	int GetReadAllyTeam() const override { return AllAccessTeam; }
 
 public:
 	static void SetEnabled(bool enable);
+
 	static bool IsEnabled() { return (instance != nullptr); }
 
 	virtual void DrawScreen() override;

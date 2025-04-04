@@ -9,16 +9,29 @@
 class VAO {
 public:
 	static bool IsSupported();
+
 public:
 	VAO() = default;
 	VAO(const VAO& v) = delete;
+
 	VAO(VAO&& v) noexcept { *this = std::move(v); }
+
 	~VAO() { Delete(); }
 
-	VAO& operator = (const VAO& v) = delete;
-	VAO& operator = (VAO&& v) noexcept { std::swap(id, v.id); return *this; }
+	VAO& operator=(const VAO& v) = delete;
 
-	uint32_t GetId() const { Generate(); return GetIdRaw(); }
+	VAO& operator=(VAO&& v) noexcept
+	{
+		std::swap(id, v.id);
+		return *this;
+	}
+
+	uint32_t GetId() const
+	{
+		Generate();
+		return GetIdRaw();
+	}
+
 	uint32_t GetIdRaw() const { return id; }
 
 	void Generate() const;
@@ -32,4 +45,3 @@ private:
 };
 
 #endif
-

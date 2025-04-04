@@ -2,47 +2,44 @@
 
 #include "SkirmishAIHandler.h"
 
-#include "ExternalAI/SkirmishAIKey.h"
 #include "ExternalAI/AILibraryManager.h"
 #include "ExternalAI/EngineOutHandler.h"
-#include "ExternalAI/LuaAIImplHandler.h"
 #include "ExternalAI/Interface/SSkirmishAILibrary.h"
+#include "ExternalAI/LuaAIImplHandler.h"
+#include "ExternalAI/SkirmishAIKey.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "System/Option.h"
-
 #include "System/creg/STL_Map.h"
 #include "System/creg/STL_Set.h"
 
 #include <algorithm>
 #include <cassert>
 
-CR_BIND(CSkirmishAIHandler,)
+CR_BIND(CSkirmishAIHandler, )
 
-CR_REG_METADATA(CSkirmishAIHandler, (
-	CR_MEMBER(aiInstanceData),
-	CR_MEMBER(aiKillFlags),
+CR_REG_METADATA(CSkirmishAIHandler,
+    (CR_MEMBER(aiInstanceData),
+        CR_MEMBER(aiKillFlags),
 
-	CR_MEMBER_BEGINFLAG(CM_NoSerialize),
-		CR_IGNORED(localTeamAIs),
-		CR_IGNORED(aiLibraryKeys),
+        CR_MEMBER_BEGINFLAG(CM_NoSerialize),
+        CR_IGNORED(localTeamAIs),
+        CR_IGNORED(aiLibraryKeys),
 
-		CR_IGNORED(skirmishAIDataMap),
-		CR_IGNORED(luaAIShortNames),
+        CR_IGNORED(skirmishAIDataMap),
+        CR_IGNORED(luaAIShortNames),
 
-		CR_IGNORED(currentAIId),
-		CR_IGNORED(numSkirmishAIs),
+        CR_IGNORED(currentAIId),
+        CR_IGNORED(numSkirmishAIs),
 
-		CR_IGNORED(gameInitialized),
-	CR_MEMBER_ENDFLAG(CM_NoSerialize),
+        CR_IGNORED(gameInitialized),
+        CR_MEMBER_ENDFLAG(CM_NoSerialize),
 
-	CR_POSTLOAD(PostLoad)
-))
+        CR_POSTLOAD(PostLoad)))
 
 
 CSkirmishAIHandler skirmishAIHandler;
-
 
 void CSkirmishAIHandler::SerializeSkirmishAIHandler(creg::ISerializer* s)
 {
@@ -65,7 +62,6 @@ void CSkirmishAIHandler::PostLoad()
 	LoadPreGame();
 }
 
-
 void CSkirmishAIHandler::ResetState()
 {
 	aiInstanceData.fill({});
@@ -82,7 +78,8 @@ void CSkirmishAIHandler::ResetState()
 	gameInitialized = false;
 }
 
-void CSkirmishAIHandler::LoadFromSetup(const CGameSetup& setup) {
+void CSkirmishAIHandler::LoadFromSetup(const CGameSetup& setup)
+{
 	const auto& aiDataCont = setup.GetAIStartingDataCont();
 
 	for (const SkirmishAIData& aiData: aiDataCont) {
@@ -90,8 +87,8 @@ void CSkirmishAIHandler::LoadFromSetup(const CGameSetup& setup) {
 	}
 }
 
-void CSkirmishAIHandler::LoadPreGame() {
-
+void CSkirmishAIHandler::LoadPreGame()
+{
 	if (gameInitialized)
 		return;
 
@@ -116,11 +113,13 @@ void CSkirmishAIHandler::LoadPreGame() {
 	}
 }
 
-bool CSkirmishAIHandler::IsActiveSkirmishAI(const size_t skirmishAIId) const {
+bool CSkirmishAIHandler::IsActiveSkirmishAI(const size_t skirmishAIId) const
+{
 	return IsValidSkirmishAI(aiInstanceData[skirmishAIId]);
 }
 
-SkirmishAIData* CSkirmishAIHandler::GetSkirmishAI(const size_t skirmishAIId) {
+SkirmishAIData* CSkirmishAIHandler::GetSkirmishAI(const size_t skirmishAIId)
+{
 	if (!IsActiveSkirmishAI(skirmishAIId))
 		return nullptr;
 
@@ -178,8 +177,8 @@ std::vector<uint8_t> CSkirmishAIHandler::GetSkirmishAIsByPlayer(const int hostPl
 	return skirmishAIs;
 }
 
-
-bool CSkirmishAIHandler::AddSkirmishAI(const SkirmishAIData& data, const size_t skirmishAIId) {
+bool CSkirmishAIHandler::AddSkirmishAI(const SkirmishAIData& data, const size_t skirmishAIId)
+{
 	// if the ID is already taken, something went very wrong
 	if (IsValidSkirmishAI(aiInstanceData[skirmishAIId]))
 		return false;
@@ -196,11 +195,12 @@ bool CSkirmishAIHandler::AddSkirmishAI(const SkirmishAIData& data, const size_t 
 	return true;
 }
 
-bool CSkirmishAIHandler::RemoveSkirmishAI(const size_t skirmishAIId) {
+bool CSkirmishAIHandler::RemoveSkirmishAI(const size_t skirmishAIId)
+{
 	if (!IsValidSkirmishAI(aiInstanceData[skirmishAIId]))
 		return false;
 
-	localTeamAIs[ aiInstanceData[skirmishAIId].team ] = {};
+	localTeamAIs[aiInstanceData[skirmishAIId].team] = {};
 
 	aiKillFlags[skirmishAIId] = -1;
 	aiLibraryKeys[skirmishAIId] = {};
@@ -212,8 +212,8 @@ bool CSkirmishAIHandler::RemoveSkirmishAI(const size_t skirmishAIId) {
 	return true;
 }
 
-
-void CSkirmishAIHandler::CreateLocalSkirmishAI(const size_t skirmishAIId, bool savedGame) {
+void CSkirmishAIHandler::CreateLocalSkirmishAI(const size_t skirmishAIId, bool savedGame)
+{
 	SkirmishAIData* aiData = GetSkirmishAI(skirmishAIId);
 
 	// fail, if a local AI is already in line for this team
@@ -228,14 +228,16 @@ void CSkirmishAIHandler::CreateLocalSkirmishAI(const size_t skirmishAIId, bool s
 	eoh->CreateSkirmishAI(skirmishAIId, savedGame);
 }
 
-void CSkirmishAIHandler::PostLoadSkirmishAI(const size_t skirmishAIId) {
+void CSkirmishAIHandler::PostLoadSkirmishAI(const size_t skirmishAIId)
+{
 	if (HasLocalKillFlag(skirmishAIId) || GetSkirmishAI(skirmishAIId)->isLuaAI)
 		return;
 
 	eoh->PostLoadSkirmishAI(skirmishAIId);
 }
 
-void CSkirmishAIHandler::NetCreateLocalSkirmishAI(const SkirmishAIData& aiData) {
+void CSkirmishAIHandler::NetCreateLocalSkirmishAI(const SkirmishAIData& aiData)
+{
 	// fail if a local AI is already in line for this team
 	assert(!IsValidSkirmishAI(localTeamAIs[aiData.team]));
 	// fail, if the specified AI is not a local one
@@ -249,13 +251,15 @@ void CSkirmishAIHandler::NetCreateLocalSkirmishAI(const SkirmishAIData& aiData) 
 	clientNet->Send(CBaseNetProtocol::Get().SendAICreated(aiData.hostPlayer, 0, aiData.team, aiData.name));
 }
 
-const SkirmishAIData* CSkirmishAIHandler::GetLocalSkirmishAIInCreation(const int teamId) const {
+const SkirmishAIData* CSkirmishAIHandler::GetLocalSkirmishAIInCreation(const int teamId) const
+{
 	if (IsValidSkirmishAI(localTeamAIs[teamId]))
 		return &localTeamAIs[teamId];
 	return nullptr;
 }
 
-void CSkirmishAIHandler::SetLocalKillFlag(const size_t skirmishAIId, const int reason) {
+void CSkirmishAIHandler::SetLocalKillFlag(const size_t skirmishAIId, const int reason)
+{
 	const SkirmishAIData& aiData = aiInstanceData[skirmishAIId];
 
 	assert(IsValidSkirmishAI(aiData)); // is valid id?
@@ -269,8 +273,8 @@ void CSkirmishAIHandler::SetLocalKillFlag(const size_t skirmishAIId, const int r
 	clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_DIEING));
 }
 
-
-const SkirmishAIKey* CSkirmishAIHandler::GetLocalSkirmishAILibraryKey(const size_t skirmishAIId) {
+const SkirmishAIKey* CSkirmishAIHandler::GetLocalSkirmishAILibraryKey(const size_t skirmishAIId)
+{
 	// fail if the specified AI is not local
 	assert(IsLocalSkirmishAI(skirmishAIId));
 
@@ -290,15 +294,15 @@ const SkirmishAIKey* CSkirmishAIHandler::GetLocalSkirmishAILibraryKey(const size
 	return &aiLibraryKeys[skirmishAIId];
 }
 
-
-bool CSkirmishAIHandler::IsLocalSkirmishAI(const size_t skirmishAIId) const {
+bool CSkirmishAIHandler::IsLocalSkirmishAI(const size_t skirmishAIId) const
+{
 	return (IsValidSkirmishAI(aiInstanceData[skirmishAIId]) && IsLocalSkirmishAI(aiInstanceData[skirmishAIId]));
 }
 
-bool CSkirmishAIHandler::IsLocalSkirmishAI(const SkirmishAIData& aiData) {
+bool CSkirmishAIHandler::IsLocalSkirmishAI(const SkirmishAIData& aiData)
+{
 	return (aiData.hostPlayer == gu->myPlayerNum);
 }
-
 
 void CSkirmishAIHandler::CompleteWithDefaultOptionValues(const size_t skirmishAIId)
 {
@@ -342,7 +346,8 @@ void CSkirmishAIHandler::CompleteWithDefaultOptionValues(const size_t skirmishAI
 	}
 }
 
-void CSkirmishAIHandler::CompleteSkirmishAI(const size_t skirmishAIId) {
+void CSkirmishAIHandler::CompleteSkirmishAI(const size_t skirmishAIId)
+{
 	if (!gameInitialized)
 		return;
 
@@ -356,4 +361,3 @@ void CSkirmishAIHandler::CompleteSkirmishAI(const size_t skirmishAIId) {
 
 	CompleteWithDefaultOptionValues(skirmishAIId);
 }
-

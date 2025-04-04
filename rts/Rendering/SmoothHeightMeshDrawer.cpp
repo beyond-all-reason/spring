@@ -4,40 +4,41 @@
 
 #include "Game/UI/MiniMap.h"
 #include "Map/ReadMap.h"
-#include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/myGL.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
 #include "System/EventHandler.h"
-#include "System/float3.h"
 #include "System/SafeUtil.h"
+#include "System/float3.h"
 
 using namespace SmoothHeightMeshNamespace;
 
 static SmoothHeightMeshDrawer* smoothMeshDrawer = nullptr;
 
-SmoothHeightMeshDrawer* SmoothHeightMeshDrawer::GetInstance() {
+SmoothHeightMeshDrawer* SmoothHeightMeshDrawer::GetInstance()
+{
 	if (smoothMeshDrawer == nullptr) {
 		smoothMeshDrawer = new SmoothHeightMeshDrawer();
 	}
 	return smoothMeshDrawer;
 }
 
-void SmoothHeightMeshDrawer::FreeInstance() {
+void SmoothHeightMeshDrawer::FreeInstance()
+{
 	if (smoothMeshDrawer != nullptr) {
 		spring::SafeDelete(smoothMeshDrawer);
 	}
 }
 
 SmoothHeightMeshDrawer::SmoothHeightMeshDrawer()
-	: CEventClient("[SmoothHeightMeshDrawer]", 300002, false)
-	, drawEnabled(false)
+    : CEventClient("[SmoothHeightMeshDrawer]", 300002, false)
+    , drawEnabled(false)
 {
 	eventHandler.AddClient(this);
 }
-SmoothHeightMeshDrawer::~SmoothHeightMeshDrawer() {
-	eventHandler.RemoveClient(this);
-}
+
+SmoothHeightMeshDrawer::~SmoothHeightMeshDrawer() { eventHandler.RemoveClient(this); }
 
 void SmoothHeightMeshDrawer::DrawInMiniMap()
 {
@@ -45,15 +46,15 @@ void SmoothHeightMeshDrawer::DrawInMiniMap()
 		return;
 
 	glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0, -1.0);
-		minimap->ApplyConstraintsMatrix();
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0, -1.0);
+	minimap->ApplyConstraintsMatrix();
 	glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-		glTranslatef3(UpVector);
-		glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
+	glPushMatrix();
+	glLoadIdentity();
+	glTranslatef3(UpVector);
+	glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
 
 	glDisable(GL_TEXTURE_2D);
 	glColor4f(1.0f, 1.0f, 0.0f, 0.7f);
@@ -61,8 +62,8 @@ void SmoothHeightMeshDrawer::DrawInMiniMap()
 	const SmoothHeightMesh::MapChangeTrack& mapChangeTrack = smoothGround.mapChangeTrack;
 	const float tileSize = SAMPLES_PER_QUAD * smoothGround.resolution;
 	int i = 0;
-	for (auto changed : mapChangeTrack.damageMap) {
-		if (changed){
+	for (auto changed: mapChangeTrack.damageMap) {
+		if (changed) {
 			const float x = (i % mapChangeTrack.width) * tileSize;
 			const float y = (i / mapChangeTrack.width) * tileSize;
 			glRectf(x, y, x + tileSize, y + tileSize);
@@ -74,12 +75,13 @@ void SmoothHeightMeshDrawer::DrawInMiniMap()
 	glEnable(GL_TEXTURE_2D);
 
 	glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
+	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
+	glPopMatrix();
 }
 
-void SmoothHeightMeshDrawer::Draw(float yoffset) {
+void SmoothHeightMeshDrawer::Draw(float yoffset)
+{
 	if (!(drawEnabled && gs->cheatEnabled))
 		return;
 
@@ -103,17 +105,16 @@ void SmoothHeightMeshDrawer::Draw(float yoffset) {
 			const float x = xq * quadSize;
 			const float z = zq * quadSize;
 
-			const float h1 = smoothGround.GetHeight(x,            z           ) + yoffset;
-			const float h2 = smoothGround.GetHeight(x + quadSize, z           ) + yoffset;
+			const float h1 = smoothGround.GetHeight(x, z) + yoffset;
+			const float h2 = smoothGround.GetHeight(x + quadSize, z) + yoffset;
 			const float h3 = smoothGround.GetHeight(x + quadSize, z + quadSize) + yoffset;
-			const float h4 = smoothGround.GetHeight(x,            z + quadSize) + yoffset;
+			const float h4 = smoothGround.GetHeight(x, z + quadSize) + yoffset;
 
 			rb.AddQuadTriangles(
-				{ { x,            h1, z            } },
-				{ { x + quadSize, h2, z            } },
-				{ { x + quadSize, h3, z + quadSize } },
-				{ { x,            h4, z + quadSize } }
-			);
+			    {
+			        {x, h1, z}
+            },
+			    {{x + quadSize, h2, z}}, {{x + quadSize, h3, z + quadSize}}, {{x, h4, z + quadSize}});
 		}
 	}
 

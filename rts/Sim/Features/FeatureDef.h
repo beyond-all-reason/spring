@@ -8,14 +8,11 @@
 
 enum {
 	DRAWTYPE_MODEL = 0,
-	DRAWTYPE_TREE  = 1, // >= different types of trees
+	DRAWTYPE_TREE = 1, // >= different types of trees
 	DRAWTYPE_NONE = -1,
 };
 
-
-
-struct FeatureDef: public SolidObjectDef
-{
+struct FeatureDef : public SolidObjectDef {
 	FeatureDef();
 
 	std::string description;

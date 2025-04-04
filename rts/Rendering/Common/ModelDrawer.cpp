@@ -1,11 +1,10 @@
 #include "ModelDrawer.h"
 
 #include "Map/Ground.h"
-#include "Rendering/GL/LightHandler.h"
-#include "System/Config/ConfigHandler.h"
 #include "Rendering/Env/CubeMapHandler.h"
+#include "Rendering/GL/LightHandler.h"
 #include "Rendering/LuaObjectDrawer.h"
-
+#include "System/Config/ConfigHandler.h"
 #include "System/Misc/TracyDefs.h"
 
 void CModelDrawerConcept::InitStatic()
@@ -26,7 +25,7 @@ void CModelDrawerConcept::InitStatic()
 	deferredAllowed &= geomBuffer->Valid();
 
 	IModelDrawerState::InitInstance<CModelDrawerStateGLSL>(MODEL_DRAWER_GLSL);
-	IModelDrawerState::InitInstance<CModelDrawerStateGL4 >(MODEL_DRAWER_GL4 );
+	IModelDrawerState::InitInstance<CModelDrawerStateGL4>(MODEL_DRAWER_GL4);
 
 	initialized = true;
 }

@@ -1,15 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "GeometryBuffer.h"
+
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Misc/TracyDefs.h"
 
 #include <algorithm>
 #include <cstring> //memset
 
-#include "System/Misc/TracyDefs.h"
-
-void GL::GeometryBuffer::Init(bool ctor) {
+void GL::GeometryBuffer::Init(bool ctor)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// if dead, this must be a non-ctor reload
 	assert(!dead || !ctor);
@@ -30,7 +31,8 @@ void GL::GeometryBuffer::Init(bool ctor) {
 	msaa &= globalRendering->supportMSAAFrameBuffer;
 }
 
-void GL::GeometryBuffer::Kill(bool dtor) {
+void GL::GeometryBuffer::Kill(bool dtor)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (dead) {
 		// if already dead, this must be final cleanup
@@ -44,29 +46,32 @@ void GL::GeometryBuffer::Kill(bool dtor) {
 	dead = true;
 }
 
-void GL::GeometryBuffer::Clear() const {
+void GL::GeometryBuffer::Clear() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(bound);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GL::GeometryBuffer::SetDepthRange(float nearDepth, float farDepth) const {
+void GL::GeometryBuffer::SetDepthRange(float nearDepth, float farDepth) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
+#if 0
 	if (globalRendering->supportClipSpaceControl) {
 		// TODO: need to inform shaders about this, modify PM instead
 		glDepthRangef(nearDepth, farDepth);
 		glClearDepth(farDepth);
 		glDepthFunc((nearDepth <= farDepth)? GL_LEQUAL: GL_GREATER);
 	}
-	#else
+#else
 	glClearDepth(std::max(nearDepth, farDepth));
 	glDepthFunc(GL_LEQUAL);
-	#endif
+#endif
 }
 
-void GL::GeometryBuffer::DetachTextures(const bool init) {
+void GL::GeometryBuffer::DetachTextures(const bool init)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// nothing to detach yet during init
 	if (init)
@@ -89,7 +94,8 @@ void GL::GeometryBuffer::DetachTextures(const bool init) {
 	memset(&bufferAttachments[0], 0, sizeof(bufferAttachments));
 }
 
-void GL::GeometryBuffer::DrawDebug(const unsigned int texID, const float2 texMins, const float2 texMaxs) const {
+void GL::GeometryBuffer::DrawDebug(const unsigned int texID, const float2 texMins, const float2 texMaxs) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
@@ -101,10 +107,18 @@ void GL::GeometryBuffer::DrawDebug(const unsigned int texID, const float2 texMin
 	glEnable(GetTextureTarget());
 	glBindTexture(GetTextureTarget(), texID);
 	glBegin(GL_QUADS);
-	glTexCoord2f(texMins.x, texMins.y); glNormal3fv(&UpVector.x); glVertex2f(texMins.x, texMins.y);
-	glTexCoord2f(texMaxs.x, texMins.y); glNormal3fv(&UpVector.x); glVertex2f(texMaxs.x, texMins.y);
-	glTexCoord2f(texMaxs.x, texMaxs.y); glNormal3fv(&UpVector.x); glVertex2f(texMaxs.x, texMaxs.y);
-	glTexCoord2f(texMins.x, texMaxs.y); glNormal3fv(&UpVector.x); glVertex2f(texMins.x, texMaxs.y);
+	glTexCoord2f(texMins.x, texMins.y);
+	glNormal3fv(&UpVector.x);
+	glVertex2f(texMins.x, texMins.y);
+	glTexCoord2f(texMaxs.x, texMins.y);
+	glNormal3fv(&UpVector.x);
+	glVertex2f(texMaxs.x, texMins.y);
+	glTexCoord2f(texMaxs.x, texMaxs.y);
+	glNormal3fv(&UpVector.x);
+	glVertex2f(texMaxs.x, texMaxs.y);
+	glTexCoord2f(texMins.x, texMaxs.y);
+	glNormal3fv(&UpVector.x);
+	glVertex2f(texMins.x, texMaxs.y);
 	glEnd();
 	glBindTexture(GetTextureTarget(), 0);
 	glDisable(GetTextureTarget());
@@ -114,7 +128,8 @@ void GL::GeometryBuffer::DrawDebug(const unsigned int texID, const float2 texMin
 	glPopMatrix();
 }
 
-bool GL::GeometryBuffer::Create(const int2 size) {
+bool GL::GeometryBuffer::Create(const int2 size)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int texTarget = GetTextureTarget();
 
@@ -131,12 +146,15 @@ bool GL::GeometryBuffer::Create(const int2 size) {
 			glTexParameteri(texTarget, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
 
 			if (texTarget == GL_TEXTURE_2D)
-				glTexImage2D(texTarget, 0, GL_DEPTH_COMPONENT32F, size.x, size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+				glTexImage2D(
+				    texTarget, 0, GL_DEPTH_COMPONENT32F, size.x, size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 			else
-				glTexImage2DMultisample(texTarget, globalRendering->msaaLevel, GL_DEPTH_COMPONENT32F, size.x, size.y, GL_TRUE);
+				glTexImage2DMultisample(
+				    texTarget, globalRendering->msaaLevel, GL_DEPTH_COMPONENT32F, size.x, size.y, GL_TRUE);
 
 			bufferAttachments[n] = GL_DEPTH_ATTACHMENT_EXT;
-		} else {
+		}
+		else {
 			if (texTarget == GL_TEXTURE_2D)
 				glTexImage2D(texTarget, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 			else
@@ -167,7 +185,8 @@ bool GL::GeometryBuffer::Create(const int2 size) {
 	return ret;
 }
 
-bool GL::GeometryBuffer::Update(const bool init) {
+bool GL::GeometryBuffer::Update(const bool init)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	currBufferSize = GetWantedSize(true);
 
@@ -196,7 +215,8 @@ bool GL::GeometryBuffer::Update(const bool init) {
 	return (Create(prevBufferSize = currBufferSize));
 }
 
-int2 GL::GeometryBuffer::GetWantedSize(bool allowed) const {
+int2 GL::GeometryBuffer::GetWantedSize(bool allowed) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return {globalRendering->viewSizeX * allowed, globalRendering->viewSizeY * allowed};
 }

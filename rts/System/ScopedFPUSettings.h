@@ -10,13 +10,15 @@
 
 class ScopedDisableFpuExceptions {
 public:
-	ScopedDisableFpuExceptions() {
+	ScopedDisableFpuExceptions()
+	{
 		streflop::fegetenv(&fenv);
-		streflop::feclearexcept(streflop::FPU_Exceptions(streflop::FE_INVALID | streflop::FE_DIVBYZERO | streflop::FE_OVERFLOW));
+		streflop::feclearexcept(
+		    streflop::FPU_Exceptions(streflop::FE_INVALID | streflop::FE_DIVBYZERO | streflop::FE_OVERFLOW));
 	}
-	~ScopedDisableFpuExceptions() {
-		streflop::fesetenv(&fenv);
-	}
+
+	~ScopedDisableFpuExceptions() { streflop::fesetenv(&fenv); }
+
 private:
 	streflop::fpenv_t fenv;
 };
@@ -24,10 +26,13 @@ private:
 #else
 
 #include <stddef.h> //NULL
+
 class ScopedDisableFpuExceptions {
 public:
-	ScopedDisableFpuExceptions() {
-		if (false) *(int *)NULL = 0; // just something here to avoid MSVC "unreferenced local variable"
+	ScopedDisableFpuExceptions()
+	{
+		if (false)
+			*(int*)NULL = 0; // just something here to avoid MSVC "unreferenced local variable"
 	}
 };
 

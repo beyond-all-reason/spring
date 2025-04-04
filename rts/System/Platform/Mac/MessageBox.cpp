@@ -2,7 +2,7 @@
 
 #include "System/Platform/MessageBox.h"
 
-#if 0 //!defined(DEDICATED) && !defined(HEADLESS)
+#if 0 //! defined(DEDICATED) && !defined(HEADLESS)
 #include <CoreFoundation/CFBase.h>
 #include <CoreFoundation/CFString.h>
 #include <CoreFoundation/CFUserNotification.h>
@@ -17,7 +17,7 @@ namespace Platform {
  */
 void MsgBox(const char* message, const char* caption, unsigned int flags)
 {
-#if 0 //!defined(DEDICATED) && !defined(HEADLESS)
+#if 0 //! defined(DEDICATED) && !defined(HEADLESS)
 	CFStringRef cf_caption = CFStringCreateWithCString(NULL, caption, strlen(caption));
 	CFStringRef cf_message = CFStringCreateWithCString(NULL, message, strlen(message));
 
@@ -33,7 +33,7 @@ void MsgBox(const char* message, const char* caption, unsigned int flags)
 		NULL, // icon url (use default depending on flags)
 		NULL, // sound url
 		NULL, // localization url
-		cf_caption, // caption text 
+		cf_caption, // caption text
 		cf_message, // message text
 		NULL,  // button text (use default "ok")
 		NULL, // alternate button title
@@ -47,4 +47,4 @@ void MsgBox(const char* message, const char* caption, unsigned int flags)
 #endif
 }
 
-}; //namespace Platform
+}; // namespace Platform

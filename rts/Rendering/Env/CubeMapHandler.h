@@ -7,7 +7,10 @@
 
 class CubeMapHandler {
 public:
-	CubeMapHandler(): reflectionCubeFBO(true) {}
+	CubeMapHandler()
+	    : reflectionCubeFBO(true)
+	{
+	}
 
 	bool Init();
 	void Free();
@@ -16,16 +19,32 @@ public:
 	void UpdateSpecularTexture();
 
 	unsigned int GetEnvReflectionTextureID() const { return envReflectionTexID; }
+
 	unsigned int GetSkyReflectionTextureID() const { return skyReflectionTexID; }
+
 	unsigned int GetSpecularTextureID() const { return specularTexID; }
+
 	unsigned int GetReflectionTextureSize() const { return reflTexSize; }
+
 	unsigned int GetSpecularTextureSize() const { return specTexSize; }
 
 private:
 	void CreateReflectionFace(unsigned int, bool);
-	void CreateSpecularFacePart(unsigned int, unsigned int, const float3&, const float3&, const float3&, unsigned int, unsigned char*);
+	void CreateSpecularFacePart(unsigned int,
+	    unsigned int,
+	    const float3&,
+	    const float3&,
+	    const float3&,
+	    unsigned int,
+	    unsigned char*);
 	void CreateSpecularFace(unsigned int, unsigned int, const float3&, const float3&, const float3&);
-	void UpdateSpecularFace(unsigned int, unsigned int, const float3&, const float3&, const float3&, unsigned int, unsigned char*);
+	void UpdateSpecularFace(unsigned int,
+	    unsigned int,
+	    const float3&,
+	    const float3&,
+	    const float3&,
+	    unsigned int,
+	    unsigned char*);
 
 	unsigned int envReflectionTexID; // sky and map
 	unsigned int skyReflectionTexID; // sky only
@@ -55,12 +74,12 @@ private:
 	*/
 
 	const float3 faceDirs[6][3] = {
-		{ RgtVector,  FwdVector,   UpVector}, // fwd = +x, right = +z, up = +y
-		{-RgtVector, -FwdVector,   UpVector}, // fwd = -x
-		{  UpVector, -RgtVector, -FwdVector}, // fwd = +y
-		{ -UpVector, -RgtVector,  FwdVector}, // fwd = -y
-		{ FwdVector, -RgtVector,   UpVector}, // fwd = +z
-		{-FwdVector,  RgtVector,   UpVector}, // fwd = -z
+	    {RgtVector,  FwdVector,  UpVector  }, // fwd = +x, right = +z, up = +y
+	    {-RgtVector, -FwdVector, UpVector  }, // fwd = -x
+	    {UpVector,   -RgtVector, -FwdVector}, // fwd = +y
+	    {-UpVector,  -RgtVector, FwdVector }, // fwd = -y
+	    {FwdVector,  -RgtVector, UpVector  }, // fwd = +z
+	    {-FwdVector, RgtVector,  UpVector  }, // fwd = -z
 	};
 };
 

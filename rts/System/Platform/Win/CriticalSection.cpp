@@ -1,55 +1,28 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "CriticalSection.h"
+
 #include <algorithm>
 
+CriticalSection::CriticalSection() noexcept { InitializeCriticalSection(&mtx); }
 
-CriticalSection::CriticalSection() noexcept
-{
-	InitializeCriticalSection(&mtx);
-}
+CriticalSection::~CriticalSection() { DeleteCriticalSection(&mtx); }
 
+void CriticalSection::lock() { EnterCriticalSection(&mtx); }
 
-CriticalSection::~CriticalSection()
-{
-	DeleteCriticalSection(&mtx);
-}
+bool CriticalSection::try_lock() noexcept { return TryEnterCriticalSection(&mtx); }
 
-
-void CriticalSection::lock()
-{
-	EnterCriticalSection(&mtx);
-}
-
-
-bool CriticalSection::try_lock() noexcept
-{
-	return TryEnterCriticalSection(&mtx);
-}
-
-
-void CriticalSection::unlock()
-{
-	LeaveCriticalSection(&mtx);
-}
-
-
+void CriticalSection::unlock() { LeaveCriticalSection(&mtx); }
 
 win_signal::win_signal() noexcept
-: sleepers(false)
+    : sleepers(false)
 {
 	event = CreateEvent(NULL, true, false, NULL);
 }
 
-win_signal::~win_signal()
-{
-	CloseHandle(event);
-}
+win_signal::~win_signal() { CloseHandle(event); }
 
-void win_signal::wait()
-{
-	wait_for(spring_notime);
-}
+void win_signal::wait() { wait_for(spring_notime); }
 
 void win_signal::wait_for(spring_time t)
 {

@@ -37,7 +37,7 @@ private:
 	void DrawDefaultCommand(const Command&, const CUnit*) const;
 
 private:
-	spring::unordered_set<std::pair<int, int>> luaQueuedUnitSet; //unitID, queueDepth (if > 0)
+	spring::unordered_set<std::pair<int, int>> luaQueuedUnitSet; // unitID, queueDepth (if > 0)
 	static constexpr uint32_t cmdCircleResolution = 100;
 };
 

@@ -32,15 +32,14 @@
 #define RMLUI_SYSTEMINTERFACE_H
 
 
+#include "Rml/SolLua/TranslationTable.h"
+
 #include <RmlUi/Core/Input.h>
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
 #include <SDL.h>
 
-#include "Rml/SolLua/TranslationTable.h"
-
-class RmlSystemInterface : public Rml::SystemInterface
-{
+class RmlSystemInterface : public Rml::SystemInterface {
 public:
 	RmlSystemInterface();
 	~RmlSystemInterface();
@@ -89,28 +88,27 @@ private:
 };
 
 // not named "Rml" or "RmlSDL" to avoid name collision with the original Rml lib files
-namespace RmlSDLRecoil
-{
+namespace RmlSDLRecoil {
 
-	// Applies input on the context based on the given SDL event.
-	// @return True if the event is still propagating, false if it was handled by the context.
-	bool InputEventHandler(Rml::Context* context, const SDL_Event& ev);
-	bool EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key);
-	bool EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key);
-	bool EventTextInput(Rml::Context* context, const std::string& text);
-	bool EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y);
-	bool EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button);
-	bool EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button);
-	bool EventMouseWheel(Rml::Context* context, float delta);
+// Applies input on the context based on the given SDL event.
+// @return True if the event is still propagating, false if it was handled by the context.
+bool InputEventHandler(Rml::Context* context, const SDL_Event& ev);
+bool EventKeyDown(Rml::Context* context, Rml::Input::KeyIdentifier key);
+bool EventKeyUp(Rml::Context* context, Rml::Input::KeyIdentifier key);
+bool EventTextInput(Rml::Context* context, const std::string& text);
+bool EventMouseMove(Rml::Context* context, Sint32 x, Sint32 y);
+bool EventMousePress(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button);
+bool EventMouseRelease(Rml::Context* context, Sint32 x, Sint32 y, Sint32 button);
+bool EventMouseWheel(Rml::Context* context, float delta);
 
-	// Converts the SDL key to RmlUi key.
-	Rml::Input::KeyIdentifier ConvertKey(int sdl_key);
+// Converts the SDL key to RmlUi key.
+Rml::Input::KeyIdentifier ConvertKey(int sdl_key);
 
-	// Converts the SDL mouse button to RmlUi mouse button.
-	int ConvertMouseButton(int sdl_mouse_button);
+// Converts the SDL mouse button to RmlUi mouse button.
+int ConvertMouseButton(int sdl_mouse_button);
 
-	// Returns the active RmlUi key modifier state.
-	int GetKeyModifierState();
+// Returns the active RmlUi key modifier state.
+int GetKeyModifierState();
 
-}  // namespace RmlSDLRecoil
-#endif  // RMLUI_SYSTEMINTERFACE_H
+} // namespace RmlSDLRecoil
+#endif // RMLUI_SYSTEMINTERFACE_H

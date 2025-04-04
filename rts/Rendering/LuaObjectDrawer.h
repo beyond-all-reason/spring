@@ -23,6 +23,7 @@ class LuaMatShader;
 class LuaObjectDrawer {
 public:
 	static bool InDrawPass() { return inDrawPass; }
+
 	static void DrawDeferredPass(LuaObjType objType);
 
 	static bool DrawSingleObjectCommon(const CSolidObject* obj, LuaObjType objType, bool applyTrans);
@@ -50,18 +51,25 @@ public:
 
 	static int GetBinObjTeam() { return binObjTeam; }
 
-	static float GetLODScale          (int objType) { return (LODScale[objType]                              ); }
-	static float GetLODScaleShadow    (int objType) { return (LODScale[objType] * LODScaleShadow    [objType]); }
+	static float GetLODScale(int objType) { return (LODScale[objType]); }
+
+	static float GetLODScaleShadow(int objType) { return (LODScale[objType] * LODScaleShadow[objType]); }
+
 	static float GetLODScaleReflection(int objType) { return (LODScale[objType] * LODScaleReflection[objType]); }
+
 	static float GetLODScaleRefraction(int objType) { return (LODScale[objType] * LODScaleRefraction[objType]); }
 
-	static float SetLODScale          (int objType, float v) { return (LODScale          [objType] = v); }
-	static float SetLODScaleShadow    (int objType, float v) { return (LODScaleShadow    [objType] = v); }
+	static float SetLODScale(int objType, float v) { return (LODScale[objType] = v); }
+
+	static float SetLODScaleShadow(int objType, float v) { return (LODScaleShadow[objType] = v); }
+
 	static float SetLODScaleReflection(int objType, float v) { return (LODScaleReflection[objType] = v); }
+
 	static float SetLODScaleRefraction(int objType, float v) { return (LODScaleRefraction[objType] = v); }
 
 	static LuaMatType GetDrawPassOpaqueMat();
 	static LuaMatType GetDrawPassAlphaMat();
+
 	static LuaMatType GetDrawPassShadowMat() { return LUAMAT_SHADOW; }
 
 	// shared by {Unit,Feature}Drawer
@@ -71,25 +79,21 @@ public:
 
 private:
 	static void DrawMaterialBins(LuaObjType objType, LuaMatType matType, bool deferredPass);
-	static void DrawMaterialBin(
-		const LuaMatBin* currBin,
-		const LuaMaterial* prevMat,
-		LuaObjType objType,
-		LuaMatType matType,
-		bool deferredPass,
-		bool alphaMatBin
-	);
+	static void DrawMaterialBin(const LuaMatBin* currBin,
+	    const LuaMaterial* prevMat,
+	    LuaObjType objType,
+	    LuaMatType matType,
+	    bool deferredPass,
+	    bool alphaMatBin);
 
-	static void DrawBinObject(
-		const CSolidObject* obj,
-		LuaObjType objType,
-		const LuaObjectLODMaterial* lodMat,
-		const LuaMaterial* luaMat,
-		bool deferredPass,
-		bool alphaMatBin,
-		bool applyTrans,
-		bool noLuaCall
-	);
+	static void DrawBinObject(const CSolidObject* obj,
+	    LuaObjType objType,
+	    const LuaObjectLODMaterial* lodMat,
+	    const LuaMaterial* luaMat,
+	    bool deferredPass,
+	    bool alphaMatBin,
+	    bool applyTrans,
+	    bool noLuaCall);
 
 private:
 	static GL::GeometryBuffer* geomBuffer;
@@ -119,4 +123,3 @@ private:
 };
 
 #endif
-

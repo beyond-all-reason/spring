@@ -5,21 +5,20 @@
 
 #include "System/Info.h"
 
-//#include "System/creg/creg_cond.h"
+// #include "System/creg/creg_cond.h"
 
 #include <array>
-#include <vector>
 #include <string>
+#include <vector>
 
 /**
  * Handles all Lua AI implementation relevant stuff.
  */
-class CLuaAIImplHandler
-{
-//	CR_DECLARE(CLuaAIImplHandler);
+class CLuaAIImplHandler {
+	//	CR_DECLARE(CLuaAIImplHandler);
 
 public:
-	typedef std::vector< std::array<InfoItem, 4> > InfoItemVector;
+	typedef std::vector<std::array<InfoItem, 4>> InfoItemVector;
 
 	/**
 	 * Fetcher for the singleton.

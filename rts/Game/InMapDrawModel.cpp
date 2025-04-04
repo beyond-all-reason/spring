@@ -5,14 +5,13 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
-#include "Net/Protocol/BaseNetProtocol.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
+#include "Net/Protocol/BaseNetProtocol.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/EventHandler.h"
-#include "System/creg/STL_List.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/creg/STL_List.h"
 
 
 CInMapDrawModel* inMapDrawerModel = nullptr;
@@ -21,14 +20,12 @@ const size_t CInMapDrawModel::DRAW_QUAD_SIZE = 32;
 
 const float CInMapDrawModel::QUAD_SCALE = 1.0f / (DRAW_QUAD_SIZE * SQUARE_SIZE);
 
-
-
 CInMapDrawModel::CInMapDrawModel()
-	: drawQuadsX(mapDims.mapx / DRAW_QUAD_SIZE)
-	, drawQuadsY(mapDims.mapy / DRAW_QUAD_SIZE)
-	, drawAllMarks(false)
-	, numPoints(0)
-	, numLines(0)
+    : drawQuadsX(mapDims.mapx / DRAW_QUAD_SIZE)
+    , drawQuadsY(mapDims.mapy / DRAW_QUAD_SIZE)
+    , drawAllMarks(false)
+    , numPoints(0)
+    , numLines(0)
 {
 	drawQuads.resize(drawQuadsX * drawQuadsY);
 
@@ -39,8 +36,6 @@ CInMapDrawModel::CInMapDrawModel()
 		}
 	}
 }
-
-
 
 bool CInMapDrawModel::MapDrawPrimitive::IsVisibleToPlayer(bool drawAllMarks) const
 {
@@ -53,11 +48,10 @@ bool CInMapDrawModel::MapDrawPrimitive::IsVisibleToPlayer(bool drawAllMarks) con
 	return (gu->spectating || drawAllMarks || (!spectator && alliedAB && alliedBA));
 }
 
-
 bool CInMapDrawModel::AllowedMsg(const CPlayer* sender) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const int  allyTeam  = teamHandler.AllyTeam(sender->team);
+	const int allyTeam = teamHandler.AllyTeam(sender->team);
 
 	const bool alliedAB = teamHandler.Ally(allyTeam, gu->myAllyTeam);
 	const bool alliedBA = teamHandler.Ally(gu->myAllyTeam, allyTeam);
@@ -68,7 +62,6 @@ bool CInMapDrawModel::AllowedMsg(const CPlayer* sender) const
 	// it due to drawAllMarks mode considerations
 	return (gu->spectating || (!sender->spectator && alliedMsg));
 }
-
 
 bool CInMapDrawModel::AddPoint(const float3& constPos, const std::string& label, int playerID)
 {
@@ -96,15 +89,13 @@ bool CInMapDrawModel::AddPoint(const float3& constPos, const std::string& label,
 	// rendering the quads)
 	MapPoint point(sender->spectator, sender->team, sender, pos, label);
 
-	const int quad = int(pos.z * QUAD_SCALE) * drawQuadsX +
-	                 int(pos.x * QUAD_SCALE);
+	const int quad = int(pos.z * QUAD_SCALE) * drawQuadsX + int(pos.x * QUAD_SCALE);
 	drawQuads[quad].points.push_back(point);
 
 	numPoints++;
 
 	return true;
 }
-
 
 bool CInMapDrawModel::AddLine(const float3& constPos1, const float3& constPos2, int playerID)
 {
@@ -129,15 +120,13 @@ bool CInMapDrawModel::AddLine(const float3& constPos1, const float3& constPos2, 
 
 	MapLine line(sender->spectator, sender->team, sender, pos1, pos2);
 
-	const int quad = int(pos1.z * QUAD_SCALE) * drawQuadsX +
-	                 int(pos1.x * QUAD_SCALE);
+	const int quad = int(pos1.z * QUAD_SCALE) * drawQuadsX + int(pos1.x * QUAD_SCALE);
 	drawQuads[quad].lines.push_back(line);
 
 	numLines++;
 
 	return true;
 }
-
 
 void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool alwaysErase)
 {
@@ -154,17 +143,18 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool
 	pos.ClampInBounds();
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 2.0f;
 
-	if ((alwaysErase || AllowedMsg(sender)) && eventHandler.MapDrawCmd(playerID, MAPDRAW_ERASE, &pos, nullptr, nullptr)) {
+	if ((alwaysErase || AllowedMsg(sender)) &&
+	    eventHandler.MapDrawCmd(playerID, MAPDRAW_ERASE, &pos, nullptr, nullptr)) {
 		return;
 	}
 
 	const float radius = 100.0f;
 	const int maxY = drawQuadsY - 1;
 	const int maxX = drawQuadsX - 1;
-	const int yStart = (int) std::max(0,    int((pos.z - radius) * QUAD_SCALE));
-	const int xStart = (int) std::max(0,    int((pos.x - radius) * QUAD_SCALE));
-	const int yEnd   = (int) std::min(maxY, int((pos.z + radius) * QUAD_SCALE));
-	const int xEnd   = (int) std::min(maxX, int((pos.x + radius) * QUAD_SCALE));
+	const int yStart = (int)std::max(0, int((pos.z - radius) * QUAD_SCALE));
+	const int xStart = (int)std::max(0, int((pos.x - radius) * QUAD_SCALE));
+	const int yEnd = (int)std::min(maxY, int((pos.z + radius) * QUAD_SCALE));
+	const int xEnd = (int)std::min(maxX, int((pos.x + radius) * QUAD_SCALE));
 
 	for (int y = yStart; y <= yEnd; ++y) {
 		for (int x = xStart; x <= xEnd; ++x) {
@@ -173,11 +163,13 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool
 			// use explicit indexing, MSVC chokes on iterator manipulation
 			for (size_t pii = 0; pii < dq->points.size(); /* none */) {
 				auto pi = &dq->points[pii];
-				if (pi->GetPos().SqDistance2D(pos) < (radius*radius) && (alwaysErase || (pi->IsBySpectator() == sender->spectator))) {
+				if (pi->GetPos().SqDistance2D(pos) < (radius * radius) &&
+				    (alwaysErase || (pi->IsBySpectator() == sender->spectator))) {
 					*pi = dq->points.back();
 					dq->points.pop_back();
 					numPoints--;
-				} else {
+				}
+				else {
 					++pii;
 				}
 			}
@@ -186,18 +178,19 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool
 			for (size_t lii = 0; lii < dq->lines.size(); /* none */) {
 				auto li = &dq->lines[lii];
 				// TODO maybe erase on pos2 too?
-				if (li->GetPos1().SqDistance2D(pos) < (radius*radius) && (alwaysErase || (li->IsBySpectator() == sender->spectator))) {
+				if (li->GetPos1().SqDistance2D(pos) < (radius * radius) &&
+				    (alwaysErase || (li->IsBySpectator() == sender->spectator))) {
 					*li = dq->lines.back();
 					dq->lines.pop_back();
 					numLines--;
-				} else {
+				}
+				else {
 					++lii;
 				}
 			}
 		}
 	}
 }
-
 
 void CInMapDrawModel::EraseAll()
 {
@@ -210,9 +203,8 @@ void CInMapDrawModel::EraseAll()
 	numLines = 0;
 
 	// TODO check if this is needed
-	//visibleLabels.clear();
+	// visibleLabels.clear();
 }
-
 
 const CInMapDrawModel::DrawQuad* CInMapDrawModel::GetDrawQuad(int x, int y) const
 {

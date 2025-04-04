@@ -3,22 +3,22 @@
 #ifndef _COMMAND_AI_H
 #define _COMMAND_AI_H
 
-#include <functional>
-#include <vector>
-
-#include "System/Object.h"
 #include "CommandDescription.h"
 #include "CommandQueue.h"
-#include "System/float3.h"
+
+#include "System/Object.h"
 #include "System/UnorderedSet.hpp"
+#include "System/float3.h"
+
+#include <functional>
+#include <vector>
 
 class CUnit;
 class CFeature;
 class CWeapon;
 struct Command;
 
-class CCommandAI : public CObject
-{
+class CCommandAI : public CObject {
 	CR_DECLARE(CCommandAI)
 
 public:
@@ -26,7 +26,7 @@ public:
 	CCommandAI();
 	virtual ~CCommandAI();
 
-	void* GetPreallocContainer() { return owner; }  // creg
+	void* GetPreallocContainer() { return owner; } // creg
 
 	void DependentDied(CObject* o);
 
@@ -41,19 +41,21 @@ public:
 	void ClearCommandDependencies();
 
 	// these both feed into GiveCommandReal()
-	void GiveCommand(const Command& c,                bool fromSynced = true              ); // sim
-	void GiveCommand(const Command& c, int playerNum, bool fromSynced       , bool fromLua); // net,Lua
+	void GiveCommand(const Command& c, bool fromSynced = true);                       // sim
+	void GiveCommand(const Command& c, int playerNum, bool fromSynced, bool fromLua); // net,Lua
 
 	void ClearTargetLock(const Command& fc);
 	void WeaponFired(CWeapon* weapon, const bool searchForNewTarget, bool raiseEvent = true);
 
 	virtual bool CanWeaponAutoTarget(const CWeapon* weapon) const { return true; }
+
 	virtual int GetDefaultCmd(const CUnit* pointed, const CFeature* feature);
 	virtual void SlowUpdate();
 	virtual void GiveCommandReal(const Command& c, bool fromSynced = true);
 	virtual void FinishCommand();
 
 	virtual void BuggerOff(const float3& pos, float radius) {}
+
 	virtual void StopMove() {}
 
 	void StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred);
@@ -132,9 +134,11 @@ public:
 	bool repeatOrders;
 	int lastSelectedCommandPage;
 	int inCommand;
+
 protected:
 	bool HandleBuildOptionInsertion(int cmdId);
 	bool HandleBuildOptionRemoval(int cmdId);
+
 	// return true by default so non-AirCAI's trigger FinishCommand
 	virtual bool SelectNewAreaAttackTargetOrPos(const Command& ac) { return true; }
 
@@ -164,7 +168,8 @@ private:
 	int targetLostTimer;
 };
 
-inline void CCommandAI::SetOrderTarget(CUnit* o) {
+inline void CCommandAI::SetOrderTarget(CUnit* o)
+{
 	if (orderTarget != NULL) {
 		// NOTE As we do not include Unit.h,
 		//   the compiler does not know that CUnit derives from CObject,

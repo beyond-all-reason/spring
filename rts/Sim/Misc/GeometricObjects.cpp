@@ -1,23 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "System/creg/STL_Map.h"
 #include "GeometricObjects.h"
+
 #include "Map/ReadMap.h"
+#include "Rendering/Env/Particles/Classes/GeoSquareProjectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
-#include "Rendering/Env/Particles/Classes/GeoSquareProjectile.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/creg/STL_Map.h"
 
 CR_BIND(CGeometricObjects, )
 CR_BIND(CGeometricObjects::GeoGroup, )
 
-CR_REG_METADATA(CGeometricObjects, (
-	CR_MEMBER(geoGroups),
-	CR_MEMBER(timedGroups),
-	CR_MEMBER(firstFreeGroup)
-))
+CR_REG_METADATA(CGeometricObjects, (CR_MEMBER(geoGroups), CR_MEMBER(timedGroups), CR_MEMBER(firstFreeGroup)))
 
 CR_REG_METADATA_SUB(CGeometricObjects, GeoGroup, (CR_MEMBER(squares)))
 
@@ -33,7 +29,14 @@ CGeometricObjects::~CGeometricObjects()
 	}
 }
 
-int CGeometricObjects::AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, float width, int arrow, int lifeTime, int group)
+int CGeometricObjects::AddSpline(float3 b1,
+    float3 b2,
+    float3 b3,
+    float3 b4,
+    float width,
+    int arrow,
+    int lifeTime,
+    int group)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (group == 0)
@@ -44,7 +47,7 @@ int CGeometricObjects::AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, flo
 	old2 = CalcSpline(0.05f, b1, b2, b3, b4);
 
 	for (int a = 0; a < 20; ++a) {
-		const float3 np = CalcSpline(a*0.05f + 0.1f, b1, b2, b3, b4);
+		const float3 np = CalcSpline(a * 0.05f + 0.1f, b1, b2, b3, b4);
 		const float3 dir1 = (old2 - old1).ANormalize();
 		const float3 dir2 = (np - old2).ANormalize();
 
@@ -52,7 +55,8 @@ int CGeometricObjects::AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, flo
 		if ((arrow == 1) && (a == 19)) {
 			w1 = width;
 			w2 = 0;
-		} else {
+		}
+		else {
 			w1 = width * 0.5f;
 			w2 = w1;
 		}
@@ -68,7 +72,6 @@ int CGeometricObjects::AddSpline(float3 b1, float3 b2, float3 b3, float3 b4, flo
 	return group;
 }
 
-
 void CGeometricObjects::DeleteGroup(int group)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -81,7 +84,6 @@ void CGeometricObjects::DeleteGroup(int group)
 	geoGroups.erase(group);
 }
 
-
 void CGeometricObjects::SetColor(int group, float r, float g, float b, float a)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -92,16 +94,14 @@ void CGeometricObjects::SetColor(int group, float r, float g, float b, float a)
 	}
 }
 
-
 float3 CGeometricObjects::CalcSpline(float i, const float3& p1, const float3& p2, const float3& p3, const float3& p4)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	float ni = 1 - i;
 
-	float3 res = p1*ni*ni*ni + p2*3*i*ni*ni + p3*3*i*i*ni + p4*i*i*i;
+	float3 res = p1 * ni * ni * ni + p2 * 3 * i * ni * ni + p3 * 3 * i * i * ni + p4 * i * i * i;
 	return res;
 }
-
 
 int CGeometricObjects::AddLine(float3 start, float3 end, float width, int arrow, int lifetime, int group)
 {
@@ -111,14 +111,16 @@ int CGeometricObjects::AddLine(float3 start, float3 end, float width, int arrow,
 
 	float3 dir = (end - start).SafeANormalize();
 	if (arrow) {
-		CGeoSquareProjectile* gsp = projMemPool.alloc<CGeoSquareProjectile>(start, start*0.2f + end*0.8f, dir, dir, width*0.5f, width*0.5f);
+		CGeoSquareProjectile* gsp = projMemPool.alloc<CGeoSquareProjectile>(
+		    start, start * 0.2f + end * 0.8f, dir, dir, width * 0.5f, width * 0.5f);
 		geoGroups[group].squares.push_back(gsp);
 
-		gsp = projMemPool.alloc<CGeoSquareProjectile>(start*0.2f + end*0.8f, end, dir, dir, width, 0);
+		gsp = projMemPool.alloc<CGeoSquareProjectile>(start * 0.2f + end * 0.8f, end, dir, dir, width, 0);
 		geoGroups[group].squares.push_back(gsp);
-
-	} else {
-		CGeoSquareProjectile* gsp = projMemPool.alloc<CGeoSquareProjectile>(start, end, dir, dir, width*0.5f, width*0.5f);
+	}
+	else {
+		CGeoSquareProjectile* gsp =
+		    projMemPool.alloc<CGeoSquareProjectile>(start, end, dir, dir, width * 0.5f, width * 0.5f);
 		geoGroups[group].squares.push_back(gsp);
 	}
 
@@ -127,7 +129,6 @@ int CGeometricObjects::AddLine(float3 start, float3 end, float width, int arrow,
 
 	return group;
 }
-
 
 void CGeometricObjects::Update()
 {
@@ -144,13 +145,12 @@ void CGeometricObjects::Update()
 	timedGroups.erase(iter->first);
 }
 
-
 void CGeometricObjects::MarkSquare(int mapSquare)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 startPos;
-	startPos.x = (int) (mapSquare * SQUARE_SIZE) % mapDims.mapx;
-	startPos.z = (int) (mapSquare * SQUARE_SIZE) / mapDims.mapx;
+	startPos.x = (int)(mapSquare * SQUARE_SIZE) % mapDims.mapx;
+	startPos.z = (int)(mapSquare * SQUARE_SIZE) / mapDims.mapx;
 	startPos.y = readMap->GetCenterHeightMapSynced()[mapSquare];
 
 	float3 endPos = startPos;
@@ -163,4 +163,3 @@ void CGeometricObjects::MarkSquare(int mapSquare)
 	endPos.x -= SQUARE_SIZE;
 	AddLine(startPos, endPos, 3, 0, 1000);
 }
-

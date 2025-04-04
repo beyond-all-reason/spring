@@ -1,32 +1,29 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "MusicStream.h"
 
-#include "System/Sound/SoundLog.h"
-#include "System/SafeUtil.h"
 #include "ALShared.h"
 #include "VorbisShared.h"
+
+#include "System/SafeUtil.h"
+#include "System/Sound/SoundLog.h"
 
 #include <filesystem>
 #include <string_view>
 #include <variant>
 
-
 MusicStream::MusicStream()
-	: buffers{}
-	, source(0)
-	, format(AL_FORMAT_MONO16)
-	, stopped(true)
-	, paused(false)
-	, msecsPlayed(spring_nulltime)
-	, lastTick(spring_nulltime)
-	, totalTime(0.0f)
+    : buffers{}
+    , source(0)
+    , format(AL_FORMAT_MONO16)
+    , stopped(true)
+    , paused(false)
+    , msecsPlayed(spring_nulltime)
+    , lastTick(spring_nulltime)
+    , totalTime(0.0f)
 {
 }
 
-MusicStream::~MusicStream()
-{
-	Stop();
-}
+MusicStream::~MusicStream() { Stop(); }
 
 // open a music stream from a given file and start playing it
 void MusicStream::Play(const std::string& path, float volume, ALuint src)
@@ -47,7 +44,8 @@ void MusicStream::Play(const std::string& path, float volume, ALuint src)
 
 	if (fileBuffer.GetFileExt() == std::string_view{"mp3"}) {
 		decoder = Mp3Decoder();
-	} else {
+	}
+	else {
 		assert(fileBuffer.GetFileExt() == "ogg");
 		decoder = OggDecoder();
 	}
@@ -58,9 +56,8 @@ void MusicStream::Play(const std::string& path, float volume, ALuint src)
 		fileBuffer.Read(buf.data(), fileBuffer.FileSize());
 	}
 
-	const bool loaded = std::visit([&](auto&& d) {
-			return d.LoadData(fileBuffer.GetBuffer().data(), fileBuffer.FileSize());
-			} , decoder);
+	const bool loaded =
+	    std::visit([&](auto&& d) { return d.LoadData(fileBuffer.GetBuffer().data(), fileBuffer.FileSize()); }, decoder);
 	if (!loaded) {
 		LOG_L(L_ERROR, "[MusicStream::Play] Could not load file: %s", path.c_str());
 		source = 0; // invalidate
@@ -77,12 +74,12 @@ void MusicStream::Play(const std::string& path, float volume, ALuint src)
 	CheckError("[MusicStream::Play][1]");
 
 	if (!StartPlaying()) {
-		LOG_L(L_ERROR, "[MusicStream::Play] Failed to decode: %s",
-			  path.c_str());
+		LOG_L(L_ERROR, "[MusicStream::Play] Failed to decode: %s", path.c_str());
 		ReleaseBuffers();
-	} else {
+	}
+	else {
 		stopped = false;
-		paused  = false;
+		paused = false;
 	}
 
 	CheckError("[MusicStream::Play][2]");
@@ -133,25 +130,25 @@ void MusicStream::ReleaseBuffers()
 	assert(IsFinished());
 }
 
-
 // returns true if both buffers were
 // filled with data from the stream
 bool MusicStream::StartPlaying()
 {
 	msecsPlayed = spring_nulltime;
 	lastTick = spring_gettime();
-	
+
 	if (!DecodeStream(buffers[0])) {
 		return false;
 	}
-	
+
 	int numDecodedStreams = 1;
 	if (DecodeStream(buffers[1])) {
 		++numDecodedStreams;
-	} else {
+	}
+	else {
 		// small file or broken stream
 	}
-	
+
 	alSourceQueueBuffers(source, numDecodedStreams, buffers.data());
 
 	// CheckError returns true if *no* error occurred
@@ -161,7 +158,6 @@ bool MusicStream::StartPlaying()
 	alSourcePlay(source);
 	return (CheckError("[MusicStream::StartPlaying][2]"));
 }
-
 
 // returns true if we're still playing
 bool MusicStream::IsPlaying()
@@ -179,7 +175,6 @@ bool MusicStream::TogglePause()
 
 	return paused;
 }
-
 
 // pop the processed buffers from the queue,
 // refill them, and push them back in line
@@ -206,7 +201,6 @@ bool MusicStream::UpdateBuffers()
 	return (active && CheckError("[MusicStream::UpdateBuffers][3]"));
 }
 
-
 void MusicStream::Update()
 {
 	if (stopped)
@@ -228,7 +222,6 @@ void MusicStream::Update()
 	lastTick = tick;
 }
 
-
 // read decoded data from audio stream into PCM buffer
 bool MusicStream::DecodeStream(ALuint buffer)
 {
@@ -240,8 +233,8 @@ bool MusicStream::DecodeStream(ALuint buffer)
 
 	while (size < static_cast<int>(pcmDecodeBuffer.size())) {
 		result = std::visit([&](auto&& d) {
-				return d.Read(pcmDecodeBuffer.data() + size, pcmDecodeBuffer.size() - size, 0, 2, 1, &section);
-				}, decoder);
+			return d.Read(pcmDecodeBuffer.data() + size, pcmDecodeBuffer.size() - size, 0, 2, 1, &section);
+		}, decoder);
 
 		if (result > 0) {
 			size += result;
@@ -263,7 +256,6 @@ bool MusicStream::DecodeStream(ALuint buffer)
 	alBufferData(buffer, format, pcmDecodeBuffer.data(), size, rate);
 	return (CheckError("[MusicStream::DecodeStream]"));
 }
-
 
 // dequeue any buffers pending on source (unused, see ReleaseBuffers)
 void MusicStream::EmptyBuffers()

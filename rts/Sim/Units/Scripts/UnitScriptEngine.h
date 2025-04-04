@@ -5,17 +5,15 @@
 #ifndef UNIT_SCRIPT_ENGINE_H
 #define UNIT_SCRIPT_ENGINE_H
 
-#include <vector>
-
 #include "System/creg/creg_cond.h"
+
+#include <vector>
 
 struct UnitDef;
 class CUnit;
 class CUnitScript;
 
-
-class CUnitScriptEngine
-{
+class CUnitScriptEngine {
 	CR_DECLARE_STRUCT(CUnitScriptEngine)
 
 public:
@@ -26,10 +24,12 @@ public:
 	void Tick(int deltaTime);
 
 	void Init() { animating.reserve(256); }
+
 	void Kill() { animating.clear(); }
 
 	static void InitStatic();
 	static void KillStatic();
+
 private:
 	CUnitScript* currentScript = nullptr;
 

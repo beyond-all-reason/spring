@@ -6,8 +6,7 @@
 #include "RmlUi/Core/FileInterface.h"
 #include "RmlUi/Core/Types.h"
 
-class VFSFileInterface : public Rml::FileInterface
-{
+class VFSFileInterface : public Rml::FileInterface {
 public:
 	VFSFileInterface();
 	Rml::FileHandle Open(const Rml::String& path) override;
@@ -16,4 +15,4 @@ public:
 	bool Seek(Rml::FileHandle file, long offset, int origin) override;
 	size_t Tell(Rml::FileHandle file) override;
 };
-#endif  // RMLUI_VFSFILEINTERFACE_H
+#endif // RMLUI_VFSFILEINTERFACE_H

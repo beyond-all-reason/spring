@@ -77,6 +77,6 @@ typedef SizedUnsignedInteger<32>::Type uint32_t;
 typedef SizedInteger<64>::Type int64_t;
 typedef SizedUnsignedInteger<64>::Type uint64_t;
 
-}
+} // namespace streflop
 
 #endif

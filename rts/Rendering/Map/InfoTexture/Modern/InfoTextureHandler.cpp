@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "InfoTextureHandler.h"
+
 #include "AirLos.h"
 #include "Combiner.h"
 #include "Height.h"
@@ -11,9 +12,6 @@
 #include "Radar.h"
 
 #include "System/Misc/TracyDefs.h"
-
-
-
 
 CInfoTextureHandler::CInfoTextureHandler()
 {
@@ -35,7 +33,6 @@ CInfoTextureHandler::CInfoTextureHandler()
 	// Update();
 }
 
-
 CInfoTextureHandler::~CInfoTextureHandler()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -45,13 +42,11 @@ CInfoTextureHandler::~CInfoTextureHandler()
 	infoTextureHandler = nullptr;
 }
 
-
 void CInfoTextureHandler::AddInfoTexture(CPboInfoTexture* itex)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	infoTextures[itex->GetName()] = itex;
 }
-
 
 const CInfoTexture* CInfoTextureHandler::GetInfoTextureConst(const std::string& name) const
 {
@@ -72,13 +67,11 @@ CInfoTexture* CInfoTextureHandler::GetInfoTexture(const std::string& name)
 	return (const_cast<CInfoTexture*>(GetInfoTextureConst(name)));
 }
 
-
 bool CInfoTextureHandler::IsEnabled() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (infoTex->IsEnabled());
 }
-
 
 void CInfoTextureHandler::DisableCurrentMode()
 {
@@ -86,23 +79,22 @@ void CInfoTextureHandler::DisableCurrentMode()
 	if (returnToLOS && (GetMode() != "los")) {
 		// return to LOS-mode if it was active before
 		SetMode("los");
-	} else {
+	}
+	else {
 		// otherwise disable overlay entirely
 		SetMode("");
 	}
 }
 
-
 void CInfoTextureHandler::SetMode(const std::string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	returnToLOS &= (name !=      ""); // NOLINT(readability-container-size-empty)
-	returnToLOS |= (name ==   "los");
-	inMetalMode  = (name == "metal");
+	returnToLOS &= (name != ""); // NOLINT(readability-container-size-empty)
+	returnToLOS |= (name == "los");
+	inMetalMode = (name == "metal");
 
 	infoTex->SwitchMode(name);
 }
-
 
 void CInfoTextureHandler::ToggleMode(const std::string& name)
 {
@@ -112,7 +104,6 @@ void CInfoTextureHandler::ToggleMode(const std::string& name)
 
 	SetMode(name);
 }
-
 
 const std::string& CInfoTextureHandler::GetMode() const
 {
@@ -132,7 +123,6 @@ int2 CInfoTextureHandler::GetCurrentInfoTextureSize() const
 	return (infoTex->GetTexSize());
 }
 
-
 void CInfoTextureHandler::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -149,4 +139,3 @@ void CInfoTextureHandler::Update()
 
 	firstUpdate = false;
 }
-

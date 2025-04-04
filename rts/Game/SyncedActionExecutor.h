@@ -9,14 +9,13 @@
 
 class Action;
 
-
-class SyncedAction : public IAction
-{
+class SyncedAction : public IAction {
 public:
 	SyncedAction(const Action& action, int playerID)
-		: IAction(action)
-		, playerID(playerID)
-	{}
+	    : IAction(action)
+	    , playerID(playerID)
+	{
+	}
 
 	/**
 	 * Returns the normalized key symbol.
@@ -27,12 +26,12 @@ private:
 	int playerID;
 };
 
-class ISyncedActionExecutor : public IActionExecutor<SyncedAction, true>
-{
+class ISyncedActionExecutor : public IActionExecutor<SyncedAction, true> {
 protected:
 	ISyncedActionExecutor(const std::string& command, const std::string& description, bool cheatRequired = false)
-		: IActionExecutor<SyncedAction, true>(command, description, cheatRequired)
-	{}
+	    : IActionExecutor<SyncedAction, true>(command, description, cheatRequired)
+	{
+	}
 
 public:
 	virtual ~ISyncedActionExecutor() {}

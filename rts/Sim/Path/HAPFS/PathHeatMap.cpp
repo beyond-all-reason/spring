@@ -1,37 +1,41 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "PathHeatMap.h"
+
 #include "PathConstants.h"
 #include "PathManager.h"
+
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Objects/SolidObject.h"
-
 #include "System/Misc/TracyDefs.h"
 
 namespace HAPFS {
 
 PathHeatMap gPathHeatMap;
 
-void PathHeatMap::FreeInstance(PathHeatMap* phm) {
+void PathHeatMap::FreeInstance(PathHeatMap* phm)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(phm == &gPathHeatMap);
 	phm->Kill();
 }
 
-void PathHeatMap::Init(unsigned int scalex, unsigned int scalez) {
+void PathHeatMap::Init(unsigned int scalex, unsigned int scalez)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	xscale = std::max(1, std::min(mapDims.hmapx, int(scalex)));
 	zscale = std::max(1, std::min(mapDims.hmapy, int(scalez)));
-	xsize  = mapDims.hmapx / xscale;
-	zsize  = mapDims.hmapy / zscale;
+	xsize = mapDims.hmapx / xscale;
+	zsize = mapDims.hmapy / zscale;
 
 	heatMapOffset = 0;
 
 	heatMap.resize(xsize * zsize);
 }
 
-unsigned int PathHeatMap::GetHeatMapIndex(unsigned int hmx, unsigned int hmz) const {
+unsigned int PathHeatMap::GetHeatMapIndex(unsigned int hmx, unsigned int hmz) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!heatMap.empty());
 
@@ -42,7 +46,8 @@ unsigned int PathHeatMap::GetHeatMapIndex(unsigned int hmx, unsigned int hmz) co
 	return (hmz * xsize + hmx);
 }
 
-void PathHeatMap::AddHeat(const CSolidObject* owner, const CPathManager* pm, unsigned int pathID) {
+void PathHeatMap::AddHeat(const CSolidObject* owner, const CPathManager* pm, unsigned int pathID)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (pathID == 0)
 		return;
@@ -85,7 +90,8 @@ void PathHeatMap::AddHeat(const CSolidObject* owner, const CPathManager* pm, uns
 	}
 }
 
-void PathHeatMap::UpdateHeatValue(unsigned int x, unsigned int y, unsigned int value, unsigned int ownerID) {
+void PathHeatMap::UpdateHeatValue(unsigned int x, unsigned int y, unsigned int value, unsigned int ownerID)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const unsigned int idx = GetHeatMapIndex(x, y);
 
@@ -95,7 +101,8 @@ void PathHeatMap::UpdateHeatValue(unsigned int x, unsigned int y, unsigned int v
 	}
 }
 
-float PathHeatMap::GetHeatCost(unsigned int x, unsigned int z, const MoveDef& md, unsigned int ownerID) const {
+float PathHeatMap::GetHeatCost(unsigned int x, unsigned int z, const MoveDef& md, unsigned int ownerID) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float c = 0.0f;
 
@@ -103,7 +110,7 @@ float PathHeatMap::GetHeatCost(unsigned int x, unsigned int z, const MoveDef& md
 		return c;
 
 	const unsigned int idx = GetHeatMapIndex(x, z);
-	const unsigned int val = (heatMapOffset >= heatMap[idx].value)? 0: (heatMap[idx].value - heatMapOffset);
+	const unsigned int val = (heatMapOffset >= heatMap[idx].value) ? 0 : (heatMap[idx].value - heatMapOffset);
 
 	if (heatMap[idx].ownerID != ownerID)
 		c = (md.heatMod * val);
@@ -111,4 +118,4 @@ float PathHeatMap::GetHeatCost(unsigned int x, unsigned int z, const MoveDef& md
 	return c;
 }
 
-}
+} // namespace HAPFS

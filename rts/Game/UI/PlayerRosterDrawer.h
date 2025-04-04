@@ -4,8 +4,8 @@
 #define PLAYER_ROSTER_DRAWER_H
 
 class CPlayerRosterDrawer {
-	public:
-		static void Draw();
+public:
+	static void Draw();
 };
 
 #endif /* PLAYER_ROSTER_DRAWER_H */

@@ -17,20 +17,17 @@ using namespace creg;
 
 // type instance allocators
 
-void BasicType::Serialize(ISerializer* s, void* inst)
-{
-	s->SerializeInt(inst, GetSize());
-}
+void BasicType::Serialize(ISerializer* s, void* inst) { s->SerializeInt(inst, GetSize()); }
 
 std::string BasicType::GetName() const
 {
-	switch(id) {
+	switch (id) {
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
-		case crSyncedInt:   return "synced int";
-		case crSyncedFloat: return "synced float";
+	case crSyncedInt: return "synced int";
+	case crSyncedFloat: return "synced float";
 #endif
-		case crInt:   return "int";
-		case crFloat: return "float";
+	case crInt: return "int";
+	case crFloat: return "float";
 	};
 	return std::string();
 }
@@ -40,30 +37,15 @@ std::unique_ptr<IType> IType::CreateBasicType(BasicTypeID t, size_t size)
 	return std::unique_ptr<IType>(new BasicType(t, size));
 }
 
-std::string ObjectPointerBaseType::GetName() const
-{
-	return std::string(objClass->name) + "*";
-}
+std::string ObjectPointerBaseType::GetName() const { return std::string(objClass->name) + "*"; }
 
-std::string StringType::GetName() const
-{
-	return "string";
-}
+std::string StringType::GetName() const { return "string"; }
 
-std::unique_ptr<IType> IType::CreateStringType()
-{
-	return std::unique_ptr<IType>(new StringType());
-}
+std::unique_ptr<IType> IType::CreateStringType() { return std::unique_ptr<IType>(new StringType()); }
 
-void ObjectInstanceType::Serialize(ISerializer* s, void* inst)
-{
-	s->SerializeObjectInstance(inst, objectClass);
-}
+void ObjectInstanceType::Serialize(ISerializer* s, void* inst) { s->SerializeObjectInstance(inst, objectClass); }
 
-std::string ObjectInstanceType::GetName() const
-{
-	return objectClass->name;
-}
+std::string ObjectInstanceType::GetName() const { return objectClass->name; }
 
 std::unique_ptr<IType> IType::CreateObjInstanceType(Class* objectType, size_t size)
 {
@@ -75,12 +57,6 @@ std::string StaticArrayBaseType::GetName() const
 	return elemType->GetName() + "[" + IntToString(size / elemType->GetSize()) + "]";
 }
 
-std::string DynamicArrayBaseType::GetName() const
-{
-	return elemType->GetName() + "[]";
-}
+std::string DynamicArrayBaseType::GetName() const { return elemType->GetName() + "[]"; }
 
-std::unique_ptr<IType> IType::CreateIgnoredType(size_t size)
-{
-	return std::unique_ptr<IType>(new IgnoredType(size));
-}
+std::unique_ptr<IType> IType::CreateIgnoredType(size_t size) { return std::unique_ptr<IType>(new IgnoredType(size)); }

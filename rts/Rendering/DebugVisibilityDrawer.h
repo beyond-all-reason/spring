@@ -4,8 +4,7 @@
 
 struct CDebugVisibilityDrawer;
 
-class DebugVisibilityDrawer
-{
+class DebugVisibilityDrawer {
 public:
 	static inline bool enable = false;
 	static void DrawWorld();

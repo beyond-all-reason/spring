@@ -6,19 +6,19 @@
 #include "PathCache.h"
 #include "PathEstimator.h"
 #include "PathFinder.h"
+
 #include "System/MemPoolTypes.h"
 
 namespace HAPFS {
 
 typedef DynMemPoolT<CPathCache> PCMemPool;
-//typedef DynMemPool<sizeof(CPathEstimator)> PEMemPool;
+// typedef DynMemPool<sizeof(CPathEstimator)> PEMemPool;
 typedef DynMemPoolT<CPathFinder> PFMemPool;
 
 extern PCMemPool pcMemPool;
-//extern PEMemPool peMemPool;
+// extern PEMemPool peMemPool;
 extern PFMemPool pfMemPool;
 
-}
+} // namespace HAPFS
 
 #endif
-

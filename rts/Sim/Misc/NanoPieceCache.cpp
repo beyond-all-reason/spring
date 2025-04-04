@@ -1,20 +1,17 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "NanoPieceCache.h"
+
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Units/Scripts/UnitScript.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND(NanoPieceCache, )
 
-CR_REG_METADATA(NanoPieceCache, (
-	CR_MEMBER(nanoPieces),
-	CR_MEMBER(lastNanoPieceCnt),
-	CR_MEMBER(curBuildPowerMask)
-))
+CR_REG_METADATA(NanoPieceCache, (CR_MEMBER(nanoPieces), CR_MEMBER(lastNanoPieceCnt), CR_MEMBER(curBuildPowerMask)))
 
-int NanoPieceCache::GetNanoPiece(CUnitScript* ownerScript) {
+int NanoPieceCache::GetNanoPiece(CUnitScript* ownerScript)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	curBuildPowerMask |= (1 << (MASK_BITS - 1));
 
@@ -29,7 +26,7 @@ int NanoPieceCache::GetNanoPiece(CUnitScript* ownerScript) {
 	if (lastNanoPieceCnt <= MAX_QUERYNANOPIECE_CALLS) {
 		// only do so 30 times and then use the cache
 		const int scriptPiece = ownerScript->QueryNanoPiece();
-		const int modelPiece  = ownerScript->ScriptToModel(scriptPiece);
+		const int modelPiece = ownerScript->ScriptToModel(scriptPiece);
 
 		if (ownerScript->PieceExists(scriptPiece)) {
 			nanoPiece = modelPiece;
@@ -37,15 +34,16 @@ int NanoPieceCache::GetNanoPiece(CUnitScript* ownerScript) {
 			if (std::find(nanoPieces.begin(), nanoPieces.end(), nanoPiece) != nanoPieces.end()) {
 				// already in cache
 				lastNanoPieceCnt++;
-			} else {
+			}
+			else {
 				nanoPieces.push_back(nanoPiece);
 				lastNanoPieceCnt = 0;
 			}
-		} else {
+		}
+		else {
 			lastNanoPieceCnt++;
 		}
 	}
 
 	return nanoPiece;
 }
-

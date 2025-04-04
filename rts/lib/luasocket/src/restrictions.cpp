@@ -2,12 +2,12 @@
 
 #include "restrictions.h"
 
+#include "System/Config/ConfigHandler.h"
+#include "System/Log/ILog.h"
+#include "System/SafeUtil.h"
+
 #include <cstdint>
 #include <string>
-
-#include "System/SafeUtil.h"
-#include "System/Log/ILog.h"
-#include "System/Config/ConfigHandler.h"
 
 
 #define WILDCARD_HOST "*"
@@ -17,7 +17,7 @@
 #define LOG_SECTION_LUASOCKET "LuaSocket"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_LUASOCKET)
 #ifdef LOG_SECTION_CURRENT
-	#undef LOG_SECTION_CURRENT
+#undef LOG_SECTION_CURRENT
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_LUASOCKET
 
@@ -33,18 +33,20 @@ static uint8_t luaSocketRestrictionsMem[sizeof(CLuaSocketRestrictions)];
 
 CLuaSocketRestrictions* luaSocketRestrictions = nullptr;
 
+void CLuaSocketRestrictions::InitStatic()
+{
+	luaSocketRestrictions = new (luaSocketRestrictionsMem) CLuaSocketRestrictions();
+}
 
-void CLuaSocketRestrictions::InitStatic() { luaSocketRestrictions = new (luaSocketRestrictionsMem) CLuaSocketRestrictions(); }
 void CLuaSocketRestrictions::KillStatic() { spring::SafeDestruct(luaSocketRestrictions); }
-
 
 CLuaSocketRestrictions::CLuaSocketRestrictions()
 {
 #ifndef TEST
 	addRules(TCP_CONNECT, configHandler->GetString("TCPAllowConnect"));
-	addRules(TCP_LISTEN,  configHandler->GetString("TCPAllowListen"));
+	addRules(TCP_LISTEN, configHandler->GetString("TCPAllowListen"));
 	addRules(UDP_CONNECT, configHandler->GetString("UDPAllowConnect"));
-	addRules(UDP_LISTEN,  configHandler->GetString("UDPAllowListen"));
+	addRules(UDP_LISTEN, configHandler->GetString("UDPAllowListen"));
 #endif
 }
 
@@ -54,11 +56,11 @@ CLuaSocketRestrictions::~CLuaSocketRestrictions()
 
 	for (int i = 0; i < ALL_RULES; i++) {
 		for (const TSocketRule& rule: restrictions[i]) {
-			LOG("%s %s %s %d", ruleToStr((RestrictType)i), rule.allowed ? "ALLOW" : "DENY ", rule.hostname.c_str(), rule.port);
+			LOG("%s %s %s %d", ruleToStr((RestrictType)i), rule.allowed ? "ALLOW" : "DENY ", rule.hostname.c_str(),
+			    rule.port);
 		}
 	}
 }
-
 
 void CLuaSocketRestrictions::addRule(RestrictType type, const std::string& hostname, int port, bool allowed)
 {
@@ -77,7 +79,8 @@ void CLuaSocketRestrictions::addRule(RestrictType type, const std::string& hostn
 	// add deny-rules to the front of the list
 	if (!allowed) {
 		restrictions[type].emplace_front(hostname, port, allowed);
-	} else {
+	}
+	else {
 		restrictions[type].emplace_back(hostname, port, allowed);
 	}
 }
@@ -113,7 +116,8 @@ void CLuaSocketRestrictions::addRules(RestrictType type, const std::string& conf
 		if ((isspace(ch)) && (!rule.empty())) {
 			addRule(type, rule);
 			rule = "";
-		} else {
+		}
+		else {
 			rule += ch;
 		}
 	}
@@ -127,12 +131,13 @@ void CLuaSocketRestrictions::addRules(RestrictType type, const std::string& conf
 /*
 bool isValidIpAddress(const char* ipAddress)
 {
-	struct sockaddr_in sa;
-	return (inet_pton(AF_INET, ipAddress, &(sa.sin_addr)) != 0);
+    struct sockaddr_in sa;
+    return (inet_pton(AF_INET, ipAddress, &(sa.sin_addr)) != 0);
 }
 */
 
-bool CLuaSocketRestrictions::isAllowed(RestrictType type, const char* hostname, int port) {
+bool CLuaSocketRestrictions::isAllowed(RestrictType type, const char* hostname, int port)
+{
 	const TSocketRule* rule = getRule(type, hostname, port);
 
 	if (rule == nullptr)
@@ -141,14 +146,16 @@ bool CLuaSocketRestrictions::isAllowed(RestrictType type, const char* hostname, 
 	return rule->allowed;
 }
 
-const TSocketRule* CLuaSocketRestrictions::getRule(RestrictType type, const char* hostname, int port) {
+const TSocketRule* CLuaSocketRestrictions::getRule(RestrictType type, const char* hostname, int port)
+{
 	int start;
 	int end;
 
 	if (type != ALL_RULES) {
 		start = type;
 		end = start + 1;
-	} else {
+	}
+	else {
 		start = 0;
 		end = ALL_RULES;
 	}
@@ -184,13 +191,13 @@ void CLuaSocketRestrictions::addIP(const char* hostname, const char* ip)
 	}
 }
 
-const char* CLuaSocketRestrictions::ruleToStr(RestrictType type) {
+const char* CLuaSocketRestrictions::ruleToStr(RestrictType type)
+{
 	switch (type) {
-		case TCP_CONNECT: return "TCP_CONNECT";
-		case TCP_LISTEN : return "TCP_LISTEN ";
-		case UDP_LISTEN : return "UDP_LISTEN ";
-		case UDP_CONNECT: return "UDP_CONNECT";
-		default: return "INVALID";
+	case TCP_CONNECT: return "TCP_CONNECT";
+	case TCP_LISTEN: return "TCP_LISTEN ";
+	case UDP_LISTEN: return "UDP_LISTEN ";
+	case UDP_CONNECT: return "UDP_CONNECT";
+	default: return "INVALID";
 	}
 }
-

@@ -4,4 +4,3 @@
 
 CR_BIND_DERIVED(CNoWeapon, CWeapon, )
 CR_REG_METADATA(CNoWeapon, )
-

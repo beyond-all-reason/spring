@@ -2,6 +2,7 @@
 
 
 #include "FlameProjectile.h"
+
 #include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -10,25 +11,19 @@
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CFlameProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CFlameProjectile,(
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(spread),
-	CR_MEMBER(curTime),
-	CR_MEMBER(physLife),
-	CR_MEMBER(invttl)
-))
+CR_REG_METADATA(CFlameProjectile,
+    (CR_SETFLAG(CF_Synced), CR_MEMBER(spread), CR_MEMBER(curTime), CR_MEMBER(physLife), CR_MEMBER(invttl)))
 
-
-CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProjectile(params)
-	, curTime(0.0f)
-	, physLife(0.0f)
-	, invttl(1.0f / ttl)
-	, spread(params.spread)
+CFlameProjectile::CFlameProjectile(const ProjectileParams& params)
+    : CWeaponProjectile(params)
+    , curTime(0.0f)
+    , physLife(0.0f)
+    , invttl(1.0f / ttl)
+    , spread(params.spread)
 {
 	projectileType = WEAPON_FLAME_PROJECTILE;
 
@@ -85,12 +80,14 @@ void CFlameProjectile::Draw()
 	unsigned char col[4];
 	weaponDef->visuals.colorMap->GetColor(col, curTime);
 
-	AddWeaponEffectsQuad<1>(
-		{ drawPos - camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->ystart, col },
-		{ drawPos + camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xend,   weaponDef->visuals.texture1->yend,   col },
-		{ drawPos - camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->yend,   col }
-	);
+	AddWeaponEffectsQuad<1>({drawPos - camera->GetRight() * radius - camera->GetUp() * radius,
+	                            weaponDef->visuals.texture1->xstart, weaponDef->visuals.texture1->ystart, col},
+	    {drawPos + camera->GetRight() * radius - camera->GetUp() * radius, weaponDef->visuals.texture1->xend,
+	        weaponDef->visuals.texture1->ystart, col},
+	    {drawPos + camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xend,
+	        weaponDef->visuals.texture1->yend, col},
+	    {drawPos - camera->GetRight() * radius + camera->GetUp() * radius, weaponDef->visuals.texture1->xstart,
+	        weaponDef->visuals.texture1->yend, col});
 }
 
 int CFlameProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

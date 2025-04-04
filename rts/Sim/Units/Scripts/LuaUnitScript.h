@@ -3,9 +3,10 @@
 #ifndef LUAUNITSCRIPT_H
 #define LUAUNITSCRIPT_H
 
-#include "UnitScript.h"
-#include "NullUnitScript.h"
 #include "LuaScriptNames.h"
+#include "NullUnitScript.h"
+#include "UnitScript.h"
+
 #include "System/UnorderedMap.hpp"
 
 class CLuaHandle;
@@ -15,8 +16,7 @@ struct lua_State;
 // Hack for creg:
 // Since CLuaUnitScript isn't creged, during loading it will
 // construct a CNullUnitScript instead.
-class CLuaUnitScript : public CUnitScript
-{
+class CLuaUnitScript : public CUnitScript {
 	CR_DECLARE_DERIVED(CLuaUnitScript)
 private:
 	static CUnit* activeUnit;
@@ -38,7 +38,10 @@ private:
 
 public:
 	// for creg use only
-	CLuaUnitScript() : CUnitScript(nullptr) {}
+	CLuaUnitScript()
+	    : CUnitScript(nullptr)
+	{
+	}
 
 	// note: instance can not logically be created from outside CreateScript
 	// the ctor and dtor still have to be public because scripts are pooled
@@ -58,9 +61,11 @@ protected:
 	float PopNumber(int fn, float def);
 	bool PopBoolean(int fn, bool def);
 
-	int  RunQueryCallIn(int fn);
-	int  RunQueryCallIn(int fn, float arg1);
+	int RunQueryCallIn(int fn);
+	int RunQueryCallIn(int fn, float arg1);
+
 	void Call(int fn) { RawCall(scriptIndex[fn]); }
+
 	void Call(int fn, float arg1);
 	void Call(int fn, float arg1, float arg2);
 	void Call(int fn, float arg1, float arg2, float arg3);
@@ -75,7 +80,6 @@ protected:
 	std::string GetScriptName(int functionId) const;
 
 public:
-
 	// takes LUAFN_* constant as argument
 	bool HasFunction(int id) const { return scriptIndex[id] >= 0; }
 
@@ -98,12 +102,12 @@ public:
 	void SetSFXOccupy(int curTerrainType) override;
 	void QueryLandingPads(std::vector<int>& out_pieces) override;
 	void BeginTransport(const CUnit* unit) override;
-	int  QueryTransport(const CUnit* unit) override;
+	int QueryTransport(const CUnit* unit) override;
 	void TransportPickup(const CUnit* unit) override;
 	void TransportDrop(const CUnit* unit, const float3& pos) override;
 	void StartBuilding(float heading, float pitch) override;
-	int  QueryNanoPiece() override;
-	int  QueryBuildInfo() override;
+	int QueryNanoPiece() override;
+	int QueryBuildInfo() override;
 
 	void Destroy() override;
 	void StartMoving(bool reversing) override;
@@ -124,12 +128,12 @@ public:
 	void EndBurst(int weaponNum) override;
 
 	// weapon callins
-	int   QueryWeapon(int weaponNum) override;
-	void  AimWeapon(int weaponNum, float heading, float pitch) override;
-	void  AimShieldWeapon(CPlasmaRepulser* weapon) override;
-	int   AimFromWeapon(int weaponNum) override;
-	void  Shot(int weaponNum) override;
-	bool  BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget) override;
+	int QueryWeapon(int weaponNum) override;
+	void AimWeapon(int weaponNum, float heading, float pitch) override;
+	void AimShieldWeapon(CPlasmaRepulser* weapon) override;
+	int AimFromWeapon(int weaponNum) override;
+	void Shot(int weaponNum) override;
+	bool BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget) override;
 	float TargetWeight(int weaponNum, const CUnit* targetUnit) override;
 
 	// special callin to allow Lua to resume threads blocking on this anim
@@ -154,7 +158,7 @@ private:
 	static int SetUnitValue(lua_State* L);
 	static int SetUnitCOBValue(lua_State* L); // backward compat
 	static int SetPieceVisibility(lua_State* L);
-	static int EmitSfx(lua_State* L);       // TODO: better names?
+	static int EmitSfx(lua_State* L); // TODO: better names?
 	static int AttachUnit(lua_State* L);
 	static int DropUnit(lua_State* L);
 	static int Explode(lua_State* L);
@@ -173,7 +177,7 @@ private:
 	static int WaitForTurn(lua_State* L);
 	static int WaitForMove(lua_State* L);
 
-	static int MultiExec(lua_State *L, int (*const func)(lua_State*), const int expectedArgs);
+	static int MultiExec(lua_State* L, int (*const func)(lua_State*), const int expectedArgs);
 	static int MultiSetPieceVisibility(lua_State* L);
 	static int MultiSpin(lua_State* L);
 	static int MultiStopSpin(lua_State* L);

@@ -1,23 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include <string>
-
 #include "SideParser.h"
+
 #include "Lua/LuaParser.h"
 #include "Lua/LuaSyncedRead.h"
 #include "System/Log/ILog.h"
-#include "System/UnorderedSet.hpp"
-#include "System/StringUtil.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
+#include "System/UnorderedSet.hpp"
 
+#include <string>
 
 
 SideParser sideParser;
 
 const std::string SideParser::emptyStr = "";
-
 
 /******************************************************************************/
 
@@ -27,8 +25,7 @@ bool SideParser::Load()
 	dataVec.clear();
 	errorLog.clear();
 
-	LuaParser parser("gamedata/sidedata.lua",
-			SPRING_VFS_MOD_BASE, SPRING_VFS_MOD_BASE);
+	LuaParser parser("gamedata/sidedata.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_MOD_BASE);
 #if !defined UNITSYNC && !defined DEDICATED
 	// this should not be included with unitsync:
 	// 1. avoids linkage with LuaSyncedRead
@@ -51,18 +48,21 @@ bool SideParser::Load()
 			break;
 
 		Data data;
-		data.caseName  = sideTable.GetString("name", "");
-		data.sideName  = StringToLower(data.caseName);
+		data.caseName = sideTable.GetString("name", "");
+		data.sideName = StringToLower(data.caseName);
 		data.startUnit = sideTable.GetString("startUnit", "");
 		data.startUnit = StringToLower(data.startUnit);
 
 		if (data.sideName.empty()) {
 			LOG_L(L_ERROR, "Missing side name: %i", i);
-		} else if (data.startUnit.empty()) {
+		}
+		else if (data.startUnit.empty()) {
 			LOG_L(L_ERROR, "Missing side start unit: %s", data.sideName.c_str());
-		} else if (sideSet.find(data.sideName) != sideSet.end()) {
+		}
+		else if (sideSet.find(data.sideName) != sideSet.end()) {
 			LOG_L(L_ERROR, "Duplicate side name: %s", data.sideName.c_str());
-		} else {
+		}
+		else {
 			sideSet.insert(data.sideName);
 			dataVec.push_back(data);
 		}
@@ -71,7 +71,6 @@ bool SideParser::Load()
 	return true;
 }
 
- 
 /******************************************************************************/
 
 const SideParser::Data* SideParser::FindSide(const std::string& sideName) const
@@ -87,9 +86,7 @@ const SideParser::Data* SideParser::FindSide(const std::string& sideName) const
 	return NULL;
 }
 
-
-const std::string& SideParser::GetSideName(unsigned int index,
-		const std::string& def) const
+const std::string& SideParser::GetSideName(unsigned int index, const std::string& def) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!ValidSide(index)) {
@@ -98,9 +95,7 @@ const std::string& SideParser::GetSideName(unsigned int index,
 	return dataVec[index].sideName;
 }
 
-
-const std::string& SideParser::GetCaseName(unsigned int index,
-		const std::string& def) const
+const std::string& SideParser::GetCaseName(unsigned int index, const std::string& def) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!ValidSide(index)) {
@@ -109,9 +104,7 @@ const std::string& SideParser::GetCaseName(unsigned int index,
 	return dataVec[index].caseName;
 }
 
-
-const std::string& SideParser::GetCaseName(const std::string& name,
-		const std::string& def) const
+const std::string& SideParser::GetCaseName(const std::string& name, const std::string& def) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const Data* data = FindSide(name);
@@ -121,9 +114,7 @@ const std::string& SideParser::GetCaseName(const std::string& name,
 	return data->caseName;
 }
 
-
-const std::string& SideParser::GetStartUnit(unsigned int index,
-		const std::string& def) const
+const std::string& SideParser::GetStartUnit(unsigned int index, const std::string& def) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!ValidSide(index)) {
@@ -132,9 +123,7 @@ const std::string& SideParser::GetStartUnit(unsigned int index,
 	return dataVec[index].startUnit;
 }
 
-
-const std::string& SideParser::GetStartUnit(const std::string& name,
-		const std::string& def) const
+const std::string& SideParser::GetStartUnit(const std::string& name, const std::string& def) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const Data* data = FindSide(name);
@@ -143,6 +132,5 @@ const std::string& SideParser::GetStartUnit(const std::string& name,
 	}
 	return data->startUnit;
 }
-
 
 /******************************************************************************/

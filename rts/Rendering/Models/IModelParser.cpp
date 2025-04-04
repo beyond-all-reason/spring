@@ -1,31 +1,33 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <chrono>
-#include <string_view>
-#include <fmt/printf.h>
-
 #include "IModelParser.h"
-#include "3DOParser.h"
-#include "S3OParser.h"
-#include "AssParser.h"
+
 #include "3DModelVAO.h"
+#include "3DOParser.h"
+#include "AssParser.h"
 #include "ModelsLock.h"
+#include "S3OParser.h"
+
 #include "Game/GlobalUnsynced.h"
-#include "Rendering/Textures/S3OTextureHandler.h"
 #include "Net/Protocol/NetProtocol.h" // NETLOG
+#include "Rendering/Textures/S3OTextureHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
+#include "System/ContainerUtil.h"
+#include "System/Exceptions.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
-#include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-#include "System/Exceptions.h"
-#include "System/SafeUtil.h"
-#include "System/Threading/ThreadPool.h"
-#include "System/ContainerUtil.h"
 #include "System/LoadLock.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
+#include "System/StringUtil.h"
+#include "System/Threading/ThreadPool.h"
 #include "lib/assimp/include/assimp/Importer.hpp"
 
-#include "System/Misc/TracyDefs.h"
+#include <chrono>
+#include <string_view>
+
+#include <fmt/printf.h>
 
 
 CModelLoader modelLoader;
@@ -34,14 +36,14 @@ static C3DOParser g3DOParser;
 static CS3OParser gS3OParser;
 static CAssParser gAssParser;
 
-
-static bool CheckAssimpWhitelist(const char* aiExt) {
+static bool CheckAssimpWhitelist(const char* aiExt)
+{
 	constexpr std::array<const char*, 5> whitelist = {
-		"3ds"  , // 3DSMax
-		"dae"  , // Collada
-		"lwo"  , // LightWave
-		"obj"  ,
-		"blend", // Blender
+	    "3ds", // 3DSMax
+	    "dae", // Collada
+	    "lwo", // LightWave
+	    "obj",
+	    "blend", // Blender
 	};
 
 	const auto pred = [&aiExt](const char* wlExt) { return (strcmp(aiExt, wlExt) == 0); };
@@ -50,7 +52,8 @@ static bool CheckAssimpWhitelist(const char* aiExt) {
 	return (iter != whitelist.end());
 }
 
-static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
+static void RegisterModelFormats(CModelLoader::ParsersType& parsers)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// file-extension should be lowercase
 	parsers.emplace_back("3do", &g3DOParser);
@@ -79,7 +82,8 @@ static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 
 		if (!CheckAssimpWhitelist(extension.c_str()))
 			continue;
-		if (std::find_if(parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; }) != parsers.end())
+		if (std::find_if(parsers.begin(), parsers.end(),
+		        [&extension](const auto& item) { return item.first == extension; }) != parsers.end())
 			continue;
 
 		parsers.emplace_back(extension, &gAssParser);
@@ -97,7 +101,7 @@ static void LoadDummyModel(S3DModel& model)
 	model.numPieces = 1;
 	// give it one empty piece
 	model.AddPiece(g3DOParser.AllocPiece());
-	model.FlattenPieceTree(model.GetRootPiece()); //useless except for setting up matAlloc
+	model.FlattenPieceTree(model.GetRootPiece()); // useless except for setting up matAlloc
 	model.GetRootPiece()->SetCollisionVolume(CollisionVolume('b', 'z', -UpVector, ZeroVector));
 	model.loadStatus = S3DModel::LoadStatus::LOADED;
 }
@@ -123,12 +127,13 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 
 		if (numNullNormals > 0) {
 			constexpr const char* formatStr =
-				"[%s] piece \"%s\" of model \"%s\" has %u (of %u) normals with invalid length (<0.5)";
+			    "[%s] piece \"%s\" of model \"%s\" has %u (of %u) normals with invalid length (<0.5)";
 
 			const char* modelName = model->name.c_str();
 			const char* pieceName = modelPiece->name.c_str();
 
-			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, static_cast<uint32_t>(numNullNormals), static_cast<uint32_t>(vertCount));
+			LOG_L(L_DEBUG, formatStr, __func__, pieceName, modelName, static_cast<uint32_t>(numNullNormals),
+			    static_cast<uint32_t>(vertCount));
 		}
 	}
 
@@ -136,8 +141,6 @@ static void CheckPieceNormals(const S3DModel* model, const S3DModelPiece* modelP
 		CheckPieceNormals(model, childPiece);
 	}
 }
-
-
 
 void CModelLoader::Init()
 {
@@ -187,8 +190,6 @@ void CModelLoader::KillParsers() const
 	gAssParser.Kill();
 }
 
-
-
 std::string CModelLoader::FindModelPath(std::string name) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -200,7 +201,7 @@ std::string CModelLoader::FindModelPath(std::string name) const
 	const std::string vfsPath = "objects3d/";
 
 	if (const std::string& fileExt = FileSystem::GetExtension(name); fileExt.empty()) {
-		for (const auto& [formatExt, parser] : parsers) {
+		for (const auto& [formatExt, parser]: parsers) {
 			if (CFileHandler::FileExists(name + "." + formatExt, SPRING_VFS_ZIP)) {
 				name.append("." + formatExt);
 				break;
@@ -217,25 +218,19 @@ std::string CModelLoader::FindModelPath(std::string name) const
 	return (FindModelPath(vfsPath + name));
 }
 
-
 void CModelLoader::PreloadModel(const std::string& modelName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
-	//NB: do preload in any case
+	// NB: do preload in any case
 	if (ThreadPool::HasThreads()) {
-
 		// if already in cache, thread just returns early
 		// not spawning the thread at all would be better but still
 		// requires locking around cache.find(...) since some other
 		// preload worker might be down in FillModel modifying it
 		// at the same time
-		preloadFutures.emplace_back(
-			ThreadPool::Enqueue([modelName]() {
-				modelLoader.LoadModel(modelName, true);
-			})
-		);
+		preloadFutures.emplace_back(ThreadPool::Enqueue([modelName]() { modelLoader.LoadModel(modelName, true); }));
 	}
 	else {
 		modelLoader.LoadModel(modelName, true);
@@ -261,7 +256,6 @@ void CModelLoader::LogErrors()
 	errors.clear();
 	throw content_error("[CModelLoader] couldn't load one or many models");
 }
-
 
 S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 {
@@ -291,9 +285,7 @@ S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 	}
 
 	auto lock = CModelsLock::GetUniqueLock();
-	cv.wait(lock, [model]() {
-		return model->loadStatus == S3DModel::LoadStatus::LOADED;
-	});
+	cv.wait(lock, [model]() { return model->loadStatus == S3DModel::LoadStatus::LOADED; });
 
 	if (!preload)
 		Upload(model);
@@ -332,8 +324,9 @@ S3DModel* CModelLoader::GetCachedModel(std::string fullName)
 	}
 
 	if (modelID + 1 == MAX_MODEL_OBJECTS) {
-		LOG_L(L_ERROR, "[CModelLoader::%s] Model pool of size %i is exhausted. Cannot load model %s", __func__, MAX_MODEL_OBJECTS, fullName.c_str());
-		return &models[0]; //dummy model
+		LOG_L(L_ERROR, "[CModelLoader::%s] Model pool of size %i is exhausted. Cannot load model %s", __func__,
+		    MAX_MODEL_OBJECTS, fullName.c_str());
+		return &models[0]; // dummy model
 	}
 
 	models[modelID].id = ++modelID;
@@ -347,11 +340,8 @@ S3DModel* CModelLoader::GetCachedModel(std::string fullName)
 	return &models[modelID];
 }
 
-void CModelLoader::FillModel(
-	S3DModel& model,
-	const std::string& name,
-	const std::string& path
-) {
+void CModelLoader::FillModel(S3DModel& model, const std::string& name, const std::string& path)
+{
 	ParseModel(model, name, path);
 
 	assert(model.numPieces != 0);
@@ -380,7 +370,7 @@ void CModelLoader::DrainPreloadFutures(uint32_t numAllowed)
 		return;
 
 	while (preloadFutures.size() > numAllowed) {
-		//drain queue until there are <= numAllowed items there
+		// drain queue until there are <= numAllowed items there
 		std::erase_if(preloadFutures, erasePredicate);
 		spring_sleep(spring_msecs(100));
 	}
@@ -397,7 +387,8 @@ IModelParser* CModelLoader::GetFormatParser(const std::string& pathExt)
 	if (lastParser.first == extension)
 		return lastParser.second;
 
-	const auto it = std::find_if(parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; });
+	const auto it = std::find_if(
+	    parsers.begin(), parsers.end(), [&extension](const auto& item) { return item.first == extension; });
 	if (it == parsers.end())
 		return nullptr;
 
@@ -420,15 +411,13 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 			LoadDummyModel(model);
 			throw content_error(fmt::sprintf("A model has too many pieces (>%u): %s", MAX_PIECES_PER_MODEL, path));
 		}
-
-	} catch (const content_error& ex) {
+	}
+	catch (const content_error& ex) {
 		auto lock = CModelsLock::GetScopedLock();
 		LoadDummyModel(model);
 		errors.emplace_back(name, ex.what());
 	}
 }
-
-
 
 void CModelLoader::PostProcessGeometry(S3DModel* model)
 {
@@ -452,15 +441,17 @@ void CModelLoader::PostProcessGeometry(S3DModel* model)
 	cv.notify_all();
 }
 
-void CModelLoader::Upload(S3DModel* model) const {
+void CModelLoader::Upload(S3DModel* model) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (model->uploaded) //already uploaded
+	if (model->uploaded) // already uploaded
 		return;
 
 	assert(Threading::IsMainThread() || Threading::IsGameLoadThread());
 
 	{
-		auto lock = CLoadLock::GetUniqueLock(); //mostly needed to support calls from CFeatureHandler::LoadFeaturesFromMap()
+		auto lock =
+		    CLoadLock::GetUniqueLock(); // mostly needed to support calls from CFeatureHandler::LoadFeaturesFromMap()
 		S3DModelVAO::GetInstance().UploadVBOs();
 
 		// 3DO atlases are preloaded C3DOTextureHandler::Init()
@@ -470,7 +461,7 @@ void CModelLoader::Upload(S3DModel* model) const {
 		}
 	}
 
-	for (auto* p : model->pieceObjects) {
+	for (auto* p: model->pieceObjects) {
 		p->ReleaseShatterIndices();
 	}
 
@@ -481,4 +472,3 @@ void CModelLoader::Upload(S3DModel* model) const {
 
 	model->uploaded = true;
 }
-

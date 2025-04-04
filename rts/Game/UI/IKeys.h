@@ -3,10 +3,9 @@
 #ifndef IKEYS_H
 #define IKEYS_H
 
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
-
 
 class IKeys {
 public:
@@ -19,7 +18,6 @@ public:
 	virtual void Reset() {};
 
 public:
-
 	virtual void PrintNameToCode() const = 0;
 	virtual void PrintCodeToName() const = 0;
 	virtual bool IsModifier(int code) const = 0;
@@ -39,12 +37,12 @@ protected:
 	std::vector<CodeNamePair> codeToName;
 	std::vector<NameCodePair> defaultNameToCode;
 	std::vector<CodeNamePair> defaultCodeToName;
-	std::vector<         int> printableCodes;
+	std::vector<int> printableCodes;
 
-	const std::function<int (CodeNamePair, CodeNamePair)> codePred = [](const auto& a, const auto& b) {
+	const std::function<int(CodeNamePair, CodeNamePair)> codePred = [](const auto& a, const auto& b) {
 		return (a.first < b.first);
 	};
-	const std::function<int (NameCodePair, NameCodePair)> namePred = [](const auto& a, const auto& b) {
+	const std::function<int(NameCodePair, NameCodePair)> namePred = [](const auto& a, const auto& b) {
 		return (a.first < b.first);
 	};
 };

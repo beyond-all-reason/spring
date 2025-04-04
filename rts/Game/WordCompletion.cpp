@@ -8,11 +8,12 @@
 
 
 #include "WordCompletion.h"
+
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 
 CWordCompletion wordCompletion;
 
@@ -43,15 +44,17 @@ void CWordCompletion::Init()
 	AddWordRaw("/mutebynum ", true, false, false);
 }
 
-
-void CWordCompletion::Sort() {
+void CWordCompletion::Sort()
+{
 	std::sort(words.begin(), words.end(), [](const WordEntry& a, const WordEntry& b) { return (a.first < b.first); });
 }
 
-void CWordCompletion::Filter() {
-	words.erase(std::unique(words.begin(), words.end(), [](const WordEntry& a, const WordEntry& b) { return (a.first == b.first); }), words.end());
+void CWordCompletion::Filter()
+{
+	words.erase(std::unique(words.begin(), words.end(),
+	                [](const WordEntry& a, const WordEntry& b) { return (a.first == b.first); }),
+	    words.end());
 }
-
 
 bool CWordCompletion::AddWord(const std::string& word, bool startOfLine, bool unitName, bool miniMap)
 {
@@ -99,7 +102,6 @@ bool CWordCompletion::RemoveWord(const std::string& word)
 	return true;
 }
 
-
 std::vector<std::string> CWordCompletion::Complete(std::string& msg) const
 {
 	std::vector<std::string> partials;
@@ -114,7 +116,8 @@ std::vector<std::string> CWordCompletion::Complete(std::string& msg) const
 	if ((msg.find_first_of("aAsS") == 0) && (msg[1] == ':')) {
 		prefix = msg.substr(0, 2);
 		rawmsg = msg.substr(2);
-	} else {
+	}
+	else {
 		rawmsg = msg;
 	}
 
@@ -137,12 +140,13 @@ std::vector<std::string> CWordCompletion::Complete(std::string& msg) const
 	for (auto it = start; it != words.end(); ++it) {
 		const int cmp = it->first.compare(0, fragment.size(), fragment);
 
-		if (cmp < 0) continue;
-		if (cmp > 0) break;
+		if (cmp < 0)
+			continue;
+		if (cmp > 0)
+			break;
 
-		if ((!it->second.startOfLine || startOfLine) &&
-		    (!it->second.unitName    || unitName)    &&
-		    (!it->second.miniMap     || miniMap)) {
+		if ((!it->second.startOfLine || startOfLine) && (!it->second.unitName || unitName) &&
+		    (!it->second.miniMap || miniMap)) {
 			partials.push_back(it->first);
 		}
 	}

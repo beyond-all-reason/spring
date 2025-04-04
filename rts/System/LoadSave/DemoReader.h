@@ -3,22 +3,23 @@
 #ifndef DEMO_READER
 #define DEMO_READER
 
-#include <fstream>
-#include <vector>
-
 #include "Demo.h"
 
 #include "Game/Players/PlayerStatistics.h"
 #include "Sim/Misc/TeamStatistics.h"
 
-namespace netcode { class RawPacket; }
+#include <fstream>
+#include <vector>
+
+namespace netcode {
+class RawPacket;
+}
 class CFileHandler;
 
 /**
  * @brief Utility class for reading demofiles
  */
-class CDemoReader : public CDemo
-{
+class CDemoReader : public CDemo {
 public:
 	/**
 	@brief Open a demofile for reading
@@ -40,17 +41,18 @@ public:
 	bool ReachedEnd();
 
 	float GetModGameTime() const { return chunkHeader.modGameTime; }
+
 	float GetDemoTimeOffset() const { return demoTimeOffset; }
+
 	float GetNextDemoReadTime() const { return nextDemoReadTime; }
 
-	const std::string& GetSetupScript() const
-	{
-		return setupScript;
-	};
+	const std::string& GetSetupScript() const { return setupScript; };
 
 	const std::vector<PlayerStatistics>& GetPlayerStats() const { return playerStats; }
-	const std::vector< std::vector<TeamStatistics> >& GetTeamStats() const { return teamStats; }
-	const std::vector< unsigned char >& GetWinningAllyTeams() const { return winningAllyTeams; }
+
+	const std::vector<std::vector<TeamStatistics>>& GetTeamStats() const { return teamStats; }
+
+	const std::vector<unsigned char>& GetWinningAllyTeams() const { return winningAllyTeams; }
 
 	/// Not needed for normal demo watching
 	void LoadStats();
@@ -65,10 +67,10 @@ private:
 
 	DemoStreamChunkHeader chunkHeader;
 
-	std::string setupScript;	// the original, unaltered version from script
+	std::string setupScript; // the original, unaltered version from script
 
-	std::vector<PlayerStatistics> playerStats; // one stat per player
-	std::vector< std::vector<TeamStatistics> > teamStats; // many stats per team
+	std::vector<PlayerStatistics> playerStats;          // one stat per player
+	std::vector<std::vector<TeamStatistics>> teamStats; // many stats per team
 	std::vector<unsigned char> winningAllyTeams;
 };
 

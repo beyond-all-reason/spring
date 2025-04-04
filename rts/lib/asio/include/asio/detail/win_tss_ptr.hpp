@@ -12,7 +12,7 @@
 #define ASIO_DETAIL_WIN_TSS_PTR_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
@@ -20,9 +20,8 @@
 #if defined(ASIO_WINDOWS)
 
 #include "asio/detail/noncopyable.hpp"
-#include "asio/detail/socket_types.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/detail/socket_types.hpp"
 
 namespace asio {
 namespace detail {
@@ -30,39 +29,27 @@ namespace detail {
 // Helper function to create thread-specific storage.
 ASIO_DECL DWORD win_tss_ptr_create();
 
-template <typename T>
-class win_tss_ptr
-  : private noncopyable
-{
+template<typename T> class win_tss_ptr : private noncopyable {
 public:
-  // Constructor.
-  win_tss_ptr()
-    : tss_key_(win_tss_ptr_create())
-  {
-  }
+	// Constructor.
+	win_tss_ptr()
+	    : tss_key_(win_tss_ptr_create())
+	{
+	}
 
-  // Destructor.
-  ~win_tss_ptr()
-  {
-    ::TlsFree(tss_key_);
-  }
+	// Destructor.
+	~win_tss_ptr() { ::TlsFree(tss_key_); }
 
-  // Get the value.
-  operator T*() const
-  {
-    return static_cast<T*>(::TlsGetValue(tss_key_));
-  }
+	// Get the value.
+	operator T*() const { return static_cast<T*>(::TlsGetValue(tss_key_)); }
 
-  // Set the value.
-  void operator=(T* value)
-  {
-    ::TlsSetValue(tss_key_, value);
-  }
+	// Set the value.
+	void operator=(T* value) { ::TlsSetValue(tss_key_, value); }
 
 private:
-  // Thread-specific storage to allow unlocked access to determine whether a
-  // thread is a member of the pool.
-  DWORD tss_key_;
+	// Thread-specific storage to allow unlocked access to determine whether a
+	// thread is a member of the pool.
+	DWORD tss_key_;
 };
 
 } // namespace detail
@@ -71,7 +58,7 @@ private:
 #include "asio/detail/pop_options.hpp"
 
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/detail/impl/win_tss_ptr.ipp"
+#include "asio/detail/impl/win_tss_ptr.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // defined(ASIO_WINDOWS)

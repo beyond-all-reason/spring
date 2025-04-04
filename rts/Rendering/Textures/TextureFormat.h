@@ -5,13 +5,12 @@
 
 #include "Rendering/GL/myGL.h"
 
-namespace GL
-{
-	GLenum GetInternalFormatDataFormat(GLenum internalFormat);
+namespace GL {
+GLenum GetInternalFormatDataFormat(GLenum internalFormat);
 
-	GLenum GetInternalFormatDataType(GLenum internalFormat);
+GLenum GetInternalFormatDataType(GLenum internalFormat);
 
-	GLenum GetBindingQueryFromTarget(GLenum target);
-}
+GLenum GetBindingQueryFromTarget(GLenum target);
+} // namespace GL
 
 #endif // TEXTURE_FORMAT_H

@@ -4,10 +4,10 @@
 #define _ROTOH_CONTROLLER_H
 
 #include "CameraController.h"
+
 #include "Game/Camera.h"
 
-class CRotOverheadController : public CCameraController
-{
+class CRotOverheadController : public CCameraController {
 public:
 	CRotOverheadController();
 
@@ -17,9 +17,11 @@ public:
 	void MouseMove(float3 move);
 	void ScreenEdgeMove(float3 move);
 	void MouseWheelMove(float move);
+
 	void MouseWheelMove(float move, const float3& newDir) { MouseWheelMove(move); }
 
 	void SetPos(const float3& newPos);
+
 	void SetRot(const float3& newRot) { rot = newRot; };
 
 	float3 SwitchFrom() const;
@@ -27,8 +29,10 @@ public:
 
 	void GetState(StateMap& sm) const;
 	bool SetState(const StateMap& sm);
+
 	float3 GetRot() const { return rot; }
-	float3 GetDir() const {	return CCamera::GetFwdFromRot(rot); }
+
+	float3 GetDir() const { return CCamera::GetFwdFromRot(rot); }
 
 	void Update();
 

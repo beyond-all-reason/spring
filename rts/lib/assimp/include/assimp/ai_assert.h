@@ -44,10 +44,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AI_ASSERT_H_INC
 
 #ifdef ASSIMP_BUILD_DEBUG
-#   include <assert.h>
-#   define  ai_assert(expression) assert(expression)
+#include <assert.h>
+#define ai_assert(expression) assert(expression)
 #else
-#   define  ai_assert(expression)
-#endif // 
+#define ai_assert(expression)
+#endif //
 
 #endif // AI_ASSERT_H_INC

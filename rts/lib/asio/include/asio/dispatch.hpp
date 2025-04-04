@@ -12,18 +12,17 @@
 #define ASIO_DISPATCH_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio/detail/config.hpp"
 #include "asio/async_result.hpp"
+#include "asio/detail/config.hpp"
 #include "asio/detail/initiate_dispatch.hpp"
-#include "asio/detail/type_traits.hpp"
-#include "asio/execution_context.hpp"
-#include "asio/execution/executor.hpp"
-#include "asio/is_executor.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/detail/type_traits.hpp"
+#include "asio/execution/executor.hpp"
+#include "asio/execution_context.hpp"
+#include "asio/is_executor.hpp"
 
 namespace asio {
 
@@ -68,14 +67,11 @@ namespace asio {
  * @par Completion Signature
  * @code void() @endcode
  */
-template <ASIO_COMPLETION_TOKEN_FOR(void()) NullaryToken>
+template<ASIO_COMPLETION_TOKEN_FOR(void()) NullaryToken>
 inline auto dispatch(NullaryToken&& token)
-  -> decltype(
-    async_initiate<NullaryToken, void()>(
-      declval<detail::initiate_dispatch>(), token))
+    -> decltype(async_initiate<NullaryToken, void()>(declval<detail::initiate_dispatch>(), token))
 {
-  return async_initiate<NullaryToken, void()>(
-      detail::initiate_dispatch(), token);
+	return async_initiate<NullaryToken, void()>(detail::initiate_dispatch(), token);
 }
 
 /// Submits a completion token or function object for execution.
@@ -140,20 +136,14 @@ inline auto dispatch(NullaryToken&& token)
  * @par Completion Signature
  * @code void() @endcode
  */
-template <typename Executor,
-    ASIO_COMPLETION_TOKEN_FOR(void()) NullaryToken
-      = default_completion_token_t<Executor>>
+template<typename Executor, ASIO_COMPLETION_TOKEN_FOR(void()) NullaryToken = default_completion_token_t<Executor>>
 inline auto dispatch(const Executor& ex,
     NullaryToken&& token = default_completion_token_t<Executor>(),
-    constraint_t<
-      execution::is_executor<Executor>::value || is_executor<Executor>::value
-    > = 0)
-  -> decltype(
-    async_initiate<NullaryToken, void()>(
-      declval<detail::initiate_dispatch_with_executor<Executor>>(), token))
+    constraint_t<execution::is_executor<Executor>::value || is_executor<Executor>::value> = 0)
+    -> decltype(async_initiate<NullaryToken, void()>(declval<detail::initiate_dispatch_with_executor<Executor>>(),
+        token))
 {
-  return async_initiate<NullaryToken, void()>(
-      detail::initiate_dispatch_with_executor<Executor>(ex), token);
+	return async_initiate<NullaryToken, void()>(detail::initiate_dispatch_with_executor<Executor>(ex), token);
 }
 
 /// Submits a completion token or function object for execution.
@@ -170,24 +160,18 @@ inline auto dispatch(const Executor& ex,
  * @par Completion Signature
  * @code void() @endcode
  */
-template <typename ExecutionContext,
-    ASIO_COMPLETION_TOKEN_FOR(void()) NullaryToken
-      = default_completion_token_t<typename ExecutionContext::executor_type>>
+template<typename ExecutionContext,
+    ASIO_COMPLETION_TOKEN_FOR(void())
+        NullaryToken = default_completion_token_t<typename ExecutionContext::executor_type>>
 inline auto dispatch(ExecutionContext& ctx,
-    NullaryToken&& token = default_completion_token_t<
-      typename ExecutionContext::executor_type>(),
-    constraint_t<
-      is_convertible<ExecutionContext&, execution_context&>::value
-    > = 0)
-  -> decltype(
-    async_initiate<NullaryToken, void()>(
-      declval<detail::initiate_dispatch_with_executor<
-        typename ExecutionContext::executor_type>>(), token))
+    NullaryToken&& token = default_completion_token_t<typename ExecutionContext::executor_type>(),
+    constraint_t<is_convertible<ExecutionContext&, execution_context&>::value> = 0)
+    -> decltype(async_initiate<NullaryToken, void()>(
+        declval<detail::initiate_dispatch_with_executor<typename ExecutionContext::executor_type>>(),
+        token))
 {
-  return async_initiate<NullaryToken, void()>(
-      detail::initiate_dispatch_with_executor<
-        typename ExecutionContext::executor_type>(
-          ctx.get_executor()), token);
+	return async_initiate<NullaryToken, void()>(
+	    detail::initiate_dispatch_with_executor<typename ExecutionContext::executor_type>(ctx.get_executor()), token);
 }
 
 } // namespace asio

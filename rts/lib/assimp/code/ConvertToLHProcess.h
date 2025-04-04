@@ -50,15 +50,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef AI_CONVERTTOLHPROCESS_H_INC
 #define AI_CONVERTTOLHPROCESS_H_INC
 
-#include <assimp/types.h>
 #include "BaseProcess.h"
+
+#include <assimp/types.h>
 
 struct aiMesh;
 struct aiNodeAnim;
 struct aiNode;
 struct aiMaterial;
 
-namespace Assimp    {
+namespace Assimp {
 
 // -----------------------------------------------------------------------------------
 /** @brief The MakeLeftHandedProcess converts all imported data to a left-handed
@@ -70,98 +71,91 @@ namespace Assimp    {
  *
  * @note RH-LH and LH-RH is the same, so this class can be used for both
  */
-class MakeLeftHandedProcess : public BaseProcess
-{
-
-
+class MakeLeftHandedProcess : public BaseProcess {
 public:
-    MakeLeftHandedProcess();
-    ~MakeLeftHandedProcess();
+	MakeLeftHandedProcess();
+	~MakeLeftHandedProcess();
 
-    // -------------------------------------------------------------------
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	void Execute(aiScene* pScene);
 
 protected:
+	// -------------------------------------------------------------------
+	/** Recursively converts a node and all of its children
+	 */
+	void ProcessNode(aiNode* pNode, const aiMatrix4x4& pParentGlobalRotation);
 
-    // -------------------------------------------------------------------
-    /** Recursively converts a node and all of its children
-     */
-    void ProcessNode( aiNode* pNode, const aiMatrix4x4& pParentGlobalRotation);
+	// -------------------------------------------------------------------
+	/** Converts a single mesh to left handed coordinates.
+	 * This means that positions, normals and tangents are mirrored at
+	 * the local Z axis and the order of all faces are inverted.
+	 * @param pMesh The mesh to convert.
+	 */
+	void ProcessMesh(aiMesh* pMesh);
 
-    // -------------------------------------------------------------------
-    /** Converts a single mesh to left handed coordinates.
-     * This means that positions, normals and tangents are mirrored at
-     * the local Z axis and the order of all faces are inverted.
-     * @param pMesh The mesh to convert.
-     */
-    void ProcessMesh( aiMesh* pMesh);
+	// -------------------------------------------------------------------
+	/** Converts a single material to left-handed coordinates
+	 * @param pMat Material to convert
+	 */
+	void ProcessMaterial(aiMaterial* pMat);
 
-    // -------------------------------------------------------------------
-    /** Converts a single material to left-handed coordinates
-     * @param pMat Material to convert
-     */
-    void ProcessMaterial( aiMaterial* pMat);
-
-    // -------------------------------------------------------------------
-    /** Converts the given animation to LH coordinates.
-     * The rotation and translation keys are transformed, the scale keys
-     * work in local space and can therefore be left untouched.
-     * @param pAnim The bone animation to transform
-     */
-    void ProcessAnimation( aiNodeAnim* pAnim);
+	// -------------------------------------------------------------------
+	/** Converts the given animation to LH coordinates.
+	 * The rotation and translation keys are transformed, the scale keys
+	 * work in local space and can therefore be left untouched.
+	 * @param pAnim The bone animation to transform
+	 */
+	void ProcessAnimation(aiNodeAnim* pAnim);
 };
-
 
 // ---------------------------------------------------------------------------
 /** Postprocessing step to flip the face order of the imported data
  */
-class FlipWindingOrderProcess : public BaseProcess
-{
-    friend class Importer;
+class FlipWindingOrderProcess : public BaseProcess {
+	friend class Importer;
 
 public:
-    /** Constructor to be privately used by Importer */
-    FlipWindingOrderProcess();
+	/** Constructor to be privately used by Importer */
+	FlipWindingOrderProcess();
 
-    /** Destructor, private as well */
-    ~FlipWindingOrderProcess();
+	/** Destructor, private as well */
+	~FlipWindingOrderProcess();
 
-    // -------------------------------------------------------------------
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	void Execute(aiScene* pScene);
 
 protected:
-    void ProcessMesh( aiMesh* pMesh);
+	void ProcessMesh(aiMesh* pMesh);
 };
 
 // ---------------------------------------------------------------------------
 /** Postprocessing step to flip the UV coordinate system of the import data
  */
-class FlipUVsProcess : public BaseProcess
-{
-    friend class Importer;
+class FlipUVsProcess : public BaseProcess {
+	friend class Importer;
 
 public:
-    /** Constructor to be privately used by Importer */
-    FlipUVsProcess();
+	/** Constructor to be privately used by Importer */
+	FlipUVsProcess();
 
-    /** Destructor, private as well */
-    ~FlipUVsProcess();
+	/** Destructor, private as well */
+	~FlipUVsProcess();
 
-    // -------------------------------------------------------------------
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	void Execute(aiScene* pScene);
 
 protected:
-    void ProcessMesh( aiMesh* pMesh);
-    void ProcessMaterial( aiMaterial* mat);
+	void ProcessMesh(aiMesh* pMesh);
+	void ProcessMaterial(aiMaterial* mat);
 };
 
 } // end of namespace Assimp

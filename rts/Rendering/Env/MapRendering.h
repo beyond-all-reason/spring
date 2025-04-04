@@ -9,12 +9,13 @@ struct CMapRendering {
 public:
 	void Init();
 	bool IsGlobalInstance() const;
+
 public:
 	float4 splatTexScales;
 	float4 splatTexMults;
-	bool   splatDetailNormalDiffuseAlpha;
-	bool   voidWater;
-	bool   voidGround;
+	bool splatDetailNormalDiffuseAlpha;
+	bool voidWater;
+	bool voidGround;
 };
 
 extern CMapRendering mapRenderingInst;

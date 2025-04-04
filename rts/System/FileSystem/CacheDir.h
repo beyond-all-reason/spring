@@ -26,7 +26,7 @@ class CacheDir {
 public:
 	static const std::string tagFile_name;
 	static const std::string tagFile_content;
-	static const size_t      tagFile_content_size;
+	static const size_t tagFile_content_size;
 	static const std::string defaultAdditionalText;
 
 	/**
@@ -41,12 +41,14 @@ public:
 	 * @param dir directory to be used as cache
 	 * @param wantedCacheState if true, writes a CACHEDIR.TAG
 	 * @param additionalText only used if (wantedCacheState == true), is appended in the cache tag file
-	 * @param forceRewrite if set to true, the tag file will be rewritten even if a valid one already exists (default: false)
+	 * @param forceRewrite if set to true, the tag file will be rewritten even if a valid one already exists (default:
+	 * false)
 	 * @return true if the dir tag file was successfully removed, created or already existed, false otherwise
 	 */
-	static bool SetCacheDir(const std::string& dir, bool wantedCacheState,
-	                        const std::string& additionalText = CacheDir::defaultAdditionalText,
-	                        bool forceRewrite = false);
+	static bool SetCacheDir(const std::string& dir,
+	    bool wantedCacheState,
+	    const std::string& additionalText = CacheDir::defaultAdditionalText,
+	    bool forceRewrite = false);
 
 private:
 	/**

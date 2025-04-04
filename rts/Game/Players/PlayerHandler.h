@@ -12,8 +12,7 @@
 
 class CGameSetup;
 
-class CPlayerHandler
-{
+class CPlayerHandler {
 public:
 	CR_DECLARE_STRUCT(CPlayerHandler)
 
@@ -27,7 +26,11 @@ public:
 	 *
 	 * Accesses a CPlayer instance at a given index
 	 */
-	CPlayer* Player(int id) { assert(unsigned(id) < players.size()); return &players[id]; }
+	CPlayer* Player(int id)
+	{
+		assert(unsigned(id) < players.size());
+		return &players[id];
+	}
 
 	/**
 	 * @brief Player
@@ -62,9 +65,7 @@ public:
 	 *
 	 * Will change during at runtime when a new spectator joins
 	 */
-	bool IsValidPlayer(unsigned id) const {
-		return (id < ActivePlayers());
-	}
+	bool IsValidPlayer(unsigned id) const { return (id < ActivePlayers()); }
 
 	void GameFrame(int frameNum);
 

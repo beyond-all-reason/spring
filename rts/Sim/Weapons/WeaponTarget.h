@@ -3,13 +3,12 @@
 #ifndef WEAPONTARGET_H
 #define WEAPONTARGET_H
 
-#include "System/float3.h"
 #include "System/creg/creg_cond.h"
+#include "System/float3.h"
 
 
 class CUnit;
 class CWeaponProjectile;
-
 
 enum TargetType {
 	Target_None,
@@ -17,7 +16,6 @@ enum TargetType {
 	Target_Pos,
 	Target_Intercept
 };
-
 
 struct SWeaponTarget {
 	CR_DECLARE_STRUCT(SWeaponTarget)
@@ -33,10 +31,11 @@ struct SWeaponTarget {
 
 	// operators
 	bool operator!=(const SWeaponTarget& other) const;
+
 	bool operator==(const SWeaponTarget& other) const { return !(*this != other); }
 
 public:
-	TargetType type;    // indicates if we have a target and what type
+	TargetType type; // indicates if we have a target and what type
 
 	bool isUserTarget = false;
 	bool isAutoTarget = false;
@@ -45,7 +44,7 @@ public:
 	CUnit* unit;                  // if targettype=unit: the targeted unit
 	CWeaponProjectile* intercept; // if targettype=intercept: projectile that we currently target for interception
 
-	float3 groundPos;             // if targettype=ground: the ground position
+	float3 groundPos; // if targettype=ground: the ground position
 };
 
 #endif // WEAPONTARGET_H

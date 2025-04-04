@@ -47,17 +47,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assimp/ProgressHandler.hpp>
 
-namespace Assimp    {
+namespace Assimp {
 
 // ------------------------------------------------------------------------------------
 /** @brief Internal default implementation of the #ProgressHandler interface. */
-class DefaultProgressHandler
-    : public ProgressHandler    {
-
-
-    virtual bool Update(float /*percentage*/) {
-        return false;
-    }
+class DefaultProgressHandler : public ProgressHandler {
+	virtual bool Update(float /*percentage*/) { return false; }
 
 
 }; // !class DefaultProgressHandler

@@ -26,14 +26,14 @@ struct RandomState {
 #if !defined(STREFLOP_RANDOM_GEN_SIZE)
 #define STREFLOP_RANDOM_GEN_SIZE 32
 #endif
-    // state vector
-    SizedUnsignedInteger<STREFLOP_RANDOM_GEN_SIZE>::Type mt[19968/STREFLOP_RANDOM_GEN_SIZE];
-    int mti;
-    // random seed that was used for initialization
-    SizedUnsignedInteger<32>::Type seed;
+	// state vector
+	SizedUnsignedInteger<STREFLOP_RANDOM_GEN_SIZE>::Type mt[19968 / STREFLOP_RANDOM_GEN_SIZE];
+	int mti;
+	// random seed that was used for initialization
+	SizedUnsignedInteger<32>::Type seed;
 }
 #ifdef __GNUC__
-__attribute__ ((aligned (64))) // align state vector on cache line size
+__attribute__((aligned(64))) // align state vector on cache line size
 #endif
 ;
 
@@ -110,20 +110,38 @@ SizedUnsignedInteger<32>::Type RandomSeed(RandomState& state = DefaultRandomStat
     synchronize the access to a shared state object, of course).
 */
 
-template<bool include_min, bool include_max, typename a_type> a_type Random(a_type min, a_type max, RandomState& state = DefaultRandomState);
+template<bool include_min, bool include_max, typename a_type>
+a_type Random(a_type min, a_type max, RandomState& state = DefaultRandomState);
 // function that returns a random number on the whole possible range
 template<typename a_type> a_type Random(RandomState& state = DefaultRandomState);
+
 // Alias that can be useful too
-template<typename a_type> inline a_type RandomIE(a_type min, a_type max, RandomState& state = DefaultRandomState) {return Random<true, false, a_type>(min, max, state);}
-template<typename a_type> inline a_type RandomEI(a_type min, a_type max, RandomState& state = DefaultRandomState) {return Random<false, true, a_type>(min, max, state);}
-template<typename a_type> inline a_type RandomEE(a_type min, a_type max, RandomState& state = DefaultRandomState) {return Random<false, false, a_type>(min, max, state);}
-template<typename a_type> inline a_type RandomII(a_type min, a_type max, RandomState& state = DefaultRandomState) {return Random<true, true, a_type>(min, max, state);}
-#define STREFLOP_RANDOM_MAKE_REAL(a_type) \
-template<> a_type Random<a_type>(RandomState& state); \
-template<> a_type Random<true, true, a_type>(a_type min, a_type max, RandomState& state); \
-template<> a_type Random<true, false, a_type>(a_type min, a_type max, RandomState& state); \
-template<> a_type Random<false, true, a_type>(a_type min, a_type max, RandomState& state); \
-template<> a_type Random<false, false, a_type>(a_type min, a_type max, RandomState& state);
+template<typename a_type> inline a_type RandomIE(a_type min, a_type max, RandomState& state = DefaultRandomState)
+{
+	return Random<true, false, a_type>(min, max, state);
+}
+
+template<typename a_type> inline a_type RandomEI(a_type min, a_type max, RandomState& state = DefaultRandomState)
+{
+	return Random<false, true, a_type>(min, max, state);
+}
+
+template<typename a_type> inline a_type RandomEE(a_type min, a_type max, RandomState& state = DefaultRandomState)
+{
+	return Random<false, false, a_type>(min, max, state);
+}
+
+template<typename a_type> inline a_type RandomII(a_type min, a_type max, RandomState& state = DefaultRandomState)
+{
+	return Random<true, true, a_type>(min, max, state);
+}
+
+#define STREFLOP_RANDOM_MAKE_REAL(a_type)                                                        \
+	template<> a_type Random<a_type>(RandomState & state);                                       \
+	template<> a_type Random<true, true, a_type>(a_type min, a_type max, RandomState & state);   \
+	template<> a_type Random<true, false, a_type>(a_type min, a_type max, RandomState & state);  \
+	template<> a_type Random<false, true, a_type>(a_type min, a_type max, RandomState & state);  \
+	template<> a_type Random<false, false, a_type>(a_type min, a_type max, RandomState & state);
 
 STREFLOP_RANDOM_MAKE_REAL(char)
 STREFLOP_RANDOM_MAKE_REAL(unsigned char)
@@ -141,11 +159,27 @@ STREFLOP_RANDOM_MAKE_REAL(unsigned long long)
     These return a number in the 1..2 range, the base for all the other random functions
 */
 template<bool include_min, bool include_max, typename a_type> a_type Random12(RandomState& state = DefaultRandomState);
+
 // Alias that can be useful too
-template<typename a_type> inline a_type Random12IE(RandomState& state = DefaultRandomState) {return Random12<true, false, a_type>(state);}
-template<typename a_type> inline a_type Random12EI(RandomState& state = DefaultRandomState) {return Random12<false, true, a_type>(state);}
-template<typename a_type> inline a_type Random12EE(RandomState& state = DefaultRandomState) {return Random12<false, false, a_type>(state);}
-template<typename a_type> inline a_type Random12II(RandomState& state = DefaultRandomState) {return Random12<true, true, a_type>(state);}
+template<typename a_type> inline a_type Random12IE(RandomState& state = DefaultRandomState)
+{
+	return Random12<true, false, a_type>(state);
+}
+
+template<typename a_type> inline a_type Random12EI(RandomState& state = DefaultRandomState)
+{
+	return Random12<false, true, a_type>(state);
+}
+
+template<typename a_type> inline a_type Random12EE(RandomState& state = DefaultRandomState)
+{
+	return Random12<false, false, a_type>(state);
+}
+
+template<typename a_type> inline a_type Random12II(RandomState& state = DefaultRandomState)
+{
+	return Random12<true, true, a_type>(state);
+}
 
 /** Additional and faster functions for real numbers
 
@@ -154,40 +188,62 @@ template<typename a_type> inline a_type Random12II(RandomState& state = DefaultR
 
     Provided for convenience only, use the 1..2 range as the base random function
 */
-template<bool include_min, bool include_max, typename a_type> inline a_type Random01(RandomState& state = DefaultRandomState) {
-    return Random12<include_min, include_max, a_type>(state) - a_type(1.0);
+template<bool include_min, bool include_max, typename a_type>
+inline a_type Random01(RandomState& state = DefaultRandomState)
+{
+	return Random12<include_min, include_max, a_type>(state) - a_type(1.0);
 }
+
 // Alias that can be useful too
-template<typename a_type> inline a_type Random01IE(RandomState& state = DefaultRandomState) {return Random01<true, false, a_type>(state);}
-template<typename a_type> inline a_type Random01EI(RandomState& state = DefaultRandomState) {return Random01<false, true, a_type>(state);}
-template<typename a_type> inline a_type Random01EE(RandomState& state = DefaultRandomState) {return Random01<false, false, a_type>(state);}
-template<typename a_type> inline a_type Random01II(RandomState& state = DefaultRandomState) {return Random01<true, true, a_type>(state);}
+template<typename a_type> inline a_type Random01IE(RandomState& state = DefaultRandomState)
+{
+	return Random01<true, false, a_type>(state);
+}
+
+template<typename a_type> inline a_type Random01EI(RandomState& state = DefaultRandomState)
+{
+	return Random01<false, true, a_type>(state);
+}
+
+template<typename a_type> inline a_type Random01EE(RandomState& state = DefaultRandomState)
+{
+	return Random01<false, false, a_type>(state);
+}
+
+template<typename a_type> inline a_type Random01II(RandomState& state = DefaultRandomState)
+{
+	return Random01<true, true, a_type>(state);
+}
 
 /// Define all 12 and 01 functions only for real types
 /// use the 12 function to generate the other
 
-#define STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(a_type) \
-template<> a_type Random12<true, true, a_type>(RandomState& state); \
-template<> a_type Random12<true, false, a_type>(RandomState& state); \
-template<> a_type Random12<false, true, a_type>(RandomState& state); \
-template<> a_type Random12<false, false, a_type>(RandomState& state); \
-template<> a_type Random<a_type>(RandomState& state); \
-template<> inline a_type Random<true, true, a_type>(a_type min, a_type max, RandomState& state) { \
-    a_type range = max - min;\
-    return Random12<true,true,a_type>(DefaultRandomState) * range - range + min;\
-} \
-template<> inline a_type Random<true, false, a_type>(a_type min, a_type max, RandomState& state) { \
-    a_type range = max - min;\
-    return Random12<true,false,a_type>(DefaultRandomState) * range - range + min;\
-} \
-template<> inline a_type Random<false, true, a_type>(a_type min, a_type max, RandomState& state) { \
-    a_type range = max - min;\
-    return Random12<false,true,a_type>(DefaultRandomState) * range - range + min;\
-} \
-template<> inline a_type Random<false, false, a_type>(a_type min, a_type max, RandomState& state) { \
-    a_type range = max - min;\
-    return Random12<false,false,a_type>(DefaultRandomState) * range - range + min;\
-}
+#define STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(a_type)                                                  \
+	template<> a_type Random12<true, true, a_type>(RandomState & state);                               \
+	template<> a_type Random12<true, false, a_type>(RandomState & state);                              \
+	template<> a_type Random12<false, true, a_type>(RandomState & state);                              \
+	template<> a_type Random12<false, false, a_type>(RandomState & state);                             \
+	template<> a_type Random<a_type>(RandomState & state);                                             \
+	template<> inline a_type Random<true, true, a_type>(a_type min, a_type max, RandomState & state)   \
+	{                                                                                                  \
+		a_type range = max - min;                                                                      \
+		return Random12<true, true, a_type>(DefaultRandomState) * range - range + min;                 \
+	}                                                                                                  \
+	template<> inline a_type Random<true, false, a_type>(a_type min, a_type max, RandomState & state)  \
+	{                                                                                                  \
+		a_type range = max - min;                                                                      \
+		return Random12<true, false, a_type>(DefaultRandomState) * range - range + min;                \
+	}                                                                                                  \
+	template<> inline a_type Random<false, true, a_type>(a_type min, a_type max, RandomState & state)  \
+	{                                                                                                  \
+		a_type range = max - min;                                                                      \
+		return Random12<false, true, a_type>(DefaultRandomState) * range - range + min;                \
+	}                                                                                                  \
+	template<> inline a_type Random<false, false, a_type>(a_type min, a_type max, RandomState & state) \
+	{                                                                                                  \
+		a_type range = max - min;                                                                      \
+		return Random12<false, false, a_type>(DefaultRandomState) * range - range + min;               \
+	}
 
 
 STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Simple)
@@ -225,21 +281,21 @@ STREFLOP_RANDOM_MAKE_REAL_FLOAT_TYPES(Extended)
     indepedent from the first will be returned at negligible cost (in other words, by default, half the values
     are thrown away)
 */
-template<typename a_type> a_type NRandom(a_type mean, a_type std_dev, a_type *secondary = 0, RandomState& state = DefaultRandomState);
-template<> Simple NRandom(Simple mean, Simple std_dev, Simple *secondary, RandomState& state);
-template<> Double NRandom(Double mean, Double std_dev, Double *secondary, RandomState& state);
+template<typename a_type>
+a_type NRandom(a_type mean, a_type std_dev, a_type* secondary = 0, RandomState& state = DefaultRandomState);
+template<> Simple NRandom(Simple mean, Simple std_dev, Simple* secondary, RandomState& state);
+template<> Double NRandom(Double mean, Double std_dev, Double* secondary, RandomState& state);
 #if defined(Extended)
-template<> Extended NRandom(Extended mean, Extended std_dev, Extended *secondary, RandomState& state);
+template<> Extended NRandom(Extended mean, Extended std_dev, Extended* secondary, RandomState& state);
 #endif
 /// Simplified versions
-template<typename a_type> a_type NRandom(a_type *secondary = 0, RandomState& state = DefaultRandomState);
-template<> Simple NRandom(Simple *secondary, RandomState& state);
-template<> Double NRandom(Double *secondary, RandomState& state);
+template<typename a_type> a_type NRandom(a_type* secondary = 0, RandomState& state = DefaultRandomState);
+template<> Simple NRandom(Simple* secondary, RandomState& state);
+template<> Double NRandom(Double* secondary, RandomState& state);
 #if defined(Extended)
-template<> Extended NRandom(Extended *secondary, RandomState& state);
+template<> Extended NRandom(Extended* secondary, RandomState& state);
 #endif
 
-}
+} // namespace streflop
 
 #endif
-

@@ -2,23 +2,23 @@
 
 
 #include "ResourceBar.h"
-#include "GuiHandler.h"
-#include "Game/GlobalUnsynced.h"
-#include "Rendering/GL/myGL.h"
-#include "Rendering/GL/glExtra.h"
-#include "Rendering/Fonts/glFont.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Net/Protocol/NetProtocol.h"
-#include "System/SpringMath.h"
 
+#include "GuiHandler.h"
+
+#include "Game/GlobalUnsynced.h"
+#include "Net/Protocol/NetProtocol.h"
+#include "Rendering/Fonts/glFont.h"
+#include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/myGL.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CResourceBar* resourceBar = nullptr;
 
-
 CResourceBar::CResourceBar()
-	: moveBox(false)
-	, enabled(true)
+    : moveBox(false)
+    , enabled(true)
 {
 	box.x1 = 0.26f;
 	box.y1 = 0.97f;
@@ -28,7 +28,7 @@ CResourceBar::CResourceBar()
 	metalBox.x1 = 0.09f;
 	metalBox.y1 = 0.01f;
 	metalBox.x2 = (box.x2 - box.x1) / 2.0f - 0.03f;
-	metalBox.y2 = metalBox.y1 + (box.y2 - box.y1);   // extend to the very top of the screen
+	metalBox.y2 = metalBox.y1 + (box.y2 - box.y1); // extend to the very top of the screen
 
 	energyBox.x1 = 0.48f;
 	energyBox.y1 = 0.01f;
@@ -36,27 +36,29 @@ CResourceBar::CResourceBar()
 	energyBox.y2 = energyBox.y1 + (box.y2 - box.y1); // extend to the very top of the screen
 }
 
-
-static std::string FloatToSmallString(float num, float mul = 1) {
+static std::string FloatToSmallString(float num, float mul = 1)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	char c[50];
 
 	if (num == 0)
 		sprintf(c, "0");
-	if (       math::fabs(num) < (10       * mul)) {
-		sprintf(c, "%.1f",  num);
-	} else if (math::fabs(num) < (10000    * mul)) {
-		sprintf(c, "%.0f",  num);
-	} else if (math::fabs(num) < (10000000 * mul)) {
+	if (math::fabs(num) < (10 * mul)) {
+		sprintf(c, "%.1f", num);
+	}
+	else if (math::fabs(num) < (10000 * mul)) {
+		sprintf(c, "%.0f", num);
+	}
+	else if (math::fabs(num) < (10000000 * mul)) {
 		sprintf(c, "%.0fk", num / 1000);
-	} else {
+	}
+	else {
 		sprintf(c, "%.0fM", num / 1000000);
 	}
 
 	return c;
 }
-
 
 void CResourceBar::Draw()
 {
@@ -66,12 +68,12 @@ void CResourceBar::Draw()
 
 	const CTeam* myTeam = teamHandler.Team(gu->myTeam);
 
-	const SResourcePack& rpp  = myTeam->resPrevPull;
-	const SResourcePack& rpi  = myTeam->resPrevIncome;
+	const SResourcePack& rpp = myTeam->resPrevPull;
+	const SResourcePack& rpi = myTeam->resPrevIncome;
 	const SResourcePack& rsnt = myTeam->resSent;
 	const SResourcePack& rshr = myTeam->resShare;
-	const SResourcePack& rcs  = myTeam->resStorage;
-	const SResourcePack& rcr  = myTeam->res;
+	const SResourcePack& rcs = myTeam->resStorage;
+	const SResourcePack& rcr = myTeam->res;
 
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 	auto& shader = rb.GetShader();
@@ -102,11 +104,13 @@ void CResourceBar::Draw()
 		const float x2 = metalbarx2;
 		const float y1 = metaly + 0.014f;
 		const float y2 = metaly + 0.020f;
-		const float sx[] = {(rcs.metal != 0.0f)? ((rcr.metal / rcs.metal) * metalbarlen): 0.0f, rshr.metal * metalbarlen};
+		const float sx[] = {
+		    (rcs.metal != 0.0f) ? ((rcr.metal / rcs.metal) * metalbarlen) : 0.0f, rshr.metal * metalbarlen};
 
-		gleDrawQuadC(TRectangle<float>{x1                 , y1         , x2                 , y2         }, SColor{0.8f, 0.8f, 0.8f, 0.2f}, rb);
-		gleDrawQuadC(TRectangle<float>{x1                 , y1         , x1 + sx[0]         , y2         }, SColor{1.0f, 1.0f, 1.0f, 1.0f}, rb);
-		gleDrawQuadC(TRectangle<float>{x1 + sx[1] - 0.003f, y1 - 0.003f, x1 + sx[1] + 0.003f, y2 + 0.003f}, SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
+		gleDrawQuadC(TRectangle<float>{x1, y1, x2, y2}, SColor{0.8f, 0.8f, 0.8f, 0.2f}, rb);
+		gleDrawQuadC(TRectangle<float>{x1, y1, x1 + sx[0], y2}, SColor{1.0f, 1.0f, 1.0f, 1.0f}, rb);
+		gleDrawQuadC(TRectangle<float>{x1 + sx[1] - 0.003f, y1 - 0.003f, x1 + sx[1] + 0.003f, y2 + 0.003f},
+		    SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
 	}
 	{
 		// layout energy in box
@@ -114,11 +118,13 @@ void CResourceBar::Draw()
 		const float x2 = energybarx2;
 		const float y1 = energyy + 0.014f;
 		const float y2 = energyy + 0.020f;
-		const float sx[] = {(rcs.energy != 0.0f)? ((rcr.energy / rcs.energy) * energybarlen): 0.0f, rshr.energy * energybarlen};
+		const float sx[] = {
+		    (rcs.energy != 0.0f) ? ((rcr.energy / rcs.energy) * energybarlen) : 0.0f, rshr.energy * energybarlen};
 
-		gleDrawQuadC(TRectangle<float>{x1                 , y1         , x2                 , y2         }, SColor{0.8f, 0.8f, 0.2f, 0.2f}, rb);
-		gleDrawQuadC(TRectangle<float>{x1                 , y1         , x1 + sx[0]         , y2         }, SColor{1.0f, 1.0f, 0.2f, 1.0f}, rb);
-		gleDrawQuadC(TRectangle<float>{x1 + sx[1] - 0.003f, y1 - 0.003f, x1 + sx[1] + 0.003f, y2 + 0.003f}, SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
+		gleDrawQuadC(TRectangle<float>{x1, y1, x2, y2}, SColor{0.8f, 0.8f, 0.2f, 0.2f}, rb);
+		gleDrawQuadC(TRectangle<float>{x1, y1, x1 + sx[0], y2}, SColor{1.0f, 1.0f, 0.2f, 1.0f}, rb);
+		gleDrawQuadC(TRectangle<float>{x1 + sx[1] - 0.003f, y1 - 0.003f, x1 + sx[1] + 0.003f, y2 + 0.003f},
+		    SColor{0.9f, 0.2f, 0.2f, 0.7f}, rb);
 	}
 	{
 		shader.Enable();
@@ -129,38 +135,46 @@ void CResourceBar::Draw()
 	const float headerFontSize = (box.y2 - box.y1) * 0.7f * globalRendering->viewSizeY;
 	const float labelsFontSize = (box.y2 - box.y1) * 0.5f * globalRendering->viewSizeY;
 
-	const unsigned int fontOptions = (guihandler != nullptr && guihandler->GetOutlineFonts()) ? (FONT_OUTLINE | FONT_NORM) : FONT_NORM;
+	const unsigned int fontOptions =
+	    (guihandler != nullptr && guihandler->GetOutlineFonts()) ? (FONT_OUTLINE | FONT_NORM) : FONT_NORM;
 
 
 	smallFont->SetTextColor(0.8f, 0.8f, 1.0f, 0.8f);
-	smallFont->glPrint(metalx - 0.004f,  (box.y1 + box.y2) * 0.5f, headerFontSize, FONT_VCENTER | fontOptions | FONT_BUFFERED, "Metal");
+	smallFont->glPrint(
+	    metalx - 0.004f, (box.y1 + box.y2) * 0.5f, headerFontSize, FONT_VCENTER | fontOptions | FONT_BUFFERED, "Metal");
 
 	smallFont->SetTextColor(1.0f, 1.0f, 0.4f, 0.8f);
-	smallFont->glPrint(energyx - 0.018f, (box.y1 + box.y2) * 0.5f, headerFontSize, FONT_VCENTER | fontOptions | FONT_BUFFERED, "Energy");
+	smallFont->glPrint(energyx - 0.018f, (box.y1 + box.y2) * 0.5f, headerFontSize,
+	    FONT_VCENTER | fontOptions | FONT_BUFFERED, "Energy");
 
 	smallFont->SetTextColor(1.0f, 0.3f, 0.3f, 1.0f); // Expenses
-	smallFont->glFormat(metalx  + 0.044f, box.y1, labelsFontSize, FONT_DESCENDER | fontOptions | FONT_BUFFERED, "-%s(-%s)",
-		FloatToSmallString(math::fabs( rpp.metal)).c_str(),
-		FloatToSmallString(math::fabs(rsnt.metal)).c_str());
-	smallFont->glFormat(energyx + 0.044f, box.y1, labelsFontSize, FONT_DESCENDER | fontOptions | FONT_BUFFERED, "-%s(-%s)",
-		FloatToSmallString(math::fabs( rpp.energy)).c_str(),
-		FloatToSmallString(math::fabs(rsnt.energy)).c_str());
+	smallFont->glFormat(metalx + 0.044f, box.y1, labelsFontSize, FONT_DESCENDER | fontOptions | FONT_BUFFERED,
+	    "-%s(-%s)", FloatToSmallString(math::fabs(rpp.metal)).c_str(),
+	    FloatToSmallString(math::fabs(rsnt.metal)).c_str());
+	smallFont->glFormat(energyx + 0.044f, box.y1, labelsFontSize, FONT_DESCENDER | fontOptions | FONT_BUFFERED,
+	    "-%s(-%s)", FloatToSmallString(math::fabs(rpp.energy)).c_str(),
+	    FloatToSmallString(math::fabs(rsnt.energy)).c_str());
 
 	smallFont->SetTextColor(0.4f, 1.0f, 0.4f, 0.95f); // Income (sans portion received from allies)
-	smallFont->glFormat(metalx  + 0.044f, box.y2 - 2.0f * globalRendering->pixelY, labelsFontSize, FONT_ASCENDER | fontOptions | FONT_BUFFERED, "+%s", FloatToSmallString(rpi.metal ).c_str());
-	smallFont->glFormat(energyx + 0.044f, box.y2 - 2.0f * globalRendering->pixelY, labelsFontSize, FONT_ASCENDER | fontOptions | FONT_BUFFERED, "+%s", FloatToSmallString(rpi.energy).c_str());
+	smallFont->glFormat(metalx + 0.044f, box.y2 - 2.0f * globalRendering->pixelY, labelsFontSize,
+	    FONT_ASCENDER | fontOptions | FONT_BUFFERED, "+%s", FloatToSmallString(rpi.metal).c_str());
+	smallFont->glFormat(energyx + 0.044f, box.y2 - 2.0f * globalRendering->pixelY, labelsFontSize,
+	    FONT_ASCENDER | fontOptions | FONT_BUFFERED, "+%s", FloatToSmallString(rpi.energy).c_str());
 
 	smallFont->SetTextColor(1.0f, 1.0f, 1.0f, 0.8f);
-	smallFont->glPrint(energybarx2 - 0.01f              , energyy - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED, FloatToSmallString(rcs.energy));
-	smallFont->glPrint(energybarx1 + energybarlen / 2.0f, energyy - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED, FloatToSmallString(rcr.energy));
+	smallFont->glPrint(energybarx2 - 0.01f, energyy - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED,
+	    FloatToSmallString(rcs.energy));
+	smallFont->glPrint(energybarx1 + energybarlen / 2.0f, energyy - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED,
+	    FloatToSmallString(rcr.energy));
 
-	smallFont->glPrint(metalbarx2 - 0.01f             , metaly - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED, FloatToSmallString(rcs.metal));
-	smallFont->glPrint(metalbarx1 + metalbarlen / 2.0f, metaly - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED, FloatToSmallString(rcr.metal));
+	smallFont->glPrint(metalbarx2 - 0.01f, metaly - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED,
+	    FloatToSmallString(rcs.metal));
+	smallFont->glPrint(metalbarx1 + metalbarlen / 2.0f, metaly - 0.005f, labelsFontSize, fontOptions | FONT_BUFFERED,
+	    FloatToSmallString(rcr.metal));
 	smallFont->SetTextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	smallFont->DrawBuffered();
 }
-
 
 bool CResourceBar::IsAbove(int x, int y)
 {
@@ -173,7 +187,6 @@ bool CResourceBar::IsAbove(int x, int y)
 	return InBox(mx, my, box);
 }
 
-
 std::string CResourceBar::GetTooltip(int x, int y)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -182,16 +195,17 @@ std::string CResourceBar::GetTooltip(int x, int y)
 	std::string resourceName;
 	if (mx < (box.x1 + 0.36f)) {
 		resourceName = "metal";
-	} else {
+	}
+	else {
 		resourceName = "energy";
 	}
 
-	return "Shows your stored " + resourceName + " as well as\n"
+	return "Shows your stored " + resourceName +
+	       " as well as\n"
 	       "income(\xff\x40\xff\x40green\xff\xff\xff\xff) and expenditures (\xff\xff\x20\x20red\xff\xff\xff\xff).\n"
 	       "Click in the bar to select your\n"
 	       "AutoShareLevel.";
 }
-
 
 bool CResourceBar::MousePress(int x, int y, int button)
 {
@@ -211,18 +225,20 @@ bool CResourceBar::MousePress(int x, int y, int button)
 		if (InBox(mx, my, box + metalBox)) {
 			moveBox = false;
 			const float metalShare = std::clamp((mx - (box.x1 + metalBox.x1)) / (metalBox.x2 - metalBox.x1), 0.f, 1.f);
-			clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, metalShare, teamHandler.Team(gu->myTeam)->resShare.energy));
+			clientNet->Send(CBaseNetProtocol::Get().SendSetShare(
+			    gu->myPlayerNum, gu->myTeam, metalShare, teamHandler.Team(gu->myTeam)->resShare.energy));
 		}
 		if (InBox(mx, my, box + energyBox)) {
 			moveBox = false;
-			const float energyShare = std::clamp((mx - (box.x1 + energyBox.x1)) / (energyBox.x2 - energyBox.x1), 0.f, 1.f);
-			clientNet->Send(CBaseNetProtocol::Get().SendSetShare(gu->myPlayerNum, gu->myTeam, teamHandler.Team(gu->myTeam)->resShare.metal, energyShare));
+			const float energyShare =
+			    std::clamp((mx - (box.x1 + energyBox.x1)) / (energyBox.x2 - energyBox.x1), 0.f, 1.f);
+			clientNet->Send(CBaseNetProtocol::Get().SendSetShare(
+			    gu->myPlayerNum, gu->myTeam, teamHandler.Team(gu->myTeam)->resShare.metal, energyShare));
 		}
 	}
 
 	return true;
 }
-
 
 void CResourceBar::MouseMove(int x, int y, int dx, int dy, int button)
 {

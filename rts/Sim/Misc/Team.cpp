@@ -2,13 +2,14 @@
 
 #include "Team.h"
 
-#include "TeamHandler.h"
 #include "GlobalSynced.h"
+#include "TeamHandler.h"
+
 #include "ExternalAI/SkirmishAIHandler.h"
-#include "Game/Players/Player.h"
-#include "Game/Players/PlayerHandler.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/Players/Player.h"
+#include "Game/Players/PlayerHandler.h"
 #include "Map/ReadMap.h"
 #include "Net/Protocol/NetProtocol.h"
 #include "Sim/Units/Unit.h"
@@ -16,62 +17,61 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/EventHandler.h"
-#include "System/MsgStrings.h"
 #include "System/Log/ILog.h"
-#include "System/creg/STL_Set.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/MsgStrings.h"
 #include "System/creg/STL_List.h"
 #include "System/creg/STL_Map.h"
-
-#include "System/Misc/TracyDefs.h"
+#include "System/creg/STL_Set.h"
 
 
 CR_BIND_DERIVED(CTeam, TeamBase, )
-CR_REG_METADATA(CTeam, (
-	CR_MEMBER(teamNum),
-	CR_MEMBER(numUnits),
-	CR_MEMBER(maxUnits),
+CR_REG_METADATA(CTeam,
+    (CR_MEMBER(teamNum),
+        CR_MEMBER(numUnits),
+        CR_MEMBER(maxUnits),
 
-	CR_MEMBER(isDead),
-	CR_MEMBER(gaia),
+        CR_MEMBER(isDead),
+        CR_MEMBER(gaia),
 
-	CR_MEMBER(res),
-	CR_MEMBER(resStorage),
-	CR_MEMBER(resPull),
-	CR_MEMBER(resPrevPull),
-	CR_MEMBER(resIncome),
-	CR_MEMBER(resPrevIncome),
-	CR_MEMBER(resExpense),
-	CR_MEMBER(resPrevExpense),
-	CR_MEMBER(resShare),
-	CR_MEMBER(resDelayedShare),
-	CR_MEMBER(resSent),
-	CR_MEMBER(resPrevSent),
-	CR_MEMBER(resReceived),
-	CR_MEMBER(resPrevReceived),
-	CR_MEMBER(resPrevExcess),
-	CR_MEMBER(nextHistoryEntry),
-	CR_MEMBER(statHistory),
-	CR_MEMBER(modParams),
-	CR_IGNORED(highlight)
-))
-
+        CR_MEMBER(res),
+        CR_MEMBER(resStorage),
+        CR_MEMBER(resPull),
+        CR_MEMBER(resPrevPull),
+        CR_MEMBER(resIncome),
+        CR_MEMBER(resPrevIncome),
+        CR_MEMBER(resExpense),
+        CR_MEMBER(resPrevExpense),
+        CR_MEMBER(resShare),
+        CR_MEMBER(resDelayedShare),
+        CR_MEMBER(resSent),
+        CR_MEMBER(resPrevSent),
+        CR_MEMBER(resReceived),
+        CR_MEMBER(resPrevReceived),
+        CR_MEMBER(resPrevExcess),
+        CR_MEMBER(nextHistoryEntry),
+        CR_MEMBER(statHistory),
+        CR_MEMBER(modParams),
+        CR_IGNORED(highlight)))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CTeam::CTeam():
-	teamNum(-1),
-	numUnits(0),
-	maxUnits(0),
+CTeam::CTeam()
+    : teamNum(-1)
+    , numUnits(0)
+    , maxUnits(0)
+    ,
 
-	isDead(false),
-	gaia(false),
+    isDead(false)
+    , gaia(false)
+    ,
 
-	resStorage(1000000, 1000000),
-	resShare(0.99f, 0.95f),
-	nextHistoryEntry(0),
-	highlight(0.0f)
+    resStorage(1000000, 1000000)
+    , resShare(0.99f, 0.95f)
+    , nextHistoryEntry(0)
+    , highlight(0.0f)
 {
 	statHistory.reserve(1024);
 	statHistory.push_back(TeamStatistics());
@@ -105,19 +105,16 @@ void CTeam::ClampStartPosInStartBox(float3* pos) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int allyTeam = teamHandler.AllyTeam(teamNum);
 	const AllyTeam& allyTeamData = teamHandler.GetAllyTeam(allyTeam);
-	const SRectangle rect(
-		allyTeamData.startRectLeft   * mapDims.mapx * SQUARE_SIZE,
-		allyTeamData.startRectTop    * mapDims.mapy * SQUARE_SIZE,
-		allyTeamData.startRectRight  * mapDims.mapx * SQUARE_SIZE,
-		allyTeamData.startRectBottom * mapDims.mapy * SQUARE_SIZE
-	);
+	const SRectangle rect(allyTeamData.startRectLeft * mapDims.mapx * SQUARE_SIZE,
+	    allyTeamData.startRectTop * mapDims.mapy * SQUARE_SIZE,
+	    allyTeamData.startRectRight * mapDims.mapx * SQUARE_SIZE,
+	    allyTeamData.startRectBottom * mapDims.mapy * SQUARE_SIZE);
 
 	int2 ipos(pos->x, pos->z);
 	rect.ClampPos(&ipos);
 	pos->x = ipos.x;
 	pos->z = ipos.y;
 }
-
 
 bool CTeam::UseMetal(float amount)
 {
@@ -140,8 +137,6 @@ bool CTeam::UseEnergy(float amount)
 	resExpense.energy += amount;
 	return true;
 }
-
-
 
 void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
 {
@@ -174,13 +169,11 @@ void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
 	}
 }
 
-
 bool CTeam::HaveResources(const SResourcePack& amount) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (res >= amount);
 }
-
 
 void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 {
@@ -211,7 +204,6 @@ bool CTeam::UseResources(const SResourcePack& amount)
 	return true;
 }
 
-
 void CTeam::GiveEverythingTo(const unsigned toTeam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -234,11 +226,10 @@ void CTeam::GiveEverythingTo(const unsigned toTeam)
 	const auto& teamUnits = unitHandler.GetUnitsByTeam(teamNum);
 
 	// NB: can not be a ranged loop since ChangeTeam removes [i] from teamUnits on success
-	for (size_t i = 0; i < teamUnits.size(); ) {
+	for (size_t i = 0; i < teamUnits.size();) {
 		i += (!teamUnits[i]->ChangeTeam(toTeam, CUnit::ChangeGiven));
 	}
 }
-
 
 void CTeam::Died(bool normalDeath)
 {
@@ -293,26 +284,34 @@ void CTeam::KillAIs()
 	}
 }
 
-
-
 void CTeam::ResetResourceState()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// reset all state variables that were
 	// potentially modified during the last
 	// <TEAM_SLOWUPDATE_RATE> frames
-	resPrevPull.metal     = resPull.metal;     resPull.metal     = 0.0f;
-	resPrevIncome.metal   = resIncome.metal;   resIncome.metal   = 0.0f;
-	resPrevExpense.metal  = resExpense.metal;  resExpense.metal  = 0.0f;
-	resPrevPull.energy    = resPull.energy;    resPull.energy    = 0.0f;
-	resPrevIncome.energy  = resIncome.energy;  resIncome.energy  = 0.0f;
-	resPrevExpense.energy = resExpense.energy; resExpense.energy = 0.0f;
+	resPrevPull.metal = resPull.metal;
+	resPull.metal = 0.0f;
+	resPrevIncome.metal = resIncome.metal;
+	resIncome.metal = 0.0f;
+	resPrevExpense.metal = resExpense.metal;
+	resExpense.metal = 0.0f;
+	resPrevPull.energy = resPull.energy;
+	resPull.energy = 0.0f;
+	resPrevIncome.energy = resIncome.energy;
+	resIncome.energy = 0.0f;
+	resPrevExpense.energy = resExpense.energy;
+	resExpense.energy = 0.0f;
 
 	// reset the sharing accumulators
-	resPrevSent.metal = resSent.metal; resSent.metal = 0.0f;
-	resPrevReceived.metal = resReceived.metal; resReceived.metal = 0.0f;
-	resPrevSent.energy = resSent.energy; resSent.energy = 0.0f;
-	resPrevReceived.energy = resReceived.energy; resReceived.energy = 0.0f;
+	resPrevSent.metal = resSent.metal;
+	resSent.metal = 0.0f;
+	resPrevReceived.metal = resReceived.metal;
+	resReceived.metal = 0.0f;
+	resPrevSent.energy = resSent.energy;
+	resSent.energy = 0.0f;
+	resPrevReceived.energy = resReceived.energy;
+	resReceived.energy = 0.0f;
 }
 
 void CTeam::SlowUpdate()
@@ -334,27 +333,33 @@ void CTeam::SlowUpdate()
 				continue;
 
 			eShare += std::max(0.0f, (team->resStorage.energy * 0.99f) - team->res.energy);
-			mShare += std::max(0.0f, (team->resStorage.metal  * 0.99f) - team->res.metal);
+			mShare += std::max(0.0f, (team->resStorage.metal * 0.99f) - team->res.metal);
 		}
 	}
 
-	currentStats.metalProduced  += resPrevIncome.metal;
+	currentStats.metalProduced += resPrevIncome.metal;
 	currentStats.energyProduced += resPrevIncome.energy;
-	currentStats.metalUsed  += resPrevExpense.metal;
+	currentStats.metalUsed += resPrevExpense.metal;
 	currentStats.energyUsed += resPrevExpense.energy;
 
-	res.metal  += resDelayedShare.metal;  resDelayedShare.metal  = 0.0f;
-	res.energy += resDelayedShare.energy; resDelayedShare.energy = 0.0f;
+	res.metal += resDelayedShare.metal;
+	resDelayedShare.metal = 0.0f;
+	res.energy += resDelayedShare.energy;
+	resDelayedShare.energy = 0.0f;
 
 
 	// calculate how much we can share in total (any and all excess resources)
 	const float eExcess = std::max(0.0f, res.energy - (resStorage.energy * resShare.energy));
-	const float mExcess = std::max(0.0f, res.metal  - (resStorage.metal  * resShare.metal));
+	const float mExcess = std::max(0.0f, res.metal - (resStorage.metal * resShare.metal));
 
 	float de = 0.0f;
 	float dm = 0.0f;
-	if (eShare > 0.0f) { de = std::min(1.0f, eExcess / eShare); }
-	if (mShare > 0.0f) { dm = std::min(1.0f, mExcess / mShare); }
+	if (eShare > 0.0f) {
+		de = std::min(1.0f, eExcess / eShare);
+	}
+	if (mShare > 0.0f) {
+		dm = std::min(1.0f, mExcess / mShare);
+	}
 
 	// now evenly distribute our excess resources among allied teams
 	for (int a = 0; a < teamHandler.ActiveTeams(); ++a) {
@@ -363,20 +368,27 @@ void CTeam::SlowUpdate()
 			if (team->isDead)
 				continue;
 
-			//due to precision errors mdif/edif sometimes can be slightly >= than res. If team has no metal income
-			//this causes units with zero fire resources requirements to be unable to fire
-			//when CTeam::HaveResources() is evaluated, thus clamp edif / mdif on both sides
+			// due to precision errors mdif/edif sometimes can be slightly >= than res. If team has no metal income
+			// this causes units with zero fire resources requirements to be unable to fire
+			// when CTeam::HaveResources() is evaluated, thus clamp edif / mdif on both sides
 
-			const float edif = std::clamp(((team->resStorage.energy * 0.99f) - team->res.energy) * de, 0.0f, res.energy);
-			const float mdif = std::clamp(((team->resStorage.metal  * 0.99f) - team->res.metal ) * dm, 0.0f, res.metal );
+			const float edif =
+			    std::clamp(((team->resStorage.energy * 0.99f) - team->res.energy) * de, 0.0f, res.energy);
+			const float mdif = std::clamp(((team->resStorage.metal * 0.99f) - team->res.metal) * dm, 0.0f, res.metal);
 
-			res.energy     -= edif; team->res.energy         += edif;
-			resSent.energy += edif; team->resReceived.energy += edif;
-			res.metal      -= mdif; team->res.metal          += mdif;
-			resSent.metal  += mdif; team->resReceived.metal  += mdif;
+			res.energy -= edif;
+			team->res.energy += edif;
+			resSent.energy += edif;
+			team->resReceived.energy += edif;
+			res.metal -= mdif;
+			team->res.metal += mdif;
+			resSent.metal += mdif;
+			team->resReceived.metal += mdif;
 
-			currentStats.energySent += edif; team->GetCurrentStats().energyReceived += edif;
-			currentStats.metalSent  += mdif; team->GetCurrentStats().metalReceived  += mdif;
+			currentStats.energySent += edif;
+			team->GetCurrentStats().energyReceived += edif;
+			currentStats.metalSent += mdif;
+			team->GetCurrentStats().metalReceived += mdif;
 		}
 	}
 
@@ -385,14 +397,16 @@ void CTeam::SlowUpdate()
 		resPrevExcess.metal = (res.metal - resStorage.metal);
 		currentStats.metalExcess += resPrevExcess.metal;
 		res.metal = resStorage.metal;
-	} else {
+	}
+	else {
 		resPrevExcess.metal = 0;
 	}
 	if (res.energy > resStorage.energy) {
 		resPrevExcess.energy = (res.energy - resStorage.energy);
 		currentStats.energyExcess += resPrevExcess.energy;
 		res.energy = resStorage.energy;
-	} else {
+	}
+	else {
 		resPrevExcess.energy = 0;
 	}
 
@@ -408,25 +422,23 @@ void CTeam::SlowUpdate()
 	}
 }
 
-
 void CTeam::AddUnit(CUnit* unit, AddType type)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	numUnits++;
 
 	switch (type) {
-		case AddBuilt: {
-			GetCurrentStats().unitsProduced++;
-		} break;
-		case AddGiven: {
-			GetCurrentStats().unitsReceived++;
-		} break;
-		case AddCaptured: {
-			GetCurrentStats().unitsCaptured++;
-		} break;
+	case AddBuilt: {
+		GetCurrentStats().unitsProduced++;
+	} break;
+	case AddGiven: {
+		GetCurrentStats().unitsReceived++;
+	} break;
+	case AddCaptured: {
+		GetCurrentStats().unitsCaptured++;
+	} break;
 	}
 }
-
 
 void CTeam::RemoveUnit(CUnit* unit, RemoveType type)
 {
@@ -434,19 +446,20 @@ void CTeam::RemoveUnit(CUnit* unit, RemoveType type)
 	numUnits--;
 
 	switch (type) {
-		case RemoveDied: {
-			GetCurrentStats().unitsDied++;
-		} break;
-		case RemoveGiven: {
-			GetCurrentStats().unitsSent++;
-		} break;
-		case RemoveCaptured: {
-			GetCurrentStats().unitsOutCaptured++;
-		} break;
+	case RemoveDied: {
+		GetCurrentStats().unitsDied++;
+	} break;
+	case RemoveGiven: {
+		GetCurrentStats().unitsSent++;
+	} break;
+	case RemoveCaptured: {
+		GetCurrentStats().unitsOutCaptured++;
+	} break;
 	}
 }
 
-void CTeam::UpdateControllerName() {
+void CTeam::UpdateControllerName()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// format is "Joe[, AI: ABCAI 0.1 ('Killer')[, AI: DEFAI 1.2 ('Slayer')[, ...]]]"
 	memset(controllerName, 0, sizeof(controllerName));
@@ -461,15 +474,18 @@ void CTeam::UpdateControllerName() {
 
 	if (leadPlayer->team == this->teamNum) {
 		ptr += std::snprintf(ptr, sizeof(controllerName) - (ptr - controllerName), "%s", leadPlayer->name.c_str());
-	} else {
-		const CTeam*   realLeadPlayerTeam = teamHandler.Team(leadPlayer->team);
-		const CPlayer* realLeadPlayer     = nullptr;
+	}
+	else {
+		const CTeam* realLeadPlayerTeam = teamHandler.Team(leadPlayer->team);
+		const CPlayer* realLeadPlayer = nullptr;
 
 		if (realLeadPlayerTeam->HasLeader()) {
 			realLeadPlayer = playerHandler.Player(realLeadPlayerTeam->GetLeader());
 
-			ptr += std::snprintf(ptr, sizeof(controllerName) - (ptr - controllerName), "%s", realLeadPlayer->name.c_str());
-		} else {
+			ptr +=
+			    std::snprintf(ptr, sizeof(controllerName) - (ptr - controllerName), "%s", realLeadPlayer->name.c_str());
+		}
+		else {
 			ptr += std::snprintf(ptr, sizeof(controllerName) - (ptr - controllerName), "%s", "N/A"); // weird
 		}
 	}
@@ -486,4 +502,3 @@ void CTeam::UpdateControllerName() {
 
 	controllerName[sizeof(controllerName) - 1] = 0;
 }
-

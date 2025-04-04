@@ -34,92 +34,93 @@
 
 #ifndef ELEMENTLUATEXTURE_H
 #define ELEMENTLUATEXTURE_H
-#include <unordered_set>
-
+#include "Lua/LuaOpenGLUtils.h"
 #include "RmlUi/Core/Element.h"
 #include "RmlUi/Core/Geometry.h"
 #include "RmlUi/Core/Texture.h"
-#include "Lua/LuaOpenGLUtils.h"
 
-namespace RmlGui
-{
-	/// The 'LuaTexture' element can render textures created/used in the Lua environment.
-	///
-	/// The 'src' attribute is used to specify what texture to load
-	/// See LuaOpenGLUtils::ParseTextureImage on how to format this special string
-	///
-	/// See Rml::ElementImage for use of width/height/rect params
-	/// https://mikke89.github.io/RmlUiDoc/pages/rml/images.html
-	///
-	/// @author ChrisFloofyKitsune
-	class ElementLuaTexture : public Rml::Element
-	{
-	public:
-		RMLUI_RTTI_DefineWithParent(ElementLuaTexture, Element)
+#include <unordered_set>
 
-		/// Constructs a new ElementLuaTexture. This should not be called directly; use the Factory instead.
-		/// @param[in] tag The tag the element was declared as in RML.
-		ElementLuaTexture(const Rml::String& tag);
-		virtual ~ElementLuaTexture();
+namespace RmlGui {
+/// The 'LuaTexture' element can render textures created/used in the Lua environment.
+///
+/// The 'src' attribute is used to specify what texture to load
+/// See LuaOpenGLUtils::ParseTextureImage on how to format this special string
+///
+/// See Rml::ElementImage for use of width/height/rect params
+/// https://mikke89.github.io/RmlUiDoc/pages/rml/images.html
+///
+/// @author ChrisFloofyKitsune
+class ElementLuaTexture : public Rml::Element {
+public:
+	RMLUI_RTTI_DefineWithParent(ElementLuaTexture, Element)
 
-		/// Returns the element's inherent size.
-		bool GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio) override;
+	    /// Constructs a new ElementLuaTexture. This should not be called directly; use the Factory instead.
+	    /// @param[in] tag The tag the element was declared as in RML.
+	    ElementLuaTexture(const Rml::String& tag);
+	virtual ~ElementLuaTexture();
 
-	protected:
-		/// Renders the image.
-		void OnRender() override;
+	/// Returns the element's inherent size.
+	bool GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio) override;
 
-		/// Regenerates the element's geometry.
-		void OnResize() override;
+protected:
+	/// Renders the image.
+	void OnRender() override;
 
-		/// Our intrinsic dimensions may change with the dp-ratio.
-		void OnDpRatioChange() override;
+	/// Regenerates the element's geometry.
+	void OnResize() override;
 
-		/// Checks for changes to the image's source or dimensions.
-		/// @param[in] changed_attributes A list of attributes changed on the element.
-		void OnAttributeChange(const Rml::ElementAttributes& changed_attributes) override;
+	/// Our intrinsic dimensions may change with the dp-ratio.
+	void OnDpRatioChange() override;
 
-		/// Called when properties on the element are changed.
-		/// @param[in] changed_properties The properties changed on the element.
-		void OnPropertyChange(const Rml::PropertyIdSet& changed_properties) override;
+	/// Checks for changes to the image's source or dimensions.
+	/// @param[in] changed_attributes A list of attributes changed on the element.
+	void OnAttributeChange(const Rml::ElementAttributes& changed_attributes) override;
 
-		/// Detect when we have been added to the document.
-		void OnChildAdd(Element* child) override;
+	/// Called when properties on the element are changed.
+	/// @param[in] changed_properties The properties changed on the element.
+	void OnPropertyChange(const Rml::PropertyIdSet& changed_properties) override;
 
-	private:
-		// Generates the element's geometry.
-		void GenerateGeometry();
+	/// Detect when we have been added to the document.
+	void OnChildAdd(Element* child) override;
 
-		// Loads the element's texture, as specified by the 'src' attribute.
-		bool LoadTexture();
+private:
+	// Generates the element's geometry.
+	void GenerateGeometry();
 
-		// Loads the rect value from the element's attribute
-		void UpdateRect();
+	// Loads the element's texture, as specified by the 'src' attribute.
+	bool LoadTexture();
 
-		// Handle to the externally provided texture to be used
-		LuaMatTexture luaTexture;
+	// Loads the rect value from the element's attribute
+	void UpdateRect();
 
-		// True if we need to refetch the texture's source from the element's attributes.
-		bool texture_dirty;
+	// Handle to the externally provided texture to be used
+	LuaMatTexture luaTexture;
 
-		// A factor which scales the intrinsic dimensions based on the dp-ratio and image scale.
-		float dimensions_scale;
+	// True if we need to refetch the texture's source from the element's attributes.
+	bool texture_dirty;
 
-		// The element's computed intrinsic dimensions. If either of these values are set to -1, then
-		// that dimension has not been computed yet.
-		Rml::Vector2f dimensions;
+	// A factor which scales the intrinsic dimensions based on the dp-ratio and image scale.
+	float dimensions_scale;
 
-		// The rectangle extracted from the 'rect' attribute. The rect_source will be None if
-		// these have not been specified or are invalid.
-		Rml::Rectanglef rect;
-		enum class RectSource { None, Attribute } rect_source;
+	// The element's computed intrinsic dimensions. If either of these values are set to -1, then
+	// that dimension has not been computed yet.
+	Rml::Vector2f dimensions;
 
-		// The geometry used to render this element.
-		Rml::CompiledGeometryHandle geometry_handle = (Rml::CompiledGeometryHandle) nullptr;
-		bool geometry_dirty;
+	// The rectangle extracted from the 'rect' attribute. The rect_source will be None if
+	// these have not been specified or are invalid.
+	Rml::Rectanglef rect;
+	enum class RectSource {
+		None,
+		Attribute
+	} rect_source;
 
-		Rml::Vector2i GetTextureDimensions();
-	};
+	// The geometry used to render this element.
+	Rml::CompiledGeometryHandle geometry_handle = (Rml::CompiledGeometryHandle) nullptr;
+	bool geometry_dirty;
+
+	Rml::Vector2i GetTextureDimensions();
+};
 } // namespace RmlGui
 
-#endif //ELEMENTLUATEXTURE_H
+#endif // ELEMENTLUATEXTURE_H

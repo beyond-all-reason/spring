@@ -3,27 +3,25 @@
 #ifndef BUMP_WATER_H
 #define BUMP_WATER_H
 
-#include "Rendering/GL/FBO.h"
-#include "Rendering/GL/myGL.h"
-#include "Rendering/GL/RenderBuffers.h"
 #include "IWater.h"
 
+#include "Rendering/GL/FBO.h"
+#include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/myGL.h"
 #include "System/EventClient.h"
 #include "System/Misc/RectangleOverlapHandler.h"
 
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
-class CBumpWater : public IWater, public CEventClient
-{
+class CBumpWater : public IWater, public CEventClient {
 public:
 	//! CEventClient interface
-	bool WantsEvent(const std::string& eventName) {
-		return shoreWaves && (eventName == "UnsyncedHeightMapUpdate");
-	}
+	bool WantsEvent(const std::string& eventName) { return shoreWaves && (eventName == "UnsyncedHeightMapUpdate"); }
+
 	bool GetFullRead() const { return true; }
+
 	int GetReadAllyTeam() const { return AllAccessTeam; }
 
 public:
@@ -37,15 +35,19 @@ public:
 	void DrawReflection(const CGame* game);
 	void DrawRefraction(const CGame* game);
 	void Draw() override;
+
 	WATER_RENDERER GetID() const override { return WATER_RENDERER_BUMPMAPPED; }
 
 	bool CanDrawReflectionPass() const override { return true; }
+
 	bool CanDrawRefractionPass() const override { return true; }
+
 private:
 	//! coastmap (needed for shorewaves)
 	struct CoastAtlasRect {
 		explicit CoastAtlasRect(const SRectangle& rect);
-		bool isCoastline; ///< if false, then the whole rect is either above water or below water (no coastline -> no need to calc/render distfield)
+		bool isCoastline; ///< if false, then the whole rect is either above water or below water (no coastline -> no
+		                  ///< need to calc/render distfield)
 		int ix1, iy1;
 		int ix2, iy2;
 		int xsize, ysize;
@@ -62,30 +64,30 @@ private:
 	void UpdateCoastmap(const bool initialize = false);
 	void UpdateDynWaves(const bool initialize = false);
 
-	int atlasX,atlasY;
+	int atlasX, atlasY;
 
 	void UnsyncedHeightMapUpdate(const SRectangle& rect);
 
 private:
 	//! user options
-	char  reflection;   ///< 0:=off, 1:=don't render the terrain, 2:=render everything+terrain
-	char  refraction;   ///< 0:=off, 1:=screencopy, 2:=own rendering cycle
-	int   reflTexSize;
-	bool  depthCopy;    ///< uses a screen depth copy, which allows a nicer interpolation between deep sea and shallow water
+	char reflection; ///< 0:=off, 1:=don't render the terrain, 2:=render everything+terrain
+	char refraction; ///< 0:=off, 1:=screencopy, 2:=own rendering cycle
+	int reflTexSize;
+	bool depthCopy; ///< uses a screen depth copy, which allows a nicer interpolation between deep sea and shallow water
 	float anisotropy;
-	char  depthBits;    ///< depthBits for reflection/refraction RBO
-	bool  blurRefl;
-	bool  shoreWaves;
-	bool  endlessOcean; ///< render the water around the whole map
-	bool  dynWaves;     ///< only usable if bumpmap/normal texture is a TileSet
+	char depthBits; ///< depthBits for reflection/refraction RBO
+	bool blurRefl;
+	bool shoreWaves;
+	bool endlessOcean; ///< render the water around the whole map
+	bool dynWaves;     ///< only usable if bumpmap/normal texture is a TileSet
 
 	std::vector<uint8_t> tileOffsets; ///< used to randomize the wave/bumpmap/normal texture
-	int  normalTextureX; ///< needed for dynamic waves
-	int  normalTextureY;
+	int normalTextureX;               ///< needed for dynamic waves
+	int normalTextureY;
 
 	GLuint target; ///< for screen copies (color/depth), can be GL_TEXTURE_RECTANGLE (nvidia) or GL_TEXTURE_2D (others)
-	int  screenTextureX;
-	int  screenTextureY;
+	int screenTextureX;
+	int screenTextureY;
 
 	FBO reflectFBO;
 	FBO refractFBO;
@@ -96,7 +98,7 @@ private:
 
 	GLuint refractTexture;
 	GLuint reflectTexture;
-	GLuint depthTexture;   ///< screen depth copy
+	GLuint depthTexture; ///< screen depth copy
 	GLuint waveRandTexture;
 	GLuint foamTexture;
 	GLuint normalTexture;  ///< final used
@@ -110,4 +112,3 @@ private:
 };
 
 #endif // BUMP_WATER_H
-

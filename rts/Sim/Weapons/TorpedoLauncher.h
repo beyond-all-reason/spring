@@ -5,8 +5,7 @@
 
 #include "Weapon.h"
 
-class CTorpedoLauncher: public CWeapon
-{
+class CTorpedoLauncher : public CWeapon {
 	CR_DECLARE_DERIVED(CTorpedoLauncher)
 public:
 	CTorpedoLauncher(CUnit* owner = nullptr, const WeaponDef* def = nullptr);

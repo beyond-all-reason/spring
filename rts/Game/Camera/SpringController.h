@@ -4,11 +4,11 @@
 #define _SPRING_CONTROLLER_H
 
 #include "CameraController.h"
+
 #include "Game/UI/MouseHandler.h"
 #include "System/type2.h"
 
-class CSpringController : public CCameraController
-{
+class CSpringController : public CCameraController {
 public:
 	CSpringController();
 	~CSpringController();
@@ -18,16 +18,31 @@ public:
 	void KeyMove(float3 move);
 	void MouseMove(float3 move);
 	void ScreenEdgeMove(float3 move);
+
 	void MouseWheelMove(float move) { MouseWheelMove(move, mouse->dir); }
+
 	void MouseWheelMove(float move, const float3& newDir);
 
 	void Update();
-	void SetPos(const float3& newPos) { pos = newPos; Update(); }
-	void SetRot(const float3& newRot) { rot = newRot; Update(); }
+
+	void SetPos(const float3& newPos)
+	{
+		pos = newPos;
+		Update();
+	}
+
+	void SetRot(const float3& newRot)
+	{
+		rot = newRot;
+		Update();
+	}
+
 	float3 GetPos() const;
+
 	float3 GetRot() const { return (float3(rot.x, GetAzimuth(), 0.0f)); }
 
 	float3 SwitchFrom() const { return GetPos(); }
+
 	void SwitchTo(const CCameraController* oldCam, const bool showText);
 
 	void GetState(StateMap& sm) const;
@@ -48,9 +63,9 @@ private:
 private:
 	float3 rot;
 
-	float curDist; // current zoom-out distance
+	float curDist;       // current zoom-out distance
 	const float maxDist; // maximum zoom-out distance
-	float minDist; // minimum zoom-in distance
+	float minDist;       // minimum zoom-in distance
 	float oldDist;
 	float fastScaleMove;
 	float fastScaleMousewheel;

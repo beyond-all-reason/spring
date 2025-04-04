@@ -7,17 +7,12 @@
 
 class CUnit;
 
-class CRepulseGfx : public CProjectile
-{
+class CRepulseGfx : public CProjectile {
 	CR_DECLARE_DERIVED(CRepulseGfx)
 public:
-	CRepulseGfx() { }
-	CRepulseGfx(
-		CUnit* owner,
-		CProjectile* repulsee,
-		float maxOwnerDist,
-		const float4& gfxColor
-	);
+	CRepulseGfx() {}
+
+	CRepulseGfx(CUnit* owner, CProjectile* repulsee, float maxOwnerDist, const float4& gfxColor);
 
 	void Draw() override;
 	void Update() override;

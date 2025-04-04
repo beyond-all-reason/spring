@@ -3,20 +3,20 @@
 #ifndef NET_PROTOCOL_H
 #define NET_PROTOCOL_H
 
+#include "BaseNetProtocol.h" // not used in here, but in all files including this one
+
+#include "System/Threading/SpringThreading.h"
+
 #include <atomic>
 #include <string>
-
-#include "BaseNetProtocol.h" // not used in here, but in all files including this one
-#include "System/Threading/SpringThreading.h"
 
 class ClientSetup;
 class CDemoRecorder;
 
-namespace netcode
-{
-	class RawPacket;
-	class CConnection;
-}
+namespace netcode {
+class RawPacket;
+class CConnection;
+} // namespace netcode
 
 /**
  * @brief Client interface for handling communication with the game server.
@@ -25,17 +25,18 @@ namespace netcode
  * with the server. It keeps the connection alive,
  * and is able to send and receive raw binary packets transparently
  * over the network.
-*/
-class CNetProtocol
-{
+ */
+class CNetProtocol {
 public:
 	CNetProtocol();
 	~CNetProtocol();
 
 	/**
 	 * @brief Initialise in client mode (remote server)
-	*/
-	void InitClient(std::shared_ptr<ClientSetup> clientSetup, const std::string& clientVersion, const std::string& clientPlatform);
+	 */
+	void InitClient(std::shared_ptr<ClientSetup> clientSetup,
+	    const std::string& clientVersion,
+	    const std::string& clientPlatform);
 
 	/**
 	 * @brief Initialise in client mode (local server)
@@ -106,6 +107,7 @@ public:
 	void ResetDemoRecorder();
 
 	netcode::CConnection* GetServerConnection() { return serverConnPtr; }
+
 	CDemoRecorder* GetDemoRecorder() { return demoRecordPtr; }
 
 	unsigned int GetNumWaitingServerPackets() const;
@@ -117,7 +119,7 @@ private:
 	spring::spinlock serverConnMutex;
 
 	uint8_t serverConnMem[1024];
-	uint8_t demoRecordMem[ 512];
+	uint8_t demoRecordMem[512];
 
 	netcode::CConnection* serverConnPtr = nullptr;
 	CDemoRecorder* demoRecordPtr = nullptr;
@@ -129,4 +131,3 @@ private:
 extern CNetProtocol* clientNet;
 
 #endif // NET_PROTOCOL_H
-

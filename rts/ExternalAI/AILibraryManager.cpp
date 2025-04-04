@@ -2,33 +2,31 @@
 
 #include "AILibraryManager.h"
 
-#include "Interface/aidefines.h"
-#include "Interface/SAIInterfaceLibrary.h"
 #include "AIInterfaceKey.h"
-#include "AIInterfaceLibraryInfo.h"
 #include "AIInterfaceLibrary.h"
-#include "SkirmishAILibraryInfo.h"
+#include "AIInterfaceLibraryInfo.h"
 #include "SkirmishAIData.h"
 #include "SkirmishAIKey.h"
+#include "SkirmishAILibraryInfo.h"
 
-#include "System/StringUtil.h"
-#include "System/Log/ILog.h"
-#include "System/Platform/errorhandler.h"
-#include "System/Platform/SharedLib.h"
-#include "System/FileSystem/FileHandler.h"
+#include "Interface/SAIInterfaceLibrary.h"
+#include "Interface/aidefines.h"
 #include "System/FileSystem/DataDirsAccess.h"
+#include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileQueryFlags.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/SimpleParser.h" // for Split()
+#include "System/Log/ILog.h"
+#include "System/Platform/SharedLib.h"
+#include "System/Platform/errorhandler.h"
+#include "System/StringUtil.h"
 
 #include <climits>
 #include <cstdio>
 #include <cstring>
-
 #include <string>
 
 static AILibraryManager aiLibraryManager;
-
 
 AILibraryManager* AILibraryManager::GetInstance(bool init)
 {
@@ -37,7 +35,6 @@ AILibraryManager* AILibraryManager::GetInstance(bool init)
 
 	return &aiLibraryManager;
 }
-
 
 void AILibraryManager::Init()
 {
@@ -70,7 +67,6 @@ void AILibraryManager::ClearAll()
 	assert(loadedAIInterfaceLibs.empty());
 }
 
-
 void AILibraryManager::GatherInterfaceLibInfo()
 {
 	// cause we use CFileHandler for searching files,
@@ -78,7 +74,7 @@ void AILibraryManager::GatherInterfaceLibInfo()
 
 	// read from AI Interface info files, looking for
 	// {AI_INTERFACES_DATA_DIR}/{*}/{*}/InterfaceInfo.lua
-	std::map<const AIInterfaceKey, std::set<std::string> > duplicateInterfaces;
+	std::map<const AIInterfaceKey, std::set<std::string>> duplicateInterfaces;
 
 	for (const auto& possibleDataDir: dataDirsAccess.FindDirsInDirectSubDirs(AI_INTERFACES_DATA_DIR)) {
 		const auto& infoFiles = CFileHandler::FindFiles(possibleDataDir, "InterfaceInfo.lua");
@@ -118,7 +114,7 @@ void AILibraryManager::GatherInterfaceLibInfo()
 			continue;
 
 		const std::string& isn = info.first.GetShortName();
-		const std::string& iv =  info.first.GetVersion();
+		const std::string& iv = info.first.GetVersion();
 		const char* lastDir = "n/a";
 
 		LOG_L(L_ERROR, "[%s] duplicate AI Interface Info found", __func__);
@@ -143,19 +139,15 @@ void AILibraryManager::GatherSkirmishAILibInfo()
 	FilterDuplicateSkirmishAILibInfo(duplicateSkirmishAIs);
 }
 
-void AILibraryManager::StoreSkirmishAILibInfo(
-	T_dupSkirm& duplicateSkirmishAIs,
-	CSkirmishAILibraryInfo& skirmishAIInfo,
-	const std::string& sourceDesc
-) {
+void AILibraryManager::StoreSkirmishAILibInfo(T_dupSkirm& duplicateSkirmishAIs,
+    CSkirmishAILibraryInfo& skirmishAIInfo,
+    const std::string& sourceDesc)
+{
 	skirmishAIInfo.SetLuaAI(false);
 
 	const SkirmishAIKey aiKey = skirmishAIInfo.GetKey();
 	const AIInterfaceKey interfaceKey = FindFittingInterfaceKey(
-		skirmishAIInfo.GetInterfaceShortName(),
-		skirmishAIInfo.GetInterfaceVersion(),
-		interfaceKeys
-	);
+	    skirmishAIInfo.GetInterfaceShortName(), skirmishAIInfo.GetInterfaceVersion(), interfaceKeys);
 
 	if (!interfaceKey.IsUnspecified()) {
 		SkirmishAIKey skirmishAIKey = SkirmishAIKey(aiKey, interfaceKey);
@@ -171,7 +163,7 @@ void AILibraryManager::StoreSkirmishAILibInfo(
 	}
 
 	const std::string& isn = skirmishAIInfo.GetShortName();
-	const std::string& iv  = skirmishAIInfo.GetVersion();
+	const std::string& iv = skirmishAIInfo.GetVersion();
 
 	LOG_L(L_ERROR, "[%s] required AI Interface for Skirmish AI %s %s not found", __func__, isn.c_str(), iv.c_str());
 }
@@ -182,7 +174,7 @@ void AILibraryManager::GatherSkirmishAILibInfoFromLuaFiles(T_dupSkirm& duplicate
 	// we are looking for:
 	// {SKIRMISH_AI_DATA_DIR}/{*}/{*}/AIInfo.lua
 	// {SKIRMISH_AI_DATA_DIR}/{*}/{*}/AIOptions.lua
-	for (const auto& possibleDataDir : dataDirsAccess.FindDirsInDirectSubDirs(SKIRMISH_AI_DATA_DIR)) {
+	for (const auto& possibleDataDir: dataDirsAccess.FindDirsInDirectSubDirs(SKIRMISH_AI_DATA_DIR)) {
 		const auto& infoFiles = CFileHandler::FindFiles(possibleDataDir, "AIInfo.lua");
 
 		if (infoFiles.empty())
@@ -262,9 +254,6 @@ void AILibraryManager::FilterDuplicateSkirmishAILibInfo(const T_dupSkirm& duplic
 	}
 }
 
-
-
-
 std::vector<SkirmishAIKey> AILibraryManager::FittingSkirmishAIKeys(const SkirmishAIKey& skirmishAIKey) const
 {
 	std::vector<SkirmishAIKey> matchedKeys;
@@ -289,15 +278,13 @@ std::vector<SkirmishAIKey> AILibraryManager::FittingSkirmishAIKeys(const Skirmis
 	return matchedKeys;
 }
 
-
-
 const CSkirmishAILibrary* AILibraryManager::FetchSkirmishAILibrary(const SkirmishAIKey& skirmishAIKey)
 {
 	const auto aiInfo = skirmishAIInfos.find(skirmishAIKey);
 
 	if (aiInfo == skirmishAIInfos.end()) {
 		const std::string& ksn = skirmishAIKey.GetShortName();
-		const std::string& kv  = skirmishAIKey.GetVersion();
+		const std::string& kv = skirmishAIKey.GetVersion();
 
 		LOG_L(L_ERROR, "[%s] unknown skirmish AI %s %s specified", __func__, ksn.c_str(), kv.c_str());
 		return nullptr;
@@ -325,7 +312,6 @@ void AILibraryManager::ReleaseSkirmishAILibrary(const SkirmishAIKey& skirmishAIK
 	ReleaseInterface(skirmishAIKey.GetInterface());
 }
 
-
 void AILibraryManager::ReleaseAll()
 {
 	for (const auto& p: loadedAIInterfaceLibs) {
@@ -339,8 +325,6 @@ void AILibraryManager::ReleaseAll()
 		ReleaseInterface(p.first);
 	}
 }
-
-
 
 CAIInterfaceLibrary* AILibraryManager::FetchInterface(const AIInterfaceKey& interfaceKey)
 {
@@ -381,12 +365,10 @@ void AILibraryManager::ReleaseInterface(const AIInterfaceKey& interfaceKey)
 	loadedAIInterfaceLibs.erase(interfacePos);
 }
 
-
-AIInterfaceKey AILibraryManager::FindFittingInterfaceKey(
-	const std::string& shortName,
-	const std::string& minVersion,
-	const AILibraryManager::T_interfaceSpecs& keys
-) {
+AIInterfaceKey AILibraryManager::FindFittingInterfaceKey(const std::string& shortName,
+    const std::string& minVersion,
+    const AILibraryManager::T_interfaceSpecs& keys)
+{
 	int minDiff = INT_MAX;
 	AIInterfaceKey fittingKey = AIInterfaceKey(); // unspecified key
 
@@ -405,9 +387,6 @@ AIInterfaceKey AILibraryManager::FindFittingInterfaceKey(
 
 	return fittingKey;
 }
-
-
-
 
 void AILibraryManager::OutputAIInterfacesInfo()
 {
@@ -458,9 +437,9 @@ void AILibraryManager::OutputSkirmishAIInfo()
 
 	for (const auto& key: aiKeys) {
 		const std::string& ksn = key.GetShortName();
-		const std::string& kv  = key.GetVersion();
+		const std::string& kv = key.GetVersion();
 		const std::string& isn = (key.GetInterface()).GetShortName();
-		const std::string& iv  = (key.GetInterface()).GetVersion();
+		const std::string& iv = (key.GetInterface()).GetVersion();
 
 		printf("# %-20s %-20s %-20s %s\n", ksn.c_str(), kv.c_str(), isn.c_str(), iv.c_str());
 	}
@@ -469,7 +448,7 @@ void AILibraryManager::OutputSkirmishAIInfo()
 
 	for (const auto& info: duplicateSkirmishAIInfos) {
 		const std::string& isn = info.first.GetShortName();
-		const std::string& iv  = info.first.GetVersion();
+		const std::string& iv = info.first.GetVersion();
 
 		printf("# WARNING: Duplicate Skirmish AI Info found:\n");
 		printf("# \tfor Skirmish AI: %s %s\n", isn.c_str(), iv.c_str());
@@ -488,16 +467,15 @@ int AILibraryManager::VersionCompare(const std::string& version1, const std::str
 	const std::vector<std::string>& parts1 = CSimpleParser::Split(version1, ".");
 	const std::vector<std::string>& parts2 = CSimpleParser::Split(version2, ".");
 
-	const unsigned int maxParts = (parts1.size() > parts2.size())? parts1.size(): parts2.size();
+	const unsigned int maxParts = (parts1.size() > parts2.size()) ? parts1.size() : parts2.size();
 
 	int diff = 0;
 	for (unsigned int i = 0; i < maxParts; ++i) {
-		const std::string& v1p = (i < parts1.size())? parts1[i] : "0";
-		const std::string& v2p = (i < parts2.size())? parts2[i] : "0";
+		const std::string& v1p = (i < parts1.size()) ? parts1[i] : "0";
+		const std::string& v2p = (i < parts2.size()) ? parts2[i] : "0";
 		diff += (1 << ((maxParts - i) * 2)) * v1p.compare(v2p);
 	}
 
 	// compute the sign of diff -> 1, 0 or -1
 	return (diff != 0) | -(int)((unsigned int)((int)diff) >> (sizeof(int) * CHAR_BIT - 1));
 }
-

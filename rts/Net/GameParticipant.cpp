@@ -7,10 +7,7 @@
 #include "System/Log/ILog.h"
 #include "System/Net/Connection.h"
 
-GameParticipant::GameParticipant()
-{
-	aiClientLinks[MAX_AIS] = ClientLinkData(false);
-}
+GameParticipant::GameParticipant() { aiClientLinks[MAX_AIS] = ClientLinkData(false); }
 
 GameParticipant::~GameParticipant()
 {
@@ -48,11 +45,12 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 
 			if (flush) {
 				/* delay to make sure the Flush() performed by Close()
-				* has an effect (forced flushes are undesirable) */
+				 * has an effect (forced flushes are undesirable) */
 				disconnectDelay = spring_gettime() + spring_time(1000);
 				disconnected = false;
 				LOG("%s: client disconnecting...", __func__);
-			} else
+			}
+			else
 				CloseConnection(false);
 		}
 		else
@@ -67,7 +65,8 @@ void GameParticipant::Kill(const std::string& reason, const bool flush)
 	myState = (disconnected) ? DISCONNECTED : DISCONNECTING;
 }
 
-void GameParticipant::CheckForExpiredConnection() {
+void GameParticipant::CheckForExpiredConnection()
+{
 	if (myState == DISCONNECTING) {
 		if (spring_gettime() >= disconnectDelay) {
 			CloseConnection(true);
@@ -77,7 +76,8 @@ void GameParticipant::CheckForExpiredConnection() {
 	}
 }
 
-void GameParticipant::CloseConnection(bool flush) {
+void GameParticipant::CloseConnection(bool flush)
+{
 	if (clientLink != nullptr) {
 		LOG("%s: client connection closed", __func__);
 		clientLink->Close(flush);

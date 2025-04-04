@@ -1,21 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <vector>
-#include <cassert>
-#include <limits>
-
 #include "SmoothHeightMesh.h"
 
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/ModInfo.h"
-#include "System/float3.h"
 #include "System/Log/ILog.h"
-#include "System/SpringMath.h"
-#include "System/TimeProfiler.h"
-#include "System/Threading/ThreadPool.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
+#include "System/Threading/ThreadPool.h"
+#include "System/TimeProfiler.h"
+#include "System/float3.h"
+
+#include <cassert>
+#include <limits>
+#include <vector>
 
 
 using namespace SmoothHeightMeshNamespace;
@@ -34,7 +33,6 @@ using namespace SmoothHeightMeshNamespace;
 
 SmoothHeightMesh smoothGround;
 
-
 static float Interpolate(float x, float y, const int maxx, const int maxy, const float res, const float* heightmap)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -48,9 +46,9 @@ static float Interpolate(float x, float y, const int maxx, const int maxy, const
 	const int sxp1 = std::min(sx + 1, maxx - 1);
 	const int syp1 = std::min(sy + 1, maxy - 1);
 
-	const float& h1 = heightmap[sx   + sy   * maxx];
-	const float& h2 = heightmap[sxp1 + sy   * maxx];
-	const float& h3 = heightmap[sx   + syp1 * maxx];
+	const float& h1 = heightmap[sx + sy * maxx];
+	const float& h2 = heightmap[sxp1 + sy * maxx];
+	const float& h3 = heightmap[sx + syp1 * maxx];
 	const float& h4 = heightmap[sxp1 + syp1 * maxx];
 
 	const float hi1 = mix(h1, h2, dx);
@@ -66,7 +64,8 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 	enabled = modInfo.enableSmoothMesh;
 
 	// we use SSE in performance sensitive code, don't let the window size be too small.
-	if (smoothRad < 4) smoothRad = 4;
+	if (smoothRad < 4)
+		smoothRad = 4;
 
 	fmaxx = max.x * SQUARE_SIZE;
 	fmaxy = max.y * SQUARE_SIZE;
@@ -81,10 +80,12 @@ void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 	InitMapChangeTracking();
 	InitDataStructures();
 
-	if (enabled) MakeSmoothMesh();
+	if (enabled)
+		MakeSmoothMesh();
 }
 
-void SmoothHeightMesh::InitMapChangeTracking() {
+void SmoothHeightMesh::InitMapChangeTracking()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int damageTrackWidth = maxx / SAMPLES_PER_QUAD + (maxx % SAMPLES_PER_QUAD ? 1 : 0);
 	const int damageTrackHeight = maxy / SAMPLES_PER_QUAD + (maxy % SAMPLES_PER_QUAD ? 1 : 0);
@@ -95,7 +96,8 @@ void SmoothHeightMesh::InitMapChangeTracking() {
 	mapChangeTrack.height = damageTrackHeight;
 }
 
-void SmoothHeightMesh::InitDataStructures() {
+void SmoothHeightMesh::InitDataStructures()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(mesh.empty());
 	maximaMesh.resize(maxx * maxy, 0.0f);
@@ -108,12 +110,21 @@ void SmoothHeightMesh::InitDataStructures() {
 	maximaRows.resize(maxx, -1);
 }
 
-void SmoothHeightMesh::Kill() {
+void SmoothHeightMesh::Kill()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	while (!mapChangeTrack.damageQueue[0].empty()) { mapChangeTrack.damageQueue[0].pop(); }
-	while (!mapChangeTrack.damageQueue[1].empty()) { mapChangeTrack.damageQueue[1].pop(); }
-	while (!mapChangeTrack.horizontalBlurQueue.empty()) { mapChangeTrack.horizontalBlurQueue.pop(); }
-	while (!mapChangeTrack.verticalBlurQueue.empty()) { mapChangeTrack.verticalBlurQueue.pop(); }
+	while (!mapChangeTrack.damageQueue[0].empty()) {
+		mapChangeTrack.damageQueue[0].pop();
+	}
+	while (!mapChangeTrack.damageQueue[1].empty()) {
+		mapChangeTrack.damageQueue[1].pop();
+	}
+	while (!mapChangeTrack.horizontalBlurQueue.empty()) {
+		mapChangeTrack.horizontalBlurQueue.pop();
+	}
+	while (!mapChangeTrack.verticalBlurQueue.empty()) {
+		mapChangeTrack.verticalBlurQueue.pop();
+	}
 
 	mapChangeTrack.damageMap.clear();
 	maximaMesh.clear();
@@ -138,42 +149,42 @@ float SmoothHeightMesh::GetHeightAboveWater(float x, float y)
 float SmoothHeightMesh::SetHeight(int index, float h)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	assert(index < maxx*maxy);
+	assert(index < maxx * maxy);
 	return (mesh[index] = h);
 }
 
 float SmoothHeightMesh::AddHeight(int index, float h)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	assert(index < maxx*maxy);
+	assert(index < maxx * maxy);
 	return (mesh[index] += h);
 }
 
 float SmoothHeightMesh::SetMaxHeight(int index, float h)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	assert(index < maxx*maxy);
+	assert(index < maxx * maxy);
 	return (mesh[index] = std::max(h, mesh[index]));
 }
 
-inline static float GetRealGroundHeight(int x, int y, int resolution) {
+inline static float GetRealGroundHeight(int x, int y, int resolution)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float* heightMap = readMap->GetCornerHeightMapSynced();
-	const int baseIndex = (x + y*mapDims.mapxp1)*resolution;
+	const int baseIndex = (x + y * mapDims.mapxp1) * resolution;
 
 	return heightMap[baseIndex];
 }
 
-inline static void FindMaximumColumnHeights(
-	const int2 map,
-	const int y,
-	const int minx,
-	const int maxx,
-	const int winSize,
-	const int resolution,
-	std::vector<float>& colsMaxima,
-	std::vector<int>& maximaRows
-) {
+inline static void FindMaximumColumnHeights(const int2 map,
+    const int y,
+    const int minx,
+    const int maxx,
+    const int winSize,
+    const int resolution,
+    std::vector<float>& colsMaxima,
+    std::vector<int>& maximaRows)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// initialize the algorithm: find the maximum
 	// height per column and the corresponding row
@@ -182,7 +193,7 @@ inline static void FindMaximumColumnHeights(
 	const int maxy = std::min(y + winSize, map.y - 1);
 
 	for (int y1 = miny; y1 <= maxy; ++y1) {
-		for (int x = minx; x <= maxx; ++x)  {
+		for (int x = minx; x <= maxx; ++x) {
 			const float curh = GetRealGroundHeight(x, y1, resolution);
 
 			if (curh >= colsMaxima[x]) {
@@ -198,17 +209,15 @@ inline static void FindMaximumColumnHeights(
 #endif
 }
 
-
-inline static void FindRadialMaximum(
-	const int2 map,
-	int y,
-	int minx,
-	int maxx,
-	int winSize,
-	float resolution,
-	const std::vector<float>& colsMaxima,
-	      std::vector<float>& mesh
-) {
+inline static void FindRadialMaximum(const int2 map,
+    int y,
+    int minx,
+    int maxx,
+    int winSize,
+    float resolution,
+    const std::vector<float>& colsMaxima,
+    std::vector<float>& mesh)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (int x = minx; x <= maxx; ++x) {
 		float maxRowHeight = -std::numeric_limits<float>::max();
@@ -255,17 +264,15 @@ inline static void FindRadialMaximum(
 	}
 }
 
-
-inline static void AdvanceMaximas(
-	const int2 map,
-	const int y,
-	const int minx,
-	const int maxx,
-	const int winSize,
-	const int resolution,
-	std::vector<float>& colsMaxima,
-	std::vector<int>& maximaRows
-) {
+inline static void AdvanceMaximas(const int2 map,
+    const int y,
+    const int minx,
+    const int maxx,
+    const int winSize,
+    const int resolution,
+    std::vector<float>& colsMaxima,
+    std::vector<int>& maximaRows)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// fix remaining maximums after a pass
 	const int miny = std::max(y - winSize, 0);
@@ -285,7 +292,8 @@ inline static void AdvanceMaximas(
 					maximaRows[x] = y1;
 				}
 			}
-		} else if (virtualRow < map.y) {
+		}
+		else if (virtualRow < map.y) {
 			// else, just check if a new maximum has entered the window
 			const float h = GetRealGroundHeight(x, maxy, resolution);
 
@@ -304,26 +312,23 @@ inline static void AdvanceMaximas(
 	}
 }
 
-
-inline static void BlurHorizontal(
-	const int2 mapSize,
-	const int2 min,
-	const int2 max,
-	const int blurSize,
-	const int resolution,
-	const std::vector<float>& mesh,
-	      std::vector<float>& smoothed
-) {
+inline static void BlurHorizontal(const int2 mapSize,
+    const int2 min,
+    const int2 max,
+    const int blurSize,
+    const int resolution,
+    const std::vector<float>& mesh,
+    std::vector<float>& smoothed)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int lineSize = mapSize.x;
 	const int mapMaxX = mapSize.x - 1;
 
-	for (int y = min.y; y <= max.y; ++y)
-	{
+	for (int y = min.y; y <= max.y; ++y) {
 		float avg = 0.0f;
 		float lv = 0;
 		float rv = 0;
-		float weight = 1.f / ((float)(blurSize*2 + 1));
+		float weight = 1.f / ((float)(blurSize * 2 + 1));
 		int li = min.x - blurSize;
 		int ri = min.x + blurSize;
 
@@ -331,52 +336,50 @@ inline static void BlurHorizontal(
 		// the rest of the points can be determined by taking the average after removing the
 		// last oldest value and adding the next value.
 		for (int x1 = li; x1 <= ri; ++x1) {
-		 	avg += mesh[std::max(0, std::min(x1, mapMaxX)) + y * lineSize];
+			avg += mesh[std::max(0, std::min(x1, mapMaxX)) + y * lineSize];
 		}
 		// ri should point to the next value to add to the averages
 		ri++;
 
-		for (int x = min.x; x <= max.x; ++x)
-		{
+		for (int x = min.x; x <= max.x; ++x) {
 			// Remove the oldest height value (lv) and add the newest height value (rv)
 			avg += (-lv) + rv;
 			const float gh = GetRealGroundHeight(x, y, resolution);
-			smoothed[x + y * lineSize] = std::max(gh, avg*weight);
+			smoothed[x + y * lineSize] = std::max(gh, avg * weight);
 
 			// Get the values to add/remove for next iteration
 			lv = mesh[std::max(0, std::min(li, mapMaxX)) + y * lineSize];
-			rv = mesh[            std::min(ri, mapMaxX)  + y * lineSize];
-			li++; ri++;
+			rv = mesh[std::min(ri, mapMaxX) + y * lineSize];
+			li++;
+			ri++;
 
 #ifdef SMOOTH_MESH_DEBUG_BLUR
-			LOG ( "%s: x: %d, y: %d, avg: %f (%f) (g: %f) (max h: %f)"
-				, __func__, x, y, avg, avg*weight, gh, readMap->GetCurrMaxHeight());
+			LOG("%s: x: %d, y: %d, avg: %f (%f) (g: %f) (max h: %f)", __func__, x, y, avg, avg * weight, gh,
+			    readMap->GetCurrMaxHeight());
 #endif
 		}
 	}
 }
 
-inline static void BlurVertical(
-	const int2 mapSize,
-	const int2 min,
-	const int2 max,
-	const int blurSize,
-	const int resolution,
-	const std::vector<float>& mesh,
-	      std::vector<float>& smoothed
-) {
+inline static void BlurVertical(const int2 mapSize,
+    const int2 min,
+    const int2 max,
+    const int blurSize,
+    const int resolution,
+    const std::vector<float>& mesh,
+    std::vector<float>& smoothed)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// See BlurHorizontal for all the detailed comments.
 
 	const int lineSize = mapSize.x;
 	const int mapMaxY = mapSize.y - 1;
 
-	for (int x = min.x; x <= max.x; ++x)
-	{
+	for (int x = min.x; x <= max.x; ++x) {
 		float avg = 0.0f;
 		float lv = 0;
 		float rv = 0;
-		float weight = 1.f / ((float)(blurSize*2 + 1));
+		float weight = 1.f / ((float)(blurSize * 2 + 1));
 		int li = min.y - blurSize;
 		int ri = min.y + blurSize;
 		for (int y1 = li; y1 <= ri; ++y1) {
@@ -385,37 +388,35 @@ inline static void BlurVertical(
 		ri++;
 
 #ifdef SMOOTH_MESH_DEBUG_BLUR
-		LOG("%s: starting average is: %f (%f) (w: %f)", __func__, avg, avg*weight, weight);
+		LOG("%s: starting average is: %f (%f) (w: %f)", __func__, avg, avg * weight, weight);
 #endif
 
-		for (int y = min.y; y <= max.y; ++y)
-		{
+		for (int y = min.y; y <= max.y; ++y) {
 			avg += (-lv) + rv;
 			const float gh = GetRealGroundHeight(x, y, resolution);
-			smoothed[x + y * lineSize] = std::max(gh, avg*weight);
+			smoothed[x + y * lineSize] = std::max(gh, avg * weight);
 
-			lv = mesh[ x + std::max(0, std::min(li, mapMaxY)) * lineSize];
-			rv = mesh[ x +             std::min(ri, mapMaxY)  * lineSize];
-			li++; ri++;
+			lv = mesh[x + std::max(0, std::min(li, mapMaxY)) * lineSize];
+			rv = mesh[x + std::min(ri, mapMaxY) * lineSize];
+			li++;
+			ri++;
 
 #ifdef SMOOTH_MESH_DEBUG_BLUR
-			LOG("%s: x: %d, y: %d, avg: %f (%f) (g: %f)", __func__, x, y, avg, avg*weight, gh);
+			LOG("%s: x: %d, y: %d, avg: %f (%f) (g: %f)", __func__, x, y, avg, avg * weight, gh);
 			LOG("%s: for next line -%f +%f", __func__, lv, rv);
 #endif
 		}
 	}
 }
 
-
-inline static void CheckInvariants(
-	int y,
-	int maxx,
-	int maxy,
-	int winSize,
-	int resolution,
-	const std::vector<float>& colsMaxima,
-	const std::vector<int>& maximaRows
-) {
+inline static void CheckInvariants(int y,
+    int maxx,
+    int maxy,
+    int winSize,
+    int resolution,
+    const std::vector<float>& colsMaxima,
+    const std::vector<int>& maximaRows)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// check invariants - only for initial mesh creationgit reset HEAD~
 	if (y <= maxy) {
@@ -433,30 +434,29 @@ inline static void CheckInvariants(
 	}
 }
 
-
-void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
+void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
-	if (!enabled) return;
+	if (!enabled)
+		return;
 
 	const bool queueWasEmpty = mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
-	const int res = resolution*SAMPLES_PER_QUAD;
+	const int res = resolution * SAMPLES_PER_QUAD;
 	const int w = mapChangeTrack.width;
 	const int h = mapChangeTrack.height;
-	
-	const int2 min  { std::max((x1 - smoothRadius) / res, 0)
-					, std::max((y1 - smoothRadius) / res, 0)};
-	const int2 max  { std::min((x2 + smoothRadius - 1) / res, (w-1))
-					, std::min((y2 + smoothRadius - 1) / res, (h-1))};
+
+	const int2 min{std::max((x1 - smoothRadius) / res, 0), std::max((y1 - smoothRadius) / res, 0)};
+	const int2 max{std::min((x2 + smoothRadius - 1) / res, (w - 1)), std::min((y2 + smoothRadius - 1) / res, (h - 1))};
 
 	for (int y = min.y; y <= max.y; ++y) {
-		int i = min.x + y*w;
+		int i = min.x + y * w;
 		for (int x = min.x; x <= max.x; ++x, ++i) {
 			if (!mapChangeTrack.damageMap[i]) {
 				mapChangeTrack.damageMap[i] = true;
 				mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].push(i);
 			}
-		}	
+		}
 	}
 
 	const bool queueWasUpdated = !mapChangeTrack.damageQueue[mapChangeTrack.activeBuffer].empty();
@@ -465,41 +465,33 @@ void SmoothHeightMesh::MapChanged(int x1, int y1, int x2, int y2) {
 		mapChangeTrack.queueReleaseOnFrame = gs->frameNum + SMOOTH_MESH_UPDATE_DELAY;
 }
 
-
-inline static void CopyMeshPart
-		( int mapx
-		, int2 min
-		, int2 max
-		, const std::vector<float>& src
-		, std::vector<float>& dest
-		) {
-			RECOIL_DETAILED_TRACY_ZONE;
+inline static void CopyMeshPart(int mapx, int2 min, int2 max, const std::vector<float>& src, std::vector<float>& dest)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
 	for (int y = min.y; y <= max.y; ++y) {
-		const int startIdx = min.x + y*mapx;
-		const int endIdx = max.x + y*mapx + 1;
+		const int startIdx = min.x + y * mapx;
+		const int endIdx = max.x + y * mapx + 1;
 		std::copy(src.begin() + startIdx, src.begin() + endIdx, dest.begin() + startIdx);
 	}
 }
 
-
-inline static bool UpdateSmoothMeshRequired(SmoothHeightMesh::MapChangeTrack& mapChangeTrack) {
+inline static bool UpdateSmoothMeshRequired(SmoothHeightMesh::MapChangeTrack& mapChangeTrack)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const bool flushBuffer = !mapChangeTrack.activeBuffer;
 	const bool activeBuffer = mapChangeTrack.activeBuffer;
-	const bool currentWorkloadComplete = mapChangeTrack.damageQueue[flushBuffer].empty()
-									  && mapChangeTrack.horizontalBlurQueue.empty()
-									  && mapChangeTrack.verticalBlurQueue.empty();
+	const bool currentWorkloadComplete = mapChangeTrack.damageQueue[flushBuffer].empty() &&
+	                                     mapChangeTrack.horizontalBlurQueue.empty() &&
+	                                     mapChangeTrack.verticalBlurQueue.empty();
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
-	LOG("%s: flush buffer is %d; damage queue is %I64d; blur queue is %I64d"
-		, __func__, (int)flushBuffer, meshDamageTrack.damageQueue[flushBuffer].size()
-		, meshDamageTrack.blurQueue.size()
-		);
+	LOG("%s: flush buffer is %d; damage queue is %I64d; blur queue is %I64d", __func__, (int)flushBuffer,
+	    meshDamageTrack.damageQueue[flushBuffer].size(), meshDamageTrack.blurQueue.size());
 #endif
 
-	if (currentWorkloadComplete){
-		const bool activeBufferReady = !mapChangeTrack.damageQueue[activeBuffer].empty()
-									&& gs->frameNum >= mapChangeTrack.queueReleaseOnFrame;
+	if (currentWorkloadComplete) {
+		const bool activeBufferReady =
+		    !mapChangeTrack.damageQueue[activeBuffer].empty() && gs->frameNum >= mapChangeTrack.queueReleaseOnFrame;
 		if (activeBufferReady) {
 			mapChangeTrack.activeBuffer = !mapChangeTrack.activeBuffer;
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
@@ -511,8 +503,8 @@ inline static bool UpdateSmoothMeshRequired(SmoothHeightMesh::MapChangeTrack& ma
 	return !currentWorkloadComplete;
 }
 
-
-void SmoothHeightMesh::UpdateSmoothMeshMaximas(int2 damageMin, int2 damageMax) {
+void SmoothHeightMesh::UpdateSmoothMeshMaximas(int2 damageMin, int2 damageMax)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int winSize = smoothRadius / resolution;
 	const int blurSize = std::max(1, winSize / 2);
@@ -528,44 +520,41 @@ void SmoothHeightMesh::UpdateSmoothMeshMaximas(int2 damageMin, int2 damageMax) {
 	max.y = std::clamp(max.y, 0, map.y - 1);
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
-LOG("%s: quad index %d (%d,%d)-(%d,%d) (%d,%d)-(%d,%d) updating maxima"
-	, __func__, damagedAreaIndex, damageMin.x, damageMin.y, damageMax.x, damageMax.y, min.x, min.y, max.x, max.y
-	);
+	LOG("%s: quad index %d (%d,%d)-(%d,%d) (%d,%d)-(%d,%d) updating maxima", __func__, damagedAreaIndex, damageMin.x,
+	    damageMin.y, damageMax.x, damageMax.y, min.x, min.y, max.x, max.y);
 
-LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
-	, (float)damageMin.x * fresolution, (float)damageMin.y * fresolution
-	, (float)damageMax.x * fresolution, (float)damageMax.y * fresolution
-	);
+	LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__, (float)damageMin.x * fresolution,
+	    (float)damageMin.y * fresolution, (float)damageMax.x * fresolution, (float)damageMax.y * fresolution);
 #endif
 
-	for (int i = min.x; i <= max.x; ++i)
-		colsMaxima[i] = -std::numeric_limits<float>::max();
+	for (int i = min.x; i <= max.x; ++i) colsMaxima[i] = -std::numeric_limits<float>::max();
 
-	for (int i = min.x; i <= max.x; ++i)
-		maximaRows[i] = -1;
+	for (int i = min.x; i <= max.x; ++i) maximaRows[i] = -1;
 
 	FindMaximumColumnHeights(map, damageMin.y, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
 
 	for (int y = damageMin.y; y <= damageMax.y; ++y) {
 		FindRadialMaximum(map, y, damageMin.x, damageMax.x, winSize, resolution, colsMaxima, maximaMesh);
-		AdvanceMaximas(map, y+1, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
+		AdvanceMaximas(map, y + 1, min.x, max.x, winSize, resolution, colsMaxima, maximaRows);
 	}
 }
 
-
-void SmoothHeightMesh::UpdateSmoothMesh() {
-	if (!enabled) return;
+void SmoothHeightMesh::UpdateSmoothMesh()
+{
+	if (!enabled)
+		return;
 
 	SCOPED_TIMER("Sim::SmoothHeightMesh::UpdateSmoothMesh");
 
-	if (!UpdateSmoothMeshRequired(mapChangeTrack)) return;
+	if (!UpdateSmoothMeshRequired(mapChangeTrack))
+		return;
 
 	const bool flushBuffer = !mapChangeTrack.activeBuffer;
 	const bool updateMaxima = !mapChangeTrack.damageQueue[flushBuffer].empty();
 	const bool doHorizontalBlur = !mapChangeTrack.horizontalBlurQueue.empty();
 
 	std::queue<int>* activeQueue = nullptr;
-	if (updateMaxima) 
+	if (updateMaxima)
 		activeQueue = &mapChangeTrack.damageQueue[flushBuffer];
 	else if (doHorizontalBlur)
 		activeQueue = &mapChangeTrack.horizontalBlurQueue;
@@ -578,7 +567,7 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 	// area of the map which to recalculate the height values
 	const int damageX = damagedAreaIndex % mapChangeTrack.width;
 	const int damageY = damagedAreaIndex / mapChangeTrack.width;
-	int2 damageMin{damageX*SAMPLES_PER_QUAD, damageY*SAMPLES_PER_QUAD};
+	int2 damageMin{damageX * SAMPLES_PER_QUAD, damageY * SAMPLES_PER_QUAD};
 	int2 damageMax = damageMin + int2{SAMPLES_PER_QUAD - 1, SAMPLES_PER_QUAD - 1};
 
 	damageMin.x = std::clamp(damageMin.x, 0, maxx - 1);
@@ -591,20 +580,18 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 
 		mapChangeTrack.horizontalBlurQueue.push(damagedAreaIndex);
 		mapChangeTrack.damageMap[damagedAreaIndex] = false;
-	} else {
+	}
+	else {
 		const int winSize = smoothRadius / resolution;
 		const int blurSize = std::max(1, winSize / 2);
 		const int2 map{maxx, maxy};
 
 #ifdef SMOOTH_MESH_DEBUG_GENERAL
-	LOG("%s: quad index %d (%d,%d)-(%d,%d) applying blur", __func__
-		, damagedAreaIndex, damageMin.x, damageMin.y, damageMax.x, damageMax.y
-		);
+		LOG("%s: quad index %d (%d,%d)-(%d,%d) applying blur", __func__, damagedAreaIndex, damageMin.x, damageMin.y,
+		    damageMax.x, damageMax.y);
 
-	LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__
-		, (float)damageMin.x * fresolution, (float)damageMin.y * fresolution
-		, (float)damageMax.x * fresolution, (float)damageMax.y * fresolution
-		);
+		LOG("%s: quad area in world space (%f,%f) (%f,%f)", __func__, (float)damageMin.x * fresolution,
+		    (float)damageMin.y * fresolution, (float)damageMax.x * fresolution, (float)damageMax.y * fresolution);
 #endif
 
 		if (doHorizontalBlur) {
@@ -618,8 +605,8 @@ void SmoothHeightMesh::UpdateSmoothMesh() {
 	}
 }
 
-
-void SmoothHeightMesh::MakeSmoothMesh() {
+void SmoothHeightMesh::MakeSmoothMesh()
+{
 	SCOPED_ONCE_TIMER("SmoothHeightMesh::MakeSmoothMesh");
 
 	// A sliding window is used to reduce computational complexity
@@ -628,14 +615,14 @@ void SmoothHeightMesh::MakeSmoothMesh() {
 	// blur size is half the window size to create a wider plateau
 	const int blurSize = std::max(1, winSize / 2);
 	int2 min{0, 0};
-	int2 max{maxx-1, maxy-1};
+	int2 max{maxx - 1, maxy - 1};
 	int2 map{maxx, maxy};
 
- 	FindMaximumColumnHeights(map, 0, 0, max.x, winSize, resolution, colsMaxima, maximaRows);
+	FindMaximumColumnHeights(map, 0, 0, max.x, winSize, resolution, colsMaxima, maximaRows);
 
 	for (int y = 0; y <= max.y; ++y) {
 		FindRadialMaximum(map, y, 0, max.x, winSize, resolution, colsMaxima, maximaMesh);
-		AdvanceMaximas(map, y+1, 0, max.x, winSize, resolution, colsMaxima, maximaRows);
+		AdvanceMaximas(map, y + 1, 0, max.x, winSize, resolution, colsMaxima, maximaRows);
 
 #ifdef _DEBUG
 		CheckInvariants(y, max.x, max.y, winSize, resolution, colsMaxima, maximaRows);
@@ -652,29 +639,28 @@ void SmoothHeightMesh::MakeSmoothMesh() {
 	std::copy(mesh.begin(), mesh.end(), tempMesh.begin());
 }
 
-
 // =============================================
 // Old gaussian kernel reference code kept here for future reference
 // =============================================
-	// const auto fillGaussianKernelFunc = [blurSize](std::vector<float>& gaussianKernel, const float sigma) {
-	// 	gaussianKernel.resize(blurSize + 1);
+// const auto fillGaussianKernelFunc = [blurSize](std::vector<float>& gaussianKernel, const float sigma) {
+// 	gaussianKernel.resize(blurSize + 1);
 
-	// 	const auto gaussianG = [](const int x, const float sigma) -> float {
-	// 		// 0.3989422804f = 1/sqrt(2*pi)
-	// 		return 0.3989422804f * math::expf(-0.5f * x * x / (sigma * sigma)) / sigma;
-	// 	};
+// 	const auto gaussianG = [](const int x, const float sigma) -> float {
+// 		// 0.3989422804f = 1/sqrt(2*pi)
+// 		return 0.3989422804f * math::expf(-0.5f * x * x / (sigma * sigma)) / sigma;
+// 	};
 
-	// 	float sum = (gaussianKernel[0] = gaussianG(0, sigma));
+// 	float sum = (gaussianKernel[0] = gaussianG(0, sigma));
 
-	// 	for (int i = 1; i < blurSize + 1; ++i) {
-	// 		sum += 2.0f * (gaussianKernel[i] = gaussianG(i, sigma));
-	// 	}
+// 	for (int i = 1; i < blurSize + 1; ++i) {
+// 		sum += 2.0f * (gaussianKernel[i] = gaussianG(i, sigma));
+// 	}
 
-	// 	for (auto& gk : gaussianKernel) {
-	// 		gk /= sum;
-	// 	}
-	// };
+// 	for (auto& gk : gaussianKernel) {
+// 		gk /= sum;
+// 	}
+// };
 
-	// constexpr float gSigma = 5.0f;
-	// fillGaussianKernelFunc(gaussianKernel, gSigma);
+// constexpr float gSigma = 5.0f;
+// fillGaussianKernelFunc(gaussianKernel, gSigma);
 // =============================================

@@ -2,11 +2,12 @@
 
 
 #include "UnitTracker.h"
+
+#include "Game/Camera.h"
 #include "Game/Camera/FPSController.h"
 #include "Game/CameraHandler.h"
-#include "Game/Camera.h"
-#include "Game/SelectedUnitsHandler.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/SelectedUnitsHandler.h"
 #include "Map/Ground.h"
 #include "Rendering/GlobalRendering.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -16,35 +17,28 @@
 #include "Sim/Units/UnitHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 
 CUnitTracker unitTracker;
 
 
-const char* CUnitTracker::modeNames[TrackModeCount] = {
-	"Single",
-	"Average",
-	"Extents"
-};
+const char* CUnitTracker::modeNames[TrackModeCount] = {"Single", "Average", "Extents"};
 
-bool IsInvalidUnitForSelection(int unitID) {
+bool IsInvalidUnitForSelection(int unitID)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* u = unitHandler.GetUnit(unitID);
 	if (!u)
 		return true;
 
-	const bool canSeeAndSelect =
-		(losHandler->GetGlobalLOS(u->allyteam) ||
-		(gu->spectating && gu->spectatingFullView) ||
-		(u->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_CONTRADAR)) != 0) &&
-		selectedUnitsHandler.CanISelectTeam(gu->GetMyPlayer(), u->team);
+	const bool canSeeAndSelect = (losHandler->GetGlobalLOS(u->allyteam) || (gu->spectating && gu->spectatingFullView) ||
+	                                 (u->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_CONTRADAR)) != 0) &&
+	                             selectedUnitsHandler.CanISelectTeam(gu->GetMyPlayer(), u->team);
 
 	return !canSeeAndSelect;
 };
-
 
 void CUnitTracker::Disable()
 {
@@ -53,13 +47,11 @@ void CUnitTracker::Disable()
 	enabled = false;
 }
 
-
 int CUnitTracker::GetMode() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return trackMode;
 }
-
 
 void CUnitTracker::IncMode()
 {
@@ -68,14 +60,12 @@ void CUnitTracker::IncMode()
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
 
-
 void CUnitTracker::SetMode(int mode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	trackMode = std::clamp(mode, 0, TrackModeCount - 1);
 	LOG("TrackMode: %s", modeNames[trackMode]);
 }
-
 
 /******************************************************************************/
 
@@ -87,7 +77,7 @@ void CUnitTracker::Track(std::vector<int>&& unitIDs)
 	if (!unitIDs.empty())
 		selectedUnitsHandler.ClearSelected();
 
-	for (int unitID : unitIDs) {
+	for (int unitID: unitIDs) {
 		selectedUnitsHandler.AddUnit(unitHandler.GetUnit(unitID));
 	}
 
@@ -98,7 +88,8 @@ void CUnitTracker::Track(std::vector<int>&& unitIDs)
 	if (trackedUnitIDs.empty()) {
 		if (su.empty()) {
 			Disable();
-		} else {
+		}
+		else {
 			MakeTrackGroup();
 			trackUnit = *trackedUnitIDs.begin();
 			enabled = true;
@@ -128,7 +119,6 @@ void CUnitTracker::Track(std::vector<int>&& unitIDs)
 	enabled = true;
 }
 
-
 void CUnitTracker::MakeTrackGroup()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -151,7 +141,7 @@ void CUnitTracker::CleanTrackGroup()
 			invalidUnitIDs.push_back(unitID);
 	}
 
-	for (const int invalidUnitID : invalidUnitIDs) {
+	for (const int invalidUnitID: invalidUnitIDs) {
 		trackedUnitIDs.erase(invalidUnitID);
 	}
 
@@ -166,7 +156,6 @@ void CUnitTracker::CleanTrackGroup()
 
 	trackUnit = *trackedUnitIDs.begin();
 }
-
 
 void CUnitTracker::NextUnit()
 {
@@ -184,11 +173,11 @@ void CUnitTracker::NextUnit()
 	if ((++it) == trackedUnitIDs.end()) {
 		trackUnit = *trackedUnitIDs.begin();
 		Disable();
-	} else {
+	}
+	else {
 		trackUnit = *it;
 	}
 }
-
 
 CUnit* CUnitTracker::GetTrackUnit()
 {
@@ -203,7 +192,6 @@ CUnit* CUnitTracker::GetTrackUnit()
 	return unitHandler.GetUnitUnsafe(trackUnit);
 }
 
-
 float3 CUnitTracker::CalcAveragePos() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -215,7 +203,6 @@ float3 CUnitTracker::CalcAveragePos() const
 
 	return (p / trackedUnitIDs.size());
 }
-
 
 float3 CUnitTracker::CalcExtentsPos() const
 {
@@ -233,7 +220,6 @@ float3 CUnitTracker::CalcExtentsPos() const
 	return ((minPos + maxPos) * 0.5f);
 }
 
-
 /******************************************************************************/
 
 void CUnitTracker::SetCam()
@@ -249,7 +235,8 @@ void CUnitTracker::SetCam()
 	if (lastFollowUnit != 0 && unitHandler.GetUnitUnsafe(lastFollowUnit) == nullptr) {
 		timeOut = 1;
 		lastFollowUnit = 0;
-	} else {
+	}
+	else {
 		oldCamDir = camera->GetDir();
 		oldCamPos = camera->GetPos();
 	}
@@ -268,24 +255,26 @@ void CUnitTracker::SetCam()
 		timeOut *= (timeOut <= 15);
 
 		camHandler->UpdateTransition();
-	} else if (camHandler->GetCurrentControllerNum() != CCameraHandler::CAMERA_MODE_FIRSTPERSON) {
+	}
+	else if (camHandler->GetCurrentControllerNum() != CCameraHandler::CAMERA_MODE_FIRSTPERSON) {
 		// non-FPS camera modes  (immediate positional tracking)
 		float3 pos;
 		switch (trackMode) {
-			case TrackAverage: {
-				pos = CalcAveragePos();
-			} break;
-			case TrackExtents: {
-				pos = CalcExtentsPos();
-			} break;
-			default: {
-				pos = u->drawMidPos;
-			} break;
+		case TrackAverage: {
+			pos = CalcAveragePos();
+		} break;
+		case TrackExtents: {
+			pos = CalcExtentsPos();
+		} break;
+		default: {
+			pos = u->drawMidPos;
+		} break;
 		}
 
 		camHandler->GetCurrentController().SetTrackingInfo(pos, u->radius * 2.7182818f);
 		camHandler->UpdateTransition();
-	} else {
+	}
+	else {
 		// FPS Camera
 		const float offsetTime = gs->frameNum + globalRendering->timeOffset;
 		const float deltaTime = offsetTime - lastUpdateTime;
@@ -293,9 +282,10 @@ void CUnitTracker::SetCam()
 
 		const float3 modFrontVec = u->frontdir * u->radius * 3.0f;
 		const float3 mixRightDir = mix<float3>(u->rightdir, RgtVector, 0.75f); // NB: will be 0 if u->r == -R
-		      float3 modPlanePos = u->drawMidPos - modFrontVec;
+		float3 modPlanePos = u->drawMidPos - modFrontVec;
 
-		modPlanePos.y = std::max(modPlanePos.y, CGround::GetHeightReal(modPlanePos.x, modPlanePos.z, false) + (u->radius * 2.0f));
+		modPlanePos.y =
+		    std::max(modPlanePos.y, CGround::GetHeightReal(modPlanePos.x, modPlanePos.z, false) + (u->radius * 2.0f));
 
 		trackPos += (modPlanePos - trackPos) * (1 - math::pow(0.95f, deltaTime));
 		trackDir += (u->frontdir - trackDir) * (1 - math::pow(0.90f, deltaTime));

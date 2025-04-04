@@ -3,19 +3,17 @@
 #ifndef _CONNECTION_H
 #define _CONNECTION_H
 
-#include <string>
-#include <memory>
-
 #include "RawPacket.h"
 
-namespace netcode
-{
+#include <memory>
+#include <string>
+
+namespace netcode {
 
 /**
  * @brief Base class for connecting to various receivers / senders
  */
-class CConnection
-{
+class CConnection {
 public:
 	virtual ~CConnection() {}
 
@@ -62,7 +60,9 @@ public:
 	virtual bool NeedsReconnect() = 0;
 
 	unsigned int GetDataReceived() const { return dataRecv; }
+
 	unsigned int GetNumQueuedPings() const { return numPings; }
+
 	virtual unsigned int GetPacketQueueSize() const { return 0; }
 
 	virtual std::string Statistics() const = 0;
@@ -86,4 +86,3 @@ protected:
 } // namespace netcode
 
 #endif // _CONNECTION_H
-

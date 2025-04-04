@@ -11,7 +11,6 @@ struct SSkirmishAICallback;
 struct Command;
 class float3;
 
-
 /**
  * Acts as an OO wrapper for a Skirmish AI instance.
  * Basically converts function calls to AIEvents,
@@ -28,12 +27,12 @@ public:
 	CSkirmishAIWrapper(const CSkirmishAIWrapper& w) = delete;
 	CSkirmishAIWrapper(CSkirmishAIWrapper&& w) = delete;
 
-	CSkirmishAIWrapper& operator = (const CSkirmishAIWrapper& w) = delete;
-	CSkirmishAIWrapper& operator = (CSkirmishAIWrapper&& w) = delete;
+	CSkirmishAIWrapper& operator=(const CSkirmishAIWrapper& w) = delete;
+	CSkirmishAIWrapper& operator=(CSkirmishAIWrapper&& w) = delete;
 
 	void Serialize(creg::ISerializer* s) {}
-	void PostLoad() { SendUnitEvents(); }
 
+	void PostLoad() { SendUnitEvents(); }
 
 	void PreInit(int aiID);
 	/** Called just before all the units are destroyed. */
@@ -51,8 +50,8 @@ public:
 
 
 	// AI Events
-	void Load(std::istream *s);
-	void Save(std::ostream *s);
+	void Load(std::istream* s);
+	void Save(std::ostream* s);
 
 	void UnitIdle(int unitId);
 	void UnitCreated(int unitId, int builderId);
@@ -69,7 +68,8 @@ public:
 	void EnemyEnterRadar(int unitId);
 	void EnemyLeaveRadar(int unitId);
 	void EnemyDestroyed(int enemyUnitId, int attackerUnitId);
-	void EnemyDamaged(int enemyUnitId, int attackerUnitId, float damage, const float3& dir, int weaponDefId, bool paralyzer);
+	void
+	EnemyDamaged(int enemyUnitId, int attackerUnitId, float damage, const float3& dir, int weaponDefId, bool paralyzer);
 	void Update(int frame);
 	void SendChatMessage(const char* msg, int fromPlayerId);
 	void SendLuaMessage(const char* inData, const char** outData);
@@ -79,6 +79,7 @@ public:
 	void SeismicPing(int allyTeam, int unitId, const float3& pos, float strength);
 
 	int GetSkirmishAIID() const { return skirmishAIId; }
+
 	int GetTeamId() const { return teamId; }
 
 	const SkirmishAIKey& GetKey() const { return key; }
@@ -91,6 +92,7 @@ public:
 	 * @see CSkirmishAIHandler::SetLocalKillFlag()
 	 */
 	void SetBlockEvents(bool enable) { blockEvents = enable; }
+
 	void SetCheatEvents(bool enable) { cheatEvents = enable; }
 
 	bool CheatEventsEnabled() const { return cheatEvents; }
@@ -114,7 +116,8 @@ private:
 	uint32_t GetTimerNameHash() const { return *reinterpret_cast<const uint32_t*>(&timerName[0]); }
 
 	const char* GetTimerName() const { return (timerName + sizeof(uint32_t)); }
-	      char* GetTimerName()       { return (timerName + sizeof(uint32_t)); }
+
+	char* GetTimerName() { return (timerName + sizeof(uint32_t)); }
 
 private:
 	SkirmishAIKey key;
@@ -130,7 +133,7 @@ private:
 	int teamId = -1;
 
 	bool initialized = false; // true after handling Init event
-	bool    released = false; // true after handling Release event
+	bool released = false;    // true after handling Release event
 	bool libraryInit = false; // CSkirmishAILibrary::Init retval
 	bool cheatEvents = false;
 	bool blockEvents = false;

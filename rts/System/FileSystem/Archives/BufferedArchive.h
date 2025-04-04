@@ -3,19 +3,21 @@
 #ifndef _BUFFERED_ARCHIVE_H
 #define _BUFFERED_ARCHIVE_H
 
-#include <tuple>
-
 #include "IArchive.h"
+
 #include "System/Threading/SpringThreading.h"
+
+#include <tuple>
 
 /**
  * Provides a helper implementation for archive types that can only uncompress
  * one file to memory at a time.
  */
-class CBufferedArchive : public IArchive
-{
+class CBufferedArchive : public IArchive {
 public:
-	CBufferedArchive(const std::string& name, bool cached = true): IArchive(name) {
+	CBufferedArchive(const std::string& name, bool cached = true)
+	    : IArchive(name)
+	{
 		noCache = !cached;
 	}
 
@@ -30,6 +32,7 @@ protected:
 
 	// indexed by file-id
 	std::vector<std::tuple<uint32_t, bool, std::vector<uint8_t>>> fileCache = {};
+
 private:
 	spring::spinlock mutex;
 	bool noCache = false;

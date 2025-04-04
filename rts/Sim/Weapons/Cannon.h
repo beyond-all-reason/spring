@@ -4,10 +4,10 @@
 #define _CANNON_H
 
 #include "Weapon.h"
+
 #include "System/type2.h"
 
-class CCannon: public CWeapon
-{
+class CCannon : public CWeapon {
 	CR_DECLARE_DERIVED(CCannon)
 
 protected:
@@ -26,15 +26,27 @@ protected:
 	bool highTrajectory = false;
 
 public:
-	CCannon(CUnit* owner = nullptr, const WeaponDef* def = nullptr): CWeapon(owner, def) {}
+	CCannon(CUnit* owner = nullptr, const WeaponDef* def = nullptr)
+	    : CWeapon(owner, def)
+	{
+	}
 
 	void Init() override final;
 	void UpdateRange(const float val) override final;
+
 	void UpdateWantedDir() override final { wantedDir = GetWantedDir(currentTargetPos - aimFromPos); }
+
 	void SlowUpdate() override final;
 
-	float GetRange2D(float ydiff, float rbFac, float hbFac) const { return (GetStaticRange2D({range, ydiff}, {projectileSpeed, gravity}, {rbFac, hbFac})); }
-	float GetRange2D(float boost, float ydiff) const override final { return (GetRange2D(ydiff, rangeBoostFactor, heightBoostFactor)) + boost; }
+	float GetRange2D(float ydiff, float rbFac, float hbFac) const
+	{
+		return (GetStaticRange2D({range, ydiff}, {projectileSpeed, gravity}, {rbFac, hbFac}));
+	}
+
+	float GetRange2D(float boost, float ydiff) const override final
+	{
+		return (GetRange2D(ydiff, rangeBoostFactor, heightBoostFactor)) + boost;
+	}
 
 	// baseConsts{.x := weaponDefRange, .y := modHeightDif}
 	// projConsts{.x := speed, .y := gravity}

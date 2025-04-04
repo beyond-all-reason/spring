@@ -1,51 +1,51 @@
 #pragma once
 
-#include "creg_cond.h"
-#include <bitset>
-#include <bit>
-#include <array>
-#include <cstdint>
 #include "../TemplateUtils.hpp"
+
+#include <array>
+#include <bit>
+#include <bitset>
+#include <cstdint>
+
+#include "creg_cond.h"
 
 #ifdef USING_CREG
 
-namespace creg
-{
-	template<size_t N>
-	class BitsetType : public IType
+namespace creg {
+template<size_t N> class BitsetType : public IType {
+public:
+	using T = std::bitset<N>;
+
+	BitsetType()
+	    : IType(sizeof(T))
 	{
-	public:
-		using T = std::bitset<N>;
-		BitsetType() : IType(sizeof(T)) { }
-		~BitsetType() { }
+	}
 
-		void Serialize(ISerializer* s, void* instance)
-		{
-			T& ct = *(T*)instance;
+	~BitsetType() {}
 
-			std::array<uint8_t, sizeof(T)> bytesRep = {0};
+	void Serialize(ISerializer* s, void* instance)
+	{
+		T& ct = *(T*)instance;
 
-			if (s->IsWriting())
-				bytesRep = std::bit_cast<decltype(bytesRep)>(ct);
+		std::array<uint8_t, sizeof(T)> bytesRep = {0};
 
-			for (auto& b : bytesRep) {
-				s->SerializeInt(b, sizeof(b));
-			}
+		if (s->IsWriting())
+			bytesRep = std::bit_cast<decltype(bytesRep)>(ct);
 
-			if (!s->IsWriting())
-				ct = std::bit_cast<T>(bytesRep);
+		for (auto& b: bytesRep) {
+			s->SerializeInt(b, sizeof(b));
 		}
-		std::string GetName() const {
-			return std::string("bitset<" + std::to_string(N) + ">");
-		}
-	};
 
-	template<size_t N>
-	struct DeduceType<std::bitset<N> > {
-		static std::unique_ptr<IType> Get() {
-			return std::unique_ptr<IType>(new BitsetType<N>());
-		}
-	};
-}
+		if (!s->IsWriting())
+			ct = std::bit_cast<T>(bytesRep);
+	}
+
+	std::string GetName() const { return std::string("bitset<" + std::to_string(N) + ">"); }
+};
+
+template<size_t N> struct DeduceType<std::bitset<N>> {
+	static std::unique_ptr<IType> Get() { return std::unique_ptr<IType>(new BitsetType<N>()); }
+};
+} // namespace creg
 
 #endif // USING_CREG

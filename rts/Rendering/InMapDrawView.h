@@ -3,20 +3,19 @@
 #ifndef IN_MAP_DRAW_VIEW_H
 #define IN_MAP_DRAW_VIEW_H
 
-#include <string>
-#include <vector>
-
-#include "System/float3.h"
 #include "Game/InMapDrawModel.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "System/float3.h"
+
+#include <string>
+#include <vector>
 
 /**
  * The V in MVC for InMapDraw.
  * @see CInMapDrawModel for M
  * @see CInMapDraw for C
  */
-class CInMapDrawView
-{
+class CInMapDrawView {
 public:
 	CInMapDrawView();
 	~CInMapDrawView();
@@ -25,7 +24,7 @@ public:
 
 private:
 	TypedRenderBuffer<VA_TYPE_TC>& rbp = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
-	TypedRenderBuffer<VA_TYPE_C >& rbl = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C >();
+	TypedRenderBuffer<VA_TYPE_C>& rbl = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 
 	uint32_t texture;
 

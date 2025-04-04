@@ -9,8 +9,7 @@
 
 class CUnit;
 
-class CBuilderCaches
-{
+class CBuilderCaches {
 public:
 	/**
 	 * Checks if a unit is being reclaimed by a friendly con.

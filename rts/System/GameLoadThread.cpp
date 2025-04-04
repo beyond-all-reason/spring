@@ -1,22 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "lib/streflop/streflop_cond.h" //! must happen before OffscreenGLContext.h, which includes agl.h
 #include "System/GameLoadThread.h"
 
-#include <functional>
-
-#include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
-#include "System/Platform/errorhandler.h"
 #include "System/Platform/Threading.h"
+#include "System/Platform/errorhandler.h"
+#include "System/SafeUtil.h"
 #include "System/Threading/SpringThreading.h"
+#include "lib/streflop/streflop_cond.h" //! must happen before OffscreenGLContext.h, which includes agl.h
 
+#include <functional>
 
 CGameLoadThread::CGameLoadThread(std::function<void()> f)
 {
 	thread = spring::thread(std::bind(&CGameLoadThread::WrapFunc, this, f));
 }
-
 
 void CGameLoadThread::join()
 {
@@ -25,7 +23,6 @@ void CGameLoadThread::join()
 
 	thread.join();
 }
-
 
 __FORCE_ALIGN_STACK__
 void CGameLoadThread::WrapFunc(std::function<void()> f)
@@ -39,6 +36,6 @@ void CGameLoadThread::WrapFunc(std::function<void()> f)
 
 	try {
 		f();
-	} CATCH_SPRING_ERRORS
+	}
+	CATCH_SPRING_ERRORS
 }
-

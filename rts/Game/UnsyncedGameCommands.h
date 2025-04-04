@@ -7,11 +7,10 @@
 
 class IUnsyncedActionExecutor;
 
-
-class UnsyncedGameCommands : public IGameCommands<IUnsyncedActionExecutor>
-{
+class UnsyncedGameCommands : public IGameCommands<IUnsyncedActionExecutor> {
 public:
-	static UnsyncedGameCommands*& GetInstance() {
+	static UnsyncedGameCommands*& GetInstance()
+	{
 		static UnsyncedGameCommands* singleton = nullptr;
 		return singleton;
 	}

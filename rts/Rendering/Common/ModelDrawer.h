@@ -1,66 +1,77 @@
 #pragma once
 
-#include <array>
-#include <string>
-#include <string_view>
-#include <stack>
-#include <tuple>
-
 #include "ModelDrawerData.h"
-#include "ModelDrawerState.hpp"
 #include "ModelDrawerHelpers.h"
-#include "System/Log/ILog.h"
-#include "System/TypeToStr.h"
-#include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/GL/LightHandler.h"
+
 #include "Rendering/Env/ISky.h"
-#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/GL/LightHandler.h"
+#include "Rendering/LuaObjectDrawer.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
+#include "System/Log/ILog.h"
+#include "System/TypeToStr.h"
 
-namespace GL { struct GeometryBuffer; }
+#include <array>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <tuple>
+
+#include "ModelDrawerState.hpp"
+
+namespace GL {
+struct GeometryBuffer;
+}
 template<typename T> class ScopedModelDrawerImpl;
 class ScopedMatricesMemAlloc;
 
 
 static constexpr const char* ModelDrawerNames[ModelDrawerTypes::MODEL_DRAWER_CNT] = {
-	"GLSL: legacy standard shader path",
-	"GL4 : modern standard shader path",
+    "GLSL: legacy standard shader path",
+    "GL4 : modern standard shader path",
 };
 
 class CModelDrawerConcept {
 public:
 	CModelDrawerConcept() {}
+
 	virtual ~CModelDrawerConcept() {}
+
 public:
 	static void InitStatic();
 	static void KillStatic(bool reload);
+
 public:
-	static bool  DeferredAllowed() { return deferredAllowed; }
+	static bool DeferredAllowed() { return deferredAllowed; }
+
 	static bool& WireFrameModeRef() { return wireFrameMode; }
+
 public:
 	// lightHandler
 	static GL::LightHandler* GetLightHandler() { return &lightHandler; }
 
 	// geomBuffer
 	static GL::GeometryBuffer* GetGeometryBuffer() { return geomBuffer; }
+
 protected:
 	inline static bool initialized = false;
 	inline static bool wireFrameMode = false;
 	inline static bool deferredAllowed = false;
+
 protected:
 	inline static GL::LightHandler lightHandler;
 	inline static GL::GeometryBuffer* geomBuffer = nullptr;
 };
 
-template <typename TDrawerData, typename TDrawer>
-class CModelDrawerBase : public CModelDrawerConcept {
+template<typename TDrawerData, typename TDrawer> class CModelDrawerBase : public CModelDrawerConcept {
 public:
 	using ObjType = typename TDrawerData::ObjType;
+
 public:
-	template<typename TDrawerDerivative>
-	static void InitInstance(int t) {
+	template<typename TDrawerDerivative> static void InitInstance(int t)
+	{
 		static_assert(std::is_base_of_v<TDrawer, TDrawerDerivative>, "");
 		static_assert(std::is_base_of_v<CModelDrawerBase<TDrawerData, TDrawer>, TDrawer>, "");
 
@@ -69,29 +80,39 @@ public:
 			modelDrawers[t]->mdType = static_cast<ModelDrawerTypes>(t);
 		}
 	}
-	static void KillInstance(int t) {
-		spring::SafeDelete(modelDrawers[t]);
-	}
+
+	static void KillInstance(int t) { spring::SafeDelete(modelDrawers[t]); }
 
 	static void InitStatic();
 	static void KillStatic(bool reload);
-	static void UpdateStatic() {
+
+	static void UpdateStatic()
+	{
 		SelectImplementation(reselectionRequested);
 		reselectionRequested = false;
 		modelDrawer->Update();
 	}
+
 public:
 	// Set/Get state from outside
 	static bool& WireFrameModeRef() { return wireFrameMode; }
 
-	static int  PreferedDrawerType() { return preferedDrawerType; }
-	static int& PreferedDrawerTypeRef() { reselectionRequested = true; return preferedDrawerType; }
+	static int PreferedDrawerType() { return preferedDrawerType; }
 
-	static bool& MTDrawerTypeRef() { return mtModelDrawer; } //no reselectionRequested needed
+	static int& PreferedDrawerTypeRef()
+	{
+		reselectionRequested = true;
+		return preferedDrawerType;
+	}
+
+	static bool& MTDrawerTypeRef() { return mtModelDrawer; } // no reselectionRequested needed
 
 	static void SetDrawForwardPass(bool b) { drawForward = b; }
+
 	static void SetDrawDeferredPass(bool b) { drawDeferred = b; }
+
 	static bool DrawForward() { return drawForward; }
+
 	static bool DrawDeferred() { return drawDeferred; }
 
 	static void ForceLegacyPath();
@@ -103,9 +124,16 @@ public:
 
 	/// Proxy interface for modelDrawerState
 	static bool CanDrawDeferred() { return modelDrawerState->CanDrawDeferred(); }
+
 	static bool SetTeamColor(int team, const float alpha = 1.0f) { return modelDrawerState->SetTeamColor(team, alpha); }
+
 	static void SetNanoColor(const float4& color) { modelDrawerState->SetNanoColor(color); }
-	static const ScopedMatricesMemAlloc& GetMatricesMemAlloc(const ObjType* o) { return const_cast<const TDrawerData*>(modelDrawerData)->GetObjectMatricesMemAlloc(o); }
+
+	static const ScopedMatricesMemAlloc& GetMatricesMemAlloc(const ObjType* o)
+	{
+		return const_cast<const TDrawerData*>(modelDrawerData)->GetObjectMatricesMemAlloc(o);
+	}
+
 public:
 	virtual void Update() const = 0;
 	// Draw*
@@ -114,6 +142,7 @@ public:
 	virtual void DrawOpaquePass(bool deferredPass, bool drawReflection, bool drawRefraction) const = 0;
 	virtual void DrawShadowPass() const = 0;
 	virtual void DrawAlphaPass(bool drawReflection, bool drawRefraction = false) const = 0;
+
 protected:
 	virtual void DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const = 0;
 	virtual void DrawOpaqueObjectsAux(int modelType) const = 0;
@@ -125,46 +154,54 @@ protected:
 
 	virtual void DrawObjectsShadow(int modelType) const = 0;
 	virtual void DrawShadowObjectsLua() const = 0;
+
 public:
 	// Setup Fixed State, reused by a few other classes, thus public:
 	void SetupOpaqueDrawing(bool deferredPass) const { modelDrawerState->SetupOpaqueDrawing(deferredPass); }
+
 	void ResetOpaqueDrawing(bool deferredPass) const { modelDrawerState->ResetOpaqueDrawing(deferredPass); }
 
 	void SetupAlphaDrawing(bool deferredPass) const { modelDrawerState->SetupAlphaDrawing(deferredPass); }
+
 	void ResetAlphaDrawing(bool deferredPass) const { modelDrawerState->ResetAlphaDrawing(deferredPass); }
+
 protected:
-	template<bool legacy, LuaObjType lot>
-	void DrawImpl(bool drawReflection, bool drawRefraction) const;
+	template<bool legacy, LuaObjType lot> void DrawImpl(bool drawReflection, bool drawRefraction) const;
 
-	template<LuaObjType lot>
-	void DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const;
+	template<LuaObjType lot> void DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const;
 
-	template<LuaObjType lot>
-	void DrawAlphaPassImpl(bool drawReflection, bool drawRefraction) const;
+	template<LuaObjType lot> void DrawAlphaPassImpl(bool drawReflection, bool drawRefraction) const;
 
-	template<bool legacy, LuaObjType lot>
-	void DrawShadowPassImpl() const;
+	template<bool legacy, LuaObjType lot> void DrawShadowPassImpl() const;
+
 protected:
 	// TODO move into TDrawerData?
 	static bool CheckLegacyDrawing(const CSolidObject* so, bool noLuaCall);
-	static bool CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall);
+	static bool
+	CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall);
+
 private:
-	static void Push(bool legacy, bool modern, bool mt) {
+	static void Push(bool legacy, bool modern, bool mt)
+	{
 		implStack.emplace(std::make_tuple(modelDrawer, modelDrawerState, mtModelDrawer));
 		mtModelDrawer = mt;
 		SelectImplementation(true, legacy, modern);
 	}
-	static void Pop() {
+
+	static void Pop()
+	{
 		std::tie(modelDrawer, modelDrawerState, mtModelDrawer) = implStack.top();
 		implStack.pop();
 	}
+
 private:
 	ModelDrawerTypes mdType = ModelDrawerTypes::MODEL_DRAWER_CNT;
+
 public:
 	inline static TDrawer* modelDrawer = nullptr;
-	inline static TDrawerData* modelDrawerData = nullptr; //public for creg
+	inline static TDrawerData* modelDrawerData = nullptr; // public for creg
 protected:
-	inline static int preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //no preference
+	inline static int preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; // no preference
 	inline static bool mtModelDrawer = true;
 
 	inline static bool reselectionRequested = true;
@@ -178,19 +215,16 @@ protected:
 	inline static std::array<TDrawer*, ModelDrawerTypes::MODEL_DRAWER_CNT> modelDrawers = {};
 
 	inline static std::stack<std::tuple<TDrawer*, IModelDrawerState*, bool>> implStack;
+
 protected:
 	static constexpr const char* className = spring::TypeToCStr<TDrawer>();
 };
 
-template<typename T>
-class ScopedModelDrawerImpl {
+template<typename T> class ScopedModelDrawerImpl {
 public:
-	ScopedModelDrawerImpl(bool legacy, bool modern, bool mt = false) {
-		T::Push(legacy, modern, mt);
-	}
-	~ScopedModelDrawerImpl() {
-		T::Pop();
-	}
+	ScopedModelDrawerImpl(bool legacy, bool modern, bool mt = false) { T::Push(legacy, modern, mt); }
+
+	~ScopedModelDrawerImpl() { T::Pop(); }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -200,11 +234,10 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename TDrawerData, typename TDrawer>
-inline void CModelDrawerBase<TDrawerData, TDrawer>::InitStatic()
+template<typename TDrawerData, typename TDrawer> inline void CModelDrawerBase<TDrawerData, TDrawer>::InitStatic()
 {
 	CModelDrawerConcept::InitStatic();
-	//CModelDrawerBase<TDrawerData, TDrawer>::InitInstance is done in TDrawer::InitStatic()
+	// CModelDrawerBase<TDrawerData, TDrawer>::InitInstance is done in TDrawer::InitStatic()
 
 	mtModelDrawer = true;
 	reselectionRequested = true;
@@ -212,9 +245,11 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::InitStatic()
 	drawForward = true;
 	drawDeferred = true;
 
-	while (!implStack.empty()) { implStack.pop(); } //clear just in case
+	while (!implStack.empty()) {
+		implStack.pop();
+	} // clear just in case
 
-	modelDrawerData = new TDrawerData{ mtModelDrawer };
+	modelDrawerData = new TDrawerData{mtModelDrawer};
 }
 
 template<typename TDrawerData, typename TDrawer>
@@ -232,16 +267,19 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::KillStatic(bool reload)
 	modelDrawerState = nullptr;
 }
 
-template<typename TDrawerData, typename TDrawer>
-inline void CModelDrawerBase<TDrawerData, TDrawer>::ForceLegacyPath()
+template<typename TDrawerData, typename TDrawer> inline void CModelDrawerBase<TDrawerData, TDrawer>::ForceLegacyPath()
 {
 	reselectionRequested = true;
 	forceLegacyPath = true;
-	LOG_L(L_WARNING, "[%s::%s] Using legacy (slow) %s renderer! This is caused by insufficient GPU/driver capabilities or by using of old Lua rendering API", className, __func__, className);
+	LOG_L(L_WARNING,
+	    "[%s::%s] Using legacy (slow) %s renderer! This is caused by insufficient GPU/driver capabilities or by using "
+	    "of old Lua rendering API",
+	    className, __func__, className);
 }
 
 template<typename TDrawerData, typename TDrawer>
-inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool forceReselection, bool legacy, bool modern)
+inline void
+CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool forceReselection, bool legacy, bool modern)
 {
 	if (!forceReselection)
 		return;
@@ -272,13 +310,15 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::SelectImplementation(bool fo
 		auto d = modelDrawers[preferedDrawerType];
 		auto s = IModelDrawerState::modelDrawerStates[preferedDrawerType];
 		if (qualifyDrawerFunc(d, s)) {
-			LOG_L(L_INFO, "[%s::%s] Force-switching to %s(%s)", className, __func__, ModelDrawerNames[preferedDrawerType], mtModelDrawer ? "MT" : "ST");
+			LOG_L(L_INFO, "[%s::%s] Force-switching to %s(%s)", className, __func__,
+			    ModelDrawerNames[preferedDrawerType], mtModelDrawer ? "MT" : "ST");
 			SelectImplementation(preferedDrawerType);
 		}
 		else {
-			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %s(%s)", className, __func__, ModelDrawerNames[preferedDrawerType], mtModelDrawer ? "MT" : "ST");
+			LOG_L(L_ERROR, "[%s::%s] Couldn't force-switch to %s(%s)", className, __func__,
+			    ModelDrawerNames[preferedDrawerType], mtModelDrawer ? "MT" : "ST");
 		}
-		preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; //reset;
+		preferedDrawerType = ModelDrawerTypes::MODEL_DRAWER_CNT; // reset;
 		return;
 	}
 
@@ -340,7 +380,9 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawImpl(bool drawReflection
 
 template<typename TDrawerData, typename TDrawer>
 template<LuaObjType lot>
-inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawOpaquePassImpl(bool deferredPass, bool drawReflection, bool drawRefraction) const
+inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawOpaquePassImpl(bool deferredPass,
+    bool drawReflection,
+    bool drawRefraction) const
 {
 	constexpr static auto zone_name = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawOpaquePass");
 	SCOPED_TIMER(zone_name.str);
@@ -393,7 +435,7 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawAlphaPassImpl(bool drawR
 	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
 	// draw all custom'ed units that were bypassed in the loop above
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
-	LuaObjectDrawer::DrawAlphaMaterialObjects(lot, /*deferredPass*/false);
+	LuaObjectDrawer::DrawAlphaMaterialObjects(lot, /*deferredPass*/ false);
 }
 
 template<typename TDrawerData, typename TDrawer>
@@ -450,7 +492,7 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
 	// draw all custom'ed units that were bypassed in the loop above
 	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
-	LuaObjectDrawer::DrawShadowMaterialObjects(lot, /*deferredPass*/false);
+	LuaObjectDrawer::DrawShadowMaterialObjects(lot, /*deferredPass*/ false);
 }
 
 template<typename TDrawerData, typename TDrawer>
@@ -463,13 +505,17 @@ inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSo
 }
 
 template<typename TDrawerData, typename TDrawer>
-inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSolidObject* so, uint32_t preList, uint32_t postList, bool lodCall, bool noLuaCall)
+inline bool CModelDrawerBase<TDrawerData, TDrawer>::CheckLegacyDrawing(const CSolidObject* so,
+    uint32_t preList,
+    uint32_t postList,
+    bool lodCall,
+    bool noLuaCall)
 {
-	//#pragma message("TODO: Make use of it")
+	// #pragma message("TODO: Make use of it")
 	if (forceLegacyPath)
 		return false;
 
-	if (lodCall || preList != 0 || postList != 0 || CheckLegacyDrawing(so, noLuaCall)) { //TODO: sanitize
+	if (lodCall || preList != 0 || postList != 0 || CheckLegacyDrawing(so, noLuaCall)) { // TODO: sanitize
 		ForceLegacyPath();
 		return false;
 	}

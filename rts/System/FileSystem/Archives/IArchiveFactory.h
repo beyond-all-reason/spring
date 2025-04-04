@@ -13,15 +13,15 @@ class IArchive;
  * An implementation od this is responsible for parsing a single, specific
  * type of archives.
  */
-class IArchiveFactory
-{
+class IArchiveFactory {
 protected:
 	/**
 	 * @param defaultExtension for example "sdz"
 	 */
 	IArchiveFactory(const std::string& defaultExtension)
-		: defaultExtension(defaultExtension)
-	{}
+	    : defaultExtension(defaultExtension)
+	{
+	}
 
 public:
 	virtual ~IArchiveFactory() {}
@@ -34,9 +34,7 @@ public:
 	/**
 	 * Parses a single archive, denoted by a path.
 	 */
-	IArchive* CreateArchive(const std::string& filePath) const {
-		return DoCreateArchive(filePath);
-	}
+	IArchive* CreateArchive(const std::string& filePath) const { return DoCreateArchive(filePath); }
 
 private:
 	/**

@@ -9,7 +9,7 @@
  *
  * Developed at SunPro, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
@@ -25,21 +25,21 @@ static char rcsid[] = "$NetBSD: s_copysignf.c,v 1.4f 1995/05/10 20:46:59 jtc Exp
  */
 
 #include "SMath.h"
+
 #include "math_private.h"
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __copysignf(Simple x, Simple y)
+Simple __copysignf(Simple x, Simple y)
 #else
-	Simple __copysignf(x,y)
-	Simple x,y;
+Simple __copysignf(x, y) Simple x, y;
 #endif
 {
-	u_int32_t ix,iy;
-	GET_FLOAT_WORD(ix,x);
-	GET_FLOAT_WORD(iy,y);
-	SET_FLOAT_WORD(x,(ix&0x7fffffff)|(iy&0x80000000));
-        return x;
+	u_int32_t ix, iy;
+	GET_FLOAT_WORD(ix, x);
+	GET_FLOAT_WORD(iy, y);
+	SET_FLOAT_WORD(x, (ix & 0x7fffffff) | (iy & 0x80000000));
+	return x;
 }
-weak_alias (__copysignf, copysignf)
-}
+weak_alias(__copysignf, copysignf)
+} // namespace streflop_libm

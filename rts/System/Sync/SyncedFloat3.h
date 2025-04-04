@@ -3,14 +3,16 @@
 #ifndef SYNCEDFLOAT3_H
 #define SYNCEDFLOAT3_H
 
-#include "System/float3.h"
 #include "SyncedPrimitiveBase.h"
+
+#include "System/float3.h"
 
 #if defined(SYNCDEBUG) || defined(SYNCCHECK)
 
-#include "lib/streflop/streflop_cond.h"
 #include "SyncedPrimitive.h"
+
 #include "System/FastMath.h" //SSE (I)SQRT
+#include "lib/streflop/streflop_cond.h"
 
 /**
  * @brief SyncedFloat3 class
@@ -19,8 +21,7 @@
  * Usually used to represent a vector in
  * space as x/y/z.
  */
-struct SyncedFloat3
-{
+struct SyncedFloat3 {
 public:
 	// value type -> _STRUCT (because no virtual dtor or vtable is required)
 	CR_DECLARE_STRUCT(SyncedFloat3)
@@ -28,12 +29,22 @@ public:
 	/**
 	 * @brief Copy constructor
 	 */
-	SyncedFloat3(const SyncedFloat3& f) : x(f.x), y(f.y), z(f.z) {}
+	SyncedFloat3(const SyncedFloat3& f)
+	    : x(f.x)
+	    , y(f.y)
+	    , z(f.z)
+	{
+	}
 
 	/**
 	 * @brief Conversion from float3
 	 */
-	SyncedFloat3(const float3& f) : x(f.x), y(f.y), z(f.z) {}
+	SyncedFloat3(const float3& f)
+	    : x(f.x)
+	    , y(f.y)
+	    , z(f.z)
+	{
+	}
 
 	/**
 	 * @brief Constructor
@@ -44,7 +55,11 @@ public:
 	 * With parameters, initializes x/y/z to the given floats.
 	 */
 	SyncedFloat3(const float x = 0.0f, const float y = 0.0f, const float z = 0.0f)
-			: x(x), y(y), z(z) {}
+	    : x(x)
+	    , y(y)
+	    , z(z)
+	{
+	}
 
 	/**
 	 * @brief float[3] Constructor
@@ -52,7 +67,12 @@ public:
 	 *
 	 * With parameters, initializes x/y/z to the given float[3].
 	 */
-	SyncedFloat3(const float f[3]) : x(f[0]), y(f[1]), z(f[2]) {}
+	SyncedFloat3(const float f[3])
+	    : x(f[0])
+	    , y(f[1])
+	    , z(f[2])
+	{
+	}
 
 	/**
 	 * @brief operator =
@@ -60,8 +80,8 @@ public:
 	 *
 	 * Sets the float3 to the given float[3].
 	 */
-	SyncedFloat3& operator= (const float f[3]) {
-
+	SyncedFloat3& operator=(const float f[3])
+	{
 		x = f[0];
 		y = f[1];
 		z = f[2];
@@ -75,13 +95,12 @@ public:
 	 *
 	 * Sets the float[3] to this float3.
 	 */
-	void copyInto(float f[3]) const {
-
+	void copyInto(float f[3]) const
+	{
 		f[0] = x;
 		f[1] = y;
 		f[2] = z;
 	}
-
 
 	/**
 	 * @brief operator +
@@ -92,9 +111,7 @@ public:
 	 * calculate the sum of the positions in
 	 * space (adds the x/y/z components individually)
 	 */
-	float3 operator+ (const float3& f) const {
-		return float3(x+f.x, y+f.y, z+f.z);
-	}
+	float3 operator+(const float3& f) const { return float3(x + f.x, y + f.y, z + f.z); }
 
 	/**
 	 * @brief operator +
@@ -104,9 +121,7 @@ public:
 	 * When adding just a float, the point is
 	 * increased in all directions by that float.
 	 */
-	float3 operator+ (const float f) const {
-		return float3(x+f, y+f, z+f);
-	}
+	float3 operator+(const float f) const { return float3(x + f, y + f, z + f); }
 
 	/**
 	 * @brief operator +=
@@ -115,8 +130,8 @@ public:
 	 * Just like adding a float3, but updates this
 	 * float with the new sum.
 	 */
-	void operator+= (const float3& f) {
-
+	void operator+=(const float3& f)
+	{
 		x += f.x;
 		y += f.y;
 		z += f.z;
@@ -130,9 +145,7 @@ public:
 	 * Decreases the float3 by another float3,
 	 * subtracting each x/y/z component individually.
 	 */
-	float3 operator- (const float3& f) const {
-		return float3(x-f.x, y-f.y, z-f.z);
-	}
+	float3 operator-(const float3& f) const { return float3(x - f.x, y - f.y, z - f.z); }
 
 	/**
 	 * @brief operator -
@@ -141,9 +154,7 @@ public:
 	 * When negating the float3, inverts all three
 	 * x/y/z components.
 	 */
-	float3 operator- () const {
-		return float3(-x, -y, -z);
-	}
+	float3 operator-() const { return float3(-x, -y, -z); }
 
 	/**
 	 * @brief operator -
@@ -153,9 +164,7 @@ public:
 	 * When subtracting a single fixed float,
 	 * decreases all three x/y/z components by that amount.
 	 */
-	float3 operator- (const float f) const {
-		return float3(x-f, y-f, z-f);
-	}
+	float3 operator-(const float f) const { return float3(x - f, y - f, z - f); }
 
 	/**
 	 * @brief operator -=
@@ -164,8 +173,8 @@ public:
 	 * Same as subtracting a float3, but stores
 	 * the new float3 inside this one.
 	 */
-	void operator-= (const float3& f) {
-
+	void operator-=(const float3& f)
+	{
 		x -= f.x;
 		y -= f.y;
 		z -= f.z;
@@ -179,9 +188,7 @@ public:
 	 * When multiplying by another float3,
 	 * multiplies each x/y/z component individually.
 	 */
-	float3 operator* (const float3& f) const {
-		return float3(x*f.x, y*f.y, z*f.z);
-	}
+	float3 operator*(const float3& f) const { return float3(x * f.x, y * f.y, z * f.z); }
 
 	/**
 	 * @brief operator *
@@ -191,9 +198,7 @@ public:
 	 * When multiplying by a single float, multiplies
 	 * each x/y/z component by that float.
 	 */
-	float3 operator* (const float f) const {
-		return float3(x*f, y*f, z*f);
-	}
+	float3 operator*(const float f) const { return float3(x * f, y * f, z * f); }
 
 	/**
 	 * @brief operator *=
@@ -202,7 +207,8 @@ public:
 	 * Same as multiplying a float3, but stores
 	 * the new float3 inside this one.
 	 */
-	void operator*= (const float3& f) {
+	void operator*=(const float3& f)
+	{
 		x *= f.x;
 		y *= f.y;
 		z *= f.z;
@@ -215,7 +221,8 @@ public:
 	 * Same as multiplying a float, but stores
 	 * the new float3 inside this one.
 	 */
-	void operator*= (const float f) {
+	void operator*=(const float f)
+	{
 		x *= f;
 		y *= f;
 		z *= f;
@@ -229,9 +236,7 @@ public:
 	 * When dividing by a float3, divides
 	 * each x/y/z component individually.
 	 */
-	float3 operator/ (const float3& f) const {
-		return float3(x/f.x, y/f.y, z/f.z);
-	}
+	float3 operator/(const float3& f) const { return float3(x / f.x, y / f.y, z / f.z); }
 
 	/**
 	 * @brief operator /
@@ -241,9 +246,9 @@ public:
 	 * When dividing by a single float, divides
 	 * each x/y/z component by that float.
 	 */
-	float3 operator/ (const float f) const {
-
-		const float inv = (float) 1.0f / f;
+	float3 operator/(const float f) const
+	{
+		const float inv = (float)1.0f / f;
 		return *this * inv;
 	}
 
@@ -254,8 +259,8 @@ public:
 	 * Same as dividing by a float3, but stores
 	 * the new values inside this float3.
 	 */
-	void operator/= (const float3& f) {
-
+	void operator/=(const float3& f)
+	{
 		x /= f.x;
 		y /= f.y;
 		z /= f.z;
@@ -268,9 +273,9 @@ public:
 	 * Same as dividing by a single float, but stores
 	 * the new values inside this float3.
 	 */
-	void operator/= (const float f) {
-
-		const float inv = (float) 1.f / f;
+	void operator/=(const float f)
+	{
+		const float inv = (float)1.f / f;
 		*this *= inv;
 	}
 
@@ -282,9 +287,7 @@ public:
 	 * Tests if this float3 is equal to another, by
 	 * checking each x/y/z component individually.
 	 */
-	bool operator== (const float3& f) const {
-		return (equals(f));
-	}
+	bool operator==(const float3& f) const { return (equals(f)); }
 
 	/**
 	 * @brief operator !=
@@ -294,9 +297,7 @@ public:
 	 * Tests if this float3 is not equal to another, by
 	 * checking each x/y/z component individually.
 	 */
-	bool operator!= (const float3& f) const {
-		return (!equals(f));
-	}
+	bool operator!=(const float3& f) const { return (!equals(f)); }
 
 	/**
 	 * @brief operator[]
@@ -306,9 +307,7 @@ public:
 	 * Array access for x/y/z components
 	 * (index 0 is x, index 1 is y, index 2 is z)
 	 */
-	SyncedFloat& operator[] (const int t) {
-		return (&x)[t];
-	}
+	SyncedFloat& operator[](const int t) { return (&x)[t]; }
 
 	/**
 	 * @brief operator[] const
@@ -318,23 +317,20 @@ public:
 	 * Same as plain [] operator but used in
 	 * a const context
 	 */
-	const SyncedFloat& operator[] (const int t) const {
-		return (&x)[t];
-	}
+	const SyncedFloat& operator[](const int t) const { return (&x)[t]; }
 
 	/**
 	 * @see operator==
 	 */
-	bool equals(const float3& f, const float3& eps = float3(float3::cmp_eps(), float3::cmp_eps(), float3::cmp_eps())) const {
-		return math::fabs(x - f.x) <= math::fabs(eps.x * x)
-			&& math::fabs(y - f.y) <= math::fabs(eps.y * y)
-			&& math::fabs(z - f.z) <= math::fabs(eps.z * z);
+	bool equals(const float3& f,
+	    const float3& eps = float3(float3::cmp_eps(), float3::cmp_eps(), float3::cmp_eps())) const
+	{
+		return math::fabs(x - f.x) <= math::fabs(eps.x * x) && math::fabs(y - f.y) <= math::fabs(eps.y * y) &&
+		       math::fabs(z - f.z) <= math::fabs(eps.z * z);
 	}
 
 	// For when bit level precision is necessary.
-	bool bitExactEquals(const float3& f) const {
-		return (x == f.x) && (y == f.y) && (z == f.z);
-	}
+	bool bitExactEquals(const float3& f) const { return (x == f.x) && (y == f.y) && (z == f.z); }
 
 	/**
 	 * @brief dot product
@@ -345,9 +341,7 @@ public:
 	 * another float3 (sums the products of each
 	 * x/y/z component).
 	 */
-	float dot (const float3& f) const {
-		return (x * f.x) + (y * f.y) + (z * f.z);
-	}
+	float dot(const float3& f) const { return (x * f.x) + (y * f.y) + (z * f.z); }
 
 	/**
 	 * @brief cross product
@@ -358,11 +352,9 @@ public:
 	 * another float3:
 	 * (y1*z2 - z1*y2, z1*x2 - x1*z2, x1*y2 - y1*x2)
 	 */
-	float3 cross(const float3& f) const {
-		return float3(
-				(y * f.z) - (z * f.y),
-				(z * f.x) - (x * f.z),
-				(x * f.y) - (y * f.x));
+	float3 cross(const float3& f) const
+	{
+		return float3((y * f.z) - (z * f.y), (z * f.x) - (x * f.z), (x * f.y) - (y * f.x));
 	}
 
 	/**
@@ -374,12 +366,12 @@ public:
 	 * and another float3 (sums the differences in each
 	 * x/y/z component, square root for pythagorean theorem)
 	 */
-	float distance(const float3& f) const {
-
+	float distance(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dy = y - f.y;
 		const float dz = z - f.z;
-		return (float) math::sqrt(dx*dx + dy*dy + dz*dz);
+		return (float)math::sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
 	/**
@@ -393,11 +385,11 @@ public:
 	 * differences in the x and z components, square
 	 * root for pythagorean theorem
 	 */
-	float distance2D(const float3& f) const {
-
+	float distance2D(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dz = z - f.z;
-		return (float) math::sqrt(dx*dx + dz*dz);
+		return (float)math::sqrt(dx * dx + dz * dz);
 	}
 
 	/**
@@ -408,9 +400,10 @@ public:
 	 * (squares and sums each x/y/z component,
 	 * square root for pythagorean theorem)
 	 */
-	float Length() const {
-		//assert(x!=0.f || y!=0.f || z!=0.f);
-		return (float) math::sqrt(SqLength());
+	float Length() const
+	{
+		// assert(x!=0.f || y!=0.f || z!=0.f);
+		return (float)math::sqrt(SqLength());
 	}
 
 	/**
@@ -421,9 +414,10 @@ public:
 	 * (squares and sums only the x and z components,
 	 * square root for pythagorean theorem)
 	 */
-	float Length2D() const {
-		//assert(x!=0.f || y!=0.f || z!=0.f);
-		return (float) math::sqrt(SqLength2D());
+	float Length2D() const
+	{
+		// assert(x!=0.f || y!=0.f || z!=0.f);
+		return (float)math::sqrt(SqLength2D());
 	}
 
 	/**
@@ -433,7 +427,8 @@ public:
 	 * Normalizes the vector by dividing each
 	 * x/y/z component by the vector's length.
 	 */
-	SyncedFloat3& Normalize() {
+	SyncedFloat3& Normalize()
+	{
 #if defined(__SUPPORT_SNAN__)
 		// this can only be invoked by sim thread
 		assert(SqLength() > float3::nrm_eps());
@@ -450,11 +445,11 @@ public:
 	 * Normalizes the vector by dividing each
 	 * x/y/z component by the vector's length.
 	 */
-	SyncedFloat3& UnsafeNormalize() {
+	SyncedFloat3& UnsafeNormalize()
+	{
 		*this *= math::isqrt(SqLength());
 		return *this;
 	}
-
 
 	/**
 	 * @brief normalizes the vector safely (check for *this == ZeroVector)
@@ -463,16 +458,15 @@ public:
 	 * Normalizes the vector by dividing each
 	 * x/y/z component by the vector's length.
 	 */
-	SyncedFloat3& SafeNormalize() {
-
+	SyncedFloat3& SafeNormalize()
+	{
 		const float sql = SqLength();
-		if likely(sql > float3::nrm_eps()) {
+		if likely (sql > float3::nrm_eps()) {
 			*this *= math::isqrt(sql);
 		}
 
 		return *this;
 	}
-
 
 	/**
 	 * @brief normalizes the vector approximately
@@ -481,7 +475,8 @@ public:
 	 * Normalizes the vector by dividing each x/y/z component by
 	 * the vector's approx. length.
 	 */
-	SyncedFloat3& ANormalize() {
+	SyncedFloat3& ANormalize()
+	{
 #if defined(__SUPPORT_SNAN__)
 		// this can only be invoked by sim thread
 		assert(SqLength() > float3::nrm_eps());
@@ -491,7 +486,6 @@ public:
 #endif
 	}
 
-
 	/**
 	 * @brief normalizes the vector approximately without checking
 	 *        for ZeroVector
@@ -500,11 +494,11 @@ public:
 	 * Normalizes the vector by dividing each x/y/z component by
 	 * the vector's approx. length.
 	 */
-	SyncedFloat3& UnsafeANormalize() {
+	SyncedFloat3& UnsafeANormalize()
+	{
 		*this *= math::isqrt(SqLength());
 		return *this;
 	}
-
 
 	/**
 	 * @brief normalizes the vector approximately and safely
@@ -514,16 +508,15 @@ public:
 	 * the vector's approximate length, if (this != ZeroVector),
 	 * else do nothing.
 	 */
-	SyncedFloat3& SafeANormalize() {
-
+	SyncedFloat3& SafeANormalize()
+	{
 		const float sql = SqLength();
-		if likely(sql > float3::nrm_eps()) {
+		if likely (sql > float3::nrm_eps()) {
 			*this *= math::isqrt(sql);
 		}
 
 		return *this;
 	}
-
 
 	/**
 	 * @brief length squared
@@ -531,9 +524,7 @@ public:
 	 *
 	 * Returns the length of this vector squared.
 	 */
-	float SqLength() const {
-		return x*x + y*y + z*z;
-	}
+	float SqLength() const { return x * x + y * y + z * z; }
 
 	/**
 	 * @brief 2-dimensional length squared
@@ -542,10 +533,7 @@ public:
 	 * Returns the 2-dimensional length of this
 	 * vector squared.
 	 */
-	float SqLength2D() const {
-		return x*x + z*z;
-	}
-
+	float SqLength2D() const { return x * x + z * z; }
 
 	/**
 	 * @brief SqDistance between float3s squared
@@ -554,14 +542,13 @@ public:
 	 *
 	 * Returns the squared distance of 2 float3s
 	 */
-	float SqDistance(const float3& f) const {
-
+	float SqDistance(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dy = y - f.y;
 		const float dz = z - f.z;
-		return (float)(dx*dx + dy*dy + dz*dz);
+		return (float)(dx * dx + dy * dy + dz * dz);
 	}
-
 
 	/**
 	 * @brief SqDistance2D between float3s (only x and z)
@@ -570,13 +557,12 @@ public:
 	 *
 	 * Returns the squared 2d-distance of 2 float3s
 	 */
-	float SqDistance2D(const float3& f) const {
-
+	float SqDistance2D(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dz = z - f.z;
-		return (float)(dx*dx + dz*dz);
+		return (float)(dx * dx + dz * dz);
 	}
-
 
 	/**
 	 * @brief Check against FaceHeightmap bounds
@@ -601,7 +587,13 @@ public:
 	 * @note USE THIS!
 	 */
 	void ClampInMap();
-	float3 cClampInMap() const { SyncedFloat3 f = *this; f.ClampInMap(); return f; }
+
+	float3 cClampInMap() const
+	{
+		SyncedFloat3 f = *this;
+		f.ClampInMap();
+		return f;
+	}
 
 	/**
 	 * @brief cast operator
@@ -610,7 +602,8 @@ public:
 	 */
 	operator float3() const { return float3(x, y, z); }
 
-	void AssertNaNs() const {
+	void AssertNaNs() const
+	{
 		assert(!math::isnan(x) && !math::isinf(x));
 		assert(!math::isnan(y) && !math::isinf(y));
 		assert(!math::isnan(z) && !math::isinf(z));
@@ -629,14 +622,15 @@ typedef float3 SyncedFloat3;
 #endif // !SYNCDEBUG && !SYNCCHECK
 
 namespace Sync {
-	/**
-	 * @brief Specialization of Assert to better differentiate the components.
-	 */
-	static inline void Assert(const SyncedFloat3& f) {
-		Assert(f.x, "assert-x");
-		Assert(f.y, "assert-y");
-		Assert(f.z, "assert-z");
-	}
+/**
+ * @brief Specialization of Assert to better differentiate the components.
+ */
+static inline void Assert(const SyncedFloat3& f)
+{
+	Assert(f.x, "assert-x");
+	Assert(f.y, "assert-y");
+	Assert(f.z, "assert-z");
 }
+} // namespace Sync
 
 #endif // SYNCEDFLOAT3_H

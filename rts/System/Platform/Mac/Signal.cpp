@@ -1,8 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Signal.h"
-#include <chrono>
+
 #include <algorithm>
+#include <chrono>
 
 void mac_signal::wait()
 {
@@ -13,7 +14,6 @@ void mac_signal::wait()
 	}
 	sleepers--;
 }
-
 
 void mac_signal::wait_for(spring_time t)
 {
@@ -26,7 +26,6 @@ void mac_signal::wait_for(spring_time t)
 	sleepers--;
 }
 
-
 void mac_signal::notify_all(const int min_sleepers)
 {
 	if (sleepers.load() < std::max(1, min_sleepers))
@@ -34,4 +33,3 @@ void mac_signal::notify_all(const int min_sleepers)
 
 	cv.notify_all();
 }
-

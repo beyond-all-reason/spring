@@ -4,32 +4,28 @@
 #include "NanoProjectile.h"
 
 #include "Game/Camera.h"
+#include "Game/GlobalUnsynced.h"
+#include "Rendering/Colors.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/Textures/TextureAtlas.h"
-#include "Rendering/Colors.h"
 #include "Rendering/GlobalRendering.h"
-#include "Game/GlobalUnsynced.h"
+#include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/ExpGenSpawnableMemberInfo.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CNanoProjectile, CProjectile, )
 
 CR_REG_METADATA(CNanoProjectile,
-(
-	CR_MEMBER(rotAcc),
-	CR_MEMBER(rotVal0x),
-	CR_MEMBER(rotVel0x),
-	CR_MEMBER(rotAcc0x),
-	CR_MEMBER_BEGINFLAG(CM_Config),
-		CR_MEMBER(deathFrame),
-		CR_MEMBER(color),
-	CR_MEMBER_ENDFLAG(CM_Config)
-))
-
+    (CR_MEMBER(rotAcc),
+        CR_MEMBER(rotVal0x),
+        CR_MEMBER(rotVel0x),
+        CR_MEMBER(rotAcc0x),
+        CR_MEMBER_BEGINFLAG(CM_Config),
+        CR_MEMBER(deathFrame),
+        CR_MEMBER(color),
+        CR_MEMBER_ENDFLAG(CM_Config)))
 
 CNanoProjectile::CNanoProjectile()
 {
@@ -42,9 +38,9 @@ CNanoProjectile::CNanoProjectile()
 }
 
 CNanoProjectile::CNanoProjectile(float3 pos, float3 speed, int lifeTime, SColor c)
-	: CProjectile(pos, speed, nullptr, false, false, false)
-	, deathFrame(gs->frameNum + lifeTime)
-	, color(c)
+    : CProjectile(pos, speed, nullptr, false, false, false)
+    , deathFrame(gs->frameNum + lifeTime)
+    , color(c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	checkCol = false;
@@ -88,30 +84,22 @@ void CNanoProjectile::Draw()
 
 	const float3 ri = camera->GetRight() * drawRadius;
 	const float3 up = camera->GetUp() * drawRadius;
-	std::array<float3, 4> bounds = {
-		-ri - up,
-		 ri - up,
-		 ri + up,
-		-ri + up
-	};
+	std::array<float3, 4> bounds = {-ri - up, ri - up, ri + up, -ri + up};
 
 	if (math::fabs(rotVal) > 0.01f) {
 		float3::rotate<false>(rotVal, camera->GetForward(), bounds);
 	}
 
 	const auto* gfxt = projectileDrawer->gfxtex;
-	AddEffectsQuad(
-		{ drawPos + bounds[0], gfxt->xstart, gfxt->ystart, color },
-		{ drawPos + bounds[1], gfxt->xend  , gfxt->ystart, color },
-		{ drawPos + bounds[2], gfxt->xend  , gfxt->yend  , color },
-		{ drawPos + bounds[3], gfxt->xstart, gfxt->yend  , color }
-	);
+	AddEffectsQuad({drawPos + bounds[0], gfxt->xstart, gfxt->ystart, color},
+	    {drawPos + bounds[1], gfxt->xend, gfxt->ystart, color}, {drawPos + bounds[2], gfxt->xend, gfxt->yend, color},
+	    {drawPos + bounds[3], gfxt->xstart, gfxt->yend, color});
 }
 
 void CNanoProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	AddMiniMapVertices({ pos        , color4::green }, { pos + speed, color4::green });
+	AddMiniMapVertices({pos, color4::green}, {pos + speed, color4::green});
 }
 
 int CNanoProjectile::GetProjectilesCount() const
@@ -119,15 +107,14 @@ int CNanoProjectile::GetProjectilesCount() const
 	return 0; // nano particles use their own counter
 }
 
-
 bool CNanoProjectile::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (CProjectile::GetMemberInfo(memberInfo))
 		return true;
 
-	CHECK_MEMBER_INFO_INT   (CNanoProjectile, deathFrame)
-	CHECK_MEMBER_INFO_SCOLOR(CNanoProjectile, color     )
+	CHECK_MEMBER_INFO_INT(CNanoProjectile, deathFrame)
+	CHECK_MEMBER_INFO_SCOLOR(CNanoProjectile, color)
 
 	return false;
 }

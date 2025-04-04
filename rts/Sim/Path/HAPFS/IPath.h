@@ -3,63 +3,70 @@
 #ifndef IPATH_H
 #define IPATH_H
 
-#include <vector>
 #include "System/float3.h"
 #include "System/type2.h"
 
+#include <vector>
+
 namespace IPath {
-	// note: ordered from best to worst
-	enum SearchResult {
-		Ok,
-		CantGetCloser,
-		GoalOutOfRange,
-		Error,
-		Unitialized
-	};
+// note: ordered from best to worst
+enum SearchResult {
+	Ok,
+	CantGetCloser,
+	GoalOutOfRange,
+	Error,
+	Unitialized
+};
 
-	typedef std::vector<float3> path_list_type;
-	typedef std::vector<int2> square_list_type;
+typedef std::vector<float3> path_list_type;
+typedef std::vector<int2> square_list_type;
 
-	struct Path {
-		Path()
-			: goalRadius(-1.0f)
-			, pathCost(-1.0f)
-		{}
-		Path(const Path& p) { *this = p; }
-		Path(Path&& p) { *this = std::move(p); }
+struct Path {
+	Path()
+	    : goalRadius(-1.0f)
+	    , pathCost(-1.0f)
+	{
+	}
 
-		Path& operator = (const Path& p) {
-			path    = p.path;
-			squares = p.squares;
+	Path(const Path& p) { *this = p; }
 
-			desiredGoal = p.desiredGoal;
-			pathGoal    = p.pathGoal;
+	Path(Path&& p) { *this = std::move(p); }
 
-			goalRadius = p.goalRadius;
-			pathCost   = p.pathCost;
-			return *this;
-		}
-		Path& operator = (Path&& p) {
-			path    = std::move(p.path);
-			squares = std::move(p.squares);
+	Path& operator=(const Path& p)
+	{
+		path = p.path;
+		squares = p.squares;
 
-			desiredGoal = p.desiredGoal;
-			pathGoal    = p.pathGoal;
+		desiredGoal = p.desiredGoal;
+		pathGoal = p.pathGoal;
 
-			goalRadius = p.goalRadius;
-			pathCost   = p.pathCost;
-			return *this;
-		}
+		goalRadius = p.goalRadius;
+		pathCost = p.pathCost;
+		return *this;
+	}
 
-		path_list_type path;
-		square_list_type squares;
+	Path& operator=(Path&& p)
+	{
+		path = std::move(p.path);
+		squares = std::move(p.squares);
 
-		float3 desiredGoal; // requested goal-position
-		float3 pathGoal; // generated goal-position
+		desiredGoal = p.desiredGoal;
+		pathGoal = p.pathGoal;
 
-		float goalRadius;
-		float pathCost;
-	};
-}
+		goalRadius = p.goalRadius;
+		pathCost = p.pathCost;
+		return *this;
+	}
+
+	path_list_type path;
+	square_list_type squares;
+
+	float3 desiredGoal; // requested goal-position
+	float3 pathGoal;    // generated goal-position
+
+	float goalRadius;
+	float pathCost;
+};
+} // namespace IPath
 
 #endif

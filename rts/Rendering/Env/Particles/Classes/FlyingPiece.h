@@ -3,41 +3,42 @@
 #ifndef FLYING_PIECE_H
 #define FLYING_PIECE_H
 
-#include <vector>
-
+#include "Rendering/GL/VBO.h"
+#include "System/Matrix44f.h"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/Matrix44f.h"
-#include "Rendering/GL/VBO.h"
+
+#include <vector>
 
 
 struct S3DModelPiece;
 
-
 struct FlyingPiece {
 public:
-	FlyingPiece(
-		const S3DModelPiece* _piece,
-		const CMatrix44f& _pieceMatrix,
-		const float3 pos,
-		const float3 speed,
-		const float2 _pieceParams,
-		const int2 _renderParams
-	);
+	FlyingPiece(const S3DModelPiece* _piece,
+	    const CMatrix44f& _pieceMatrix,
+	    const float3 pos,
+	    const float3 speed,
+	    const float2 _pieceParams,
+	    const int2 _renderParams);
 
 	bool Update();
 	static void BeginDraw();
 	void Draw(const FlyingPiece* prev) const;
 	static void EndDraw();
+
 	uint32_t GetDrawCallCount() const { return static_cast<uint32_t>(splitterParts.size()); }
 
 public:
 	const int& GetTeam() const { return team; }
+
 	const float3& GetPos() const { return pos; }
-	const float&  GetRadius() const { return drawRadius; }
+
+	const float& GetRadius() const { return drawRadius; }
 
 	// used for sorting to reduce gl state changes
-	bool operator< (const FlyingPiece& fp) const {
+	bool operator<(const FlyingPiece& fp) const
+	{
 		if (texture != fp.texture)
 			return (texture < fp.texture);
 		if (piece != fp.piece)
@@ -81,4 +82,3 @@ private:
 };
 
 #endif // FLYING_PIECE_H
-

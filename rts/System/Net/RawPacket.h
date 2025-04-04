@@ -3,25 +3,22 @@
 #ifndef RAW_PACKET_H
 #define RAW_PACKET_H
 
-#include <cassert>
-#include <cstdint>
-#include <cstring>
-#include <utility>
-
-#include <string>
-#include <vector>
-
 #include "System/Misc/NonCopyable.h"
 #include "System/SafeVector.h"
 
-namespace netcode
-{
+#include <cassert>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace netcode {
 
 /**
  * @brief simple structure to hold some data
  */
-class RawPacket
-{
+class RawPacket {
 public:
 	RawPacket() = default;
 
@@ -36,25 +33,31 @@ public:
 	 * @brief create a new packet without data
 	 * @param length the estimated length of the data
 	 */
-	RawPacket(const uint32_t newLength): length(newLength) {
+	RawPacket(const uint32_t newLength)
+	    : length(newLength)
+	{
 		if (length == 0)
 			return;
 
 		data = new uint8_t[length];
 	}
 
-	RawPacket(const uint32_t length, uint8_t msgID): RawPacket(length) {
+	RawPacket(const uint32_t length, uint8_t msgID)
+	    : RawPacket(length)
+	{
 		*this << (id = msgID);
 	}
 
-	RawPacket(const RawPacket&  p) = delete;
-	RawPacket(      RawPacket&& p) { *this = std::move(p); }
+	RawPacket(const RawPacket& p) = delete;
+
+	RawPacket(RawPacket&& p) { *this = std::move(p); }
 
 	~RawPacket() { Delete(); }
 
+	RawPacket& operator=(const RawPacket& p) = delete;
 
-	RawPacket& operator = (const RawPacket&  p) = delete;
-	RawPacket& operator = (      RawPacket&& p) {
+	RawPacket& operator=(RawPacket&& p)
+	{
 		// assume no self-assignment
 		data = p.data;
 		p.data = nullptr;
@@ -71,11 +74,9 @@ public:
 		return *this;
 	}
 
-
-
 	// packing operations
-	template <typename T>
-	RawPacket& operator << (const T& t) {
+	template<typename T> RawPacket& operator<<(const T& t)
+	{
 		constexpr uint32_t size = sizeof(T);
 		assert((size + pos) <= length);
 		memcpy(reinterpret_cast<T*>(GetWritingPos()), reinterpret_cast<const void*>(&t), sizeof(T));
@@ -83,10 +84,10 @@ public:
 		return *this;
 	}
 
-	RawPacket& operator << (const std::string& text);
+	RawPacket& operator<<(const std::string& text);
 
-	template <typename element>
-	RawPacket& operator << (const std::vector<element>& vec) {
+	template<typename element> RawPacket& operator<<(const std::vector<element>& vec)
+	{
 		const size_t size = vec.size() * sizeof(element);
 		assert((size + pos) <= length);
 		if (size > 0) {
@@ -96,9 +97,9 @@ public:
 		return *this;
 	}
 
-	#ifdef USE_SAFE_VECTOR
-	template <typename element>
-	RawPacket& operator << (const safe_vector<element>& vec) {
+#ifdef USE_SAFE_VECTOR
+	template<typename element> RawPacket& operator<<(const safe_vector<element>& vec)
+	{
 		const size_t size = vec.size() * sizeof(element);
 		assert((size + pos) <= length);
 		if (size > 0) {
@@ -107,13 +108,13 @@ public:
 		}
 		return *this;
 	}
-	#endif
+#endif
 
 
 	uint8_t* GetWritingPos() { return (data + pos); }
 
-
-	void Delete() {
+	void Delete()
+	{
 		if (length == 0)
 			return;
 

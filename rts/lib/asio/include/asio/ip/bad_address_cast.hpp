@@ -12,13 +12,13 @@
 #define ASIO_IP_BAD_ADDRESS_CAST_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include <typeinfo>
-
 #include "asio/detail/push_options.hpp"
+
+#include <typeinfo>
 
 namespace asio {
 namespace ip {
@@ -26,33 +26,30 @@ namespace ip {
 /// Thrown to indicate a failed address conversion.
 class bad_address_cast :
 #if defined(ASIO_MSVC) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS
-  public std::exception
+    public std::exception
 #else
-  public std::bad_cast
+    public std::bad_cast
 #endif
 {
 public:
-  /// Default constructor.
-  bad_address_cast() {}
+	/// Default constructor.
+	bad_address_cast() {}
 
-  /// Copy constructor.
-  bad_address_cast(const bad_address_cast& other) noexcept
+	/// Copy constructor.
+	bad_address_cast(const bad_address_cast& other) noexcept
 #if defined(ASIO_MSVC) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS
-    : std::exception(static_cast<const std::exception&>(other))
+	    : std::exception(static_cast<const std::exception&>(other))
 #else
-    : std::bad_cast(static_cast<const std::bad_cast&>(other))
+	    : std::bad_cast(static_cast<const std::bad_cast&>(other))
 #endif
-  {
-  }
+	{
+	}
 
-  /// Destructor.
-  virtual ~bad_address_cast() noexcept {}
+	/// Destructor.
+	virtual ~bad_address_cast() noexcept {}
 
-  /// Get the message associated with the exception.
-  virtual const char* what() const noexcept
-  {
-    return "bad address cast";
-  }
+	/// Get the message associated with the exception.
+	virtual const char* what() const noexcept { return "bad address cast"; }
 };
 
 } // namespace ip

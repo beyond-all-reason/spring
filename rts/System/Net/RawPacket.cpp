@@ -1,21 +1,23 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <string.h>
-#include <stdexcept>
-
 #include "RawPacket.h"
 
 #include "System/Log/ILog.h"
 
-namespace netcode
-{
+#include <stdexcept>
 
-RawPacket::RawPacket(const uint8_t* const tdata, const uint32_t newLength): length(newLength)
+#include <string.h>
+
+namespace netcode {
+
+RawPacket::RawPacket(const uint8_t* const tdata, const uint32_t newLength)
+    : length(newLength)
 {
 	if (length > 0) {
 		data = new uint8_t[length];
 		memcpy(data, tdata, length);
-	} else {
+	}
+	else {
 		LOG_L(L_ERROR, "[%s] tried to pack a zero-length packet", __func__);
 		// TODO handle error
 	}
@@ -30,7 +32,8 @@ RawPacket& RawPacket::operator<<(const std::string& text)
 		size = text.find_first_of('\0') + 1;
 	}
 	if ((pos + size) > length) {
-		LOG_L(L_WARNING, "[RawPacket::%s][id=%u] text truncated (pos=%u length=%u #text=%u)", __func__, id, pos, length, uint32_t(size));
+		LOG_L(L_WARNING, "[RawPacket::%s][id=%u] text truncated (pos=%u length=%u #text=%u)", __func__, id, pos, length,
+		    uint32_t(size));
 		size = static_cast<size_t>(length - pos);
 	}
 
@@ -40,4 +43,3 @@ RawPacket& RawPacket::operator<<(const std::string& text)
 }
 
 } // namespace netcode
-

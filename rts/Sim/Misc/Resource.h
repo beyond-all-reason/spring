@@ -3,64 +3,90 @@
 #ifndef _RESOURCE_H
 #define _RESOURCE_H
 
-#include <string>
-#include <iterator>
 #include "System/creg/creg_cond.h"
 
+#include <iterator>
+#include <string>
 
 struct SResourcePack {
 	static const int MAX_RESOURCES = 2;
 
 	union {
 		float res[MAX_RESOURCES];
-		struct { float metal, energy; };
-		struct { float res1, res2; };
+
+		struct {
+			float metal, energy;
+		};
+
+		struct {
+			float res1, res2;
+		};
 	};
 
 public:
-	SResourcePack() : res1(0.0f), res2(0.0f) {}
-	SResourcePack(const float value) : metal(value), energy(value) {}
-	SResourcePack(const float m, const float e) : metal(m), energy(e) {}
+	SResourcePack()
+	    : res1(0.0f)
+	    , res2(0.0f)
+	{
+	}
+
+	SResourcePack(const float value)
+	    : metal(value)
+	    , energy(value)
+	{
+	}
+
+	SResourcePack(const float m, const float e)
+	    : metal(m)
+	    , energy(e)
+	{
+	}
 	CR_DECLARE_STRUCT(SResourcePack)
 
-	bool empty() const {
+	bool empty() const
+	{
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			if (res[i] != 0.0f) return false;
+			if (res[i] != 0.0f)
+				return false;
 		}
 		return true;
 	}
 
-	SResourcePack& cap_at (const SResourcePack &cap) {
-		for (int i = 0; i < MAX_RESOURCES; ++i)
-			res[i] = std::min(res[i], cap.res[i]);
+	SResourcePack& cap_at(const SResourcePack& cap)
+	{
+		for (int i = 0; i < MAX_RESOURCES; ++i) res[i] = std::min(res[i], cap.res[i]);
 
 		return *this;
 	}
 
 	decltype(std::begin(res)) begin() { return std::begin(res); }
+
 	decltype(std::end(res)) end() { return std::end(res); }
 
-	float& operator[](const size_t i) {
-		return res[i];
-	}
-	const float& operator[](const size_t i) const {
-		return res[i];
-	}
+	float& operator[](const size_t i) { return res[i]; }
 
-	bool operator<=(const SResourcePack& other) const {
+	const float& operator[](const size_t i) const { return res[i]; }
+
+	bool operator<=(const SResourcePack& other) const
+	{
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			if (res[i] > other.res[i]) return false;
-		}
-		return true;
-	}
-	bool operator>=(const SResourcePack& other) const {
-		for (int i = 0; i < MAX_RESOURCES; ++i) {
-			if (res[i] < other.res[i]) return false;
+			if (res[i] > other.res[i])
+				return false;
 		}
 		return true;
 	}
 
-	SResourcePack operator+(const SResourcePack& other) const {
+	bool operator>=(const SResourcePack& other) const
+	{
+		for (int i = 0; i < MAX_RESOURCES; ++i) {
+			if (res[i] < other.res[i])
+				return false;
+		}
+		return true;
+	}
+
+	SResourcePack operator+(const SResourcePack& other) const
+	{
 		SResourcePack out = *this;
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			out[i] += other.res[i];
@@ -68,25 +94,31 @@ public:
 		return out;
 	}
 
-	SResourcePack& operator+=(const SResourcePack& other) {
+	SResourcePack& operator+=(const SResourcePack& other)
+	{
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			res[i] += other.res[i];
 		}
 		return *this;
 	}
-	SResourcePack& operator-=(const SResourcePack& other) {
+
+	SResourcePack& operator-=(const SResourcePack& other)
+	{
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			res[i] -= other.res[i];
 		}
 		return *this;
 	}
-	SResourcePack& operator*=(const SResourcePack& other) {
-		for (int i = 0; i < MAX_RESOURCES; ++i)
-			res[i] *= other.res[i];
+
+	SResourcePack& operator*=(const SResourcePack& other)
+	{
+		for (int i = 0; i < MAX_RESOURCES; ++i) res[i] *= other.res[i];
 
 		return *this;
 	}
-	SResourcePack& operator/=(const SResourcePack& other) {
+
+	SResourcePack& operator/=(const SResourcePack& other)
+	{
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			if (!other[i])
 				res[i] = 1.0f;
@@ -97,7 +129,8 @@ public:
 		return *this;
 	}
 
-	SResourcePack& operator*=(float scale) {
+	SResourcePack& operator*=(float scale)
+	{
 		for (int i = 0; i < MAX_RESOURCES; ++i) {
 			res[i] *= scale;
 		}
@@ -105,9 +138,11 @@ public:
 	}
 };
 
-inline SResourcePack operator * (SResourcePack pack, float scale) { return pack *= scale; }
-inline SResourcePack operator * (SResourcePack lhs, const SResourcePack& rhs) { return lhs *= rhs; }
-inline SResourcePack operator / (SResourcePack lhs, const SResourcePack& rhs) { return lhs /= rhs; }
+inline SResourcePack operator*(SResourcePack pack, float scale) { return pack *= scale; }
+
+inline SResourcePack operator*(SResourcePack lhs, const SResourcePack& rhs) { return lhs *= rhs; }
+
+inline SResourcePack operator/(SResourcePack lhs, const SResourcePack& rhs) { return lhs /= rhs; }
 
 struct SResourceOrder {
 	SResourcePack use;
@@ -123,13 +158,16 @@ struct SResourceOrder {
 	bool separate;
 
 public:
-	SResourceOrder() : quantum(false), overflow(false), separate(false) {}
+	SResourceOrder()
+	    : quantum(false)
+	    , overflow(false)
+	    , separate(false)
+	{
+	}
 	CR_DECLARE_STRUCT(SResourceOrder)
 };
 
-
-class CResourceDescription
-{
+class CResourceDescription {
 public:
 	CR_DECLARE_STRUCT(CResourceDescription)
 

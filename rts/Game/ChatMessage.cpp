@@ -3,14 +3,13 @@
 #include "ChatMessage.h"
 
 #include "Net/Protocol/BaseNetProtocol.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Net/PackPacket.h"
 #include "System/Net/UnpackPacket.h"
 
-#include "System/Misc/TracyDefs.h"
-
 ChatMessage::ChatMessage(int from, int dest, const std::string& chat)
-	: fromPlayer(from)
-	, destination(dest)
+    : fromPlayer(from)
+    , destination(dest)
 {
 	// restrict all (player and autohost) chat-messages before they get Pack()'ed
 	msg.resize(std::min(chat.size(), MAX_MSG_SIZE));
@@ -46,9 +45,9 @@ const netcode::RawPacket* ChatMessage::Pack() const
 	RECOIL_DETAILED_TRACY_ZONE;
 	// message id (uint8), size (uint8), from (uint8), dest (uint8), len(msg)+null
 	// msg.size() itself is clamped to MAX_MSG_SIZE == UINT8_MAX/2 by construction
-	constexpr uint8_t  headerSize = 4 * sizeof(uint8_t);
-	const     uint8_t messageSize = static_cast<uint8_t>(msg.size() + 1);
-	const     uint8_t  packetSize = headerSize + messageSize;
+	constexpr uint8_t headerSize = 4 * sizeof(uint8_t);
+	const uint8_t messageSize = static_cast<uint8_t>(msg.size() + 1);
+	const uint8_t packetSize = headerSize + messageSize;
 
 	assert(packetSize <= (headerSize + MAX_MSG_SIZE + 1));
 
@@ -61,4 +60,3 @@ const netcode::RawPacket* ChatMessage::Pack() const
 
 	return buffer;
 }
-

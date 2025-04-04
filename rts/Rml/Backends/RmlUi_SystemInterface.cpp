@@ -29,6 +29,7 @@
  */
 
 #include "RmlUi_SystemInterface.h"
+
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Input.h>
 #include <RmlUi/Core/SystemInterface.h>
@@ -36,18 +37,11 @@
 #include <System/Log/ILog.h>
 #include <System/Misc/SpringTime.h>
 
-RmlSystemInterface::RmlSystemInterface()
-{
-}
+RmlSystemInterface::RmlSystemInterface() {}
 
-RmlSystemInterface::~RmlSystemInterface()
-{
-}
+RmlSystemInterface::~RmlSystemInterface() {}
 
-double RmlSystemInterface::GetElapsedTime()
-{
-	return spring_gettime().toSecs<double>();
-}
+double RmlSystemInterface::GetElapsedTime() { return spring_gettime().toSecs<double>(); }
 
 int RmlSystemInterface::TranslateString(Rml::String& translated, const Rml::String& input)
 {
@@ -65,21 +59,21 @@ bool RmlSystemInterface::LogMessage(Rml::Log::Type type, const Rml::String& mess
 	const char* fmtStr = "[RmlUi] %s";
 	const char* logStr = message.c_str();
 	switch (type) {
-		case Rml::Log::LT_ASSERT:
-		case Rml::Log::LT_DEBUG: {
-			LOG_L(L_DEBUG, fmtStr, logStr);
-		} break;
-		case Rml::Log::LT_ERROR: {
-			LOG_L(L_ERROR, fmtStr, logStr);
-		} break;
-		case Rml::Log::LT_WARNING: {
-			LOG_L(L_WARNING, fmtStr, logStr);
-		} break;
+	case Rml::Log::LT_ASSERT:
+	case Rml::Log::LT_DEBUG: {
+		LOG_L(L_DEBUG, fmtStr, logStr);
+	} break;
+	case Rml::Log::LT_ERROR: {
+		LOG_L(L_ERROR, fmtStr, logStr);
+	} break;
+	case Rml::Log::LT_WARNING: {
+		LOG_L(L_WARNING, fmtStr, logStr);
+	} break;
 
-		case Rml::Log::LT_INFO:
-		default: {
-			LOG_L(L_INFO, fmtStr, logStr);
-		} break;
+	case Rml::Log::LT_INFO:
+	default: {
+		LOG_L(L_INFO, fmtStr, logStr);
+	} break;
 	}
 	return true;
 }
@@ -89,21 +83,11 @@ void RmlSystemInterface::SetMouseCursor(const Rml::String& cursor_name)
 	mouseCursor = mouseCursorAliases.contains(cursor_name) ? mouseCursorAliases[cursor_name] : cursor_name;
 }
 
-const Rml::String& RmlSystemInterface::GetMouseCursor()
-{
-	return mouseCursor;
-}
+const Rml::String& RmlSystemInterface::GetMouseCursor() { return mouseCursor; }
 
-void RmlSystemInterface::SetTranslationTable(TranslationTable* tt)
-{
-	translationTable = tt;
-}
+void RmlSystemInterface::SetTranslationTable(TranslationTable* tt) { translationTable = tt; }
 
-
-void RmlSystemInterface::SetClipboardText(const Rml::String& text_utf8)
-{
-	SDL_SetClipboardText(text_utf8.c_str());
-}
+void RmlSystemInterface::SetClipboardText(const Rml::String& text_utf8) { SDL_SetClipboardText(text_utf8.c_str()); }
 
 void RmlSystemInterface::GetClipboardText(Rml::String& text)
 {
@@ -155,46 +139,33 @@ bool RmlSDLRecoil::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
 	bool result = true;
 
 	switch (ev.type) {
-		case SDL_MOUSEMOTION:
-			result = context->ProcessMouseMove(ev.motion.x, ev.motion.y, GetKeyModifierState());
-			break;
-		case SDL_MOUSEBUTTONDOWN:
-			result = context->ProcessMouseButtonDown(ConvertMouseButton(ev.button.button),
-			                                         GetKeyModifierState());
-			SDL_CaptureMouse(SDL_TRUE);
-			break;
-		case SDL_MOUSEBUTTONUP:
-			SDL_CaptureMouse(SDL_FALSE);
-			result = context->ProcessMouseButtonUp(ConvertMouseButton(ev.button.button),
-			                                       GetKeyModifierState());
-			break;
-		case SDL_MOUSEWHEEL:
-			result = context->ProcessMouseWheel(float(-ev.wheel.y), GetKeyModifierState());
-			break;
-		case SDL_KEYDOWN:
-			result = context->ProcessKeyDown(ConvertKey(ev.key.keysym.sym), GetKeyModifierState());
-			if (ev.key.keysym.sym == SDLK_RETURN || ev.key.keysym.sym == SDLK_KP_ENTER)
-				result &= context->ProcessTextInput('\n');
-			break;
-		case SDL_KEYUP:
-			result = context->ProcessKeyUp(ConvertKey(ev.key.keysym.sym), GetKeyModifierState());
-			break;
-		case SDL_TEXTINPUT:
-			result = context->ProcessTextInput(Rml::String(&ev.text.text[0]));
-			break;
-		case SDL_WINDOWEVENT: {
-			switch (ev.window.event) {
-				case SDL_WINDOWEVENT_SIZE_CHANGED: {
-					Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
-					context->SetDimensions(dimensions);
-				} break;
-				case SDL_WINDOWEVENT_LEAVE:
-					context->ProcessMouseLeave();
-					break;
-			}
+	case SDL_MOUSEMOTION: result = context->ProcessMouseMove(ev.motion.x, ev.motion.y, GetKeyModifierState()); break;
+	case SDL_MOUSEBUTTONDOWN:
+		result = context->ProcessMouseButtonDown(ConvertMouseButton(ev.button.button), GetKeyModifierState());
+		SDL_CaptureMouse(SDL_TRUE);
+		break;
+	case SDL_MOUSEBUTTONUP:
+		SDL_CaptureMouse(SDL_FALSE);
+		result = context->ProcessMouseButtonUp(ConvertMouseButton(ev.button.button), GetKeyModifierState());
+		break;
+	case SDL_MOUSEWHEEL: result = context->ProcessMouseWheel(float(-ev.wheel.y), GetKeyModifierState()); break;
+	case SDL_KEYDOWN:
+		result = context->ProcessKeyDown(ConvertKey(ev.key.keysym.sym), GetKeyModifierState());
+		if (ev.key.keysym.sym == SDLK_RETURN || ev.key.keysym.sym == SDLK_KP_ENTER)
+			result &= context->ProcessTextInput('\n');
+		break;
+	case SDL_KEYUP: result = context->ProcessKeyUp(ConvertKey(ev.key.keysym.sym), GetKeyModifierState()); break;
+	case SDL_TEXTINPUT: result = context->ProcessTextInput(Rml::String(&ev.text.text[0])); break;
+	case SDL_WINDOWEVENT: {
+		switch (ev.window.event) {
+		case SDL_WINDOWEVENT_SIZE_CHANGED: {
+			Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
+			context->SetDimensions(dimensions);
 		} break;
-		default:
-			break;
+		case SDL_WINDOWEVENT_LEAVE: context->ProcessMouseLeave(); break;
+		}
+	} break;
+	default: break;
 	}
 
 	return result;
@@ -328,14 +299,10 @@ Rml::Input::KeyIdentifier RmlSDLRecoil::ConvertKey(int sdlkey)
 int RmlSDLRecoil::ConvertMouseButton(int button)
 {
 	switch (button) {
-		case SDL_BUTTON_LEFT:
-			return 0;
-		case SDL_BUTTON_RIGHT:
-			return 1;
-		case SDL_BUTTON_MIDDLE:
-			return 2;
-		default:
-			return 3;
+	case SDL_BUTTON_LEFT: return 0;
+	case SDL_BUTTON_RIGHT: return 1;
+	case SDL_BUTTON_MIDDLE: return 2;
+	default: return 3;
 	}
 }
 

@@ -43,89 +43,86 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef AI_DEBONEPROCESS_H_INC
 #define AI_DEBONEPROCESS_H_INC
 
-#include <vector>
-#include <utility>
 #include "BaseProcess.h"
+
+#include <utility>
+#include <vector>
 
 #include <assimp/mesh.h>
 #include <assimp/scene.h>
 
 class DeboneTest;
 
-namespace Assimp
-{
+namespace Assimp {
 
 #if (!defined AI_DEBONE_THRESHOLD)
-#   define AI_DEBONE_THRESHOLD  1.0f
+#define AI_DEBONE_THRESHOLD 1.0f
 #endif // !! AI_DEBONE_THRESHOLD
 
 // ---------------------------------------------------------------------------
 /** This post processing step removes bones nearly losslessly or according to
-* a configured threshold. In order to remove the bone, the primitives affected by
-* the bone are split from the mesh. The split off (new) mesh is boneless. At any
-* point in time, bones without affect upon a given mesh are to be removed.
-*/
-class DeboneProcess : public BaseProcess
-{
+ * a configured threshold. In order to remove the bone, the primitives affected by
+ * the bone are split from the mesh. The split off (new) mesh is boneless. At any
+ * point in time, bones without affect upon a given mesh are to be removed.
+ */
+class DeboneProcess : public BaseProcess {
 public:
-
-    DeboneProcess();
-    ~DeboneProcess();
+	DeboneProcess();
+	~DeboneProcess();
 
 public:
-    // -------------------------------------------------------------------
-    /** Returns whether the processing step is present in the given flag.
-    * @param pFlags The processing flags the importer was called with.
-    *   A bitwise combination of #aiPostProcessSteps.
-    * @return true if the process is present in this flag fields,
-    *   false if not.
-    */
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	/** Returns whether the processing step is present in the given flag.
+	 * @param pFlags The processing flags the importer was called with.
+	 *   A bitwise combination of #aiPostProcessSteps.
+	 * @return true if the process is present in this flag fields,
+	 *   false if not.
+	 */
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    /** Called prior to ExecuteOnScene().
-    * The function is a request to the process to update its configuration
-    * basing on the Importer's configuration property list.
-    */
-    void SetupProperties(const Importer* pImp);
+	// -------------------------------------------------------------------
+	/** Called prior to ExecuteOnScene().
+	 * The function is a request to the process to update its configuration
+	 * basing on the Importer's configuration property list.
+	 */
+	void SetupProperties(const Importer* pImp);
 
 protected:
+	// -------------------------------------------------------------------
+	/** Executes the post processing step on the given imported data.
+	 * At the moment a process is not supposed to fail.
+	 * @param pScene The imported data to work at.
+	 */
+	void Execute(aiScene* pScene);
 
-    // -------------------------------------------------------------------
-    /** Executes the post processing step on the given imported data.
-    * At the moment a process is not supposed to fail.
-    * @param pScene The imported data to work at.
-    */
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	/** Counts bones total/removable in a given mesh.
+	 * @param pMesh The mesh to process.
+	 */
+	bool ConsiderMesh(const aiMesh* pMesh);
 
-    // -------------------------------------------------------------------
-    /** Counts bones total/removable in a given mesh.
-    * @param pMesh The mesh to process.
-    */
-    bool ConsiderMesh( const aiMesh* pMesh);
+	/// Splits the given mesh by bone count.
+	/// @param pMesh the Mesh to split. Is not changed at all, but might be superfluous in case it was split.
+	/// @param poNewMeshes Array of submeshes created in the process. Empty if splitting was not necessary.
+	void SplitMesh(const aiMesh* pMesh, std::vector<std::pair<aiMesh*, const aiBone*>>& poNewMeshes) const;
 
-    /// Splits the given mesh by bone count.
-    /// @param pMesh the Mesh to split. Is not changed at all, but might be superfluous in case it was split.
-    /// @param poNewMeshes Array of submeshes created in the process. Empty if splitting was not necessary.
-    void SplitMesh(const aiMesh* pMesh, std::vector< std::pair< aiMesh*,const aiBone* > >& poNewMeshes) const;
+	/// Recursively updates the node's mesh list to account for the changed mesh list
+	void UpdateNode(aiNode* pNode) const;
 
-    /// Recursively updates the node's mesh list to account for the changed mesh list
-    void UpdateNode(aiNode* pNode) const;
-
-    // -------------------------------------------------------------------
-    // Apply transformation to a mesh
-    void ApplyTransform(aiMesh* mesh, const aiMatrix4x4& mat)const;
+	// -------------------------------------------------------------------
+	// Apply transformation to a mesh
+	void ApplyTransform(aiMesh* mesh, const aiMatrix4x4& mat) const;
 
 public:
-    /** Number of bones present in the scene. */
-    unsigned int mNumBones;
-    unsigned int mNumBonesCanDoWithout;
+	/** Number of bones present in the scene. */
+	unsigned int mNumBones;
+	unsigned int mNumBonesCanDoWithout;
 
-    float mThreshold;
-    bool mAllOrNone;
+	float mThreshold;
+	bool mAllOrNone;
 
-    /// Per mesh index: Array of indices of the new submeshes.
-    std::vector< std::vector< std::pair< unsigned int,aiNode* > > > mSubMeshIndices;
+	/// Per mesh index: Array of indices of the new submeshes.
+	std::vector<std::vector<std::pair<unsigned int, aiNode*>>> mSubMeshIndices;
 };
 
 } // end of namespace Assimp

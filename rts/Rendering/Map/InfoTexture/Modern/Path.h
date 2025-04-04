@@ -4,6 +4,7 @@
 #define _PATH_TEXTURE_H
 
 #include "PboInfoTexture.h"
+
 #include "Rendering/GL/FBO.h"
 #include "System/Misc/SpringTime.h"
 
@@ -11,9 +12,7 @@
 struct MoveDef;
 struct UnitDef;
 
-
-class CPathTexture : public CPboInfoTexture
-{
+class CPathTexture : public CPboInfoTexture {
 public:
 	CPathTexture();
 
@@ -32,7 +31,7 @@ private:
 
 private:
 	bool isCleared;
-//	int updateFrame;
+	//	int updateFrame;
 	int updateProcess;
 	unsigned int lastSelectedPathType;
 	int forcedPathType;

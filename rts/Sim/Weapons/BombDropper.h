@@ -5,8 +5,7 @@
 
 #include "Weapon.h"
 
-class CBombDropper: public CWeapon
-{
+class CBombDropper : public CWeapon {
 	CR_DECLARE_DERIVED(CBombDropper)
 public:
 	CBombDropper(CUnit* owner = nullptr, const WeaponDef* def = nullptr, bool useTorps = false);
@@ -18,8 +17,13 @@ private:
 
 	bool TestTarget(const float3 pos, const SWeaponTarget& trg) const override final;
 	bool TestRange(const float3 pos, const SWeaponTarget& trg) const override final;
+
 	// TODO: requires sampling parabola from aimFromPos down to dropPos
-	bool HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const override final { return true; }
+	bool HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const override final
+	{
+		return true;
+	}
+
 	void FireImpl(const bool scriptCall) override final;
 
 private:

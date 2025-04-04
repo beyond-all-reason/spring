@@ -2,8 +2,8 @@
 
 #if !defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__)
 
-#include <glad/glad_glx.h>
 #include <SDL_syswm.h>
+#include <glad/glad_glx.h>
 
 void GLX::Load(SDL_Window* window)
 {
@@ -14,8 +14,7 @@ void GLX::Load(SDL_Window* window)
 	if (!SDL_GetWindowWMInfo(window, &info))
 		return;
 
-	switch (info.subsystem)
-	{
+	switch (info.subsystem) {
 	case SDL_SYSWM_X11: {
 		Display* display = info.info.x11.display;
 		supported = static_cast<bool>(gladLoadGLX(display, DefaultScreen(display)));
@@ -23,8 +22,7 @@ void GLX::Load(SDL_Window* window)
 	case SDL_SYSWM_WAYLAND: {
 		supported = static_cast<bool>(gladLoadGLX(nullptr, 0));
 	} break;
-	default:
-		break;
+	default: break;
 	}
 }
 
@@ -32,7 +30,7 @@ void GLX::Unload()
 {
 	if (!supported)
 		return;
-	
+
 	gladUnloadGLX();
 }
 
@@ -46,7 +44,8 @@ bool GLX::GetVideoMemInfoMESA(int* memInfo)
 		return false;
 
 	// note: unlike the others, this value is returned in megabytes
-	glad_glXQueryCurrentRendererIntegerMESA(GLX_RENDERER_VIDEO_MEMORY_MESA, reinterpret_cast<unsigned int*>(&memInfo[0]));
+	glad_glXQueryCurrentRendererIntegerMESA(
+	    GLX_RENDERER_VIDEO_MEMORY_MESA, reinterpret_cast<unsigned int*>(&memInfo[0]));
 
 	memInfo[0] *= 1024;
 	memInfo[1] = memInfo[0];
@@ -57,6 +56,8 @@ bool GLX::GetVideoMemInfoMESA(int* memInfo)
 }
 #else
 void GLX::Load(SDL_Window* window) {}
+
 void GLX::Unload() {}
+
 bool GLX::GetVideoMemInfoMESA(int* memInfo) { return false; }
 #endif

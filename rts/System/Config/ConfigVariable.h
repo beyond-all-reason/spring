@@ -4,12 +4,11 @@
 #define CONFIG_VALUE_H
 
 #include "System/Misc/NonCopyable.h"
+#include "System/StringConvertibleOptionalValue.h"
+
 #include <algorithm>
 #include <map>
 #include <string>
-#include "System/StringConvertibleOptionalValue.h"
-
-
 
 /**
  * @brief Untyped configuration variable meta data.
@@ -17,8 +16,7 @@
  * That is, meta data of a type that does not depend on the declared type
  * of the config variable.
  */
-class ConfigVariableMetaData : public spring::noncopyable
-{
+class ConfigVariableMetaData : public spring::noncopyable {
 public:
 	typedef TypedStringConvertibleOptionalValue<std::string> OptionalString;
 	typedef TypedStringConvertibleOptionalValue<int> OptionalInt;
@@ -47,12 +45,17 @@ public:
 	virtual std::string Clamp(const std::string& value) const = 0;
 
 	std::string GetKey() const { return key; }
+
 	std::string GetType() const { return type; }
 
 	const OptionalString& GetDeclarationFile() const { return declarationFile; }
+
 	const OptionalInt& GetDeclarationLine() const { return declarationLine; }
+
 	const OptionalString& GetDescription() const { return description; }
+
 	const OptionalInt& GetReadOnly() const { return readOnly; }
+
 	const OptionalInt& GetDeprecated() const { return deprecated; }
 
 protected:
@@ -73,17 +76,24 @@ protected:
  * That is, meta data of the same type as the declared type
  * of the config variable.
  */
-template<typename T>
-class ConfigVariableTypedMetaData : public ConfigVariableMetaData
-{
+template<typename T> class ConfigVariableTypedMetaData : public ConfigVariableMetaData {
 public:
-	ConfigVariableTypedMetaData(const char* k, const char* t) { key = k; type = t; }
+	ConfigVariableTypedMetaData(const char* k, const char* t)
+	{
+		key = k;
+		type = t;
+	}
 
 	const StringConvertibleOptionalValue& GetDefaultValue() const { return defaultValue; }
+
 	const StringConvertibleOptionalValue& GetMinimumValue() const { return minimumValue; }
+
 	const StringConvertibleOptionalValue& GetMaximumValue() const { return maximumValue; }
+
 	const StringConvertibleOptionalValue& GetSafemodeValue() const { return safemodeValue; }
+
 	const StringConvertibleOptionalValue& GetHeadlessValue() const { return headlessValue; }
+
 	const StringConvertibleOptionalValue& GetDedicatedValue() const { return dedicatedValue; }
 
 	/**
@@ -135,17 +145,20 @@ protected:
  *   .description("This is an example")
  *   .readOnly(true);
  */
-template<typename T>
-class ConfigVariableBuilder : public spring::noncopyable
-{
+template<typename T> class ConfigVariableBuilder : public spring::noncopyable {
 public:
-	ConfigVariableBuilder(ConfigVariableTypedMetaData<T>& data) : data(&data) {}
+	ConfigVariableBuilder(ConfigVariableTypedMetaData<T>& data)
+	    : data(&data)
+	{
+	}
+
 	const ConfigVariableMetaData* GetData() const { return data; }
 
-#define MAKE_CHAIN_METHOD(property, type) \
-	ConfigVariableBuilder& property(type const& x) { \
-		data->property = x; \
-		return *this; \
+#define MAKE_CHAIN_METHOD(property, type)           \
+	ConfigVariableBuilder& property(type const & x) \
+	{                                               \
+		data->property = x;                         \
+		return *this;                               \
 	}
 
 	MAKE_CHAIN_METHOD(declarationFile, const char*);
@@ -173,8 +186,7 @@ private:
  * ConfigVariableBuilder in a global map of meta data as it is assigned to
  * an instance of this class.
  */
-class ConfigVariable
-{
+class ConfigVariable {
 public:
 	typedef std::map<std::string, const ConfigVariableMetaData*> MetaDataMap;
 
@@ -188,20 +200,16 @@ private:
 
 public:
 	/// @brief Implicit conversion from ConfigVariableBuilder<T>.
-	template<typename T>
-	ConfigVariable(const ConfigVariableBuilder<T>& builder)
-	{
-		AddMetaData(builder.GetData());
-	}
+	template<typename T> ConfigVariable(const ConfigVariableBuilder<T>& builder) { AddMetaData(builder.GetData()); }
 };
 
 /**
  * @brief Macro to start the method chain used to declare a config variable.
  * @see ConfigVariableBuilder
  */
-#define CONFIG(T, name) \
-	static ConfigVariableTypedMetaData<T> cfgdata##name(#name, #T); \
-	static ConfigVariable cfg##name = ConfigVariableBuilder<T>(cfgdata##name) \
-		.declarationFile(__FILE__).declarationLine(__LINE__)
+#define CONFIG(T, name)                                                                             \
+	static ConfigVariableTypedMetaData<T> cfgdata##name(#name, #T);                                 \
+	static ConfigVariable cfg##name =                                                               \
+	    ConfigVariableBuilder<T>(cfgdata##name).declarationFile(__FILE__).declarationLine(__LINE__)
 
 #endif // CONFIG_VALUE_H

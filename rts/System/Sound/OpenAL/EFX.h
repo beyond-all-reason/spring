@@ -3,22 +3,24 @@
 #ifndef _EFX_H_
 #define _EFX_H_
 
+#include "EFXPresets.h"
+
+#include "System/UnorderedMap.hpp"
+
 #include <string>
 
 #include <al.h>
 #include <alc.h>
 #include <efx.h>
 
-#include "EFXPresets.h"
-#include "System/UnorderedMap.hpp"
-
 /// Default sound effects system implementation
-class CEFX
-{
+class CEFX {
 public:
 	void Init(ALCdevice* device);
 	void Kill();
-	void ResetState() {
+
+	void ResetState()
+	{
 		updates = 0;
 		maxSlots = 0;
 
@@ -48,6 +50,7 @@ public:
 	void SetHeightRolloffModifer(float mod);
 
 	bool Enabled() const { return enabled; }
+
 	bool Supported() const { return supported; }
 
 public:
@@ -55,6 +58,7 @@ public:
 	void ConfigNotify(const std::string& key, const std::string& value);
 
 	void SetAirAbsorptionFactor(ALfloat value);
+
 	ALfloat GetAirAbsorptionFactor() const { return airAbsorptionFactor; }
 
 public:

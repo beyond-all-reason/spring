@@ -3,14 +3,12 @@
 #ifndef SKIRMISH_AI_DATA_H
 #define SKIRMISH_AI_DATA_H
 
+#include "ExternalAI/SkirmishAIBase.h"
+#include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
+
 #include <string>
 #include <vector>
-
-#include "ExternalAI/SkirmishAIBase.h"
-
-#include "System/creg/creg_cond.h"
-#include "System/UnorderedMap.hpp"
-
 
 /**
  * Contains everything needed to initialize a Skirmish AI instance.
@@ -22,10 +20,13 @@ class SkirmishAIData : public SkirmishAIBase {
 public:
 	SkirmishAIData() = default;
 	SkirmishAIData(const SkirmishAIData& d) = default;
+
 	SkirmishAIData(SkirmishAIData&& d) noexcept { *this = std::move(d); }
 
-	SkirmishAIData& operator = (const SkirmishAIData& d) = default;
-	SkirmishAIData& operator = (SkirmishAIData&& d) noexcept {
+	SkirmishAIData& operator=(const SkirmishAIData& d) = default;
+
+	SkirmishAIData& operator=(SkirmishAIData&& d) noexcept
+	{
 		team = d.team;
 		hostPlayer = d.hostPlayer;
 		status = d.status;

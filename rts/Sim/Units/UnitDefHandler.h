@@ -3,23 +3,26 @@
 #ifndef UNITDEFHANDLER_H
 #define UNITDEFHANDLER_H
 
-#include <string>
-#include <vector>
-
 #include "UnitDef.h"
+
 #include "Sim/Misc/CommonDefHandler.h"
 #include "System/UnorderedMap.hpp"
+
+#include <string>
+#include <vector>
 
 class LuaTable;
 struct UnitDef;
 struct GuiSoundSet;
 
 class LuaParser;
-class CUnitDefHandler : CommonDefHandler
-{
+
+class CUnitDefHandler : CommonDefHandler {
 public:
 	void Init(LuaParser* defsParser);
-	void Kill() {
+
+	void Kill()
+	{
 		unitDefsVector.clear();
 		unitDefIDs.clear(); // never iterated in synced code
 
@@ -34,20 +37,21 @@ public:
 	}
 
 	bool GetNoCost() { return noCost; }
+
 	void SetNoCost(bool value);
 
 	// NOTE: safe with unordered_map after Init
 	const UnitDef* GetUnitDefByName(std::string name);
-	const UnitDef* GetUnitDefByID(int id) {
+
+	const UnitDef* GetUnitDefByID(int id)
+	{
 		if (!IsValidUnitDefID(id))
 			return nullptr;
 
 		return &unitDefsVector[id];
 	}
 
-	bool IsValidUnitDefID(const int id) const {
-		return (id > 0) && (static_cast<size_t>(id) < unitDefsVector.size());
-	}
+	bool IsValidUnitDefID(const int id) const { return (id > 0) && (static_cast<size_t>(id) < unitDefsVector.size()); }
 
 	// id=0 is not a valid UnitDef, hence the -1
 	unsigned int NumUnitDefs() const { return (unitDefsVector.size() - 1); }
@@ -55,8 +59,10 @@ public:
 	int PushNewUnitDef(const std::string& unitName, const LuaTable& udTable);
 
 	const std::vector<UnitDef>& GetUnitDefsVec() const { return unitDefsVector; }
+
 	const spring::unordered_map<std::string, int>& GetUnitDefIDs() const { return unitDefIDs; }
-	const spring::unordered_map<int, std::vector<int> >& GetDecoyDefIDs() const { return decoyMap; }
+
+	const spring::unordered_map<int, std::vector<int>>& GetDecoyDefIDs() const { return decoyMap; }
 
 	void SanitizeUnitDefs();
 
@@ -70,8 +76,8 @@ protected:
 private:
 	std::vector<UnitDef> unitDefsVector;
 	spring::unordered_map<std::string, int> unitDefIDs;
-	spring::unordered_map<int, std::vector<int> > decoyMap;
-	std::vector< std::pair<std::string, std::string> > decoyNameMap;
+	spring::unordered_map<int, std::vector<int>> decoyMap;
+	std::vector<std::pair<std::string, std::string>> decoyNameMap;
 
 	bool noCost = false;
 };

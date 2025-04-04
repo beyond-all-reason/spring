@@ -3,13 +3,12 @@
 #ifndef MOUSE_INPUT_H
 #define MOUSE_INPUT_H
 
-#include <SDL_events.h>
 #include "System/Input/InputHandler.h"
-
 #include "System/type2.h"
 
-class IMouseInput
-{
+#include <SDL_events.h>
+
+class IMouseInput {
 public:
 	static IMouseInput* GetInstance(bool relModeWarp);
 	static void FreeInstance(IMouseInput*);
@@ -24,6 +23,7 @@ public:
 
 	bool SetPos(int2 pos);
 	bool WarpPos(int2 pos);
+
 	bool SetWarpPos(int2 pos) { return (SetPos(pos) && WarpPos(pos)); }
 
 	bool HandleSDLMouseEvent(const SDL_Event& event);

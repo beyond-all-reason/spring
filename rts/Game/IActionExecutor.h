@@ -4,17 +4,19 @@
 #define I_ACTION_EXECUTOR_H
 
 #include "Action.h"
+
 #include "Sim/Misc/GlobalSynced.h"
 #include "System/Log/ILog.h"
 
 #include <string>
 
-class IAction
-{
+class IAction {
 protected:
 	IAction(const Action& action)
-		: action(action)
-	{}
+	    : action(action)
+	{
+	}
+
 	virtual ~IAction() {}
 
 public:
@@ -22,6 +24,7 @@ public:
 	 * Returns the action arguments.
 	 */
 	const std::string& GetCmd() const { return action.command; }
+
 	const std::string& GetArgs() const { return action.extra; }
 
 	const Action& GetInnerAction() const { return action; }
@@ -30,19 +33,19 @@ private:
 	const Action& action;
 };
 
-
-template<class action_t, bool synced_v>
-class IActionExecutor
-{
+template<class action_t, bool synced_v> class IActionExecutor {
 protected:
 	IActionExecutor(const std::string& command,
-			const std::string& description, bool cheatRequired = false,
-			std::vector<std::pair<std::string, std::string>> arguments = {})
-		: command(command)
-		, description(description)
-		, cheatRequired(cheatRequired)
-		, arguments(arguments)
-	{}
+	    const std::string& description,
+	    bool cheatRequired = false,
+	    std::vector<std::pair<std::string, std::string>> arguments = {})
+	    : command(command)
+	    , description(description)
+	    , cheatRequired(cheatRequired)
+	    , arguments(arguments)
+	{
+	}
+
 	virtual ~IActionExecutor() {}
 
 public:
@@ -81,9 +84,7 @@ public:
 	bool ExecuteAction(const action_t& action) const;
 
 protected:
-	void SetDescription(const std::string& description) {
-		this->description = description;
-	}
+	void SetDescription(const std::string& description) { this->description = description; }
 
 private:
 	/**
@@ -97,8 +98,6 @@ private:
 	std::vector<std::pair<std::string, std::string>> arguments;
 };
 
-
-
 /*
  * Because this is a template enabled class,
  * the implementations have to be in the same file.
@@ -106,18 +105,17 @@ private:
 template<class action_t, bool synced_v>
 bool IActionExecutor<action_t, synced_v>::ExecuteAction(const action_t& action) const
 {
-	//assert(action.GetAction().command == GetCommand());
+	// assert(action.GetAction().command == GetCommand());
 
 	if (IsCheatRequired() && !gs->cheatEnabled) {
-		LOG_L(L_WARNING, "Chat command /%s (%s) cannot be executed (cheats required)!",
-				GetCommand().c_str(),
-				(IsSynced() ? "synced" : "unsynced"));
+		LOG_L(L_WARNING, "Chat command /%s (%s) cannot be executed (cheats required)!", GetCommand().c_str(),
+		    (IsSynced() ? "synced" : "unsynced"));
 		return false;
-	} else {
+	}
+	else {
 		return Execute(action);
 	}
 }
-
 
 /// Logs the enabled/disabled status of a sub-system of the engine.
 static inline void LogSystemStatus(const std::string& system, const bool status)

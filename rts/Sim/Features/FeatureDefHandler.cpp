@@ -3,15 +3,15 @@
 #include "FeatureDefHandler.h"
 
 #include "FeatureDef.h"
+
 #include "Lua/LuaParser.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Objects/SolidObject.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
 
 static CFeatureDefHandler gFeatureDefHandler;
 CFeatureDefHandler* featureDefHandler = &gFeatureDefHandler;
@@ -58,7 +58,6 @@ void CFeatureDefHandler::Init(LuaParser* defsParser)
 	}
 }
 
-
 void CFeatureDefHandler::AddFeatureDef(const std::string& name, FeatureDef* fd, bool isDefaultFeature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -84,7 +83,6 @@ FeatureDef& CFeatureDefHandler::GetNewFeatureDef()
 	return fd;
 }
 
-
 FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const std::string& mixedCase)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -98,22 +96,22 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 	fd.name = name;
 	fd.description = fdTable.GetString("description", "");
 
-	fd.collidable    =  fdTable.GetBool("blocking",        true);
-	fd.selectable    = !fdTable.GetBool("noselect",        false);
-	fd.burnable      =  fdTable.GetBool("flammable",       false);
-	fd.destructable  = !fdTable.GetBool("indestructible",  false);
-	fd.reclaimable   =  fdTable.GetBool("reclaimable",     fd.destructable);
-	fd.autoreclaim   =  fdTable.GetBool("autoreclaimable", fd.reclaimable);
-	fd.resurrectable =  fdTable.GetInt("resurrectable",    -1);
-	fd.geoThermal    =  fdTable.GetBool("geoThermal",      false);
-	fd.floating      =  fdTable.GetBool("floating",        false);
+	fd.collidable = fdTable.GetBool("blocking", true);
+	fd.selectable = !fdTable.GetBool("noselect", false);
+	fd.burnable = fdTable.GetBool("flammable", false);
+	fd.destructable = !fdTable.GetBool("indestructible", false);
+	fd.reclaimable = fdTable.GetBool("reclaimable", fd.destructable);
+	fd.autoreclaim = fdTable.GetBool("autoreclaimable", fd.reclaimable);
+	fd.resurrectable = fdTable.GetInt("resurrectable", -1);
+	fd.geoThermal = fdTable.GetBool("geoThermal", false);
+	fd.floating = fdTable.GetBool("floating", false);
 
-	fd.cost.metal    = fdTable.GetFloat("metal",  0.0f);
-	fd.cost.energy   = fdTable.GetFloat("energy", 0.0f);
+	fd.cost.metal = fdTable.GetFloat("metal", 0.0f);
+	fd.cost.energy = fdTable.GetFloat("energy", 0.0f);
 
 	// "damage" is the legacy Total Annihilation spelling
-	fd.health      = fdTable.GetFloat("health", fdTable.GetFloat("damage", 0.0f));
-	fd.health      = std::max(0.1f, fd.health);
+	fd.health = fdTable.GetFloat("health", fdTable.GetFloat("damage", 0.0f));
+	fd.health = std::max(0.1f, fd.health);
 
 	fd.reclaimTime = std::max(1.0f, fdTable.GetFloat("reclaimTime", (fd.cost.metal + fd.cost.energy) * 6.0f));
 
@@ -155,7 +153,6 @@ FeatureDef* CFeatureDefHandler::CreateFeatureDef(const LuaTable& fdTable, const 
 
 	return &fd;
 }
-
 
 FeatureDef* CFeatureDefHandler::CreateDefaultTreeFeatureDef(const std::string& name)
 {
@@ -204,7 +201,6 @@ FeatureDef* CFeatureDefHandler::CreateDefaultGeoFeatureDef(const std::string& na
 	return &fd;
 }
 
-
 const FeatureDef* CFeatureDefHandler::GetFeatureDef(string name, const bool showError) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -223,13 +219,12 @@ const FeatureDef* CFeatureDefHandler::GetFeatureDef(string name, const bool show
 	return nullptr;
 }
 
-
 void CFeatureDefHandler::LoadFeatureDefsFromMap()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// reserved names
 	const char* treeDefName = "treetype";
-	const char*  geoDefName =  "geovent";
+	const char* geoDefName = "geovent";
 	const char* errorFormat = "[%s] unknown map default feature-type \"%s\" (only \"%s\" and \"%s\" are recognized)";
 
 	// add default tree and geo FeatureDefs defined by the map
@@ -257,4 +252,3 @@ void CFeatureDefHandler::LoadFeatureDefsFromMap()
 
 	AddFeatureDef(geoDefName, CreateDefaultGeoFeatureDef(geoDefName), true);
 }
-

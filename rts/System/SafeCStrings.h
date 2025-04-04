@@ -5,7 +5,7 @@
 
 #include <stddef.h>
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -27,7 +27,7 @@ char* safe_strcat(char* destination, size_t destinationSize, const char* source)
 #define STRCAT_T safe_strcat
 ///@}
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 } /* extern "C" */
 #endif
 

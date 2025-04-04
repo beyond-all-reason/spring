@@ -3,22 +3,22 @@
 #ifndef PREGAME_H
 #define PREGAME_H
 
-#include <string>
-#include <memory>
-#include <future>
-
 #include "GameController.h"
+
 #include "System/Misc/SpringTime.h"
 #include "System/Sync/SHA512.hpp"
+
+#include <future>
+#include <memory>
+#include <string>
 
 class ILoadSaveHandler;
 class GameData;
 class CGameSetup;
 class ClientSetup;
 
-
 namespace netcode {
-	class RawPacket;
+class RawPacket;
 }
 
 /**
@@ -36,8 +36,7 @@ namespace netcode {
  * 2. Receive GameData from server
  * 3. Start the CGame with the information provided by server
  * */
-class CPreGame : public CGameController
-{
+class CPreGame : public CGameController {
 public:
 	CPreGame(std::shared_ptr<ClientSetup> setup);
 	virtual ~CPreGame();
@@ -53,6 +52,7 @@ public:
 
 	using AsyncExecFuncType = void (CPreGame::*)(const std::string&);
 	void AsyncExecute(AsyncExecFuncType execFunc, const std::string& argument);
+
 private:
 	void AddMapArchivesToVFS(const CGameSetup* setup);
 	void AddModArchivesToVFS(const CGameSetup* setup);
@@ -69,6 +69,7 @@ private:
 	void GameDataReceived(std::shared_ptr<const netcode::RawPacket> packet);
 
 	bool HasPendingAsyncTask();
+
 private:
 	/**
 	@brief GameData we received from server

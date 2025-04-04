@@ -47,4 +47,3 @@ void log_backend_unregisterCleanup(log_cleanup_ptr cleanupFunc);
 #endif
 
 #endif // LOG_BACKEND_H
-

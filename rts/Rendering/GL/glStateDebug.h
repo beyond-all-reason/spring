@@ -7,51 +7,54 @@
 #define GL_STATE_CHECKER(name)
 #else
 
-#include <string>
-#include "System/SpringMacros.h"
 #include "Rendering/GL/myGL.h"
+#include "System/SpringMacros.h"
+
+#include <string>
 // GL_STATE_CHECKER(name) verifies the GL state has default values when entering/exiting its scope.
-// If something isn't set correctly, it logs an error with a mention of when the value was last set (TODO: deal with lists)
+// If something isn't set correctly, it logs an error with a mention of when the value was last set (TODO: deal with
+// lists)
 #define GL_STATE_CHECKER(name) CGLStateChecker __gl_state_checker(name)
 
 
 #ifndef NO_GL_WRAP
 
-	#define glEnable(i) _wrap_glEnable(i, #i, FILEPOS)
-	#define glDisable(i) _wrap_glDisable(i, #i, FILEPOS)
+#define glEnable(i) _wrap_glEnable(i, #i, FILEPOS)
+#define glDisable(i) _wrap_glDisable(i, #i, FILEPOS)
 
-	#ifdef glBlendFunc
-		#undef glBlendFunc
-	#endif
+#ifdef glBlendFunc
+#undef glBlendFunc
+#endif
 
-	#ifdef glBlendFuncSeparate
-		#undef glBlendFuncSeparate
-	#endif
+#ifdef glBlendFuncSeparate
+#undef glBlendFuncSeparate
+#endif
 
-	#ifdef glColor4f
-		#undef glColor4f
-	#endif
+#ifdef glColor4f
+#undef glColor4f
+#endif
 
-	#ifdef glColor3f
-		#undef glColor3f
-	#endif
+#ifdef glColor3f
+#undef glColor3f
+#endif
 
-	#ifdef glColor4fv
-		#undef glColor4fv
-	#endif
+#ifdef glColor4fv
+#undef glColor4fv
+#endif
 
-	#ifdef glDepthMask
-		#undef glDepthMask
-	#endif
+#ifdef glDepthMask
+#undef glDepthMask
+#endif
 
-	#define glBlendFunc(sfactor, dfactor) _wrap_glBlendFunc(sfactor, dfactor, FILEPOS)
-	#define glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha) _wrap_glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha, FILEPOS)
-	#define glColor3f(r, g, b) _wrap_glColor3f(r, g, b, FILEPOS)
-	#define glColor4f(r, g, b, a) _wrap_glColor4f(r, g, b, a, FILEPOS)
-	#define glColor4fv(v) _wrap_glColor4fv(v, FILEPOS)
-	#define glDepthMask(flag) _wrap_glDepthMask(flag, FILEPOS)
-	#define glDepthFunc(func) _wrap_glDepthFunc(func, FILEPOS)
-	#define glColorMask(r, g, b, a) _wrap_glColorMask(r, g, b, a, FILEPOS)
+#define glBlendFunc(sfactor, dfactor) _wrap_glBlendFunc(sfactor, dfactor, FILEPOS)
+#define glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha)            \
+	_wrap_glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha, FILEPOS)
+#define glColor3f(r, g, b) _wrap_glColor3f(r, g, b, FILEPOS)
+#define glColor4f(r, g, b, a) _wrap_glColor4f(r, g, b, a, FILEPOS)
+#define glColor4fv(v) _wrap_glColor4fv(v, FILEPOS)
+#define glDepthMask(flag) _wrap_glDepthMask(flag, FILEPOS)
+#define glDepthFunc(func) _wrap_glDepthFunc(func, FILEPOS)
+#define glColorMask(r, g, b, a) _wrap_glColorMask(r, g, b, a, FILEPOS)
 #endif
 
 
@@ -61,13 +64,14 @@ extern void _wrap_glDisable(GLenum pname, std::string pstr, std::string location
 
 extern void _wrap_glBlendFunc(GLenum sfactor, GLenum dfactor, std::string location);
 
-extern void _wrap_glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha, std::string location);
+extern void
+_wrap_glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha, std::string location);
 
 extern void _wrap_glColor3f(GLfloat red, GLfloat green, GLfloat blue, std::string location);
 
 extern void _wrap_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, std::string location);
 
-extern void _wrap_glColor4fv(const GLfloat *v, std::string location);
+extern void _wrap_glColor4fv(const GLfloat* v, std::string location);
 
 extern void _wrap_glDepthMask(GLboolean flag, std::string location);
 
@@ -75,8 +79,7 @@ extern void _wrap_glDepthFunc(GLenum func, std::string location);
 
 extern void _wrap_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha, std::string location);
 
-class CGLStateChecker
-{
+class CGLStateChecker {
 public:
 	CGLStateChecker(std::string id);
 	~CGLStateChecker();

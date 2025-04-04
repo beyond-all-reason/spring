@@ -19,18 +19,16 @@
 // ===============================================================================
 
 #ifdef AI_PUSHPACK_IS_DEFINED
-#	error poppack1.h must be included after pushpack1.h
+#error poppack1.h must be included after pushpack1.h
 #endif
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 #define PACK_STRUCT
 
 #if defined(_MSC_VER)
 
 // C4103: Packing was changed after the inclusion of the header, probably missing #pragma pop
-#	pragma warning (disable : 4103)
+#pragma warning(disable : 4103)
 #endif
 
 #define AI_PUSHPACK_IS_DEFINED
-
-

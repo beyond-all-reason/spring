@@ -3,30 +3,31 @@
 
 #include "UnitDef.h"
 #include "UnitDefHandler.h"
+
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/float3.h"
 
-#include "System/Misc/TracyDefs.h"
-
-
 BuildInfo::BuildInfo()
-	: def(nullptr)
-	, pos(ZeroVector)
-	, buildFacing(FACING_SOUTH)
-{}
+    : def(nullptr)
+    , pos(ZeroVector)
+    , buildFacing(FACING_SOUTH)
+{
+}
 
 BuildInfo::BuildInfo(const UnitDef* def, const float3& pos, int facing)
-	: def(def)
-	, pos(pos)
-	, buildFacing(std::abs(facing) % NUM_FACINGS)
-{}
+    : def(def)
+    , pos(pos)
+    , buildFacing(std::abs(facing) % NUM_FACINGS)
+{
+}
 
 BuildInfo::BuildInfo(const std::string& name, const float3& pos, int facing)
-	: def(unitDefHandler->GetUnitDefByName(name))
-	, pos(pos)
-	, buildFacing(std::abs(facing) % NUM_FACINGS)
-{}
-
+    : def(unitDefHandler->GetUnitDefByName(name))
+    , pos(pos)
+    , buildFacing(std::abs(facing) % NUM_FACINGS)
+{
+}
 
 int BuildInfo::CreateCommandID() const
 {
@@ -38,9 +39,8 @@ void BuildInfo::AddCommandParams(Command& cmd) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	cmd.PushPos(pos);
-	cmd.PushParam((float) buildFacing);
+	cmd.PushParam((float)buildFacing);
 }
-
 
 bool BuildInfo::Parse(const Command& c)
 {
@@ -68,7 +68,6 @@ bool BuildInfo::Parse(const Command& c)
 
 	return true;
 }
-
 
 int BuildInfo::GetXSize() const
 {

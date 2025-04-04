@@ -6,57 +6,56 @@
 #include <windows.h>
 #endif
 
-#include "Game/GameSetup.h"
 #include "Game/ClientSetup.h"
 #include "Game/GameData.h"
+#include "Game/GameSetup.h"
 #include "Game/GameVersion.h"
 #include "Net/GameServer.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
+#include "System/FileSystem/ArchiveScanner.h"
+#include "System/FileSystem/DataDirLocater.h"
+#include "System/FileSystem/FileHandler.h"
+#include "System/FileSystem/FileSystemInitializer.h"
+#include "System/FileSystem/VFSHandler.h"
+#include "System/GflagsExt.h"
 #include "System/GlobalConfig.h"
 #include "System/GlobalRNG.h"
-#include "System/GflagsExt.h"
-#include "System/Config/ConfigHandler.h"
-#include "System/FileSystem/DataDirLocater.h"
-#include "System/FileSystem/FileSystemInitializer.h"
-#include "System/FileSystem/ArchiveScanner.h"
-#include "System/FileSystem/VFSHandler.h"
-#include "System/FileSystem/FileHandler.h"
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/Log/ConsoleSink.h"
-#include "System/Log/ILog.h"
 #include "System/Log/DefaultFilter.h"
+#include "System/Log/ILog.h"
 #include "System/LogOutput.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Platform/CrashHandler.h"
-#include "System/Platform/errorhandler.h"
 #include "System/Platform/Threading.h"
+#include "System/Platform/errorhandler.h"
 
 #define LOG_SECTION_DEDICATED_SERVER "DedicatedServer"
 LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_DEDICATED_SERVER)
 
 // use the specific section for all LOG*() calls in this source file
 #ifdef LOG_SECTION_CURRENT
-	#undef LOG_SECTION_CURRENT
+#undef LOG_SECTION_CURRENT
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_DEDICATED_SERVER
 
-DEFINE_bool_EX  (sync_version,     "sync-version",     false, "Display program sync version (for online gaming)");
-DEFINE_string   (config,                               "",    "Exclusive configuration file");
-DEFINE_bool_EX  (list_config_vars, "list-config-vars", false, "Dump a list of config vars and meta data to stdout");
-DEFINE_bool     (isolation,                            false, "Limit the data-dir (games & maps) scanner to one directory");
-DEFINE_string_EX(isolation_dir,    "isolation-dir",    "",    "Specify the isolation-mode data-dir (see --isolation)");
-DEFINE_bool     (nocolor,                              false, "Disables colorized stdout");
-DEFINE_uint32   (sleeptime,                            1,     "Number of seconds to sleep between game-over checks");
+DEFINE_bool_EX(sync_version, "sync-version", false, "Display program sync version (for online gaming)");
+DEFINE_string(config, "", "Exclusive configuration file");
+DEFINE_bool_EX(list_config_vars, "list-config-vars", false, "Dump a list of config vars and meta data to stdout");
+DEFINE_bool(isolation, false, "Limit the data-dir (games & maps) scanner to one directory");
+DEFINE_string_EX(isolation_dir, "isolation-dir", "", "Specify the isolation-mode data-dir (see --isolation)");
+DEFINE_bool(nocolor, false, "Disables colorized stdout");
+DEFINE_uint32(sleeptime, 1, "Number of seconds to sleep between game-over checks");
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 void ParseCmdLine(int argc, char* argv[], std::string& scriptName)
 {
-	#undef  LOG_SECTION_CURRENT
-	#define LOG_SECTION_CURRENT LOG_SECTION_DEFAULT
+#undef LOG_SECTION_CURRENT
+#define LOG_SECTION_CURRENT LOG_SECTION_DEFAULT
 
 #ifndef _WIN32
 	if (!FLAGS_nocolor && (getenv("SPRING_NOCOLOR") == nullptr)) {
@@ -96,14 +95,12 @@ void ParseCmdLine(int argc, char* argv[], std::string& scriptName)
 		exit(0);
 	}
 
-	//LOG("Run: %s", cmdLine.GetCmdLine().c_str());
+	// LOG("Run: %s", cmdLine.GetCmdLine().c_str());
 	FileSystemInitializer::PreInitializeConfigHandler(FLAGS_config);
 
-	#undef  LOG_SECTION_CURRENT
-	#define LOG_SECTION_CURRENT LOG_SECTION_DEDICATED_SERVER
+#undef LOG_SECTION_CURRENT
+#define LOG_SECTION_CURRENT LOG_SECTION_DEDICATED_SERVER
 }
-
-
 
 int main(int argc, char* argv[])
 {
@@ -167,7 +164,8 @@ int main(int argc, char* argv[])
 		rng.Seed(randSeed);
 		if (dsGameSetup->fixedRNGSeed == 0) {
 			dsGameData->SetRandomSeed(rng.NextInt());
-		} else {
+		}
+		else {
 			dsGameData->SetRandomSeed(dsGameSetup->fixedRNGSeed);
 		}
 
@@ -191,7 +189,8 @@ int main(int argc, char* argv[])
 			if (std::find_if(dsMapChecksum.begin(), dsMapChecksum.end(), hashPred) != dsMapChecksum.end()) {
 				dsGameData->SetMapChecksum(dsMapChecksum.data());
 				dsGameSetup->LoadStartPositions(false); // reduced mode
-			} else {
+			}
+			else {
 				dsGameData->SetMapChecksum(&archiveScanner->GetArchiveCompleteChecksumBytes(dsGameSetup->mapName)[0]);
 
 				CFileHandler f("maps/" + dsGameSetup->mapName);
@@ -203,7 +202,8 @@ int main(int argc, char* argv[])
 
 			if (std::find_if(dsModChecksum.begin(), dsModChecksum.end(), hashPred) != dsModChecksum.end()) {
 				dsGameData->SetModChecksum(dsModChecksum.data());
-			} else {
+			}
+			else {
 				const std::string& modArchive = archiveScanner->ArchiveFromName(dsGameSetup->modName);
 				const sha512::raw_digest& modCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(modArchive);
 
@@ -238,7 +238,9 @@ int main(int argc, char* argv[])
 					LOG("recording demo: %s", (demoRec->GetName()).c_str());
 					LOG("using mod: %s", (dsGameSetup->modName).c_str());
 					LOG("using map: %s", (dsGameSetup->mapName).c_str());
-					LOG("GameID: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", gameID[0], gameID[1], gameID[2], gameID[3], gameID[4], gameID[5], gameID[6], gameID[7], gameID[8], gameID[9], gameID[10], gameID[11], gameID[12], gameID[13], gameID[14], gameID[15]);
+					LOG("GameID: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", gameID[0],
+					    gameID[1], gameID[2], gameID[3], gameID[4], gameID[5], gameID[6], gameID[7], gameID[8],
+					    gameID[9], gameID[10], gameID[11], gameID[12], gameID[13], gameID[14], gameID[15]);
 				}
 
 				spring_secs(sleepTime).sleep(true);

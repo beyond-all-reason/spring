@@ -1,14 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LoadSaveHandler.h"
+
 #include "CregLoadSaveHandler.h"
 #include "LuaLoadSaveHandler.h"
+
 #include "Game/GameSetup.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
 
 SaveFileData globalSaveFileData;
-
 
 ILoadSaveHandler* ILoadSaveHandler::CreateHandler(const std::string& saveFile)
 {
@@ -23,16 +24,14 @@ ILoadSaveHandler* ILoadSaveHandler::CreateHandler(const std::string& saveFile)
 	return (new DummyLoadSaveHandler());
 }
 
-
-bool ILoadSaveHandler::CreateSave(
-	const std::string& saveFile,
-	const std::string& saveArgs
-) {
+bool ILoadSaveHandler::CreateSave(const std::string& saveFile, const std::string& saveArgs)
+{
 	if (!FileSystem::CreateDirectory("Saves"))
 		return false;
 
 	if (saveArgs != "-y" && FileSystem::FileExists(saveFile)) {
-		LOG_L(L_WARNING, "[ILoadSaveHandler::%s] file \"%s\" already exists (use /save -y to override)", __func__, saveFile.c_str());
+		LOG_L(L_WARNING, "[ILoadSaveHandler::%s] file \"%s\" already exists (use /save -y to override)", __func__,
+		    saveFile.c_str());
 		return false;
 	}
 
@@ -52,4 +51,3 @@ std::string ILoadSaveHandler::FindSaveFile(const std::string& file)
 
 	return (FileSystem::EnsurePathSepAtEnd("Saves") + file);
 }
-

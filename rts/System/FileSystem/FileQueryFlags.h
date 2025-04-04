@@ -7,17 +7,17 @@ namespace FileQueryFlags { // FIXME not good, as we already have a class with th
 
 // flags for FindFiles
 enum FindFilesBits {
-	RECURSE      = (1 << 0),
+	RECURSE = (1 << 0),
 	INCLUDE_DIRS = (1 << 1),
-	ONLY_DIRS    = (1 << 2),
+	ONLY_DIRS = (1 << 2),
 };
 
 // flags for LocateFile
 enum LocateFileBits {
-	WRITE       = (1 << 0),
+	WRITE = (1 << 0),
 	CREATE_DIRS = (1 << 1),
 };
 
-}
+} // namespace FileQueryFlags
 
 #endif // !FILE_QUERY_FLAGS_H

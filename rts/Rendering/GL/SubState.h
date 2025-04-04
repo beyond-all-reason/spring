@@ -3,16 +3,16 @@
 #pragma once
 
 #include "State.h"
+
 #include "System/TemplateUtils.hpp"
+
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
-namespace GL
-{
+namespace GL {
 
-namespace Impl
-{
+namespace Impl {
 template<class... UniqueAttributeValueTypes> class SubState {
 private:
 	using ValuesType = std::tuple<UniqueAttributeValueTypes...>;
@@ -20,11 +20,14 @@ private:
 public:
 	inline SubState(UniqueAttributeValueTypes... newValues)
 	{
-		((std::get<UniqueAttributeValueTypes>(savedValues) = std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes)), ...);
+		((std::get<UniqueAttributeValueTypes>(savedValues) =
+		         std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes)),
+		    ...);
 		((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = newValues), ...);
 	}
 
-	template<class UniqueAttributeValueType, std::enable_if_t<spring::tuple_contains_type_v<ValuesType, UniqueAttributeValueType>, bool> = true>
+	template<class UniqueAttributeValueType,
+	    std::enable_if_t<spring::tuple_contains_type_v<ValuesType, UniqueAttributeValueType>, bool> = true>
 	inline const SubState& operator<<(UniqueAttributeValueType newValue) const
 	{
 		if (pushed) {
@@ -36,26 +39,24 @@ public:
 	inline void pop()
 	{
 		if (pushed) {
-			((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) = std::get<UniqueAttributeValueTypes>(savedValues)), ...);
+			((std::get<typename UniqueAttributeValueTypes::AttributeType>(State::Attributes) =
+			         std::get<UniqueAttributeValueTypes>(savedValues)),
+			    ...);
 			pushed = false;
 		}
 	}
 
-	inline ~SubState()
-	{
-		pop();
-	}
+	inline ~SubState() { pop(); }
 
 private:
 	ValuesType savedValues;
 	bool pushed = true;
 };
-}
+} // namespace Impl
 
-template<class... ArgTypes>
-auto SubState(ArgTypes&&... args)
+template<class... ArgTypes> auto SubState(ArgTypes&&... args)
 {
 	return Impl::SubState<ArgTypes...>(std::forward<ArgTypes>(args)...);
 }
 
-}
+} // namespace GL

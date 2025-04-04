@@ -1,14 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
+#include "MissileProjectile.h"
+
 #include "Game/Camera.h"
 #include "Game/GameHelper.h"
 #include "Map/Ground.h"
-#include "MissileProjectile.h"
-#include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GeometricObjects.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -18,55 +19,53 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/Matrix44f.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND_DERIVED(CMissileProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CMissileProjectile,(
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(ignoreError),
-	CR_MEMBER(maxSpeed),
-	// CR_MEMBER(ttl),
-	CR_MEMBER(age),
-	CR_MEMBER(oldSmoke),
-	CR_MEMBER(oldDir),
-	CR_MEMBER(numParts),
-	CR_MEMBER(isWobbling),
-	CR_MEMBER(wobbleDir),
-	CR_MEMBER(wobbleTime),
-	CR_MEMBER(wobbleDif),
-	CR_MEMBER(danceMove),
-	CR_MEMBER(danceCenter),
-	CR_MEMBER(danceTime),
-	CR_MEMBER(isDancing),
-	CR_MEMBER(extraHeight),
-	CR_MEMBER(extraHeightDecay),
-	CR_MEMBER(extraHeightTime),
-	CR_IGNORED(smokeTrail)
-))
+CR_REG_METADATA(CMissileProjectile,
+    (CR_SETFLAG(CF_Synced),
+        CR_MEMBER(ignoreError),
+        CR_MEMBER(maxSpeed),
+        // CR_MEMBER(ttl),
+        CR_MEMBER(age),
+        CR_MEMBER(oldSmoke),
+        CR_MEMBER(oldDir),
+        CR_MEMBER(numParts),
+        CR_MEMBER(isWobbling),
+        CR_MEMBER(wobbleDir),
+        CR_MEMBER(wobbleTime),
+        CR_MEMBER(wobbleDif),
+        CR_MEMBER(danceMove),
+        CR_MEMBER(danceCenter),
+        CR_MEMBER(danceTime),
+        CR_MEMBER(isDancing),
+        CR_MEMBER(extraHeight),
+        CR_MEMBER(extraHeightDecay),
+        CR_MEMBER(extraHeightTime),
+        CR_IGNORED(smokeTrail)))
 
+CMissileProjectile::CMissileProjectile(const ProjectileParams& params)
+    : CWeaponProjectile(params)
+    , ignoreError(false)
+    , maxSpeed(0.0f)
+    , extraHeight(0.0f)
+    , extraHeightDecay(0.0f)
 
-CMissileProjectile::CMissileProjectile(const ProjectileParams& params): CWeaponProjectile(params)
-	, ignoreError(false)
-	, maxSpeed(0.0f)
-	, extraHeight(0.0f)
-	, extraHeightDecay(0.0f)
+    , age(0)
+    , numParts(0)
+    , extraHeightTime(0)
 
-	, age(0)
-	, numParts(0)
-	, extraHeightTime(0)
+    , isDancing(false)
+    , isWobbling(false)
 
-	, isDancing(false)
-	, isWobbling(false)
+    , danceTime(1)
+    , wobbleTime(1)
 
-	, danceTime(1)
-	, wobbleTime(1)
-
-	, oldSmoke(pos)
-	, oldDir(dir)
-	, smokeTrail(nullptr)
+    , oldSmoke(pos)
+    , oldDir(dir)
+    , smokeTrail(nullptr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_MISSILE_PROJECTILE;
@@ -107,7 +106,9 @@ void CMissileProjectile::Collision()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(),
+		    GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2,
+		    weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision();
 	oldSmoke = pos;
@@ -117,7 +118,9 @@ void CMissileProjectile::Collision(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(),
+		    GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2,
+		    weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision(unit);
 	oldSmoke = pos;
@@ -127,7 +130,9 @@ void CMissileProjectile::Collision(CFeature* feature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (weaponDef->visuals.smokeTrail)
-		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
+		projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmoke, dir, oldDir, false, true, GetSmokeSize(),
+		    GetSmokeTime(), GetSmokePeriod(), GetSmokeColor(), weaponDef->visuals.texture2,
+		    weaponDef->visuals.smokeTrailCastShadow);
 
 	CWeaponProjectile::Collision(feature);
 	oldSmoke = pos;
@@ -173,25 +178,25 @@ void CMissileProjectile::Update()
 					// 1. missile is pointing below target
 					// 2. AND missile height is below target
 					// This compensates for high wobble zero turnrate missiles aiming at high elevations
-					// Prevents these missiles from quickly turing directly downwards if wobble 
-					// causes them to undershoot their elevated target 
+					// Prevents these missiles from quickly turing directly downwards if wobble
+					// causes them to undershoot their elevated target
 					if (((targetDir.y - dir.y) > 0.0f) && ((targetPos.y - extraHeight - pos.y) > 0.0f)) {
 						dir.y += (dirDiff * ratio);
 					}
 					else {
 						dir.y -= (dirDiff * ratio);
 					}
-
-				} else {
+				}
+				else {
 					// missile is still ascending
-					
+
 					// tilt missile up if
 					// 1. missile is pointing below target
 					// 2. AND missile height is below target
 					// This compensates for high wobble zero turnrate missiles aiming at high elevations
 					// Lets these missiles continue ascending to an elevated target
-					// even if wobble causes them to temporarily undershoot their elevated target 
-					if ( ((targetDir.y - dir.y) > 0.0f) && ((targetPos.y - extraHeight - pos.y) > 0.0f) ) {
+					// even if wobble causes them to temporarily undershoot their elevated target
+					if (((targetDir.y - dir.y) > 0.0f) && ((targetPos.y - extraHeight - pos.y) > 0.0f)) {
 						dir.y += (extraHeightDecay / targetDist);
 					}
 					else {
@@ -207,7 +212,8 @@ void CMissileProjectile::Update()
 
 			if (targetDirDif.SqLength() < Square(weaponDef->turnrate)) {
 				dir = targetLeadDir;
-			} else {
+			}
+			else {
 				targetDirDif = (targetDirDif - (dir * (targetDirDif.dot(dir)))).SafeNormalize();
 				dir = (dir + (targetDirDif * weaponDef->turnrate)).SafeNormalize();
 			}
@@ -219,10 +225,12 @@ void CMissileProjectile::Update()
 		}
 
 		explGenHandler.GenExplosion(cegID, pos, dir, ttl, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
-	} else {
+	}
+	else {
 		if (weaponDef->selfExplode) {
 			Collision();
-		} else {
+		}
+		else {
 			// only when TTL <= 0 do we (missiles)
 			// get influenced by gravity and drag
 			if (!luaMoveCtrl)
@@ -244,19 +252,9 @@ void CMissileProjectile::Update()
 		}
 
 		if ((age % weaponDef->visuals.smokePeriod) == 0) {
-			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(
-				own,
-				pos, oldSmoke,
-				dir, oldDir,
-				age == weaponDef->visuals.smokePeriod,
-				false,
-				GetSmokeSize(),
-				GetSmokeTime(),
-				GetSmokePeriod(),
-				GetSmokeColor(),
-				weaponDef->visuals.texture2,
-				weaponDef->visuals.smokeTrailCastShadow
-			);
+			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(own, pos, oldSmoke, dir, oldDir,
+			    age == weaponDef->visuals.smokePeriod, false, GetSmokeSize(), GetSmokeTime(), GetSmokePeriod(),
+			    GetSmokeColor(), weaponDef->visuals.texture2, weaponDef->visuals.smokeTrailCastShadow);
 
 			numParts = 0;
 			useAirLos = smokeTrail->useAirLos;
@@ -267,7 +265,8 @@ void CMissileProjectile::Update()
 	UpdateGroundBounce();
 }
 
-float3 CMissileProjectile::UpdateTargeting() {
+float3 CMissileProjectile::UpdateTargeting()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 targetVel;
 
@@ -301,7 +300,8 @@ float3 CMissileProjectile::UpdateTargeting() {
 	return po->speed;
 }
 
-void CMissileProjectile::UpdateWobble() {
+void CMissileProjectile::UpdateWobble()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isWobbling)
 		return;
@@ -320,7 +320,8 @@ void CMissileProjectile::UpdateWobble() {
 	dir = (dir + wobbleDir * wobbleFact).Normalize();
 }
 
-void CMissileProjectile::UpdateDance() {
+void CMissileProjectile::UpdateDance()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!isDancing)
 		return;
@@ -358,7 +359,8 @@ inline int CMissileProjectile::GetSmokePeriod() const
 	return weaponDef->visuals.smokePeriod;
 }
 
-void CMissileProjectile::UpdateGroundBounce() {
+void CMissileProjectile::UpdateGroundBounce()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaMoveCtrl)
 		return;
@@ -372,8 +374,6 @@ void CMissileProjectile::UpdateGroundBounce() {
 
 	SetVelocityAndSpeed(speed);
 }
-
-
 
 void CMissileProjectile::Draw()
 {
@@ -390,11 +390,10 @@ void CMissileProjectile::Draw()
 	const auto* WT1 = weaponDef->visuals.texture1;
 
 	AddWeaponEffectsQuad<1>(
-		{ drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xstart, WT1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xend,   WT1->ystart, lightYellow },
-		{ drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xend,   WT1->yend,   lightYellow },
-		{ drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xstart, WT1->yend,   lightYellow }
-	);
+	    {drawPos - camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xstart, WT1->ystart, lightYellow},
+	    {drawPos + camera->GetRight() * fsize - camera->GetUp() * fsize, WT1->xend, WT1->ystart, lightYellow},
+	    {drawPos + camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xend, WT1->yend, lightYellow},
+	    {drawPos - camera->GetRight() * fsize + camera->GetUp() * fsize, WT1->xstart, WT1->yend, lightYellow});
 }
 
 int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)
@@ -412,7 +411,8 @@ int CMissileProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce
 
 		if (dif2.SqLength() < Square(tracking)) {
 			dir = sdir;
-		} else {
+		}
+		else {
 			dif2 = (dif2 - (dir * (dif2.dot(dir)))).SafeNormalize();
 			dir = (dir + (dif2 * tracking)).SafeNormalize();
 		}

@@ -1,28 +1,28 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "RoamMeshDrawer.h"
+
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Map/ReadMap.h"
-#include "Map/SMF/SMFReadMap.h"
 #include "Map/SMF/SMFGroundDrawer.h"
+#include "Map/SMF/SMFReadMap.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/ShadowHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/Config/ConfigHandler.h"
+#include "System/Log/ILog.h"
 #include "System/Rectangle.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
-#include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
 
 #ifdef DRAW_DEBUG_IN_MINIMAP
-	#include "Game/UI/MiniMap.h"
+#include "Game/UI/MiniMap.h"
 #endif
-
-#include <cmath>
 
 #include "System/Misc/TracyDefs.h"
 
+#include <cmath>
 
 
 #define LOG_SECTION_ROAM "RoamMeshDrawer"
@@ -30,7 +30,7 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_ROAM)
 
 // use the specific section for all LOG*() calls in this source file
 #ifdef LOG_SECTION_CURRENT
-	#undef LOG_SECTION_CURRENT
+#undef LOG_SECTION_CURRENT
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_ROAM
 
@@ -44,10 +44,9 @@ static constexpr float CAMERA_CHANGE_TRESHOLD = 16.0f;
 
 bool CRoamMeshDrawer::forceNextTesselation[MESH_COUNT] = {false, false};
 
-
 CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
-	: CEventClient("[CRoamMeshDrawer]", 271989, false)
-	, smfGroundDrawer(gd)
+    : CEventClient("[CRoamMeshDrawer]", 271989, false)
+    , smfGroundDrawer(gd)
 {
 	eventHandler.AddClient(this);
 
@@ -61,15 +60,17 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 
 	ForceNextTesselation(true, true);
 
-	#ifdef DRAW_DEBUG_IN_MINIMAP
-		debugColors.resize(numPatchesX*numPatchesY);
-	#endif
+#ifdef DRAW_DEBUG_IN_MINIMAP
+	debugColors.resize(numPatchesX * numPatchesY);
+#endif
 
 	for (unsigned int i = MESH_NORMAL; i <= MESH_SHADOW; i++) {
 		patchMeshGrid[i].resize(numPatchesX * numPatchesY);
 		const int borderSizeX = 1 + (numPatchesX > 1);
 		const int borderSizeY = 1 + (numPatchesY > 1);
-		borderPatches[i].resize(borderSizeX * borderSizeY + (numPatchesY - borderSizeY) * borderSizeX + (numPatchesX - borderSizeX) * borderSizeY, nullptr);
+		borderPatches[i].resize(borderSizeX * borderSizeY + (numPatchesY - borderSizeY) * borderSizeX +
+		                            (numPatchesX - borderSizeX) * borderSizeY,
+		    nullptr);
 		patchVisFlags[i].resize(numPatchesX * numPatchesY, 0);
 	}
 
@@ -93,20 +94,23 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 		unsigned int patchIdx = 0;
 
 		// gather corner patches
-		                                        borderPatches[i][patchIdx++] = &patches[                                  (              0)];
-		if (numPatchesX > 1                   ) borderPatches[i][patchIdx++] = &patches[                                  (numPatchesX - 1)];
-		if (numPatchesY > 1                   ) borderPatches[i][patchIdx++] = &patches[(numPatchesY - 1) * numPatchesX + (              0)];
-		if (numPatchesX > 1 && numPatchesY > 1) borderPatches[i][patchIdx++] = &patches[(numPatchesY - 1) * numPatchesX + (numPatchesX - 1)];
+		borderPatches[i][patchIdx++] = &patches[(0)];
+		if (numPatchesX > 1)
+			borderPatches[i][patchIdx++] = &patches[(numPatchesX - 1)];
+		if (numPatchesY > 1)
+			borderPatches[i][patchIdx++] = &patches[(numPatchesY - 1) * numPatchesX + (0)];
+		if (numPatchesX > 1 && numPatchesY > 1)
+			borderPatches[i][patchIdx++] = &patches[(numPatchesY - 1) * numPatchesX + (numPatchesX - 1)];
 
 		// gather x-border patches
 		for (int py = 1; py < (numPatchesY - 1); ++py) {
-			borderPatches[i][patchIdx++] = &patches[py * numPatchesX + (              0)];
+			borderPatches[i][patchIdx++] = &patches[py * numPatchesX + (0)];
 			borderPatches[i][patchIdx++] = &patches[py * numPatchesX + (numPatchesX - 1)];
 		}
 
 		// gather z-border patches
 		for (int px = 1; px < (numPatchesX - 1); ++px) {
-			borderPatches[i][patchIdx++] = &patches[(              0) * numPatchesX + px];
+			borderPatches[i][patchIdx++] = &patches[(0) * numPatchesX + px];
 			borderPatches[i][patchIdx++] = &patches[(numPatchesY - 1) * numPatchesX + px];
 		}
 	}
@@ -117,7 +121,6 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.RemoveClient(this);
 }
-
 
 // Notes for LOAM (Lazy Optimally Adapting Meshes).
 // Dear reader, consider yourself a rubber ducky.
@@ -153,17 +156,19 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 // Tricky cases:
 // going from full view to zoomed in state:
 // theoretically, full view should be tesselated at a low degree, so not all of the trinodepool should be exhausted
-// when zooming in further, an increase in detail should be forced , but this 1. further exhausts the tripool, and should not be done too often.
-// we can call retesselate of a patch,
+// when zooming in further, an increase in detail should be forced , but this 1. further exhausts the tripool, and
+// should not be done too often. we can call retesselate of a patch,
 
 // an exhaustion of the tritreenodepool should instantly trigger a reset and retesselate
 
 // 4. Shadowpass seems to have on average 3x more patches than regular.
 //  - also, its 'camera' is quite static, only really changes along one axis, and is unreliable:
-// [f=0002142] [RoamMeshDrawer] Skip:37 oldcam: 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526 dist=924793.375000
-// [f=0002142] [RoamMeshDrawer] Skip:50 oldcam: 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526 dist=924793.375000
-// [f=0002142] [RoamMeshDrawer] Skip:63 oldcam: 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526 dist=924793.375000
-// [f=0002142] [RoamMeshDrawer] Skip:76 oldcam: 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526 dist=924793.375000
+// [f=0002142] [RoamMeshDrawer] Skip:37 oldcam: 4334.830078:-259.387939:-259.387939 nowcam
+// 5011.015137:-259.387939:1593.139526 dist=924793.375000 [f=0002142] [RoamMeshDrawer] Skip:50 oldcam:
+// 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526 dist=924793.375000 [f=0002142]
+// [RoamMeshDrawer] Skip:63 oldcam: 4334.830078:-259.387939:-259.387939 nowcam 5011.015137:-259.387939:1593.139526
+// dist=924793.375000 [f=0002142] [RoamMeshDrawer] Skip:76 oldcam: 4334.830078:-259.387939:-259.387939 nowcam
+// 5011.015137:-259.387939:1593.139526 dist=924793.375000
 
 // TODO:
 // uninitialized memory read in Patch::IsVisible!
@@ -175,12 +180,14 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 // 5. Better zoom handling:
 //  -since the tesselation depends only on the distance from camera
 //  -position doesnt really matter
-//  - if a patch was tesselated with a camera that is more than 2x closer than the last tesselation of that patch, then we should retesselate
+//  - if a patch was tesselated with a camera that is more than 2x closer than the last tesselation of that patch, then
+//  we should retesselate
 //  - I do not know how this relates to the shadow camera, as that still needs quite a bit of work anyway
 //  - maybe just use the shadowcamera for visibility, but actually use the main camera for distance?
 //  - this would also add a 'magic'
 //  TODO: lastCamPos[shadowPass] = cam->GetPos(); // is update a frame too late
-//  CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER) // gets the actual camera! lets hope its updated before shadow pass.
+//  CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER) // gets the actual camera! lets hope its updated before shadow
+//  pass.
 void CRoamMeshDrawer::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -199,12 +206,11 @@ void CRoamMeshDrawer::Update()
 
 	const bool gldUpdated = smfGroundDrawer->GetGroundDetail() != lastGroundDetail[shadowPass];
 
-	//Early bailout conditions:
+	// Early bailout conditions:
 	if ((!forceNextTesselation[shadowPass]) &&
-		(cam->GetPos().distance(lastCamPos[shadowPass]) < CAMERA_CHANGE_TRESHOLD) &&
-		(cam->GetDir().distance(lastCamDir[shadowPass]) < CAMERA_CHANGE_TRESHOLD * 0.001f) &&
-		(heightMapChanged == false) &&
-		!gldUpdated) {
+	    (cam->GetPos().distance(lastCamPos[shadowPass]) < CAMERA_CHANGE_TRESHOLD) &&
+	    (cam->GetDir().distance(lastCamDir[shadowPass]) < CAMERA_CHANGE_TRESHOLD * 0.001f) &&
+	    (heightMapChanged == false) && !gldUpdated) {
 		return;
 	}
 
@@ -224,15 +230,15 @@ void CRoamMeshDrawer::Update()
 
 #if TESSELATION_DEBUG
 	if (tesselMesh)
-		LOG("Tesselation forced for pass %i in frame %i", shadowPass,globalRendering->drawFrame);
-#endif //TESSELATION_DEBUG
+		LOG("Tesselation forced for pass %i in frame %i", shadowPass, globalRendering->drawFrame);
+#endif // TESSELATION_DEBUG
 
 	{
 		// Check if a retessellation is needed
-		//SCOPED_TIMER("ROAM::ComputeVariance");
+		// SCOPED_TIMER("ROAM::ComputeVariance");
 
 		for (int i = 0; i < numPatches; ++i) {
-			//FIXME multithread? don't retessellate on small heightmap changes?
+			// FIXME multithread? don't retessellate on small heightmap changes?
 			Patch& p = patches[i];
 
 			const bool isVisibleNow = p.IsVisible(cam);
@@ -240,25 +246,24 @@ void CRoamMeshDrawer::Update()
 			pvflags[i] = uint8_t(p.IsVisible(cam));
 
 			// first case: a patch left visibility;
-			// do nothing, just count the number of patches in total that have done so, as they still use the trinodepools
-			// when a sufficient number of patches have left visibility, we are going to have to force a reset.
+			// do nothing, just count the number of patches in total that have done so, as they still use the
+			// trinodepools when a sufficient number of patches have left visibility, we are going to have to force a
+			// reset.
 			if (!isVisibleNow && wasVisible) {
-			#if TESSELATION_DEBUG
+#if TESSELATION_DEBUG
 				numPatchesExitVisibility++;
-			#endif
+#endif
 				numPatchesLeftVisibility[shadowPass]++;
 				if (numPatchesLeftVisibility[shadowPass] > numPatches * RETESSELLATE_TO_FREE_INVISIBLE_PATCHES) {
-
 					// Be even lazier, and only force full retesselation once zoomed back in
 					if ((numPatchesVisible * (5 - 3 * shadowPass) < numPatches) ||
-						(numPatchesLeftVisibility[shadowPass] > 2 * numPatches * RETESSELLATE_TO_FREE_INVISIBLE_PATCHES)) {
-						#if TESSELATION_DEBUG
-							LOG("Too many patches (%i) left visibility, forcing retess on this df #%i! poolsize=%i used=%i",
-								numPatchesLeftVisibility[shadowPass],
-								globalRendering->drawFrame,
-								p.curTriPool->GetPoolSize(),
-								p.curTriPool->GetNextTriNodeIdx());
-						#endif
+					    (numPatchesLeftVisibility[shadowPass] >
+					        2 * numPatches * RETESSELLATE_TO_FREE_INVISIBLE_PATCHES)) {
+#if TESSELATION_DEBUG
+						LOG("Too many patches (%i) left visibility, forcing retess on this df #%i! poolsize=%i used=%i",
+						    numPatchesLeftVisibility[shadowPass], globalRendering->drawFrame,
+						    p.curTriPool->GetPoolSize(), p.curTriPool->GetNextTriNodeIdx());
+#endif
 						forceNextTesselation[shadowPass] = true;
 						numPatchesLeftVisibility[shadowPass] = 0;
 					}
@@ -276,45 +281,50 @@ void CRoamMeshDrawer::Update()
 					patchesToTesselate[i] = true;
 				}
 
-			#if TESSELATION_DEBUG
+#if TESSELATION_DEBUG
 				if (!wasVisible)
 					numPatchesEnterVisibility++;
-			#endif
+#endif
 
 				const float currentDistanceFromCamera = playerCameraPosition.distance(p.midPos);
 
-				//high numbers means we zoomed in more:
+				// high numbers means we zoomed in more:
 				const float distanceFromCameraRatio = p.camDistanceLastTesselation / currentDistanceFromCamera;
 
-				if ((currentDistanceFromCamera > 500.0f) && (distanceFromCameraRatio > MAGIC_RETESSELATE_CAMERA_RATIO)) {
+				if ((currentDistanceFromCamera > 500.0f) &&
+				    (distanceFromCameraRatio > MAGIC_RETESSELATE_CAMERA_RATIO)) {
 					patchesToTesselate[i] = true;
 					// Since we just retesselated,
 					totalCameraDistanceRatioInv += 1.0;
-					//LOG("Zoom%i currdist=%.1f lastdist=%.1f ratio=%.1f",i,currentDistanceFromCamera,p.camDistanceLastTesselation,distanceFromCameraRatio);
-				#if TESSELATION_DEBUG
+					// LOG("Zoom%i currdist=%.1f lastdist=%.1f
+					// ratio=%.1f",i,currentDistanceFromCamera,p.camDistanceLastTesselation,distanceFromCameraRatio);
+#if TESSELATION_DEBUG
 					numPatchesZoomChanged++;
-				#endif
-				} else {
+#endif
+				}
+				else {
 					totalCameraDistanceRatioInv += 1.0 / distanceFromCameraRatio;
 				}
 			}
 
-			#ifdef DRAW_DEBUG_IN_MINIMAP
-				if (isVisibleNow) {
-					if (shadowPass) {
-						debugColors[i].z = 1.0;
-					} else {
-						debugColors[i].y = 1.0;
-					}
-				} else {
-					if (shadowPass) {
-						debugColors[i].z = 0.0;
-					} else {
-						debugColors[i].y = 0.0;
-					}
-
+#ifdef DRAW_DEBUG_IN_MINIMAP
+			if (isVisibleNow) {
+				if (shadowPass) {
+					debugColors[i].z = 1.0;
 				}
-			#endif
+				else {
+					debugColors[i].y = 1.0;
+				}
+			}
+			else {
+				if (shadowPass) {
+					debugColors[i].z = 0.0;
+				}
+				else {
+					debugColors[i].y = 0.0;
+				}
+			}
+#endif
 		}
 	}
 
@@ -325,16 +335,14 @@ void CRoamMeshDrawer::Update()
 	if (totalCameraDistanceRatioInv > MAGIC_TOTAL_CAMDIST_RETESSELATE || gldUpdated) {
 		forceNextTesselation[shadowPass] = true;
 
-	#if TESSELATION_DEBUG
-		LOG("Zoomed out too far, retesselating all to save tris: Visible=%i pass=%i ratio=%.2f",
-			numPatchesVisible,
-			shadowPass,
-			totalCameraDistanceRatioInv);
-	#endif
+#if TESSELATION_DEBUG
+		LOG("Zoomed out too far, retesselating all to save tris: Visible=%i pass=%i ratio=%.2f", numPatchesVisible,
+		    shadowPass, totalCameraDistanceRatioInv);
+#endif
 	}
 
 	{
-		//SCOPED_TIMER("ROAM::Tessellate");
+		// SCOPED_TIMER("ROAM::Tessellate");
 
 		// tesselate all the patches patches that are marked for it, but if we run out of trinodes,
 		// then reset all of them and try again
@@ -343,9 +351,9 @@ void CRoamMeshDrawer::Update()
 			for (int pi = 0; pi < numPatches; ++pi) {
 				Patch& p = patches[pi];
 
-			#ifdef DRAW_DEBUG_IN_MINIMAP
-				debugColors[pi].x = std::max (debugColors[pi].x -0.002f,0.0f);
-			#endif
+#ifdef DRAW_DEBUG_IN_MINIMAP
+				debugColors[pi].x = std::max(debugColors[pi].x - 0.002f, 0.0f);
+#endif
 
 				if (!patchesToTesselate[pi])
 					continue;
@@ -353,27 +361,26 @@ void CRoamMeshDrawer::Update()
 				actualTesselations++;
 				tesselationsSinceLastReset[shadowPass]++;
 
-			#ifdef DRAW_DEBUG_IN_MINIMAP
+#ifdef DRAW_DEBUG_IN_MINIMAP
 				debugColors[pi].x = 1.0;
-			#endif
+#endif
 
 				if (p.Tessellate(playerCameraPosition, smfGroundDrawer->GetGroundDetail(), shadowPass))
 					continue;
 
 				tessSuccess = false;
 
-			#if TESSELATION_DEBUG
-				LOG("Lazy tesselation ran out of trinodes, trying again after a reset #Visible=%i #tesssincelastreset=%i, shadow=%i",
-					numPatchesVisible,
-					tesselationsSinceLastReset[shadowPass],
-					shadowPass);
-			#endif // TESSELATION_DEBUG
+#if TESSELATION_DEBUG
+				LOG("Lazy tesselation ran out of trinodes, trying again after a reset #Visible=%i "
+				    "#tesssincelastreset=%i, shadow=%i",
+				    numPatchesVisible, tesselationsSinceLastReset[shadowPass], shadowPass);
+#endif // TESSELATION_DEBUG
 
 				break;
 			}
 		}
 
-		if(forceNextTesselation[shadowPass] || !tessSuccess) {
+		if (forceNextTesselation[shadowPass] || !tessSuccess) {
 			Reset(shadowPass);
 			for (int pi = 0; pi < numPatches; ++pi) {
 				Patch& p = patches[pi];
@@ -384,16 +391,16 @@ void CRoamMeshDrawer::Update()
 				actualTesselations++;
 				tesselationsSinceLastReset[shadowPass]++;
 
-			#ifdef DRAW_DEBUG_IN_MINIMAP
+#ifdef DRAW_DEBUG_IN_MINIMAP
 				debugColors[pi].x = 1.0;
-			#endif
+#endif
 			}
 		}
 	}
 
 	{
-		//SCOPED_TIMER("ROAM::GenerateIndexArray");
-		//only do for_mt if a full tesselation happened, since only a few patches come into visibility
+		// SCOPED_TIMER("ROAM::GenerateIndexArray");
+		// only do for_mt if a full tesselation happened, since only a few patches come into visibility
 		if (forceNextTesselation[shadowPass]) {
 			for_mt(0, numPatches, [&patches, &cam](const int i) {
 				Patch* p = &patches[i];
@@ -403,7 +410,8 @@ void CRoamMeshDrawer::Update()
 				p->GenerateIndices();
 				p->GenerateBorderVertices();
 			});
-		} else {
+		}
+		else {
 			for (Patch& p: patches) {
 				if (!p.IsVisible(cam) || !p.isChanged)
 					continue;
@@ -414,7 +422,7 @@ void CRoamMeshDrawer::Update()
 		}
 	}
 	{
-		//SCOPED_TIMER("ROAM::Upload");
+		// SCOPED_TIMER("ROAM::Upload");
 
 		for (Patch& p: patches) {
 			if (!p.IsVisible(cam) || !p.isChanged)
@@ -426,19 +434,12 @@ void CRoamMeshDrawer::Update()
 	}
 #if TESSELATION_DEBUG
 	if (actualTesselations > 0 || actualUploads > 0) {
-		LOG("#V=%i d_in=%i d_out=%i in df:#%i shadow:%i Z+%i actual=%i up=%i mratio = %.2f",
-			numPatchesVisible,
-			numPatchesEnterVisibility,
-			numPatchesExitVisibility,
-			globalRendering->drawFrame,
-			shadowPass,
-			numPatchesZoomChanged,
-			actualTesselations,
-			actualUploads,
-			totalCameraDistanceRatioInv);
+		LOG("#V=%i d_in=%i d_out=%i in df:#%i shadow:%i Z+%i actual=%i up=%i mratio = %.2f", numPatchesVisible,
+		    numPatchesEnterVisibility, numPatchesExitVisibility, globalRendering->drawFrame, shadowPass,
+		    numPatchesZoomChanged, actualTesselations, actualUploads, totalCameraDistanceRatioInv);
 
 		float3 nowcampos = cam->GetPos();
-		//LOG("Camera pass=%i pos= %.1f, %.1f, %.1f", shadowPass, nowcampos.x, nowcampos.y, nowcampos.z);
+		// LOG("Camera pass=%i pos= %.1f, %.1f, %.1f", shadowPass, nowcampos.x, nowcampos.y, nowcampos.z);
 	}
 #endif // TESSELATION_DEBUG
 
@@ -448,7 +449,6 @@ void CRoamMeshDrawer::Update()
 	forceNextTesselation[shadowPass] = false;
 	heightMapChanged = false;
 }
-
 
 void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 {
@@ -464,16 +464,20 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 	//   pass to reuse MESH_NORMAL
 
 	// SCOPED_TIMER can't have dynamic values in a single call
-	//SCOPED_TIMER(drawPass == DrawPass::Normal ? "Draw::World::Terrain::ROAM" : "Misc::ROAM");
+	// SCOPED_TIMER(drawPass == DrawPass::Normal ? "Draw::World::Terrain::ROAM" : "Misc::ROAM");
 	{
 		SCOPED_TIMER("Draw::World::Terrain::ROAM::Update");
 
 		switch (drawPass) {
-			case DrawPass::Normal: { Update(); } break;
-			case DrawPass::Shadow: { Update(); } break;
-			default: {
-				Patch::UpdateVisibility(CCameraHandler::GetActiveCamera(), patchMeshGrid[MESH_NORMAL], numPatchesX);
-			} break;
+		case DrawPass::Normal: {
+			Update();
+		} break;
+		case DrawPass::Shadow: {
+			Update();
+		} break;
+		default: {
+			Patch::UpdateVisibility(CCameraHandler::GetActiveCamera(), patchMeshGrid[MESH_NORMAL], numPatchesX);
+		} break;
 		}
 	}
 
@@ -507,41 +511,39 @@ void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)
 void CRoamMeshDrawer::DrawInMiniMap()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#ifdef DRAW_DEBUG_IN_MINIMAP
+#ifdef DRAW_DEBUG_IN_MINIMAP
 	// DrawInMiniMap runs before DrawWorld
 	globalRendering->drawFrame -= 1;
 
 	glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0, -1.0);
-		minimap->ApplyConstraintsMatrix();
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0, -1.0);
+	minimap->ApplyConstraintsMatrix();
 	glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-		glTranslatef3(UpVector);
-		glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
+	glPushMatrix();
+	glLoadIdentity();
+	glTranslatef3(UpVector);
+	glScalef(1.0f / mapDims.mapx, -1.0f / mapDims.mapy, 1.0f);
 
 	glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
 
 
 	int pi = 0;
 	for (const Patch& p: patchMeshGrid[MESH_NORMAL]) {
-		glColor4f(debugColors[pi].x, debugColors[pi].y, debugColors[pi].z ,0.5f);
+		glColor4f(debugColors[pi].x, debugColors[pi].y, debugColors[pi].z, 0.5f);
 		pi++;
 		glRectf(p.coors.x, p.coors.y, p.coors.x + PATCH_SIZE, p.coors.y + PATCH_SIZE);
 	}
 
 	glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
+	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
+	glPopMatrix();
 
 	globalRendering->drawFrame += 1;
-	#endif
+#endif
 }
-
-
 
 void CRoamMeshDrawer::Reset(bool shadowPass)
 {
@@ -562,18 +564,22 @@ void CRoamMeshDrawer::Reset(bool shadowPass)
 			TriTreeNode* pbr = patch.GetBaseRight();
 
 			// link all patches together, leave borders NULL
-			if (x > (              0)) pbl->LeftNeighbor = patches[y * numPatchesX + x - 1].GetBaseRight();
-			if (x < (numPatchesX - 1)) pbr->LeftNeighbor = patches[y * numPatchesX + x + 1].GetBaseLeft();
+			if (x > (0))
+				pbl->LeftNeighbor = patches[y * numPatchesX + x - 1].GetBaseRight();
+			if (x < (numPatchesX - 1))
+				pbr->LeftNeighbor = patches[y * numPatchesX + x + 1].GetBaseLeft();
 
-			if (y > (              0)) pbl->RightNeighbor = patches[(y - 1) * numPatchesX + x].GetBaseRight();
-			if (y < (numPatchesY - 1)) pbr->RightNeighbor = patches[(y + 1) * numPatchesX + x].GetBaseLeft();
+			if (y > (0))
+				pbl->RightNeighbor = patches[(y - 1) * numPatchesX + x].GetBaseRight();
+			if (y < (numPatchesY - 1))
+				pbr->RightNeighbor = patches[(y + 1) * numPatchesX + x].GetBaseLeft();
 		}
 	}
 	tesselationsSinceLastReset[shadowPass] = 0;
 }
 
-
-void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam, int viewRadius, bool shadowPass) {
+void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam, int viewRadius, bool shadowPass)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	bool forceTess = false;
 
@@ -587,7 +593,6 @@ void CRoamMeshDrawer::Tessellate(std::vector<Patch>& patches, const CCamera* cam
 	forceNextTesselation[shadowPass] = forceTess;
 }
 
-
 void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -595,10 +600,10 @@ void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 	constexpr float INV_PATCH_SIZE = 1.0f / PATCH_SIZE;
 
 	// add margin since Patches share borders
-	const int xstart = std::max(          0, (int)math::floor((rect.x1 - BORDER_MARGIN) * INV_PATCH_SIZE));
-	const int xend   = std::min(numPatchesX, (int)math::ceil ((rect.x2 + BORDER_MARGIN) * INV_PATCH_SIZE));
-	const int zstart = std::max(          0, (int)math::floor((rect.z1 - BORDER_MARGIN) * INV_PATCH_SIZE));
-	const int zend   = std::min(numPatchesY, (int)math::ceil ((rect.z2 + BORDER_MARGIN) * INV_PATCH_SIZE));
+	const int xstart = std::max(0, (int)math::floor((rect.x1 - BORDER_MARGIN) * INV_PATCH_SIZE));
+	const int xend = std::min(numPatchesX, (int)math::ceil((rect.x2 + BORDER_MARGIN) * INV_PATCH_SIZE));
+	const int zstart = std::max(0, (int)math::floor((rect.z1 - BORDER_MARGIN) * INV_PATCH_SIZE));
+	const int zend = std::min(numPatchesY, (int)math::ceil((rect.z2 + BORDER_MARGIN) * INV_PATCH_SIZE));
 
 	// update patches in both tessellations
 	for (unsigned int i = MESH_NORMAL; i <= MESH_SHADOW; i++) {
@@ -609,12 +614,10 @@ void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 				Patch& p = patches[z * numPatchesX + x];
 
 				// clamp the update-rectangle within the patch
-				SRectangle prect(
-					std::max(rect.x1 - BORDER_MARGIN - p.coors.x,          0),
-					std::max(rect.z1 - BORDER_MARGIN - p.coors.y,          0),
-					std::min(rect.x2 + BORDER_MARGIN - p.coors.x, PATCH_SIZE),
-					std::min(rect.z2 + BORDER_MARGIN - p.coors.y, PATCH_SIZE)
-				);
+				SRectangle prect(std::max(rect.x1 - BORDER_MARGIN - p.coors.x, 0),
+				    std::max(rect.z1 - BORDER_MARGIN - p.coors.y, 0),
+				    std::min(rect.x2 + BORDER_MARGIN - p.coors.x, PATCH_SIZE),
+				    std::min(rect.z2 + BORDER_MARGIN - p.coors.y, PATCH_SIZE));
 
 				p.UpdateHeightMap(prect);
 			}
@@ -622,4 +625,3 @@ void CRoamMeshDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 	}
 	heightMapChanged = true;
 }
-

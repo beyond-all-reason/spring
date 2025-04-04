@@ -5,21 +5,19 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CWakeProjectile : public CProjectile
-{
+class CWakeProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CWakeProjectile)
 public:
-	CWakeProjectile() { }
-	CWakeProjectile(
-		CUnit* owner,
-		const float3& pos,
-		const float3& speed,
-		float startSize,
-		float sizeExpansion,
-		float alpha,
-		float alphaFalloff,
-		float fadeupTime
-	);
+	CWakeProjectile() {}
+
+	CWakeProjectile(CUnit* owner,
+	    const float3& pos,
+	    const float3& speed,
+	    float startSize,
+	    float sizeExpansion,
+	    float alpha,
+	    float alphaFalloff,
+	    float fadeupTime);
 
 	void Update() override;
 	void Draw() override;

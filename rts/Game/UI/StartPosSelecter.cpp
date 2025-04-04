@@ -2,28 +2,29 @@
 
 
 #include "StartPosSelecter.h"
+
 #include "MouseHandler.h"
-#include "Game/Game.h"
+
 #include "Game/Camera.h"
+#include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/InMapDraw.h"
 #include "Game/Players/Player.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
-#include "Rendering/GL/myGL.h"
-#include "Rendering/GL/glExtra.h"
-#include "Rendering/Fonts/glFont.h"
 #include "Net/Protocol/NetProtocol.h"
+#include "Rendering/Fonts/glFont.h"
+#include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/myGL.h"
 #include "Sim/Misc/TeamHandler.h"
-
 #include "System/Misc/TracyDefs.h"
 
 
 CStartPosSelecter* CStartPosSelecter::selector = nullptr;
 
-
-CStartPosSelecter::CStartPosSelecter() : CInputReceiver(BACK)
+CStartPosSelecter::CStartPosSelecter()
+    : CInputReceiver(BACK)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	showReadyBox = true;
@@ -42,7 +43,6 @@ CStartPosSelecter::~CStartPosSelecter()
 	RECOIL_DETAILED_TRACY_ZONE;
 	selector = nullptr;
 }
-
 
 bool CStartPosSelecter::Ready(bool luaForcedReady)
 {
@@ -65,20 +65,23 @@ bool CStartPosSelecter::Ready(bool luaForcedReady)
 			return false;
 
 		sp = &setStartPos;
-	} else {
+	}
+	else {
 		sp = &mt->GetStartPos();
 	}
 
 	if (luaForcedReady) {
-		clientNet->Send(CBaseNetProtocol::Get().SendStartPos(gu->myPlayerNum, gu->myTeam, CPlayer::PLAYER_RDYSTATE_FORCED, sp->x, sp->y, sp->z));
-	} else {
-		clientNet->Send(CBaseNetProtocol::Get().SendStartPos(gu->myPlayerNum, gu->myTeam, CPlayer::PLAYER_RDYSTATE_READIED, sp->x, sp->y, sp->z));
+		clientNet->Send(CBaseNetProtocol::Get().SendStartPos(
+		    gu->myPlayerNum, gu->myTeam, CPlayer::PLAYER_RDYSTATE_FORCED, sp->x, sp->y, sp->z));
+	}
+	else {
+		clientNet->Send(CBaseNetProtocol::Get().SendStartPos(
+		    gu->myPlayerNum, gu->myTeam, CPlayer::PLAYER_RDYSTATE_READIED, sp->x, sp->y, sp->z));
 	}
 
 	delete this;
 	return true;
 }
-
 
 bool CStartPosSelecter::MousePress(int x, int y, int button)
 {
@@ -93,7 +96,8 @@ bool CStartPosSelecter::MousePress(int x, int y, int button)
 	if ((showReadyBox && InBox(mx, my, readyBox)) || !gs->PreSimFrame())
 		return (!Ready(false));
 
-	const float dist = CGround::LineGroundCol(camera->GetPos(), camera->GetPos() + mouse->dir * camera->GetFarPlaneDist() * 1.4f, false);
+	const float dist = CGround::LineGroundCol(
+	    camera->GetPos(), camera->GetPos() + mouse->dir * camera->GetFarPlaneDist() * 1.4f, false);
 
 	if (dist < 0.0f)
 		return true;
@@ -101,7 +105,8 @@ bool CStartPosSelecter::MousePress(int x, int y, int button)
 	inMapDrawer->SendErase(setStartPos);
 	startPosSet = true;
 	setStartPos = camera->GetPos() + mouse->dir * dist;
-	clientNet->Send(CBaseNetProtocol::Get().SendStartPos(gu->myPlayerNum, gu->myTeam, CPlayer::PLAYER_RDYSTATE_UPDATED, setStartPos.x, setStartPos.y, setStartPos.z));
+	clientNet->Send(CBaseNetProtocol::Get().SendStartPos(
+	    gu->myPlayerNum, gu->myTeam, CPlayer::PLAYER_RDYSTATE_UPDATED, setStartPos.x, setStartPos.y, setStartPos.z));
 
 	return true;
 }
@@ -212,18 +217,20 @@ void CStartPosSelecter::Draw()
 	if (!showReadyBox)
 		return;
 
-	const float mx =                               float(mouse->lastx)  * globalRendering->pixelX;
+	const float mx = float(mouse->lastx) * globalRendering->pixelX;
 	const float my = (globalRendering->viewSizeY - float(mouse->lasty)) * globalRendering->pixelY;
 
 	{
-		gleDrawQuadC(readyBox, InBox(mx, my, readyBox)? SColor{0.7f, 0.2f, 0.2f, guiAlpha}: SColor{0.7f, 0.7f, 0.2f, guiAlpha}, rb);
+		gleDrawQuadC(readyBox,
+		    InBox(mx, my, readyBox) ? SColor{0.7f, 0.2f, 0.2f, guiAlpha} : SColor{0.7f, 0.7f, 0.2f, guiAlpha}, rb);
 
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
 
 	{
-		gleDrawQuadC(readyBox, InBox(mx, my, readyBox)? SColor{0.7f, 0.2f, 0.2f, guiAlpha}: SColor{0.7f, 0.7f, 0.2f, guiAlpha}, rb);
+		gleDrawQuadC(readyBox,
+		    InBox(mx, my, readyBox) ? SColor{0.7f, 0.2f, 0.2f, guiAlpha} : SColor{0.7f, 0.7f, 0.2f, guiAlpha}, rb);
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -242,14 +249,14 @@ void CStartPosSelecter::Draw()
 		const float yPos = 0.5f * (readyBox.y1 + readyBox.y2);
 		const float xPos = 0.5f * (readyBox.x1 + readyBox.x2);
 
-		const float unitWidth  = font->GetSize() * font->GetTextWidth("Ready") * globalRendering->pixelX;
-		const float unitHeight = font->GetSize() * font->GetLineHeight(      ) * globalRendering->pixelY;
+		const float unitWidth = font->GetSize() * font->GetTextWidth("Ready") * globalRendering->pixelX;
+		const float unitHeight = font->GetSize() * font->GetLineHeight() * globalRendering->pixelY;
 
 		const float fontScale = 0.9f * std::min(xSize / unitWidth, ySize / unitHeight);
 
 		font->SetColors(); // default
-		font->glPrint(xPos, yPos, fontScale, FONT_OUTLINE | FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Ready");
+		font->glPrint(xPos, yPos, fontScale,
+		    FONT_OUTLINE | FONT_CENTER | FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Ready");
 		font->DrawBuffered();
 	}
 }
-

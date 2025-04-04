@@ -12,13 +12,13 @@
 #define ASIO_TS_BUFFER_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/buffer.hpp"
 #include "asio/completion_condition.hpp"
 #include "asio/read.hpp"
-#include "asio/write.hpp"
 #include "asio/read_until.hpp"
+#include "asio/write.hpp"
 
 #endif // ASIO_TS_BUFFER_HPP

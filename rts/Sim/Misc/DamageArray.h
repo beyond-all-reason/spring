@@ -3,36 +3,37 @@
 #ifndef DAMAGE_ARRAY_H
 #define DAMAGE_ARRAY_H
 
+#include "System/creg/creg_cond.h"
+
 #include <algorithm>
 #include <vector>
-#include "System/creg/creg_cond.h"
 
 class float3;
 
-class DamageArray
-{
+class DamageArray {
 	CR_DECLARE(DamageArray)
 
 public:
 	DamageArray(float damage = 1.0f)
-		: paralyzeDamageTime(0)
+	    : paralyzeDamageTime(0)
 
-		, impulseFactor(1.0f)
-		, impulseBoost(0.0f)
+	    , impulseFactor(1.0f)
+	    , impulseBoost(0.0f)
 
-		, craterMult(1.0f)
-		, craterBoost(0.0f)
+	    , craterMult(1.0f)
+	    , craterBoost(0.0f)
 	{
 		SetDefaultDamage(damage);
 	}
 
-
 	DamageArray(const DamageArray& da) { *this = da; }
+
 	DamageArray(DamageArray&& da) { *this = std::move(da); }
 
 	virtual ~DamageArray() {}
 
-	DamageArray& operator = (const DamageArray& da) {
+	DamageArray& operator=(const DamageArray& da)
+	{
 		paralyzeDamageTime = da.paralyzeDamageTime;
 
 		impulseFactor = da.impulseFactor;
@@ -44,7 +45,9 @@ public:
 		damages = da.damages;
 		return *this;
 	}
-	DamageArray& operator = (DamageArray&& da) {
+
+	DamageArray& operator=(DamageArray&& da)
+	{
 		paralyzeDamageTime = da.paralyzeDamageTime;
 
 		impulseFactor = da.impulseFactor;
@@ -57,22 +60,23 @@ public:
 		return *this;
 	}
 
-	DamageArray operator * (float damageMult) const {
+	DamageArray operator*(float damageMult) const
+	{
 		DamageArray da(*this);
 
-		for (unsigned int a = 0; a < damages.size(); ++a)
-			da.damages[a] *= damageMult;
+		for (unsigned int a = 0; a < damages.size(); ++a) da.damages[a] *= damageMult;
 
 		return da;
 	}
 
-
 	int GetNumTypes() const { return damages.size(); }
 
 	void SetDefaultDamage(float damage);
+
 	void Set(int typeIndex, float d) { damages[typeIndex] = d; }
 
 	float Get(int typeIndex) const { return damages[typeIndex]; }
+
 	float GetDefault() const { return damages[0]; }
 
 public:
@@ -88,14 +92,19 @@ protected:
 	std::vector<float> damages;
 };
 
-
-class DynDamageArray : public DamageArray
-{
+class DynDamageArray : public DamageArray {
 	CR_DECLARE(DynDamageArray)
 
 public:
 	DynDamageArray(float damage = 1.0f);
-	DynDamageArray(const DynDamageArray& da) { *this = da; fromDef = false; refCount = 1; }
+
+	DynDamageArray(const DynDamageArray& da)
+	{
+		*this = da;
+		fromDef = false;
+		refCount = 1;
+	}
+
 	~DynDamageArray();
 
 	void PostLoad();

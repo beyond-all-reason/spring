@@ -5,36 +5,32 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CSpherePartProjectile : public CProjectile
-{
+class CSpherePartProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CSpherePartProjectile)
 
 public:
-	CSpherePartProjectile() { }
-	CSpherePartProjectile(
-		const CUnit* owner,
-		const float3& centerPos,
-		int xpart,
-		int ypart,
-		float expansionSpeed,
-		float alpha,
-		int ttl,
-		const float3& color
-	);
+	CSpherePartProjectile() {}
+
+	CSpherePartProjectile(const CUnit* owner,
+	    const float3& centerPos,
+	    int xpart,
+	    int ypart,
+	    float expansionSpeed,
+	    float alpha,
+	    int ttl,
+	    const float3& color);
 
 	void Draw() override;
 	void Update() override;
 
 	int GetProjectilesCount() const override;
 
-	static void CreateSphere(
-		const CUnit* owner,
-		int ttl,
-		float alpha,
-		float expansionSpeed,
-		float3 pos,
-		float3 color = float3(0.8f, 0.8f, 0.6f)
-	);
+	static void CreateSphere(const CUnit* owner,
+	    int ttl,
+	    float alpha,
+	    float expansionSpeed,
+	    float3 pos,
+	    float3 color = float3(0.8f, 0.8f, 0.6f));
 
 private:
 	float3 centerPos;
@@ -55,8 +51,7 @@ private:
 };
 
 /// This class makes a sphere-part-projectile via the explosion-generator
-class CSpherePartSpawner : public CProjectile
-{
+class CSpherePartSpawner : public CProjectile {
 	CR_DECLARE_DERIVED(CSpherePartSpawner)
 
 public:

@@ -4,10 +4,11 @@
 
 #ifdef USE_SAFE_VECTOR
 #include "System/Log/ILog.h"
-#include "System/Platform/CrashHandler.h"
 #include "System/MainDefines.h"
+#include "System/Platform/CrashHandler.h"
 
-template <> const float& safe_vector<float>::safe_element(size_type idx) const {
+template<> const float& safe_vector<float>::safe_element(size_type idx) const
+{
 	static const float def = 0.0f;
 
 	if (showError) {
@@ -21,7 +22,8 @@ template <> const float& safe_vector<float>::safe_element(size_type idx) const {
 	return def;
 }
 
-template <> float& safe_vector<float>::safe_element(size_type idx) {
+template<> float& safe_vector<float>::safe_element(size_type idx)
+{
 	static float def = 0.0f;
 
 	if (showError) {

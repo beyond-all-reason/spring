@@ -2,28 +2,28 @@
 
 #include "QuitBox.h"
 
-#include <cmath>
-
 #include "MouseHandler.h"
+
 #include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
+#include "Net/Protocol/NetProtocol.h"
 #include "Rendering/Fonts/glFont.h"
-#include "Rendering/GL/myGL.h"
 #include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/myGL.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/Log/ILog.h"
-#include "Net/Protocol/NetProtocol.h"
-#include "System/TimeUtil.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/MsgStrings.h"
+#include "System/TimeUtil.h"
+
+#include <cmath>
 
 #include <SDL_keycode.h>
-
-#include "System/Misc/TracyDefs.h"
 
 #define MAX_QUIT_TEAMS (teamHandler.ActiveTeams() - 1)
 
@@ -144,8 +144,8 @@ void CQuitBox::Draw()
 	if (hasScroll) {
 		gleDrawQuadC(box + scrollbarBox, SColor{0.1f, 0.1f, 0.1f, guiAlpha}, rb);
 
-		const float  sz = scrollbarBox.y2 - scrollbarBox.y1;
-		const float tsz =  sz / float(MAX_QUIT_TEAMS);
+		const float sz = scrollbarBox.y2 - scrollbarBox.y1;
+		const float tsz = sz / float(MAX_QUIT_TEAMS);
 		const float psz = tsz * float(numTeamsDisp);
 
 		scrollBox.y2 = scrollbarBox.y2 - startTeam * tsz;
@@ -162,17 +162,25 @@ void CQuitBox::Draw()
 
 
 	font->SetTextColor(1.0f, 1.0f, 0.4f, 0.8f);
-	font->glPrint(box.x1 + 0.045f, box.y1 + 0.58f, 0.7f, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Do you want to ...");
+	font->glPrint(box.x1 + 0.045f, box.y1 + 0.58f, 0.7f, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED,
+	    "Do you want to ...");
 	font->SetTextColor(1.0f, 1.0f, 1.0f, 0.8f);
 
-	font->glPrint(box.x1 +   resignBox.x1 + 0.025f, box.y1 + (  resignBox.y1 +   resignBox.y2) / 2, 1, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Resign");
-	font->glPrint(box.x1 +     saveBox.x1 + 0.025f, box.y1 + (    saveBox.y1 +     saveBox.y2) / 2, 1, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Save");
-	font->glPrint(box.x1 + giveAwayBox.x1 + 0.025f, box.y1 + (giveAwayBox.y1 + giveAwayBox.y2) / 2, 1, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Give everything to ...");
-	font->glPrint(box.x1 +   cancelBox.x1 + 0.025f, box.y1 + (  cancelBox.y1 +   cancelBox.y2) / 2, 1, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Cancel");
-	font->glPrint(box.x1 +     menuBox.x1 + 0.025f, box.y1 + (    menuBox.y1 +     menuBox.y2) / 2, 1, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Quit To Menu");
-	font->glPrint(box.x1 +     quitBox.x1 + 0.025f, box.y1 + (    quitBox.y1 +     quitBox.y2) / 2, 1, FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Quit To System");
+	font->glPrint(box.x1 + resignBox.x1 + 0.025f, box.y1 + (resignBox.y1 + resignBox.y2) / 2, 1,
+	    FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Resign");
+	font->glPrint(box.x1 + saveBox.x1 + 0.025f, box.y1 + (saveBox.y1 + saveBox.y2) / 2, 1,
+	    FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Save");
+	font->glPrint(box.x1 + giveAwayBox.x1 + 0.025f, box.y1 + (giveAwayBox.y1 + giveAwayBox.y2) / 2, 1,
+	    FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Give everything to ...");
+	font->glPrint(box.x1 + cancelBox.x1 + 0.025f, box.y1 + (cancelBox.y1 + cancelBox.y2) / 2, 1,
+	    FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Cancel");
+	font->glPrint(box.x1 + menuBox.x1 + 0.025f, box.y1 + (menuBox.y1 + menuBox.y2) / 2, 1,
+	    FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Quit To Menu");
+	font->glPrint(box.x1 + quitBox.x1 + 0.025f, box.y1 + (quitBox.y1 + quitBox.y2) / 2, 1,
+	    FONT_VCENTER | FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Quit To System");
 
-	for (int teamNum = startTeam, teamPos = 0; teamNum < MAX_QUIT_TEAMS && teamPos < numTeamsDisp; ++teamNum, ++teamPos) {
+	for (int teamNum = startTeam, teamPos = 0; teamNum < MAX_QUIT_TEAMS && teamPos < numTeamsDisp;
+	    ++teamNum, ++teamPos) {
 		const int actualTeamNum = teamNum + int(teamNum >= gu->myTeam);
 
 		const CTeam* team = teamHandler.Team(actualTeamNum);
@@ -186,7 +194,8 @@ void CQuitBox::Draw()
 
 		if (teamHandler.Ally(gu->myAllyTeam, teamHandler.AllyTeam(actualTeamNum))) {
 			ally = " <Ally>";
-		} else {
+		}
+		else {
 			ally = " <Enemy>";
 		}
 		if (team->isDead)
@@ -198,17 +207,8 @@ void CQuitBox::Draw()
 		}
 
 		font->SetTextColor(1.0f, 1.0f, 1.0f, 0.4f + 0.4f * (shareTeam == actualTeamNum));
-		font->glFormat(
-			box.x1 + teamBox.x1 + 0.002f,
-			box.y1 + teamBox.y2 - 0.025f - teamPos * 0.025f,
-			0.7f,
-			FONT_SCALE | FONT_NORM | FONT_BUFFERED,
-			"Team %02i (%s)%s%s",
-			actualTeamNum,
-			name,
-			ally,
-			dead
-		);
+		font->glFormat(box.x1 + teamBox.x1 + 0.002f, box.y1 + teamBox.y2 - 0.025f - teamPos * 0.025f, 0.7f,
+		    FONT_SCALE | FONT_NORM | FONT_BUFFERED, "Team %02i (%s)%s%s", actualTeamNum, name, ally, dead);
 	}
 
 	font->DrawBuffered();
@@ -227,18 +227,17 @@ std::string CQuitBox::GetTooltip(int x, int y)
 	const float my = MouseY(y);
 
 	const TRectangle<float> boxes[] = {
-		resignBox, saveBox, giveAwayBox, scrollBox, scrollbarBox, teamBox, cancelBox, menuBox, quitBox
-	};
+	    resignBox, saveBox, giveAwayBox, scrollBox, scrollbarBox, teamBox, cancelBox, menuBox, quitBox};
 	const char* toolTips[] = {
-		"Resign the match; remain in the game",
-		"Save the current game state to a file \nfor later reload",
-		"Give away all units and resources \nto the team specified below",
-		"Scroll the team list here",
-		"Scroll the team list here",
-		"Select which team receives everything",
-		"Return to the game",
-		"Return to menu; quit the game",
-		"Return to system; quit the game",
+	    "Resign the match; remain in the game",
+	    "Save the current game state to a file \nfor later reload",
+	    "Give away all units and resources \nto the team specified below",
+	    "Scroll the team list here",
+	    "Scroll the team list here",
+	    "Select which team receives everything",
+	    "Return to the game",
+	    "Return to menu; quit the game",
+	    "Return to system; quit the game",
 	};
 
 	const char* toolTip = "";
@@ -260,7 +259,8 @@ bool CQuitBox::MousePress(int x, int y, int button)
 	const float mx = MouseX(x);
 	const float my = MouseY(y);
 
-	const TRectangle<float> boxes[] = {resignBox, saveBox, giveAwayBox, teamBox, cancelBox, menuBox, quitBox, scrollbarBox, scrollBox};
+	const TRectangle<float> boxes[] = {
+	    resignBox, saveBox, giveAwayBox, teamBox, cancelBox, menuBox, quitBox, scrollbarBox, scrollBox};
 
 	if (!InBox(mx, my, box))
 		return false;
@@ -282,9 +282,9 @@ bool CQuitBox::MousePress(int x, int y, int button)
 	}
 	if (hasScroll && InBox(mx, my, box + scrollbarBox)) {
 		if (my < (box + scrollBox).y1)
-			*(volatile int*) &startTeam = startTeam + std::min(MAX_QUIT_TEAMS - numTeamsDisp - startTeam, numTeamsDisp);
+			*(volatile int*)&startTeam = startTeam + std::min(MAX_QUIT_TEAMS - numTeamsDisp - startTeam, numTeamsDisp);
 		if (my > (box + scrollBox).y2)
-			*(volatile int*) &startTeam = startTeam - std::min(startTeam, numTeamsDisp);
+			*(volatile int*)&startTeam = startTeam - std::min(startTeam, numTeamsDisp);
 
 		return true;
 	}
@@ -318,13 +318,14 @@ void CQuitBox::MouseRelease(int x, int y, int button)
 	const CPlayer* localPlayer = playerHandler.Player(gu->myPlayerNum);
 
 	const bool resign = InBox(mx, my, box + resignBox);
-	const bool   save = InBox(mx, my, box + saveBox);
-	const bool   give = InBox(mx, my, box + giveAwayBox);
+	const bool save = InBox(mx, my, box + saveBox);
+	const bool give = InBox(mx, my, box + giveAwayBox);
 
 	if (resign || (save && !localTeam->isDead) || (give && !recipTeam->isDead && !localTeam->isDead)) {
 		// give away all units (and resources)
 		if (give && !localPlayer->spectator)
-			clientNet->Send(CBaseNetProtocol::Get().SendGiveAwayEverything(gu->myPlayerNum, shareTeam, localPlayer->team));
+			clientNet->Send(
+			    CBaseNetProtocol::Get().SendGiveAwayEverything(gu->myPlayerNum, shareTeam, localPlayer->team));
 
 		// resign, so self-d all units
 		if (resign && !localPlayer->spectator)
@@ -376,7 +377,7 @@ void CQuitBox::MouseMove(int x, int y, int dx, int dy, int button)
 		const float tsz = sz / float(MAX_QUIT_TEAMS);
 
 		// ??
-		*(volatile int*) &startTeam = std::max(0, std::min((int)std::lround(scr / tsz), MAX_QUIT_TEAMS - numTeamsDisp));
+		*(volatile int*)&startTeam = std::max(0, std::min((int)std::lround(scr / tsz), MAX_QUIT_TEAMS - numTeamsDisp));
 		return;
 	}
 
@@ -402,11 +403,10 @@ void CQuitBox::MouseMove(int x, int y, int dx, int dy, int button)
 	if (teamHandler.IsValidTeam(team) && !teamHandler.Team(team)->isDead) {
 		// we don't want to give everything to the enemy if there are allies left
 		if (noAlliesLeft || (!noAlliesLeft && teamHandler.Ally(gu->myAllyTeam, teamHandler.AllyTeam(team)))) {
-			shareTeam=team;
+			shareTeam = team;
 		}
 	}
 }
-
 
 bool CQuitBox::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {

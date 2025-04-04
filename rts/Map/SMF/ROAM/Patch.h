@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include "Rendering/GL/myGL.h"
-#include "Rendering/GL/VBO.h"
-#include "Rendering/GL/VAO.h"
-#include "Rendering/GL/VertexArrayTypes.h"
-#include "Map/MapDrawPassTypes.h"
 #include "Game/Camera.h"
+#include "Map/MapDrawPassTypes.h"
+#include "Rendering/GL/VAO.h"
+#include "Rendering/GL/VBO.h"
+#include "Rendering/GL/VertexArrayTypes.h"
+#include "Rendering/GL/myGL.h"
 #include "System/Rectangle.h"
 #include "System/type2.h"
-
 
 #include <array>
 #include <vector>
@@ -25,42 +24,52 @@ static constexpr int PATCH_SIZE = 128;
 // debug (simulates fast pool exhaustion)
 // #define NEW_POOL_SIZE (1 << 2)
 
-class Patch; //declare it so that tritreenode can store its parent
+class Patch; // declare it so that tritreenode can store its parent
+
 // stores the triangle-tree structure, but no coordinates
-struct TriTreeNode
-{
+struct TriTreeNode {
 	static TriTreeNode dummyNode;
 
 	// all non-leaf nodes have both children, so just check for one
-	bool IsLeaf() const { assert(!IsDummy()); return (LeftChild == &dummyNode); }
-	bool IsBranch() const { assert(!IsDummy()); return (LeftChild != &dummyNode); }
+	bool IsLeaf() const
+	{
+		assert(!IsDummy());
+		return (LeftChild == &dummyNode);
+	}
+
+	bool IsBranch() const
+	{
+		assert(!IsDummy());
+		return (LeftChild != &dummyNode);
+	}
+
 	bool IsDummy() const { return (this == &dummyNode); }
 
-	void Reset() {
-		 LeftChild = &dummyNode;
+	void Reset()
+	{
+		LeftChild = &dummyNode;
 		RightChild = &dummyNode;
 
-		 BaseNeighbor = &dummyNode;
-		 LeftNeighbor = &dummyNode;
+		BaseNeighbor = &dummyNode;
+		LeftNeighbor = &dummyNode;
 		RightNeighbor = &dummyNode;
 	}
 
-	TriTreeNode*  LeftChild = &dummyNode;
+	TriTreeNode* LeftChild = &dummyNode;
 	TriTreeNode* RightChild = &dummyNode;
 
-	TriTreeNode*  BaseNeighbor = &dummyNode;
-	TriTreeNode*  LeftNeighbor = &dummyNode;
+	TriTreeNode* BaseNeighbor = &dummyNode;
+	TriTreeNode* LeftNeighbor = &dummyNode;
 	TriTreeNode* RightNeighbor = &dummyNode;
 
-	Patch* parentPatch = nullptr; //triangles know their parent patch so they know of a neighbour's Split() func caused changes to them
+	Patch* parentPatch =
+	    nullptr; // triangles know their parent patch so they know of a neighbour's Split() func caused changes to them
 };
-
 
 // maintains a pool of TriTreeNodes, so we can (re)construct triangle-trees
 // without dynamically (de)allocating nodes (note that InitPools() actually
 // creates a pool for each worker thread to avoid locking)
-class CTriNodePool
-{
+class CTriNodePool {
 public:
 	static void InitPools(bool shadowPass, size_t newPoolSize = NEW_POOL_SIZE);
 	static void ResetAll(bool shadowPass);
@@ -69,14 +78,19 @@ public:
 
 public:
 	void Resize(size_t poolSize);
+
 	void Reset() { nextTriNodeIdx = 0; }
+
 	bool Allocate(TriTreeNode*& left, TriTreeNode*& right);
 
 	bool ValidNode(const TriTreeNode* n) const { return (n >= &tris.front() && n <= &tris.back()); }
+
 	bool OutOfNodes() const { return (nextTriNodeIdx >= tris.size()); }
 
 	size_t GetPoolSize() const { return tris.size(); }
+
 	size_t GetNextTriNodeIdx() const { return nextTriNodeIdx; }
+
 private:
 	std::vector<TriTreeNode> tris;
 
@@ -92,11 +106,8 @@ private:
 	static inline size_t MAX_POOL_SIZE = NEW_POOL_SIZE * 8; // upper limit for ResetAll
 };
 
-
-
 // stores information needed at the Patch level
-class Patch
-{
+class Patch {
 public:
 	friend class CRoamMeshDrawer;
 	friend class CPatchInViewChecker;
@@ -112,19 +123,22 @@ public:
 	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ);
 	void Reset();
 
-	TriTreeNode* GetBaseLeft()  { return &baseLeft;  }
+	TriTreeNode* GetBaseLeft() { return &baseLeft; }
+
 	TriTreeNode* GetBaseRight() { return &baseRight; }
 
 	bool IsVisible(const CCamera*) const;
+
 	char IsDirty() const { return isDirty; }
+
 	auto GetTriCount() const { return (indices.size() / 3); }
 
 	void UpdateHeightMap(const SRectangle& rect = SRectangle(0, 0, PATCH_SIZE, PATCH_SIZE));
 
-	float3 lastCameraPosition ; //the last camera position this patch was tesselated from
+	float3 lastCameraPosition; // the last camera position this patch was tesselated from
 
-	//this specifies the manhattan distance from the camera during the last tesselation
-	//note that this can only become lower, as we can only increase tesselation levels while maintaining no cracks
+	// this specifies the manhattan distance from the camera during the last tesselation
+	// note that this can only become lower, as we can only increase tesselation levels while maintaining no cracks
 	float camDistanceLastTesselation;
 
 	// create an approximate mesh
@@ -139,6 +153,7 @@ public:
 	void SetSquareTexture(const DrawPass::e& drawPass) const;
 
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
+
 private:
 	void UploadVertices();
 	void UploadIndices();
@@ -149,30 +164,32 @@ private:
 
 	// recursive functions
 	bool Split(TriTreeNode* tri);
-	void RecursTessellate(TriTreeNode* tri, const int2 left, const int2 right, const int2 apex, const int varTreeIdx, const int curNodeIdx);
+	void RecursTessellate(TriTreeNode* tri,
+	    const int2 left,
+	    const int2 right,
+	    const int2 apex,
+	    const int varTreeIdx,
+	    const int curNodeIdx);
 	void RecursRender(const TriTreeNode* tri, const int2 left, const int2 right, const int2 apex);
 
-	float RecursComputeVariance(
-		const   int2 left,
-		const   int2 rght,
-		const   int2 apex,
-		const float3 hgts,
-		const    int varTreeIdx,
-		const    int curNodeIdx
-	);
+	float RecursComputeVariance(const int2 left,
+	    const int2 rght,
+	    const int2 apex,
+	    const float3 hgts,
+	    const int varTreeIdx,
+	    const int curNodeIdx);
 
-	void RecursGenBorderVertices(
-		const TriTreeNode* tri,
-		const int2 left,
-		const int2 rght,
-		const int2 apex,
-		const int2 depth
-	);
+	void RecursGenBorderVertices(const TriTreeNode* tri,
+	    const int2 left,
+	    const int2 rght,
+	    const int2 apex,
+	    const int2 depth);
 
 	float GetHeight(int2 pos);
 
 	void GenerateBorderIndices(CVertexArray* va);
 	void GenerateBorderVertices();
+
 private:
 	// depth of variance tree; should be near SQRT(PATCH_SIZE) + 1
 	static constexpr size_t VARIANCE_DEPTH = 12;

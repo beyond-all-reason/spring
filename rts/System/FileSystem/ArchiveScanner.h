@@ -3,15 +3,15 @@
 #ifndef _ARCHIVE_SCANNER_H
 #define _ARCHIVE_SCANNER_H
 
-#include <cstring> // memset
-#include <string>
-#include <deque>
-#include <vector>
-#include <atomic>
-
 #include "System/Info.h"
 #include "System/Sync/SHA512.hpp"
 #include "System/UnorderedMap.hpp"
+
+#include <atomic>
+#include <cstring> // memset
+#include <deque>
+#include <string>
+#include <vector>
 
 class IArchive;
 class IFileFilter;
@@ -29,25 +29,23 @@ class LuaTable;
  * the same name in more than one folder.
  */
 
-namespace modtype
-{
-	enum {
-		hidden = 0,
-		primary = 1,
-		reserved = 2,
-		map = 3,
-		base = 4,
-		menu = 5
-	};
-}
+namespace modtype {
+enum {
+	hidden = 0,
+	primary = 1,
+	reserved = 2,
+	map = 3,
+	base = 4,
+	menu = 5
+};
+} // namespace modtype
 
-class CArchiveScanner
-{
+class CArchiveScanner {
 public:
-	class ArchiveData
-	{
+	class ArchiveData {
 	public:
 		ArchiveData() {}
+
 		ArchiveData(const LuaTable& archiveTable, bool fromCache);
 
 		/*
@@ -57,25 +55,53 @@ public:
 		 * code, which could provoke runtime bugs when edited wrong.
 		 * There may well be other info-times supplied by the archive.
 		 */
-		std::string GetName() const { return GetInfoValueString("name_pure"); }          /// ex:  Original Total Annihilation
-		std::string GetNameVersioned() const { return GetInfoValueString("name"); }      /// ex:  Original Total Annihilation v2.3
-		std::string GetShortName() const { return GetInfoValueString("shortName"); }     /// ex:  OTA
-		std::string GetVersion() const { return GetInfoValueString("version"); }         /// ex:  v2.3
-		std::string GetMutator() const { return GetInfoValueString("mutator"); }         /// ex:  deployment
-		std::string GetGame() const { return GetInfoValueString("game"); }               /// ex:  Total Annihilation
-		std::string GetShortGame() const { return GetInfoValueString("shortGame"); }     /// ex:  TA
-		std::string GetDescription() const { return GetInfoValueString("description"); } /// ex:  Little units blowing up other little units
-		std::string GetMapFile() const { return GetInfoValueString("mapFile"); }         /// in case its a map, store location of smf file
-		int GetModType() const { return GetInfoValueInteger("modType"); }                /// 0=hidden, 1=primary, (2=unused), 3=map, 4=base, 5=menu
-		bool GetOnlyLocal() const { return GetInfoValueBool("onlyLocal"); }              /// if true spring will not listen for incoming connections
+		std::string GetName() const { return GetInfoValueString("name_pure"); } /// ex:  Original Total Annihilation
 
-		const std::vector< std::pair<std::string, InfoItem> >& GetInfo() const { return infoItems; }
+		std::string GetNameVersioned() const
+		{
+			return GetInfoValueString("name");
+		} /// ex:  Original Total Annihilation v2.3
+
+		std::string GetShortName() const { return GetInfoValueString("shortName"); } /// ex:  OTA
+
+		std::string GetVersion() const { return GetInfoValueString("version"); } /// ex:  v2.3
+
+		std::string GetMutator() const { return GetInfoValueString("mutator"); } /// ex:  deployment
+
+		std::string GetGame() const { return GetInfoValueString("game"); } /// ex:  Total Annihilation
+
+		std::string GetShortGame() const { return GetInfoValueString("shortGame"); } /// ex:  TA
+
+		std::string GetDescription() const
+		{
+			return GetInfoValueString("description");
+		} /// ex:  Little units blowing up other little units
+
+		std::string GetMapFile() const
+		{
+			return GetInfoValueString("mapFile");
+		} /// in case its a map, store location of smf file
+
+		int GetModType() const
+		{
+			return GetInfoValueInteger("modType");
+		} /// 0=hidden, 1=primary, (2=unused), 3=map, 4=base, 5=menu
+
+		bool GetOnlyLocal() const
+		{
+			return GetInfoValueBool("onlyLocal");
+		} /// if true spring will not listen for incoming connections
+
+		const std::vector<std::pair<std::string, InfoItem>>& GetInfo() const { return infoItems; }
+
 		std::vector<InfoItem> GetInfoItems() const;
 
 		const std::vector<std::string>& GetDependencies() const { return dependencies; }
+
 		std::vector<std::string>& GetDependencies() { return dependencies; }
 
 		const std::vector<std::string>& GetReplaces() const { return replaces; }
+
 		std::vector<std::string>& GetReplaces() { return replaces; }
 
 		void SetInfoItemValueString(const std::string& key, const std::string& value);
@@ -84,12 +110,32 @@ public:
 		void SetInfoItemValueBool(const std::string& key, bool value);
 
 		bool IsValid(std::string& error) const;
+
 		bool IsEmpty() const { return infoItems.empty(); }
 
-		bool IsMap() const { const int mt = GetModType(); return (mt == modtype::map); }
-		bool IsGame() const { const int mt = GetModType(); return (mt == modtype::hidden || mt == modtype::primary); }
-		bool IsBase() const { const int mt = GetModType(); return (mt == modtype::base); }
-		bool IsMenu() const { const int mt = GetModType(); return (mt == modtype::menu); }
+		bool IsMap() const
+		{
+			const int mt = GetModType();
+			return (mt == modtype::map);
+		}
+
+		bool IsGame() const
+		{
+			const int mt = GetModType();
+			return (mt == modtype::hidden || mt == modtype::primary);
+		}
+
+		bool IsBase() const
+		{
+			const int mt = GetModType();
+			return (mt == modtype::base);
+		}
+
+		bool IsMenu() const
+		{
+			const int mt = GetModType();
+			return (mt == modtype::menu);
+		}
 
 		static bool IsReservedKey(const std::string& keyLower);
 		static std::string GetKeyDescription(const std::string& keyLower);
@@ -106,7 +152,7 @@ public:
 		// NB: may invalidate existing references
 		InfoItem& GetAddInfoItem(const std::string& key);
 
-		std::vector< std::pair<std::string, InfoItem> > infoItems;
+		std::vector<std::pair<std::string, InfoItem>> infoItems;
 
 		std::vector<std::string> dependencies; /// Archives we depend on
 		std::vector<std::string> replaces;     /// This archive obsoletes these archives
@@ -119,7 +165,9 @@ public:
 	const std::string& GetFilepath() const { return cacheFile; }
 
 	static const char* GetMapHelperContentName() { return "Map Helper v1"; }
+
 	static const char* GetSpringBaseContentName() { return "Spring content v1"; }
+
 	static uint32_t GetNumScannedArchives();
 
 	std::vector<std::string> GetMaps() const;
@@ -136,12 +184,20 @@ public:
 	sha512::raw_digest GetArchiveCompleteChecksumBytes(const std::string& name);
 
 	/// first 4 bytes of single checksum (TODO: get rid of this in unitsync)
-	uint32_t GetArchiveSingleChecksum(const std::string& name) { return *reinterpret_cast<const uint32_t*>(&GetArchiveSingleChecksumBytes(name)[0]); }
+	uint32_t GetArchiveSingleChecksum(const std::string& name)
+	{
+		return *reinterpret_cast<const uint32_t*>(&GetArchiveSingleChecksumBytes(name)[0]);
+	}
+
 	/// first 4 bytes of complete checksum (TODO: get rid of this in ExternalAI)
-	uint32_t GetArchiveCompleteChecksum(const std::string& name) { return *reinterpret_cast<const uint32_t*>(&GetArchiveCompleteChecksumBytes(name)[0]); }
+	uint32_t GetArchiveCompleteChecksum(const std::string& name)
+	{
+		return *reinterpret_cast<const uint32_t*>(&GetArchiveCompleteChecksumBytes(name)[0]);
+	}
 
 	/// like GetArchiveCompleteChecksum, throws exception if mismatch
-	void CheckArchive(const std::string& name, const sha512::raw_digest& serverChecksum, sha512::raw_digest& clientChecksum);
+	void
+	CheckArchive(const std::string& name, const sha512::raw_digest& serverChecksum, sha512::raw_digest& clientChecksum);
 	void ScanArchive(const std::string& fullName, bool checksum = false);
 	void ScanAllDirs();
 	void Clear();
@@ -152,29 +208,31 @@ public:
 	std::string ArchiveFromName(const std::string& versionedName) const;
 	std::string NameFromArchive(const std::string& archiveName) const;
 	std::string GameHumanNameFromArchive(const std::string& archiveName) const;
-	std::string  MapHumanNameFromArchive(const std::string& archiveName) const;
+	std::string MapHumanNameFromArchive(const std::string& archiveName) const;
 	std::string GetArchivePath(const std::string& archiveName) const;
 	std::string MapNameToMapFile(const std::string& versionedMapName) const;
 	ArchiveData GetArchiveData(const std::string& versionedName) const;
 	ArchiveData GetArchiveDataByArchive(const std::string& archive) const;
+
 public:
 	uint32_t GetNumFilesHashed() const { return numFilesHashed.load(); }
+
 	void ResetNumFilesHashed() { numFilesHashed.store(0); }
+
 private:
 	struct FileInfo {
 		int32_t size = -1;
 		uint32_t modTime = 0;
 		sha512::raw_digest checksum = sha512::NULL_RAW_DIGEST;
 	};
-	struct ArchiveInfo {
-		ArchiveInfo() {
-			checksum = sha512::NULL_RAW_DIGEST;
-		}
 
-		std::string path;             // FileSystem::GetDirectory(origName)
-		std::string origName;         // non-lowercased name
-		std::string replaced;         // if not empty, use this archive instead
-		std::string archiveDataPath;  // path to {mod,map}info.lua for .sdd's
+	struct ArchiveInfo {
+		ArchiveInfo() { checksum = sha512::NULL_RAW_DIGEST; }
+
+		std::string path;            // FileSystem::GetDirectory(origName)
+		std::string origName;        // non-lowercased name
+		std::string replaced;        // if not empty, use this archive instead
+		std::string archiveDataPath; // path to {mod,map}info.lua for .sdd's
 
 		spring::unordered_map<std::string, FileInfo> filesInfo;
 
@@ -187,9 +245,10 @@ private:
 		bool updated = false;
 		bool hashed = false;
 	};
+
 	struct BrokenArchive {
-		std::string name;         // lower-case
-		std::string path;         // FileSystem::GetDirectory(origName)
+		std::string name; // lower-case
+		std::string path; // FileSystem::GetDirectory(origName)
 		std::string problem;
 
 		uint32_t modified = 0;

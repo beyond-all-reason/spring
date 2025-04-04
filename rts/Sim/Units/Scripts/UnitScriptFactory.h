@@ -11,8 +11,7 @@ class CCobFile;
 class CUnit;
 class CUnitScript;
 
-class CUnitScriptFactory
-{
+class CUnitScriptFactory {
 public:
 	static void InitStatic();
 
@@ -23,4 +22,3 @@ public:
 };
 
 #endif
-

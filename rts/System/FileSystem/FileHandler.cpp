@@ -3,30 +3,29 @@
 
 #include "FileHandler.h"
 
-#include <string>
-#include <vector>
-#include <fstream>
+#include "FileQueryFlags.h"
+#include "FileSystem.h"
+
+#include "System/SpringRegex.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <climits>
 #include <cstring>
-
-#include "System/SpringRegex.h"
-
-#include "FileQueryFlags.h"
-#include "FileSystem.h"
+#include <fstream>
+#include <string>
+#include <vector>
 
 #ifndef TOOLS
-	#include "VFSHandler.h"
-	#include "DataDirsAccess.h"
-	#include "System/StringUtil.h"
-	#include "System/Platform/Misc.h"
+#include "DataDirsAccess.h"
+#include "VFSHandler.h"
+
+#include "System/Platform/Misc.h"
+#include "System/StringUtil.h"
 #endif
 
 using std::string;
-
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -37,14 +36,11 @@ CFileHandler::CFileHandler(const char* fileName, const char* modes)
 	Open(fileName, modes);
 }
 
-
 CFileHandler::CFileHandler(const string& fileName, const string& modes)
 {
 	Close();
 	Open(fileName, modes);
 }
-
-
 
 /******************************************************************************/
 
@@ -68,7 +64,6 @@ bool CFileHandler::TryReadFromPWD(const string& fileName)
 	return false;
 }
 
-
 bool CFileHandler::TryReadFromRawFS(const string& fileName)
 {
 #ifndef TOOLS
@@ -85,14 +80,13 @@ bool CFileHandler::TryReadFromRawFS(const string& fileName)
 	return false;
 }
 
-
 bool CFileHandler::TryReadFromVFS(const string& fileName, int section)
 {
 #ifndef TOOLS
 	if (vfsHandler == nullptr)
 		return (loadCode = -2, false);
 
-	if ((loadCode = vfsHandler->LoadFile(StringToLower(fileName), fileBuffer, (CVFSHandler::Section) section)) == 1) {
+	if ((loadCode = vfsHandler->LoadFile(StringToLower(fileName), fileBuffer, (CVFSHandler::Section)section)) == 1) {
 		// capacity can exceed size if FH was used to open more than one file
 		// assert(fileBuffer.size() == fileBuffer.capacity());
 
@@ -102,7 +96,6 @@ bool CFileHandler::TryReadFromVFS(const string& fileName, int section)
 #endif
 	return false;
 }
-
 
 void CFileHandler::Open(const string& fileName, const string& modes)
 {
@@ -131,8 +124,6 @@ void CFileHandler::Close()
 	ifs.close();
 	fileBuffer.clear();
 }
-
-
 
 /******************************************************************************/
 
@@ -165,7 +156,6 @@ bool CFileHandler::FileExists(const std::string& filePath, const std::string& mo
 	return false;
 }
 
-
 int CFileHandler::Read(void* buf, int length)
 {
 	if (ifs.is_open()) {
@@ -188,7 +178,6 @@ int CFileHandler::Read(void* buf, int length)
 	return length;
 }
 
-
 int CFileHandler::ReadString(void* buf, int length)
 {
 	assert(buf != nullptr);
@@ -207,7 +196,6 @@ int CFileHandler::ReadString(void* buf, int length)
 	return slen;
 }
 
-
 void CFileHandler::Seek(int length, std::ios_base::seekdir where)
 {
 	if (ifs.is_open()) {
@@ -222,10 +210,17 @@ void CFileHandler::Seek(int length, std::ios_base::seekdir where)
 		return;
 
 	switch (where) {
-		case std::ios_base::beg: { filePos = length; } break;
-		case std::ios_base::cur: { filePos += length; } break;
-		case std::ios_base::end: { filePos = fileSize + length; } break;
-		default: {} break;
+	case std::ios_base::beg: {
+		filePos = length;
+	} break;
+	case std::ios_base::cur: {
+		filePos += length;
+	} break;
+	case std::ios_base::end: {
+		filePos = fileSize + length;
+	} break;
+	default: {
+	} break;
 	}
 }
 
@@ -240,7 +235,6 @@ bool CFileHandler::Eof() const
 	return true;
 }
 
-
 int CFileHandler::GetPos()
 {
 	if (ifs.is_open())
@@ -248,7 +242,6 @@ int CFileHandler::GetPos()
 
 	return filePos;
 }
-
 
 bool CFileHandler::LoadStringData(string& data)
 {
@@ -264,10 +257,7 @@ bool CFileHandler::LoadStringData(string& data)
 	return true;
 }
 
-std::string CFileHandler::GetFileExt() const
-{
-	return FileSystem::GetExtension(fileName);
-}
+std::string CFileHandler::GetFileExt() const { return FileSystem::GetExtension(fileName); }
 
 std::string CFileHandler::GetFileAbsolutePath(const std::string& filePath, const std::string& modes)
 {
@@ -322,19 +312,15 @@ std::vector<string> CFileHandler::FindFiles(const string& path, const string& pa
 #endif
 }
 
-
 /******************************************************************************/
 
-std::vector<string> CFileHandler::DirList(
-	const string& path,
-	const string& pattern,
-	const string& modes,
-	bool recursive
-) {
+std::vector<string>
+CFileHandler::DirList(const string& path, const string& pattern, const string& modes, bool recursive)
+{
 	std::vector<string> fileSet;
 
 #ifndef TOOLS
-	const std::string& pat = (pattern.empty())? "*" : pattern;
+	const std::string& pat = (pattern.empty()) ? "*" : pattern;
 
 	for (char c: modes) {
 		const CVFSHandler::Section section = CVFSHandler::GetModeSection(c);
@@ -353,13 +339,11 @@ std::vector<string> CFileHandler::DirList(
 	return fileSet;
 }
 
-
-bool CFileHandler::InsertRawFiles(
-	std::vector<string>& fileSet,
-	const string& path,
-	const string& pattern,
-	bool recursive
-) {
+bool CFileHandler::InsertRawFiles(std::vector<string>& fileSet,
+    const string& path,
+    const string& pattern,
+    bool recursive)
+{
 #ifndef TOOLS
 	const int flags = recursive * FileQueryFlags::RECURSE;
 	std::vector<string> found = dataDirsAccess.FindFiles(path, pattern, flags);
@@ -374,14 +358,12 @@ bool CFileHandler::InsertRawFiles(
 	return true;
 }
 
-
-bool CFileHandler::InsertVFSFiles(
-	std::vector<string>& fileSet,
-	const string& path,
-	const string& pattern,
-	bool recursive,
-	int section
-) {
+bool CFileHandler::InsertVFSFiles(std::vector<string>& fileSet,
+    const string& path,
+    const string& pattern,
+    bool recursive,
+    int section)
+{
 #ifndef TOOLS
 	if (vfsHandler == nullptr)
 		return false;
@@ -391,7 +373,7 @@ bool CFileHandler::InsertVFSFiles(
 		prefix += '/';
 
 	const spring::regex regexpattern{FileSystem::ConvertGlobToRegex(pattern), spring::regex::icase};
-	const std::vector<string>& found = vfsHandler->GetFilesInDir(path, recursive, (CVFSHandler::Section) section);
+	const std::vector<string>& found = vfsHandler->GetFilesInDir(path, recursive, (CVFSHandler::Section)section);
 
 	fileSet.reserve(fileSet.size() + found.size());
 
@@ -406,19 +388,15 @@ bool CFileHandler::InsertVFSFiles(
 	return true;
 }
 
-
 /******************************************************************************/
 
-std::vector<string> CFileHandler::SubDirs(
-	const string& path,
-	const string& pattern,
-	const string& modes,
-	bool recursive
-) {
+std::vector<string>
+CFileHandler::SubDirs(const string& path, const string& pattern, const string& modes, bool recursive)
+{
 	std::vector<string> dirSet;
 
 #ifndef TOOLS
-	const std::string& pat = (pattern.empty())? "*" : pattern;
+	const std::string& pat = (pattern.empty()) ? "*" : pattern;
 
 	for (char c: modes) {
 		CVFSHandler::Section section = CVFSHandler::GetModeSection(c);
@@ -436,13 +414,8 @@ std::vector<string> CFileHandler::SubDirs(
 	return dirSet;
 }
 
-
-bool CFileHandler::InsertRawDirs(
-	std::vector<string>& dirSet,
-	const string& path,
-	const string& pattern,
-	bool recursive
-) {
+bool CFileHandler::InsertRawDirs(std::vector<string>& dirSet, const string& path, const string& pattern, bool recursive)
+{
 #ifndef TOOLS
 	const int flags = FileQueryFlags::ONLY_DIRS | (recursive * FileQueryFlags::RECURSE);
 	std::vector<string> found = dataDirsAccess.FindFiles(path, pattern, flags);
@@ -457,14 +430,12 @@ bool CFileHandler::InsertRawDirs(
 	return true;
 }
 
-
-bool CFileHandler::InsertVFSDirs(
-	std::vector<string>& dirSet,
-	const string& path,
-	const string& pattern,
-	bool recursive,
-	int section
-) {
+bool CFileHandler::InsertVFSDirs(std::vector<string>& dirSet,
+    const string& path,
+    const string& pattern,
+    bool recursive,
+    int section)
+{
 #ifndef TOOLS
 	if (vfsHandler == nullptr)
 		return false;
@@ -474,7 +445,7 @@ bool CFileHandler::InsertVFSDirs(
 		prefix += '/';
 
 	const spring::regex regexpattern{FileSystem::ConvertGlobToRegex(pattern), spring::regex::icase};
-	const std::vector<string>& found = vfsHandler->GetDirsInDir(path, recursive, (CVFSHandler::Section) section);
+	const std::vector<string>& found = vfsHandler->GetDirsInDir(path, recursive, (CVFSHandler::Section)section);
 
 	dirSet.reserve(dirSet.size() + found.size());
 
@@ -488,7 +459,6 @@ bool CFileHandler::InsertVFSDirs(
 
 	return true;
 }
-
 
 /******************************************************************************/
 
@@ -513,7 +483,6 @@ string CFileHandler::ForbidModes(const string& modes, const string& forbidden)
 	}
 	return newModes;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

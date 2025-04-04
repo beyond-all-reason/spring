@@ -45,11 +45,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef INCLUDED_PROFILER_H
 #define INCLUDED_PROFILER_H
 
-#include <chrono>
-#include <assimp/DefaultLogger.hpp>
 #include "TinyFormatter.h"
 
+#include <chrono>
 #include <map>
+
+#include <assimp/DefaultLogger.hpp>
 
 namespace Assimp {
 namespace Profiling {
@@ -62,37 +63,37 @@ using namespace Formatter;
  */
 class Profiler {
 public:
-    Profiler() {
-        // empty
-    }
+	Profiler()
+	{
+		// empty
+	}
 
 public:
+	/** Start a named timer */
+	void BeginRegion(const std::string& region)
+	{
+		regions[region] = std::chrono::system_clock::now();
+		DefaultLogger::get()->debug((format("START `"), region, "`"));
+	}
 
-    /** Start a named timer */
-    void BeginRegion(const std::string& region) {
-        regions[region] = std::chrono::system_clock::now();
-        DefaultLogger::get()->debug((format("START `"),region,"`"));
-    }
+	/** End a specific named timer and write its end time to the log */
+	void EndRegion(const std::string& region)
+	{
+		RegionMap::const_iterator it = regions.find(region);
+		if (it == regions.end()) {
+			return;
+		}
 
-
-    /** End a specific named timer and write its end time to the log */
-    void EndRegion(const std::string& region) {
-        RegionMap::const_iterator it = regions.find(region);
-        if (it == regions.end()) {
-            return;
-        }
-
-        std::chrono::duration<double> elapsedSeconds = std::chrono::system_clock::now() - regions[region];
-        DefaultLogger::get()->debug((format("END   `"),region,"`, dt= ", elapsedSeconds.count()," s"));
-    }
+		std::chrono::duration<double> elapsedSeconds = std::chrono::system_clock::now() - regions[region];
+		DefaultLogger::get()->debug((format("END   `"), region, "`, dt= ", elapsedSeconds.count(), " s"));
+	}
 
 private:
-    typedef std::map<std::string,std::chrono::time_point<std::chrono::system_clock>> RegionMap;
-    RegionMap regions;
+	typedef std::map<std::string, std::chrono::time_point<std::chrono::system_clock>> RegionMap;
+	RegionMap regions;
 };
 
-}
-}
+} // namespace Profiling
+} // namespace Assimp
 
 #endif
-

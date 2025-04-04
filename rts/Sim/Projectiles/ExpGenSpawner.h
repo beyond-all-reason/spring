@@ -8,12 +8,13 @@
 class IExplosionGenerator;
 
 //! spawns a given explosion-generator after \<delay\> frames
-class CExpGenSpawner : public CProjectile
-{
+class CExpGenSpawner : public CProjectile {
 	CR_DECLARE_DERIVED(CExpGenSpawner)
 public:
 	CExpGenSpawner();
+
 	~CExpGenSpawner() {}
+
 	void Serialize(creg::ISerializer* s);
 
 	void Update() override;

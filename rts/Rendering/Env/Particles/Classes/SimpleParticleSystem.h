@@ -3,20 +3,20 @@
 #ifndef SIMPLE_PARTICLE_SYSTEM_H
 #define SIMPLE_PARTICLE_SYSTEM_H
 
-#include "Sim/Projectiles/Projectile.h"
 #include "Rendering/Textures/TextureAtlas.h"
+#include "Sim/Projectiles/Projectile.h"
 #include "System/float3.h"
 
 class CUnit;
 class CColorMap;
 
-class CSimpleParticleSystem : public CProjectile
-{
+class CSimpleParticleSystem : public CProjectile {
 	CR_DECLARE_DERIVED(CSimpleParticleSystem)
 	CR_DECLARE_SUB(Particle)
 
 public:
 	CSimpleParticleSystem();
+
 	virtual ~CSimpleParticleSystem() { particles.clear(); }
 
 	void Serialize(creg::ISerializer* s);
@@ -53,8 +53,7 @@ protected:
 
 	int numParticles;
 
-	struct Particle
-	{
+	struct Particle {
 		CR_DECLARE_STRUCT(Particle)
 
 		float3 pos;
@@ -71,18 +70,20 @@ protected:
 	};
 
 protected:
-	 std::vector<Particle> particles;
+	std::vector<Particle> particles;
 };
 
 /**
-* old CSphereParticleSpawner (it used to spawns the particles as independent CProjectile objects)
-* has proven to be slower
-*/
+ * old CSphereParticleSpawner (it used to spawns the particles as independent CProjectile objects)
+ * has proven to be slower
+ */
 class CSphereParticleSpawner : public CSimpleParticleSystem {
 	CR_DECLARE_DERIVED(CSphereParticleSpawner)
 public:
 	CSphereParticleSpawner() {}
-	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo) {
+
+	static bool GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
+	{
 		return CSimpleParticleSystem::GetMemberInfo(memberInfo);
 	}
 };

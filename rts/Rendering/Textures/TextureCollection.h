@@ -1,8 +1,10 @@
 #pragma once
 
-#include <vector>
 #include "Bitmap.h"
+
 #include "System/Color.h"
+
+#include <vector>
 
 class CTextureCollection {
 public:
@@ -31,7 +33,9 @@ public:
 	void Reload();
 
 	size_t GetTexturesCount() const { return textureIDs.size(); }
+
 	const auto& GetTextureIDs() const { return textureIDs; }
+
 private:
 	std::vector<std::string> textureNames;
 	std::vector<std::string> texturePaths;

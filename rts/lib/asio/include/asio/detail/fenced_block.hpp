@@ -12,23 +12,21 @@
 #define ASIO_DETAIL_FENCED_BLOCK_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 
-#if !defined(ASIO_HAS_THREADS) \
-  || defined(ASIO_DISABLE_FENCED_BLOCK)
-# include "asio/detail/null_fenced_block.hpp"
+#if !defined(ASIO_HAS_THREADS) || defined(ASIO_DISABLE_FENCED_BLOCK)
+#include "asio/detail/null_fenced_block.hpp"
 #else
-# include "asio/detail/std_fenced_block.hpp"
+#include "asio/detail/std_fenced_block.hpp"
 #endif
 
 namespace asio {
 namespace detail {
 
-#if !defined(ASIO_HAS_THREADS) \
-  || defined(ASIO_DISABLE_FENCED_BLOCK)
+#if !defined(ASIO_HAS_THREADS) || defined(ASIO_DISABLE_FENCED_BLOCK)
 typedef null_fenced_block fenced_block;
 #else
 typedef std_fenced_block fenced_block;

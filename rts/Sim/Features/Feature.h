@@ -3,11 +3,10 @@
 #ifndef _FEATURE_H
 #define _FEATURE_H
 
-#include "System/Misc/NonCopyable.h"
-
+#include "Sim/Misc/Resource.h"
 #include "Sim/Objects/SolidObject.h"
 #include "System/Matrix44f.h"
-#include "Sim/Misc/Resource.h"
+#include "System/Misc/NonCopyable.h"
 
 #define TREE_RADIUS 20
 
@@ -18,10 +17,7 @@ class CUnit;
 struct UnitDef;
 class DamageArray;
 
-
-
-class CFeature: public CSolidObject, public spring::noncopyable
-{
+class CFeature : public CSolidObject, public spring::noncopyable {
 	CR_DECLARE(CFeature)
 
 public:
@@ -29,16 +25,20 @@ public:
 	~CFeature();
 
 	CR_DECLARE_SUB(MoveCtrl)
+
 	struct MoveCtrl {
 		CR_DECLARE_STRUCT(MoveCtrl)
 	public:
-		MoveCtrl(): enabled(false) {
+		MoveCtrl()
+		    : enabled(false)
+		{
 			movementMask = OnesVector;
 			velocityMask = OnesVector;
-			 impulseMask = OnesVector;
+			impulseMask = OnesVector;
 		}
 
 		void SetMovementMask(const float3& movMask) { movementMask = movMask; }
+
 		void SetVelocityMask(const float3& velMask) { velocityMask = velMask; }
 
 	public:
@@ -63,7 +63,7 @@ public:
 	 */
 	void Initialize(const FeatureLoadParams& params);
 
-	const SolidObjectDef* GetDef() const { return ((const SolidObjectDef*) def); }
+	const SolidObjectDef* GetDef() const { return ((const SolidObjectDef*)def); }
 
 	int GetBlockingMapID() const;
 
@@ -72,25 +72,28 @@ public:
 	 * @return true if reclaimed
 	 */
 	bool AddBuildPower(CUnit* builder, float amount);
-	void DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID);
+	void
+	DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID);
 	void SetVelocity(const float3& v);
 	void ForcedMove(const float3& newPos);
 	void ForcedSpin(const float3& newDir) override;
-	void ForcedSpin(const float3& newFrontDir, const float3& newRightDir) override; 
+	void ForcedSpin(const float3& newFrontDir, const float3& newRightDir) override;
 
 	bool Update();
 	bool UpdatePosition();
 	bool UpdateVelocity(const float3& dragAccel, const float3& gravAccel, const float3& movMask, const float3& velMask);
 
 	void SetTransform(const CMatrix44f& m, bool synced) { transMatrix[synced] = m; }
+
 	void UpdateTransform(const float3& p, bool synced) { transMatrix[synced] = std::move(ComposeMatrix(p)); }
+
 	void UpdateTransformAndPhysState();
 	void UpdateQuadFieldPosition(const float3& moveVec);
 
 	void StartFire();
 	void EmitGeoSmoke();
 
-	void DependentDied(CObject *o);
+	void DependentDied(CObject* o);
 	void ChangeTeam(int newTeam);
 
 	bool IsInLosForAllyTeam(int argAllyTeam) const;
@@ -98,7 +101,11 @@ public:
 	// NOTE:
 	//   unlike CUnit which recalculates the matrix on each call
 	//   (and uses the synced and error args) CFeature caches it
-	CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const final { return transMatrix[synced]; }
+	CMatrix44f GetTransformMatrix(bool synced = false, bool fullread = false) const final
+	{
+		return transMatrix[synced];
+	}
+
 	const CMatrix44f& GetTransformMatrixRef(bool synced = false) const { return transMatrix[synced]; }
 
 private:

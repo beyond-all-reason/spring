@@ -1,24 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "PlayerHandler.h"
+
+#include "Game/GameSetup.h"
+#include "Game/SelectedUnitsHandler.h"
+#include "Sim/Misc/GlobalConstants.h"
+#include "System/Misc/TracyDefs.h"
+
 #include <algorithm>
 #include <cassert>
 
-#include "PlayerHandler.h"
-#include "Sim/Misc/GlobalConstants.h"
-#include "Game/GameSetup.h"
-#include "Game/SelectedUnitsHandler.h"
+CR_BIND(CPlayerHandler, )
 
-#include "System/Misc/TracyDefs.h"
-
-CR_BIND(CPlayerHandler,)
-
-CR_REG_METADATA(CPlayerHandler, (
-	CR_MEMBER(players)
-))
+CR_REG_METADATA(CPlayerHandler, (CR_MEMBER(players)))
 
 
 CPlayerHandler playerHandler;
-
 
 void CPlayerHandler::ResetState()
 {
@@ -50,7 +47,6 @@ void CPlayerHandler::LoadFromSetup(const CGameSetup* setup)
 	}
 }
 
-
 int CPlayerHandler::Player(const std::string& name) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -69,8 +65,6 @@ void CPlayerHandler::PlayerLeft(int id, unsigned char reason)
 	Player(id)->active = false;
 	Player(id)->ping = 0;
 }
-
-
 
 unsigned int CPlayerHandler::NumActivePlayersInTeam(int teamId) const
 {
@@ -104,8 +98,6 @@ std::vector<int> CPlayerHandler::ActivePlayersInTeam(int teamId) const
 
 	return playersInTeam;
 }
-
-
 
 void CPlayerHandler::GameFrame(int frameNum)
 {
@@ -146,4 +138,3 @@ void CPlayerHandler::AddPlayer(const CPlayer& player)
 		newPlayer->fpsController.SetControllerPlayer(newPlayer);
 	}
 }
-

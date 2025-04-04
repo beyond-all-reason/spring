@@ -3,29 +3,27 @@
 #ifndef SMOOTH_HEIGHT_MESH_H
 #define SMOOTH_HEIGHT_MESH_H
 
+#include "Sim/Misc/GlobalConstants.h"
+#include "System/type2.h"
+
 #include <memory_resource>
 #include <queue>
 #include <vector>
 
-#include "Sim/Misc/GlobalConstants.h"
-#include "System/type2.h"
-
 class CGround;
 
 namespace SmoothHeightMeshNamespace {
-	constexpr int SMOOTH_MESH_UPDATE_DELAY = GAME_SPEED;
-	constexpr int SAMPLES_PER_QUAD = 32;
-}
+constexpr int SMOOTH_MESH_UPDATE_DELAY = GAME_SPEED;
+constexpr int SAMPLES_PER_QUAD = 32;
+} // namespace SmoothHeightMeshNamespace
 
 /**
  * Provides a GetHeight(x, y) of its own that smooths the mesh.
  */
-class SmoothHeightMesh
-{
+class SmoothHeightMesh {
 	friend class SmoothHeightMeshDrawer;
 
 public:
-
 	struct MapChangeTrack {
 		std::vector<bool> damageMap;
 		std::queue<int> damageQueue[2];
@@ -47,12 +45,17 @@ public:
 	float SetMaxHeight(int index, float h);
 
 	int GetMaxX() const { return maxx; }
+
 	int GetMaxY() const { return maxy; }
+
 	float GetFMaxX() const { return fmaxx; }
+
 	float GetFMaxY() const { return fmaxy; }
+
 	float GetResolution() const { return fresolution; }
 
 	const float* GetMeshData() const { return &mesh[0]; }
+
 	const float* GetOriginalMeshData() const { return &origMesh[0]; }
 
 	void UpdateSmoothMesh();

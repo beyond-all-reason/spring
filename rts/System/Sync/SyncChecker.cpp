@@ -12,10 +12,6 @@
 unsigned CSyncChecker::g_checksum;
 int CSyncChecker::inSyncedCode;
 
-
-void CSyncChecker::debugSyncCheckThreading()
-{
-    assert(ThreadPool::GetThreadNum() == 0);
-}
+void CSyncChecker::debugSyncCheckThreading() { assert(ThreadPool::GetThreadNum() == 0); }
 
 #endif // SYNCDEBUG

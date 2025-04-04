@@ -3,41 +3,41 @@
 #ifndef _EFX_PRESETS_H_
 #define _EFX_PRESETS_H_
 
+#include "System/UnorderedMap.hpp"
+#include "System/float3.h"
+
 #include <string>
 
 #include <al.h>
 #include <efx.h>
 
-#include "System/float3.h"
-#include "System/UnorderedMap.hpp"
-
 struct EAXSfxProps {
 	EAXSfxProps() {}
-	EAXSfxProps(
-		ALfloat _density,
-		ALfloat _diffusion,
-		ALfloat _gain,
-		ALfloat _gainHF,
-		ALfloat _gainLF,
-		ALfloat _decayTime,
-		ALfloat _decayHFRatio,
-		ALfloat _decayLFRatio,
-		ALfloat _reflectionGain,
-		ALfloat _reflectionDelay,
-		float3 _reflectionPan,
-		ALfloat _lateReverbGain,
-		ALfloat _lateReverbDelay,
-		float3 _lateReverbPan,
-		ALfloat _echoTime,
-		ALfloat _echoDepth,
-		ALfloat _modTime,
-		ALfloat _modDepth,
-		ALfloat _airAbsorptionGainHF,
-		ALfloat _hfReference,
-		ALfloat _lfReference,
-		ALfloat _roomRollOffFactor,
-		ALboolean _decayHFLimit
-	) {
+
+	EAXSfxProps(ALfloat _density,
+	    ALfloat _diffusion,
+	    ALfloat _gain,
+	    ALfloat _gainHF,
+	    ALfloat _gainLF,
+	    ALfloat _decayTime,
+	    ALfloat _decayHFRatio,
+	    ALfloat _decayLFRatio,
+	    ALfloat _reflectionGain,
+	    ALfloat _reflectionDelay,
+	    float3 _reflectionPan,
+	    ALfloat _lateReverbGain,
+	    ALfloat _lateReverbDelay,
+	    float3 _lateReverbPan,
+	    ALfloat _echoTime,
+	    ALfloat _echoDepth,
+	    ALfloat _modTime,
+	    ALfloat _modDepth,
+	    ALfloat _airAbsorptionGainHF,
+	    ALfloat _hfReference,
+	    ALfloat _lfReference,
+	    ALfloat _roomRollOffFactor,
+	    ALboolean _decayHFLimit)
+	{
 		reverb_props_f[AL_EAXREVERB_DENSITY] = _density;
 		reverb_props_f[AL_EAXREVERB_DIFFUSION] = _diffusion;
 		reverb_props_f[AL_EAXREVERB_GAIN] = _gain;
@@ -67,18 +67,18 @@ struct EAXSfxProps {
 	}
 
 	spring::unsynced_map<ALuint, ALfloat> reverb_props_f;
-	spring::unsynced_map<ALuint, ALint>   reverb_props_i;
-	spring::unsynced_map<ALuint, float3>  reverb_props_v;
+	spring::unsynced_map<ALuint, ALint> reverb_props_i;
+	spring::unsynced_map<ALuint, float3> reverb_props_v;
 	spring::unsynced_map<ALuint, ALfloat> filter_props_f;
 };
 
 namespace EFXParamTypes {
-	enum {
-		FLOAT,
-		VECTOR,
-		BOOL
-	};
-}
+enum {
+	FLOAT,
+	VECTOR,
+	BOOL
+};
+} // namespace EFXParamTypes
 
 extern spring::unsynced_map<std::string, EAXSfxProps> eaxPresets;
 

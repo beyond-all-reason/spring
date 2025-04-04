@@ -2,6 +2,7 @@
 
 
 #include "UnitLoader.h"
+
 #include "Unit.h"
 #include "UnitDef.h"
 #include "UnitDefHandler.h"
@@ -12,25 +13,19 @@
 #include "CommandAI/CommandAI.h"
 #include "CommandAI/FactoryCAI.h"
 #include "CommandAI/MobileCAI.h"
-
 #include "Game/GameHelper.h"
 #include "Map/Ground.h"
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
-
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/TeamHandler.h"
-
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-#include "System/Platform/Watchdog.h"
-
 #include "System/Misc/TracyDefs.h"
-
-
+#include "System/Platform/Watchdog.h"
 
 CUnitLoader* CUnitLoader::GetInstance()
 {
@@ -45,9 +40,9 @@ CCommandAI* CUnitLoader::NewCommandAI(CUnit* u, const UnitDef* ud)
 	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(CFactoryCAI) <= sizeof(u->caiMemBuffer), "");
 	static_assert(sizeof(CBuilderCAI) <= sizeof(u->caiMemBuffer), "");
-	static_assert(sizeof(    CAirCAI) <= sizeof(u->caiMemBuffer), "");
-	static_assert(sizeof( CMobileCAI) <= sizeof(u->caiMemBuffer), "");
-	static_assert(sizeof( CCommandAI) <= sizeof(u->caiMemBuffer), "");
+	static_assert(sizeof(CAirCAI) <= sizeof(u->caiMemBuffer), "");
+	static_assert(sizeof(CMobileCAI) <= sizeof(u->caiMemBuffer), "");
+	static_assert(sizeof(CCommandAI) <= sizeof(u->caiMemBuffer), "");
 
 	if (ud->IsFactoryUnit())
 		return (new (u->caiMemBuffer) CFactoryCAI(u));
@@ -74,7 +69,7 @@ CUnit* CUnitLoader::LoadUnit(const std::string& name, const UnitLoadParams& para
 	const_cast<UnitLoadParams&>(params).unitDef = unitDefHandler->GetUnitDefByName(name);
 
 	if (params.unitDef == nullptr)
-		throw content_error("Couldn't find unittype " +  name);
+		throw content_error("Couldn't find unittype " + name);
 
 	return (LoadUnit(params));
 }
@@ -115,19 +110,19 @@ CUnit* CUnitLoader::LoadUnit(const UnitLoadParams& params)
 	return unit;
 }
 
-
-
 void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>& args, int team)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (args.size() < 2) {
-		LOG_L(L_WARNING, "[%s] not enough arguments (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")", __FUNCTION__);
+		LOG_L(L_WARNING, "[%s] not enough arguments (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")",
+		    __FUNCTION__);
 		return;
 	}
 
 	float3 pos;
 	if (sscanf(args[args.size() - 1].c_str(), "@%f, %f, %f", &pos.x, &pos.y, &pos.z) != 3) {
-		LOG_L(L_WARNING, "[%s] invalid position argument (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")", __FUNCTION__);
+		LOG_L(L_WARNING, "[%s] invalid position argument (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")",
+		    __FUNCTION__);
 		return;
 	}
 
@@ -142,7 +137,8 @@ void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>
 	else if (args.size() == 3) {
 		if (args[0].find_first_not_of("0123456789") == std::string::npos) {
 			amountArgIdx = 0;
-		} else {
+		}
+		else {
 			teamArgIdx = 1;
 		}
 	}
@@ -160,7 +156,8 @@ void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>
 	if (teamArgIdx >= 0) {
 		team = atoi(args[teamArgIdx].c_str());
 
-		if ((!teamHandler.IsValidTeam(team)) || (args[teamArgIdx].find_first_not_of("0123456789") != std::string::npos)) {
+		if ((!teamHandler.IsValidTeam(team)) ||
+		    (args[teamArgIdx].find_first_not_of("0123456789") != std::string::npos)) {
 			LOG_L(L_WARNING, "[%s] invalid team argument: %s", __FUNCTION__, args[teamArgIdx].c_str());
 			return;
 		}
@@ -178,7 +175,6 @@ void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>
 	GiveUnits(objectName, pos, amount, team, featureAllyTeam);
 }
 
-
 void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amount, int team, int featureAllyTeam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -193,7 +189,7 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 			numRequestedUnits = receivingTeam->GetMaxUnits() - currentNumUnits;
 
 		// make sure square is entirely on the map
-		const int sqSize = math::ceil(math::sqrt((float) numRequestedUnits));
+		const int sqSize = math::ceil(math::sqrt((float)numRequestedUnits));
 		const float sqHalfMapSize = sqSize / 2 * 10 * SQUARE_SIZE;
 
 		pos.x = std::clamp(pos.x, sqHalfMapSize, float3::maxxpos - sqHalfMapSize - 1);
@@ -207,31 +203,31 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 			const UnitDef* ud = unitDefHandler->GetUnitDefByID(a);
 
 			const UnitLoadParams unitParams = {
-				ud,
-				nullptr,
+			    ud,
+			    nullptr,
 
-				float3(px, CGround::GetHeightReal(px, pz), pz),
-				ZeroVector,
+			    float3(px, CGround::GetHeightReal(px, pz), pz),
+			    ZeroVector,
 
-				-1,
-				team,
-				FACING_SOUTH,
+			    -1,
+			    team,
+			    FACING_SOUTH,
 
-				false,
-				true,
+			    false,
+			    true,
 			};
 
 			LoadUnit(unitParams);
 		}
-	} else {
+	}
+	else {
 		unsigned int numRequestedUnits = amount;
 		unsigned int currentNumUnits = receivingTeam->GetNumUnits();
 
 		if (receivingTeam->AtUnitLimit()) {
 			LOG_L(L_WARNING,
-				"[%s] unable to give more units to team %d (current: %u, team limit: %u, global limit: %u)",
-				__FUNCTION__, team, currentNumUnits, receivingTeam->GetMaxUnits(), unitHandler.MaxUnits()
-			);
+			    "[%s] unable to give more units to team %d (current: %u, team limit: %u, global limit: %u)",
+			    __FUNCTION__, team, currentNumUnits, receivingTeam->GetMaxUnits(), unitHandler.MaxUnits());
 			return;
 		}
 
@@ -250,12 +246,9 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 		if (unitDef != nullptr) {
 			const int xsize = unitDef->xsize;
 			const int zsize = unitDef->zsize;
-			const int squareSize = math::ceil(math::sqrt((float) numRequestedUnits));
-			const float3 squarePos = float3(
-				pos.x - (((squareSize - 1) * xsize * SQUARE_SIZE) / 2),
-				pos.y,
-				pos.z - (((squareSize - 1) * zsize * SQUARE_SIZE) / 2)
-			);
+			const int squareSize = math::ceil(math::sqrt((float)numRequestedUnits));
+			const float3 squarePos = float3(pos.x - (((squareSize - 1) * xsize * SQUARE_SIZE) / 2), pos.y,
+			    pos.z - (((squareSize - 1) * zsize * SQUARE_SIZE) / 2));
 
 			int unitsLoaded = numRequestedUnits;
 
@@ -267,26 +260,25 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 					Watchdog::ClearTimers(false, true);
 
 					const UnitLoadParams unitParams = {
-						unitDef,
-						nullptr,
+					    unitDef,
+					    nullptr,
 
-						float3(px, CGround::GetHeightReal(px, pz), pz),
-						ZeroVector,
+					    float3(px, CGround::GetHeightReal(px, pz), pz),
+					    ZeroVector,
 
-						-1,
-						team,
-						FACING_SOUTH,
+					    -1,
+					    team,
+					    FACING_SOUTH,
 
-						false,
-						true,
+					    false,
+					    true,
 					};
 
 					LoadUnit(unitParams);
 				}
 			}
 
-			LOG("[%s] spawned %i %s unit(s) for team %i",
-					__FUNCTION__, numRequestedUnits, objectName.c_str(), team);
+			LOG("[%s] spawned %i %s unit(s) for team %i", __FUNCTION__, numRequestedUnits, objectName.c_str(), team);
 		}
 
 		if (featureDef != nullptr) {
@@ -295,12 +287,9 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 
 			const int xsize = featureDef->xsize;
 			const int zsize = featureDef->zsize;
-			const int squareSize = math::ceil(math::sqrt((float) numRequestedUnits));
-			const float3 squarePos = float3(
-				pos.x - (((squareSize - 1) * xsize * SQUARE_SIZE) / 2),
-				pos.y,
-				pos.z - (((squareSize - 1) * zsize * SQUARE_SIZE) / 2)
-			);
+			const int squareSize = math::ceil(math::sqrt((float)numRequestedUnits));
+			const float3 squarePos = float3(pos.x - (((squareSize - 1) * xsize * SQUARE_SIZE) / 2), pos.y,
+			    pos.z - (((squareSize - 1) * zsize * SQUARE_SIZE) / 2));
 
 			int total = amount; // FIXME -- feature count limit?
 
@@ -312,21 +301,17 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 
 					Watchdog::ClearTimers(false, true);
 					FeatureLoadParams params = {
-						nullptr,
-						nullptr,
-						featureDef,
+					    nullptr, nullptr, featureDef,
 
-						featurePos,
-						ZeroVector,
+					    featurePos, ZeroVector,
 
-						team,
-						featureAllyTeam,
+					    team, featureAllyTeam,
 
-						0, // rotation
-						FACING_SOUTH,
+					    0, // rotation
+					    FACING_SOUTH,
 
-						0, // wreckLevels
-						0, // smokeTime
+					    0, // wreckLevels
+					    0, // smokeTime
 					};
 
 					featureHandler.LoadFeature(params);
@@ -335,14 +320,10 @@ void CUnitLoader::GiveUnits(const std::string& objectName, float3 pos, int amoun
 				}
 			}
 
-			LOG("[%s] spawned %i %s feature(s) for team %i",
-					__FUNCTION__, numRequestedUnits, objectName.c_str(), team);
+			LOG("[%s] spawned %i %s feature(s) for team %i", __FUNCTION__, numRequestedUnits, objectName.c_str(), team);
 		}
 	}
 }
-
-
-
 
 void CUnitLoader::FlattenGround(const CUnit* unit)
 {
@@ -367,8 +348,8 @@ void CUnitLoader::FlattenGround(const CUnit* unit)
 	bi.pos = CGameHelper::Pos2BuildPos(bi, true);
 
 	const float hss = 0.5f * SQUARE_SIZE;
-	const int tx1 = (int) std::max(0.0f ,(bi.pos.x - (bi.GetXSize() * hss)) / SQUARE_SIZE);
-	const int tz1 = (int) std::max(0.0f ,(bi.pos.z - (bi.GetZSize() * hss)) / SQUARE_SIZE);
+	const int tx1 = (int)std::max(0.0f, (bi.pos.x - (bi.GetXSize() * hss)) / SQUARE_SIZE);
+	const int tz1 = (int)std::max(0.0f, (bi.pos.z - (bi.GetZSize() * hss)) / SQUARE_SIZE);
 	const int tx2 = std::min(mapDims.mapx, tx1 + bi.GetXSize());
 	const int tz2 = std::min(mapDims.mapy, tz1 + bi.GetZSize());
 
@@ -400,8 +381,8 @@ void CUnitLoader::RestoreGround(const CUnit* unit)
 	BuildInfo bi(unitDef, unit->pos, unit->buildFacing);
 	bi.pos = CGameHelper::Pos2BuildPos(bi, true);
 	const float hss = 0.5f * SQUARE_SIZE;
-	const int tx1 = (int) std::max(0.0f ,(bi.pos.x - (bi.GetXSize() * hss)) / SQUARE_SIZE);
-	const int tz1 = (int) std::max(0.0f ,(bi.pos.z - (bi.GetZSize() * hss)) / SQUARE_SIZE);
+	const int tx1 = (int)std::max(0.0f, (bi.pos.x - (bi.GetXSize() * hss)) / SQUARE_SIZE);
+	const int tz1 = (int)std::max(0.0f, (bi.pos.z - (bi.GetZSize() * hss)) / SQUARE_SIZE);
 	const int tx2 = std::min(mapDims.mapx, tx1 + bi.GetXSize());
 	const int tz2 = std::min(mapDims.mapy, tz1 + bi.GetZSize());
 
@@ -436,4 +417,3 @@ void CUnitLoader::RestoreGround(const CUnit* unit)
 
 	mapDamage->RecalcArea(tx1, tx2, tz1, tz2);
 }
-

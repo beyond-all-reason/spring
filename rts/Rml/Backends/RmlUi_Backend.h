@@ -31,56 +31,55 @@
 #ifndef RMLUI_BACKENDS_BACKEND_H
 #define RMLUI_BACKENDS_BACKEND_H
 
+#include "Game/UI/InputReceiver.h"
 #include "Rml/Rml_MathTypes_Conversions.h"
+#include "lib/sol2/sol.hpp"
+
 #include <RmlUi/Core.h>
 #include <SDL.h>
 
-#include "Game/UI/InputReceiver.h"
-#include "lib/sol2/sol.hpp"
+namespace RmlGui {
+bool Initialize();
+bool InitializeLua(lua_State* lua_state);
+bool RemoveLua();
 
-namespace RmlGui
-{
-	bool Initialize();
-	bool InitializeLua(lua_State* lua_state);
-	bool RemoveLua();
+void Shutdown();
+void Reload();
 
-	void Shutdown();
-	void Reload();
+Rml::SystemInterface* GetSystemInterface();
+Rml::RenderInterface* GetRenderInterface();
 
-	Rml::SystemInterface* GetSystemInterface();
-	Rml::RenderInterface* GetRenderInterface();
+bool ProcessEvent(const SDL_Event& event);
 
-	bool ProcessEvent(const SDL_Event& event);
+bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
+bool ProcessKeyReleased(int keyCode, int scanCode);
+bool ProcessTextInput(const std::string& text);
+bool ProcessMouseMove(int x, int y, int dx, int dy, int button);
+bool ProcessMousePress(int x, int y, int button);
+bool ProcessMouseRelease(int x, int y, int button);
+bool ProcessMouseWheel(float delta);
 
-	bool ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat);
-	bool ProcessKeyReleased(int keyCode, int scanCode);
-	bool ProcessTextInput(const std::string& text);
-	bool ProcessMouseMove(int x, int y, int dx, int dy, int button);
-	bool ProcessMousePress(int x, int y, int button);
-	bool ProcessMouseRelease(int x, int y, int button);
-	bool ProcessMouseWheel(float delta);
+void SetDebugContext(Rml::Context* context);
 
-	void SetDebugContext(Rml::Context* context);
+bool IsMouseInteractingWith();
+const std::string& GetMouseCursor();
+void SetMouseCursorAlias(std::string from, std::string to);
+CInputReceiver* GetInputReceiver();
+lua_State* GetLuaState();
 
-	bool IsMouseInteractingWith();
-	const std::string& GetMouseCursor();
-	void SetMouseCursorAlias(std::string from, std::string to);
-	CInputReceiver* GetInputReceiver();
-	lua_State* GetLuaState();
+void Update();
+void RenderFrame();
 
-	void Update();
-	void RenderFrame();
+void OnContextCreate(Rml::Context* context);
+void OnContextDestroy(Rml::Context* context);
 
-	void OnContextCreate(Rml::Context* context);
-	void OnContextDestroy(Rml::Context* context);
-	
-	Rml::Context* GetOrCreateContext(const std::string& name);
-	Rml::Context* GetContext(const std::string& name);
-	void MarkContextForRemoval(Rml::Context* context);
+Rml::Context* GetOrCreateContext(const std::string& name);
+Rml::Context* GetContext(const std::string& name);
+void MarkContextForRemoval(Rml::Context* context);
 
-	void BeginFrame();
-	void PresentFrame();
+void BeginFrame();
+void PresentFrame();
 
-}  // namespace RmlGui
+} // namespace RmlGui
 
 #endif

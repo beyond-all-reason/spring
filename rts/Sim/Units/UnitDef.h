@@ -3,15 +3,15 @@
 #ifndef UNITDEF_H
 #define UNITDEF_H
 
-#include <vector>
-
 #include "Rendering/Icon.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GuiSoundSet.h"
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Objects/SolidObjectDef.h"
-#include "System/float3.h"
 #include "System/UnorderedMap.hpp"
+#include "System/float3.h"
+
+#include <vector>
 
 #define MAX_UNITDEF_EXPGEN_IDS 32
 
@@ -22,11 +22,11 @@ struct MoveDef;
 struct UnitDefImage;
 class LuaTable;
 
-
 struct UnitDefWeapon {
 	UnitDefWeapon() = default;
 	UnitDefWeapon(const WeaponDef* weaponDef);
 	UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponTable);
+
 	UnitDefWeapon(const UnitDefWeapon& udw) { *this = udw; }
 
 	// unused
@@ -43,10 +43,13 @@ struct UnitDefWeapon {
 
 	float3 mainDir = FwdVector;
 
-	bool fastAutoRetargeting = false; ///< pick new targets as soon as possible, don't wait for slow update
-	bool fastQueryPointUpdate = false;	///< check in with unitscript to get most current query piece before every friendly fire check, don't wait for slow update
-	unsigned int burstControlWhenOutOfArc = 0; ///< Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (default), 1 = don't fire, 2 = fire in current direction of weapon 
-	float weaponAimAdjustPriority = 1.f;		///< relative importance of picking enemy targets that are in front
+	bool fastAutoRetargeting = false;  ///< pick new targets as soon as possible, don't wait for slow update
+	bool fastQueryPointUpdate = false; ///< check in with unitscript to get most current query piece before every
+	                                   ///< friendly fire check, don't wait for slow update
+	unsigned int burstControlWhenOutOfArc =
+	    0; ///< Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (default), 1 = don't
+	       ///< fire, 2 = fire in current direction of weapon
+	float weaponAimAdjustPriority = 1.f; ///< relative importance of picking enemy targets that are in front
 
 
 	static constexpr unsigned int BURST_CONTROL_OUT_OF_ARC_OFF = 0;
@@ -54,42 +57,59 @@ struct UnitDefWeapon {
 	static constexpr unsigned int BURST_CONTROL_OUT_OF_ARC_FIRE_FORWARD = 2;
 };
 
-
-struct UnitDef: public SolidObjectDef
-{
+struct UnitDef : public SolidObjectDef {
 public:
 	UnitDef(const LuaTable& udTable, const std::string& unitName, int id);
 	UnitDef();
 
 	void SetNoCost(bool noCost);
 
-	bool IsTransportUnit()     const { return (transportCapacity > 0 && transportMass > 0.0f); }
-	bool IsImmobileUnit()      const { return (pathType == -1U && !canfly && speed <= 0.0f); }
-	bool IsBuildingUnit()      const { return (IsImmobileUnit() && !yardmap.empty()); }
-	bool IsBuilderUnit()       const { return (builder && buildSpeed > 0.0f && buildDistance > 0.0f); }
+	bool IsTransportUnit() const { return (transportCapacity > 0 && transportMass > 0.0f); }
+
+	bool IsImmobileUnit() const { return (pathType == -1U && !canfly && speed <= 0.0f); }
+
+	bool IsBuildingUnit() const { return (IsImmobileUnit() && !yardmap.empty()); }
+
+	bool IsBuilderUnit() const { return (builder && buildSpeed > 0.0f && buildDistance > 0.0f); }
+
 	bool IsMobileBuilderUnit() const { return (IsBuilderUnit() && !IsImmobileUnit()); }
-	bool IsStaticBuilderUnit() const { return (IsBuilderUnit() &&  IsImmobileUnit()); }
-	bool IsFactoryUnit()       const { return (IsBuilderUnit() &&  IsBuildingUnit()); }
-	bool IsExtractorUnit()     const { return (extractsMetal > 0.0f && extractRange > 0.0f); }
-	bool IsGroundUnit()        const { return (pathType != -1U && !canfly); }
-	bool IsAirUnit()           const { return (pathType == -1U &&  canfly); }
-	bool IsStrafingAirUnit()   const { return (IsAirUnit() && !(IsBuilderUnit() || IsTransportUnit() || hoverAttack)); }
-	bool IsHoveringAirUnit()   const { return (IsAirUnit() &&  (IsBuilderUnit() || IsTransportUnit() || hoverAttack)); }
-	bool IsFighterAirUnit()    const { return (IsStrafingAirUnit() && HasWeapon(0) && !HasBomberWeapon(0)); }
-	bool IsBomberAirUnit()     const { return (IsStrafingAirUnit() && HasWeapon(0) &&  HasBomberWeapon(0)); }
+
+	bool IsStaticBuilderUnit() const { return (IsBuilderUnit() && IsImmobileUnit()); }
+
+	bool IsFactoryUnit() const { return (IsBuilderUnit() && IsBuildingUnit()); }
+
+	bool IsExtractorUnit() const { return (extractsMetal > 0.0f && extractRange > 0.0f); }
+
+	bool IsGroundUnit() const { return (pathType != -1U && !canfly); }
+
+	bool IsAirUnit() const { return (pathType == -1U && canfly); }
+
+	bool IsStrafingAirUnit() const { return (IsAirUnit() && !(IsBuilderUnit() || IsTransportUnit() || hoverAttack)); }
+
+	bool IsHoveringAirUnit() const { return (IsAirUnit() && (IsBuilderUnit() || IsTransportUnit() || hoverAttack)); }
+
+	bool IsFighterAirUnit() const { return (IsStrafingAirUnit() && HasWeapon(0) && !HasBomberWeapon(0)); }
+
+	bool IsBomberAirUnit() const { return (IsStrafingAirUnit() && HasWeapon(0) && HasBomberWeapon(0)); }
 
 	bool DontLand() const { return (dlHoverFactor >= 0.0f); }
+
 	bool RequireMoveDef() const { return (canmove && speed > 0.0f && !canfly); }
+
 	bool CanChangeFireState() const { return (canFireControl && (canKamikaze || HasWeapons() || IsFactoryUnit())); }
 
 	bool HasWeapons() const { return (HasWeapon(0)); }
+
 	bool HasWeapon(unsigned int idx) const { return (weapons[idx].def != nullptr); }
+
 	bool HasBomberWeapon(unsigned int idx) const;
 
 	bool CanAttack() const { return (canAttack && (canKamikaze || HasWeapons() || IsFactoryUnit())); }
+
 	bool CanDamage() const { return (canKamikaze || (canAttack && HasWeapons())); }
 
-	unsigned int NumWeapons() const {
+	unsigned int NumWeapons() const
+	{
 		unsigned int n = 0;
 
 		while (n < weapons.size() && HasWeapon(n)) {
@@ -100,32 +120,54 @@ public:
 	}
 
 	const UnitDefWeapon& GetWeapon(unsigned int idx) const { return weapons[idx]; }
+
 	const YardMapStatus* GetYardMapPtr() const { return (yardmap.data()); }
 
+	void AddModelExpGenID(unsigned int egID)
+	{
+		modelExplGenIDs[1 + modelExplGenIDs[0]] = egID;
+		modelExplGenIDs[0] += (egID != -1u);
+	}
 
-	void AddModelExpGenID(unsigned int egID) { modelExplGenIDs[1 + modelExplGenIDs[0]] = egID; modelExplGenIDs[0] += (egID != -1u); }
-	void AddPieceExpGenID(unsigned int egID) { pieceExplGenIDs[1 + pieceExplGenIDs[0]] = egID; pieceExplGenIDs[0] += (egID != -1u); }
-	void AddCrashExpGenID(unsigned int egID) { crashExplGenIDs[1 + crashExplGenIDs[0]] = egID; crashExplGenIDs[0] += (egID != -1u); }
+	void AddPieceExpGenID(unsigned int egID)
+	{
+		pieceExplGenIDs[1 + pieceExplGenIDs[0]] = egID;
+		pieceExplGenIDs[0] += (egID != -1u);
+	}
+
+	void AddCrashExpGenID(unsigned int egID)
+	{
+		crashExplGenIDs[1 + crashExplGenIDs[0]] = egID;
+		crashExplGenIDs[0] += (egID != -1u);
+	}
 
 	// UnitScript::EmitSFX can pass in any index, unlike PieceProjectile and AAirMoveType code
-	unsigned int GetModelExpGenID(unsigned int idx) const { return modelExplGenIDs[1 + (idx % MAX_UNITDEF_EXPGEN_IDS)]; }
-	unsigned int GetPieceExpGenID(unsigned int idx) const { return pieceExplGenIDs[1 + (idx                         )]; }
-	unsigned int GetCrashExpGenID(unsigned int idx) const { return crashExplGenIDs[1 + (idx                         )]; }
+	unsigned int GetModelExpGenID(unsigned int idx) const
+	{
+		return modelExplGenIDs[1 + (idx % MAX_UNITDEF_EXPGEN_IDS)];
+	}
+
+	unsigned int GetPieceExpGenID(unsigned int idx) const { return pieceExplGenIDs[1 + (idx)]; }
+
+	unsigned int GetCrashExpGenID(unsigned int idx) const { return crashExplGenIDs[1 + (idx)]; }
 
 	unsigned int GetModelExpGenCount() const { return modelExplGenIDs[0]; }
+
 	unsigned int GetPieceExpGenCount() const { return pieceExplGenIDs[0]; }
+
 	unsigned int GetCrashExpGenCount() const { return crashExplGenIDs[0]; }
 
 public:
-	int cobID;              ///< associated with the COB \<GET COB_ID unitID\> call
+	int cobID; ///< associated with the COB \<GET COB_ID unitID\> call
 
 	const UnitDef* decoyDef;
 
 	SResourcePack upkeep;
 	SResourcePack resourceMake; ///< will always be created
-	float makesMetal;		///< metal will be created when unit is on and enough energy can be drained
+	float makesMetal;           ///< metal will be created when unit is on and enough energy can be drained
 	float buildTime;
-	float buildeeBuildRadius; ///< if >= 0.f, override default radius to use for the buildee in build distance calculations.
+	float buildeeBuildRadius; ///< if >= 0.f, override default radius to use for the buildee in build distance
+	                          ///< calculations.
 	float extractsMetal;
 	float extractRange;
 	float windGenerator;
@@ -140,8 +182,8 @@ public:
 	float power;
 	unsigned int category;
 
-	float speed;        ///< maximum forward speed the unit can attain (elmos/sec)
-	float rSpeed;       ///< maximum reverse speed the unit can attain (elmos/sec)
+	float speed;  ///< maximum forward speed the unit can attain (elmos/sec)
+	float rSpeed; ///< maximum reverse speed the unit can attain (elmos/sec)
 	float turnRate;
 	bool turnInPlace;
 
@@ -169,7 +211,7 @@ public:
 	bool stealth;
 	bool sonarStealth;
 
-	bool  buildRange3D;
+	bool buildRange3D;
 	float buildDistance;
 	float buildSpeed;
 	float reclaimSpeed;
@@ -183,14 +225,14 @@ public:
 	bool canfly;
 	bool floatOnWater;
 	bool pushResistant;
-	bool strafeToAttack;  /// should the unit move sideways when it can't shoot?
+	bool strafeToAttack; /// should the unit move sideways when it can't shoot?
 	bool stopToAttack;
 	float minCollisionSpeed;
 	float slideTolerance;
 	float rollingResistanceCoefficient;
 	float groundFrictionCoefficient;
 	float atmosphericDragCoefficient;
-	float maxHeightDif;   /// maximum terraform height this building allows
+	float maxHeightDif; /// maximum terraform height this building allows
 	float waterline;
 	float minWaterDepth;
 	float maxWaterDepth;
@@ -220,13 +262,14 @@ public:
 	 */
 	int flankingBonusMode;
 	float3 flankingBonusDir; ///< units takes less damage when attacked from this dir (encourage flanking fire)
-	float  flankingBonusMax; ///< damage factor for the least protected direction
-	float  flankingBonusMin; ///< damage factor for the most protected direction
-	float  flankingBonusMobilityAdd; ///< how much the ability of the flanking bonus direction to move builds up each frame
+	float flankingBonusMax;  ///< damage factor for the least protected direction
+	float flankingBonusMin;  ///< damage factor for the most protected direction
+	float
+	    flankingBonusMobilityAdd; ///< how much the ability of the flanking bonus direction to move builds up each frame
 
 	std::string humanName;
 	std::string decoyName;
-	std::string scriptName;     ///< the name of the unit's script, e.g. "armjeth.cob"
+	std::string scriptName; ///< the name of the unit's script, e.g. "armjeth.cob"
 	std::string tooltip;
 	std::string wreckName;
 	std::string categoryString;
@@ -302,7 +345,7 @@ public:
 	int fireState;
 	int moveState;
 
-	//aircraft stuff
+	// aircraft stuff
 	float wingDrag;
 	float wingAngle;
 	float frontToSpeed;
@@ -318,7 +361,8 @@ public:
 	bool useSmoothMesh;
 	bool hoverAttack;
 	bool airStrafe;
-	float dlHoverFactor; ///< < 0 means it can land, >= 0 indicates how much the unit will move during hovering on the spot
+	float dlHoverFactor; ///< < 0 means it can land, >= 0 indicates how much the unit will move during hovering on the
+	                     ///< spot
 	bool bankingAllowed;
 
 	float maxAcc;
@@ -328,28 +372,28 @@ public:
 	float maxRudder;
 	float crashDrag;
 
-	float loadingRadius;							///< for transports
+	float loadingRadius; ///< for transports
 	float unloadSpread;
 	int transportCapacity;
 	int transportSize;
 	int minTransportSize;
-	bool isFirePlatform;							///< should the carried units still be able to shoot?
+	bool isFirePlatform; ///< should the carried units still be able to shoot?
 	float transportMass;
 	float minTransportMass;
 	bool holdSteady;
 	bool releaseHeld;
-	bool cantBeTransported;                         /// defaults to true for immobile units, false for all other unit-types
+	bool cantBeTransported; /// defaults to true for immobile units, false for all other unit-types
 	bool transportByEnemy;
-	int transportUnloadMethod;						///< 0 - land unload, 1 - flyover drop, 2 - land flood
-	float fallSpeed;								///< dictates fall speed of all transported units
-	float unitFallSpeed;							///< sets the transported units fbi, overrides fallSpeed
+	int transportUnloadMethod; ///< 0 - land unload, 1 - flyover drop, 2 - land flood
+	float fallSpeed;           ///< dictates fall speed of all transported units
+	float unitFallSpeed;       ///< sets the transported units fbi, overrides fallSpeed
 
-	bool startCloaked;								///< if the units want to start out cloaked
-	float cloakCost;								///< energy cost per second to stay cloaked when stationary
-	float cloakCostMoving;							///< energy cost per second when moving
-	float decloakDistance;							///< if enemy unit come within this range decloaking is forced
-	bool decloakSpherical;							///< use a spherical test instead of a cylindrical test?
-	bool decloakOnFire;								///< should the unit decloak upon firing
+	bool startCloaked;     ///< if the units want to start out cloaked
+	float cloakCost;       ///< energy cost per second to stay cloaked when stationary
+	float cloakCostMoving; ///< energy cost per second when moving
+	float decloakDistance; ///< if enemy unit come within this range decloaking is forced
+	bool decloakSpherical; ///< use a spherical test instead of a cylindrical test?
+	bool decloakOnFire;    ///< should the unit decloak upon firing
 
 	float kamikazeDist;
 	bool kamikazeUseLOS;
@@ -360,7 +404,7 @@ public:
 	bool hideDamage;
 	bool showPlayerName;
 
-	int highTrajectoryType;							///< 0 (default) = only low, 1 = only high, 2 = choose
+	int highTrajectoryType; ///< 0 (default) = only low, 1 = only high, 2 = choose
 
 	unsigned int noChaseCategory;
 
@@ -376,6 +420,7 @@ public:
 		GuiSoundSet activate;
 		GuiSoundSet deactivate;
 	};
+
 	SoundStruct sounds;
 
 	bool canDropFlare;
@@ -387,14 +432,14 @@ public:
 	int flareSalvoSize;
 	int flareSalvoDelay;
 
-	bool canLoopbackAttack;                         ///< only matters for fighter aircraft
-	bool levelGround;                               ///< only matters for buildings
+	bool canLoopbackAttack; ///< only matters for fighter aircraft
+	bool levelGround;       ///< only matters for buildings
 
-	bool showNanoFrame;								///< Does the nano frame animation get shown during construction?
-	bool showNanoSpray;								///< Does nano spray get shown at all?
-	float3 nanoColor;								///< If nano spray is displayed what color is it?
+	bool showNanoFrame; ///< Does the nano frame animation get shown during construction?
+	bool showNanoSpray; ///< Does nano spray get shown at all?
+	float3 nanoColor;   ///< If nano spray is displayed what color is it?
 
-	int maxThisUnit;                                ///< number of units of this type allowed simultaneously in the game
+	int maxThisUnit; ///< number of units of this type allowed simultaneously in the game
 
 private:
 	void ParseWeaponsTable(const LuaTable& weaponsTable);

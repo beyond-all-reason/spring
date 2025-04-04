@@ -3,42 +3,40 @@
 #include "System/Misc/TracyDefs.h"
 #define LUA_SYNCED_ONLY
 
-#include "LuaUnitScript.h"
-
 #include "CobDefines.h"
 #include "CobInstance.h"
 #include "LuaInclude.h"
+#include "LuaScriptNames.h"
+#include "LuaUnitScript.h"
 #include "NullUnitScript.h"
 #include "UnitScriptFactory.h"
-#include "LuaScriptNames.h"
-#include "Lua/LuaConfig.h"
+
 #include "Lua/LuaCallInCheck.h"
+#include "Lua/LuaConfig.h"
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaHandleSynced.h"
 #include "Lua/LuaRules.h"
 #include "Lua/LuaUtils.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitHandler.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "System/ContainerUtil.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND_DERIVED(CLuaUnitScript, CUnitScript, )
 
-CR_REG_METADATA(CLuaUnitScript, (
-	CR_IGNORED(handle),
-	CR_IGNORED(L),
-	CR_MEMBER(scriptIndex),
-	CR_MEMBER(scriptNames),
-	CR_IGNORED(inKilled),
-	CR_SERIALIZER(Serialize),
-	CR_POSTLOAD(PostLoad),
-	CR_PREALLOC(GetUnit)
-))
+CR_REG_METADATA(CLuaUnitScript,
+    (CR_IGNORED(handle),
+        CR_IGNORED(L),
+        CR_MEMBER(scriptIndex),
+        CR_MEMBER(scriptNames),
+        CR_IGNORED(inKilled),
+        CR_SERIALIZER(Serialize),
+        CR_POSTLOAD(PostLoad),
+        CR_PREALLOC(GetUnit)))
 
 void CLuaUnitScript::PostLoad()
 {
@@ -54,13 +52,13 @@ void CLuaUnitScript::PostLoad()
 
 	L = handle->GetLuaState();
 
-	hasSetSFXOccupy  = scriptIndex[LUAFN_SetSFXOccupy ] != LUA_NOREF;
-	hasRockUnit      = scriptIndex[LUAFN_RockUnit     ] != LUA_NOREF;
+	hasSetSFXOccupy = scriptIndex[LUAFN_SetSFXOccupy] != LUA_NOREF;
+	hasRockUnit = scriptIndex[LUAFN_RockUnit] != LUA_NOREF;
 	hasStartBuilding = scriptIndex[LUAFN_StartBuilding] != LUA_NOREF;
 }
 
-
-void CLuaUnitScript::Serialize(creg::ISerializer* s) {
+void CLuaUnitScript::Serialize(creg::ISerializer* s)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	bool isLuaGaia;
 	if (s->IsWriting()) {
@@ -70,13 +68,12 @@ void CLuaUnitScript::Serialize(creg::ISerializer* s) {
 	}
 	s->SerializeInt(&isLuaGaia, sizeof(isLuaGaia));
 	if (!s->IsWriting()) {
-		CSplitLuaHandle* slh = isLuaGaia ? (CSplitLuaHandle*) luaGaia : (CSplitLuaHandle*) luaRules;
+		CSplitLuaHandle* slh = isLuaGaia ? (CSplitLuaHandle*)luaGaia : (CSplitLuaHandle*)luaRules;
 		assert(slh != nullptr);
 		handle = &slh->syncedLuaHandle;
 		L = handle->GetLuaState();
 	}
 }
-
 
 static inline LocalModelPiece* ParseLocalModelPiece(lua_State* L, CUnitScript* script, const char* caller)
 {
@@ -145,106 +142,107 @@ docs for callins defined in this file:
   TODO: document other callins properly
 
 TurnFinished(number piece, number axis)
-	Called after a turn finished for this unit/piece/axis (not a turn-now!)
-	Should resume coroutine of the particular thread which called the Lua
-	WaitForTurn function (see below).
+    Called after a turn finished for this unit/piece/axis (not a turn-now!)
+    Should resume coroutine of the particular thread which called the Lua
+    WaitForTurn function (see below).
 
 MoveFinished(number piece, number axis)
-	Called after a move finished for this unit/piece/axis (not a move-now!)
-	Should resume coroutine of the particular thread which called the Lua
-	WaitForMove function (see below).
+    Called after a move finished for this unit/piece/axis (not a move-now!)
+    Should resume coroutine of the particular thread which called the Lua
+    WaitForMove function (see below).
 
 
 docs for callouts defined in this file:
 
 Spring.UnitScript.SetUnitValue(...)
-	see wiki for Spring.SetUnitCOBValue (unchanged)
+    see wiki for Spring.SetUnitCOBValue (unchanged)
 
 Spring.UnitScript.GetUnitValue(...)
-	see wiki for Spring.GetUnitCOBValue (unchanged)
+    see wiki for Spring.GetUnitCOBValue (unchanged)
 
 Spring.UnitScript.SetPieceVisibility(number piece, boolean visible) -> nil
-	Set's piece visibility.  Same as COB's hide/show.
+    Set's piece visibility.  Same as COB's hide/show.
 
 Spring.UnitSript.EmitSfx(number piece, number type) -> nil
-	Same as COB's emit-sfx.
+    Same as COB's emit-sfx.
 
 Spring.UnitScript.AttachUnit(number piece, number transporteeID) -> nil
-	Same as COB's attach-unit.
+    Same as COB's attach-unit.
 
 Spring.UnitScript.DropUnit(number transporteeID) -> nil
-	Same as COB's drop-unit.
+    Same as COB's drop-unit.
 
 Spring.UnitScript.Explode(number piece, number flags) -> nil
-	Same as COB's explode.
+    Same as COB's explode.
 
 Spring.UnitScript.ShowFlare(number piece) -> nil
-	Same as COB's show _inside_ FireWeaponX.
+    Same as COB's show _inside_ FireWeaponX.
 
 Spring.UnitScript.Spin(number piece, number axis, number speed[, number accel]) -> nil
-	Same as COB's spin.  If accel isn't given spinning starts at the desired speed.
+    Same as COB's spin.  If accel isn't given spinning starts at the desired speed.
 
 Spring.UnitScript.StopSpin(number piece, number axis[, number decel]) -> nil
-	Same as COB's stop-spin.  If decel isn't given spinning stops immediately.
+    Same as COB's stop-spin.  If decel isn't given spinning stops immediately.
 
 Spring.UnitScript.Turn(number piece, number axis, number destination[, number speed]) -> nil
-	Same as COB's turn iff speed is given and not zero, and turn-now otherwise.
+    Same as COB's turn iff speed is given and not zero, and turn-now otherwise.
 
 Spring.UnitScript.Move(number piece, number axis, number destination[, number speed]) -> nil
-	Same as COB's move iff speed is given and not zero, and move-now otherwise.
+    Same as COB's move iff speed is given and not zero, and move-now otherwise.
 
 Spring.UnitScript.IsInTurn(number piece, number axis) -> boolean
 Spring.UnitScript.IsInMove(number piece, number axis) -> boolean
 Spring.UnitScript.IsInSpin(number piece, number axis) -> boolean
-	Returns true iff such an animation exists, false otherwise.
+    Returns true iff such an animation exists, false otherwise.
 
 Spring.UnitScript.WaitForTurn(number piece, number axis) -> boolean
-	Returns true iff such an animation exists, false otherwise.  Iff it returns
-	true, the TurnFinished callIn will be called once the turn completes.
+    Returns true iff such an animation exists, false otherwise.  Iff it returns
+    true, the TurnFinished callIn will be called once the turn completes.
 
 Spring.UnitScript.WaitForMove(number piece, number axis) -> boolean
-	Returns true iff such an animation exists, false otherwise.  Iff it returns
-	true, the MoveFinished callIn will be called once the move completes.
+    Returns true iff such an animation exists, false otherwise.  Iff it returns
+    true, the MoveFinished callIn will be called once the move completes.
 
 Spring.UnitScript.SetDeathScriptFinished(number wreckLevel])
-	Tells Spring the Killed script finished, and which wreckLevel to use.
-	If wreckLevel is not given no wreck is created.
+    Tells Spring the Killed script finished, and which wreckLevel to use.
+    If wreckLevel is not given no wreck is created.
 
 Spring.UnitScript.CreateScript(number unitID, table callIns) -> nil
-	Replaces the current unit script (independent of type, also replaces COB)
-	with the unit script given by a table of callins for the unit.
-	Callins are similar to COB functions, e.g. a number of predefined names are
-	called by the engine if they exist in the table.
+    Replaces the current unit script (independent of type, also replaces COB)
+    with the unit script given by a table of callins for the unit.
+    Callins are similar to COB functions, e.g. a number of predefined names are
+    called by the engine if they exist in the table.
 
 Spring.UnitScript.UpdateCallIn(number unitID, string fname[, function callIn]) -> number|boolean
-	Iff callIn is a function, a single callIn is replaced or added, and the
-	new functionID is returned.  If callIn isn't given or is nil, the callIn is
-	nilled, returns true if it was removed, or false if the callin didn't exist.
-	See also Spring.UnitScript.CreateScript.
+    Iff callIn is a function, a single callIn is replaced or added, and the
+    new functionID is returned.  If callIn isn't given or is nil, the callIn is
+    nilled, returns true if it was removed, or false if the callin didn't exist.
+    See also Spring.UnitScript.CreateScript.
 */
 
 
-#define LUA_TRACE(m) \
-	do { \
-		if (unit) { \
+#define LUA_TRACE(m)                                             \
+	do {                                                         \
+		if (unit) {                                              \
 			LOG_L(L_DEBUG, "%s: %d: %s", __func__, unit->id, m); \
-		} else { \
-			LOG_L(L_DEBUG, "%s: %s", __func__, m); \
-		} \
+		}                                                        \
+		else {                                                   \
+			LOG_L(L_DEBUG, "%s: %s", __func__, m);               \
+		}                                                        \
 	} while (false)
 
 
 CUnit* CLuaUnitScript::activeUnit;
 CUnitScript* CLuaUnitScript::activeScript;
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 
 CLuaUnitScript::CLuaUnitScript(lua_State* L, CUnit* unit)
-	: CUnitScript(unit)
-	, handle(CLuaHandle::GetHandle(L)), L(L)
+    : CUnitScript(unit)
+    , handle(CLuaHandle::GetHandle(L))
+    , L(L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	scriptIndex.fill(LUA_NOREF);
@@ -263,7 +261,6 @@ CLuaUnitScript::CLuaUnitScript(lua_State* L, CUnit* unit)
 	}
 }
 
-
 CLuaUnitScript::~CLuaUnitScript()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -278,7 +275,6 @@ CLuaUnitScript::~CLuaUnitScript()
 		luaL_unref(L, LUA_REGISTRYINDEX, it->second);
 	}
 }
-
 
 void CLuaUnitScript::HandleFreed(CLuaHandle* handle)
 {
@@ -302,7 +298,6 @@ void CLuaUnitScript::HandleFreed(CLuaHandle* handle)
 		spring::SafeDestruct(script);
 	}
 }
-
 
 int CLuaUnitScript::UpdateCallIn()
 {
@@ -346,7 +341,6 @@ int CLuaUnitScript::UpdateCallIn()
 	return 1;
 }
 
-
 void CLuaUnitScript::UpdateCallIn(const std::string& fname, int ref)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -360,14 +354,13 @@ void CLuaUnitScript::UpdateCallIn(const std::string& fname, int ref)
 	}
 
 	switch (num) {
-		case LUAFN_SetSFXOccupy:  hasSetSFXOccupy  = (ref != LUA_NOREF); break;
-		case LUAFN_RockUnit:      hasRockUnit      = (ref != LUA_NOREF); break;
-		case LUAFN_StartBuilding: hasStartBuilding = (ref != LUA_NOREF); break;
+	case LUAFN_SetSFXOccupy: hasSetSFXOccupy = (ref != LUA_NOREF); break;
+	case LUAFN_RockUnit: hasRockUnit = (ref != LUA_NOREF); break;
+	case LUAFN_StartBuilding: hasStartBuilding = (ref != LUA_NOREF); break;
 	}
 
-	//LUA_TRACE(fname.c_str());
+	// LUA_TRACE(fname.c_str());
 }
-
 
 void CLuaUnitScript::RemoveCallIn(const std::string& fname)
 {
@@ -380,9 +373,8 @@ void CLuaUnitScript::RemoveCallIn(const std::string& fname)
 		UpdateCallIn(fname, LUA_NOREF);
 	}
 
-	//LUA_TRACE(fname.c_str());
+	// LUA_TRACE(fname.c_str());
 }
-
 
 void CLuaUnitScript::ShowScriptError(const std::string& msg)
 {
@@ -396,20 +388,17 @@ void CLuaUnitScript::ShowScriptError(const std::string& msg)
 	}
 }
 
-
 bool CLuaUnitScript::HasBlockShot(int weaponNum) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return HasFunction(LUAFN_BlockShot);
 }
 
-
 bool CLuaUnitScript::HasTargetWeight(int weaponNum) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return HasFunction(LUAFN_TargetWeight);
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -433,7 +422,6 @@ inline float CLuaUnitScript::PopNumber(int fn, float def)
 	return ret;
 }
 
-
 inline bool CLuaUnitScript::PopBoolean(int fn, bool def)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -452,7 +440,6 @@ inline bool CLuaUnitScript::PopBoolean(int fn, bool def)
 	return ret;
 }
 
-
 inline void CLuaUnitScript::RawPushFunction(int functionId)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -460,13 +447,11 @@ inline void CLuaUnitScript::RawPushFunction(int functionId)
 	lua_rawgeti(L, LUA_REGISTRYINDEX, functionId);
 }
 
-
 inline void CLuaUnitScript::PushFunction(int id)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	RawPushFunction(scriptIndex[id]);
 }
-
 
 inline void CLuaUnitScript::PushUnit(const CUnit* targetUnit)
 {
@@ -479,13 +464,11 @@ inline void CLuaUnitScript::PushUnit(const CUnit* targetUnit)
 	}
 }
 
-
 inline bool CLuaUnitScript::RunCallIn(int id, int inArgs, int outArgs)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return RawRunCallIn(scriptIndex[id], inArgs, outArgs);
 }
-
 
 int CLuaUnitScript::RunQueryCallIn(int fn)
 {
@@ -504,18 +487,17 @@ int CLuaUnitScript::RunQueryCallIn(int fn)
 	const int scriptPieceNum = (int)PopNumber(fn, 0) - 1;
 
 	// if (LOG_IS_ENABLED(L_DEBUG)) {
-		// if (PieceExists(scriptPieceNum)) {
-			// LocalModelPiece* piece = GetScriptLocalModelPiece(scriptPieceNum);
-			// LOG_L(L_DEBUG, "%s: %d %s",
-					// CLuaUnitScriptNames::GetScriptName(fn).c_str(),
-					// scriptPieceNum,
-					// (piece->original) ? piece->original->name.c_str() : "n/a");
-		// }
+	// if (PieceExists(scriptPieceNum)) {
+	// LocalModelPiece* piece = GetScriptLocalModelPiece(scriptPieceNum);
+	// LOG_L(L_DEBUG, "%s: %d %s",
+	// CLuaUnitScriptNames::GetScriptName(fn).c_str(),
+	// scriptPieceNum,
+	// (piece->original) ? piece->original->name.c_str() : "n/a");
+	// }
 	// }
 
 	return scriptPieceNum;
 }
-
 
 int CLuaUnitScript::RunQueryCallIn(int fn, float arg1)
 {
@@ -535,18 +517,17 @@ int CLuaUnitScript::RunQueryCallIn(int fn, float arg1)
 	const int scriptPieceNum = (int)PopNumber(fn, 0) - 1;
 
 	// if (LOG_IS_ENABLED(L_DEBUG)) {
-		// if (PieceExists(scriptPieceNum)) {
-			// LocalModelPiece* piece = GetScriptLocalModelPiece(scriptPieceNum);
-			// LOG_L(L_DEBUG, "%s: %d %s",
-					// CLuaUnitScriptNames::GetScriptName(fn).c_str(),
-					// scriptPieceNum,
-					// (piece->original) ? piece->original->name.c_str() : "n/a");
-		// }
+	// if (PieceExists(scriptPieceNum)) {
+	// LocalModelPiece* piece = GetScriptLocalModelPiece(scriptPieceNum);
+	// LOG_L(L_DEBUG, "%s: %d %s",
+	// CLuaUnitScriptNames::GetScriptName(fn).c_str(),
+	// scriptPieceNum,
+	// (piece->original) ? piece->original->name.c_str() : "n/a");
+	// }
 	// }
 
 	return scriptPieceNum;
 }
-
 
 void CLuaUnitScript::Call(int fn, float arg1)
 {
@@ -563,7 +544,6 @@ void CLuaUnitScript::Call(int fn, float arg1)
 	RunCallIn(fn, 1, 0);
 }
 
-
 void CLuaUnitScript::Call(int fn, float arg1, float arg2)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -579,7 +559,6 @@ void CLuaUnitScript::Call(int fn, float arg1, float arg2)
 
 	RunCallIn(fn, 2, 0);
 }
-
 
 void CLuaUnitScript::Call(int fn, float arg1, float arg2, float arg3)
 {
@@ -598,7 +577,6 @@ void CLuaUnitScript::Call(int fn, float arg1, float arg2, float arg3)
 	RunCallIn(fn, 3, 0);
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -609,7 +587,6 @@ void CLuaUnitScript::Create()
 	// There is no use for Create
 	// (Lua code can just call it after Spring.UnitScript.CreateScript(...))
 }
-
 
 void CLuaUnitScript::Killed()
 {
@@ -652,13 +629,11 @@ void CLuaUnitScript::Killed()
 	lua_pop(L, 1);
 }
 
-
 void CLuaUnitScript::WindChanged(float heading, float speed)
 {
 	ZoneScoped;
 	Call(LUAFN_WindChanged, heading, speed);
 }
-
 
 void CLuaUnitScript::ExtractionRateChanged(float speed)
 {
@@ -666,16 +641,19 @@ void CLuaUnitScript::ExtractionRateChanged(float speed)
 	Call(LUAFN_ExtractionRateChanged, speed);
 }
 
-
-
 void CLuaUnitScript::WorldRockUnit(const float3& rockDir) { RockUnit(unit->GetObjectSpaceVec(rockDir)); }
+
 void CLuaUnitScript::RockUnit(const float3& rockDir)
 {
 	ZoneScoped;
 	Call(LUAFN_RockUnit, rockDir.x, rockDir.z);
 }
 
-void CLuaUnitScript::WorldHitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage) { HitByWeapon(unit->GetObjectSpaceVec(hitDir), weaponDefId, inoutDamage); }
+void CLuaUnitScript::WorldHitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage)
+{
+	HitByWeapon(unit->GetObjectSpaceVec(hitDir), weaponDefId, inoutDamage);
+}
+
 void CLuaUnitScript::HitByWeapon(const float3& hitDir, int weaponDefId, float& inoutDamage)
 {
 	ZoneScoped;
@@ -710,7 +688,6 @@ void CLuaUnitScript::HitByWeapon(const float3& hitDir, int weaponDefId, float& i
 	lua_pop(L, 1);
 }
 
-
 void CLuaUnitScript::SetSFXOccupy(int curTerrainType)
 {
 	ZoneScoped;
@@ -727,7 +704,6 @@ void CLuaUnitScript::SetSFXOccupy(int curTerrainType)
 
 	RunCallIn(fn, 1, 0);
 }
-
 
 void CLuaUnitScript::QueryLandingPads(std::vector<int>& out_pieces)
 {
@@ -758,7 +734,8 @@ void CLuaUnitScript::QueryLandingPads(std::vector<int>& out_pieces)
 		}
 
 		lua_pop(L, 1);
-	} else {
+	}
+	else {
 		const std::string& fname = CLuaUnitScriptNames::GetScriptName(fn);
 
 		LOG_L(L_ERROR, "%s: bad return value, expected table", fname.c_str());
@@ -768,13 +745,11 @@ void CLuaUnitScript::QueryLandingPads(std::vector<int>& out_pieces)
 	lua_pop(L, 1);
 }
 
-
 void CLuaUnitScript::BeginTransport(const CUnit* unit)
 {
 	ZoneScoped;
 	Call(LUAFN_BeginTransport, unit->id);
 }
-
 
 int CLuaUnitScript::QueryTransport(const CUnit* unit)
 {
@@ -782,13 +757,11 @@ int CLuaUnitScript::QueryTransport(const CUnit* unit)
 	return RunQueryCallIn(LUAFN_QueryTransport, unit->id);
 }
 
-
 void CLuaUnitScript::TransportPickup(const CUnit* unit)
 {
 	ZoneScoped;
 	Call(LUAFN_TransportPickup, unit->id);
 }
-
 
 void CLuaUnitScript::TransportDrop(const CUnit* unit, const float3& pos)
 {
@@ -810,13 +783,11 @@ void CLuaUnitScript::TransportDrop(const CUnit* unit, const float3& pos)
 	RunCallIn(fn, 4, 0);
 }
 
-
 void CLuaUnitScript::StartBuilding(float heading, float pitch)
 {
 	ZoneScoped;
 	Call(LUAFN_StartBuilding, heading, pitch);
 }
-
 
 int CLuaUnitScript::QueryNanoPiece()
 {
@@ -824,13 +795,11 @@ int CLuaUnitScript::QueryNanoPiece()
 	return RunQueryCallIn(LUAFN_QueryNanoPiece);
 }
 
-
 int CLuaUnitScript::QueryBuildInfo()
 {
 	ZoneScoped;
 	return RunQueryCallIn(LUAFN_QueryBuildInfo);
 }
-
 
 int CLuaUnitScript::QueryWeapon(int weaponNum)
 {
@@ -838,20 +807,17 @@ int CLuaUnitScript::QueryWeapon(int weaponNum)
 	return RunQueryCallIn(LUAFN_QueryWeapon, weaponNum + LUA_WEAPON_BASE_INDEX);
 }
 
-
 void CLuaUnitScript::AimWeapon(int weaponNum, float heading, float pitch)
 {
 	ZoneScoped;
 	Call(LUAFN_AimWeapon, weaponNum + LUA_WEAPON_BASE_INDEX, heading, pitch);
 }
 
-
-void  CLuaUnitScript::AimShieldWeapon(CPlasmaRepulser* weapon)
+void CLuaUnitScript::AimShieldWeapon(CPlasmaRepulser* weapon)
 {
 	ZoneScoped;
 	Call(LUAFN_AimShield, weapon->weaponNum + LUA_WEAPON_BASE_INDEX);
 }
-
 
 int CLuaUnitScript::AimFromWeapon(int weaponNum)
 {
@@ -859,14 +825,12 @@ int CLuaUnitScript::AimFromWeapon(int weaponNum)
 	return RunQueryCallIn(LUAFN_AimFromWeapon, weaponNum + LUA_WEAPON_BASE_INDEX);
 }
 
-
 void CLuaUnitScript::Shot(int weaponNum)
 {
 	ZoneScoped;
 	// FIXME: pass projectileID?
 	Call(LUAFN_Shot, weaponNum + LUA_WEAPON_BASE_INDEX);
 }
-
 
 bool CLuaUnitScript::BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget)
 {
@@ -890,7 +854,6 @@ bool CLuaUnitScript::BlockShot(int weaponNum, const CUnit* targetUnit, bool user
 	return PopBoolean(fn, false);
 }
 
-
 float CLuaUnitScript::TargetWeight(int weaponNum, const CUnit* targetUnit)
 {
 	ZoneScoped;
@@ -912,13 +875,11 @@ float CLuaUnitScript::TargetWeight(int weaponNum, const CUnit* targetUnit)
 	return PopNumber(fn, 1.0f);
 }
 
-
 void CLuaUnitScript::AnimFinished(AnimType type, int piece, int axis)
 {
 	ZoneScoped;
-	Call((type == AMove)? LUAFN_MoveFinished : LUAFN_TurnFinished, piece + 1, axis + 1);
+	Call((type == AMove) ? LUAFN_MoveFinished : LUAFN_TurnFinished, piece + 1, axis + 1);
 }
-
 
 void CLuaUnitScript::RawCall(int functionId)
 {
@@ -933,7 +894,6 @@ void CLuaUnitScript::RawCall(int functionId)
 	RawRunCallIn(functionId, 0, 0);
 }
 
-
 std::string CLuaUnitScript::GetScriptName(int functionId) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -946,7 +906,6 @@ std::string CLuaUnitScript::GetScriptName(int functionId) const
 
 	return ("<unnamed: " + IntToString(functionId) + ">");
 }
-
 
 bool CLuaUnitScript::RawRunCallIn(int functionId, int inArgs, int outArgs)
 {
@@ -969,31 +928,114 @@ bool CLuaUnitScript::RawRunCallIn(int functionId, int inArgs, int outArgs)
 	const std::string& hname = handle->GetName();
 	const std::string& fname = GetScriptName(functionId);
 
-	LOG_L(L_ERROR, "[LuaUnitScript::%s][%s::%s] error=%i trace=%s", __func__, hname.c_str(), fname.c_str(), error, err.c_str());
+	LOG_L(L_ERROR, "[LuaUnitScript::%s][%s::%s] error=%i trace=%s", __func__, hname.c_str(), fname.c_str(), error,
+	    err.c_str());
 	RemoveCallIn(fname);
 
 	return false;
 }
 
+void CLuaUnitScript::Destroy()
+{
+	ZoneScoped;
+	Call(LUAFN_Destroy);
+}
 
-void CLuaUnitScript::Destroy() { ZoneScoped; Call(LUAFN_Destroy); }
-void CLuaUnitScript::StartMoving(bool reversing) { ZoneScoped; Call(LUAFN_StartMoving, reversing * 1.0f); }
-void CLuaUnitScript::StopMoving() { ZoneScoped; Call(LUAFN_StopMoving); }
-void CLuaUnitScript::StartSkidding(const float3& vel) { ZoneScoped; Call(LUAFN_StartSkidding, vel.x, vel.y, vel.z); }
-void CLuaUnitScript::StopSkidding() { ZoneScoped; Call(LUAFN_StopSkidding); }
-void CLuaUnitScript::ChangeHeading(short deltaHeading) { ZoneScoped; Call(LUAFN_ChangeHeading, deltaHeading * 1.0f); }
-void CLuaUnitScript::StartUnload() { ZoneScoped; Call(LUAFN_StartUnload); }
-void CLuaUnitScript::EndTransport() { ZoneScoped; Call(LUAFN_EndTransport); }
-void CLuaUnitScript::StartBuilding() { ZoneScoped; Call(LUAFN_StartBuilding); }
-void CLuaUnitScript::StopBuilding() { ZoneScoped; Call(LUAFN_StopBuilding); }
-void CLuaUnitScript::Falling() { ZoneScoped; Call(LUAFN_Falling); }
-void CLuaUnitScript::Landed() { ZoneScoped; Call(LUAFN_Landed); }
-void CLuaUnitScript::Activate() { ZoneScoped; Call(LUAFN_Activate); }
-void CLuaUnitScript::Deactivate() { ZoneScoped; Call(LUAFN_Deactivate); }
-void CLuaUnitScript::MoveRate(int curRate) { ZoneScoped; Call(LUAFN_MoveRate, curRate); }
-void CLuaUnitScript::FireWeapon(int weaponNum) { ZoneScoped; Call(LUAFN_FireWeapon, weaponNum + LUA_WEAPON_BASE_INDEX); }
-void CLuaUnitScript::EndBurst(int weaponNum) { ZoneScoped; Call(LUAFN_EndBurst, weaponNum + LUA_WEAPON_BASE_INDEX); }
+void CLuaUnitScript::StartMoving(bool reversing)
+{
+	ZoneScoped;
+	Call(LUAFN_StartMoving, reversing * 1.0f);
+}
 
+void CLuaUnitScript::StopMoving()
+{
+	ZoneScoped;
+	Call(LUAFN_StopMoving);
+}
+
+void CLuaUnitScript::StartSkidding(const float3& vel)
+{
+	ZoneScoped;
+	Call(LUAFN_StartSkidding, vel.x, vel.y, vel.z);
+}
+
+void CLuaUnitScript::StopSkidding()
+{
+	ZoneScoped;
+	Call(LUAFN_StopSkidding);
+}
+
+void CLuaUnitScript::ChangeHeading(short deltaHeading)
+{
+	ZoneScoped;
+	Call(LUAFN_ChangeHeading, deltaHeading * 1.0f);
+}
+
+void CLuaUnitScript::StartUnload()
+{
+	ZoneScoped;
+	Call(LUAFN_StartUnload);
+}
+
+void CLuaUnitScript::EndTransport()
+{
+	ZoneScoped;
+	Call(LUAFN_EndTransport);
+}
+
+void CLuaUnitScript::StartBuilding()
+{
+	ZoneScoped;
+	Call(LUAFN_StartBuilding);
+}
+
+void CLuaUnitScript::StopBuilding()
+{
+	ZoneScoped;
+	Call(LUAFN_StopBuilding);
+}
+
+void CLuaUnitScript::Falling()
+{
+	ZoneScoped;
+	Call(LUAFN_Falling);
+}
+
+void CLuaUnitScript::Landed()
+{
+	ZoneScoped;
+	Call(LUAFN_Landed);
+}
+
+void CLuaUnitScript::Activate()
+{
+	ZoneScoped;
+	Call(LUAFN_Activate);
+}
+
+void CLuaUnitScript::Deactivate()
+{
+	ZoneScoped;
+	Call(LUAFN_Deactivate);
+}
+
+void CLuaUnitScript::MoveRate(int curRate)
+{
+	ZoneScoped;
+	Call(LUAFN_MoveRate, curRate);
+}
+
+void CLuaUnitScript::FireWeapon(int weaponNum)
+{
+	ZoneScoped;
+	Call(LUAFN_FireWeapon, weaponNum + LUA_WEAPON_BASE_INDEX);
+}
+
+void CLuaUnitScript::EndBurst(int weaponNum)
+{
+	ZoneScoped;
+	Call(LUAFN_EndBurst, weaponNum + LUA_WEAPON_BASE_INDEX);
+}
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1057,7 +1099,6 @@ bool CLuaUnitScript::PushEntries(lua_State* L)
 	return true;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 //
@@ -1080,7 +1121,6 @@ static inline CUnit* ParseRawUnit(lua_State* L, const char* caller, int index)
 	return u;
 }
 
-
 static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1095,21 +1135,19 @@ static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 	return unit;
 }
 
-
 static inline int ParseAxis(lua_State* L, const char* caller, int index)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!lua_israwnumber(L, index))
 		luaL_error(L, "%s(): Bad axis", caller);
 
-	const int axis  = lua_toint(L, index) - 1;
+	const int axis = lua_toint(L, index) - 1;
 
 	if ((axis < 0) || (axis > 2))
 		luaL_error(L, "%s(): Bad axis", caller);
 
 	return axis;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1142,7 +1180,6 @@ int CLuaUnitScript::CreateScript(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::UpdateCallIn(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1165,7 +1202,6 @@ int CLuaUnitScript::UpdateCallIn(lua_State* L)
 
 	return script->UpdateCallIn();
 }
-
 
 int CLuaUnitScript::CallAsUnit(lua_State* L)
 {
@@ -1197,7 +1233,6 @@ int CLuaUnitScript::CallAsUnit(lua_State* L)
 	return (lua_gettop(L) - funcIndex + 1);
 }
 
-
 // moved from LuaSyncedCtrl
 
 int CLuaUnitScript::GetUnitValue(lua_State* L, CUnitScript* script, int arg)
@@ -1209,14 +1244,19 @@ int CLuaUnitScript::GetUnitValue(lua_State* L, CUnitScript* script, int arg)
 		arg++;
 	}
 
-	const int val = luaL_checkint(L, arg); arg++;
+	const int val = luaL_checkint(L, arg);
+	arg++;
 
 	int p[4];
 	for (int a = 0; a < 4; a++, arg++) {
 		if (lua_istable(L, arg)) {
 			int x, z;
-			lua_rawgeti(L, arg, 1); x = luaL_checkint(L, -1); lua_pop(L, 1);
-			lua_rawgeti(L, arg, 2); z = luaL_checkint(L, -1); lua_pop(L, 1);
+			lua_rawgeti(L, arg, 1);
+			x = luaL_checkint(L, -1);
+			lua_pop(L, 1);
+			lua_rawgeti(L, arg, 2);
+			z = luaL_checkint(L, -1);
+			lua_pop(L, 1);
 			p[a] = PACKXZ(x, z);
 		}
 		else {
@@ -1234,7 +1274,6 @@ int CLuaUnitScript::GetUnitValue(lua_State* L, CUnitScript* script, int arg)
 	return 2;
 }
 
-
 int CLuaUnitScript::GetUnitCOBValue(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1246,7 +1285,6 @@ int CLuaUnitScript::GetUnitCOBValue(lua_State* L)
 	return GetUnitValue(L, unit->script, 2);
 }
 
-
 int CLuaUnitScript::GetUnitValue(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1255,7 +1293,6 @@ int CLuaUnitScript::GetUnitValue(lua_State* L)
 
 	return GetUnitValue(L, activeScript, 1);
 }
-
 
 // moved from LuaSyncedCtrl
 
@@ -1277,7 +1314,6 @@ int CLuaUnitScript::SetUnitValue(lua_State* L, CUnitScript* script, int arg)
 	return 0;
 }
 
-
 int CLuaUnitScript::SetUnitCOBValue(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1289,7 +1325,6 @@ int CLuaUnitScript::SetUnitCOBValue(lua_State* L)
 	return SetUnitValue(L, unit->script, 2);
 }
 
-
 int CLuaUnitScript::SetUnitValue(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1298,7 +1333,6 @@ int CLuaUnitScript::SetUnitValue(lua_State* L)
 
 	return SetUnitValue(L, activeScript, 1);
 }
-
 
 int CLuaUnitScript::SetPieceVisibility(lua_State* L)
 {
@@ -1316,7 +1350,6 @@ int CLuaUnitScript::SetPieceVisibility(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::EmitSfx(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1326,12 +1359,12 @@ int CLuaUnitScript::EmitSfx(lua_State* L)
 
 	// note: the arguments are reversed compared to the C++ (and COB?) function
 	const int piece = luaL_checkint(L, 1) - 1;
-	const int type = lua_isnumber(L, 2)? luaL_checkint(L, 2): (explGenHandler.LoadCustomGeneratorID(lua_tostring(L, 2)) | SFX_GLOBAL);
+	const int type = lua_isnumber(L, 2) ? luaL_checkint(L, 2) :
+	                                      (explGenHandler.LoadCustomGeneratorID(lua_tostring(L, 2)) | SFX_GLOBAL);
 
 	activeScript->EmitSfx(type, piece);
 	return 0;
 }
-
 
 int CLuaUnitScript::AttachUnit(lua_State* L)
 {
@@ -1349,7 +1382,6 @@ int CLuaUnitScript::AttachUnit(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::DropUnit(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1366,7 +1398,6 @@ int CLuaUnitScript::DropUnit(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::Explode(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1380,7 +1411,6 @@ int CLuaUnitScript::Explode(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::ShowFlare(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1392,7 +1422,6 @@ int CLuaUnitScript::ShowFlare(lua_State* L)
 	activeScript->ShowFlare(piece);
 	return 0;
 }
-
 
 int CLuaUnitScript::Spin(lua_State* L)
 {
@@ -1410,7 +1439,6 @@ int CLuaUnitScript::Spin(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::StopSpin(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1426,7 +1454,6 @@ int CLuaUnitScript::StopSpin(lua_State* L)
 	return 0;
 }
 
-
 int CLuaUnitScript::Turn(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1437,18 +1464,18 @@ int CLuaUnitScript::Turn(lua_State* L)
 
 	const int piece = luaL_checkint(L, 1) - 1;
 	const int axis = ParseAxis(L, __func__, 2);
-	const float dest  = luaL_checkfloat(L, 3);
+	const float dest = luaL_checkfloat(L, 3);
 	const float speed = luaL_optfloat(L, 4, 0.0f); // speed == 0 -> TurnNow
 
 	if (speed == 0.0f) {
 		activeScript->TurnNow(piece, axis, dest);
-	} else {
+	}
+	else {
 		activeScript->Turn(piece, axis, speed, dest);
 	}
 
 	return 0;
 }
-
 
 int CLuaUnitScript::Move(lua_State* L)
 {
@@ -1460,21 +1487,22 @@ int CLuaUnitScript::Move(lua_State* L)
 
 	const int piece = luaL_checkint(L, 1) - 1;
 	const int axis = ParseAxis(L, __func__, 2);
-	const float dest  = luaL_checkfloat(L, 3);
+	const float dest = luaL_checkfloat(L, 3);
 	const float speed = luaL_optfloat(L, 4, 0.0f); // speed == 0 -> MoveNow
 
 	if (speed == 0.0f) {
 		activeScript->MoveNow(piece, axis, dest);
-	} else {
+	}
+	else {
 		activeScript->Move(piece, axis, speed, dest);
 	}
 
 	return 0;
 }
 
-
 // Do not call with a function that returns values to lua
-int CLuaUnitScript::MultiExec(lua_State *L, int (*const func)(lua_State*), const int expectedArgs) {
+int CLuaUnitScript::MultiExec(lua_State* L, int (*const func)(lua_State*), const int expectedArgs)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	int numArgs = lua_gettop(L);
@@ -1482,9 +1510,9 @@ int CLuaUnitScript::MultiExec(lua_State *L, int (*const func)(lua_State*), const
 		luaL_error(L, "%s(): requires a multiple of %d arguments", __func__, expectedArgs);
 		return 0;
 	}
-	while(numArgs > 0) {
+	while (numArgs > 0) {
 		func(L);
-		for(int x = expectedArgs; x > 0; x--) {
+		for (int x = expectedArgs; x > 0; x--) {
 			lua_replace(L, x);
 		}
 		numArgs -= expectedArgs;
@@ -1493,35 +1521,17 @@ int CLuaUnitScript::MultiExec(lua_State *L, int (*const func)(lua_State*), const
 	return 0;
 }
 
-int CLuaUnitScript::MultiSetPieceVisibility(lua_State* L)
-{
-	return MultiExec(L, &SetPieceVisibility, 2);
-}
+int CLuaUnitScript::MultiSetPieceVisibility(lua_State* L) { return MultiExec(L, &SetPieceVisibility, 2); }
 
-int CLuaUnitScript::MultiSpin(lua_State* L)
-{
-	return MultiExec(L, &Spin, 4);
-}
+int CLuaUnitScript::MultiSpin(lua_State* L) { return MultiExec(L, &Spin, 4); }
 
-int CLuaUnitScript::MultiStopSpin(lua_State* L)
-{
-	return MultiExec(L, &StopSpin, 3);
-}
+int CLuaUnitScript::MultiStopSpin(lua_State* L) { return MultiExec(L, &StopSpin, 3); }
 
-int CLuaUnitScript::MultiTurn(lua_State* L)
-{
-	return MultiExec(L, &Turn, 4);
-}
+int CLuaUnitScript::MultiTurn(lua_State* L) { return MultiExec(L, &Turn, 4); }
 
-int CLuaUnitScript::MultiExplode(lua_State* L)
-{
-	return MultiExec(L, &Explode, 2);
-}
+int CLuaUnitScript::MultiExplode(lua_State* L) { return MultiExec(L, &Explode, 2); }
 
-int CLuaUnitScript::MultiMove(lua_State* L)
-{
-	return MultiExec(L, &Move, 4);
-}
+int CLuaUnitScript::MultiMove(lua_State* L) { return MultiExec(L, &Move, 4); }
 
 int CLuaUnitScript::IsInAnimation(lua_State* L, const char* caller, AnimType type)
 {
@@ -1530,12 +1540,11 @@ int CLuaUnitScript::IsInAnimation(lua_State* L, const char* caller, AnimType typ
 		return 0;
 
 	const int piece = luaL_checkint(L, 1) - 1;
-	const int axis  = ParseAxis(L, caller, 2);
+	const int axis = ParseAxis(L, caller, 2);
 
 	lua_pushboolean(L, activeScript->IsInAnimation(type, piece, axis));
 	return 1;
 }
-
 
 int CLuaUnitScript::IsInTurn(lua_State* L)
 {
@@ -1543,20 +1552,17 @@ int CLuaUnitScript::IsInTurn(lua_State* L)
 	return IsInAnimation(L, __func__, ATurn);
 }
 
-
 int CLuaUnitScript::IsInMove(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return IsInAnimation(L, __func__, AMove);
 }
 
-
 int CLuaUnitScript::IsInSpin(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return IsInAnimation(L, __func__, ASpin);
 }
-
 
 int CLuaUnitScript::WaitForAnimation(lua_State* L, const char* caller, AnimType type)
 {
@@ -1570,12 +1576,11 @@ int CLuaUnitScript::WaitForAnimation(lua_State* L, const char* caller, AnimType 
 		luaL_error(L, "%s(): not a Lua unit script", caller);
 
 	const int piece = luaL_checkint(L, 1) - 1;
-	const int axis  = ParseAxis(L, caller, 2);
+	const int axis = ParseAxis(L, caller, 2);
 
 	lua_pushboolean(L, script->NeedsWait(type, piece, axis));
 	return 1;
 }
-
 
 int CLuaUnitScript::WaitForTurn(lua_State* L)
 {
@@ -1583,13 +1588,11 @@ int CLuaUnitScript::WaitForTurn(lua_State* L)
 	return WaitForAnimation(L, __func__, ATurn);
 }
 
-
 int CLuaUnitScript::WaitForMove(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return WaitForAnimation(L, __func__, AMove);
 }
-
 
 int CLuaUnitScript::SetDeathScriptFinished(lua_State* L)
 {
@@ -1618,7 +1621,6 @@ int CLuaUnitScript::GetPieceTranslation(lua_State* L)
 	return ToLua(L, piece->GetPosition() - piece->original->offset);
 }
 
-
 int CLuaUnitScript::GetPieceRotation(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1628,7 +1630,6 @@ int CLuaUnitScript::GetPieceRotation(lua_State* L)
 	LocalModelPiece* piece = ParseLocalModelPiece(L, activeScript, __func__);
 	return ToLua(L, piece->GetRotation());
 }
-
 
 int CLuaUnitScript::GetPiecePosDir(lua_State* L)
 {

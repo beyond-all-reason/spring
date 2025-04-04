@@ -1,16 +1,17 @@
 #include "ModelDrawerHelpers.h"
+
 #include "ModelDrawer.h"
-#include "System/float3.h"
-#include "Map/Ground.h"
+
 #include "Game/Camera.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/Team.h"
-#include "Sim/Objects/SolidObject.h"
+#include "Map/Ground.h"
+#include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
-#include "Rendering/Env/CubeMapHandler.h"
-
+#include "Sim/Misc/Team.h"
+#include "Sim/Misc/TeamHandler.h"
+#include "Sim/Objects/SolidObject.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/float3.h"
 
 bool CModelDrawerHelper::ObjectVisibleReflection(const float3& objPos, const float3& camPos, float maxRadius)
 {
@@ -24,9 +25,9 @@ bool CModelDrawerHelper::ObjectVisibleReflection(const float3& objPos, const flo
 	const float dif = objPos.y - camPos.y;
 	// Otherwise draw a line between the objects position and the underwater camera, intersecting the waterplane
 	float3 zeroPos;
-	zeroPos += (camPos * ( objPos.y / dif));
+	zeroPos += (camPos * (objPos.y / dif));
 	zeroPos += (objPos * (-camPos.y / dif));
-	// If the height of the ground at zeropos is less than the maxradius, 
+	// If the height of the ground at zeropos is less than the maxradius,
 	// we are likely to get a reflection (e.g. high cliffs will prevent reflections
 	return (CGround::GetApproximateHeight(zeroPos.x, zeroPos.z, false) <= maxRadius);
 #else
@@ -45,7 +46,8 @@ void CModelDrawerHelper::EnableTexturesCommon()
 
 	if (shadowHandler.ShadowsLoaded()) {
 		shadowHandler.SetupShadowTexSampler(GL_TEXTURE2, true);
-		glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, shadowHandler.GetColorTextureID());
 	}
 
 	glActiveTexture(GL_TEXTURE4);
@@ -105,7 +107,7 @@ float4 CModelDrawerHelper::GetTeamColor(int team, float alpha)
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(teamHandler.IsValidTeam(team));
 
-	const   CTeam* t = teamHandler.Team(team);
+	const CTeam* t = teamHandler.Team(team);
 	const uint8_t* c = t->color;
 
 	return float4(c[0] / 255.0f, c[1] / 255.0f, c[2] / 255.0f, alpha);
@@ -141,7 +143,6 @@ bool CModelDrawerHelper::DIDCheckMatrixMode(int wantedMode)
 	return true;
 #endif
 }
-
 
 void CModelDrawerHelper::BindModelTypeTexture(int mdlType, int texType)
 {
@@ -187,14 +188,15 @@ void CModelDrawerHelper::PopModelRenderState(int mdlType)
 }
 
 void CModelDrawerHelper::PopModelRenderState(const S3DModel* m) { PopModelRenderState(m->type); }
+
 void CModelDrawerHelper::PopModelRenderState(const CSolidObject* o) { PopModelRenderState(o->model); }
 
 ///////////////////////////////////////////////////////////////////////////
 
 const std::array<const CModelDrawerHelper*, MODELTYPE_CNT> CModelDrawerHelper::modelDrawerHelpers = {
-	CModelDrawerHelper::GetInstance<CModelDrawerHelper3DO>(),
-	CModelDrawerHelper::GetInstance<CModelDrawerHelperS3O>(),
-	CModelDrawerHelper::GetInstance<CModelDrawerHelperASS>(),
+    CModelDrawerHelper::GetInstance<CModelDrawerHelper3DO>(),
+    CModelDrawerHelper::GetInstance<CModelDrawerHelperS3O>(),
+    CModelDrawerHelper::GetInstance<CModelDrawerHelperASS>(),
 };
 
 ///////////////////////////////////////////////////////////////////////////

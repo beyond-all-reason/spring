@@ -3,15 +3,15 @@
 #ifndef CRITICALSECTION_H
 #define CRITICALSECTION_H
 
-#if   defined(_WIN32)
+#if defined(_WIN32)
 
-#include <windows.h>
-#include <atomic>
 #include "System/Misc/SpringTime.h"
 
+#include <atomic>
 
-class CriticalSection
-{
+#include <windows.h>
+
+class CriticalSection {
 private:
 	typedef CRITICAL_SECTION native_type;
 
@@ -33,8 +33,6 @@ public:
 protected:
 	native_type mtx;
 };
-
-
 
 class win_signal {
 public:

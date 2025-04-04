@@ -3,33 +3,34 @@
 #ifndef _UDP_CONNECTION_H
 #define _UDP_CONNECTION_H
 
-#include <asio/ip/udp.hpp>
-#include <memory>
-#include <deque>
-
 #include "Connection.h"
+
 #include "System/Misc/SpringTime.h"
 #include "System/UnorderedSet.hpp"
 
-class CRC;
+#include <deque>
+#include <memory>
 
+#include <asio/ip/udp.hpp>
+
+class CRC;
 
 namespace netcode {
 
 // for reliability testing, introduce fake packet loss with a percentage probability
-#define NETWORK_TEST 0                        // in [0, 1] // enable network reliability testing mode
-#define PACKET_LOSS_FACTOR 50                 // in [0, 100)
-#define SEVERE_PACKET_LOSS_FACTOR 1           // in [0, 100)
-#define PACKET_CORRUPTION_FACTOR 0            // in [0, 100)
-#define SEVERE_PACKET_LOSS_MAX_COUNT 10       // max continuous number of packets to be lost
-#define PACKET_MIN_LATENCY 750                // in [milliseconds] minimum latency
-#define PACKET_MAX_LATENCY 1250               // in [milliseconds] maximum latency
+#define NETWORK_TEST 0                  // in [0, 1] // enable network reliability testing mode
+#define PACKET_LOSS_FACTOR 50           // in [0, 100)
+#define SEVERE_PACKET_LOSS_FACTOR 1     // in [0, 100)
+#define PACKET_CORRUPTION_FACTOR 0      // in [0, 100)
+#define SEVERE_PACKET_LOSS_MAX_COUNT 10 // max continuous number of packets to be lost
+#define PACKET_MIN_LATENCY 750          // in [milliseconds] minimum latency
+#define PACKET_MAX_LATENCY 1250         // in [milliseconds] maximum latency
 #define ENABLE_DEBUG_STATS
 
-class Chunk
-{
+class Chunk {
 public:
 	unsigned GetSize() const { return (data.size() + headerSize); }
+
 	void UpdateChecksum(CRC& crc) const;
 	static constexpr unsigned maxSize = 254;
 	static constexpr unsigned headerSize = 5;
@@ -37,15 +38,16 @@ public:
 	std::uint8_t chunkSize;
 	std::vector<std::uint8_t> data;
 };
+
 typedef std::shared_ptr<Chunk> ChunkPtr;
 
-
-class Packet
-{
+class Packet {
 public:
 	static constexpr unsigned headerSize = 6;
 	Packet(const unsigned char* data, unsigned length);
-	Packet(int _lastCont, int _nakType) {
+
+	Packet(int _lastCont, int _nakType)
+	{
 		lastContinuous = _lastCont;
 		nakType = _nakType;
 	}
@@ -66,7 +68,6 @@ public:
 	std::vector<ChunkPtr> chunks;
 };
 
-
 /*
  * How Spring protocol-header looks like (size in bytes):
  * - 4 (int): number of the packet (continuous index)
@@ -78,8 +79,7 @@ public:
 /**
  * @brief Communication class for sending and receiving over UDP
  */
-class UDPConnection : public CConnection
-{
+class UDPConnection : public CConnection {
 public:
 	UDPConnection(std::shared_ptr<asio::ip::udp::socket> netSocket, const asio::ip::udp::endpoint& myAddr);
 	UDPConnection(int sourceport, const std::string& address, const unsigned port);
@@ -91,10 +91,11 @@ public:
 		MAX_LOSS_FACTOR = 2
 	};
 
-
 	// START overriding CConnection
 	void SendData(std::shared_ptr<const RawPacket> pkt) override;
+
 	bool HasIncomingData() const override { return !msgQueue.empty(); }
+
 	std::shared_ptr<const RawPacket> Peek(unsigned ahead) const override;
 	std::shared_ptr<const RawPacket> GetData() override;
 	void DeleteBufferPacketAt(unsigned index) override;
@@ -125,18 +126,19 @@ public:
 
 	/// Are we using this address?
 	bool IsUsingAddress(const asio::ip::udp::endpoint& from) const { return (addr == from); }
+
 	bool UseMinLossFactor() const { return (netLossFactor == MIN_LOSS_FACTOR); }
 
 	/// Connections are stealth by default, this allow them to send data
 	void Unmute() override { muted = false; }
+
 	void Close(bool flush) override;
 	void SetLossFactor(int factor) override;
 
 	const asio::ip::udp::endpoint& GetEndpoint() const { return addr; }
 
 private:
-	void InitConnection(asio::ip::udp::endpoint address,
-			std::shared_ptr<asio::ip::udp::socket> socket);
+	void InitConnection(asio::ip::udp::endpoint address, std::shared_ptr<asio::ip::udp::socket> socket);
 
 	void CopyConnection(UDPConnection& conn);
 
@@ -162,10 +164,10 @@ private:
 
 	spring_time lastUnackResentTime;
 	spring_time lastNakTime;
-	#ifdef ENABLE_DEBUG_STATS
+#ifdef ENABLE_DEBUG_STATS
 	spring_time lastDebugMessageTime;
 	spring_time lastFramePacketRecvTime;
-	#endif
+#endif
 
 
 	/// address of the other end
@@ -184,9 +186,9 @@ private:
 	int reconnectTime;
 
 	/// outgoing stuff (pure data without header) waiting to be sent
-	std::deque< std::shared_ptr<const RawPacket> > outgoingData;
+	std::deque<std::shared_ptr<const RawPacket>> outgoingData;
 	/// packets we have received but not yet read
-	std::vector< std::pair<int, RawPacket> > waitingPackets;
+	std::vector<std::pair<int, RawPacket>> waitingPackets;
 	spring::unordered_set<int> incomingChunkNums;
 
 
@@ -196,11 +198,11 @@ private:
 	std::deque<ChunkPtr> unackedChunks;
 
 	/// Packets the other side missed
-	std::vector< std::pair<std::int32_t, ChunkPtr> > resendRequested;
+	std::vector<std::pair<std::int32_t, ChunkPtr>> resendRequested;
 	spring::unordered_set<std::int32_t> erasedResendChunks;
 
 	/// complete packets we received but did not yet consume
-	std::deque< std::shared_ptr<const RawPacket> > msgQueue;
+	std::deque<std::shared_ptr<const RawPacket>> msgQueue;
 
 	std::vector<std::uint8_t> sendBuffer;
 	std::vector<std::uint8_t> recvBuffer;
@@ -210,9 +212,9 @@ private:
 
 	std::int32_t lastMidChunk;
 
-#if	NETWORK_TEST
+#if NETWORK_TEST
 	/// Delayed packets, for testing purposes
-	std::map< spring_time, std::vector<std::uint8_t> > delayed;
+	std::map<spring_time, std::vector<std::uint8_t>> delayed;
 	int lossCounter;
 #endif
 
@@ -224,8 +226,8 @@ private:
 
 	RawPacket fragmentBuffer;
 
-	// Traffic statistics and stuff
-	#ifdef ENABLE_DEBUG_STATS
+// Traffic statistics and stuff
+#ifdef ENABLE_DEBUG_STATS
 	float sumDeltaFramePacketRecvTime;
 	float minDeltaFramePacketRecvTime;
 	float maxDeltaFramePacketRecvTime;
@@ -234,7 +236,7 @@ private:
 	unsigned int numEnqueuedFramePackets;
 	unsigned int numEmptyGetDataCalls;
 	unsigned int numTotalGetDataCalls;
-	#endif
+#endif
 	unsigned int currentPacketChunkNum;
 
 	/// packets that are resent
@@ -266,4 +268,3 @@ private:
 } // namespace netcode
 
 #endif // _UDP_CONNECTION_H
-

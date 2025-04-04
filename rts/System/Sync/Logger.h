@@ -5,10 +5,12 @@
 
 #ifdef SYNCDEBUG
 
-#include <stdio.h>
+#include "System/Threading/SpringThreading.h"
+
 #include <string>
 #include <vector>
-#include "System/Threading/SpringThreading.h"
+
+#include <stdio.h>
 
 /**
  * @brief logging class for sync debugger
@@ -19,34 +21,36 @@
  * Specifically written for & used by the sync debugger.
  */
 class CLogger {
+public:
+	CLogger()
+	    : filename(NULL)
+	    , logfile(NULL)
+	{
+	}
 
-	public:
-
-		CLogger() : filename(NULL), logfile(NULL) {}
-
-		void AddLine(const char* fmt, ...)
+	void AddLine(const char* fmt, ...)
 #ifdef __GNUC__
-				__attribute__((format(printf, 2, 3)))
+	    __attribute__((format(printf, 2, 3)))
 #endif
-				;
-		void CloseSession();
+	    ;
+	void CloseSession();
 
-		void SetFilename(const char* fn) { filename = fn; }
-		void FlushBuffer();
+	void SetFilename(const char* fn) { filename = fn; }
 
-	private:
+	void FlushBuffer();
 
-		// no copying
-		CLogger(const CLogger&);
-		CLogger& operator=(const CLogger&);
+private:
+	// no copying
+	CLogger(const CLogger&);
+	CLogger& operator=(const CLogger&);
 
-		static void CppFilt(char* sym, int size);
+	static void CppFilt(char* sym, int size);
 
-		spring::recursive_mutex logmutex;
-		const char* filename;
-		FILE* logfile;
-		std::vector<std::string> buffer;
-		std::string exename;
+	spring::recursive_mutex logmutex;
+	const char* filename;
+	FILE* logfile;
+	std::vector<std::string> buffer;
+	std::string exename;
 };
 
 #endif // SYNCDEBUG

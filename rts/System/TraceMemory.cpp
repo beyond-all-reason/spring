@@ -2,8 +2,9 @@
 
 #if defined(TRACY_ENABLE)
 
-#include <new>
 #include <cstdlib>
+#include <new>
+
 #include <tracy/Tracy.hpp>
 
 void* operator new(std::size_t count)
@@ -13,7 +14,7 @@ void* operator new(std::size_t count)
 	return ptr;
 }
 
-void operator delete (void* ptr) noexcept
+void operator delete(void* ptr) noexcept
 {
 	TracyFree(ptr);
 	free(ptr);

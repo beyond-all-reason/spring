@@ -1,66 +1,65 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "CollisionVolume.h"
+
 #include "Rendering/Models/3DModel.h"
-#include "Sim/Units/Unit.h"
 #include "Sim/Features/Feature.h"
+#include "Sim/Units/Unit.h"
 #include "System/Matrix44f.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND(CollisionVolume, )
-CR_REG_METADATA(CollisionVolume, (
-	CR_MEMBER(fullAxisScales),
-	CR_IGNORED(halfAxisScales),
-	CR_IGNORED(halfAxisScalesSqr),
-	CR_IGNORED(halfAxisScalesInv),
-	CR_MEMBER(axisOffsets),
+CR_REG_METADATA(CollisionVolume,
+    (CR_MEMBER(fullAxisScales),
+        CR_IGNORED(halfAxisScales),
+        CR_IGNORED(halfAxisScalesSqr),
+        CR_IGNORED(halfAxisScalesInv),
+        CR_MEMBER(axisOffsets),
 
-	CR_IGNORED(volumeBoundingRadius),
-	CR_IGNORED(volumeBoundingRadiusSq),
+        CR_IGNORED(volumeBoundingRadius),
+        CR_IGNORED(volumeBoundingRadiusSq),
 
-	CR_MEMBER(volumeType),
-	CR_MEMBER(volumeAxes),
+        CR_MEMBER(volumeType),
+        CR_MEMBER(volumeAxes),
 
-	CR_MEMBER(ignoreHits),
-	CR_MEMBER(useContHitTest),
-	CR_MEMBER(defaultToFootPrint),
-	CR_MEMBER(defaultToPieceTree),
+        CR_MEMBER(ignoreHits),
+        CR_MEMBER(useContHitTest),
+        CR_MEMBER(defaultToFootPrint),
+        CR_MEMBER(defaultToPieceTree),
 
-	CR_POSTLOAD(PostLoad)
-))
+        CR_POSTLOAD(PostLoad)))
 
-CollisionVolume& CollisionVolume::operator = (const CollisionVolume& v) {
-	fullAxisScales         = v.fullAxisScales;
-	halfAxisScales         = v.halfAxisScales;
-	halfAxisScalesSqr      = v.halfAxisScalesSqr;
-	halfAxisScalesInv      = v.halfAxisScalesInv;
-	axisOffsets            = v.axisOffsets;
+CollisionVolume& CollisionVolume::operator=(const CollisionVolume& v)
+{
+	fullAxisScales = v.fullAxisScales;
+	halfAxisScales = v.halfAxisScales;
+	halfAxisScalesSqr = v.halfAxisScalesSqr;
+	halfAxisScalesInv = v.halfAxisScalesInv;
+	axisOffsets = v.axisOffsets;
 
-	volumeBoundingRadius   = v.volumeBoundingRadius;
+	volumeBoundingRadius = v.volumeBoundingRadius;
 	volumeBoundingRadiusSq = v.volumeBoundingRadiusSq;
 
-	volumeType             = v.volumeType;
-	volumeAxes[0]          = v.volumeAxes[0];
-	volumeAxes[1]          = v.volumeAxes[1];
-	volumeAxes[2]          = v.volumeAxes[2];
+	volumeType = v.volumeType;
+	volumeAxes[0] = v.volumeAxes[0];
+	volumeAxes[1] = v.volumeAxes[1];
+	volumeAxes[2] = v.volumeAxes[2];
 
-	ignoreHits             = v.ignoreHits;
-	useContHitTest         = v.useContHitTest;
-	defaultToFootPrint     = v.defaultToFootPrint;
-	defaultToPieceTree     = v.defaultToPieceTree;
+	ignoreHits = v.ignoreHits;
+	useContHitTest = v.useContHitTest;
+	defaultToFootPrint = v.defaultToFootPrint;
+	defaultToPieceTree = v.defaultToPieceTree;
 
 	return *this;
 }
 
-CollisionVolume::CollisionVolume(
-	const char cvTypeChar,
-	const char cvAxisChar,
-	const float3& cvScales,
-	const float3& cvOffsets
-) {
+CollisionVolume::CollisionVolume(const char cvTypeChar,
+    const char cvAxisChar,
+    const float3& cvScales,
+    const float3& cvOffsets)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// default-initialize
 	*this = CollisionVolume();
@@ -69,25 +68,47 @@ CollisionVolume::CollisionVolume(
 	int cvAxis = COLVOL_AXIS_Z;
 
 	switch (cvTypeChar) {
-		case 'E': case 'e': { cvType = COLVOL_TYPE_ELLIPSOID; } break; // "[E|e]ll..."
-		case 'C': case 'c': { cvType = COLVOL_TYPE_CYLINDER;  } break; // "[C|c]yl..."
-		case 'B': case 'b': { cvType = COLVOL_TYPE_BOX;       } break; // "[B|b]ox"
-		case 'S': case 's': { cvType = COLVOL_TYPE_SPHERE;    } break; // "[S|s]ph..."
-		default           : {                                 } break;
+	case 'E':
+	case 'e': {
+		cvType = COLVOL_TYPE_ELLIPSOID;
+	} break; // "[E|e]ll..."
+	case 'C':
+	case 'c': {
+		cvType = COLVOL_TYPE_CYLINDER;
+	} break; // "[C|c]yl..."
+	case 'B':
+	case 'b': {
+		cvType = COLVOL_TYPE_BOX;
+	} break; // "[B|b]ox"
+	case 'S':
+	case 's': {
+		cvType = COLVOL_TYPE_SPHERE;
+	} break; // "[S|s]ph..."
+	default: {
+	} break;
 	}
 
 	if (cvType == COLVOL_TYPE_CYLINDER) {
 		switch (cvAxisChar) {
-			case 'X': case 'x': { cvAxis = COLVOL_AXIS_X; } break;
-			case 'Y': case 'y': { cvAxis = COLVOL_AXIS_Y; } break;
-			case 'Z': case 'z': { cvAxis = COLVOL_AXIS_Z; } break;
-			default           : {                         } break; // just use the z-axis
+		case 'X':
+		case 'x': {
+			cvAxis = COLVOL_AXIS_X;
+		} break;
+		case 'Y':
+		case 'y': {
+			cvAxis = COLVOL_AXIS_Y;
+		} break;
+		case 'Z':
+		case 'z': {
+			cvAxis = COLVOL_AXIS_Z;
+		} break;
+		default: {
+		} break; // just use the z-axis
 		}
 	}
 
 	InitShape(cvScales, cvOffsets, cvType, COLVOL_HITTEST_CONT, cvAxis);
 }
-
 
 void CollisionVolume::PostLoad()
 {
@@ -96,14 +117,12 @@ void CollisionVolume::PostLoad()
 	SetBoundingRadius();
 }
 
-
-void CollisionVolume::InitShape(
-	const float3& scales,
-	const float3& offsets,
-	const int vType,
-	const int tType,
-	const int pAxis
-) {
+void CollisionVolume::InitShape(const float3& scales,
+    const float3& offsets,
+    const int vType,
+    const int tType,
+    const int pAxis)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	axisOffsets = offsets;
 
@@ -117,23 +136,23 @@ void CollisionVolume::InitShape(
 
 	// assign these here, since we can be
 	// called from outside the constructor
-	volumeType    = std::max(vType, 0) % (COLVOL_TYPE_SPHERE + 1);
+	volumeType = std::max(vType, 0) % (COLVOL_TYPE_SPHERE + 1);
 	volumeAxes[0] = std::max(pAxis, 0) % (COLVOL_AXIS_Z + 1);
 
 	///< [0] is primary axis, [1] and [2] are secondary (all COLVOL_AXIS_*)
 	switch (volumeAxes[0]) {
-		case COLVOL_AXIS_X: {
-			volumeAxes[1] = COLVOL_AXIS_Y;
-			volumeAxes[2] = COLVOL_AXIS_Z;
-		} break;
-		case COLVOL_AXIS_Y: {
-			volumeAxes[1] = COLVOL_AXIS_X;
-			volumeAxes[2] = COLVOL_AXIS_Z;
-		} break;
-		case COLVOL_AXIS_Z: {
-			volumeAxes[1] = COLVOL_AXIS_X;
-			volumeAxes[2] = COLVOL_AXIS_Y;
-		} break;
+	case COLVOL_AXIS_X: {
+		volumeAxes[1] = COLVOL_AXIS_Y;
+		volumeAxes[2] = COLVOL_AXIS_Z;
+	} break;
+	case COLVOL_AXIS_Y: {
+		volumeAxes[1] = COLVOL_AXIS_X;
+		volumeAxes[2] = COLVOL_AXIS_Z;
+	} break;
+	case COLVOL_AXIS_Z: {
+		volumeAxes[1] = COLVOL_AXIS_X;
+		volumeAxes[2] = COLVOL_AXIS_Y;
+	} break;
 	}
 
 	FixTypeAndScale(clampedScales);
@@ -142,8 +161,8 @@ void CollisionVolume::InitShape(
 	SetUseContHitTest(tType == COLVOL_HITTEST_CONT);
 }
 
-
-void CollisionVolume::SetBoundingRadius() {
+void CollisionVolume::SetBoundingRadius()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// set the radius of the minimum bounding sphere
 	// that encompasses this custom collision volume
@@ -152,32 +171,33 @@ void CollisionVolume::SetBoundingRadius() {
 	//   this must be called manually after either
 	//   a call to SetAxisScales or to RescaleAxes
 	switch (volumeType) {
-		case COLVOL_TYPE_BOX: {
-			// would be an over-estimation for cylinders
-			volumeBoundingRadiusSq = halfAxisScalesSqr.x + halfAxisScalesSqr.y + halfAxisScalesSqr.z;
-			volumeBoundingRadius = math::sqrt(volumeBoundingRadiusSq);
-		} break;
-		case COLVOL_TYPE_CYLINDER: {
-			const float prhs = halfAxisScales[volumeAxes[0]];   // primary axis half-scale
-			const float sahs = halfAxisScales[volumeAxes[1]];   // 1st secondary axis half-scale
-			const float sbhs = halfAxisScales[volumeAxes[2]];   // 2nd secondary axis half-scale
-			const float mshs = std::max(sahs, sbhs);            // max. secondary axis half-scale
+	case COLVOL_TYPE_BOX: {
+		// would be an over-estimation for cylinders
+		volumeBoundingRadiusSq = halfAxisScalesSqr.x + halfAxisScalesSqr.y + halfAxisScalesSqr.z;
+		volumeBoundingRadius = math::sqrt(volumeBoundingRadiusSq);
+	} break;
+	case COLVOL_TYPE_CYLINDER: {
+		const float prhs = halfAxisScales[volumeAxes[0]]; // primary axis half-scale
+		const float sahs = halfAxisScales[volumeAxes[1]]; // 1st secondary axis half-scale
+		const float sbhs = halfAxisScales[volumeAxes[2]]; // 2nd secondary axis half-scale
+		const float mshs = std::max(sahs, sbhs);          // max. secondary axis half-scale
 
-			volumeBoundingRadiusSq = prhs * prhs + mshs * mshs;
-			volumeBoundingRadius = math::sqrt(volumeBoundingRadiusSq);
-		} break;
-		case COLVOL_TYPE_SPHERE: {
-			volumeBoundingRadius = halfAxisScales.x;
-			volumeBoundingRadiusSq = volumeBoundingRadius * volumeBoundingRadius;
-		} break;
-		case COLVOL_TYPE_ELLIPSOID: {
-			volumeBoundingRadius = std::max(halfAxisScales.x, std::max(halfAxisScales.y, halfAxisScales.z));
-			volumeBoundingRadiusSq = volumeBoundingRadius * volumeBoundingRadius;
-		} break;
+		volumeBoundingRadiusSq = prhs * prhs + mshs * mshs;
+		volumeBoundingRadius = math::sqrt(volumeBoundingRadiusSq);
+	} break;
+	case COLVOL_TYPE_SPHERE: {
+		volumeBoundingRadius = halfAxisScales.x;
+		volumeBoundingRadiusSq = volumeBoundingRadius * volumeBoundingRadius;
+	} break;
+	case COLVOL_TYPE_ELLIPSOID: {
+		volumeBoundingRadius = std::max(halfAxisScales.x, std::max(halfAxisScales.y, halfAxisScales.z));
+		volumeBoundingRadiusSq = volumeBoundingRadius * volumeBoundingRadius;
+	} break;
 	}
 }
 
-void CollisionVolume::SetAxisScales(const float3& scales) {
+void CollisionVolume::SetAxisScales(const float3& scales)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	fullAxisScales = scales;
 	halfAxisScales = fullAxisScales * 0.5f;
@@ -186,7 +206,8 @@ void CollisionVolume::SetAxisScales(const float3& scales) {
 	halfAxisScalesInv = OnesVector / halfAxisScales;
 }
 
-void CollisionVolume::RescaleAxes(const float3& scales) {
+void CollisionVolume::RescaleAxes(const float3& scales)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	fullAxisScales *= scales;
 	halfAxisScales *= scales;
@@ -196,64 +217,64 @@ void CollisionVolume::RescaleAxes(const float3& scales) {
 	halfAxisScalesInv /= scales;
 }
 
-void CollisionVolume::FixTypeAndScale(float3& scales) {
+void CollisionVolume::FixTypeAndScale(float3& scales)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// NOTE:
 	//   prevent Lua (which calls InitShape directly) from
 	//   creating non-uniform spheres to emulate ellipsoids
 	switch (volumeType) {
-		case COLVOL_TYPE_SPHERE: {
-			scales = OnesVector * std::max(scales.x, std::max(scales.y, scales.z));
-			return;
-		} break;
+	case COLVOL_TYPE_SPHERE: {
+		scales = OnesVector * std::max(scales.x, std::max(scales.y, scales.z));
+		return;
+	} break;
 
-		case COLVOL_TYPE_ELLIPSOID: {
-			if (scales.x == scales.y && scales.y == scales.z) {
-				volumeType = COLVOL_TYPE_SPHERE;
-			} else {
-				// disallow insane ellipsoids
-				scales = float3::max(scales, OnesVector * std::fmax(scales.x, std::max(scales.y, scales.z)) * 0.02f);
-			}
+	case COLVOL_TYPE_ELLIPSOID: {
+		if (scales.x == scales.y && scales.y == scales.z) {
+			volumeType = COLVOL_TYPE_SPHERE;
+		}
+		else {
+			// disallow insane ellipsoids
+			scales = float3::max(scales, OnesVector * std::fmax(scales.x, std::max(scales.y, scales.z)) * 0.02f);
+		}
 
-			return;
-		} break;
+		return;
+	} break;
 
-		case COLVOL_TYPE_CYLINDER: {
-			scales[volumeAxes[1]] = std::max(scales[volumeAxes[1]], scales[volumeAxes[2]]);
-			scales[volumeAxes[2]] =          scales[volumeAxes[1]];
-		} break;
+	case COLVOL_TYPE_CYLINDER: {
+		scales[volumeAxes[1]] = std::max(scales[volumeAxes[1]], scales[volumeAxes[2]]);
+		scales[volumeAxes[2]] = scales[volumeAxes[1]];
+	} break;
 
-		default: {
-		} break;
+	default: {
+	} break;
 	}
 }
 
-
-
-float3 CollisionVolume::GetWorldSpacePos(const CSolidObject* o, const float3& extOffsets) const {
+float3 CollisionVolume::GetWorldSpacePos(const CSolidObject* o, const float3& extOffsets) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// collision-volumes are always centered on midPos
 	return (o->midPos + o->GetObjectSpaceVec(axisOffsets + extOffsets));
 }
 
-
-
-float CollisionVolume::GetPointSurfaceDistance(const CUnit* u, const LocalModelPiece* lmp, const float3& pos) const {
+float CollisionVolume::GetPointSurfaceDistance(const CUnit* u, const LocalModelPiece* lmp, const float3& pos) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (GetPointSurfaceDistance(u, lmp, u->GetTransformMatrix(true), pos));
 }
 
-float CollisionVolume::GetPointSurfaceDistance(const CFeature* f, const LocalModelPiece* lmp, const float3& pos) const {
+float CollisionVolume::GetPointSurfaceDistance(const CFeature* f, const LocalModelPiece* lmp, const float3& pos) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (GetPointSurfaceDistance(f, lmp, f->GetTransformMatrixRef(true), pos));
 }
 
-float CollisionVolume::GetPointSurfaceDistance(
-	const CSolidObject* obj,
-	const LocalModelPiece* lmp,
-	const CMatrix44f& mat,
-	const float3& pos
-) const {
+float CollisionVolume::GetPointSurfaceDistance(const CSolidObject* obj,
+    const LocalModelPiece* lmp,
+    const CMatrix44f& mat,
+    const float3& pos) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	CMatrix44f vm = mat;
 
@@ -263,7 +284,8 @@ float CollisionVolume::GetPointSurfaceDistance(
 
 		// transform into piece-space relative to pos
 		vm <<= lmp->GetModelSpaceMatrix();
-	} else {
+	}
+	else {
 		// SObj::GetTransformMatrix does not include this
 		// (its translation component is pos, not midPos)
 		vm.Translate(obj->relMidPos);
@@ -275,9 +297,8 @@ float CollisionVolume::GetPointSurfaceDistance(
 	return (GetPointSurfaceDistance(vm, pos));
 }
 
-
-
-float CollisionVolume::GetPointSurfaceDistance(const CMatrix44f& mv, const float3& p) const {
+float CollisionVolume::GetPointSurfaceDistance(const CMatrix44f& mv, const float3& p) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// transform <p> from world- to volume-space
 	float3 pv = mv.Mul(p);
@@ -285,54 +306,58 @@ float CollisionVolume::GetPointSurfaceDistance(const CMatrix44f& mv, const float
 	float d = 0.0f;
 
 	switch (volumeType) {
-		case COLVOL_TYPE_BOX: {
-			// always clamp <pv> to box (!) surface
-			// (so minimum distance is always zero)
-			pv.x = ((int(pv.x >= 0.0f) * 2) - 1) * std::max(math::fabs(pv.x), halfAxisScales.x);
-			pv.y = ((int(pv.y >= 0.0f) * 2) - 1) * std::max(math::fabs(pv.y), halfAxisScales.y);
-			pv.z = ((int(pv.z >= 0.0f) * 2) - 1) * std::max(math::fabs(pv.z), halfAxisScales.z);
+	case COLVOL_TYPE_BOX: {
+		// always clamp <pv> to box (!) surface
+		// (so minimum distance is always zero)
+		pv.x = ((int(pv.x >= 0.0f) * 2) - 1) * std::max(math::fabs(pv.x), halfAxisScales.x);
+		pv.y = ((int(pv.y >= 0.0f) * 2) - 1) * std::max(math::fabs(pv.y), halfAxisScales.y);
+		pv.z = ((int(pv.z >= 0.0f) * 2) - 1) * std::max(math::fabs(pv.z), halfAxisScales.z);
 
-			// calculate the closest surface point
-			float3 pt;
-			pt.x = std::clamp(pv.x, -halfAxisScales.x, halfAxisScales.x);
-			pt.y = std::clamp(pv.y, -halfAxisScales.y, halfAxisScales.y);
-			pt.z = std::clamp(pv.z, -halfAxisScales.z, halfAxisScales.z);
+		// calculate the closest surface point
+		float3 pt;
+		pt.x = std::clamp(pv.x, -halfAxisScales.x, halfAxisScales.x);
+		pt.y = std::clamp(pv.y, -halfAxisScales.y, halfAxisScales.y);
+		pt.z = std::clamp(pv.z, -halfAxisScales.z, halfAxisScales.z);
 
-			// float l = std::min(pv.x - pt.x, std::min(pv.y - pt.y, pv.z - pt.z));
-			d = pv.distance(pt);
+		// float l = std::min(pv.x - pt.x, std::min(pv.y - pt.y, pv.z - pt.z));
+		d = pv.distance(pt);
+	} break;
+
+	case COLVOL_TYPE_SPHERE: {
+		float l = pv.Length();
+		d = std::max(l - volumeBoundingRadius, 0.0f);
+		// float3 pt = (pv / std::max(0.01f, l)) * d;
+	} break;
+
+	case COLVOL_TYPE_CYLINDER: {
+		// code below is only valid for non-ellipsoidal cylinders
+		assert(halfAxisScales[volumeAxes[1]] == halfAxisScales[volumeAxes[2]]);
+		assert(halfAxisScalesSqr[volumeAxes[1]] == halfAxisScalesSqr[volumeAxes[2]]);
+
+		switch (volumeAxes[0]) {
+		case COLVOL_AXIS_X: {
+			d = GetCylinderDistance(pv, 0, 1, 2);
 		} break;
-
-		case COLVOL_TYPE_SPHERE: {
-			float l = pv.Length();
-			d = std::max(l - volumeBoundingRadius, 0.0f);
-			//float3 pt = (pv / std::max(0.01f, l)) * d;
+		case COLVOL_AXIS_Y: {
+			d = GetCylinderDistance(pv, 1, 0, 2);
 		} break;
-
-		case COLVOL_TYPE_CYLINDER: {
-			// code below is only valid for non-ellipsoidal cylinders
-			assert(halfAxisScales   [volumeAxes[1]] == halfAxisScales   [volumeAxes[2]]);
-			assert(halfAxisScalesSqr[volumeAxes[1]] == halfAxisScalesSqr[volumeAxes[2]]);
-
-			switch (volumeAxes[0]) {
-				case COLVOL_AXIS_X: { d = GetCylinderDistance(pv, 0, 1, 2); } break;
-				case COLVOL_AXIS_Y: { d = GetCylinderDistance(pv, 1, 0, 2); } break;
-				case COLVOL_AXIS_Z: { d = GetCylinderDistance(pv, 2, 0, 1); } break;
-			}
+		case COLVOL_AXIS_Z: {
+			d = GetCylinderDistance(pv, 2, 0, 1);
 		} break;
+		}
+	} break;
 
-		case COLVOL_TYPE_ELLIPSOID: {
-			d = GetEllipsoidDistance(pv);
-		} break;
+	case COLVOL_TYPE_ELLIPSOID: {
+		d = GetEllipsoidDistance(pv);
+	} break;
 
-		default: {
-			assert(false);
-		} break;
+	default: {
+		assert(false);
+	} break;
 	}
 
 	return d;
 }
-
-
 
 float CollisionVolume::GetCylinderDistance(const float3& pv, size_t axisA, size_t axisB, size_t axisC) const
 {
@@ -345,11 +370,13 @@ float CollisionVolume::GetCylinderDistance(const float3& pv, size_t axisA, size_
 	if (pv[axisA] >= -halfAxisScales[axisA] && pv[axisA] <= halfAxisScales[axisA]) {
 		/* case 1: point is between end-cap bounds along primary axis */
 		d = std::max(math::sqrt(pSq) - math::sqrt(rSq), 0.0f);
-	} else {
+	}
+	else {
 		if (pSq <= rSq) {
 			/* case 2: point is outside end-cap bounds but inside inf-tube */
 			d = std::max(math::fabs(pv[axisA]) - halfAxisScales[axisA], 0.0f);
-		} else {
+		}
+		else {
 			/* case 3: compute orthogonal distance to end-cap edge (rim) */
 			const float l = Square(math::fabs(pv[axisA]) - halfAxisScales[axisA]);
 			d = Square(std::max(math::sqrt(pSq) - math::sqrt(rSq), 0.0f));
@@ -363,7 +390,7 @@ float CollisionVolume::GetCylinderDistance(const float3& pv, size_t axisA, size_
 #define MAX_ITERATIONS 10
 #define THRESHOLD 0.001
 
-//Newton's method according to http://wwwf.imperial.ac.uk/~rn/distance2ellipse.pdf
+// Newton's method according to http://wwwf.imperial.ac.uk/~rn/distance2ellipse.pdf
 float CollisionVolume::GetEllipsoidDistance(const float3& pv) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -373,22 +400,22 @@ float CollisionVolume::GetEllipsoidDistance(const float3& pv) const
 	assert(abc1.x > 0.0f && abc1.y > 0.0f && abc1.z > 0.0f);
 	assert(abc2.x > 0.0f && abc2.y > 0.0f && abc2.z > 0.0f);
 
-	const float3 xyz1     = float3::fabs(pv);     // {x, y, z}
-	const float3 xyz1abc1 = (xyz1       ) * abc1; // {xa, yb, zc}
+	const float3 xyz1 = float3::fabs(pv);         // {x, y, z}
+	const float3 xyz1abc1 = (xyz1)*abc1;          // {xa, yb, zc}
 	const float3 xyz2abc2 = (xyz1 * xyz1) / abc2; // {x2_a2, y2_b2, z2_c2}, same as xyzSq * Square(halfAxisScalesInv)
 
-	//bail if inside the ellipsoid
+	// bail if inside the ellipsoid
 	if (xyz2abc2.dot(OnesVector) <= 1.0f)
 		return 0.0f;
 
-	//Initial guess
+	// Initial guess
 	float theta = math::atan2(abc1.x * xyz1.y, abc1.y * xyz1.x);
 	float phi = math::atan2(xyz1.z, abc1.z * math::sqrt(xyz2abc2.x + xyz2abc2.y));
 
 	float currDist = 0.0f;
 	float lastDist = 0.0f;
 
-	//Iterations
+	// Iterations
 	for (int i = 0; i < MAX_ITERATIONS; i++) {
 		const float sint = math::sin(theta);
 		const float cost = math::cos(theta);
@@ -415,7 +442,7 @@ float CollisionVolume::GetEllipsoidDistance(const float3& pv) const
 		const float d1 = a2b2costsint * cosp - xasint_ybcost;
 		const float d2 = a2cos2t_b2sin2t_c2 * sinp * cosp - sinp * xacost_ybsint + xyz1abc1.z * cosp;
 
-		//Derivative matrix
+		// Derivative matrix
 		const float a11 = (abc2.x - abc2.y) * (1 - 2 * sin2t) * cosp - xacost_ybsint;
 		const float a12 = -a2b2costsint * sinp;
 		const float a21 = 2 * a12 * cosp + sinp * xasint_ybcost;
@@ -431,4 +458,3 @@ float CollisionVolume::GetEllipsoidDistance(const float3& pv) const
 
 	return currDist;
 }
-

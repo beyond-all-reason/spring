@@ -4,6 +4,7 @@
 #define _RESOURCE_MAP_ANALYZER_H
 
 #include "System/float3.h"
+
 #include <vector>
 
 class CResource;

@@ -1,25 +1,24 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "MetalMap.h"
-#include "System/SpringMath.h"
+
 #include "System/EventHandler.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 #include <cstring>
-
-#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND(CMetalMap, )
 
-CR_REG_METADATA(CMetalMap,(
-	CR_IGNORED(metalScale),
-	CR_IGNORED(sizeX),
-	CR_IGNORED(sizeZ),
+CR_REG_METADATA(CMetalMap,
+    (CR_IGNORED(metalScale),
+        CR_IGNORED(sizeX),
+        CR_IGNORED(sizeZ),
 
-	CR_IGNORED(texturePalette),
-	CR_MEMBER(distributionMap),
-	CR_MEMBER(extractionMap)
-))
+        CR_IGNORED(texturePalette),
+        CR_MEMBER(distributionMap),
+        CR_MEMBER(extractionMap)))
 
 
 CMetalMap metalMap;
@@ -40,18 +39,17 @@ void CMetalMap::Init(const unsigned char* map, int _sizeX, int _sizeZ, float _me
 
 	if (map != nullptr) {
 		memcpy(&distributionMap[0], map, sizeX * sizeZ);
-	} else {
+	}
+	else {
 		metalScale = 1.0f;
 	}
 
 	for (int a = 0; a < 256; ++a) {
 		texturePalette[a * 3 + 0] = a;
-		texturePalette[a * 3 + 1] = std::min(255, a * 2      );
-		texturePalette[a * 3 + 2] = std::max(  0, a * 2 - 255);
+		texturePalette[a * 3 + 1] = std::min(255, a * 2);
+		texturePalette[a * 3 + 2] = std::max(0, a * 2 - 255);
 	}
 }
-
-
 
 float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const
 {
@@ -72,7 +70,6 @@ float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const
 	return metal;
 }
 
-
 float CMetalMap::GetMetalAmount(int x, int z) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -81,7 +78,6 @@ float CMetalMap::GetMetalAmount(int x, int z) const
 
 	return distributionMap[(z * sizeX) + x] * metalScale;
 }
-
 
 void CMetalMap::SetMetalAmount(int x, int z, float m)
 {
@@ -93,7 +89,6 @@ void CMetalMap::SetMetalAmount(int x, int z, float m)
 
 	eventHandler.MetalMapChanged(x, z);
 }
-
 
 float CMetalMap::RequestExtraction(int x, int z, float toDepth)
 {
@@ -113,7 +108,6 @@ float CMetalMap::RequestExtraction(int x, int z, float toDepth)
 	return available;
 }
 
-
 void CMetalMap::RemoveExtraction(int x, int z, float depth)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -122,7 +116,6 @@ void CMetalMap::RemoveExtraction(int x, int z, float depth)
 
 	extractionMap[(z * sizeX) + x] -= depth;
 }
-
 
 int CMetalMap::GetMetalExtraction(int x, int z) const
 {
@@ -140,11 +133,14 @@ int CMetalMap::GetMetalExtraction(int x, int z) const
 void CMetalMap::Init(const unsigned char* map, int _sizeX, int _sizeZ, float _metalScale) {}
 
 float CMetalMap::GetMetalAmount(int x1, int z1, int x2, int z2) const { return 0.0f; }
+
 float CMetalMap::GetMetalAmount(int x, int z) const { return 0.0f; }
 
 void CMetalMap::SetMetalAmount(int x, int z, float m) {}
+
 float CMetalMap::RequestExtraction(int x, int z, float toDepth) { return 0.0f; }
+
 void CMetalMap::RemoveExtraction(int x, int z, float depth) {}
+
 int CMetalMap::GetMetalExtraction(int x, int z) const { return 0; }
 #endif
-

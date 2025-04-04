@@ -2,19 +2,19 @@
 
 #pragma once
 
+#include "System/SafeUtil.h"
+#include "System/float4.h"
+#include "System/type2.h"
+
 #include <array>
 #include <string>
-
-#include "System/type2.h"
-#include "System/float4.h"
-#include "System/SafeUtil.h"
 
 class CCamera;
 struct ISkyLight;
 class CMatrix44f;
 
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 enum ModelShaderProgram {
@@ -22,13 +22,13 @@ enum ModelShaderProgram {
 	MODEL_SHADER_SHADOWED_STANDARD = 1, ///< model shader (V+F) with    self-shadowing
 	MODEL_SHADER_NOSHADOW_DEFERRED = 2, ///< deferred version of MODEL_SHADER_NOSHADOW (GLSL-only)
 	MODEL_SHADER_SHADOWED_DEFERRED = 3, ///< deferred version of MODEL_SHADER_SHADOW   (GLSL-only)
-	MODEL_SHADER_COUNT             = 4,
+	MODEL_SHADER_COUNT = 4,
 };
 
 enum ModelDrawerTypes {
 	MODEL_DRAWER_GLSL = 0, // standard-shader path (GLSL)
-	MODEL_DRAWER_GL4  = 1, // GL4-shader path (GLSL)
-	MODEL_DRAWER_CNT  = 2
+	MODEL_DRAWER_GL4 = 1,  // GL4-shader path (GLSL)
+	MODEL_DRAWER_CNT = 2
 };
 
 enum ShaderCameraModes {
@@ -40,7 +40,7 @@ enum ShaderCameraModes {
 enum ShaderMatrixModes {
 	NORMAL_MATMODE = 0,
 	STATIC_MATMODE = 1,
-	 ARRAY_MATMODE = 2, //future
+	ARRAY_MATMODE = 2, // future
 };
 
 enum ShaderShadingModes {
@@ -50,20 +50,23 @@ enum ShaderShadingModes {
 
 class IModelDrawerState {
 public:
-	template<typename T>
-	static void InitInstance(int t) {
+	template<typename T> static void InitInstance(int t)
+	{
 		if (modelDrawerStates[t] == nullptr)
 			modelDrawerStates[t] = new T{};
 	}
-	static void KillInstance(int t) {
-		spring::SafeDelete(modelDrawerStates[t]);
-	}
+
+	static void KillInstance(int t) { spring::SafeDelete(modelDrawerStates[t]); }
+
 public:
 	IModelDrawerState();
+
 	virtual ~IModelDrawerState() {}
 
 	virtual bool CanEnable() const = 0;
+
 	virtual bool CanDrawDeferred() const { return false; }
+
 	virtual bool IsLegacy() const = 0;
 
 	bool IsValid() const;
@@ -74,7 +77,7 @@ public:
 	virtual void EnableTextures() const = 0;
 	virtual void DisableTextures() const = 0;
 
-	//virtual void UpdateCurrentShaderSky(const ISkyLight*) const = 0;
+	// virtual void UpdateCurrentShaderSky(const ISkyLight*) const = 0;
 
 	// alpha.x := alpha-value
 	// alpha.y := alpha-pass (true or false)
@@ -82,44 +85,61 @@ public:
 	virtual void SetNanoColor(const float4& color) const = 0;
 
 	void SetColorMultiplier(float a = 1.0f) const { SetColorMultiplier(1.0f, 1.0f, 1.0f, a); };
-	virtual void SetColorMultiplier(float r, float g, float b, float a) const {
-		assert(false);  //doesn't make sense, except in GL4, overridden below
+
+	virtual void SetColorMultiplier(float r, float g, float b, float a) const
+	{
+		assert(false); // doesn't make sense, except in GL4, overridden below
 	};
-	virtual ShaderCameraModes SetCameraMode(ShaderCameraModes scm_ = ShaderCameraModes::NORMAL_CAMERA) const {
-		assert(false);  //doesn't make sense, except in GL4, overridden below
+
+	virtual ShaderCameraModes SetCameraMode(ShaderCameraModes scm_ = ShaderCameraModes::NORMAL_CAMERA) const
+	{
+		assert(false); // doesn't make sense, except in GL4, overridden below
 		std::swap(scm, scm_);
 		return scm_;
 	};
-	virtual ShaderMatrixModes SetMatrixMode(ShaderMatrixModes smm_ = ShaderMatrixModes::NORMAL_MATMODE) const {
-		assert(false);  //doesn't make sense, except in GL4, overridden below
+
+	virtual ShaderMatrixModes SetMatrixMode(ShaderMatrixModes smm_ = ShaderMatrixModes::NORMAL_MATMODE) const
+	{
+		assert(false); // doesn't make sense, except in GL4, overridden below
 		std::swap(smm, smm_);
 		return smm_;
 	};
-	virtual ShaderShadingModes SetShadingMode(ShaderShadingModes ssm_ = ShaderShadingModes::NORMAL_SHADING) const {
-		assert(false);  //doesn't make sense, except in GL4, overridden below
+
+	virtual ShaderShadingModes SetShadingMode(ShaderShadingModes ssm_ = ShaderShadingModes::NORMAL_SHADING) const
+	{
+		assert(false); // doesn't make sense, except in GL4, overridden below
 		std::swap(ssm, ssm_);
 		return ssm_;
 	};
-	virtual void SetStaticModelMatrix(const CMatrix44f& mat) const {
-		assert(false);  //doesn't make sense, except in GL4, overridden below
-	};
-	virtual void SetClipPlane(uint8_t idx, const float4& cp = {0.0f,  0.0f, 0.0f, 1.0f}) const {
-		assert(false);  //doesn't make sense, except in GL4, overridden below
+
+	virtual void SetStaticModelMatrix(const CMatrix44f& mat) const
+	{
+		assert(false); // doesn't make sense, except in GL4, overridden below
 	};
 
-	void SetActiveShader(bool shadowed, bool deferred) const {
+	virtual void SetClipPlane(uint8_t idx, const float4& cp = {0.0f, 0.0f, 0.0f, 1.0f}) const
+	{
+		assert(false); // doesn't make sense, except in GL4, overridden below
+	};
+
+	void SetActiveShader(bool shadowed, bool deferred) const
+	{
 		// shadowed=1 --> shader 1 (deferred=0) or 3 (deferred=1)
 		// shadowed=0 --> shader 0 (deferred=0) or 2 (deferred=1)
 		modelShader = modelShaders[shadowed + deferred * 2];
 	}
+
 	Shader::IProgramObject* ActiveShader() { return modelShader; }
+
 public:
 	void SetupOpaqueDrawing(bool deferredPass) const;
 	void ResetOpaqueDrawing(bool deferredPass) const;
 	void SetupAlphaDrawing(bool deferredPass) const;
 	void ResetAlphaDrawing(bool deferredPass) const;
+
 public:
 	inline static std::array<IModelDrawerState*, ModelDrawerTypes::MODEL_DRAWER_CNT> modelDrawerStates = {};
+
 public:
 	/// <summary>
 	/// .x := regular unit alpha
@@ -128,20 +148,21 @@ public:
 	/// .w := AI-temp unit alpha
 	/// </summary>
 	inline static float4 alphaValues = {};
+
 protected:
-	mutable ShaderCameraModes  scm = ShaderCameraModes::NORMAL_CAMERA;
+	mutable ShaderCameraModes scm = ShaderCameraModes::NORMAL_CAMERA;
 	mutable ShaderShadingModes ssm = ShaderShadingModes::NORMAL_SHADING;
-	mutable ShaderMatrixModes  smm = ShaderMatrixModes::NORMAL_MATMODE;
+	mutable ShaderMatrixModes smm = ShaderMatrixModes::NORMAL_MATMODE;
 
 	std::array<Shader::IProgramObject*, MODEL_SHADER_COUNT> modelShaders;
 	mutable Shader::IProgramObject* modelShader = nullptr;
 };
 
-
 class CModelDrawerStateLegacy : public IModelDrawerState {
 public:
 	// caps functions
 	bool IsLegacy() const override { return true; }
+
 protected:
 	inline static const std::string PO_CLASS = "[ModelDrawer]";
 };
@@ -150,6 +171,7 @@ class CModelDrawerStateGLSL final : public CModelDrawerStateLegacy {
 public:
 	CModelDrawerStateGLSL();
 	~CModelDrawerStateGLSL() override;
+
 public:
 	// caps functions
 	bool CanEnable() const override;
@@ -159,6 +181,7 @@ public:
 
 	void Enable(bool deferredPass, bool alphaPass) const override;
 	void Disable(bool deferredPass) const override;
+
 private:
 	void SetNanoColor(const float4& color) const override;
 
@@ -170,6 +193,7 @@ class CModelDrawerStateGL4 final : public IModelDrawerState {
 public:
 	CModelDrawerStateGL4();
 	~CModelDrawerStateGL4() override;
+
 public:
 public:
 	// caps functions
@@ -189,13 +213,14 @@ public:
 	ShaderMatrixModes SetMatrixMode(ShaderMatrixModes smm_) const override;
 	ShaderShadingModes SetShadingMode(ShaderShadingModes sm) const override;
 	void SetStaticModelMatrix(const CMatrix44f& mat) const override;
-	void SetClipPlane(uint8_t idx, const float4& cp = { 0.0f,  0.0f, 0.0f, 1.0f }) const override;
+	void SetClipPlane(uint8_t idx, const float4& cp = {0.0f, 0.0f, 0.0f, 1.0f}) const override;
+
 private:
 	void SetNanoColor(const float4& color) const override;
 
 	void EnableTextures() const override;
 	void DisableTextures() const override;
+
 private:
 	inline static const std::string PO_CLASS = "[ModelDrawer-GL4]";
 };
-

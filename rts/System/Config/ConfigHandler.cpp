@@ -1,21 +1,25 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "ConfigHandler.h"
+
 #include "ConfigLocater.h"
 #include "ConfigSource.h"
+
 #include "System/ContainerUtil.h"
+#include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
-#include "System/Log/ILog.h"
-#include "System/UnorderedMap.hpp"
 #include "System/Threading/SpringThreading.h"
+#include "System/UnorderedMap.hpp"
 
 #include <cstdio>
 #include <cstring>
-
 #include <stdexcept>
 
-CONFIG(bool, StoreDefaultSettings).defaultValue(false).description("springsettings.cfg will save the settings values, if they match the implicit defaults and were set by a user explicitly");
+CONFIG(bool, StoreDefaultSettings)
+    .defaultValue(false)
+    .description("springsettings.cfg will save the settings values, if they match the implicit defaults and were set "
+                 "by a user explicitly");
 
 /******************************************************************************/
 
@@ -23,11 +27,9 @@ typedef std::map<std::string, std::string> StringMap;
 
 ConfigHandler* configHandler = nullptr;
 
-
 /******************************************************************************/
 
-class ConfigHandlerImpl : public ConfigHandler
-{
+class ConfigHandlerImpl : public ConfigHandler {
 public:
 	ConfigHandlerImpl(const std::vector<std::string>& locations, bool safemode);
 	~ConfigHandlerImpl() override;
@@ -42,11 +44,16 @@ public:
 	const StringMap GetData() const override;
 	StringMap GetDataWithoutDefaults() const override;
 	void Update() override;
+
 	void EnableWriting(bool write) override { writingEnabled = write; }
 
 protected:
 	struct NamedConfigNotifyCallback {
-		NamedConfigNotifyCallback(ConfigNotifyCallback c, void* o): callback(c), observer(o) {}
+		NamedConfigNotifyCallback(ConfigNotifyCallback c, void* o)
+		    : callback(c)
+		    , observer(o)
+		{
+		}
 
 		ConfigNotifyCallback callback;
 		void* observer;
@@ -124,7 +131,7 @@ ConfigHandlerImpl::ConfigHandlerImpl(const std::vector<std::string>& locations, 
 
 ConfigHandlerImpl::~ConfigHandlerImpl()
 {
-	//all observers have to be deregistered by RemoveObserver()
+	// all observers have to be deregistered by RemoveObserver()
 	assert(configsToCallbacks.empty());
 	assert(observersToConfigs.empty());
 
@@ -157,7 +164,7 @@ void ConfigHandlerImpl::RemoveDefaults()
 	StringMap defaults = sources.back()->GetData();
 
 	for (auto rsource = sources.crbegin(); rsource != sources.crend(); ++rsource) {
-		FileConfigSource* source = dynamic_cast<FileConfigSource*> (*rsource);
+		FileConfigSource* source = dynamic_cast<FileConfigSource*>(*rsource);
 
 		if (source == nullptr)
 			continue;
@@ -172,7 +179,8 @@ void ConfigHandlerImpl::RemoveDefaults()
 			if (pos != defaults.end() && pos->second == item.second) {
 				// Exists and value is equal => Delete.
 				source->Delete(item.first);
-			} else {
+			}
+			else {
 				// Doesn't exist or is not equal => Store new default.
 				// (It will be the default for the next FileConfigSource.)
 				defaults[item.first] = item.second;
@@ -184,23 +192,22 @@ void ConfigHandlerImpl::RemoveDefaults()
 void ConfigHandlerImpl::RemoveDeprecated()
 {
 	std::vector<std::string> deprecatedVars;
-	for (const auto& [name, meta] : ConfigVariable::GetMetaDataMap()) {
+	for (const auto& [name, meta]: ConfigVariable::GetMetaDataMap()) {
 		if (meta->GetDeprecated().IsSet() && meta->GetDeprecated().Get() != 0) {
 			deprecatedVars.emplace_back(name);
 		}
 	}
 
-	for (auto source : sources) {
-		FileConfigSource* fcSrc = dynamic_cast<FileConfigSource*> (source);
+	for (auto source: sources) {
+		FileConfigSource* fcSrc = dynamic_cast<FileConfigSource*>(source);
 		if (fcSrc == nullptr)
 			continue;
 
-		for (const auto& dv : deprecatedVars) {
+		for (const auto& dv: deprecatedVars) {
 			fcSrc->Delete(dv);
 		}
 	}
 }
-
 
 StringMap ConfigHandlerImpl::GetDataWithoutDefaults() const
 {
@@ -208,7 +215,7 @@ StringMap ConfigHandlerImpl::GetDataWithoutDefaults() const
 	StringMap defaults = sources.back()->GetData();
 
 	for (auto rsource = sources.crbegin(); rsource != sources.crend(); ++rsource) {
-		const FileConfigSource* source = dynamic_cast<const FileConfigSource*> (*rsource);
+		const FileConfigSource* source = dynamic_cast<const FileConfigSource*>(*rsource);
 
 		if (source == nullptr)
 			continue;
@@ -228,7 +235,6 @@ StringMap ConfigHandlerImpl::GetDataWithoutDefaults() const
 	return cleanConfig;
 }
 
-
 void ConfigHandlerImpl::Delete(const std::string& key)
 {
 	for (ReadOnlyConfigSource* s: sources) {
@@ -247,7 +253,8 @@ void ConfigHandlerImpl::Delete(const std::string& key)
 bool ConfigHandlerImpl::IsSet(const std::string& key) const
 {
 	for (const ReadOnlyConfigSource* s: sources) {
-		if (s->IsSet(key)) return true;
+		if (s->IsSet(key))
+			return true;
 	}
 
 	return false;
@@ -279,7 +286,7 @@ std::string ConfigHandlerImpl::GetString(const std::string& key) const
 	}
 
 	throw std::runtime_error("ConfigHandler: Error: Key does not exist: " + key +
-			"\nPlease add the key to the list of allowed configuration values.");
+	                         "\nPlease add the key to the list of allowed configuration values.");
 }
 
 /**
@@ -310,7 +317,8 @@ void ConfigHandlerImpl::SetString(const std::string& key, const std::string& val
 
 	if (useOverlay) {
 		overlay->SetString(key, value);
-	} else if (writingEnabled) {
+	}
+	else if (writingEnabled) {
 		std::vector<ReadOnlyConfigSource*>::const_iterator it = sources.begin();
 
 		++it; // skip overlay
@@ -362,11 +370,10 @@ void ConfigHandlerImpl::Update()
 	changedValues.clear();
 }
 
-std::string ConfigHandlerImpl::GetConfigFile() const {
-	return writableSource->GetFilename();
-}
+std::string ConfigHandlerImpl::GetConfigFile() const { return writableSource->GetFilename(); }
 
-const StringMap ConfigHandlerImpl::GetData() const {
+const StringMap ConfigHandlerImpl::GetData() const
+{
 	StringMap data;
 	for (const ReadOnlyConfigSource* s: sources) {
 		const StringMap& sourceData = s->GetData();
@@ -376,8 +383,10 @@ const StringMap ConfigHandlerImpl::GetData() const {
 	return data;
 }
 
-
-void ConfigHandlerImpl::AddObserver(ConfigNotifyCallback callback, void* observer, const std::vector<std::string>& configs) {
+void ConfigHandlerImpl::AddObserver(ConfigNotifyCallback callback,
+    void* observer,
+    const std::vector<std::string>& configs)
+{
 	std::lock_guard<spring::mutex> lck(observerMutex);
 
 	for (const std::string& config: configs) {
@@ -386,13 +395,13 @@ void ConfigHandlerImpl::AddObserver(ConfigNotifyCallback callback, void* observe
 	}
 }
 
-void ConfigHandlerImpl::RemoveObserver(void* observer) {
+void ConfigHandlerImpl::RemoveObserver(void* observer)
+{
 	std::lock_guard<spring::mutex> lck(observerMutex);
 
 	for (const std::string& config: observersToConfigs[observer]) {
-		spring::VectorEraseIf(configsToCallbacks[config], [&](NamedConfigNotifyCallback& ncnc) {
-			return (ncnc.observer == observer);
-		});
+		spring::VectorEraseIf(
+		    configsToCallbacks[config], [&](NamedConfigNotifyCallback& ncnc) { return (ncnc.observer == observer); });
 
 		if (configsToCallbacks[config].empty())
 			configsToCallbacks.erase(config);
@@ -400,7 +409,6 @@ void ConfigHandlerImpl::RemoveObserver(void* observer) {
 
 	observersToConfigs.erase(observer);
 }
-
 
 /******************************************************************************/
 
@@ -411,7 +419,8 @@ void ConfigHandler::Instantiate(const std::string configSource, const bool safem
 	std::vector<std::string> locations;
 	if (!configSource.empty()) {
 		locations.push_back(configSource);
-	} else {
+	}
+	else {
 		ConfigLocater::GetDefaultLocations(locations);
 	}
 	assert(!locations.empty());
@@ -425,18 +434,11 @@ void ConfigHandler::Instantiate(const std::string configSource, const bool safem
 	configHandler = new ConfigHandlerImpl(locations, safemode);
 	configHandler->FinalizeLoad();
 
-	//assert(configHandler->GetString("test") == "x y z");
+	// assert(configHandler->GetString("test") == "x y z");
 }
 
-void ConfigHandler::Deallocate()
-{
-	spring::SafeDelete(configHandler);
-}
+void ConfigHandler::Deallocate() { spring::SafeDelete(configHandler); }
 
-bool ConfigHandler::Get(const std::string& key) const
-{
-	return StringToBool(GetString(key));
-}
-
+bool ConfigHandler::Get(const std::string& key) const { return StringToBool(GetString(key)); }
 
 /******************************************************************************/

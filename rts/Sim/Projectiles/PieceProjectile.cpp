@@ -1,17 +1,18 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Sim/Projectiles/PieceProjectile.h"
+
 #include "Game/Camera.h"
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/Textures/TextureAtlas.h"
 #include "Rendering/Colors.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Env/Particles/Classes/SmokeTrailProjectile.h"
+#include "Rendering/Env/Particles/ProjectileDrawer.h"
+#include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Models/3DModel.h"
+#include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
@@ -20,43 +21,39 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Matrix44f.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 
-#include "System/Misc/TracyDefs.h"
-
-static constexpr int   SMOKE_TIME   = 40;
-static constexpr int   SMOKE_SIZE   = 14;
-static constexpr float SMOKE_COLOR  = 0.5f;
+static constexpr int SMOKE_TIME = 40;
+static constexpr int SMOKE_SIZE = 14;
+static constexpr float SMOKE_COLOR = 0.5f;
 
 CR_BIND_DERIVED(CPieceProjectile, CProjectile, )
-CR_REG_METADATA(CPieceProjectile,(
-	CR_SETFLAG(CF_Synced),
+CR_REG_METADATA(CPieceProjectile,
+    (CR_SETFLAG(CF_Synced),
 
-	CR_MEMBER(age),
-	CR_MEMBER(explFlags),
-	CR_IGNORED(omp),
-	CR_IGNORED(smokeTrail),
-	CR_IGNORED(fireTrailPoints),
-	CR_MEMBER(spinVec),
-	CR_MEMBER(spinSpeed),
-	CR_MEMBER(spinAngle),
-	CR_MEMBER(oldSmokePos),
-	CR_MEMBER(oldSmokeDir)
-))
+        CR_MEMBER(age),
+        CR_MEMBER(explFlags),
+        CR_IGNORED(omp),
+        CR_IGNORED(smokeTrail),
+        CR_IGNORED(fireTrailPoints),
+        CR_MEMBER(spinVec),
+        CR_MEMBER(spinSpeed),
+        CR_MEMBER(spinAngle),
+        CR_MEMBER(oldSmokePos),
+        CR_MEMBER(oldSmokeDir)))
 
-CPieceProjectile::CPieceProjectile(
-	CUnit* owner,
-	LocalModelPiece* lmp,
-	const float3& pos,
-	const float3& speed,
-	int flags,
-	float radius
-):
-	CProjectile(pos, speed, owner, true, false, true),
-	age(0),
-	explFlags(flags),
-	omp((lmp != nullptr) ? lmp->original : nullptr),
-	smokeTrail(nullptr)
+CPieceProjectile::CPieceProjectile(CUnit* owner,
+    LocalModelPiece* lmp,
+    const float3& pos,
+    const float3& speed,
+    int flags,
+    float radius)
+    : CProjectile(pos, speed, owner, true, false, true)
+    , age(0)
+    , explFlags(flags)
+    , omp((lmp != nullptr) ? lmp->original : nullptr)
+    , smokeTrail(nullptr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (owner != nullptr) {
@@ -102,7 +99,6 @@ CPieceProjectile::CPieceProjectile(
 	assert(!detached);
 }
 
-
 void CPieceProjectile::Collision()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -119,14 +115,12 @@ void CPieceProjectile::Collision()
 	SetPosition(pos + (norm * 0.1f));
 }
 
-
 void CPieceProjectile::Collision(CFeature* f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	Collision(nullptr, f);
 	CProjectile::Collision(f);
 }
-
 
 void CPieceProjectile::Collision(CUnit* unit)
 {
@@ -135,7 +129,6 @@ void CPieceProjectile::Collision(CUnit* unit)
 	CProjectile::Collision(unit);
 }
 
-
 void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 {
 	if (unit && (unit == owner()))
@@ -143,67 +136,51 @@ void CPieceProjectile::Collision(CUnit* unit, CFeature* feature)
 
 	if ((explFlags & PF_Explode) && (unit || feature)) {
 		const DamageArray damageArray(modInfo.debrisDamage);
-		const CExplosionParams params = {
-			.pos                  = pos,
-			.dir                  = ZeroVector,
-			.damages              = damageArray,
-			.weaponDef            = nullptr,
-			.owner                = owner(),
-			.hitUnit              = unit,
-			.hitFeature           = feature,
-			.craterAreaOfEffect   = modInfo.debrisDamage * 0.25f,
-			.damageAreaOfEffect   = modInfo.debrisDamage * 0.5f,
-			.edgeEffectiveness    = 0.0f,
-			.explosionSpeed       = 10.0f,
-			.gfxMod               = 1.0f,
-			.maxGroundDeformation = 0.0f,
-			.impactOnly           = true,
-			.ignoreOwner          = false,
-			.damageGround         = false,
-			.projectileID         = static_cast<uint32_t>(id)
-		};
+		const CExplosionParams params = {.pos = pos,
+		    .dir = ZeroVector,
+		    .damages = damageArray,
+		    .weaponDef = nullptr,
+		    .owner = owner(),
+		    .hitUnit = unit,
+		    .hitFeature = feature,
+		    .craterAreaOfEffect = modInfo.debrisDamage * 0.25f,
+		    .damageAreaOfEffect = modInfo.debrisDamage * 0.5f,
+		    .edgeEffectiveness = 0.0f,
+		    .explosionSpeed = 10.0f,
+		    .gfxMod = 1.0f,
+		    .maxGroundDeformation = 0.0f,
+		    .impactOnly = true,
+		    .ignoreOwner = false,
+		    .damageGround = false,
+		    .projectileID = static_cast<uint32_t>(id)};
 
 		helper->Explosion(params);
 	}
 
 	if (explFlags & PF_Smoke) {
 		if (explFlags & PF_NoCEGTrail) {
-			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(
-				owner(),
-				pos, oldSmokePos,
-				dir, oldSmokeDir,
-				false,
-				true,
-				SMOKE_SIZE,
-				SMOKE_TIME,
-				NUM_TRAIL_PARTS,
-				SMOKE_COLOR,
-				projectileDrawer->smoketrailtex
-			);
+			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmokePos, dir, oldSmokeDir, false,
+			    true, SMOKE_SIZE, SMOKE_TIME, NUM_TRAIL_PARTS, SMOKE_COLOR, projectileDrawer->smoketrailtex);
 		}
 	}
 
 	oldSmokePos = pos;
 }
 
-
-
 float3 CPieceProjectile::RandomVertexPos() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (omp == nullptr)
 		return ZeroVector;
-	#define rf guRNG.NextFloat()
-	return mix(omp->mins, omp->maxs, float3(rf,rf,rf));
+#define rf guRNG.NextFloat()
+	return mix(omp->mins, omp->maxs, float3(rf, rf, rf));
 }
-
 
 float CPieceProjectile::GetDrawAngle() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return spinAngle + spinSpeed * globalRendering->timeOffset;
 }
-
 
 void CPieceProjectile::Update()
 {
@@ -233,7 +210,7 @@ void CPieceProjectile::Update()
 		m.Rotate(spinAngle * math::DEG_TO_RAD, spinVec);
 		m.Translate(RandomVertexPos());
 
-		fireTrailPoints[0].pos  = m.GetPos();
+		fireTrailPoints[0].pos = m.GetPos();
 		fireTrailPoints[0].size = 1 + guRNG.NextFloat();
 	}
 
@@ -245,31 +222,20 @@ void CPieceProjectile::Update()
 		}
 
 		if ((age % NUM_TRAIL_PARTS) == 0) {
-			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(
-				owner(),
-				pos, oldSmokePos,
-				dir, oldSmokeDir,
-				age == (NUM_TRAIL_PARTS - 1),
-				false,
-				SMOKE_SIZE,
-				SMOKE_TIME,
-				NUM_TRAIL_PARTS,
-				SMOKE_COLOR,
-				projectileDrawer->smoketrailtex
-			);
+			smokeTrail = projMemPool.alloc<CSmokeTrailProjectile>(owner(), pos, oldSmokePos, dir, oldSmokeDir,
+			    age == (NUM_TRAIL_PARTS - 1), false, SMOKE_SIZE, SMOKE_TIME, NUM_TRAIL_PARTS, SMOKE_COLOR,
+			    projectileDrawer->smoketrailtex);
 
 			useAirLos = smokeTrail->useAirLos;
 		}
 	}
 }
 
-
 void CPieceProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	AddMiniMapVertices({ pos        , color4::red }, { pos + speed, color4::red });
+	AddMiniMapVertices({pos, color4::red}, {pos + speed, color4::red});
 }
-
 
 void CPieceProjectile::Draw()
 {
@@ -289,14 +255,12 @@ void CPieceProjectile::Draw()
 
 		const auto eft = projectileDrawer->explofadetex;
 		AddEffectsQuad(
-			{ interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, eft->xstart, eft->ystart, col },
-			{ interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, eft->xend,   eft->ystart, col },
-			{ interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, eft->xend,   eft->yend,   col },
-			{ interPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, eft->xstart, eft->yend,   col }
-		);
+		    {interPos - camera->GetRight() * drawsize - camera->GetUp() * drawsize, eft->xstart, eft->ystart, col},
+		    {interPos + camera->GetRight() * drawsize - camera->GetUp() * drawsize, eft->xend, eft->ystart, col},
+		    {interPos + camera->GetRight() * drawsize + camera->GetUp() * drawsize, eft->xend, eft->yend, col},
+		    {interPos - camera->GetRight() * drawsize + camera->GetUp() * drawsize, eft->xstart, eft->yend, col});
 	}
 }
-
 
 int CPieceProjectile::GetProjectilesCount() const
 {

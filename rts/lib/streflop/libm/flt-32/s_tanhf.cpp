@@ -19,52 +19,56 @@ static char rcsid[] = "$NetBSD: s_tanhf.c,v 1.4f 1995/05/10 20:48:24 jtc Exp $";
 #endif
 
 #include "SMath.h"
+
 #include "math_private.h"
 
 namespace streflop_libm {
 #ifdef __STDC__
-static const Simple one=1.0f, two=2.0f, tiny = 1.0e-30f;
+static const Simple one = 1.0f, two = 2.0f, tiny = 1.0e-30f;
 #else
-static Simple one=1.0f, two=2.0f, tiny = 1.0e-30f;
+static Simple one = 1.0f, two = 2.0f, tiny = 1.0e-30f;
 #endif
 
 #ifdef __STDC__
-	Simple __tanhf(Simple x)
+Simple __tanhf(Simple x)
 #else
-	Simple __tanhf(x)
-	Simple x;
+Simple __tanhf(x) Simple x;
 #endif
 {
-	Simple t,z;
-	int32_t jx,ix;
+	Simple t, z;
+	int32_t jx, ix;
 
-	GET_FLOAT_WORD(jx,x);
-	ix = jx&0x7fffffff;
+	GET_FLOAT_WORD(jx, x);
+	ix = jx & 0x7fffffff;
 
-    /* x is INF or NaN */
-	if(ix>=0x7f800000) {
-	    if (jx>=0) return one/x+one;    /* tanh(+-inf)=+-1 */
-	    else       return one/x-one;    /* tanh(NaN) = NaN */
+	/* x is INF or NaN */
+	if (ix >= 0x7f800000) {
+		if (jx >= 0)
+			return one / x + one; /* tanh(+-inf)=+-1 */
+		else
+			return one / x - one; /* tanh(NaN) = NaN */
 	}
 
-    /* |x| < 22 */
-	if (ix < 0x41b00000) {		/* |x|<22 */
-	    if (ix == 0)
-		return x;		/* x == +-0 */
-	    if (ix<0x24000000) 		/* |x|<2**-55 */
-		return x*(one+x);    	/* tanh(small) = small */
-	    if (ix>=0x3f800000) {	/* |x|>=1  */
-		t = __expm1f(two*fabsf(x));
-		z = one - two/(t+two);
-	    } else {
-	        t = __expm1f(-two*fabsf(x));
-	        z= -t/(t+two);
-	    }
-    /* |x| > 22, return +-1 */
-	} else {
-	    z = one - tiny;		/* raised inexact flag */
+	/* |x| < 22 */
+	if (ix < 0x41b00000) { /* |x|<22 */
+		if (ix == 0)
+			return x;             /* x == +-0 */
+		if (ix < 0x24000000)      /* |x|<2**-55 */
+			return x * (one + x); /* tanh(small) = small */
+		if (ix >= 0x3f800000) {   /* |x|>=1  */
+			t = __expm1f(two * fabsf(x));
+			z = one - two / (t + two);
+		}
+		else {
+			t = __expm1f(-two * fabsf(x));
+			z = -t / (t + two);
+		}
+		/* |x| > 22, return +-1 */
 	}
-	return (jx>=0)? z: -z;
+	else {
+		z = one - tiny; /* raised inexact flag */
+	}
+	return (jx >= 0) ? z : -z;
 }
-weak_alias (__tanhf, tanhf)
-}
+weak_alias(__tanhf, tanhf)
+} // namespace streflop_libm

@@ -3,15 +3,15 @@
 #ifndef QUAD_FIELD_H
 #define QUAD_FIELD_H
 
-#include <algorithm>
-#include <array>
-#include <vector>
-
 #include "System/Misc/NonCopyable.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
 #include "System/type2.h"
+
+#include <algorithm>
+#include <array>
+#include <vector>
 
 class CUnit;
 class CFeature;
@@ -20,12 +20,12 @@ class CSolidObject;
 class CPlasmaRepulser;
 struct QuadFieldQuery;
 
-template<typename T>
-class QueryVectorCache {
+template<typename T> class QueryVectorCache {
 public:
 	typedef std::pair<bool, std::vector<T>> PairType;
 
-	std::vector<T>* ReserveVector(size_t base = 0, size_t capa = 1024) {
+	std::vector<T>* ReserveVector(size_t base = 0, size_t capa = 1024)
+	{
 		const auto pred = [](const PairType& p) { return (!p.first); };
 		const auto iter = std::find_if(vectors.begin() + base, vectors.end(), pred);
 
@@ -40,13 +40,15 @@ public:
 		return nullptr;
 	}
 
-	void ReserveAll(size_t capa) {
+	void ReserveAll(size_t capa)
+	{
 		for (size_t i = 0; i < vectors.size(); ++i) {
 			ReserveVector(i, capa);
 		}
 	}
 
-	void ReleaseVector(const std::vector<T>* released) {
+	void ReleaseVector(const std::vector<T>* released)
+	{
 		if (released == nullptr)
 			return;
 
@@ -60,27 +62,28 @@ public:
 
 		iter->first = false;
 	}
-	void ReleaseAll() {
+
+	void ReleaseAll()
+	{
 		for (auto& pair: vectors) {
 			ReleaseVector(&pair.second);
 		}
 	}
+
 private:
 	// There should at most be 2 concurrent users of each vector type
 	// using 3 to be safe, increase this number if the assertions below
 	// fail
-	std::array<PairType, 3> vectors = {{{false, {}}, {false, {}}, {false, {}}}};
+	std::array<PairType, 3> vectors = {
+	    {{false, {}}, {false, {}}, {false, {}}}
+    };
 };
 
-
-
-class CQuadField : spring::noncopyable
-{
+class CQuadField : spring::noncopyable {
 	CR_DECLARE_STRUCT(CQuadField)
 	CR_DECLARE_SUB(Quad)
 
 public:
-
 	/*
 	needed to support dynamic resizing (not used yet)
 	in large games the average loading factor (number of objects per quad)
@@ -98,13 +101,11 @@ public:
 	void GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length);
 	void GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width);
 
-	void GetUnitsAndFeaturesColVol(
-		const float3& pos,
-		const float radius,
-		std::vector<CUnit*>& units,
-		std::vector<CFeature*>& features,
-		std::vector<CPlasmaRepulser*>* repulsers = nullptr
-	);
+	void GetUnitsAndFeaturesColVol(const float3& pos,
+	    const float radius,
+	    std::vector<CUnit*>& units,
+	    std::vector<CFeature*>& features,
+	    std::vector<CPlasmaRepulser*>* repulsers = nullptr);
 
 	/**
 	 * Returns all units within @c radius of @c pos,
@@ -114,7 +115,7 @@ public:
 	/**
 	 * Returns all units within @c radius of @c pos,
 	 * takes the 3D model radius of each unit into account,
- 	 * and performs the search within a sphere or cylinder depending on @c spherical
+	 * and performs the search within a sphere or cylinder depending on @c spherical
 	 */
 	void GetUnitsExact(QuadFieldQuery& qfq, const float3& pos, float radius, bool spherical = true);
 	/**
@@ -137,20 +138,16 @@ public:
 	void GetProjectilesExact(QuadFieldQuery& qfq, const float3& pos, float radius);
 	void GetProjectilesExact(QuadFieldQuery& qfq, const float3& mins, const float3& maxs);
 
-	void GetSolidsExact(
-		QuadFieldQuery& qfq,
-		const float3& pos,
-		const float radius,
-		const unsigned int physicalStateBits = 0xFFFFFFFF,
-		const unsigned int collisionStateBits = 0xFFFFFFFF
-	);
+	void GetSolidsExact(QuadFieldQuery& qfq,
+	    const float3& pos,
+	    const float radius,
+	    const unsigned int physicalStateBits = 0xFFFFFFFF,
+	    const unsigned int collisionStateBits = 0xFFFFFFFF);
 
-	bool NoSolidsExact(
-		const float3& pos,
-		const float radius,
-		const unsigned int physicalStateBits = 0xFFFFFFFF,
-		const unsigned int collisionStateBits = 0xFFFFFFFF
-	);
+	bool NoSolidsExact(const float3& pos,
+	    const float radius,
+	    const unsigned int physicalStateBits = 0xFFFFFFFF,
+	    const unsigned int collisionStateBits = 0xFFFFFFFF);
 
 
 	bool InsertUnitIf(CUnit* unit, const float3& wpos);
@@ -171,11 +168,15 @@ public:
 
 	// Note: ensure ReleaseVector is called in the same thread as original quad field query generated.
 
-	void ReleaseVector(std::vector<CUnit*>* v       , int onThread = 0) { tempUnits[onThread].ReleaseVector(v); }
-	void ReleaseVector(std::vector<CFeature*>* v    , int onThread = 0) { tempFeatures[onThread].ReleaseVector(v); }
-	void ReleaseVector(std::vector<CProjectile*>* v ) { tempProjectiles.ReleaseVector(v); }
+	void ReleaseVector(std::vector<CUnit*>* v, int onThread = 0) { tempUnits[onThread].ReleaseVector(v); }
+
+	void ReleaseVector(std::vector<CFeature*>* v, int onThread = 0) { tempFeatures[onThread].ReleaseVector(v); }
+
+	void ReleaseVector(std::vector<CProjectile*>* v) { tempProjectiles.ReleaseVector(v); }
+
 	void ReleaseVector(std::vector<CSolidObject*>* v, int onThread = 0) { tempSolids[onThread].ReleaseVector(v); }
-	void ReleaseVector(std::vector<int>* v          , int onThread = 0) { tempQuads[onThread].ReleaseVector(v); }
+
+	void ReleaseVector(std::vector<int>* v, int onThread = 0) { tempQuads[onThread].ReleaseVector(v); }
 
 	struct Quad {
 	public:
@@ -183,10 +184,13 @@ public:
 
 		Quad() = default;
 		Quad(const Quad& q) = delete;
+
 		Quad(Quad&& q) { *this = std::move(q); }
 
-		Quad& operator = (const Quad& q) = delete;
-		Quad& operator = (Quad&& q) {
+		Quad& operator=(const Quad& q) = delete;
+
+		Quad& operator=(Quad&& q)
+		{
 			units = std::move(q.units);
 			teamUnits = std::move(q.teamUnits);
 			features = std::move(q.features);
@@ -196,8 +200,11 @@ public:
 		}
 
 		void PostLoad();
+
 		void Resize(int numAllyTeams) { teamUnits.resize(numAllyTeams); }
-		void Clear() {
+
+		void Clear()
+		{
 			units.clear();
 			// reuse inner vectors when reloading
 			// teamUnits.clear();
@@ -211,26 +218,30 @@ public:
 
 	public:
 		std::vector<CUnit*> units;
-		std::vector< std::vector<CUnit*> > teamUnits;
+		std::vector<std::vector<CUnit*>> teamUnits;
 		std::vector<CFeature*> features;
 		std::vector<CProjectile*> projectiles;
 		std::vector<CPlasmaRepulser*> repulsers;
 	};
 
-	const Quad& GetQuad(unsigned i) const {
+	const Quad& GetQuad(unsigned i) const
+	{
 		assert(i < baseQuads.size());
 		return baseQuads[i];
 	}
-	const Quad& GetQuadAt(unsigned x, unsigned z) const {
+
+	const Quad& GetQuadAt(unsigned x, unsigned z) const
+	{
 		assert(unsigned(numQuadsX * z + x) < baseQuads.size());
 		return baseQuads[numQuadsX * z + x];
 	}
 
-
 	int GetNumQuadsX() const { return numQuadsX; }
+
 	int GetNumQuadsZ() const { return numQuadsZ; }
 
 	int GetQuadSizeX() const { return quadSizeX; }
+
 	int GetQuadSizeZ() const { return quadSizeZ; }
 
 	constexpr static unsigned int BASE_QUAD_SIZE = 128;
@@ -243,11 +254,11 @@ private:
 	std::vector<Quad> baseQuads;
 
 	// preallocated vectors for Get*Exact functions
-	std::array< QueryVectorCache<CUnit*>, ThreadPool::MAX_THREADS >  tempUnits;
-	std::array< QueryVectorCache<CFeature*>, ThreadPool::MAX_THREADS >  tempFeatures;
+	std::array<QueryVectorCache<CUnit*>, ThreadPool::MAX_THREADS> tempUnits;
+	std::array<QueryVectorCache<CFeature*>, ThreadPool::MAX_THREADS> tempFeatures;
 	QueryVectorCache<CProjectile*> tempProjectiles;
-	std::array< QueryVectorCache<CSolidObject*>, ThreadPool::MAX_THREADS > tempSolids;
-	std::array< QueryVectorCache<int>, ThreadPool::MAX_THREADS > tempQuads;
+	std::array<QueryVectorCache<CSolidObject*>, ThreadPool::MAX_THREADS> tempSolids;
+	std::array<QueryVectorCache<int>, ThreadPool::MAX_THREADS> tempQuads;
 
 	float2 invQuadSize;
 
@@ -260,9 +271,9 @@ private:
 
 extern CQuadField quadField;
 
-
 struct QuadFieldQuery {
-	~QuadFieldQuery() {
+	~QuadFieldQuery()
+	{
 		quadField.ReleaseVector(units, threadOwner);
 		quadField.ReleaseVector(features, threadOwner);
 		quadField.ReleaseVector(projectiles);

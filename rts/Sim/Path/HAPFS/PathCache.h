@@ -3,17 +3,17 @@
 #ifndef HAPFS_PATHCACHE_H
 #define HAPFS_PATHCACHE_H
 
+#include "IPath.h"
+
+#include "System/UnorderedMap.hpp"
+#include "System/type2.h"
+
 #include <deque>
 #include <unordered_map>
 
-#include "IPath.h"
-#include "System/type2.h"
-#include "System/UnorderedMap.hpp"
-
 namespace HAPFS {
 
-class CPathCache
-{
+class CPathCache {
 public:
 	CPathCache(int blocksX, int blocksZ);
 	~CPathCache();
@@ -28,41 +28,26 @@ public:
 	};
 
 	void Update();
-	bool AddPath(
-		const IPath::Path* path,
-		const IPath::SearchResult result,
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType
-	);
+	bool AddPath(const IPath::Path* path,
+	    const IPath::SearchResult result,
+	    const int2 strtBlock,
+	    const int2 goalBlock,
+	    float goalRadius,
+	    int pathType);
 
-	const CacheItem& GetCachedPath(
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType
-	);
+	const CacheItem& GetCachedPath(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType);
 
 private:
 	void RemoveFrontQueItem();
 
-	std::uint64_t GetHash(
-		const int2 strtBlk,
-		const int2 goalBlk,
-		std::uint32_t goalRadius,
-		std::int32_t pathType
-	) const;
+	std::uint64_t
+	GetHash(const int2 strtBlk, const int2 goalBlk, std::uint32_t goalRadius, std::int32_t pathType) const;
 
-	bool HashCollision(
-		const CacheItem& ci,
-		const int2 strtBlk,
-		const int2 goalBlk,
-		float goalRadius,
-		int pathType
-	) const;
+	bool
+	HashCollision(const CacheItem& ci, const int2 strtBlk, const int2 goalBlk, float goalRadius, int pathType) const;
 
-	float GetCacheHitPercentage() const {
+	float GetCacheHitPercentage() const
+	{
 		if ((numCacheHits + numCacheMisses) == 0)
 			return 0.0f;
 
@@ -91,6 +76,6 @@ private:
 	std::uint32_t numHashCollisions;
 };
 
-}
+} // namespace HAPFS
 
 #endif

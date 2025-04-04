@@ -5,14 +5,17 @@
 
 #include "Weapon.h"
 
-class CRifle: public CWeapon
-{
+class CRifle : public CWeapon {
 	CR_DECLARE_DERIVED(CRifle)
 public:
-	CRifle(CUnit* owner = nullptr, const WeaponDef* def = nullptr): CWeapon(owner, def) {}
+	CRifle(CUnit* owner = nullptr, const WeaponDef* def = nullptr)
+	    : CWeapon(owner, def)
+	{
+	}
 
 private:
 	void FireImpl(const bool scriptCall) override final;
+
 	float GetPredictedImpactTime(float3 p) const override final { return 0.0f; }
 };
 

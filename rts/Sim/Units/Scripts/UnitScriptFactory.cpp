@@ -11,19 +11,17 @@
 #include "Sim/Units/UnitDef.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
 
 void CUnitScriptFactory::InitStatic()
 {
-	static_assert(sizeof(CLuaUnitScript) >= sizeof(CCobInstance   ), "");
+	static_assert(sizeof(CLuaUnitScript) >= sizeof(CCobInstance), "");
 	static_assert(sizeof(CLuaUnitScript) >= sizeof(CNullUnitScript), "");
 
 	CCobUnitScriptNames::InitScriptNames();
 	CLuaUnitScriptNames::InitScriptNames();
 }
-
 
 CUnitScript* CUnitScriptFactory::CreateScript(CUnit* unit, const UnitDef* udef)
 {
@@ -41,10 +39,10 @@ CUnitScript* CUnitScriptFactory::CreateScript(CUnit* unit, const UnitDef* udef)
 	if (file != nullptr)
 		return (CreateCOBScript(unit, file));
 
-	LOG_L(L_WARNING, "[UnitScriptFactory::%s] could not load COB script \"%s\" for unit \"%s\"", __func__, udef->scriptName.c_str(), udef->name.c_str());
+	LOG_L(L_WARNING, "[UnitScriptFactory::%s] could not load COB script \"%s\" for unit \"%s\"", __func__,
+	    udef->scriptName.c_str(), udef->name.c_str());
 	return script;
 }
-
 
 CUnitScript* CUnitScriptFactory::CreateCOBScript(CUnit* unit, CCobFile* F)
 {
@@ -59,4 +57,3 @@ CUnitScript* CUnitScriptFactory::CreateLuaScript(CUnit* unit, lua_State* L)
 	static_assert(sizeof(CLuaUnitScript) <= sizeof(unit->usMemBuffer), "");
 	return (new (unit->usMemBuffer) CLuaUnitScript(L, unit));
 }
-

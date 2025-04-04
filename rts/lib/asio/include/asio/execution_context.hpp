@@ -12,16 +12,16 @@
 #define ASIO_EXECUTION_CONTEXT_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+#include "asio/detail/noncopyable.hpp"
+#include "asio/detail/push_options.hpp"
+
 #include <cstddef>
 #include <stdexcept>
 #include <typeinfo>
-#include "asio/detail/noncopyable.hpp"
-
-#include "asio/detail/push_options.hpp"
 
 namespace asio {
 
@@ -29,13 +29,15 @@ class execution_context;
 class io_context;
 
 #if !defined(GENERATING_DOCUMENTATION)
-template <typename Service> Service& use_service(execution_context&);
-template <typename Service> Service& use_service(io_context&);
-template <typename Service> void add_service(execution_context&, Service*);
-template <typename Service> bool has_service(execution_context&);
+template<typename Service> Service& use_service(execution_context&);
+template<typename Service> Service& use_service(io_context&);
+template<typename Service> void add_service(execution_context&, Service*);
+template<typename Service> bool has_service(execution_context&);
 #endif // !defined(GENERATING_DOCUMENTATION)
 
-namespace detail { class service_registry; }
+namespace detail {
+class service_registry;
+}
 
 /// A context for function object execution.
 /**
@@ -101,288 +103,267 @@ namespace detail { class service_registry; }
  * causing all @c shared_ptr references to all connection objects to be
  * destroyed.
  */
-class execution_context
-  : private noncopyable
-{
+class execution_context : private noncopyable {
 public:
-  class id;
-  class service;
+	class id;
+	class service;
 
 public:
-  /// Constructor.
-  ASIO_DECL execution_context();
+	/// Constructor.
+	ASIO_DECL execution_context();
 
-  /// Destructor.
-  ASIO_DECL ~execution_context();
+	/// Destructor.
+	ASIO_DECL ~execution_context();
 
 protected:
-  /// Shuts down all services in the context.
-  /**
-   * This function is implemented as follows:
-   *
-   * @li For each service object @c svc in the execution_context set, in
-   * reverse order of the beginning of service object lifetime, performs @c
-   * svc->shutdown().
-   */
-  ASIO_DECL void shutdown();
+	/// Shuts down all services in the context.
+	/**
+	 * This function is implemented as follows:
+	 *
+	 * @li For each service object @c svc in the execution_context set, in
+	 * reverse order of the beginning of service object lifetime, performs @c
+	 * svc->shutdown().
+	 */
+	ASIO_DECL void shutdown();
 
-  /// Destroys all services in the context.
-  /**
-   * This function is implemented as follows:
-   *
-   * @li For each service object @c svc in the execution_context set, in
-   * reverse order * of the beginning of service object lifetime, performs
-   * <tt>delete static_cast<execution_context::service*>(svc)</tt>.
-   */
-  ASIO_DECL void destroy();
+	/// Destroys all services in the context.
+	/**
+	 * This function is implemented as follows:
+	 *
+	 * @li For each service object @c svc in the execution_context set, in
+	 * reverse order * of the beginning of service object lifetime, performs
+	 * <tt>delete static_cast<execution_context::service*>(svc)</tt>.
+	 */
+	ASIO_DECL void destroy();
 
 public:
-  /// Fork-related event notifications.
-  enum fork_event
-  {
-    /// Notify the context that the process is about to fork.
-    fork_prepare,
+	/// Fork-related event notifications.
+	enum fork_event {
+		/// Notify the context that the process is about to fork.
+		fork_prepare,
 
-    /// Notify the context that the process has forked and is the parent.
-    fork_parent,
+		/// Notify the context that the process has forked and is the parent.
+		fork_parent,
 
-    /// Notify the context that the process has forked and is the child.
-    fork_child
-  };
+		/// Notify the context that the process has forked and is the child.
+		fork_child
+	};
 
-  /// Notify the execution_context of a fork-related event.
-  /**
-   * This function is used to inform the execution_context that the process is
-   * about to fork, or has just forked. This allows the execution_context, and
-   * the services it contains, to perform any necessary housekeeping to ensure
-   * correct operation following a fork.
-   *
-   * This function must not be called while any other execution_context
-   * function, or any function associated with the execution_context's derived
-   * class, is being called in another thread. It is, however, safe to call
-   * this function from within a completion handler, provided no other thread
-   * is accessing the execution_context or its derived class.
-   *
-   * @param event A fork-related event.
-   *
-   * @throws asio::system_error Thrown on failure. If the notification
-   * fails the execution_context object should no longer be used and should be
-   * destroyed.
-   *
-   * @par Example
-   * The following code illustrates how to incorporate the notify_fork()
-   * function:
-   * @code my_execution_context.notify_fork(execution_context::fork_prepare);
-   * if (fork() == 0)
-   * {
-   *   // This is the child process.
-   *   my_execution_context.notify_fork(execution_context::fork_child);
-   * }
-   * else
-   * {
-   *   // This is the parent process.
-   *   my_execution_context.notify_fork(execution_context::fork_parent);
-   * } @endcode
-   *
-   * @note For each service object @c svc in the execution_context set,
-   * performs <tt>svc->notify_fork();</tt>. When processing the fork_prepare
-   * event, services are visited in reverse order of the beginning of service
-   * object lifetime. Otherwise, services are visited in order of the beginning
-   * of service object lifetime.
-   */
-  ASIO_DECL void notify_fork(fork_event event);
+	/// Notify the execution_context of a fork-related event.
+	/**
+	 * This function is used to inform the execution_context that the process is
+	 * about to fork, or has just forked. This allows the execution_context, and
+	 * the services it contains, to perform any necessary housekeeping to ensure
+	 * correct operation following a fork.
+	 *
+	 * This function must not be called while any other execution_context
+	 * function, or any function associated with the execution_context's derived
+	 * class, is being called in another thread. It is, however, safe to call
+	 * this function from within a completion handler, provided no other thread
+	 * is accessing the execution_context or its derived class.
+	 *
+	 * @param event A fork-related event.
+	 *
+	 * @throws asio::system_error Thrown on failure. If the notification
+	 * fails the execution_context object should no longer be used and should be
+	 * destroyed.
+	 *
+	 * @par Example
+	 * The following code illustrates how to incorporate the notify_fork()
+	 * function:
+	 * @code my_execution_context.notify_fork(execution_context::fork_prepare);
+	 * if (fork() == 0)
+	 * {
+	 *   // This is the child process.
+	 *   my_execution_context.notify_fork(execution_context::fork_child);
+	 * }
+	 * else
+	 * {
+	 *   // This is the parent process.
+	 *   my_execution_context.notify_fork(execution_context::fork_parent);
+	 * } @endcode
+	 *
+	 * @note For each service object @c svc in the execution_context set,
+	 * performs <tt>svc->notify_fork();</tt>. When processing the fork_prepare
+	 * event, services are visited in reverse order of the beginning of service
+	 * object lifetime. Otherwise, services are visited in order of the beginning
+	 * of service object lifetime.
+	 */
+	ASIO_DECL void notify_fork(fork_event event);
 
-  /// Obtain the service object corresponding to the given type.
-  /**
-   * This function is used to locate a service object that corresponds to the
-   * given service type. If there is no existing implementation of the service,
-   * then the execution_context will create a new instance of the service.
-   *
-   * @param e The execution_context object that owns the service.
-   *
-   * @return The service interface implementing the specified service type.
-   * Ownership of the service interface is not transferred to the caller.
-   */
-  template <typename Service>
-  friend Service& use_service(execution_context& e);
+	/// Obtain the service object corresponding to the given type.
+	/**
+	 * This function is used to locate a service object that corresponds to the
+	 * given service type. If there is no existing implementation of the service,
+	 * then the execution_context will create a new instance of the service.
+	 *
+	 * @param e The execution_context object that owns the service.
+	 *
+	 * @return The service interface implementing the specified service type.
+	 * Ownership of the service interface is not transferred to the caller.
+	 */
+	template<typename Service> friend Service& use_service(execution_context& e);
 
-  /// Obtain the service object corresponding to the given type.
-  /**
-   * This function is used to locate a service object that corresponds to the
-   * given service type. If there is no existing implementation of the service,
-   * then the io_context will create a new instance of the service.
-   *
-   * @param ioc The io_context object that owns the service.
-   *
-   * @return The service interface implementing the specified service type.
-   * Ownership of the service interface is not transferred to the caller.
-   *
-   * @note This overload is preserved for backwards compatibility with services
-   * that inherit from io_context::service.
-   */
-  template <typename Service>
-  friend Service& use_service(io_context& ioc);
+	/// Obtain the service object corresponding to the given type.
+	/**
+	 * This function is used to locate a service object that corresponds to the
+	 * given service type. If there is no existing implementation of the service,
+	 * then the io_context will create a new instance of the service.
+	 *
+	 * @param ioc The io_context object that owns the service.
+	 *
+	 * @return The service interface implementing the specified service type.
+	 * Ownership of the service interface is not transferred to the caller.
+	 *
+	 * @note This overload is preserved for backwards compatibility with services
+	 * that inherit from io_context::service.
+	 */
+	template<typename Service> friend Service& use_service(io_context& ioc);
 
-  /// Creates a service object and adds it to the execution_context.
-  /**
-   * This function is used to add a service to the execution_context.
-   *
-   * @param e The execution_context object that owns the service.
-   *
-   * @param args Zero or more arguments to be passed to the service
-   * constructor.
-   *
-   * @throws asio::service_already_exists Thrown if a service of the
-   * given type is already present in the execution_context.
-   */
-  template <typename Service, typename... Args>
-  friend Service& make_service(execution_context& e, Args&&... args);
+	/// Creates a service object and adds it to the execution_context.
+	/**
+	 * This function is used to add a service to the execution_context.
+	 *
+	 * @param e The execution_context object that owns the service.
+	 *
+	 * @param args Zero or more arguments to be passed to the service
+	 * constructor.
+	 *
+	 * @throws asio::service_already_exists Thrown if a service of the
+	 * given type is already present in the execution_context.
+	 */
+	template<typename Service, typename... Args> friend Service& make_service(execution_context& e, Args&&... args);
 
-  /// (Deprecated: Use make_service().) Add a service object to the
-  /// execution_context.
-  /**
-   * This function is used to add a service to the execution_context.
-   *
-   * @param e The execution_context object that owns the service.
-   *
-   * @param svc The service object. On success, ownership of the service object
-   * is transferred to the execution_context. When the execution_context object
-   * is destroyed, it will destroy the service object by performing: @code
-   * delete static_cast<execution_context::service*>(svc) @endcode
-   *
-   * @throws asio::service_already_exists Thrown if a service of the
-   * given type is already present in the execution_context.
-   *
-   * @throws asio::invalid_service_owner Thrown if the service's owning
-   * execution_context is not the execution_context object specified by the
-   * @c e parameter.
-   */
-  template <typename Service>
-  friend void add_service(execution_context& e, Service* svc);
+	/// (Deprecated: Use make_service().) Add a service object to the
+	/// execution_context.
+	/**
+	 * This function is used to add a service to the execution_context.
+	 *
+	 * @param e The execution_context object that owns the service.
+	 *
+	 * @param svc The service object. On success, ownership of the service object
+	 * is transferred to the execution_context. When the execution_context object
+	 * is destroyed, it will destroy the service object by performing: @code
+	 * delete static_cast<execution_context::service*>(svc) @endcode
+	 *
+	 * @throws asio::service_already_exists Thrown if a service of the
+	 * given type is already present in the execution_context.
+	 *
+	 * @throws asio::invalid_service_owner Thrown if the service's owning
+	 * execution_context is not the execution_context object specified by the
+	 * @c e parameter.
+	 */
+	template<typename Service> friend void add_service(execution_context& e, Service* svc);
 
-  /// Determine if an execution_context contains a specified service type.
-  /**
-   * This function is used to determine whether the execution_context contains a
-   * service object corresponding to the given service type.
-   *
-   * @param e The execution_context object that owns the service.
-   *
-   * @return A boolean indicating whether the execution_context contains the
-   * service.
-   */
-  template <typename Service>
-  friend bool has_service(execution_context& e);
+	/// Determine if an execution_context contains a specified service type.
+	/**
+	 * This function is used to determine whether the execution_context contains a
+	 * service object corresponding to the given service type.
+	 *
+	 * @param e The execution_context object that owns the service.
+	 *
+	 * @return A boolean indicating whether the execution_context contains the
+	 * service.
+	 */
+	template<typename Service> friend bool has_service(execution_context& e);
 
 private:
-  // The service registry.
-  asio::detail::service_registry* service_registry_;
+	// The service registry.
+	asio::detail::service_registry* service_registry_;
 };
 
 /// Class used to uniquely identify a service.
-class execution_context::id
-  : private noncopyable
-{
+class execution_context::id : private noncopyable {
 public:
-  /// Constructor.
-  id() {}
+	/// Constructor.
+	id() {}
 };
 
 /// Base class for all io_context services.
-class execution_context::service
-  : private noncopyable
-{
+class execution_context::service : private noncopyable {
 public:
-  /// Get the context object that owns the service.
-  execution_context& context();
+	/// Get the context object that owns the service.
+	execution_context& context();
 
 protected:
-  /// Constructor.
-  /**
-   * @param owner The execution_context object that owns the service.
-   */
-  ASIO_DECL service(execution_context& owner);
+	/// Constructor.
+	/**
+	 * @param owner The execution_context object that owns the service.
+	 */
+	ASIO_DECL service(execution_context& owner);
 
-  /// Destructor.
-  ASIO_DECL virtual ~service();
+	/// Destructor.
+	ASIO_DECL virtual ~service();
 
 private:
-  /// Destroy all user-defined handler objects owned by the service.
-  virtual void shutdown() = 0;
+	/// Destroy all user-defined handler objects owned by the service.
+	virtual void shutdown() = 0;
 
-  /// Handle notification of a fork-related event to perform any necessary
-  /// housekeeping.
-  /**
-   * This function is not a pure virtual so that services only have to
-   * implement it if necessary. The default implementation does nothing.
-   */
-  ASIO_DECL virtual void notify_fork(
-      execution_context::fork_event event);
+	/// Handle notification of a fork-related event to perform any necessary
+	/// housekeeping.
+	/**
+	 * This function is not a pure virtual so that services only have to
+	 * implement it if necessary. The default implementation does nothing.
+	 */
+	ASIO_DECL virtual void notify_fork(execution_context::fork_event event);
 
-  friend class asio::detail::service_registry;
-  struct key
-  {
-    key() : type_info_(0), id_(0) {}
-    const std::type_info* type_info_;
-    const execution_context::id* id_;
-  } key_;
+	friend class asio::detail::service_registry;
 
-  execution_context& owner_;
-  service* next_;
+	struct key {
+		key()
+		    : type_info_(0)
+		    , id_(0)
+		{
+		}
+
+		const std::type_info* type_info_;
+		const execution_context::id* id_;
+	} key_;
+
+	execution_context& owner_;
+	service* next_;
 };
 
 /// Exception thrown when trying to add a duplicate service to an
 /// execution_context.
-class service_already_exists
-  : public std::logic_error
-{
+class service_already_exists : public std::logic_error {
 public:
-  ASIO_DECL service_already_exists();
+	ASIO_DECL service_already_exists();
 };
 
 /// Exception thrown when trying to add a service object to an
 /// execution_context where the service has a different owner.
-class invalid_service_owner
-  : public std::logic_error
-{
+class invalid_service_owner : public std::logic_error {
 public:
-  ASIO_DECL invalid_service_owner();
+	ASIO_DECL invalid_service_owner();
 };
 
 namespace detail {
 
 // Special derived service id type to keep classes header-file only.
-template <typename Type>
-class service_id
-  : public execution_context::id
-{
-};
+template<typename Type> class service_id : public execution_context::id {};
 
 // Special service base class to keep classes header-file only.
-template <typename Type>
-class execution_context_service_base
-  : public execution_context::service
-{
+template<typename Type> class execution_context_service_base : public execution_context::service {
 public:
-  static service_id<Type> id;
+	static service_id<Type> id;
 
-  // Constructor.
-  execution_context_service_base(execution_context& e)
-    : execution_context::service(e)
-  {
-  }
+	// Constructor.
+	execution_context_service_base(execution_context& e)
+	    : execution_context::service(e)
+	{
+	}
 };
 
-template <typename Type>
-service_id<Type> execution_context_service_base<Type>::id;
+template<typename Type> service_id<Type> execution_context_service_base<Type>::id;
 
 } // namespace detail
 } // namespace asio
 
 #include "asio/detail/pop_options.hpp"
-
 #include "asio/impl/execution_context.hpp"
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/impl/execution_context.ipp"
+#include "asio/impl/execution_context.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // ASIO_EXECUTION_CONTEXT_HPP

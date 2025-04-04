@@ -6,9 +6,9 @@
 #include "System/Misc/NonCopyable.h"
 
 class IVideoCapturing : public spring::noncopyable {
-
 protected:
 	IVideoCapturing() {}
+
 	virtual ~IVideoCapturing() { FreeInstance(); }
 
 public:
@@ -21,9 +21,11 @@ public:
 	void SetAllowRecord(bool enable) { allowRecord = enable; }
 
 	void SetLastFrameTime(float time) { lastFrameTime = time; }
+
 	void SetTimeOffset(float offset) { timeOffset = offset; }
 
 	float GetLastFrameTime() const { return lastFrameTime; }
+
 	float GetTimeOffset() const { return timeOffset; }
 
 	/**
@@ -39,10 +41,12 @@ public:
 	 * @return	true if a video is currently being captured
 	 */
 	bool IsCapturing() const { return capturing; }
+
 	bool AllowRecord() const { return allowRecord; }
 
 protected:
 	virtual void StartCapturing() {}
+
 	virtual void StopCapturing() {}
 
 protected:

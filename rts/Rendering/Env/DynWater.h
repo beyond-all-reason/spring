@@ -4,16 +4,18 @@
 #define DYN_WATER_H
 
 #include "IWater.h"
+
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/myGL.h"
 
 #include <vector>
 
 class CCamera;
-class CDynWater : public IWater
-{
+
+class CDynWater : public IWater {
 public:
 	~CDynWater() override { FreeResources(); }
+
 	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
@@ -21,10 +23,13 @@ public:
 	void UpdateWater(const CGame* game) override;
 	void Update() override;
 	void AddExplosion(const float3& pos, float strength, float size);
+
 	WATER_RENDERER GetID() const override { return WATER_RENDERER_DYNAMIC; }
 
 	bool CanDrawReflectionPass() const override { return true; }
+
 	bool CanDrawRefractionPass() const override { return true; }
+
 private:
 	void DrawReflection(const CGame* game);
 	void DrawRefraction(const CGame* game);
@@ -34,8 +39,8 @@ private:
 	void DrawDetailNormalTex();
 	void AddShipWakes();
 	void AddExplosions();
-	void DrawUpdateSquare(float dx,float dy, int* resetTexs);
-	void DrawSingleUpdateSquare(float startx, float starty,float endx,float endy);
+	void DrawUpdateSquare(float dx, float dy, int* resetTexs);
+	void DrawSingleUpdateSquare(float startx, float starty, float endx, float endy);
 
 	int refractSize;
 	GLuint reflectTexture;
@@ -96,14 +101,17 @@ private:
 
 	struct Explosion {
 		Explosion(const float3& pos, float strength, float radius)
-			: pos(pos)
-			, strength(strength)
-			, radius(radius)
-		{}
+		    : pos(pos)
+		    , strength(strength)
+		    , radius(radius)
+		{
+		}
+
 		float3 pos;
 		float strength;
 		float radius;
 	};
+
 	std::vector<Explosion> explosions;
 	void DrawOuterSurface();
 };

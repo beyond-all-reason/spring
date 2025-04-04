@@ -6,8 +6,7 @@
 #include "Sim/Projectiles/Projectile.h"
 #include "System/Color.h"
 
-class CNanoProjectile : public CProjectile
-{
+class CNanoProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CNanoProjectile)
 
 public:
@@ -29,6 +28,7 @@ private:
 	float rotVal0x = 0.0f;
 	float rotVel0x = 0.0f;
 	float rotAcc0x = 0.0f;
+
 public:
 	static inline float rotVal0 = 0.0f;
 	static inline float rotVel0 = 0.0f;
@@ -42,4 +42,3 @@ public:
 };
 
 #endif /* NANO_PROJECTILE_H */
-

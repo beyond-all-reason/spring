@@ -3,11 +3,11 @@
 #ifndef IN_MAP_DRAW_MODEL_H
 #define IN_MAP_DRAW_MODEL_H
 
+#include "System/creg/creg_cond.h"
+#include "System/float3.h"
+
 #include <string>
 #include <vector>
-
-#include "System/float3.h"
-#include "System/creg/creg_cond.h"
 
 class CPlayer;
 class TeamController;
@@ -17,9 +17,7 @@ class TeamController;
  * @see CInMapDrawView for V
  * @see CInMapDraw for C
  */
-class CInMapDrawModel
-{
-
+class CInMapDrawModel {
 public:
 	static const size_t DRAW_QUAD_SIZE;
 	static const float QUAD_SCALE;
@@ -29,6 +27,7 @@ public:
 	void PostLoad();
 
 	void SetAllMarksVisible(bool newState) { drawAllMarks = newState; }
+
 	bool GetAllMarksVisible() const { return drawAllMarks; }
 
 	bool AddPoint(const float3& pos, const std::string& label, int playerID);
@@ -37,16 +36,17 @@ public:
 	void EraseAll();
 
 	size_t GetNumPoints() const { return numPoints; }
-	size_t GetNumLines() const { return numLines; }
 
+	size_t GetNumLines() const { return numLines; }
 
 	struct MapDrawPrimitive {
 	public:
 		MapDrawPrimitive(bool spectator, int teamID, const TeamController* teamController)
-			: spectator(spectator)
-			, teamID(teamID)
-			, teamController(teamController)
-		{}
+		    : spectator(spectator)
+		    , teamID(teamID)
+		    , teamController(teamController)
+		{
+		}
 
 		bool IsVisibleToPlayer(bool drawAllMarks) const;
 
@@ -56,12 +56,14 @@ public:
 		 * @see #GetTeamController
 		 */
 		bool IsBySpectator() const { return spectator; }
+
 		/**
 		 * The team-id of the creator of this map-drawing at the time of
 		 * creation.
 		 * @see #GetTeamController
 		 */
 		int GetTeamID() const { return teamID; }
+
 		/**
 		 * The team-controller that created this map-drawing.
 		 */
@@ -74,15 +76,20 @@ public:
 	};
 
 	struct MapPoint : public MapDrawPrimitive {
-
 	public:
-		MapPoint(bool spectator, int teamID, const TeamController* teamController, const float3& pos, const std::string& label)
-			: MapDrawPrimitive(spectator, teamID, teamController)
-			, pos(pos)
-			, label(label)
-		{}
+		MapPoint(bool spectator,
+		    int teamID,
+		    const TeamController* teamController,
+		    const float3& pos,
+		    const std::string& label)
+		    : MapDrawPrimitive(spectator, teamID, teamController)
+		    , pos(pos)
+		    , label(label)
+		{
+		}
 
 		const float3& GetPos() const { return pos; }
+
 		const std::string& GetLabel() const { return label; }
 
 	private:
@@ -91,18 +98,23 @@ public:
 	};
 
 	struct MapLine : public MapDrawPrimitive {
-
 	public:
-		MapLine(bool spectator, int teamID, const TeamController* teamController, const float3& pos1, const float3& pos2)
-			: MapDrawPrimitive(spectator, teamID, teamController)
-			, pos1(pos1)
-			, pos2(pos2)
-		{}
+		MapLine(bool spectator,
+		    int teamID,
+		    const TeamController* teamController,
+		    const float3& pos1,
+		    const float3& pos2)
+		    : MapDrawPrimitive(spectator, teamID, teamController)
+		    , pos1(pos1)
+		    , pos2(pos2)
+		{
+		}
 
 		/**
 		 * The start position of the line.
 		 */
 		const float3& GetPos1() const { return pos1; }
+
 		/**
 		 * The end position of the line.
 		 */
@@ -123,7 +135,9 @@ public:
 	};
 
 	int GetDrawQuadX() const { return drawQuadsX; }
+
 	int GetDrawQuadY() const { return drawQuadsY; }
+
 	const DrawQuad* GetDrawQuad(int x, int y) const;
 
 private:

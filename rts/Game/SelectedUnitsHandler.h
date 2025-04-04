@@ -3,26 +3,25 @@
 #ifndef SELECTED_UNITS_H
 #define SELECTED_UNITS_H
 
-#include <vector>
-#include <string>
-
 #include "Game/UI/Groups/Group.h"
 #include "Sim/Units/CommandAI/Command.h"
-#include "System/float4.h"
 #include "System/Object.h"
 #include "System/UnorderedSet.hpp"
+#include "System/float4.h"
+
+#include <string>
+#include <vector>
 
 class CUnit;
 class CFeature;
 class CPlayer;
 struct SCommandDescription;
 
-class CSelectedUnitsHandler : public CObject
-{
+class CSelectedUnitsHandler : public CObject {
 public:
 	void Init(unsigned numPlayers);
 	void SelectGroup(int num);
-	void SetGroup(CGroup* group, bool fromFactory= false, bool autoSelect = false);
+	void SetGroup(CGroup* group, bool fromFactory = false, bool autoSelect = false);
 	void AINetOrder(int unitID, int aiTeamID, int playerID, const Command& c);
 	int GetDefaultCmd(const CUnit* unit, const CFeature* feature);
 
@@ -36,6 +35,7 @@ public:
 		std::vector<SCommandDescription> commands;
 		int commandPage;
 	};
+
 	AvailableCommandsStruct GetAvailableCommands();
 	void GiveCommand(const Command& c, bool fromUser = true);
 	void AddUnit(CUnit* unit);
@@ -43,10 +43,14 @@ public:
 	void ClearSelected();
 
 	/// used by MouseHandler.cpp & MiniMap.cpp
-	void HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom);
+	void HandleUnitBoxSelection(const float4& planeRight,
+	    const float4& planeLeft,
+	    const float4& planeTop,
+	    const float4& planeBottom);
 	void HandleSingleUnitClickSelection(CUnit* unit, bool doInViewTest, bool selectType);
 
 	void ToggleBuildIconsFirst();
+
 	bool BuildIconsFirst() const { return buildIconsFirst; }
 
 	void PossibleCommandChange(CUnit* sender);
@@ -55,23 +59,31 @@ public:
 	void SetCommandPage(int page);
 	void SendCommand(const Command& c);
 	void SendSelect();
-	void SendCommandsToUnits(const std::vector<int>& unitIDs, const std::vector<Command>& commands, bool pairwise = false);
+	void
+	SendCommandsToUnits(const std::vector<int>& unitIDs, const std::vector<Command>& commands, bool pairwise = false);
 
 	bool CommandsChanged() const { return possibleCommandsChanged; }
+
 	bool IsUnitSelected(const CUnit* unit) const;
 	bool IsUnitSelected(const int unitID) const;
+
 	bool AutoAddBuiltUnitsToFactoryGroup() const { return autoAddBuiltUnitsToFactoryGroup; }
+
 	bool AutoAddBuiltUnitsToSelectedGroup() const { return autoAddBuiltUnitsToSelectedGroup; }
+
 	bool IsGroupSelected(int groupID) const { return (selectedGroup == groupID); }
+
 	int GetSelectedGroup() const { return selectedGroup; }
 
 	void SelectUnits(const std::string& line);
 	void SelectCycle(const std::string& command);
 
 	bool GetBoxSelectionHandledByEngine() const { return ubHandledByEngine; }
+
 	void SetBoxSelectionHandledByEngine(bool b) { ubHandledByEngine = b; }
 
 	static bool CanISelectTeam(const CPlayer* myPlayer, int teamID);
+
 private:
 	int selectedGroup = -1;
 	int soundMultiselID = 0;
@@ -81,12 +93,13 @@ private:
 	bool buildIconsFirst = false;
 
 	bool ubHandledByEngine = true;
+
 public:
 	bool selectionChanged = false;
 	bool possibleCommandsChanged = true;
 
 	spring::unordered_set<int> selectedUnits;
-	std::vector< std::vector<int> > netSelected;
+	std::vector<std::vector<int>> netSelected;
 
 private:
 	// buffer for SendCommand unordered_set->vector conversion
@@ -96,4 +109,3 @@ private:
 extern CSelectedUnitsHandler selectedUnitsHandler;
 
 #endif /* SELECTED_UNITS_H */
-

@@ -12,13 +12,12 @@
 #include "Sim/Misc/TeamHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
+#include "System/Misc/SpringTime.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SafeUtil.h"
 #include "System/creg/creg_cond.h"
-#include "System/Misc/SpringTime.h"
 
 #include <ctime>
-
-#include "System/Misc/TracyDefs.h"
 
 
 /**
@@ -35,27 +34,25 @@ CGlobalUnsynced* gu = &guOBJ;
 
 CR_BIND(CGlobalUnsynced, )
 
-CR_REG_METADATA(CGlobalUnsynced, (
-	CR_IGNORED(simFPS),
-	CR_IGNORED(avgSimFrameTime),
-	CR_IGNORED(avgDrawFrameTime),
-	CR_IGNORED(avgFrameTime),
-	CR_MEMBER(modGameTime),
-	CR_MEMBER(gameTime),
-	CR_MEMBER(startTime),
-	CR_MEMBER(myPlayerNum),
-	CR_MEMBER(myTeam),
-	CR_MEMBER(myAllyTeam),
-	CR_MEMBER(myPlayingTeam),
-	CR_MEMBER(myPlayingAllyTeam),
-	CR_MEMBER(spectating),
-	CR_MEMBER(spectatingFullView),
-	CR_MEMBER(spectatingFullSelect),
-	CR_IGNORED(fpsMode),
-	CR_IGNORED(globalQuit),
-	CR_IGNORED(globalReload)
-))
-
+CR_REG_METADATA(CGlobalUnsynced,
+    (CR_IGNORED(simFPS),
+        CR_IGNORED(avgSimFrameTime),
+        CR_IGNORED(avgDrawFrameTime),
+        CR_IGNORED(avgFrameTime),
+        CR_MEMBER(modGameTime),
+        CR_MEMBER(gameTime),
+        CR_MEMBER(startTime),
+        CR_MEMBER(myPlayerNum),
+        CR_MEMBER(myTeam),
+        CR_MEMBER(myAllyTeam),
+        CR_MEMBER(myPlayingTeam),
+        CR_MEMBER(myPlayingAllyTeam),
+        CR_MEMBER(spectating),
+        CR_MEMBER(spectatingFullView),
+        CR_MEMBER(spectatingFullSelect),
+        CR_IGNORED(fpsMode),
+        CR_IGNORED(globalQuit),
+        CR_IGNORED(globalReload)))
 
 void CGlobalUnsynced::ResetState()
 {
@@ -75,8 +72,8 @@ void CGlobalUnsynced::ResetState()
 	myPlayingTeam = -1;
 	myPlayingAllyTeam = -1;
 
-	spectating           = false;
-	spectatingFullView   = false;
+	spectating = false;
+	spectatingFullView = false;
 	spectatingFullSelect = false;
 
 	fpsMode = false;
@@ -95,7 +92,6 @@ void CGlobalUnsynced::LoadFromSetup(const CGameSetup* setup)
 	playerHandler.LoadFromSetup(setup);
 }
 
-
 void CGlobalUnsynced::SetMyPlayer(const int myNumber)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -109,8 +105,8 @@ void CGlobalUnsynced::SetMyPlayer(const int myNumber)
 	if (!teamHandler.IsValidAllyTeam(myAllyTeam))
 		throw content_error("Invalid MyAllyTeam in player setup");
 
-	spectating           = myPlayer->spectator;
-	spectatingFullView   = myPlayer->spectator;
+	spectating = myPlayer->spectator;
+	spectatingFullView = myPlayer->spectator;
 	spectatingFullSelect = myPlayer->spectator;
 
 	if (spectating)
@@ -120,8 +116,8 @@ void CGlobalUnsynced::SetMyPlayer(const int myNumber)
 	myPlayingAllyTeam = myAllyTeam;
 }
 
-CPlayer* CGlobalUnsynced::GetMyPlayer() {
+CPlayer* CGlobalUnsynced::GetMyPlayer()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (playerHandler.Player(myPlayerNum));
 }
-

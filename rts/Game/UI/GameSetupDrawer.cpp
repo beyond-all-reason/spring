@@ -4,28 +4,27 @@
 
 #include "KeyBindings.h"
 #include "StartPosSelecter.h"
+
 #include "Game/CameraHandler.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Net/GameServer.h"
+#include "Net/Protocol/NetProtocol.h"
+#include "Rendering/Fonts/glFont.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Rendering/Fonts/glFont.h"
-#include "Net/Protocol/NetProtocol.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringUtil.h"
 
 #include <cassert>
 #include <string>
 
-#include "System/Misc/TracyDefs.h"
-
 
 GameSetupDrawer* GameSetupDrawer::instance = nullptr;
-
 
 void GameSetupDrawer::Enable()
 {
@@ -43,20 +42,18 @@ void GameSetupDrawer::Disable()
 	instance = nullptr;
 }
 
-
 void GameSetupDrawer::StartCountdown(unsigned time)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (instance != nullptr) {
-		instance->lastTick = spring_gettime(); //FIXME
+		instance->lastTick = spring_gettime(); // FIXME
 		instance->readyCountdown = spring_msecs(time);
 	}
 }
 
-
-GameSetupDrawer::GameSetupDrawer():
-	readyCountdown(spring_notime),
-	lastTick(spring_notime)
+GameSetupDrawer::GameSetupDrawer()
+    : readyCountdown(spring_notime)
+    , lastTick(spring_notime)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (gameSetup->hostDemo)
@@ -68,7 +65,6 @@ GameSetupDrawer::GameSetupDrawer():
 }
 
 GameSetupDrawer::~GameSetupDrawer() = default;
-
 
 void GameSetupDrawer::Draw()
 {
@@ -85,19 +81,23 @@ void GameSetupDrawer::Draw()
 
 	const unsigned int numPlayers = playerHandler.ActivePlayers();
 
-	std::vector< std::pair<int, std::string> > playerStates(numPlayers);
+	std::vector<std::pair<int, std::string>> playerStates(numPlayers);
 	std::string startState = "Unknown state.";
 
 	if (readyCountdown > spring_nulltime) {
 		startState = "Starting in " + IntToString(readyCountdown.toSecsi(), "%i");
-	} else if (!playerHandler.Player(gu->myPlayerNum)->spectator && !playerHandler.Player(gu->myPlayerNum)->IsReadyToStart()) {
+	}
+	else if (!playerHandler.Player(gu->myPlayerNum)->spectator &&
+	         !playerHandler.Player(gu->myPlayerNum)->IsReadyToStart()) {
 		startState = "Choose start pos";
-	} else if (gameServer) {
+	}
+	else if (gameServer) {
 		// we are the host and can get the show on the road by force
 		const CKeyBindings::HotkeyList& fsKeys = keyBindings.GetHotkeys("forcestart");
 		const std::string fsKey = fsKeys.empty() ? "<none>" : *fsKeys.begin();
 		startState = std::string("Waiting for players, press ") + fsKey + " to force start";
-	} else {
+	}
+	else {
 		startState = "Waiting for players";
 	}
 
@@ -110,9 +110,11 @@ void GameSetupDrawer::Draw()
 		if (!player->active) {
 			// player does not become active until we receive NETMSG_PLAYERNAME
 			playerStates[a].second = "missing";
-		} else if (!player->spectator && !player->IsReadyToStart()) {
+		}
+		else if (!player->spectator && !player->IsReadyToStart()) {
 			playerStates[a].second = "notready";
-		} else {
+		}
+		else {
 			playerStates[a].second = "ready";
 		}
 	}
@@ -148,15 +150,15 @@ void GameSetupDrawer::Draw()
 	font->glPrint(0.3f, 0.7f, 1.0f, FONT_OUTLINE | FONT_SCALE | FONT_NORM, startState);
 
 	for (unsigned int a = 0; a <= numPlayers; a++) {
-		static constexpr float4      red(1.0f, 0.2f, 0.2f, 1.0f);
-		static constexpr float4    green(0.2f, 1.0f, 0.2f, 1.0f);
-		static constexpr float4   yellow(0.8f, 0.8f, 0.2f, 1.0f);
-		static constexpr float4    white(1.0f, 1.0f, 1.0f, 1.0f);
-		static constexpr float4     cyan(0.0f, 0.9f, 0.9f, 1.0f);
+		static constexpr float4 red(1.0f, 0.2f, 0.2f, 1.0f);
+		static constexpr float4 green(0.2f, 1.0f, 0.2f, 1.0f);
+		static constexpr float4 yellow(0.8f, 0.8f, 0.2f, 1.0f);
+		static constexpr float4 white(1.0f, 1.0f, 1.0f, 1.0f);
+		static constexpr float4 cyan(0.0f, 0.9f, 0.9f, 1.0f);
 		static constexpr float4 lightred(1.0f, 0.5f, 0.5f, 1.0f);
 
 		const float fontScale = 1.0f;
-		const float fontSize  = fontScale * font->GetSize();
+		const float fontSize = fontScale * font->GetSize();
 		const float yScale = fontSize * font->GetLineHeight() * globalRendering->pixelY;
 		// note: list is drawn in reverse order, last player first
 		const float yPos = 0.5f - (0.5f * yScale * numPlayers) + (yScale * a);
@@ -170,21 +172,26 @@ void GameSetupDrawer::Draw()
 		if (a == numPlayers) {
 			color = &white;
 			name = "Players:";
-		} else {
+		}
+		else {
 			player = playerHandler.Player(a);
 			name = player->name;
 
 			if (player->spectator) {
 				if (!player->active) {
 					color = &lightred;
-				} else {
+				}
+				else {
 					color = &cyan;
 				}
-			} else if (!player->active) {
+			}
+			else if (!player->active) {
 				color = &red;
-			} else if (!player->IsReadyToStart()) {
+			}
+			else if (!player->IsReadyToStart()) {
 				color = &yellow;
-			} else {
+			}
+			else {
 				color = &green;
 			}
 		}

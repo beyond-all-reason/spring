@@ -1,14 +1,14 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #ifdef USE_VALGRIND
-	#include <valgrind/valgrind.h>
+#include <valgrind/valgrind.h>
 #endif
 
-#include "System/SpringMath.h"
-#include "System/Exceptions.h"
-#include "System/Sync/FPUCheck.h"
-#include "System/Log/ILog.h"
 #include "Sim/Units/Scripts/CobInstance.h" // for TAANG2RAD (ugh)
+#include "System/Exceptions.h"
+#include "System/Log/ILog.h"
+#include "System/SpringMath.h"
+#include "System/Sync/FPUCheck.h"
 
 #undef far
 #undef near
@@ -51,15 +51,11 @@ void SpringMath::Init()
 	if (checksum == HEADING_CHECKSUM)
 		return;
 
-	throw unsupported_error(
-		"Invalid headingToVectorTable checksum. Most likely"
-		" your streflop library was not compiled with the correct"
-		" options, or you are not using streflop at all."
-	);
+	throw unsupported_error("Invalid headingToVectorTable checksum. Most likely"
+	                        " your streflop library was not compiled with the correct"
+	                        " options, or you are not using streflop at all.");
 #endif
 }
-
-
 
 float3 GetVectorFromHAndPExact(const short int heading, const short int pitch)
 {
@@ -76,7 +72,7 @@ float LinePointDist(const float3 l1, const float3 l2, const float3 p)
 {
 	const float3 dir = (l2 - l1).SafeNormalize();
 	const float3 vec = dir * std::clamp(dir.dot(p - l1), 0.0f, dir.dot(l2 - l1));
-	const float3  p2 = p - vec;
+	const float3 p2 = p - vec;
 	return (p2.distance(l1));
 }
 
@@ -87,7 +83,7 @@ float LinePointDist(const float3 l1, const float3 l2, const float3 p)
 float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p)
 {
 	const float3 ldir(l2 - l1);
-	const float3 pdir( p - l1);
+	const float3 pdir(p - l1);
 
 	const float length = ldir.Length();
 
@@ -100,7 +96,6 @@ float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p)
 	return (l1 + ldir * (cdist / length));
 }
 
-
 bool ClosestPointOnRay(const float3 p0, const float3 ray, const float3 p, float3& px)
 {
 	const float3 pdir(p - p0);
@@ -112,7 +107,6 @@ bool ClosestPointOnRay(const float3 p0, const float3 ray, const float3 p, float3
 
 	return true;
 }
-
 
 // Credit:
 // - https://stackoverflow.com/a/38437831/7351594
@@ -137,11 +131,10 @@ float3 SolveIntersectingPoint(int zeroCoord, int coord1, int coord2, const float
 	return point;
 }
 
-
 // This method helps finding a point on the intersection between two planes.
 // Depending on the orientation of the planes, the problem could solve for the
 // zero point on either the x, y or z axis
-bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3> &line)
+bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3>& line)
 {
 	// the cross product gives us the direction of the line at the intersection
 	// of the two planes, and gives us an easy way to check if the two planes
@@ -164,9 +157,11 @@ bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float
 
 	if (z >= x && z >= y) {
 		line.second = SolveIntersectingPoint(2, 0, 1, plane1, plane2); // 'z', 'x', 'y'
-	} else if (y >= z && y >= x) {
+	}
+	else if (y >= z && y >= x) {
 		line.second = SolveIntersectingPoint(1, 2, 0, plane1, plane2); // 'y', 'z', 'x'
-	} else {
+	}
+	else {
 		line.second = SolveIntersectingPoint(0, 1, 2, plane1, plane2); // 'x', 'y', 'z'
 	}
 
@@ -198,7 +193,6 @@ bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair
 	return true;
 }
 
-
 /**
  * calculates the two intersection points ON the ray
  * as scalar multiples of `dir` starting from `start`;
@@ -210,27 +204,27 @@ bool LinesIntersectionPoint(const std::pair<float3, float3>& l1, const std::pair
  */
 float2 GetMapBoundaryIntersectionPoints(const float3 start, const float3 dir)
 {
-	const float rcpdirx = (dir.x != 0.0f)? (1.0f / dir.x): 10000.0f;
-	const float rcpdirz = (dir.z != 0.0f)? (1.0f / dir.z): 10000.0f;
+	const float rcpdirx = (dir.x != 0.0f) ? (1.0f / dir.x) : 10000.0f;
+	const float rcpdirz = (dir.z != 0.0f) ? (1.0f / dir.z) : 10000.0f;
 
-	const float mapwidth  = float3::maxxpos + 1.0f;
+	const float mapwidth = float3::maxxpos + 1.0f;
 	const float mapheight = float3::maxzpos + 1.0f;
 
 	// x-component
-	float xl1 = (    0.0f - start.x) * rcpdirx;
+	float xl1 = (0.0f - start.x) * rcpdirx;
 	float xl2 = (mapwidth - start.x) * rcpdirx;
 	float xnear = std::min(xl1, xl2);
-	float xfar  = std::max(xl1, xl2);
+	float xfar = std::max(xl1, xl2);
 
 	// z-component
-	float zl1 = (     0.0f - start.z) * rcpdirz;
+	float zl1 = (0.0f - start.z) * rcpdirz;
 	float zl2 = (mapheight - start.z) * rcpdirz;
 	float znear = std::min(zl1, zl2);
-	float zfar  = std::max(zl1, zl2);
+	float zfar = std::max(zl1, zl2);
 
 	// both
 	float near = std::max(xnear, znear);
-	float far  = std::min(xfar, zfar);
+	float far = std::min(xfar, zfar);
 
 	if (far < 0.0f || far < near) {
 		// outside of boundary
@@ -275,17 +269,17 @@ bool ClampLineInMap(float3& start, float3& end)
 	const float2 ips = GetMapBoundaryIntersectionPoints(start, dir);
 
 	const float near = ips.x;
-	const float far  = ips.y;
+	const float far = ips.y;
 
 	if (far < 0.0f) {
 		// outside of map!
 		start = -OnesVector;
-		end   = -OnesVector;
+		end = -OnesVector;
 		return true;
 	}
 
 	if (far < 1.0f || near > 0.0f) {
-		end   = start + dir * std::min(far, 1.0f);
+		end = start + dir * std::min(far, 1.0f);
 		start = start + dir * std::max(near, 0.0f);
 
 		// precision of near,far are limited, better clamp afterwards
@@ -297,14 +291,13 @@ bool ClampLineInMap(float3& start, float3& end)
 	return false;
 }
 
-
 bool ClampRayInMap(const float3 start, float3& end)
 {
 	const float3 dir = end - start;
 	const float2 ips = GetMapBoundaryIntersectionPoints(start, dir);
 
 	const float near = ips.x;
-	const float far  = ips.y;
+	const float far = ips.y;
 
 	if (far < 0.0f) {
 		end = start;
@@ -323,7 +316,7 @@ void ClipRayByPlanes(const float3& p0, float3& p, const std::initializer_list<fl
 {
 	float3 minPx = p;
 	float dMin = p.SqDistance(p0);
-	for (const auto& clipPlane : clipPlanes) {
+	for (const auto& clipPlane: clipPlanes) {
 		float3 px;
 		if (RayAndPlaneIntersection(p0, p, clipPlane, true, px)) {
 			const float dx = px.SqDistance(p0);
@@ -376,7 +369,6 @@ bool PointInsideQuadrilateral(const float3& p0, const float3& p1, const float3& 
 	return PointInsideTriangle(p0, p1, p2, px) || PointInsideTriangle(p2, p3, p0, px);
 }
 
-
 float linearstep(const float edge0, const float edge1, const float value)
 {
 	const float v = std::clamp(value, edge0, edge1);
@@ -401,7 +393,6 @@ float3 smoothstep(const float edge0, const float edge1, float3 vec)
 	return vec;
 }
 
-
 float3 hs2rgb(float h, float s)
 {
 	// FIXME? ignores saturation completely
@@ -409,27 +400,36 @@ float3 hs2rgb(float h, float s)
 
 	const float invSat = 1.0f - s;
 
-	if (h > 0.5f) { h += 0.1f; }
-	if (h > 1.0f) { h -= 1.0f; }
+	if (h > 0.5f) {
+		h += 0.1f;
+	}
+	if (h > 1.0f) {
+		h -= 1.0f;
+	}
 
 	float3 col(invSat / 2.0f, invSat / 2.0f, invSat / 2.0f);
 
 	if (h < (1.0f / 6.0f)) {
 		col.x += s;
 		col.y += s * (h * 6.0f);
-	} else if (h < (1.0f / 3.0f)) {
+	}
+	else if (h < (1.0f / 3.0f)) {
 		col.y += s;
 		col.x += s * ((1.0f / 3.0f - h) * 6.0f);
-	} else if (h < (1.0f / 2.0f)) {
+	}
+	else if (h < (1.0f / 2.0f)) {
 		col.y += s;
 		col.z += s * ((h - (1.0f / 3.0f)) * 6.0f);
-	} else if (h < (2.0f / 3.0f)) {
+	}
+	else if (h < (2.0f / 3.0f)) {
 		col.z += s;
 		col.y += s * ((2.0f / 3.0f - h) * 6.0f);
-	} else if (h < (5.0f / 6.0f)) {
+	}
+	else if (h < (5.0f / 6.0f)) {
 		col.z += s;
 		col.x += s * ((h - (2.0f / 3.0f)) * 6.0f);
-	} else {
+	}
+	else {
 		col.x += s;
 		col.z += s * ((3.0f / 3.0f - h) * 6.0f);
 	}

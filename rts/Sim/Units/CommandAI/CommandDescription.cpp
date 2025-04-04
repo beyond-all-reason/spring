@@ -1,72 +1,58 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-#include <algorithm>
-
 #include "CommandDescription.h"
+
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringHash.h"
 #include "System/creg/STL_Pair.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <algorithm>
+#include <cassert>
 
 CR_BIND(SCommandDescription, )
-CR_REG_METADATA(SCommandDescription, (
-	CR_MEMBER(id),
-	CR_MEMBER(type),
+CR_REG_METADATA(SCommandDescription,
+    (CR_MEMBER(id),
+        CR_MEMBER(type),
 
-	CR_MEMBER(refCount),
+        CR_MEMBER(refCount),
 
-	CR_MEMBER(queueing),
-	CR_MEMBER(hidden),
-	CR_MEMBER(disabled),
-	CR_MEMBER(showUnique),
-	CR_MEMBER(onlyTexture),
+        CR_MEMBER(queueing),
+        CR_MEMBER(hidden),
+        CR_MEMBER(disabled),
+        CR_MEMBER(showUnique),
+        CR_MEMBER(onlyTexture),
 
-	CR_MEMBER(name),
-	CR_MEMBER(action),
-	CR_MEMBER(iconname),
-	CR_MEMBER(mouseicon),
-	CR_MEMBER(tooltip),
+        CR_MEMBER(name),
+        CR_MEMBER(action),
+        CR_MEMBER(iconname),
+        CR_MEMBER(mouseicon),
+        CR_MEMBER(tooltip),
 
-	CR_MEMBER(params)
-))
+        CR_MEMBER(params)))
 
 CR_BIND(CCommandDescriptionCache, )
-CR_REG_METADATA(CCommandDescriptionCache, (
-	CR_MEMBER(index),
-	CR_MEMBER(slots),
-	CR_MEMBER(cache),
+CR_REG_METADATA(CCommandDescriptionCache,
+    (CR_MEMBER(index),
+        CR_MEMBER(slots),
+        CR_MEMBER(cache),
 
-	CR_MEMBER(numCmdDescrs),
-	CR_MEMBER(numFreeSlots),
-	CR_MEMBER(cacheFullCtr)
-))
+        CR_MEMBER(numCmdDescrs),
+        CR_MEMBER(numFreeSlots),
+        CR_MEMBER(cacheFullCtr)))
 
-
-
-bool SCommandDescription::operator != (const SCommandDescription& cd) const
+bool SCommandDescription::operator!=(const SCommandDescription& cd) const
 {
-	return id          != cd.id          ||
-	       type        != cd.type        ||
+	return id != cd.id || type != cd.type ||
 
-	       queueing    != cd.queueing    ||
-	       hidden      != cd.hidden      ||
-	       disabled    != cd.disabled    ||
-	       showUnique  != cd.showUnique  ||
+	       queueing != cd.queueing || hidden != cd.hidden || disabled != cd.disabled || showUnique != cd.showUnique ||
 	       onlyTexture != cd.onlyTexture ||
 
-	       name        != cd.name        ||
-	       action      != cd.action      ||
-	       iconname    != cd.iconname    ||
-	       mouseicon   != cd.mouseicon   ||
-	       tooltip     != cd.tooltip     ||
-	       params      != cd.params;
+	       name != cd.name || action != cd.action || iconname != cd.iconname || mouseicon != cd.mouseicon ||
+	       tooltip != cd.tooltip || params != cd.params;
 }
 
-
 CCommandDescriptionCache commandDescriptionCache;
-
 
 void CCommandDescriptionCache::Init()
 {
@@ -124,24 +110,23 @@ void CCommandDescriptionCache::Dump(bool forced)
 	}
 }
 
-
 int CCommandDescriptionCache::CalcHash(const SCommandDescription& cd) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	int hash = 0;
 
-	hash = spring::LiteHash(&cd.id             , sizeof(cd.id)         , hash);
-	hash = spring::LiteHash(&cd.type           , sizeof(cd.type)       , hash);
-	hash = spring::LiteHash(&cd.queueing       , sizeof(cd.queueing)   , hash);
-	hash = spring::LiteHash(&cd.hidden         , sizeof(cd.hidden)     , hash);
-	hash = spring::LiteHash(&cd.disabled       , sizeof(cd.disabled)   , hash);
-	hash = spring::LiteHash(&cd.showUnique     , sizeof(cd.showUnique) , hash);
-	hash = spring::LiteHash(&cd.onlyTexture    , sizeof(cd.onlyTexture), hash);
-	hash = spring::LiteHash(cd.name.data()     , cd.name.size()        , hash);
-	hash = spring::LiteHash(cd.action.data()   , cd.action.size()      , hash);
-	hash = spring::LiteHash(cd.iconname.data() , cd.iconname.size()    , hash);
-	hash = spring::LiteHash(cd.mouseicon.data(), cd.mouseicon.size()   , hash);
-	hash = spring::LiteHash(cd.tooltip.data()  , cd.tooltip.size()     , hash);
+	hash = spring::LiteHash(&cd.id, sizeof(cd.id), hash);
+	hash = spring::LiteHash(&cd.type, sizeof(cd.type), hash);
+	hash = spring::LiteHash(&cd.queueing, sizeof(cd.queueing), hash);
+	hash = spring::LiteHash(&cd.hidden, sizeof(cd.hidden), hash);
+	hash = spring::LiteHash(&cd.disabled, sizeof(cd.disabled), hash);
+	hash = spring::LiteHash(&cd.showUnique, sizeof(cd.showUnique), hash);
+	hash = spring::LiteHash(&cd.onlyTexture, sizeof(cd.onlyTexture), hash);
+	hash = spring::LiteHash(cd.name.data(), cd.name.size(), hash);
+	hash = spring::LiteHash(cd.action.data(), cd.action.size(), hash);
+	hash = spring::LiteHash(cd.iconname.data(), cd.iconname.size(), hash);
+	hash = spring::LiteHash(cd.mouseicon.data(), cd.mouseicon.size(), hash);
+	hash = spring::LiteHash(cd.tooltip.data(), cd.tooltip.size(), hash);
 
 	for (const std::string& s: cd.params) {
 		hash = spring::LiteHash(s.data(), s.size(), hash);
@@ -149,7 +134,6 @@ int CCommandDescriptionCache::CalcHash(const SCommandDescription& cd) const
 
 	return hash;
 }
-
 
 const SCommandDescription* CCommandDescriptionCache::GetPtr(SCommandDescription&& cd)
 {
@@ -165,7 +149,13 @@ const SCommandDescription* CCommandDescriptionCache::GetPtr(SCommandDescription&
 
 	if (iter == iend || iter->first != cdHash) {
 		if (numFreeSlots == 0) {
-			LOG_L(L_WARNING, "[CmdDescrCache::%s] too many unique command-descriptions.\nid: %d, type: %d, queueing: %d, hidden: %d, disabled: %d, showUnique: %d, onlyTexture: %d, name: %s, action: %s, iconname: %s, mouseicon: %s, tooltip: %s, hash: %d", __func__, cd.id, cd.type, cd.queueing, cd.hidden, cd.disabled, cd.showUnique, cd.onlyTexture, cd.name.c_str(), cd.action.c_str(), cd.iconname.c_str(), cd.mouseicon.c_str(), cd.tooltip.c_str(), cdHash);
+			LOG_L(L_WARNING,
+			    "[CmdDescrCache::%s] too many unique command-descriptions.\nid: %d, type: %d, queueing: %d, hidden: "
+			    "%d, disabled: %d, showUnique: %d, onlyTexture: %d, name: %s, action: %s, iconname: %s, mouseicon: %s, "
+			    "tooltip: %s, hash: %d",
+			    __func__, cd.id, cd.type, cd.queueing, cd.hidden, cd.disabled, cd.showUnique, cd.onlyTexture,
+			    cd.name.c_str(), cd.action.c_str(), cd.iconname.c_str(), cd.mouseicon.c_str(), cd.tooltip.c_str(),
+			    cdHash);
 			Dump((cacheFullCtr++ % 100) == 0);
 			return &cache[cache.size() - 1];
 		}
@@ -200,7 +190,6 @@ const SCommandDescription* CCommandDescriptionCache::GetPtr(SCommandDescription&
 	return &cache[cache.size() - 1];
 }
 
-
 void CCommandDescriptionCache::DecRef(const SCommandDescription& cd)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -234,14 +223,14 @@ void CCommandDescriptionCache::DecRef(const SCommandDescription& cd)
 			for (unsigned int j = it - ibeg, n = --numCmdDescrs; j < n; j++) {
 				std::swap(index[j], index[j + 1]);
 			}
-		} else {
+		}
+		else {
 			icd.refCount -= 1;
 		}
 
 		break;
 	}
 }
-
 
 void CCommandDescriptionCache::DecRef(std::vector<const SCommandDescription*>& cmdDescs)
 {
@@ -252,4 +241,3 @@ void CCommandDescriptionCache::DecRef(std::vector<const SCommandDescription*>& c
 
 	cmdDescs.clear();
 }
-

@@ -27,4 +27,3 @@ size_t log_framePrefixer_createPrefix(char* result, size_t resultSize);
 #endif
 
 #endif // LOG_FRAME_PREFIXER_H
-

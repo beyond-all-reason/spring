@@ -1,32 +1,31 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LightningCannon.h"
+
 #include "PlasmaRepulser.h"
 #include "WeaponDef.h"
+
 #include "Game/GameHelper.h"
 #include "Game/TraceRay.h"
 #include "Sim/Misc/CollisionHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
+#include "System/Misc/TracyDefs.h"
 
 #include <vector>
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND_DERIVED(CLightningCannon, CWeapon, )
-CR_REG_METADATA(CLightningCannon, (
-	CR_MEMBER(color)
-))
+CR_REG_METADATA(CLightningCannon, (CR_MEMBER(color)))
 
-CLightningCannon::CLightningCannon(CUnit* owner, const WeaponDef* def): CWeapon(owner, def)
+CLightningCannon::CLightningCannon(CUnit* owner, const WeaponDef* def)
+    : CWeapon(owner, def)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// null happens when loading
 	if (def != nullptr)
 		color = def->visuals.color;
 }
-
 
 void CLightningCannon::FireImpl(const bool scriptCall)
 {
@@ -41,7 +40,8 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 	CFeature* hitFeature = nullptr;
 	CollisionQuery hitColQuery;
 
-	float boltLength = TraceRay::TraceRay(curPos, curDir, range, collisionFlags, owner, hitUnit, hitFeature, &hitColQuery);
+	float boltLength =
+	    TraceRay::TraceRay(curPos, curDir, range, collisionFlags, owner, hitUnit, hitFeature, &hitColQuery);
 
 	if (!weaponDef->waterweapon) {
 		// terminate bolt at water surface if necessary
@@ -69,25 +69,23 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 
 
 	const DamageArray& damageArray = damages->GetDynamicDamages(weaponMuzzlePos, currentTargetPos);
-	const CExplosionParams params = {
-		.pos                  = curPos + curDir * boltLength,
-		.dir                  = curDir,
-		.damages              = damageArray,
-		.weaponDef            = weaponDef,
-		.owner                = owner,
-		.hitUnit              = hitUnit,
-		.hitFeature           = hitFeature,
-		.craterAreaOfEffect   = damages->craterAreaOfEffect,
-		.damageAreaOfEffect   = damages->damageAreaOfEffect,
-		.edgeEffectiveness    = damages->edgeEffectiveness,
-		.explosionSpeed       = damages->explosionSpeed,
-		.gfxMod               = 0.5f,
-		.maxGroundDeformation = 0.0f,
-		.impactOnly           = weaponDef->impactOnly,
-		.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
-		.damageGround         = false,
-		.projectileID         = static_cast<uint32_t>(-1u)
-	};
+	const CExplosionParams params = {.pos = curPos + curDir * boltLength,
+	    .dir = curDir,
+	    .damages = damageArray,
+	    .weaponDef = weaponDef,
+	    .owner = owner,
+	    .hitUnit = hitUnit,
+	    .hitFeature = hitFeature,
+	    .craterAreaOfEffect = damages->craterAreaOfEffect,
+	    .damageAreaOfEffect = damages->damageAreaOfEffect,
+	    .edgeEffectiveness = damages->edgeEffectiveness,
+	    .explosionSpeed = damages->explosionSpeed,
+	    .gfxMod = 0.5f,
+	    .maxGroundDeformation = 0.0f,
+	    .impactOnly = weaponDef->impactOnly,
+	    .ignoreOwner = weaponDef->noExplode || weaponDef->noSelfDamage,
+	    .damageGround = false,
+	    .projectileID = static_cast<uint32_t>(-1u)};
 
 	helper->Explosion(params);
 
@@ -98,4 +96,3 @@ void CLightningCannon::FireImpl(const bool scriptCall)
 
 	WeaponProjectileFactory::LoadProjectile(pparams);
 }
-

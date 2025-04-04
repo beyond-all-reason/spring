@@ -2,29 +2,26 @@
 
 
 #include "Building.h"
+
 #include "Game/GameHelper.h"
 #include "Map/ReadMap.h"
 #include "Sim/Units/BuildInfo.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitLoader.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 
 CR_BIND_DERIVED(CBuilding, CUnit, )
-CR_REG_METADATA(CBuilding, (
-	CR_IGNORED(blockMap), // reloaded in PostLoad
-	CR_POSTLOAD(PostLoad)
-))
-
+CR_REG_METADATA(CBuilding,
+    (CR_IGNORED(blockMap), // reloaded in PostLoad
+        CR_POSTLOAD(PostLoad)))
 
 void CBuilding::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	blockMap = unitDef->GetYardMapPtr();
 }
-
 
 void CBuilding::PreInit(const UnitLoadParams& params)
 {
@@ -45,8 +42,8 @@ void CBuilding::PostInit(const CUnit* builder)
 	CUnit::PostInit(builder);
 }
 
-
-void CBuilding::ForcedMove(const float3& newPos) {
+void CBuilding::ForcedMove(const float3& newPos)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// heading might have changed if building was dropped from transport
 	// (always needs to be axis-aligned because yardmaps are not rotated)
@@ -60,4 +57,3 @@ void CBuilding::ForcedMove(const float3& newPos) {
 
 	unitLoader->FlattenGround(this);
 }
-

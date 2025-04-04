@@ -2,16 +2,11 @@
 
 #include "PboInfoTexture.h"
 
-
 CPboInfoTexture::CPboInfoTexture(const std::string& _name)
 {
-	name        = _name;
+	name = _name;
 	texChannels = 0;
-	texture     = 0;
+	texture = 0;
 }
 
-
-CPboInfoTexture::~CPboInfoTexture()
-{
-	glDeleteTextures(1, &texture);
-}
+CPboInfoTexture::~CPboInfoTexture() { glDeleteTextures(1, &texture); }

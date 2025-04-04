@@ -7,24 +7,24 @@
 
 
 #include "irrXML.h"
-#include "irrString.h"
-#include "irrArray.h"
-#include "./../../code/fast_atof.h"
-#include "CXMLReaderImpl.h"
 
-namespace irr
-{
-namespace io
-{
+#include "CXMLReaderImpl.h"
+#include "irrArray.h"
+#include "irrString.h"
+
+#include "./../../code/fast_atof.h"
+
+namespace irr {
+namespace io {
 
 //! Implementation of the file read callback for ordinary files
-class CFileReadCallBack : public IFileReadCallBack
-{
+class CFileReadCallBack : public IFileReadCallBack {
 public:
-
 	//! construct from filename
 	CFileReadCallBack(const char* filename)
-		: File(0), Size(0), Close(true)
+	    : File(0)
+	    , Size(0)
+	    , Close(true)
 	{
 		// open file
 		File = fopen(filename, "rb");
@@ -35,7 +35,9 @@ public:
 
 	//! construct from FILE pointer
 	CFileReadCallBack(FILE* file)
-		: File(file), Size(0), Close(false)
+	    : File(file)
+	    , Size(0)
+	    , Close(false)
 	{
 		if (File)
 			getFileSize();
@@ -58,13 +60,9 @@ public:
 	}
 
 	//! Returns size of file in bytes
-	virtual int getSize()
-	{
-		return Size;
-	}
+	virtual int getSize() { return Size; }
 
 private:
-
 	//! retrieves the file size of the open file
 	void getFileSize()
 	{
@@ -79,71 +77,58 @@ private:
 
 }; // end class CFileReadCallBack
 
-
-
 // FACTORY FUNCTIONS:
 
 
-//! Creates an instance of an UFT-8 or ASCII character xml parser. 
+//! Creates an instance of an UFT-8 or ASCII character xml parser.
 IrrXMLReader* createIrrXMLReader(const char* filename)
 {
-	return new CXMLReaderImpl<char, IXMLBase>(new CFileReadCallBack(filename)); 
+	return new CXMLReaderImpl<char, IXMLBase>(new CFileReadCallBack(filename));
 }
 
+//! Creates an instance of an UFT-8 or ASCII character xml parser.
+IrrXMLReader* createIrrXMLReader(FILE* file) { return new CXMLReaderImpl<char, IXMLBase>(new CFileReadCallBack(file)); }
 
-//! Creates an instance of an UFT-8 or ASCII character xml parser. 
-IrrXMLReader* createIrrXMLReader(FILE* file)
-{
-	return new CXMLReaderImpl<char, IXMLBase>(new CFileReadCallBack(file)); 
-}
-
-
-//! Creates an instance of an UFT-8 or ASCII character xml parser. 
+//! Creates an instance of an UFT-8 or ASCII character xml parser.
 IrrXMLReader* createIrrXMLReader(IFileReadCallBack* callback)
 {
-	return new CXMLReaderImpl<char, IXMLBase>(callback, false); 
+	return new CXMLReaderImpl<char, IXMLBase>(callback, false);
 }
 
-
-//! Creates an instance of an UTF-16 xml parser. 
+//! Creates an instance of an UTF-16 xml parser.
 IrrXMLReaderUTF16* createIrrXMLReaderUTF16(const char* filename)
 {
-	return new CXMLReaderImpl<char16, IXMLBase>(new CFileReadCallBack(filename)); 
+	return new CXMLReaderImpl<char16, IXMLBase>(new CFileReadCallBack(filename));
 }
 
-
-//! Creates an instance of an UTF-16 xml parser. 
+//! Creates an instance of an UTF-16 xml parser.
 IrrXMLReaderUTF16* createIrrXMLReaderUTF16(FILE* file)
 {
-	return new CXMLReaderImpl<char16, IXMLBase>(new CFileReadCallBack(file)); 
+	return new CXMLReaderImpl<char16, IXMLBase>(new CFileReadCallBack(file));
 }
 
-
-//! Creates an instance of an UTF-16 xml parser. 
+//! Creates an instance of an UTF-16 xml parser.
 IrrXMLReaderUTF16* createIrrXMLReaderUTF16(IFileReadCallBack* callback)
 {
-	return new CXMLReaderImpl<char16, IXMLBase>(callback, false); 
+	return new CXMLReaderImpl<char16, IXMLBase>(callback, false);
 }
 
-
-//! Creates an instance of an UTF-32 xml parser. 
+//! Creates an instance of an UTF-32 xml parser.
 IrrXMLReaderUTF32* createIrrXMLReaderUTF32(const char* filename)
 {
-	return new CXMLReaderImpl<char32, IXMLBase>(new CFileReadCallBack(filename)); 
+	return new CXMLReaderImpl<char32, IXMLBase>(new CFileReadCallBack(filename));
 }
 
-
-//! Creates an instance of an UTF-32 xml parser. 
+//! Creates an instance of an UTF-32 xml parser.
 IrrXMLReaderUTF32* createIrrXMLReaderUTF32(FILE* file)
 {
-	return new CXMLReaderImpl<char32, IXMLBase>(new CFileReadCallBack(file)); 
+	return new CXMLReaderImpl<char32, IXMLBase>(new CFileReadCallBack(file));
 }
 
-
-//! Creates an instance of an UTF-32 xml parser. 
+//! Creates an instance of an UTF-32 xml parser.
 IrrXMLReaderUTF32* createIrrXMLReaderUTF32(IFileReadCallBack* callback)
 {
-	return new CXMLReaderImpl<char32, IXMLBase>(callback, false); 
+	return new CXMLReaderImpl<char32, IXMLBase>(callback, false);
 }
 
 

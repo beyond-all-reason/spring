@@ -8,9 +8,7 @@
 
 struct QuadTreeNode;
 
-
-class CQuadtreeAtlasAlloc : public IAtlasAllocator
-{
+class CQuadtreeAtlasAlloc : public IAtlasAllocator {
 public:
 	CQuadtreeAtlasAlloc();
 	virtual ~CQuadtreeAtlasAlloc();

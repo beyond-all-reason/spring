@@ -11,8 +11,7 @@
  * This class loads *nix-type *.so shared objects.
  * Derived from the abstract SharedLib.
  */
-class SoLib: public SharedLib
-{
+class SoLib : public SharedLib {
 public:
 	/**
 	 * @brief Constructor

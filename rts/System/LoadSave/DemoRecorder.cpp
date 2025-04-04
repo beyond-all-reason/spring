@@ -1,22 +1,24 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "DemoRecorder.h"
+
+#include "base64.h"
+
+#include "Game/GameVersion.h"
+#include "Sim/Misc/TeamStatistics.h"
+#include "System/FileSystem/DataDirsAccess.h"
+#include "System/FileSystem/FileHandler.h"
+#include "System/FileSystem/FileQueryFlags.h"
+#include "System/FileSystem/FileSystem.h"
+#include "System/Log/ILog.h"
+#include "System/StringUtil.h"
+#include "System/Threading/ThreadPool.h"
+#include "System/TimeUtil.h"
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <memory>
-
-#include "DemoRecorder.h"
-#include "base64.h"
-#include "Game/GameVersion.h"
-#include "Sim/Misc/TeamStatistics.h"
-#include "System/TimeUtil.h"
-#include "System/StringUtil.h"
-#include "System/FileSystem/DataDirsAccess.h"
-#include "System/FileSystem/FileSystem.h"
-#include "System/FileSystem/FileQueryFlags.h"
-#include "System/FileSystem/FileHandler.h"
-#include "System/Log/ILog.h"
-#include "System/Threading/ThreadPool.h"
 
 #ifdef CreateDirectory
 #undef CreateDirectory
@@ -31,8 +33,8 @@
 static std::string demoStreams[2];
 static spring::mutex demoMutex;
 
-
-CDemoRecorder::CDemoRecorder(const std::string& mapName, const std::string& modName, bool serverDemo): isServerDemo(serverDemo)
+CDemoRecorder::CDemoRecorder(const std::string& mapName, const std::string& modName, bool serverDemo)
+    : isServerDemo(serverDemo)
 {
 	std::lock_guard<spring::mutex> lock(demoMutex);
 
@@ -55,7 +57,6 @@ CDemoRecorder::~CDemoRecorder()
 	WriteFileHeader(true);
 	WriteDemoFile();
 }
-
 
 void CDemoRecorder::SetStream()
 {
@@ -93,21 +94,22 @@ void CDemoRecorder::WriteDemoFile()
 		gzclose(file);
 	};
 
-	LOG("[DemoRecorder::%s] writing %s-demo \"%s\" (" _STPF_ " bytes)", __func__, (isServerDemo? "server": "client"), demoName.c_str(), data.size());
+	LOG("[DemoRecorder::%s] writing %s-demo \"%s\" (" _STPF_ " bytes)", __func__, (isServerDemo ? "server" : "client"),
+	    demoName.c_str(), data.size());
 
-	#ifndef _WIN32
+#ifndef _WIN32
 	// NOTE: can not use ThreadPool for this directly here, workers are already gone
 	// FIXME: does not currently (august 2017) compile on Windows mingw buildbots
 	ThreadPool::AddExtJob(spring::thread(std::move(func), file, std::ref(data)));
-	#else
+#else
 	ThreadPool::AddExtJob(std::move(std::async(std::launch::async, std::move(func), file, std::ref(data))));
-	#endif
+#endif
 }
 
 void CDemoRecorder::WriteSetupText(const std::string& text)
 {
 	LOG_L(L_INFO, "[CDemoRecorder::%s] SetupText=\"%s\"", __func__,
-		base64_encode(reinterpret_cast<const uint8_t*>(text.c_str()), text.size()).c_str());
+	    base64_encode(reinterpret_cast<const uint8_t*>(text.c_str()), text.size()).c_str());
 
 	int length = text.length();
 	while (length > 0 && text[length - 1] == '\0') {
@@ -115,7 +117,8 @@ void CDemoRecorder::WriteSetupText(const std::string& text)
 	}
 
 	if (length <= 0) {
-		LOG_L(L_ERROR, "[CDemoRecorder::%s] Invalid game setup text (len %d):\n%s", __func__, static_cast<int32_t>(text.length()), text.c_str());
+		LOG_L(L_ERROR, "[CDemoRecorder::%s] Invalid game setup text (len %d):\n%s", __func__,
+		    static_cast<int32_t>(text.length()), text.c_str());
 		throw std::runtime_error("Invalid game setup text");
 	}
 
@@ -139,7 +142,7 @@ void CDemoRecorder::SetName(const std::string& mapName, const std::string& modNa
 {
 	// Returns the current UTC time as "JJJJMMDD_HHmmSS", eg: "20091231_115959"
 	const std::string curTime = CTimeUtil::GetCurrentTimeStr(true);
-	const std::string demoDir = isServerDemo? "demos-server/": "demos/";
+	const std::string demoDir = isServerDemo ? "demos-server/" : "demos/";
 
 	// We want this folder to exist
 	if (!FileSystem::CreateDirectory(demoDir))
@@ -147,7 +150,8 @@ void CDemoRecorder::SetName(const std::string& mapName, const std::string& modNa
 
 	std::string engineVersionName = SpringVersion::GetSync();
 	// FIXME: possible to escape instead perhaps? Requires working around *nix and windows conventions
-	std::replace(engineVersionName.begin(), engineVersionName.end(), '/', '_'); // Sanitize generated engine version name when not release version
+	std::replace(engineVersionName.begin(), engineVersionName.end(), '/',
+	    '_'); // Sanitize generated engine version name when not release version
 
 	std::ostringstream oss;
 	std::ostringstream buf;
@@ -189,14 +193,12 @@ void CDemoRecorder::InitializeStats(int numPlayers, int numTeams)
 	teamStats.resize(fileHeader.numTeams = numTeams);
 }
 
-
 void CDemoRecorder::AddNewPlayer(const std::string& name, int playerNum)
 {
 	if (playerNum >= playerStats.size()) {
 		playerStats.resize(playerNum + 1);
 	}
 }
-
 
 /** @brief Set (overwrite) the CPlayer::Statistics for player playerNum */
 void CDemoRecorder::SetPlayerStats(int playerNum, const PlayerStatistics& stats)
@@ -210,7 +212,7 @@ void CDemoRecorder::SetPlayerStats(int playerNum, const PlayerStatistics& stats)
 /** @brief Set (overwrite) the TeamStatistics history for team teamNum */
 void CDemoRecorder::SetTeamStats(int teamNum, const std::vector<TeamStatistics>& stats)
 {
-	assert((unsigned)teamNum < teamStats.size()); //FIXME
+	assert((unsigned)teamNum < teamStats.size()); // FIXME
 
 	teamStats[teamNum].clear();
 	teamStats[teamNum].reserve(stats.size());
@@ -219,7 +221,6 @@ void CDemoRecorder::SetTeamStats(int teamNum, const std::vector<TeamStatistics>&
 		teamStats[teamNum].push_back(stat);
 	}
 }
-
 
 /** @brief Set (overwrite) the list of winning allyTeams */
 void CDemoRecorder::SetWinningAllyTeams(const std::vector<unsigned char>& winningAllyTeamIDs)
@@ -244,9 +245,11 @@ unsigned int CDemoRecorder::WriteFileHeader(bool updateStreamLength)
 
 	if (demoStreams[isServerDemo].empty()) {
 		demoStreams[isServerDemo].append(reinterpret_cast<const char*>(&tmpHeader), sizeof(tmpHeader));
-	} else {
+	}
+	else {
 		assert(demoStreams[isServerDemo].size() >= sizeof(tmpHeader));
-		memcpy(&demoStreams[isServerDemo][0], reinterpret_cast<const char*>(&tmpHeader), sizeof(tmpHeader)); // no non-const .data() until C++17
+		memcpy(&demoStreams[isServerDemo][0], reinterpret_cast<const char*>(&tmpHeader),
+		    sizeof(tmpHeader)); // no non-const .data() until C++17
 	}
 
 	return (demoStreams[isServerDemo].size());
@@ -267,8 +270,6 @@ void CDemoRecorder::WritePlayerStats()
 
 	playerStats.clear();
 }
-
-
 
 /** @brief Write the winningAllyTeams at the current position in the file. */
 void CDemoRecorder::WriteWinnerList()

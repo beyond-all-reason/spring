@@ -3,17 +3,16 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
-#include <string>
-#include <vector>
 #include <cinttypes>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace netcode {
-	class RawPacket;
+class RawPacket;
 }
 
-class GameData
-{
+class GameData {
 public:
 	GameData();
 	GameData(const std::string& setup);
@@ -22,13 +21,19 @@ public:
 	const netcode::RawPacket* Pack() const;
 
 	void SetSetupText(const std::string& newSetup);
+
 	void SetMapChecksum(const uint8_t* checksum) { std::copy(checksum, checksum + sizeof(mapChecksum), mapChecksum); }
+
 	void SetModChecksum(const uint8_t* checksum) { std::copy(checksum, checksum + sizeof(modChecksum), modChecksum); }
+
 	void SetRandomSeed(const uint32_t seed) { randomSeed = seed; }
 
 	const std::string& GetSetupText() const { return setupText; }
+
 	const uint8_t* GetMapChecksum() const { return &mapChecksum[0]; }
+
 	const uint8_t* GetModChecksum() const { return &modChecksum[0]; }
+
 	uint32_t GetRandomSeed() const { return randomSeed; }
 
 private:

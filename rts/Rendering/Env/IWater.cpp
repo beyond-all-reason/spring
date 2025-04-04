@@ -1,50 +1,54 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IWater.h"
-#include "ISky.h"
-#include "BasicWater.h"
+
 #include "AdvWater.h"
+#include "BasicWater.h"
 #include "BumpWater.h"
 #include "DynWater.h"
+#include "ISky.h"
 #include "RefractWater.h"
+
 #include "Game/Game.h"
 #include "Game/GameHelper.h"
-#include "Map/ReadMap.h"
 #include "Map/BaseGroundDrawer.h"
+#include "Map/ReadMap.h"
+#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Features/FeatureDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Sim/Projectiles/ExplosionListener.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
-#include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
 
 CONFIG(int, Water)
-.defaultValue(IWater::WATER_RENDERER_REFLECTIVE)
-.safemodeValue(IWater::WATER_RENDERER_BASIC)
-.headlessValue(0)
-.minimumValue(0)
-.maximumValue(IWater::NUM_WATER_RENDERERS - 1)
-.description("Defines the type of water rendering. Can be set in game. Options are: 0 = Basic water, 1 = Reflective water, 2 = Reflective and Refractive water, 3 = Dynamic water, 4 = Bumpmapped water");
+    .defaultValue(IWater::WATER_RENDERER_REFLECTIVE)
+    .safemodeValue(IWater::WATER_RENDERER_BASIC)
+    .headlessValue(0)
+    .minimumValue(0)
+    .maximumValue(IWater::NUM_WATER_RENDERERS - 1)
+    .description("Defines the type of water rendering. Can be set in game. Options are: 0 = Basic water, 1 = "
+                 "Reflective water, 2 = Reflective and Refractive water, 3 = Dynamic water, 4 = Bumpmapped water");
 
 IWater::IWater()
-	: drawReflection(false)
-	, drawRefraction(false)
-	, wireFrameMode(false)
+    : drawReflection(false)
+    , drawRefraction(false)
+    , wireFrameMode(false)
 {
 	CExplosionCreator::AddExplosionListener(this);
 }
 
-void IWater::ExplosionOccurred(const CExplosionParams& event) {
+void IWater::ExplosionOccurred(const CExplosionParams& event)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	AddExplosion(event.pos, event.damages.GetDefault(), event.craterAreaOfEffect);
 }
 
-void IWater::SetModelClippingPlane(const double* planeEq) {
+void IWater::SetModelClippingPlane(const double* planeEq)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
 	glLoadIdentity();
@@ -56,11 +60,11 @@ void IWater::SetWater(int rendererMode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	static std::array<bool, NUM_WATER_RENDERERS> allowedModes = {
-		true,
-		GLAD_GL_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
-		GLAD_GL_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
-		GLAD_GL_ARB_fragment_program && GLAD_GL_ARB_texture_rectangle,
-		GLAD_GL_ARB_shading_language_100 && GLAD_GL_ARB_fragment_shader && GLAD_GL_ARB_vertex_shader,
+	    true,
+	    GLAD_GL_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/water.fp"),
+	    GLAD_GL_ARB_fragment_program && ProgramStringIsNative(GL_FRAGMENT_PROGRAM_ARB, "ARB/waterDyn.fp"),
+	    GLAD_GL_ARB_fragment_program && GLAD_GL_ARB_texture_rectangle,
+	    GLAD_GL_ARB_shading_language_100 && GLAD_GL_ARB_fragment_shader && GLAD_GL_ARB_vertex_shader,
 	};
 
 	WATER_RENDERER selectedRendererID;
@@ -74,7 +78,8 @@ void IWater::SetWater(int rendererMode)
 		else {
 			// cycle
 			for (int i = NUM_WATER_RENDERERS - 1; i >= 0; --i) {
-				selectedRendererID = static_cast<WATER_RENDERER>((static_cast<int>(water->GetID()) + 1 + i) % NUM_WATER_RENDERERS);
+				selectedRendererID =
+				    static_cast<WATER_RENDERER>((static_cast<int>(water->GetID()) + 1 + i) % NUM_WATER_RENDERERS);
 				if (allowedModes[selectedRendererID])
 					break;
 			}
@@ -94,33 +99,21 @@ void IWater::SetWater(int rendererMode)
 
 	water = nullptr;
 	try {
-		switch (selectedRendererID)
-		{
-		case WATER_RENDERER_BASIC:
-			water = std::make_unique<CBasicWater>();
-			break;
-		case WATER_RENDERER_REFLECTIVE:
-			water = std::make_unique<CAdvWater>();
-			break;
-		case WATER_RENDERER_DYNAMIC:
-			water = std::make_unique<CDynWater>();
-			break;
-		case WATER_RENDERER_REFL_REFR:
-			water = std::make_unique<CRefractWater>();
-			break;
-		case WATER_RENDERER_BUMPMAPPED:
-			water = std::make_unique<CBumpWater>();
-			break;
-		default:
-			assert(false);
-			break;
+		switch (selectedRendererID) {
+		case WATER_RENDERER_BASIC: water = std::make_unique<CBasicWater>(); break;
+		case WATER_RENDERER_REFLECTIVE: water = std::make_unique<CAdvWater>(); break;
+		case WATER_RENDERER_DYNAMIC: water = std::make_unique<CDynWater>(); break;
+		case WATER_RENDERER_REFL_REFR: water = std::make_unique<CRefractWater>(); break;
+		case WATER_RENDERER_BUMPMAPPED: water = std::make_unique<CBumpWater>(); break;
+		default: assert(false); break;
 		}
 		if (water)
 			water->InitResources();
-	} catch (const content_error& ex) {		
+	}
+	catch (const content_error& ex) {
 		LOG_L(L_ERROR, "Loading \"%s\" water failed, error: %s", IWater::GetWaterName(selectedRendererID), ex.what());
 		if (water)
-			water->FreeResources(); //destructor is not called for an object throwing exception in a constructor
+			water->FreeResources(); // destructor is not called for an object throwing exception in a constructor
 		water = nullptr;
 	}
 
@@ -132,8 +125,8 @@ void IWater::SetWater(int rendererMode)
 		water = std::make_unique<CBasicWater>();
 }
 
-
-void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
+void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool drawSky)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameReflectionDraw);
 
@@ -176,7 +169,8 @@ void IWater::DrawReflections(const double* clipPlaneEqs, bool drawGround, bool d
 	game->SetDrawMode(CGame::gameNormalDraw);
 }
 
-void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky) {
+void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool drawSky)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	game->SetDrawMode(CGame::gameRefractionDraw);
 
@@ -216,4 +210,3 @@ void IWater::DrawRefractions(const double* clipPlaneEqs, bool drawGround, bool d
 
 	game->SetDrawMode(CGame::gameNormalDraw);
 }
-

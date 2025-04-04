@@ -42,19 +42,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /** @file Implementation of BaseProcess */
 
-#include "BaseImporter.h"
 #include "BaseProcess.h"
+
+#include "BaseImporter.h"
+#include "Importer.h"
+
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/scene.h>
-#include "Importer.h"
 
 using namespace Assimp;
 
 // ------------------------------------------------------------------------------------------------
 // Constructor to be privately used by Importer
 BaseProcess::BaseProcess()
-: shared()
-, progress()
+    : shared()
+    , progress()
 {
 }
 
@@ -62,45 +64,39 @@ BaseProcess::BaseProcess()
 // Destructor, private as well
 BaseProcess::~BaseProcess()
 {
-    // nothing to do here
+	// nothing to do here
 }
 
 // ------------------------------------------------------------------------------------------------
-void BaseProcess::ExecuteOnScene( Importer* pImp)
+void BaseProcess::ExecuteOnScene(Importer* pImp)
 {
-    ai_assert(NULL != pImp && NULL != pImp->Pimpl()->mScene);
+	ai_assert(NULL != pImp && NULL != pImp->Pimpl()->mScene);
 
-    progress = pImp->GetProgressHandler();
-    ai_assert(progress);
+	progress = pImp->GetProgressHandler();
+	ai_assert(progress);
 
-    SetupProperties( pImp );
+	SetupProperties(pImp);
 
-    // catch exceptions thrown inside the PostProcess-Step
-    try
-    {
-        Execute(pImp->Pimpl()->mScene);
+	// catch exceptions thrown inside the PostProcess-Step
+	try {
+		Execute(pImp->Pimpl()->mScene);
+	}
+	catch (const std::exception& err) {
+		// extract error description
+		pImp->Pimpl()->mErrorString = err.what();
+		DefaultLogger::get()->error(pImp->Pimpl()->mErrorString);
 
-    } catch( const std::exception& err )    {
-
-        // extract error description
-        pImp->Pimpl()->mErrorString = err.what();
-        DefaultLogger::get()->error(pImp->Pimpl()->mErrorString);
-
-        // and kill the partially imported data
-        delete pImp->Pimpl()->mScene;
-        pImp->Pimpl()->mScene = NULL;
-    }
+		// and kill the partially imported data
+		delete pImp->Pimpl()->mScene;
+		pImp->Pimpl()->mScene = NULL;
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
 void BaseProcess::SetupProperties(const Importer* /*pImp*/)
 {
-    // the default implementation does nothing
+	// the default implementation does nothing
 }
 
 // ------------------------------------------------------------------------------------------------
-bool BaseProcess::RequireVerboseFormat() const
-{
-    return true;
-}
-
+bool BaseProcess::RequireVerboseFormat() const { return true; }

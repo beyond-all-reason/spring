@@ -4,10 +4,7 @@
 
 #include "System/float3.h"
 
-inline float expDecay(float a, float b, float decay, float dt)
-{
-	return b+(a-b)*math::exp(-decay*dt);
-}
+inline float expDecay(float a, float b, float decay, float dt) { return b + (a - b) * math::exp(-decay * dt); }
 
 inline void expDecay(float3& a, float3 b, float decay, float dt)
 {

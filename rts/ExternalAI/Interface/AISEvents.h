@@ -7,7 +7,7 @@
 // so DO NOT CHANGE the style and format it uses without
 // major though in advance, and deliberation with hoijui!
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -28,68 +28,50 @@ extern "C" {
  * @see SSkirmishAILibrary.handleEvent()
  */
 enum EventTopic {
-	EVENT_NULL                         =  0,
-	EVENT_INIT                         =  1,
-	EVENT_RELEASE                      =  2,
-	EVENT_UPDATE                       =  3,
-	EVENT_MESSAGE                      =  4,
-	EVENT_UNIT_CREATED                 =  5,
-	EVENT_UNIT_FINISHED                =  6,
-	EVENT_UNIT_IDLE                    =  7,
-	EVENT_UNIT_MOVE_FAILED             =  8,
-	EVENT_UNIT_DAMAGED                 =  9,
-	EVENT_UNIT_DESTROYED               = 10,
-	EVENT_UNIT_GIVEN                   = 11,
-	EVENT_UNIT_CAPTURED                = 12,
-	EVENT_ENEMY_ENTER_LOS              = 13,
-	EVENT_ENEMY_LEAVE_LOS              = 14,
-	EVENT_ENEMY_ENTER_RADAR            = 15,
-	EVENT_ENEMY_LEAVE_RADAR            = 16,
-	EVENT_ENEMY_DAMAGED                = 17,
-	EVENT_ENEMY_DESTROYED              = 18,
-	EVENT_WEAPON_FIRED                 = 19,
-	EVENT_PLAYER_COMMAND               = 20,
-	EVENT_SEISMIC_PING                 = 21,
-	EVENT_COMMAND_FINISHED             = 22,
-	EVENT_LOAD                         = 23,
-	EVENT_SAVE                         = 24,
-	EVENT_ENEMY_CREATED                = 25,
-	EVENT_ENEMY_FINISHED               = 26,
-	EVENT_LUA_MESSAGE                  = 27,
+	EVENT_NULL = 0,
+	EVENT_INIT = 1,
+	EVENT_RELEASE = 2,
+	EVENT_UPDATE = 3,
+	EVENT_MESSAGE = 4,
+	EVENT_UNIT_CREATED = 5,
+	EVENT_UNIT_FINISHED = 6,
+	EVENT_UNIT_IDLE = 7,
+	EVENT_UNIT_MOVE_FAILED = 8,
+	EVENT_UNIT_DAMAGED = 9,
+	EVENT_UNIT_DESTROYED = 10,
+	EVENT_UNIT_GIVEN = 11,
+	EVENT_UNIT_CAPTURED = 12,
+	EVENT_ENEMY_ENTER_LOS = 13,
+	EVENT_ENEMY_LEAVE_LOS = 14,
+	EVENT_ENEMY_ENTER_RADAR = 15,
+	EVENT_ENEMY_LEAVE_RADAR = 16,
+	EVENT_ENEMY_DAMAGED = 17,
+	EVENT_ENEMY_DESTROYED = 18,
+	EVENT_WEAPON_FIRED = 19,
+	EVENT_PLAYER_COMMAND = 20,
+	EVENT_SEISMIC_PING = 21,
+	EVENT_COMMAND_FINISHED = 22,
+	EVENT_LOAD = 23,
+	EVENT_SAVE = 24,
+	EVENT_ENEMY_CREATED = 25,
+	EVENT_ENEMY_FINISHED = 26,
+	EVENT_LUA_MESSAGE = 27,
 };
+
 const int NUM_EVENTS = 28;
 
 
-
-#define AIINTERFACE_EVENTS_ABI_VERSION     ( \
-		  sizeof(struct SInitEvent) \
-		+ sizeof(struct SReleaseEvent) \
-		+ sizeof(struct SUpdateEvent) \
-		+ sizeof(struct SMessageEvent) \
-		+ sizeof(struct SUnitCreatedEvent) \
-		+ sizeof(struct SUnitFinishedEvent) \
-		+ sizeof(struct SUnitIdleEvent) \
-		+ sizeof(struct SUnitMoveFailedEvent) \
-		+ sizeof(struct SUnitDamagedEvent) \
-		+ sizeof(struct SUnitDestroyedEvent) \
-		+ sizeof(struct SUnitGivenEvent) \
-		+ sizeof(struct SUnitCapturedEvent) \
-		+ sizeof(struct SEnemyEnterLOSEvent) \
-		+ sizeof(struct SEnemyLeaveLOSEvent) \
-		+ sizeof(struct SEnemyEnterRadarEvent) \
-		+ sizeof(struct SEnemyLeaveRadarEvent) \
-		+ sizeof(struct SEnemyDamagedEvent) \
-		+ sizeof(struct SEnemyDestroyedEvent) \
-		+ sizeof(struct SWeaponFiredEvent) \
-		+ sizeof(struct SPlayerCommandEvent) \
-		+ sizeof(struct SCommandFinishedEvent) \
-		+ sizeof(struct SSeismicPingEvent) \
-		+ sizeof(struct SLoadEvent) \
-		+ sizeof(struct SSaveEvent) \
-		+ sizeof(struct SEnemyCreatedEvent) \
-		+ sizeof(struct SEnemyFinishedEvent) \
-		+ sizeof(struct SLuaMessageEvent) \
-		)
+#define AIINTERFACE_EVENTS_ABI_VERSION                                                                                 \
+	(sizeof(struct SInitEvent) + sizeof(struct SReleaseEvent) + sizeof(struct SUpdateEvent) +                          \
+	    sizeof(struct SMessageEvent) + sizeof(struct SUnitCreatedEvent) + sizeof(struct SUnitFinishedEvent) +          \
+	    sizeof(struct SUnitIdleEvent) + sizeof(struct SUnitMoveFailedEvent) + sizeof(struct SUnitDamagedEvent) +       \
+	    sizeof(struct SUnitDestroyedEvent) + sizeof(struct SUnitGivenEvent) + sizeof(struct SUnitCapturedEvent) +      \
+	    sizeof(struct SEnemyEnterLOSEvent) + sizeof(struct SEnemyLeaveLOSEvent) +                                      \
+	    sizeof(struct SEnemyEnterRadarEvent) + sizeof(struct SEnemyLeaveRadarEvent) +                                  \
+	    sizeof(struct SEnemyDamagedEvent) + sizeof(struct SEnemyDestroyedEvent) + sizeof(struct SWeaponFiredEvent) +   \
+	    sizeof(struct SPlayerCommandEvent) + sizeof(struct SCommandFinishedEvent) + sizeof(struct SSeismicPingEvent) + \
+	    sizeof(struct SLoadEvent) + sizeof(struct SSaveEvent) + sizeof(struct SEnemyCreatedEvent) +                    \
+	    sizeof(struct SEnemyFinishedEvent) + sizeof(struct SLuaMessageEvent))
 
 /**
  * This AI event initializes a Skirmish AI instance.
@@ -398,7 +380,7 @@ struct SEnemyFinishedEvent {
 	int enemy;
 }; //$ EVENT_ENEMY_FINISHED INTERFACES:Unit(enemy),Enemy(enemy)
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 } // extern "C"
 #endif
 

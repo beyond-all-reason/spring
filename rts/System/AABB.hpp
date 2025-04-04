@@ -3,13 +3,14 @@
 #ifndef AABB_H
 #define AABB_H
 
+#include "System/Matrix44f.h"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/Matrix44f.h"
 
 struct AABB {
 public:
-	static bool RangeOverlap(const float2& a, const float2& b) {
+	static bool RangeOverlap(const float2& a, const float2& b)
+	{
 		uint8_t n = 0;
 
 		n += (b.x >= a.x && b.x <= a.y);
@@ -20,7 +21,8 @@ public:
 		return (n > 0);
 	}
 
-	bool Intersects(const AABB& b) const {
+	bool Intersects(const AABB& b) const
+	{
 		uint8_t n = 0;
 
 		n += RangeOverlap({mins.x, maxs.x}, {b.mins.x, b.maxs.x});
@@ -30,7 +32,8 @@ public:
 		return (n == 3);
 	}
 
-	bool Contains(const float3& p) const {
+	bool Contains(const float3& p) const
+	{
 		uint8_t n = 0;
 
 		n += (p.x >= mins.x && p.x <= maxs.x);
@@ -41,8 +44,11 @@ public:
 	};
 
 	void CalcCorners(std::array<float3, 8>& verts) const { CalcCorners(CMatrix44f::Identity(), verts); }
+
 	void CalcCorners(float3 verts[8]) const { CalcCorners(CMatrix44f::Identity(), verts); }
-	void CalcCorners(const CMatrix44f& mat, float3 verts[8]) const {
+
+	void CalcCorners(const CMatrix44f& mat, float3 verts[8]) const
+	{
 		// bottom
 		verts[0] = mat * float3{mins.x, mins.y, mins.z};
 		verts[1] = mat * float3{mins.x, mins.y, maxs.z};
@@ -54,42 +60,49 @@ public:
 		verts[6] = mat * float3{maxs.x, maxs.y, mins.z};
 		verts[7] = mat * float3{maxs.x, maxs.y, maxs.z};
 	}
-	void CalcCorners(const CMatrix44f& mat, std::array<float3, 8>& verts) const {
+
+	void CalcCorners(const CMatrix44f& mat, std::array<float3, 8>& verts) const
+	{
 		// bottom
-		verts[0] = mat * float3{ mins.x, mins.y, mins.z };
-		verts[1] = mat * float3{ mins.x, mins.y, maxs.z };
-		verts[2] = mat * float3{ maxs.x, mins.y, mins.z };
-		verts[3] = mat * float3{ maxs.x, mins.y, maxs.z };
+		verts[0] = mat * float3{mins.x, mins.y, mins.z};
+		verts[1] = mat * float3{mins.x, mins.y, maxs.z};
+		verts[2] = mat * float3{maxs.x, mins.y, mins.z};
+		verts[3] = mat * float3{maxs.x, mins.y, maxs.z};
 		// top
-		verts[4] = mat * float3{ mins.x, maxs.y, mins.z };
-		verts[5] = mat * float3{ mins.x, maxs.y, maxs.z };
-		verts[6] = mat * float3{ maxs.x, maxs.y, mins.z };
-		verts[7] = mat * float3{ maxs.x, maxs.y, maxs.z };
+		verts[4] = mat * float3{mins.x, maxs.y, mins.z};
+		verts[5] = mat * float3{mins.x, maxs.y, maxs.z};
+		verts[6] = mat * float3{maxs.x, maxs.y, mins.z};
+		verts[7] = mat * float3{maxs.x, maxs.y, maxs.z};
 	}
 
 	float3 CalcCenter(const CMatrix44f& mat) const { return (mat * CalcCenter()); }
+
 	float3 CalcCenter() const { return ((maxs + mins) * 0.5f); }
+
 	float3 CalcScales() const { return ((maxs - mins) * 0.5f); }
 
 	float CalcRadiusSq() const { return (CalcScales().SqLength()); }
+
 	float CalcRadius() const { return (CalcScales().Length()); }
 
 	float3 GetVertexP(const float3& normal) const;
 	float3 GetVertexN(const float3& normal) const;
 
-	void AddPoint(const float3& p) {
+	void AddPoint(const float3& p)
+	{
 		mins = float3::min(mins, p);
 		maxs = float3::max(maxs, p);
 	}
 
-	void Reset() {
-		mins = float3{ std::numeric_limits<float>::max()    };
-		maxs = float3{ std::numeric_limits<float>::lowest() };
+	void Reset()
+	{
+		mins = float3{std::numeric_limits<float>::max()};
+		maxs = float3{std::numeric_limits<float>::lowest()};
 	}
+
 public:
-	float3 mins = float3{ std::numeric_limits<float>::max()    };
-	float3 maxs = float3{ std::numeric_limits<float>::lowest() };
+	float3 mins = float3{std::numeric_limits<float>::max()};
+	float3 maxs = float3{std::numeric_limits<float>::lowest()};
 };
 
 #endif
-

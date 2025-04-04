@@ -5,10 +5,11 @@
 
 #include "PlayerBase.h"
 #include "PlayerStatistics.h"
+
 #include "Game/FPSUnitController.h"
 #include "Lua/LuaRulesParams.h"
-#include "System/creg/creg_cond.h"
 #include "System/UnorderedSet.hpp"
+#include "System/creg/creg_cond.h"
 
 #include <string>
 
@@ -18,24 +19,21 @@ class CUnit;
 /// @see CPlayer::ping
 #define PATHING_FLAG 0xFFFFFFFF
 
-
-class CPlayer : public PlayerBase
-{
+class CPlayer : public PlayerBase {
 public:
 	CR_DECLARE(CPlayer)
 
 	enum {
 		PLAYER_RDYSTATE_UPDATED = 0,
 		PLAYER_RDYSTATE_READIED = 1,
-		PLAYER_RDYSTATE_FORCED  = 2,
-		PLAYER_RDYSTATE_FAILED  = 3,
+		PLAYER_RDYSTATE_FORCED = 2,
+		PLAYER_RDYSTATE_FAILED = 3,
 	};
 
 	CPlayer();
 
-	bool CanControlTeam(int teamID) const {
-		return (controlledTeams.find(teamID) != controlledTeams.end());
-	}
+	bool CanControlTeam(int teamID) const { return (controlledTeams.find(teamID) != controlledTeams.end()); }
+
 	void SetControlledTeams();
 	/// SetControlledTeams() for all players
 	static void UpdateControlledTeams();
@@ -44,7 +42,11 @@ public:
 	void JoinTeam(int newTeam);
 	void GameFrame(int frameNum);
 
-	CPlayer& operator=(const PlayerBase& base) { PlayerBase::operator=(base); return *this; }
+	CPlayer& operator=(const PlayerBase& base)
+	{
+		PlayerBase::operator=(base);
+		return *this;
+	}
 
 	void StartControllingUnit();
 	void StopControllingUnit();

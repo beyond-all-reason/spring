@@ -43,4 +43,3 @@ struct ProjectileParams {
 };
 
 #endif
-

@@ -2,12 +2,12 @@
 
 
 #include "InputReceiver.h"
+
 #include "Lua/LuaInputReceiver.h"
 #include "Rendering/GL/myGL.h"
 #include "Rml/Backends/RmlUi_Backend.h"
-#include "System/Rectangle.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/Rectangle.h"
 
 
 float CInputReceiver::guiAlpha = 0.8f;
@@ -18,9 +18,14 @@ CInputReceiver::CInputReceiver(Where w)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (w) {
-		case FRONT: { GetReceivers().push_front(this); } break;
-		case BACK: { GetReceivers().push_back(this); } break;
-		default: {} break;
+	case FRONT: {
+		GetReceivers().push_front(this);
+	} break;
+	case BACK: {
+		GetReceivers().push_back(this);
+	} break;
+	default: {
+	} break;
 	}
 }
 
@@ -99,6 +104,5 @@ CInputReceiver* CInputReceiver::GetReceiverAt(int x, int y)
 bool CInputReceiver::InBox(float x, float y, const TRectangle<float>& box) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return ((x > box.x1) && (x < box.x2)  &&  (y > box.y1) && (y < box.y2));
+	return ((x > box.x1) && (x < box.x2) && (y > box.y1) && (y < box.y2));
 }
-

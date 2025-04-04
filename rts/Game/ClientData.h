@@ -7,11 +7,10 @@
 #include <string>
 #include <vector>
 
-
 namespace ClientData {
-	std::vector<std::uint8_t> GetCompressed();
-	std::string GetUncompressed(const std::vector<std::uint8_t>& compressed);
-}
+std::vector<std::uint8_t> GetCompressed();
+std::string GetUncompressed(const std::vector<std::uint8_t>& compressed);
+} // namespace ClientData
 
 
 #endif // CLIENT_DATA_H

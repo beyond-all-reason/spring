@@ -8,14 +8,13 @@
 
 class CSmokeTrailProjectile;
 
-class CStarburstProjectile : public CWeaponProjectile
-{
+class CStarburstProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CStarburstProjectile)
 	CR_DECLARE_SUB(TracerPart)
 
 public:
 	// creg only
-	CStarburstProjectile() { }
+	CStarburstProjectile() {}
 
 	CStarburstProjectile(const ProjectileParams& params);
 
@@ -30,6 +29,7 @@ public:
 	int ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed) override;
 
 	void SetIgnoreError(bool b) { ignoreError = b; }
+
 private:
 	void UpdateTargeting();
 	void UpdateTrajectory();
@@ -63,6 +63,7 @@ private:
 	static constexpr unsigned int MAX_NUM_AGEMODS = 20;
 
 	static constexpr float TRACER_PARTS_STEP = 2.0f;
+
 private:
 	inline float GetSmokeSize() const;
 	inline float GetSmokeColor() const;

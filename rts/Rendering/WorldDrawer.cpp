@@ -1,56 +1,56 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "Rendering/GL/myGL.h"
-
 #include "WorldDrawer.h"
-#include "Sim/Units/UnitDefHandler.h"
-#include "Sim/Features/FeatureDefHandler.h"
-#include "Sim/Weapons/WeaponDefHandler.h"
+
+#include "Game/Camera.h"
+#include "Game/Game.h"
+#include "Game/GlobalUnsynced.h"
+#include "Game/LoadScreen.h"
+#include "Game/SelectedUnitsHandler.h"
+#include "Game/UI/CommandColors.h"
+#include "Game/UI/GuiHandler.h"
+#include "Map/BaseGroundDrawer.h"
+#include "Map/ReadMap.h"
+#include "Rendering/CommandDrawer.h"
+#include "Rendering/DebugColVolDrawer.h"
+#include "Rendering/DebugVisibilityDrawer.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/Env/GrassDrawer.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/ISky.h"
+#include "Rendering/Env/IWater.h"
+#include "Rendering/Env/MapRendering.h"
+#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Env/SunLighting.h"
 #include "Rendering/Env/WaterRendering.h"
-#include "Rendering/Env/MapRendering.h"
-#include "Rendering/Env/IWater.h"
-#include "Rendering/CommandDrawer.h"
-#include "Rendering/DebugColVolDrawer.h"
-#include "Rendering/DebugVisibilityDrawer.h"
+#include "Rendering/Features/FeatureDrawer.h"
+#include "Rendering/GL/myGL.h"
+#include "Rendering/IPathDrawer.h"
+#include "Rendering/InMapDrawView.h"
 #include "Rendering/LineDrawer.h"
 #include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/Features/FeatureDrawer.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
-#include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/IPathDrawer.h"
-#include "Rendering/DepthBufferCopy.h"
-#include "Rendering/SmoothHeightMeshDrawer.h"
-#include "Rendering/InMapDrawView.h"
-#include "Rendering/ShadowHandler.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
-#include "Rendering/Models/IModelParser.h"
 #include "Rendering/Models/3DModelVAO.h"
+#include "Rendering/Models/IModelParser.h"
 #include "Rendering/Models/ModelsLock.h"
 #include "Rendering/Shaders/ShaderHandler.h"
-#include "Rendering/Textures/ColorMap.h"
+#include "Rendering/ShadowHandler.h"
+#include "Rendering/SmoothHeightMeshDrawer.h"
 #include "Rendering/Textures/3DOTextureHandler.h"
+#include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
-#include "Map/BaseGroundDrawer.h"
-#include "Map/ReadMap.h"
-#include "Game/Camera.h"
-#include "Game/SelectedUnitsHandler.h"
-#include "Game/Game.h"
-#include "Game/GlobalUnsynced.h"
-#include "Game/LoadScreen.h"
-#include "Game/UI/CommandColors.h"
-#include "Game/UI/GuiHandler.h"
+#include "Rendering/Units/UnitDrawer.h"
+#include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Units/UnitDefHandler.h"
+#include "Sim/Weapons/WeaponDefHandler.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
-#include "System/TimeProfiler.h"
-#include "System/SafeUtil.h"
-#include "System/Log/ILog.h"
-#include "System/Config/ConfigHandler.h"
 #include "System/LoadLock.h"
+#include "System/Log/ILog.h"
+#include "System/SafeUtil.h"
+#include "System/TimeProfiler.h"
 
 CONFIG(bool, PreloadModels).defaultValue(true).description("The engine will preload all models");
 
@@ -87,15 +87,15 @@ void CWorldDrawer::InitPost() const
 		loadscreen->SetLoadMessage("Loading Models");
 
 		if (preloadMode) {
-			for (const auto& def : unitDefHandler->GetUnitDefsVec()) {
+			for (const auto& def: unitDefHandler->GetUnitDefsVec()) {
 				def.PreloadModel();
 			}
 
-			for (const auto& def : featureDefHandler->GetFeatureDefsVec()) {
+			for (const auto& def: featureDefHandler->GetFeatureDefsVec()) {
 				def.PreloadModel();
 			}
 
-			for (const auto& def : weaponDefHandler->GetWeaponDefsVec()) {
+			for (const auto& def: weaponDefHandler->GetWeaponDefsVec()) {
 				def.PreloadModel();
 			}
 		}
@@ -113,7 +113,8 @@ void CWorldDrawer::InitPost() const
 	try {
 		loadscreen->SetLoadMessage("Creating GroundDrawer");
 		readMap->InitGroundDrawer();
-	} catch (const content_error& e) {
+	}
+	catch (const content_error& e) {
 		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), "[WorldDrawer::%s] caught exception \"%s\"", __func__, e.what());
 	}
@@ -152,7 +153,7 @@ void CWorldDrawer::InitPost() const
 	{
 		ISky::GetSky()->SetupFog();
 	}
-	lock = {}; //unlock
+	lock = {}; // unlock
 	{
 		loadscreen->SetLoadMessage("Finalizing Models");
 		modelLoader.DrainPreloadFutures(0);
@@ -164,11 +165,10 @@ void CWorldDrawer::InitPost() const
 			}
 			mv.SetSafeToDeleteVectors();
 			modelLoader.LogErrors();
-			CModelsLock::SetThreadSafety(false); //all models are already preloaded
+			CModelsLock::SetThreadSafety(false); // all models are already preloaded
 		}
 	}
 }
-
 
 void CWorldDrawer::Kill()
 {
@@ -199,9 +199,6 @@ void CWorldDrawer::Kill()
 
 	numUpdates = 0;
 }
-
-
-
 
 void CWorldDrawer::Update(bool newSimFrame)
 {
@@ -240,11 +237,8 @@ void CWorldDrawer::Update(bool newSimFrame)
 	numUpdates += 1;
 }
 
-
-
 void CWorldDrawer::GenerateIBLTextures() const
 {
-
 	if (shadowHandler.ShadowsLoaded()) {
 		SCOPED_TIMER("Draw::World::CreateShadows");
 		SCOPED_GL_DEBUGGROUP("Draw::World::CreateShadows");
@@ -293,8 +287,6 @@ void CWorldDrawer::ResetMVPMatrices() const
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-
-
 void CWorldDrawer::Draw() const
 {
 	SCOPED_TIMER("Draw::World");
@@ -325,7 +317,6 @@ void CWorldDrawer::Draw() const
 
 	glDisable(GL_FOG);
 }
-
 
 void CWorldDrawer::DrawOpaqueObjects() const
 {
@@ -389,7 +380,7 @@ void CWorldDrawer::DrawAlphaObjects() const
 	glDepthFunc(GL_LEQUAL);
 
 	static const double belowPlaneEq[4] = {0.0f, -1.0f, 0.0f, 0.0f};
-	static const double abovePlaneEq[4] = {0.0f,  1.0f, 0.0f, 0.0f};
+	static const double abovePlaneEq[4] = {0.0f, 1.0f, 0.0f, 0.0f};
 
 	const bool hasWaterRendering = globalRendering->drawWater && readMap->HasVisibleWater();
 
@@ -459,7 +450,6 @@ void CWorldDrawer::DrawAlphaObjects() const
 
 void CWorldDrawer::DrawMiscObjects() const
 {
-
 	{
 		// note: duplicated in CMiniMap::DrawWorldStuff()
 		commandDrawer->DrawLuaQueuedUnitSetCommands();
@@ -486,11 +476,8 @@ void CWorldDrawer::DrawMiscObjects() const
 	}
 }
 
-
-
 void CWorldDrawer::DrawBelowWaterOverlay() const
 {
-
 	if (!globalRendering->drawWater)
 		return;
 	if (mapRendering->voidWater)
@@ -509,12 +496,8 @@ void CWorldDrawer::DrawBelowWaterOverlay() const
 		glColor4f(0.0f, 0.5f, 0.3f, 0.50f);
 
 		{
-			const float3 verts[] = {
-				float3(cpos.x - vr, 0.0f, cpos.z - vr),
-				float3(cpos.x - vr, 0.0f, cpos.z + vr),
-				float3(cpos.x + vr, 0.0f, cpos.z + vr),
-				float3(cpos.x + vr, 0.0f, cpos.z - vr)
-			};
+			const float3 verts[] = {float3(cpos.x - vr, 0.0f, cpos.z - vr), float3(cpos.x - vr, 0.0f, cpos.z + vr),
+			    float3(cpos.x + vr, 0.0f, cpos.z + vr), float3(cpos.x + vr, 0.0f, cpos.z - vr)};
 
 			glVertexPointer(3, GL_FLOAT, 0, verts);
 			glDrawArrays(GL_QUADS, 0, 4);
@@ -522,16 +505,16 @@ void CWorldDrawer::DrawBelowWaterOverlay() const
 
 		{
 			const float3 verts[] = {
-				float3(cpos.x - vr, 0.0f, cpos.z - vr),
-				float3(cpos.x - vr,  -vr, cpos.z - vr),
-				float3(cpos.x - vr, 0.0f, cpos.z + vr),
-				float3(cpos.x - vr,  -vr, cpos.z + vr),
-				float3(cpos.x + vr, 0.0f, cpos.z + vr),
-				float3(cpos.x + vr,  -vr, cpos.z + vr),
-				float3(cpos.x + vr, 0.0f, cpos.z - vr),
-				float3(cpos.x + vr,  -vr, cpos.z - vr),
-				float3(cpos.x - vr, 0.0f, cpos.z - vr),
-				float3(cpos.x - vr,  -vr, cpos.z - vr),
+			    float3(cpos.x - vr, 0.0f, cpos.z - vr),
+			    float3(cpos.x - vr, -vr, cpos.z - vr),
+			    float3(cpos.x - vr, 0.0f, cpos.z + vr),
+			    float3(cpos.x - vr, -vr, cpos.z + vr),
+			    float3(cpos.x + vr, 0.0f, cpos.z + vr),
+			    float3(cpos.x + vr, -vr, cpos.z + vr),
+			    float3(cpos.x + vr, 0.0f, cpos.z - vr),
+			    float3(cpos.x + vr, -vr, cpos.z - vr),
+			    float3(cpos.x - vr, 0.0f, cpos.z - vr),
+			    float3(cpos.x - vr, -vr, cpos.z - vr),
 			};
 
 			glVertexPointer(3, GL_FLOAT, 0, verts);
@@ -551,10 +534,10 @@ void CWorldDrawer::DrawBelowWaterOverlay() const
 		glColor4f(0.0f, 0.2f, 0.8f, 0.333f);
 
 		const float3 verts[] = {
-			float3(0.0f, 0.0f, -1.0f),
-			float3(1.0f, 0.0f, -1.0f),
-			float3(1.0f, 1.0f, -1.0f),
-			float3(0.0f, 1.0f, -1.0f),
+		    float3(0.0f, 0.0f, -1.0f),
+		    float3(1.0f, 0.0f, -1.0f),
+		    float3(1.0f, 1.0f, -1.0f),
+		    float3(0.0f, 1.0f, -1.0f),
 		};
 
 		glVertexPointer(3, GL_FLOAT, 0, verts);

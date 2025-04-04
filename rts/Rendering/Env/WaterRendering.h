@@ -12,49 +12,51 @@
 struct CWaterRendering {
 public:
 	void Init();
-	bool IsUpdated() {
-		return std::exchange(updated, false);
-	}
+
+	bool IsUpdated() { return std::exchange(updated, false); }
+
 	void SetUpdated() { updated = true; }
+
 public:
-	float  repeatX;           ///< (calculated default is in IWater)
-	float  repeatY;           ///< (calculated default is in IWater)
+	float repeatX; ///< (calculated default is in IWater)
+	float repeatY; ///< (calculated default is in IWater)
 	float3 absorb;
 	float3 baseColor;
 	float3 minColor;
 	float3 surfaceColor;
-	float  surfaceAlpha;
+	float surfaceAlpha;
 	float4 planeColor;
 	float3 diffuseColor;
 	float3 specularColor;
-	float  ambientFactor;
-	float  diffuseFactor;
-	float  specularFactor;
-	float  specularPower;
-	float  fresnelMin;
-	float  fresnelMax;
-	float  fresnelPower;
-	float  reflDistortion;
-	float  blurBase;
-	float  blurExponent;
-	float  perlinStartFreq;
-	float  perlinLacunarity;
-	float  perlinAmplitude;
-	float  windSpeed;
-	float  waveOffsetFactor;
-	float  waveLength;
-	float  waveFoamDistortion;
-	float  waveFoamIntensity;
-	float  causticsResolution;
-	float  causticsStrength;
-	bool   shoreWaves;
-	bool   forceRendering;    ///< if false the renderers will render it only if currentMinMapHeight<0
-	bool   hasWaterPlane;     ///< true if "MAP\WATER\WaterPlaneColor" is set
+	float ambientFactor;
+	float diffuseFactor;
+	float specularFactor;
+	float specularPower;
+	float fresnelMin;
+	float fresnelMax;
+	float fresnelPower;
+	float reflDistortion;
+	float blurBase;
+	float blurExponent;
+	float perlinStartFreq;
+	float perlinLacunarity;
+	float perlinAmplitude;
+	float windSpeed;
+	float waveOffsetFactor;
+	float waveLength;
+	float waveFoamDistortion;
+	float waveFoamIntensity;
+	float causticsResolution;
+	float causticsStrength;
+	bool shoreWaves;
+	bool forceRendering; ///< if false the renderers will render it only if currentMinMapHeight<0
+	bool hasWaterPlane;  ///< true if "MAP\WATER\WaterPlaneColor" is set
 	unsigned char numTiles;
 	std::string texture;
 	std::string foamTexture;
 	std::string normalTexture;
 	std::vector<std::string> causticTextures;
+
 private:
 	bool updated = true;
 };

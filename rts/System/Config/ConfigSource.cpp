@@ -1,18 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "ConfigSource.h"
+
 #include "ConfigVariable.h"
+
 #include "System/Log/ILog.h"
 #include "System/Platform/ScopedFileLock.h"
 
 #ifdef _WIN32
-	#include <io.h>
+#include <io.h>
 #else
-	#include <unistd.h>
+#include <unistd.h>
 #endif
 #include <cstring>
-#include <stdexcept>
 #include <functional>
+#include <stdexcept>
 
 /******************************************************************************/
 
@@ -23,10 +25,7 @@ typedef map<string, string> StringMap;
 
 /******************************************************************************/
 
-bool ReadOnlyConfigSource::IsSet(const string& key) const
-{
-	return data.find(key) != data.end();
-}
+bool ReadOnlyConfigSource::IsSet(const string& key) const { return data.find(key) != data.end(); }
 
 string ReadOnlyConfigSource::GetString(const string& key) const
 {
@@ -39,19 +38,14 @@ string ReadOnlyConfigSource::GetString(const string& key) const
 
 /******************************************************************************/
 
-void ReadWriteConfigSource::SetString(const string& key, const string& value)
-{
-	data[key] = value;
-}
+void ReadWriteConfigSource::SetString(const string& key, const string& value) { data[key] = value; }
 
-void ReadWriteConfigSource::Delete(const string& key)
-{
-	data.erase(key);
-}
+void ReadWriteConfigSource::Delete(const string& key) { data.erase(key); }
 
 /******************************************************************************/
 
-FileConfigSource::FileConfigSource(const string& filename) : filename(filename)
+FileConfigSource::FileConfigSource(const string& filename)
+    : filename(filename)
 {
 	FILE* file;
 
@@ -91,7 +85,8 @@ void FileConfigSource::Delete(const string& key)
 	ReadModifyWrite(std::bind(&FileConfigSource::DeleteInternal, this, key));
 }
 
-void FileConfigSource::ReadModifyWrite(std::function<void ()> modify) {
+void FileConfigSource::ReadModifyWrite(std::function<void()> modify)
+{
 	FILE* file = fopen(filename.c_str(), "r+");
 
 	if (file) {
@@ -120,7 +115,8 @@ void FileConfigSource::ReadModifyWrite(std::function<void ()> modify) {
  * Precondition: end must point to the last character of the string,
  * i.e. the one before the terminating '\0'.
  */
-char* FileConfigSource::Strip(char* begin, char* end) {
+char* FileConfigSource::Strip(char* begin, char* end)
+{
 	while (end >= begin && isspace(*end)) --end;
 	while (begin <= end && isspace(*begin)) ++begin;
 	*(end + 1) = '\0';
@@ -223,7 +219,6 @@ DefaultConfigSource::DefaultConfigSource()
 	}
 }
 
-
 /**
  * @brief Fill with safemode values of declared configuration variables.
  */
@@ -253,7 +248,6 @@ DedicatedConfigSource::DedicatedConfigSource()
 		}
 	}
 }
-
 
 /**
  * @brief Fill with headless values of declared configuration variables.

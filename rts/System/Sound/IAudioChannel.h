@@ -20,16 +20,19 @@ class CWorldObject;
 class IAudioChannel {
 protected:
 	IAudioChannel();
+
 public:
 	virtual ~IAudioChannel() {}
 
 	virtual void Enable(bool newState) = 0;
+
 	bool IsEnabled() const { return enabled; }
 
 	/**
 	 * @param newVolume [0.0, 1.0]
 	 */
 	virtual void SetVolume(float newVolume) = 0;
+
 	/**
 	 * @return [0.0, 1.0]
 	 */
@@ -63,7 +66,9 @@ public:
 	virtual float StreamGetPlayTime() = 0;
 
 	void UpdateFrame() { emitsThisFrame = 0; }
+
 	void SetMaxEmits(unsigned max) { emitsPerFrame = max; }
+
 	void SetMaxConcurrent(unsigned max) { maxConcurrentSources = max; }
 
 protected:

@@ -3,13 +3,13 @@
 #ifndef PROJECTILE_HANDLER_H
 #define PROJECTILE_HANDLER_H
 
+#include "Rendering/Env/Particles/Classes/FlyingPiece.h"
+#include "Rendering/Models/3DModel.h"
+#include "System/FreeListMap.h"
+#include "System/float3.h"
+
 #include <array>
 #include <vector>
-
-#include "Rendering/Models/3DModel.h"
-#include "Rendering/Env/Particles/Classes/FlyingPiece.h"
-#include "System/float3.h"
-#include "System/FreeListMap.h"
 
 
 // bypass id and event handling for unsynced projectiles (faster)
@@ -25,8 +25,7 @@ struct UnitDef;
 typedef std::vector<CGroundFlash*> GroundFlashContainer;
 typedef std::vector<FlyingPiece> FlyingPieceContainer;
 
-class CProjectileHandler
-{
+class CProjectileHandler {
 	CR_DECLARE_STRUCT(CProjectileHandler)
 
 public:
@@ -36,12 +35,11 @@ public:
 	/// @see ConfigHandler::ConfigNotifyCallback
 	void ConfigNotify(const std::string& key, const std::string& value);
 
-	CProjectile* GetProjectileBySyncedID(int id)   { return GetProjectileByID<true >(id); }
+	CProjectile* GetProjectileBySyncedID(int id) { return GetProjectileByID<true>(id); }
+
 	CProjectile* GetProjectileByUnsyncedID(int id) { return GetProjectileByID<false>(id); }
 
-	const auto& GetActiveProjectiles(bool synced) const {
-		return projectiles[synced];
-	}
+	const auto& GetActiveProjectiles(bool synced) const { return projectiles[synced]; }
 
 	void CheckUnitCollisions(CProjectile*, std::vector<CUnit*>&, const float3, const float3);
 	void CheckFeatureCollisions(CProjectile*, std::vector<CFeature*>&, const float3, const float3);
@@ -51,12 +49,15 @@ public:
 	void CheckCollisions();
 
 	void SetMaxParticles(int value) { maxParticles = std::max(0, value); }
+
 	void SetMaxNanoParticles(int value) { maxNanoParticles = std::max(0, value); }
 
 	void Update();
 
 	float GetParticleSaturation(bool randomized = true) const;
-	float GetNanoParticleSaturation(float priority) const {
+
+	float GetNanoParticleSaturation(float priority) const
+	{
 		const float total = std::max(1.0f, maxNanoParticles * priority);
 		const float fract = std::max(int(currentNanoParticles >= maxNanoParticles), currentNanoParticles) / total;
 
@@ -66,18 +67,24 @@ public:
 	int GetCurrentParticles() const;
 
 	void AddProjectile(CProjectile* p);
+
 	void AddGroundFlash(CGroundFlash* flash) { groundFlashes.push_back(flash); }
-	void AddFlyingPiece(
-		int modelType,
-		const S3DModelPiece* piece,
-		const CMatrix44f& m,
-		const float3 pos,
-		const float3 speed,
-		const float2 pieceParams,
-		const int2 renderParams
-	);
+
+	void AddFlyingPiece(int modelType,
+	    const S3DModelPiece* piece,
+	    const CMatrix44f& m,
+	    const float3 pos,
+	    const float3 speed,
+	    const float2 pieceParams,
+	    const int2 renderParams);
 	void AddNanoParticle(const float3, const float3, const UnitDef*, int team, bool highPriority);
-	void AddNanoParticle(const float3, const float3, const UnitDef*, int team, float radius, bool inverse, bool highPriority);
+	void AddNanoParticle(const float3,
+	    const float3,
+	    const UnitDef*,
+	    int team,
+	    float radius,
+	    bool inverse,
+	    bool highPriority);
 
 public:
 	int maxParticles = 0;
@@ -89,7 +96,7 @@ public:
 	mutable int frameProjectileCounts[2] = {0, 0};
 
 	// flying pieces (unsynced) are sorted from time to time to reduce GL state changes
-	std::array<                bool, MODELTYPE_CNT> resortFlyingPieces{};
+	std::array<bool, MODELTYPE_CNT> resortFlyingPieces{};
 	std::array<FlyingPieceContainer, MODELTYPE_CNT> flyingPieces{};
 
 	// unsynced
@@ -100,13 +107,13 @@ private:
 	void CreateProjectile(CProjectile*);
 	void DestroyProjectile(CProjectile*);
 
-	template<bool synced>
-	CProjectile* GetProjectileByID(int id);
+	template<bool synced> CProjectile* GetProjectileByID(int id);
 
-	template<bool synced>
-	void UpdateProjectilesImpl();
-	void UpdateProjectiles() {
-		UpdateProjectilesImpl< true>();
+	template<bool synced> void UpdateProjectilesImpl();
+
+	void UpdateProjectiles()
+	{
+		UpdateProjectilesImpl<true>();
 		UpdateProjectilesImpl<false>();
 	}
 
@@ -116,13 +123,12 @@ private:
 	spring::FreeListMapCompact<CProjectile*, int> projectiles[2];
 
 	static uint32_t UnsyncedRandInt(uint32_t N);
-	static uint32_t   SyncedRandInt(uint32_t N);
+	static uint32_t SyncedRandInt(uint32_t N);
 
-	static constexpr decltype(&UnsyncedRandInt) rngFuncs[] = { &UnsyncedRandInt, &SyncedRandInt };
+	static constexpr decltype(&UnsyncedRandInt) rngFuncs[] = {&UnsyncedRandInt, &SyncedRandInt};
 };
 
-template<bool synced>
-inline CProjectile* CProjectileHandler::GetProjectileByID(int id)
+template<bool synced> inline CProjectile* CProjectileHandler::GetProjectileByID(int id)
 {
 	size_t pos = projectiles[synced].Find(id);
 	if (pos == size_t(-1))
@@ -130,8 +136,6 @@ inline CProjectile* CProjectileHandler::GetProjectileByID(int id)
 
 	return projectiles[synced][pos];
 }
-
-
 
 extern CProjectileHandler projectileHandler;
 

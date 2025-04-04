@@ -1,4 +1,5 @@
 #include "CpuTopology.h"
+
 #include <atomic>
 #include <bit>
 #include <mutex>
@@ -12,7 +13,8 @@ static ProcessorMasks cachedProcessorMasks;
 static int logicalCpuCount = 0;
 static int physicalCpuCount = 0;
 
-void SetCpuCounts(ProcessorMasks& masks) {
+void SetCpuCounts(ProcessorMasks& masks)
+{
 	const uint32_t logicalCountMask = (masks.efficiencyCoreMask & masks.performanceCoreMask);
 	const uint32_t coreCountMask = logicalCountMask & ~masks.hyperThreadHighMask;
 
@@ -20,7 +22,8 @@ void SetCpuCounts(ProcessorMasks& masks) {
 	physicalCpuCount = std::popcount(coreCountMask);
 }
 
-void InitTopologicalData() {
+void InitTopologicalData()
+{
 	if (cacheActive)
 		return;
 
@@ -33,22 +36,25 @@ void InitTopologicalData() {
 	cacheActive = true;
 }
 
-const ProcessorMasks& GetCachedProcessorMasks() {
+const ProcessorMasks& GetCachedProcessorMasks()
+{
 	InitTopologicalData();
 
 	return cachedProcessorMasks;
 }
 
-int GetNumLogicalCpuCores() {
+int GetNumLogicalCpuCores()
+{
 	InitTopologicalData();
 
 	return logicalCpuCount;
 }
 
-int GetNumPhysicalCpuCores() {
+int GetNumPhysicalCpuCores()
+{
 	InitTopologicalData();
 
 	return physicalCpuCount;
 }
 
-} //namespace cpu_topology
+} // namespace cpu_topology

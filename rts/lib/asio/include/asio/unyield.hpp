@@ -9,13 +9,13 @@
 //
 
 #ifdef reenter
-# undef reenter
+#undef reenter
 #endif
 
 #ifdef yield
-# undef yield
+#undef yield
 #endif
 
 #ifdef fork
-# undef fork
+#undef fork
 #endif

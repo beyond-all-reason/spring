@@ -6,15 +6,15 @@
 #include "CommandAI.h"
 #include "CommandQueue.h"
 
-#include <string>
 #include "System/UnorderedMap.hpp"
+
+#include <string>
 
 class CUnit;
 class CFeature;
 struct Command;
 
-class CFactoryCAI : public CCommandAI
-{
+class CFactoryCAI : public CCommandAI {
 public:
 	CR_DECLARE(CFactoryCAI)
 

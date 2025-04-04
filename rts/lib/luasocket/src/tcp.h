@@ -16,21 +16,20 @@
 *
 * RCS ID: $Id: tcp.h,v 1.7 2005/10/07 04:40:59 diego Exp $
 \*=========================================================================*/
-#include "lua.h"
-
 #include "buffer.h"
-#include "timeout.h"
+#include "lua.h"
 #include "socket.h"
+#include "timeout.h"
 
 typedef struct t_tcp_ {
-    t_socket sock;
-    t_io io;
-    t_buffer buf;
-    t_timeout tm;
+	t_socket sock;
+	t_io io;
+	t_buffer buf;
+	t_timeout tm;
 } t_tcp;
 
-typedef t_tcp *p_tcp;
+typedef t_tcp* p_tcp;
 
-int tcp_open(lua_State *L);
+int tcp_open(lua_State* L);
 
 #endif /* TCP_H */

@@ -3,29 +3,27 @@
 #ifndef GRASSDRAWER_H
 #define GRASSDRAWER_H
 
+#include "Rendering/GL/VertexArray.h"
+#include "System/EventClient.h"
+#include "System/float3.h"
+
 #include <vector>
 
-#include "Rendering/GL/VertexArray.h"
-#include "System/float3.h"
-#include "System/EventClient.h"
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 class CVertexArray;
 struct VA_TYPE_TN;
 
-
-class CGrassDrawer : public CEventClient
-{
+class CGrassDrawer : public CEventClient {
 public:
 	CGrassDrawer();
 	~CGrassDrawer();
 
 	void Draw();
 	void DrawShadow();
-	void AddGrass(const float3& pos,  const uint8_t grassValue);
+	void AddGrass(const float3& pos, const uint8_t grassValue);
 	void ResetPos(const float3& pos);
 	void RemoveGrass(const float3& pos);
 	unsigned char GetGrass(const float3& pos);
@@ -46,15 +44,17 @@ public:
 		int y;
 		float dist;
 	};
+
 	struct GrassStruct {
 		GrassStruct()
-			: va(128)
-			, posX(0)
-			, posZ(0)
-			, lastSeen(0)
-			, lastFar(0)
-			, lastDist(0.0f)
-		{}
+		    : va(128)
+		    , posX(0)
+		    , posZ(0)
+		    , lastSeen(0)
+		    , lastFar(0)
+		    , lastDist(0.0f)
+		{
+		}
 
 		CVertexArray va;
 
@@ -67,10 +67,10 @@ public:
 	};
 
 	enum GrassShaderProgram {
-		GRASS_PROGRAM_NEAR        = 0,
-		GRASS_PROGRAM_DIST        = 1,
-		GRASS_PROGRAM_SHADOW_GEN  = 2,
-		GRASS_PROGRAM_LAST        = 3
+		GRASS_PROGRAM_NEAR = 0,
+		GRASS_PROGRAM_DIST = 1,
+		GRASS_PROGRAM_SHADOW_GEN = 2,
+		GRASS_PROGRAM_LAST = 3
 	};
 
 protected:

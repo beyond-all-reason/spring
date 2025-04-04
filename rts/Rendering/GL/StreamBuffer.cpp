@@ -2,13 +2,11 @@
 
 #include "VBO.h"
 
-#include "System/ContainerUtil.h"
-#include "System/Log/ILog.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/GlobalRenderingInfo.h"
-
+#include "System/ContainerUtil.h"
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
-
 
 //////////////////////////////////////////////////////////////////////
 
@@ -25,7 +23,7 @@ void IStreamBufferConcept::PutBufferLocks()
 
 	spring::VectorSortUnique(lockList);
 
-	for (auto& so : lockList) {
+	for (auto& so: lockList) {
 		if (glIsSync(*so))
 			glDeleteSync(*so);
 
@@ -35,18 +33,19 @@ void IStreamBufferConcept::PutBufferLocks()
 }
 
 IStreamBufferConcept::IStreamBufferConcept(StreamBufferCreationParams p, std::string_view bufferTypeName)
-	: name{ p.name }
-	, target{ p.target }
-	, id{ 0 }
-	, numElements { p.numElems }
-	, byteSize{ 0 }
-	, allocIdx{ 0 }
-	, mapElemOffet{ 0 }
-	, mapElemCount{ 0 }
-	, optimizeForStreaming{ p.optimizeForStreaming }
+    : name{p.name}
+    , target{p.target}
+    , id{0}
+    , numElements{p.numElems}
+    , byteSize{0}
+    , allocIdx{0}
+    , mapElemOffet{0}
+    , mapElemCount{0}
+    , optimizeForStreaming{p.optimizeForStreaming}
 {
 	if (reportType)
-		LOG_L(L_INFO, "[StreamBuffer::%s] Created StreamBuffer name %s type %s", __func__, name.c_str(), bufferTypeName.data());
+		LOG_L(L_INFO, "[StreamBuffer::%s] Created StreamBuffer name %s type %s", __func__, name.c_str(),
+		    bufferTypeName.data());
 }
 
 void IStreamBufferConcept::QueueLockBuffer(GLsync& syncObj) const
@@ -73,7 +72,10 @@ void IStreamBufferConcept::WaitBuffer(GLsync& syncObj) const
 	syncObj = {};
 
 	if (gWaitCount > 0)
-		LOG_L(L_DEBUG, "[IStreamBuffer::WaitBuffer] Detected non-zero (%u) wait spins on stream buffer (%u, %s). Consider increasing numBuffers", gWaitCount, id, name.c_str());
+		LOG_L(L_DEBUG,
+		    "[IStreamBuffer::WaitBuffer] Detected non-zero (%u) wait spins on stream buffer (%u, %s). Consider "
+		    "increasing numBuffers",
+		    gWaitCount, id, name.c_str());
 }
 
 void IStreamBufferConcept::CreateBuffer(uint32_t byteBufferSize, uint32_t newUsage)
@@ -122,7 +124,7 @@ void IStreamBufferConcept::Bind(uint32_t bindTarget) const
 	glBindBuffer(bindTarget > 0 ? bindTarget : target, id);
 }
 
-void  IStreamBufferConcept::Unbind(uint32_t bindTarget) const
+void IStreamBufferConcept::Unbind(uint32_t bindTarget) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBindBuffer(bindTarget > 0 ? bindTarget : target, 0);

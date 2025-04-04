@@ -3,8 +3,9 @@
 #ifndef _SMF_MAP_FILE_H
 #define _SMF_MAP_FILE_H
 
-#include "System/FileSystem/FileHandler.h"
 #include "SMFFormat.h"
+
+#include "System/FileSystem/FileHandler.h"
 
 #include <string>
 #include <vector>
@@ -12,11 +13,19 @@
 struct MapFeatureInfo;
 struct MapBitmapInfo;
 
-class CSMFMapFile
-{
+class CSMFMapFile {
 public:
-	CSMFMapFile(                              ): ifs("", "") {                    } // defer Open
-	CSMFMapFile(const std::string& mapFileName): ifs("", "") { Open(mapFileName); } // unitsync
+	CSMFMapFile()
+	    : ifs("", "")
+	{
+	} // defer Open
+
+	CSMFMapFile(const std::string& mapFileName)
+	    : ifs("", "")
+	{
+		Open(mapFileName);
+	} // unitsync
+
 	~CSMFMapFile() { Close(); }
 
 	void Open(const std::string& mapFileName);
@@ -32,7 +41,8 @@ public:
 	void GetInfoMapSize(const char* name, MapBitmapInfo*) const;
 	bool ReadInfoMap(const char* name, void* data);
 
-	int GetNumFeatures()     const { return featureHeader.numFeatures; }
+	int GetNumFeatures() const { return featureHeader.numFeatures; }
+
 	int GetNumFeatureTypes() const { return featureHeader.numFeatureType; }
 
 	const char* GetFeatureTypeName(int typeID) const;

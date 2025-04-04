@@ -6,12 +6,15 @@
 #include "Sim/Units/Unit.h"
 #include "System/float3.h"
 
-class CBuilding : public CUnit
-{
+class CBuilding : public CUnit {
 public:
 	CR_DECLARE(CBuilding)
 
-	CBuilding(): CUnit() { immobile = true; }
+	CBuilding()
+	    : CUnit()
+	{
+		immobile = true;
+	}
 
 	// Unblock is required here because the blockMap is not available during ~CUnit()
 	virtual ~CBuilding() { UnBlock(); };

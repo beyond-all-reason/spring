@@ -1,7 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <SDL_keycode.h>
-
 #include "OverheadController.h"
 
 #include "Game/Camera.h"
@@ -10,12 +8,13 @@
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Rendering/GlobalRendering.h"
-#include "System/SpringMath.h"
-#include "System/Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Input/KeyInput.h"
-
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
+
+#include <SDL_keycode.h>
 
 CONFIG(float, MiddleClickScrollSpeed).defaultValue(0.01f);
 CONFIG(int, OverheadScrollSpeed).defaultValue(10);
@@ -23,25 +22,29 @@ CONFIG(float, OverheadTiltSpeed).defaultValue(1.0f);
 CONFIG(bool, OverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, OverheadFOV).defaultValue(45.0f);
 CONFIG(float, OverheadMinZoomDistance).defaultValue(60.0f).description("Minimum camera zoom distance");
-CONFIG(float, OverheadMaxHeightFactor).defaultValue(1.0f).description("Float multiplier for maximum overhead camera zoom distance");
+CONFIG(float, OverheadMaxHeightFactor)
+    .defaultValue(1.0f)
+    .description("Float multiplier for maximum overhead camera zoom distance");
 CONFIG(float, CamOverheadFastScale).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult.");
 
 static const float angleStep = math::HALFPI / 14.0f;
 
-
 COverheadController::COverheadController()
-	: flipped(false)
-	, changeAltHeight(true)
+    : flipped(false)
+    , changeAltHeight(true)
 
-	// make whole map visible in overhead mode
-	, height(CGround::GetHeightAboveWater(pos.x, pos.z, false) + (2.5f * std::max(pos.x / globalRendering->aspectRatio, pos.z)))
-	, oldAltHeight(height)
+    // make whole map visible in overhead mode
+    , height(CGround::GetHeightAboveWater(pos.x, pos.z, false) +
+             (2.5f * std::max(pos.x / globalRendering->aspectRatio, pos.z)))
+    , oldAltHeight(height)
 
-	, maxHeight(10000.0f)
-	, minHeight(60.0f)
-	, angle(DEFAULT_ANGLE)
+    , maxHeight(10000.0f)
+    , minHeight(60.0f)
+    , angle(DEFAULT_ANGLE)
 {
-	configHandler->NotifyOnChange(this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV", "OverheadMinZoomDistance", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
+	configHandler->NotifyOnChange(
+	    this, {"MiddleClickScrollSpeed", "OverheadScrollSpeed", "OverheadTiltSpeed", "OverheadEnabled", "OverheadFOV",
+	              "OverheadMinZoomDistance", "OverheadMaxHeightFactor", "CamOverheadFastScale"});
 	ConfigUpdate();
 }
 
@@ -64,7 +67,7 @@ void COverheadController::ConfigUpdate()
 	fastScale = configHandler->GetFloat("CamOverheadFastScale");
 }
 
-void COverheadController::ConfigNotify(const std::string & key, const std::string & value)
+void COverheadController::ConfigNotify(const std::string& key, const std::string& value)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
@@ -113,7 +116,6 @@ void COverheadController::ScreenEdgeMove(float3 move)
 	KeyMove(move);
 }
 
-
 void COverheadController::MouseWheelMove(float move, const float3& newDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -122,9 +124,9 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 
 	camHandler->CameraTransition(0.05f);
 
-	const bool moveFast     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
-	const bool moveTilt     = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
-	const float shiftSpeed  = (moveFast ? camera->moveFastMult * fastScale: 1.0f);
+	const bool moveFast = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_FST];
+	const bool moveTilt = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_TLT];
+	const float shiftSpeed = (moveFast ? camera->moveFastMult * fastScale : 1.0f);
 	const float altZoomDist = height * move * 0.007f * shiftSpeed;
 
 	// tilt the camera if LCTRL is pressed
@@ -135,7 +137,8 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 		angle += (move * tiltSpeed * shiftSpeed * 0.025f) * angleStep;
 		angle = std::clamp(angle, 0.01f, math::HALFPI);
 		camHandler->CameraTransition(0.125f);
-	} else {
+	}
+	else {
 		const bool moveReset = camHandler->GetActiveCamera()->GetMovState()[CCamera::MOVE_STATE_RST];
 
 		if (move < 0.0f) {
@@ -161,16 +164,17 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 			if ((wantedPos.y + (dir.y * newHeight)) < 0.0f)
 				newHeight = -wantedPos.y / yDirClamp;
 
-			if(newHeight < minHeight) {
+			if (newHeight < minHeight) {
 				wantedPos = cpos + newDir * (height - minHeight);
 				newHeight = minHeight;
 			}
 
-			if(height > minHeight) {
+			if (height > minHeight) {
 				height = newHeight;
 				pos = wantedPos + dir * height;
 			}
-		} else {
+		}
+		else {
 			// ZOOM OUT from mid screen
 			if (moveReset) {
 				// instazoom out to maximum height
@@ -180,9 +184,10 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 				}
 
 				height = maxHeight;
-				pos.x  = mapDims.mapx * SQUARE_SIZE * 0.5f;
-				pos.z  = mapDims.mapy * SQUARE_SIZE * 0.55f; // somewhat longer toward bottom
-			} else {
+				pos.x = mapDims.mapx * SQUARE_SIZE * 0.5f;
+				pos.z = mapDims.mapy * SQUARE_SIZE * 0.55f; // somewhat longer toward bottom
+			}
+			else {
 				height *= (1.0f + (altZoomDist / height));
 			}
 		}
@@ -191,7 +196,8 @@ void COverheadController::MouseWheelMove(float move, const float3& newDir)
 		if (moveReset) {
 			angle = DEFAULT_ANGLE;
 			camHandler->CameraTransition(1.0f);
-		} else {
+		}
+		else {
 			changeAltHeight = true;
 		}
 	}
@@ -213,14 +219,12 @@ void COverheadController::Update()
 	pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * height * 2.0f;
 }
 
-
 void COverheadController::SetPos(const float3& newPos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	pos = newPos;
 	Update();
 }
-
 
 void COverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
@@ -229,7 +233,7 @@ void COverheadController::SwitchTo(const CCameraController* oldCam, const bool s
 		LOG("Switching to Overhead (TA) style camera");
 
 	float3 oldPos = oldCam->SwitchFrom();
-	if (oldCam->GetName() == "ov"){
+	if (oldCam->GetName() == "ov") {
 		pos = oldPos + dir * height;
 		Update();
 		return;
@@ -252,8 +256,8 @@ void COverheadController::GetState(StateMap& sm) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 
-	sm["height"]  = height;
-	sm["angle"]   = angle;
+	sm["height"] = height;
+	sm["angle"] = angle;
 	sm["flipped"] = flipped ? +1.0f : -1.0f;
 }
 
@@ -264,7 +268,7 @@ bool COverheadController::SetState(const StateMap& sm)
 
 	SetStateFloat(sm, "height", height);
 	SetStateFloat(sm, "angle", angle);
-	SetStateBool (sm, "flipped", flipped);
+	SetStateBool(sm, "flipped", flipped);
 
 	return true;
 }

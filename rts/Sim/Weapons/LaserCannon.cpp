@@ -1,29 +1,28 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LaserCannon.h"
+
 #include "WeaponDef.h"
+
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND_DERIVED(CLaserCannon, CWeapon, )
-CR_REG_METADATA(CLaserCannon, (
-	CR_MEMBER(color)
-))
+CR_REG_METADATA(CLaserCannon, (CR_MEMBER(color)))
 
-CLaserCannon::CLaserCannon(CUnit* owner, const WeaponDef* def): CWeapon(owner, def)
+CLaserCannon::CLaserCannon(CUnit* owner, const WeaponDef* def)
+    : CWeapon(owner, def)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//happens when loading
+	// happens when loading
 	if (def != nullptr)
 		color = def->visuals.color;
 }
-
 
 void CLaserCannon::UpdateProjectileSpeed(const float val)
 {
@@ -31,6 +30,7 @@ void CLaserCannon::UpdateProjectileSpeed(const float val)
 	projectileSpeed = std::max(0.001f, val); // sanitize
 	range = std::max(1.0f, std::floor(val / projectileSpeed)) * projectileSpeed;
 }
+
 void CLaserCannon::UpdateRange(const float val)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -41,7 +41,6 @@ void CLaserCannon::UpdateRange(const float val)
 	// to 0 and collisions are checked at 0 inclusive
 	range = std::max(1.0f, std::floor(val / projectileSpeed)) * projectileSpeed;
 }
-
 
 void CLaserCannon::FireImpl(const bool scriptCall)
 {

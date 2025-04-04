@@ -110,12 +110,12 @@ static constexpr int MAX_AIS = 255;
  * which places a further cap at 1 << 24 (far beyond the realm of feasible
  * runtime performance) should these maxima ever be removed.
  */
-static constexpr int MAX_UNITS       =  32000;
-static constexpr int MAX_FEATURES    =  32000;
+static constexpr int MAX_UNITS = 32000;
+static constexpr int MAX_FEATURES = 32000;
 static constexpr int MAX_PROJECTILES = 128000;
 
 static_assert(MAX_UNITS + MAX_FEATURES < std::numeric_limits<uint16_t>::max(),
-	"MAX_UNITS + MAX_FEATURES must fit in a 16-bit type because the network protocol packs them both there");
+    "MAX_UNITS + MAX_FEATURES must fit in a 16-bit type because the network protocol packs them both there");
 
 /**
  * @brief max weapons per unit
@@ -159,4 +159,3 @@ static constexpr float MAX_PROJECTILE_HEIGHT = 1e6f;
 static constexpr int MAX_UNIT_SENSOR_RADIUS = 32768;
 
 #endif // _GLOBAL_CONSTANTS_H
-

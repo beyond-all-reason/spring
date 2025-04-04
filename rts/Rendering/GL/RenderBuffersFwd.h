@@ -19,11 +19,9 @@ class TypedRenderBuffer;
 */
 class RenderBuffer;
 
-template <typename T>
-class RenderBufferShader;
+template<typename T> class RenderBufferShader;
 /*
 template <typename T>
 class TypedRenderBuffer : public RenderBuffer;
 */
-template <typename T>
-class TypedRenderBuffer;
+template<typename T> class TypedRenderBuffer;

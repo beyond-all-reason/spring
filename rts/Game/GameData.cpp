@@ -1,16 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-#include <limits>
-
 #include "GameData.h"
 
 #include "Net/Protocol/BaseNetProtocol.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Net/PackPacket.h"
 #include "System/Net/UnpackPacket.h"
 #include "System/StringUtil.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cassert>
+#include <limits>
 
 using namespace netcode;
 
@@ -20,7 +19,9 @@ GameData::GameData()
 	std::memset(mapChecksum, 0, sizeof(mapChecksum));
 	std::memset(modChecksum, 0, sizeof(modChecksum));
 }
-GameData::GameData(const std::string& setup): setupText(setup)
+
+GameData::GameData(const std::string& setup)
+    : setupText(setup)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::memset(mapChecksum, 0, sizeof(mapChecksum));
@@ -36,7 +37,8 @@ GameData::GameData(std::shared_ptr<const RawPacket> pckt)
 
 	std::uint16_t compressedSize;
 
-	packet >> compressedSize; compressed.resize(compressedSize);
+	packet >> compressedSize;
+	compressed.resize(compressedSize);
 	packet >> compressed;
 
 	const std::vector<std::uint8_t> buffer{zlib::inflate(compressed)};
@@ -47,8 +49,12 @@ GameData::GameData(std::shared_ptr<const RawPacket> pckt)
 	// avoid reinterpret_cast; buffer is not null-terminated
 	setupText = {buffer.begin(), buffer.end()};
 
-	for (auto& checksum: mapChecksum) { packet >> checksum; }
-	for (auto& checksum: modChecksum) { packet >> checksum; }
+	for (auto& checksum: mapChecksum) {
+		packet >> checksum;
+	}
+	for (auto& checksum: modChecksum) {
+		packet >> checksum;
+	}
 
 	packet >> randomSeed;
 }
@@ -68,8 +74,12 @@ const netcode::RawPacket* GameData::Pack() const
 	*buffer << std::uint16_t(compressed.size());
 	*buffer << compressed;
 
-	for (auto& checksum: mapChecksum) { *buffer << checksum; }
-	for (auto& checksum: modChecksum) { *buffer << checksum; }
+	for (auto& checksum: mapChecksum) {
+		*buffer << checksum;
+	}
+	for (auto& checksum: modChecksum) {
+		*buffer << checksum;
+	}
 
 	*buffer << randomSeed;
 	return buffer;
@@ -81,4 +91,3 @@ void GameData::SetSetupText(const std::string& newSetup)
 	setupText = newSetup;
 	compressed.clear();
 }
-

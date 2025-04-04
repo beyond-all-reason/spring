@@ -1,12 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LogSinkHandler.h"
+
 #include "Backend.h"
 
-#include <string>
 #include <cassert>
-
-
+#include <string>
 
 // forwards a log entry to all ILogSinks (e.g. InfoConsole) added to the handler
 static void log_sink_record_logSinkHandler(int level, const char* section, const char* record)
@@ -14,9 +13,8 @@ static void log_sink_record_logSinkHandler(int level, const char* section, const
 	logSinkHandler.RecordLogMessage(level, (section == nullptr) ? "" : section, record);
 }
 
-
-
-void LogSinkHandler::AddSink(ILogSink* logSink) {
+void LogSinkHandler::AddSink(ILogSink* logSink)
+{
 	assert(logSink != nullptr);
 
 	if (sinks.empty())
@@ -25,7 +23,8 @@ void LogSinkHandler::AddSink(ILogSink* logSink) {
 	sinks.insert(logSink);
 }
 
-void LogSinkHandler::RemoveSink(ILogSink* logSink) {
+void LogSinkHandler::RemoveSink(ILogSink* logSink)
+{
 	assert(logSink != nullptr);
 	sinks.erase(logSink);
 
@@ -35,11 +34,8 @@ void LogSinkHandler::RemoveSink(ILogSink* logSink) {
 	log_backend_unregisterSink(&log_sink_record_logSinkHandler);
 }
 
-void LogSinkHandler::RecordLogMessage(
-	int level,
-	const std::string& section,
-	const std::string& message
-) {
+void LogSinkHandler::RecordLogMessage(int level, const std::string& section, const std::string& message)
+{
 	if (!sinking)
 		return;
 
@@ -48,4 +44,3 @@ void LogSinkHandler::RecordLogMessage(
 		sink->RecordLogMessage(level, section, message);
 	}
 }
-

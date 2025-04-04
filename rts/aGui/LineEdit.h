@@ -3,22 +3,18 @@
 #ifndef LINE_EDIT_H
 #define LINE_EDIT_H
 
-#include <string>
-
 #include "GuiElement.h"
 
-namespace agui
-{
+#include <string>
 
-class LineEdit : public GuiElement
-{
+namespace agui {
+
+class LineEdit : public GuiElement {
 public:
 	LineEdit(GuiElement* parent = NULL);
 
-	std::string GetContent() const
-	{
-		return content;
-	};
+	std::string GetContent() const { return content; };
+
 	void SetContent(const std::string& line, bool moveCursor = true);
 
 	void SetFocus(bool focus);
@@ -36,5 +32,5 @@ private:
 	unsigned cursorPos;
 };
 
-}
+} // namespace agui
 #endif
