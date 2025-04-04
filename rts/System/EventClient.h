@@ -306,7 +306,7 @@ class CEventClient
 		virtual void CameraRotationChanged(const float3& rot);
 		virtual void CameraPositionChanged(const float3& pos);
 		virtual void MiniMapRotationChanged(const float newRot, const float oldRot);
-		virtual void MiniMapMinimizationChanged(const bool isMinimized);
+		virtual void MiniMapStateChanged(const bool isMinimized, const bool isMaximized);
 		virtual void MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim);
 		virtual bool CommandNotify(const Command& cmd);
 

@@ -1868,9 +1868,9 @@ function gadgetHandler:MiniMapRotationChanged(newRot, oldRot)
   end
 end
 
-function gadgetHandler:MiniMapMinimizationChanged(isMinimized)
-  for _,g in r_ipairs(self.MiniMapMinimizationChangedList) do
-    g:MiniMapMinimizationChanged(isMinimized)
+function gadgetHandler:MiniMapStateChanged(isMinimized, isMaximized)
+  for _,g in r_ipairs(self.MiniMapStateChangedList) do
+    g:MiniMapStateChanged(isMinimized, isMaximized)
   end
 end
 

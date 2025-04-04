@@ -238,7 +238,7 @@ class CEventHandler
 		void CameraRotationChanged(const float3& rot);
 		void CameraPositionChanged(const float3& pos);
 		void MiniMapRotationChanged(const float newRot, const float oldRot);
-		void MiniMapMinimizationChanged(const bool isMinimized);
+		void MiniMapStateChanged(const bool isMinimized, const bool isMaximized);
 		void MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim);
 		bool CommandNotify(const Command& cmd);
 

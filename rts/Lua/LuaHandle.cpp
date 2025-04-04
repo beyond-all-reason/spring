@@ -3444,22 +3444,25 @@ void CLuaHandle::MiniMapRotationChanged(const float newRot, const float oldRot)
 	RunCallIn(L, cmdStr, 2, 0);
 }
 
-/*** Called when the MiniMap minimization changes
+/*** Called when the MiniMap minimizes or maximizes changes
  * 
- * @function Callins:MiniMapMinimizationChanged
+ * @function Callins:MiniMapStateChanged
  * @param isMinimized boolean
+ * @param isMaximized boolean
  */
-void CLuaHandle::MiniMapMinimizationChanged(const bool isMinimized)
+void CLuaHandle::MiniMapStateChanged(const bool isMinimized,
+									const bool isMaximized)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, false);
-	luaL_checkstack(L, 4, __func__);
+	luaL_checkstack(L, 5, __func__);
 
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
 		return;
 
 	lua_pushboolean(L, isMinimized);
+	lua_pushboolean(L, isMaximized);
 
 	RunCallIn(L, cmdStr, 1, 0);
 }

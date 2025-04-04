@@ -19,7 +19,7 @@ CallInsList = {
 	"CameraRotationChanged",
 	"CameraPositionChanged",
 	"MiniMapRotationChanged",
-	"MiniMapMinimizationChanged",
+	"MiniMapStateChanged",
 	"MiniMapGeometryChanged",
 	"CommandNotify",
 

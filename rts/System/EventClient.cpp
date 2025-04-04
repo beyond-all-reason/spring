@@ -84,7 +84,7 @@ void CEventClient::ActiveCommandChanged(const SCommandDescription* cmdDesc) {}
 void CEventClient::CameraRotationChanged(const float3& rot) {}
 void CEventClient::CameraPositionChanged(const float3& pos) {}
 void CEventClient::MiniMapRotationChanged(const float newRot, const float oldRot) {}
-void CEventClient::MiniMapMinimizationChanged(const bool isMinimized) {}
+void CEventClient::MiniMapStateChanged(const bool isMinimized, const bool isMaximized) {}
 void CEventClient::MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim) {}
 bool CEventClient::CommandNotify(const Command& cmd) { return false; }
 
