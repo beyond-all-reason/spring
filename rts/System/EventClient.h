@@ -305,6 +305,9 @@ class CEventClient
 		virtual void ActiveCommandChanged(const SCommandDescription* cmdDesc);
 		virtual void CameraRotationChanged(const float3& rot);
 		virtual void CameraPositionChanged(const float3& pos);
+		virtual void MiniMapRotationChanged(const float newRot, const float oldRot);
+		virtual void MiniMapMinimizationChanged(const bool isMinimized);
+		virtual void MiniMapGeometryChanged(const int2 newPos, const int2 newDim, const int2 oldPos, const int2 oldDim);
 		virtual bool CommandNotify(const Command& cmd);
 
 		virtual bool AddConsoleLine(const std::string& msg, const std::string& section, int level);
