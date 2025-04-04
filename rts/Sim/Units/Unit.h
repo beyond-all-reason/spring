@@ -391,7 +391,6 @@ public:
 
 	// how long the unit has been inactive
 	unsigned int restTime = 0;
-	unsigned int outOfMapTime = 0;
 
 	float reloadSpeed = 1.0f;
 	float maxRange = 0.0f;

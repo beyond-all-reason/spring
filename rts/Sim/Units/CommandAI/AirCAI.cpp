@@ -495,10 +495,6 @@ void CAirCAI::ExecuteGuard(Command& c)
 		StopMoveAndFinishCommand();
 		return;
 	}
-	if (guardee->outOfMapTime > (GAME_SPEED * 5)) {
-		StopMoveAndFinishCommand();
-		return;
-	}
 
 	const bool pushAttackCommand =
 		(owner->maxRange > 0.0f) &&
