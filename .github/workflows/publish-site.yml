@@ -4,7 +4,7 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 env:
-  EMMYLUA_CLI_VERSION: "0.6"
+  EMMYLUA_CLI_VERSION: "0.6.0"
 jobs:
   publish:
     if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
