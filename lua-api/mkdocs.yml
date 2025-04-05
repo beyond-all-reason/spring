@@ -1,0 +1,30 @@
+site_name: Docs
+theme:
+  name: material
+  font:
+    text: Roboto
+    code: Roboto Mono
+  search: true
+  features:
+    - quick-links
+    - navigation
+    - search
+    - toc
+    - fullscreen
+    - bookmarks
+    - tabs
+    - code
+    - edit-on-github
+    - language-selector
+    - code
+    - cover
+    - footer
+    - social-share
+    - theme-switcher
+nav:
+  - Home: index.md
+  
+  
+  
+extra:
+  footer: ""
