@@ -398,6 +398,13 @@ void CFactoryCAI::SlowUpdate()
 			// regular order (move/wait/etc)
 			switch (c.GetID()) {
 				case CMD_STOP: {
+					/* Targeted hack to optimize bulk STOP orders.
+					 * Build orders get replaced by STOP instead of being removed,
+					 * this is due to the buildqueue's internal implementation as `std::deque`
+					 * whose interface doesn't support removal from the middle that well.
+					 * Units often get added and removed in large quantities via CTRL/SHIFT,
+					 * such multiple STOPs commands in a row would then produce a freeze
+					 * when the engine tries to process them all in one frame. */
 					if (lastCmdID != CMD_STOP)
 						ExecuteStop(c);
 				} break;
