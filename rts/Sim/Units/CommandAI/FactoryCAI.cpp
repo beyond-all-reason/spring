@@ -380,6 +380,7 @@ void CFactoryCAI::SlowUpdate()
 
 	CFactory* fac = static_cast<CFactory*>(owner);
 
+	int lastCmdID = 0;
 	while (!commandQue.empty()) {
 		Command& c = commandQue.front();
 
@@ -397,7 +398,8 @@ void CFactoryCAI::SlowUpdate()
 			// regular order (move/wait/etc)
 			switch (c.GetID()) {
 				case CMD_STOP: {
-					ExecuteStop(c);
+					if (lastCmdID != CMD_STOP)
+						ExecuteStop(c);
 				} break;
 				default: {
 					CCommandAI::SlowUpdate();
@@ -408,6 +410,7 @@ void CFactoryCAI::SlowUpdate()
 		// exit if no command was consumed
 		if (oldQueueSize == commandQue.size())
 			break;
+		lastCmdID = c.GetID();
 	}
 }
 
