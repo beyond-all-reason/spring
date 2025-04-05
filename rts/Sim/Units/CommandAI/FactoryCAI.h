@@ -39,6 +39,7 @@ public:
 
 private:
 	void UpdateIconName(int id, const int& numQueued);
+	void ClearBuildQueue();
 };
 
 #endif // _FACTORY_AI_H_

@@ -152,6 +152,26 @@ static constexpr int GetCountMultiplierFromOptions(int opts)
 	return ret;
 }
 
+void CFactoryCAI::ClearBuildQueue()
+{
+	if (!commandQue.empty()) {
+		// remove all 'description' build amounts
+		for (unsigned int cmdNum = 0; cmdNum < commandQue.size(); ++cmdNum) {
+			if (commandQue[cmdNum].GetID() < 0)
+				UpdateIconName(commandQue[cmdNum].GetID(), 0);
+		}
+
+		// clear queues
+		waitCommandsAI.ClearUnitQueue(owner, commandQue);
+		CCommandAI::ClearCommandDependencies();
+		commandQue.clear();
+
+		// issue stop build
+		CFactory* fac = static_cast<CFactory*>(owner);
+		fac->StopBuild();
+	}
+}
+
 void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -188,6 +208,11 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
  			waitCommandsAI.ClearUnitQueue(owner, newUnitCommands);
 			CCommandAI::ClearCommandDependencies();
 			newUnitCommands.clear();
+		}
+
+		if (cmdID == CMD_STOP && c.GetOpts() & ALTQUEUE) {
+			ClearBuildQueue();
+			return;
 		}
 
 		CCommandAI::AddCommandDependency(c);

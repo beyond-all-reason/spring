@@ -86,6 +86,7 @@ static constexpr float CMD_WAITCODE_GATHERWAIT = 4.0f;
 //   be QUEUED_ORDER), ALT_KEY in most contexts means
 //   OVERRIDE_QUEUED_ORDER, etc.
 //
+static constexpr uint8_t ALTQUEUE        = (1 << 1); //   2
 static constexpr uint8_t META_KEY        = (1 << 2); //   4
 static constexpr uint8_t INTERNAL_ORDER  = (1 << 3); //   8
 static constexpr uint8_t RIGHT_MOUSE_KEY = (1 << 4); //  16
