@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
+env:
+  EMMYLUA_CLI_VERSION: "0.6"
 jobs:
   publish:
     if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
@@ -37,7 +39,7 @@ jobs:
           path: rts/Lua/library/
       - name: Install emmylua_doc_cli
         run: |
-          cargo install emmylua_doc_cli
+          cargo install emmylua_doc_cli --version "${EMMYLUA_CLI_VERSION}"
       - name: Generate docs using emmylua_doc_cli
         run: |
           emmylua_doc_cli \
