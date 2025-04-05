@@ -6,7 +6,7 @@
 * Be aware that we're volunteers working in our free time, every interaction may take a while.
 * Consider getting familiar with [the build process](https://beyond-all-reason.github.io/spring/development) and [guides](https://beyond-all-reason.github.io/spring/guides)/[articles](https://beyond-all-reason.github.io/spring/articles) relating to your contribution area.
 * If an existing ticket provides a bill of materials it is strongly recommended to follow it.
-* Leep in mind Recoil is not just for BAR. Don't put overt game design in the engine.
+* Keep in mind Recoil is not just for BAR. Don't put overt game design in the engine.
 
 ### Work in progress
 * Don't be afraid to ask for feedback/help. This can be on a ticket, your PR, or e.g. on discord.
