@@ -405,7 +405,9 @@ void CFactoryCAI::SlowUpdate()
 					 * Units often get added and removed in large quantities via CTRL/SHIFT,
 					 * such multiple STOPs commands in a row would then produce a freeze
 					 * when the engine tries to process them all in one frame. */
-					if (lastCmdID != CMD_STOP)
+					if (lastCmdID == CMD_STOP)
+						commandQue.pop_front();
+					else
 						ExecuteStop(c);
 				} break;
 				default: {
