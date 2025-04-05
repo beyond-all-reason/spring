@@ -380,7 +380,6 @@ void CFactoryCAI::SlowUpdate()
 
 	CFactory* fac = static_cast<CFactory*>(owner);
 
-	int lastCmdID = 0;
 	while (!commandQue.empty()) {
 		Command& c = commandQue.front();
 
@@ -404,11 +403,15 @@ void CFactoryCAI::SlowUpdate()
 					 * whose interface doesn't support removal from the middle that well.
 					 * Units often get added and removed in large quantities via CTRL/SHIFT,
 					 * such multiple STOPs commands in a row would then produce a freeze
-					 * when the engine tries to process them all in one frame. */
-					if (lastCmdID == CMD_STOP)
-						commandQue.pop_front();
-					else
+					 * when the engine tries to process them all in one frame.
+					 * Just execute the last in each series to ensure last build is cancelled
+					 * otherwise last unit stays being built. */
+					if (oldQueueSize < 2 || commandQue[1].GetID() != CMD_STOP) {
 						ExecuteStop(c);
+					} else {
+						commandQue.pop_front();
+					}
+
 				} break;
 				default: {
 					CCommandAI::SlowUpdate();
@@ -419,7 +422,6 @@ void CFactoryCAI::SlowUpdate()
 		// exit if no command was consumed
 		if (oldQueueSize == commandQue.size())
 			break;
-		lastCmdID = c.GetID();
 	}
 }
 
