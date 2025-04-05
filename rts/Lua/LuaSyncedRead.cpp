@@ -3193,6 +3193,11 @@ int LuaSyncedRead::GetUnitsInPlanes(lua_State* L)
 	lua_newtable(L);
 
 	for (int team = startTeam; team <= endTeam; team++) {
+		if (allegiance == LuaUtils::AllyUnits && !LuaUtils::IsAlliedTeam(L, team))
+			continue;
+		if (allegiance == LuaUtils::EnemyUnits && LuaUtils::IsAlliedTeam(L, team))
+			continue;
+
 		const std::vector<CUnit*>& units = unitHandler.GetUnitsByTeam(team);
 
 		GetFilteredUnits(L, allegiance, units, planesTest);
