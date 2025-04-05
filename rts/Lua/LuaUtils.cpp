@@ -979,6 +979,7 @@ int LuaUtils::PushUnitAndCommand(lua_State* L, const CUnit* unit, const Command&
 
 /***
  * @alias CommandOptionBit
+ * | 2 # Alternative queue order
  * | 4 # Meta (windows/mac/mod4) key.
  * | 8 # Internal order.
  * | 16 # Right mouse key.
@@ -994,6 +995,7 @@ int LuaUtils::PushUnitAndCommand(lua_State* L, const CUnit* unit, const Command&
  * | "ctrl" # Control key.
  * | "shift" # Shift key.
  * | "meta" # Meta key (space).
+ * | "altqueue" # Put order into the unit alternative queue.
  */
 
 /***
@@ -1045,6 +1047,9 @@ static bool ParseCommandOptions(
 					case hashString("meta"): {
 						cmd.SetOpts(cmd.GetOpts() | (META_KEY * value));
 					} break;
+					case hashString("altqueue"): {
+						cmd.SetOpts(cmd.GetOpts() | (ALTQUEUE * value));
+					} break;
 				}
 
 				continue;
@@ -1070,6 +1075,9 @@ static bool ParseCommandOptions(
 					} break;
 					case hashString("meta"): {
 						cmd.SetOpts(cmd.GetOpts() | META_KEY);
+					} break;
+					case hashString("altqueue"): {
+						cmd.SetOpts(cmd.GetOpts() | ALTQUEUE);
 					} break;
 				}
 			}
