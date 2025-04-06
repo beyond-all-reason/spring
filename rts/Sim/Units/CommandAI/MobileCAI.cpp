@@ -622,10 +622,6 @@ void CMobileCAI::ExecuteGuard(Command& c)
 		StopMoveAndFinishCommand();
 		return;
 	}
-	if (guardee->outOfMapTime > (GAME_SPEED * 5)) {
-		StopMoveAndFinishCommand();
-		return;
-	}
 
 	constexpr int retaliationTimeout = 40;
 	const bool pushAttackCommand =
