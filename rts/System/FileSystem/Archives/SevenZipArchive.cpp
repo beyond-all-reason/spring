@@ -123,7 +123,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
 	static_assert(ThreadPool::MAX_THREADS <= CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
-	static_assert(sizeof(decltype(afi)::ValueType) * 8 <= ThreadPool::MAX_THREADS);
+	static_assert(sizeof(decltype(afi)::ValueType) * 8 >= ThreadPool::MAX_THREADS);
 
 	std::scoped_lock lck(archiveLock); //not needed?
 

@@ -20,7 +20,7 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 	: CBufferedArchive(archiveName)
 {
 	static_assert(ThreadPool::MAX_THREADS <= CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
-	static_assert(sizeof(decltype(afi)::ValueType) * 8 <= ThreadPool::MAX_THREADS);
+	static_assert(sizeof(decltype(afi)::ValueType) * 8 >= ThreadPool::MAX_THREADS);
 
 	std::scoped_lock lck(archiveLock); //not needed?
 
