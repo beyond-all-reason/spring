@@ -109,6 +109,8 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 				// change group, but do not call SUH::AddUnit while iterating
 				u->SetGroup(group, false, false);
 			}
+
+			return true;
 		} break;
 
 		case hashString("select"): {
