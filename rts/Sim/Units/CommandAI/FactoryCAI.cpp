@@ -406,7 +406,7 @@ void CFactoryCAI::SlowUpdate()
 					 * when the engine tries to process them all in one frame.
 					 * Just execute the last in each series to ensure last build is cancelled
 					 * otherwise last unit stays being built. */
-					if (oldQueueSize < 2 || commandQue[1].GetID() != CMD_STOP) {
+					if (oldQueueSize == 1 || commandQue[1].GetID() != CMD_STOP) {
 						ExecuteStop(c);
 					} else {
 						commandQue.pop_front();
