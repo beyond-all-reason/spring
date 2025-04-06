@@ -8,6 +8,7 @@
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileQueryFlags.h"
+#include "System/Threading/ThreadPool.h"
 #include "System/StringUtil.h"
 
 
@@ -26,6 +27,13 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 	: IArchive(archiveName)
 	, dirName(archiveName + '/')
 {
+	{
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveFile);
+		// just a file, can MT
+		parallelAccessNum = isOnSpinningDisk ? GetSpinningDiskParallelAccessNum() : ThreadPool::GetNumThreads();
+		sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
+	}
+
 	const std::vector<std::string>& found = dataDirsAccess.FindFiles(dirName, "*", FileQueryFlags::RECURSE);
 
 	for (const std::string& f: found) {
@@ -46,6 +54,8 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
+
+	auto semAcq = AcquireSemaphoreScoped();
 
 	std::ifstream ifs(files[fid].rawFileName.c_str(), std::ios::in | std::ios::binary);
 

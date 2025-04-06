@@ -16,11 +16,12 @@ IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
 	return new CZipArchive(filePath);
 }
 
-static_assert(ThreadPool::MAX_THREADS <= CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
-
 CZipArchive::CZipArchive(const std::string& archiveName)
 	: CBufferedArchive(archiveName)
 {
+	static_assert(ThreadPool::MAX_THREADS <= CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
+	static_assert(sizeof(decltype(afi)::ValueType) * 8 <= ThreadPool::MAX_THREADS);
+
 	std::scoped_lock lck(archiveLock); //not needed?
 
 	unzFile zip = nullptr;
@@ -68,6 +69,9 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 	}
 
 	zipPerThread[0] = zip;
+
+	parallelAccessNum = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer needs to be mutex locked
+	sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
 }
 
 CZipArchive::~CZipArchive()
@@ -112,7 +116,16 @@ IArchive::SFileInfo CZipArchive::FileInfo(uint32_t fid) const
 // than one file at a time
 int CZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
-	unzFile& thisThreadZip = zipPerThread[ThreadPool::GetThreadNum()];
+	// this below will lead to expensive on-demand creation of thisThreadZip
+	// in case actual number of parallel threads entering this function is
+	// less than ThreadPool::GetThreadNum(). E.g. when counting_semaphore
+	// dictates for less than ThreadPool::GetThreadNum() simultaneous IO operations
+	//unzFile& thisThreadZip = zipPerThread[ThreadPool::GetThreadNum()];
+
+	const auto tnum = afi.AcquireScoped();
+	assert(tnum < parallelAccessNum);
+	unzFile& thisThreadZip = zipPerThread[tnum];
+
 	if (!thisThreadZip) {
 		thisThreadZip = unzOpen(GetArchiveFile().c_str());
 	}

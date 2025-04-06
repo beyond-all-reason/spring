@@ -6,9 +6,12 @@
 #include <string>
 #include <vector>
 #include <cinttypes>
+#include <memory>
+#include <semaphore>
 
 #include "ArchiveTypes.h"
 #include "System/Sync/SHA512.hpp"
+#include "System/ScopedResource.h"
 #include "System/UnorderedMap.hpp"
 
 /**
@@ -29,9 +32,7 @@ public:
 		uint32_t modTime = 0;
 	};
 protected:
-	IArchive(const std::string& archiveFile): archiveFile(archiveFile) {
-	}
-
+	IArchive(const std::string& archiveFile);
 public:
 	virtual ~IArchive() {}
 
@@ -101,6 +102,13 @@ public:
 		return size;
 	}
 
+	auto AcquireSemaphoreScoped() {
+		return spring::ScopedNullResource(
+			[this]() { sem->acquire(); },
+			[this]() { sem->release(); }
+		);
+	}
+
 	/**
 	 * Fetches the name of a file by its ID.
 	 */
@@ -137,7 +145,8 @@ public:
 	 * Fetches the (SHA512) hash of a file by its ID.
 	 */
 	virtual bool CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std::uint8_t>& fb);
-
+protected:
+	static uint32_t GetSpinningDiskParallelAccessNum();
 
 protected:
 	// Spring expects the contents of archives to be case-independent
@@ -148,6 +157,8 @@ protected:
 protected:
 	/// "ExampleArchive.sdd"
 	const std::string archiveFile;
+	uint32_t parallelAccessNum = 0;
+	std::unique_ptr<std::counting_semaphore<>> sem;
 };
 
 #endif // _ARCHIVE_BASE_H

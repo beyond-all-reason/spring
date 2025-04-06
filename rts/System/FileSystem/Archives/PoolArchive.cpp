@@ -14,6 +14,7 @@
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Threading/SpringThreading.h"
+#include "System/Threading/ThreadPool.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Exceptions.h"
 #include "System/StringUtil.h"
@@ -49,6 +50,12 @@ static bool gz_really_read(gzFile file, voidp buf, uint32_t len)
 CPoolArchive::CPoolArchive(const std::string& name)
 	: CBufferedArchive(name)
 {
+	{
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveFile));
+		// each file is one gzip instance, can MT
+		parallelAccessNum = isOnSpinningDisk ? GetSpinningDiskParallelAccessNum() : ThreadPool::GetNumThreads();
+	}
+
 	char c_name[255];
 	uint8_t c_md5sum[16];
 	uint8_t c_crc32[4];

@@ -29,11 +29,13 @@ CBufferedArchive::~CBufferedArchive()
 	);
 }
 
-bool CBufferedArchive::GetFile(unsigned int fid, std::vector<std::uint8_t>& buffer)
+bool CBufferedArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
 	int ret = 0;
+
+	auto semAcq = AcquireSemaphoreScoped();
 
 	if (!globalConfig.vfsCacheArchiveFiles || noCache) {
 		if ((ret = GetFileImpl(fid, buffer)) != 1)

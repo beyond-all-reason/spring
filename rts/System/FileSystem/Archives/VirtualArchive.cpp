@@ -42,7 +42,9 @@ IArchive* CVirtualArchiveFactory::DoCreateArchive(const std::string& fileName) c
 	return nullptr;
 }
 
-CVirtualArchiveOpen::CVirtualArchiveOpen(CVirtualArchive* archive, const std::string& fileName) : IArchive(fileName), archive(archive)
+CVirtualArchiveOpen::CVirtualArchiveOpen(CVirtualArchive* archive, const std::string& fileName)
+	: IArchive(fileName)
+	, archive(archive)
 {
 	// set subclass name index to archive's index (doesn't update while archive is open)
 	lcNameIndex = archive->GetNameIndex();
@@ -54,7 +56,7 @@ uint32_t CVirtualArchiveOpen::NumFiles() const
 	return archive->NumFiles();
 }
 
-bool CVirtualArchiveOpen::GetFile( uint32_t fid, std::vector<std::uint8_t>& buffer )
+bool CVirtualArchiveOpen::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	return archive->GetFile(fid, buffer);
 }

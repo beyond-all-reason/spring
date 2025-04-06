@@ -2,7 +2,16 @@
 
 #include "IArchive.h"
 
+#include <cassert>
+
 #include "System/StringUtil.h"
+#include "System/Threading/ThreadPool.h"
+
+IArchive::IArchive(const std::string& archiveFile)
+	: archiveFile(archiveFile)
+{
+	
+}
 
 uint32_t IArchive::FindFile(const std::string& filePath) const
 {
@@ -39,3 +48,14 @@ bool IArchive::CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std:
 	return true;
 }
 
+uint32_t IArchive::GetSpinningDiskParallelAccessNum()
+{
+#ifdef _WIN32
+	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
+#else
+	// Linux FS even on spinning disk seems far more tolerant to parallel reads, use all threads
+	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
+#endif // _WIN32
+
+	return NUM_PARALLEL_FILE_READS_SD;
+}

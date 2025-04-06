@@ -65,7 +65,7 @@ namespace spring {
 		MyType& operator=(const MyType&) = delete;
 	private:
 		R r;
-		D&& d;
+		D d;
 
 		bool released;
 	};
