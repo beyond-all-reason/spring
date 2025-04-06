@@ -813,25 +813,35 @@ void CGroundMoveType::SlowUpdate()
 			}
 
 			if (wantRepath) {
-				// When repaths are requested, they are pre-emptive and are made without
-				// confirmation that it is really necessary. Give the unit a chance to
-				// make progress: for example, when it got pushed against a building, but
-				// is otherwise moving on. Pathing is expensive so we really want to keep
-				// repathing to a minimum.
-				// Resolution distance checks kept to 1/10th of an Elmo to reduce the
-				// amount of time a unit can spend making insignificant progress, every
-				// SlowUpdate.
-				float curDist = math::floorf(currWayPoint.distance2D(owner->pos) * 10.f) / 10.f;
-				if (curDist < bestLastWaypointDist) {
-					bestLastWaypointDist = curDist;
-					wantRepathFrame = gs->frameNum;
+				// If the unit is being asked to walk into an exit-only zone, but finds itself outside of that, then
+				// force a repath: we know the path is no longer valid.
+				bool fallenOutOfExitOnly = (owner->moveDef->IsInExitOnly(currWayPoint) == true)
+				                        && (owner->moveDef->IsInExitOnly(owner->pos) == false);
+
+				if (!fallenOutOfExitOnly) {
+					// When repaths are requested, they are pre-emptive and are made without
+					// confirmation that it is really necessary. Give the unit a chance to
+					// make progress: for example, when it got pushed against a building, but
+					// is otherwise moving on. Pathing is expensive so we really want to keep
+					// repathing to a minimum.
+					// Resolution distance checks kept to 1/10th of an Elmo to reduce the
+					// amount of time a unit can spend making insignificant progress, every
+					// SlowUpdate.
+					float curDist = math::floorf(currWayPoint.distance2D(owner->pos) * 10.f) / 10.f;
+					if (curDist < bestLastWaypointDist) {
+						bestLastWaypointDist = curDist;
+						wantRepathFrame = gs->frameNum;
+					}
+				} else {
+					lastWaypoint = false;
 				}
 
 				// lastWaypoint typically retries a repath and most likely won't get closer, so
 				// in this case, don't wait around making the unit try to run into an obstacle for
 				// longer than absolutely necessary.
-				bool timeForRepath = gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
-									&& (gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames || lastWaypoint);
+				bool timeForRepath = fallenOutOfExitOnly
+				                   || (    gs->frameNum >= wantRepathFrame + modInfo.pfRepathDelayInFrames
+				                       && (gs->frameNum >= lastRepathFrame + modInfo.pfRepathMaxRateInFrames || lastWaypoint) );
 
 				// can't request a new path while the unit is stuck in terrain/static objects
 				if (timeForRepath){
