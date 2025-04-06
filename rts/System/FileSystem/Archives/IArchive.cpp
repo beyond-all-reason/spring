@@ -10,7 +10,7 @@
 IArchive::IArchive(const std::string& archiveFile)
 	: archiveFile(archiveFile)
 {
-	static_assert(decltype(sem)::element_type::max() == ThreadPool::MAX_THREADS);
+	static_assert(decltype(sem)::element_type::max() >= ThreadPool::MAX_THREADS);
 }
 
 uint32_t IArchive::FindFile(const std::string& filePath) const
