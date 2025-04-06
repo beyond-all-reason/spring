@@ -102,13 +102,6 @@ public:
 		return size;
 	}
 
-	auto AcquireSemaphoreScoped() {
-		return spring::ScopedNullResource(
-			[this]() { if (sem) sem->acquire(); },
-			[this]() { if (sem) sem->release(); }
-		);
-	}
-
 	/**
 	 * Fetches the name of a file by its ID.
 	 */
@@ -147,7 +140,12 @@ public:
 	virtual bool CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std::uint8_t>& fb);
 protected:
 	static uint32_t GetSpinningDiskParallelAccessNum();
-
+	auto AcquireSemaphoreScoped() const { // fake const
+		return spring::ScopedNullResource(
+			[this]() { if (sem) sem->acquire(); },
+			[this]() { if (sem) sem->release(); }
+		);
+	}
 protected:
 	// Spring expects the contents of archives to be case-independent
 	// this map (which must be populated by subclass archives) is kept

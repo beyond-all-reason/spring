@@ -994,7 +994,6 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		if (ignore->Match(fn))
 			return;
 
-		auto semAcq = ar->AcquireSemaphoreScoped();
 		const auto volatile fi = ar->FileInfo(fid); // volatile to force execution
 		++numFiles;
 	});

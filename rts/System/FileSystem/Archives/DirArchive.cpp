@@ -99,11 +99,14 @@ IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 	fi.fileName = file.fileName;
 
 	// check if not cached, file.size and file.modTime are mutable
-	if (file.size == -1)
-		file.size = FileSystem::GetFileSize(file.rawFileName);
+	if (auto ifs = (file.size == -1), ifm = (file.modTime == 0); ifs || ifm) {
+		auto semAcq = AcquireSemaphoreScoped();
+		if (ifs)
+			file.size = FileSystem::GetFileSize(file.rawFileName);
 
-	if (file.modTime == 0)
-		file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
+		if (ifm)
+			file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
+	}
 
 	fi.specialFileName = file.rawFileName;
 	fi.size = file.size;

@@ -143,8 +143,10 @@ IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 	assert(IsFileId(fid));
 	auto& file = files[fid];
 
-	if (file.modTime == 0)
+	if (file.modTime == 0) {
+		auto semAcq = AcquireSemaphoreScoped();
 		file.modTime = FileSystemAbstraction::GetFileModificationTime(GetPoolFilePath(poolRootDir, file.md5sum)); // file.modTime is mutable
+	}
 
 	return IArchive::SFileInfo{
 		.fileName = file.name,
