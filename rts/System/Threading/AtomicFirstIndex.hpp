@@ -20,7 +20,7 @@ namespace Recoil {
 		}
 	private:
 		int Acquire() {
-			T currMask = busyMask.load();
+			T currMask = busyMask.load(std::memory_order_acquire);
 			while (true) {
 				const T compMask = ~currMask;
 
@@ -36,15 +36,15 @@ namespace Recoil {
 
 				// Attempt atomic compare-and-swap
 				const T desiredMask = currMask | mask;
-				if (busyMask.compare_exchange_weak(currMask, desiredMask)) {
+				if (busyMask.compare_exchange_weak(currMask, desiredMask, std::memory_order_acq_rel, std::memory_order_relaxed)) {
 					return pos;
 				}
 				// CAS failed (value changed), retry with new current value
 			}
 		}
 		void Release(int idx) {
-			const T m = ~(T(1) << idx);
-			busyMask.fetch_and(m);
+			const T resetMask = ~(T(1) << idx);
+			busyMask.fetch_and(resetMask, std::memory_order_release);
 		}
 	private:
 		std::atomic<T> busyMask = {0};
