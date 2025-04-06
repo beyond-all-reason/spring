@@ -55,7 +55,7 @@ bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
 
-	auto semAcq = AcquireSemaphoreScoped();
+	auto scopedSemAcq = AcquireSemaphoreScoped();
 
 	std::ifstream ifs(files[fid].rawFileName.c_str(), std::ios::in | std::ios::binary);
 
@@ -100,7 +100,7 @@ IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 
 	// check if not cached, file.size and file.modTime are mutable
 	if (auto ifs = (file.size == -1), ifm = (file.modTime == 0); ifs || ifm) {
-		auto semAcq = AcquireSemaphoreScoped();
+		auto scopedSemAcq = AcquireSemaphoreScoped();
 		if (ifs)
 			file.size = FileSystem::GetFileSize(file.rawFileName);
 

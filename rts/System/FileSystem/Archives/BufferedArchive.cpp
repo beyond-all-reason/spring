@@ -35,7 +35,7 @@ bool CBufferedArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 
 	int ret = 0;
 
-	auto semAcq = AcquireSemaphoreScoped();
+	auto scopedSemAcq = AcquireSemaphoreScoped();
 
 	if (!globalConfig.vfsCacheArchiveFiles || noCache) {
 		if ((ret = GetFileImpl(fid, buffer)) != 1)

@@ -144,7 +144,7 @@ IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 	auto& file = files[fid];
 
 	if (file.modTime == 0) {
-		auto semAcq = AcquireSemaphoreScoped();
+		auto scopedSemAcq = AcquireSemaphoreScoped();
 		file.modTime = FileSystemAbstraction::GetFileModificationTime(GetPoolFilePath(poolRootDir, file.md5sum)); // file.modTime is mutable
 	}
 
