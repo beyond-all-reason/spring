@@ -72,6 +72,8 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 
 	parallelAccessNum = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer needs to be mutex locked
 	sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
+	const auto maxBitMask = (1u << parallelAccessNum) - 1;
+	afi.SetMaxBitsMask(maxBitMask);
 }
 
 CZipArchive::~CZipArchive()

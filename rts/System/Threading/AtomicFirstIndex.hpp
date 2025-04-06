@@ -12,6 +12,8 @@ namespace Recoil {
 	public:
 		using ValueType = T;
 	public:
+		void SetMaxBitsMask(T maxBitsMask_) { maxBitsMask = maxBitsMask_; }
+
 		auto AcquireScoped() {
 			return spring::ScopedResource(
 				[this]() { return Acquire(); }(),
@@ -22,20 +24,21 @@ namespace Recoil {
 		int Acquire() {
 			T currMask = busyMask.load(std::memory_order_acquire);
 			while (true) {
-				const T compMask = ~currMask;
-
 				// All bits set - no zeros available
-				if (compMask == 0) {
+				if (currMask == maxBitsMask) {
 					assert(false);
-					return -1;
+					// this is not expected, but continue looping
+					// instead of causing crash with returning -1
+					//return -1;
 				}
 
 				// Find first 0 bit (first set bit in complement)
-				const auto pos = std::countr_zero(compMask);
+				const auto pos = std::countr_one(currMask);
 				const T mask = T(1) << pos;
 
 				// Attempt atomic compare-and-swap
 				const T desiredMask = currMask | mask;
+
 				if (busyMask.compare_exchange_weak(currMask, desiredMask, std::memory_order_acq_rel, std::memory_order_relaxed)) {
 					return pos;
 				}
@@ -47,6 +50,7 @@ namespace Recoil {
 			busyMask.fetch_and(resetMask, std::memory_order_release);
 		}
 	private:
-		std::atomic<T> busyMask = {0};
+		std::atomic<T> busyMask = T(0);
+		T maxBitsMask = T(-1);
 	};
 }

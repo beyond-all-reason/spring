@@ -167,6 +167,8 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 
 	parallelAccessNum = !CheckForSolid() ? ThreadPool::GetNumThreads() : 1; // allow parallel access, but only for non-solid archives
 	sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
+	const auto maxBitMask = (1u << parallelAccessNum) - 1;
+	afi.SetMaxBitsMask(maxBitMask);
 }
 
 
