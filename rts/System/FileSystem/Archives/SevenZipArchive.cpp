@@ -208,19 +208,16 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 	if (!perThreadData[tnum])
 		OpenArchive(tnum);
 
-	auto& db = perThreadData[tnum]->db;
-	auto& lookStream = perThreadData[tnum]->lookStream;
-	auto& outBuffer = perThreadData[tnum]->outBuffer;
-	//auto& blockIndex = perThreadData[tnum]->blockIndex;
-	UInt32 blockIndex = 0xFFFFFFFF;
+	auto& db            = perThreadData[tnum]->db;
+	auto& lookStream    = perThreadData[tnum]->lookStream;
+	auto& outBuffer     = perThreadData[tnum]->outBuffer;
+	auto& blockIndex    = perThreadData[tnum]->blockIndex;
+	auto& outBufferSize = perThreadData[tnum]->outBufferSize;
 
 	size_t offset = 0;
 	size_t outSizeProcessed = 0;
-	size_t outBufferSize = 0;
 
-	if (auto res = SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer,
-		&outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp); res != SZ_OK) {
-
+	if (auto res = SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer, &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp); res != SZ_OK) {
 		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s", __func__, archiveFile.c_str(), GetErrorStr(res));
 		return 0;
 	}

@@ -60,6 +60,7 @@ private:
 		CSzArEx db;
 		CLookToRead2 lookStream;
 		UInt32 blockIndex = 0xFFFFFFFF;
+		size_t outBufferSize = 0;
 		Byte* outBuffer = nullptr;
 	};
 
