@@ -4,7 +4,6 @@
 #include <array>
 #include <cstdio>
 #include <memory>
-#include <semaphore>
 #include <random>
 #include <chrono>
 
@@ -981,60 +980,21 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 	if (ar == nullptr)
 		return false;
 
-#ifdef _WIN32
-	static constexpr int NUM_PARALLEL_FILE_READS_SD = 4;
-#else
-	// Linux FS even on spinning disk seems far more tolerant to parallel reads, use all threads
-	const int NUM_PARALLEL_FILE_READS_SD = ThreadPool::GetNumThreads();
-#endif // _WIN32
-
-	int numParallelFileReads;
-
-	switch (ar->GetType())
-	{
-		case ARCHIVE_TYPE_SDP: {
-			auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveName));
-			// each file is one gzip instance, can MT
-			numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
-		} break;
-		case ARCHIVE_TYPE_SDD: {
-			auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveName);
-			// just a file, can MT
-			numParallelFileReads = isOnSpinningDisk ? NUM_PARALLEL_FILE_READS_SD : ThreadPool::GetNumThreads();
-		} break;
-		case ARCHIVE_TYPE_SDZ: {
-			numParallelFileReads = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer needs to be mutex locked
-		} break;
-		case ARCHIVE_TYPE_SD7: {
-			numParallelFileReads = !ar->CheckForSolid() ? ThreadPool::GetNumThreads() : 1; // allow parallel access, but only for non-solid archives
-		} break;
-		default: { // just default to 1 thread
-			numParallelFileReads = 1;
-		} break;
-	}
-
-	numParallelFileReads = std::min(numParallelFileReads, ThreadPool::GetNumThreads());
-
 	const bool sdpArchive = (ar->GetType() == ARCHIVE_TYPE_SDP);
 	const bool compressedArchive = (ar->GetType() == ARCHIVE_TYPE_SD7 || ar->GetType() == ARCHIVE_TYPE_SDZ);
-
-	// limit the number of simultaneous IO operations
-	std::counting_semaphore sem(numParallelFileReads);
 
 	// load ignore list
 	std::unique_ptr<IFileFilter> ignore(CreateIgnoreFilter(ar.get()));
 
 	// warm up. For some archive types ar->FileInfo(fid) is a mutable operation loading important IArchive::SFileInfo fields
 	std::atomic_uint32_t numFiles = {0};
-	for_mt(0, ar->NumFiles(), [&sem, &numFiles, &ar = std::as_const(ar), &ignore = std::as_const(ignore)](int fid) {
+	for_mt(0, ar->NumFiles(), [&numFiles, &ar, &ignore](int fid) {
 		const auto fn = ar->FileName(fid);
 
 		if (ignore->Match(fn))
 			return;
 
-		sem.acquire();
 		const auto volatile fi = ar->FileInfo(fid); // volatile to force execution
-		sem.release();
 		++numFiles;
 	});
 
@@ -1073,7 +1033,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	std::array<std::vector<uint8_t>, ThreadPool::MAX_THREADS> fileBuffers;
 
-	for_mt(0, fileNames.size(), [&ar, &fileNames = std::as_const(fileNames), &fileBuffers, &filesInfo = archiveInfo.filesInfo, &sem, this](int i) {
+	for_mt(0, fileNames.size(), [&ar, &fileNames = std::as_const(fileNames), &fileBuffers, &filesInfo = archiveInfo.filesInfo, this](int i) {
 		const auto& fileName = fileNames[i]; // note generally (i != fid) due to ignore->Match(fi.fileName) filtering
 
 		const auto it = filesInfo.find(fileName);
@@ -1084,10 +1044,8 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 		auto& fileBuffer = fileBuffers[ThreadPool::GetThreadNum()];
 		fileBuffer.clear();
 
-		sem.acquire();
 		// note ar->FindFile() converts to lowercase
 		numFilesHashed.fetch_add(static_cast<uint32_t>(ar->CalcHash(ar->FindFile(fileName), it->second.checksum, fileBuffer)));
-		sem.release();
 	});
 
 	// stable sort by filename

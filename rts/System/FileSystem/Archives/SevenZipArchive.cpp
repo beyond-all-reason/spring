@@ -117,13 +117,14 @@ static inline const char* GetErrorStr(int err)
 	return "Unknown error";
 }
 
-static_assert(ThreadPool::MAX_THREADS <= CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
-
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	: CBufferedArchive(name)
 	, allocImp({SzAlloc, SzFree})
 	, allocTempImp({SzAllocTemp, SzFreeTemp})
 {
+	static_assert(ThreadPool::MAX_THREADS <= CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
+	static_assert(sizeof(decltype(afi)::ValueType) * 8 >= ThreadPool::MAX_THREADS);
+
 	std::scoped_lock lck(archiveLock); //not needed?
 
 	CRC::InitTable();
@@ -163,6 +164,11 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	// Now there is a grey area 7z approach with blocks of certain fixed size.
 	// It's not clear how to get the block size information, so we will use another heuristic to consider the archive solid
 	considerSolid = (db.db.NumFolders == 1) || (fileEntries.size() > db.db.NumFolders && db.db.NumFolders < ThreadPool::GetNumThreads());
+
+	parallelAccessNum = !CheckForSolid() ? ThreadPool::GetNumThreads() : 1; // allow parallel access, but only for non-solid archives
+	sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
+	const auto maxBitMask = (1u << parallelAccessNum) - 1;
+	afi.SetMaxBitsMask(maxBitMask);
 }
 
 
@@ -196,29 +202,28 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 {
 	assert(IsFileId(fid));
 
-	// operate with one thread only in case of solid archives
-	auto tnum = !considerSolid ? ThreadPool::GetThreadNum() : 0;
-
-	std::unique_lock uniqueLock(archiveLock, std::defer_lock);
-	if (considerSolid)
-		uniqueLock.lock();
+	// see CZipArchive::GetFileImpl() why we do the thing below
+	const auto tnum = afi.AcquireScoped();
+	assert(!considerSolid || tnum == 0);
+	assert(tnum < parallelAccessNum);
 
 	if (!perThreadData[tnum])
 		OpenArchive(tnum);
 
-	auto& db = perThreadData[tnum]->db;
-	auto& lookStream = perThreadData[tnum]->lookStream;
-	auto& outBuffer = perThreadData[tnum]->outBuffer;
+	auto& db            = perThreadData[tnum]->db;
+	auto& lookStream    = perThreadData[tnum]->lookStream;
+	auto& outBuffer     = perThreadData[tnum]->outBuffer;
+	auto& blockIndex    = perThreadData[tnum]->blockIndex;
+	auto& outBufferSize = perThreadData[tnum]->outBufferSize;
 
 	size_t offset = 0;
 	size_t outSizeProcessed = 0;
 
-	UInt32 blockIndex = 0xFFFFFFFF;
-	size_t outBufferSize = 0;
-
-	if (SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer,
-	                   &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp) != SZ_OK)
+	if (auto res = SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer, &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp); res != SZ_OK) {
+		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s", __func__, archiveFile.c_str(), GetErrorStr(res));
 		return 0;
+	}
+
 
 	buffer.resize(outSizeProcessed);
 	if (outSizeProcessed > 0) {

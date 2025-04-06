@@ -8,6 +8,7 @@
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileQueryFlags.h"
+#include "System/Threading/ThreadPool.h"
 #include "System/StringUtil.h"
 
 
@@ -26,6 +27,13 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 	: IArchive(archiveName)
 	, dirName(archiveName + '/')
 {
+	{
+		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveFile);
+		// just a file, can MT
+		parallelAccessNum = isOnSpinningDisk ? GetSpinningDiskParallelAccessNum() : ThreadPool::GetNumThreads();
+		sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
+	}
+
 	const std::vector<std::string>& found = dataDirsAccess.FindFiles(dirName, "*", FileQueryFlags::RECURSE);
 
 	for (const std::string& f: found) {
@@ -46,6 +54,8 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
+
+	auto scopedSemAcq = AcquireSemaphoreScoped();
 
 	std::ifstream ifs(files[fid].rawFileName.c_str(), std::ios::in | std::ios::binary);
 
@@ -89,11 +99,14 @@ IArchive::SFileInfo CDirArchive::FileInfo(uint32_t fid) const
 	fi.fileName = file.fileName;
 
 	// check if not cached, file.size and file.modTime are mutable
-	if (file.size == -1)
-		file.size = FileSystem::GetFileSize(file.rawFileName);
+	if (auto ifs = (file.size == -1), ifm = (file.modTime == 0); ifs || ifm) {
+		auto scopedSemAcq = AcquireSemaphoreScoped();
+		if (ifs)
+			file.size = FileSystem::GetFileSize(file.rawFileName);
 
-	if (file.modTime == 0)
-		file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
+		if (ifm)
+			file.modTime = FileSystemAbstraction::GetFileModificationTime(file.rawFileName);
+	}
 
 	fi.specialFileName = file.rawFileName;
 	fi.size = file.size;

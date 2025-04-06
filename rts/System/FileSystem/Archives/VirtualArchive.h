@@ -85,7 +85,9 @@ private:
 class CVirtualArchive
 {
 public:
-	CVirtualArchive(const std::string& _fileName): fileName(_fileName) {}
+	CVirtualArchive(const std::string& _fileName)
+		: fileName(_fileName)
+	{}
 
 	CVirtualArchiveOpen* Open();
 	CVirtualFile* GetFilePtr(uint32_t fid) { return &files[fid]; }
