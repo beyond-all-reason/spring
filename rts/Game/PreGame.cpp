@@ -187,7 +187,6 @@ bool CPreGame::Draw()
 {
 #ifndef HEADLESS
 	RECOIL_DETAILED_TRACY_ZONE;
-	spring_msecs(10).sleep(true); // 100 fps
 
 	ClearScreen();
 
