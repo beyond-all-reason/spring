@@ -988,7 +988,7 @@ bool CArchiveScanner::GetArchiveChecksum(const std::string& archiveName, Archive
 
 	// warm up. For some archive types ar->FileInfo(fid) is a mutable operation loading important IArchive::SFileInfo fields
 	std::atomic_uint32_t numFiles = {0};
-	for_mt(0, ar->NumFiles(), [&numFiles, &ar, &ignore = std::as_const(ignore)](int fid) {
+	for_mt(0, ar->NumFiles(), [&numFiles, &ar, &ignore](int fid) {
 		const auto fn = ar->FileName(fid);
 
 		if (ignore->Match(fn))
