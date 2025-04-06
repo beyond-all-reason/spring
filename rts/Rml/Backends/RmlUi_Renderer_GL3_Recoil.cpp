@@ -525,7 +525,7 @@ static bool CreateFramebuffer(
 #endif
 
 	constexpr GLenum color_format = GL_RGBA8;   // GL_RGBA8 GL_SRGB8_ALPHA8 GL_RGBA16F
-	constexpr GLint min_mag_filter = GL_LINEAR; // GL_NEAREST
+	constexpr GLint min_mag_filter = GL_NEAREST; // GL_NEAREST
 	const Rml::Colourf border_color(0.f, 0.f);
 
 	GLuint framebuffer = 0;
@@ -696,7 +696,7 @@ void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
 
 void RenderInterface_GL3_Recoil::BeginFrame()
 {
-	RMLUI_ASSERT(viewport_width >= 1 && viewport_height >= 1)
+	RMLUI_ASSERT(viewport_width >= 1 && viewport_height >= 1);
 
 	// Backup GL state.
 	glstate_backup.enable_cull_face = glIsEnabled(GL_CULL_FACE);
@@ -760,6 +760,8 @@ void RenderInterface_GL3_Recoil::BeginFrame()
 	glStencilFunc(GL_ALWAYS, 1, GLuint(-1));
 	glStencilMask(GLuint(-1));
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+	glDisable(GL_DEPTH_TEST);
 
 	SetTransform(nullptr);
 
