@@ -25,6 +25,8 @@ struct MoveDef;
 namespace QTPFS {
 	struct INode;
 
+	typedef std::function<uint64_t(INode*)> IsNodeAllowedFunc;
+
 	struct NodeLayer {
 	public:
 		static void InitStatic();
@@ -160,7 +162,7 @@ namespace QTPFS {
 		}
 
 		void GetNodesInArea(const SRectangle& areaToSearch, std::vector<INode*>& nodesFound);
-		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes);
+		INode* GetNearestNodeInArea(const SRectangle& areaToSearch, int2 referencePoint, std::vector<INode*>& openNodes, IsNodeAllowedFunc* = nullptr);
 		INode* GetNodeThatEncasesPowerOfTwoArea(const SRectangle& areaToEncase);
 
 		bool UseShortestPath() { return useShortestPath; }

@@ -685,6 +685,83 @@ void QTPFS::PathSearch::SetForwardSearchLimit() {
 // #pragma GCC push_options
 // #pragma GCC optimize ("O0")
 
+
+bool QTPFS::PathSearch::FindBetterTargetNode() {
+
+	// Can't do this with a path repair: that would disconnect the remaining untouched path.
+	if (doPathRepair) return false;
+
+	auto& fwd = directionalSearchData[SearchThreadData::SEARCH_FORWARD];
+	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
+	auto& searchedFwdNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_FORWARD];
+	auto& searchedBwdNodes = searchThreadData->allSearchedNodes[SearchThreadData::SEARCH_BACKWARD];
+
+	// Exclude nodes that have been found in the reverse search.
+	IsNodeAllowedFunc isNodeAllowedFunc = [&searchedBwdNodes](INode* curNode) -> bool {
+		return !( searchedBwdNodes.isSet(curNode->GetIndex()) );
+	};
+
+	// find nearest acceptable node because this will otherwise trigger a full walk of every pathable node.
+	int searchWidth = std::max(int(goalDistance)/SQUARE_SIZE, 16);
+	INode* tgtNode = nodeLayer->GetNode(fwd.tgtPoint.x / SQUARE_SIZE, fwd.tgtPoint.z / SQUARE_SIZE);
+	INode* altTgtNode = nodeLayer->GetNearestNodeInArea
+		( SRectangle
+				( std::max(int(tgtNode->xmin()) - searchWidth, 0)
+				, std::max(int(tgtNode->zmin()) - searchWidth, 0)
+				, std::min(int(tgtNode->xmax()) + searchWidth, mapDims.mapx)
+				, std::min(int(tgtNode->zmax()) + searchWidth, mapDims.mapy)
+				)
+		, int2(fwd.tgtPoint.x / SQUARE_SIZE, fwd.tgtPoint.z / SQUARE_SIZE)
+		, searchThreadData->tmpNodesStore
+		, &isNodeAllowedFunc
+	);
+
+	if (altTgtNode == nullptr) {
+		// No alternative target was found.
+		return false;
+	}
+
+	// Alternative found. Try from here going forward.
+	tgtNode = altTgtNode;
+	badGoal = true;
+
+	// Check whether the node has already been searched by the forward search.
+	// bool initFwdTarget = searchedFwdNodes.isSet(altTgtNode->GetIndex());
+
+	fwd.tgtSearchNode = &searchedFwdNodes.InsertINodeIfNotPresent(tgtNode->GetIndex());
+	bwd.srcSearchNode = &searchedBwdNodes.InsertINode(tgtNode->GetIndex());
+
+	fwd.tgtSearchNode->nodeNumber = tgtNode->GetNodeNumber();
+	bwd.srcSearchNode->nodeNumber = tgtNode->GetNodeNumber();
+
+	ResetState(bwd.srcSearchNode, bwd, float3()); // coord can be 0,0,0 because it will get overriden due to badGoal
+	UpdateNode(bwd.srcSearchNode, nullptr, 0);
+	CopyNodeBoundaries(*bwd.srcSearchNode, *tgtNode);
+
+	(*bwd.openNodes).emplace(bwd.srcSearchNode->GetIndex(), bwd.srcSearchNode->GetHeapPriority());
+
+	UpdateBadGoal();
+
+	return true;
+}
+
+void QTPFS::PathSearch::UpdateBadGoal() {
+	auto& bwd = directionalSearchData[SearchThreadData::SEARCH_BACKWARD];
+
+	if (badGoal) {
+		// Move the reverse search start point to the closest point to the goalPos.
+		auto* curNode = nodeLayer->GetPoolNode(bwd.srcSearchNode->GetIndex());
+		float2 tmpPoint
+			{ float(curNode->xmid() * SQUARE_SIZE)
+			, float(curNode->zmid() * SQUARE_SIZE)};
+
+		bwd.srcSearchNode->SetNeighborEdgeTransitionPoint(tmpPoint);
+		bwd.srcPoint = FindNearestPointOnNodeToGoal(*bwd.srcSearchNode, goalPos);
+		bwd.srcSearchNode->SetNeighborEdgeTransitionPoint({bwd.srcPoint.x, bwd.srcPoint.z});
+	}
+}
+
+
 bool QTPFS::PathSearch::ExecutePathSearch() {
 	ZoneScoped;
 
@@ -852,17 +929,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 		}
 	};
 
-	if (badGoal) {
-		// Move the reverse search start point to the closest point to the goalPos.
-		auto* curNode = nodeLayer->GetPoolNode(bwd.srcSearchNode->GetIndex());
-		float2 tmpPoint
-			{ float(curNode->xmid() * SQUARE_SIZE)
-			, float(curNode->zmid() * SQUARE_SIZE)};
-
-		bwd.srcSearchNode->SetNeighborEdgeTransitionPoint(tmpPoint);
-		bwd.srcPoint = FindNearestPointOnNodeToGoal(*bwd.srcSearchNode, goalPos);
-		bwd.srcSearchNode->SetNeighborEdgeTransitionPoint({bwd.srcPoint.x, bwd.srcPoint.z});
-	}
+	UpdateBadGoal();
 
 	assert(fwd.srcSearchNode != nullptr);
 
@@ -974,12 +1041,8 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			RemoveOutdatedOpenNodesFromQueue(SearchThreadData::SEARCH_FORWARD);
 
 			// We're done with the forward path and we expect the reverse path to fail so stop it right there.
-			if ((*fwd.openNodes).empty() && expectIncompletePartialSearch){
-				SetForwardSearchLimit();
-			// 	searchEarlyDrop = true;
-			// 	//bwd.tgtSearchNode = curSearchNode;
-			// 	searchThreadData->ResetQueue(SearchThreadData::SEARCH_BACKWARD);
-			}
+			if ((*fwd.openNodes).empty() && expectIncompletePartialSearch)
+				fwdNodeSearchLimit = 0;
 		}
 
 		if (!(*bwd.openNodes).empty()) {
@@ -1075,8 +1138,11 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 
 			// Limit forward search to avoid excessively costly searches when the path cannot be
 			// joined. This should be okay for partial searches as well.
-			if ((*bwd.openNodes).empty() && !bwdPathConnected)
-				SetForwardSearchLimit();
+			if ((*bwd.openNodes).empty() && !bwdPathConnected){
+				// attempt to find a better open square
+				if (!FindBetterTargetNode())
+					SetForwardSearchLimit();
+			}
 		}
 
 		// stop if forward search is done, even if reverse search can continue. If forward search

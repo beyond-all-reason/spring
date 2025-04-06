@@ -192,6 +192,9 @@ namespace QTPFS {
 
 		const PathHashType GenerateVirtualHash(const INode* srcNode, const INode* tgtNode) const;
 
+		bool FindBetterTargetNode();
+		void UpdateBadGoal();
+
 		public:
 		static const std::uint32_t GenerateVirtualNodeNumber(const QTPFS::NodeLayer& nodeLayer, const INode* startNode, int nodeMaxSize, int x, int z, uint32_t* depth = nullptr);
 
