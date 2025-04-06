@@ -104,8 +104,8 @@ public:
 
 	auto AcquireSemaphoreScoped() {
 		return spring::ScopedNullResource(
-			[this]() { sem->acquire(); },
-			[this]() { sem->release(); }
+			[this]() { if (sem) sem->acquire(); },
+			[this]() { if (sem) sem->release(); }
 		);
 	}
 
@@ -158,7 +158,7 @@ protected:
 	/// "ExampleArchive.sdd"
 	const std::string archiveFile;
 	uint32_t parallelAccessNum = 0;
-	std::unique_ptr<std::counting_semaphore<>> sem;
+	std::unique_ptr<std::counting_semaphore<32>> sem;
 };
 
 #endif // _ARCHIVE_BASE_H

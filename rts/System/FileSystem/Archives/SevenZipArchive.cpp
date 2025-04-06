@@ -202,7 +202,7 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 
 	// see CZipArchive::GetFileImpl() why we do the thing below
 	const auto tnum = afi.AcquireScoped();
-	assert(considerSolid && tnum == 0);
+	assert(!considerSolid || tnum == 0);
 	assert(tnum < parallelAccessNum);
 
 	if (!perThreadData[tnum])
