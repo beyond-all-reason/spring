@@ -1125,7 +1125,7 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 	if (!owner->unitDef->canResurrect)
 		return;
 
-	if (c.GetNumParams() == 1) {
+	if (c.GetNumParams() == 1 || c.GetNumParams() == 5) {
 		const unsigned int id = (unsigned int) c.GetParam(0);
 
 		if (id >= unitHandler.MaxUnits()) { // resurrect feature
@@ -1145,8 +1145,14 @@ void CBuilderCAI::ExecuteResurrect(Command& c)
 
 				if (ownerBuilder->lastResurrected && unitHandler.GetUnitUnsafe(ownerBuilder->lastResurrected) != nullptr && owner->unitDef->canRepair) {
 					// resurrection finished, start repair (by overwriting the current order)
-					c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected);
-
+					if (c.GetNumParams() == 5) {
+						float3 pos = c.GetPos(1);
+						float radius = c.GetParam(4);
+						c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected, pos);
+						c.PushParam(radius);
+					} else {
+						c = Command(CMD_REPAIR, c.GetOpts() | INTERNAL_ORDER, ownerBuilder->lastResurrected);
+					}
 					ownerBuilder->lastResurrected = 0;
 					inCommand = CMD_STOP;
 					SlowUpdate();
@@ -1547,7 +1553,9 @@ bool CBuilderCAI::FindResurrectableFeatureAndResurrect(
 	}
 
 	if (best != nullptr) {
-		commandQue.push_front(Command(CMD_RESURRECT, options | INTERNAL_ORDER, unitHandler.MaxUnits() + best->id));
+		Command c(CMD_RESURRECT, options | INTERNAL_ORDER, unitHandler.MaxUnits() + best->id, pos);
+		c.PushParam(radius);
+		commandQue.push_front(c);
 		return true;
 	}
 
