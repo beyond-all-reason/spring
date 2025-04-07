@@ -2209,7 +2209,7 @@ bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool 
 		handled = true;
 
 	if (luaMenu != nullptr && luaMenu->GotChatMsg(action.rawline, false))
-		handled |= true;
+		handled = true;
 
 	return handled;
 }
