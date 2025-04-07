@@ -3464,7 +3464,7 @@ void CLuaHandle::MiniMapStateChanged(const bool isMinimized,
 	lua_pushboolean(L, isMinimized);
 	lua_pushboolean(L, isMaximized);
 
-	RunCallIn(L, cmdStr, 1, 0);
+	RunCallIn(L, cmdStr, 2, 0);
 }
 
 /*** Called when the MiniMap Geometry changes
