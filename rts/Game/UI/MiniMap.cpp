@@ -1105,7 +1105,9 @@ void CMiniMap::Update()
 	fbo.Bind();
 	UpdateTextureCache();
 
-	if (curPos != lastPos || curDim != lastDim) { // probably can be moved to SetGeometry
+	/* Would need a larger refactor for this to become SetGeometry since the entire file
+	 * continuously changes dim and pos from curDim and curPos regularly from many functions */
+	if (curPos != lastPos || curDim != lastDim) {
 		eventHandler.MiniMapGeometryChanged(curPos, curDim, lastPos, lastDim);
 		lastPos = curPos;
 		lastDim = curDim;
