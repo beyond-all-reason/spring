@@ -293,6 +293,11 @@ bool CLuaUI::ConfigureLayout(const string& command)
 	if (!cmdStr.GetGlobalFunc(L))
 		return false; // the call is not defined
 
+	static bool deprecatedMsgDone = false;
+	if (!deprecatedMsgDone) {
+		LOG_L(L_DEPRECATED, "ConfigureLayout callin is deprecated! Please use GotChatMsg(cmd, playerID) instead.");
+	}
+
 	lua_pushsstring(L, command);
 
 	// call the routine
