@@ -99,6 +99,7 @@ namespace QTPFS {
 			, havePartPath(false)
 			, pathOwner(nullptr)
 			, tryPathRepair(false)
+			, originalbadGoalTargetNode(nullptr)
 			{}
 		PathSearch(unsigned int pathSearchType)
 			: PathSearch()
@@ -221,6 +222,8 @@ namespace QTPFS {
 		PathSearchTrace::Iteration searchIter;
 
 		SearchNode *curSearchNode, *nextSearchNode;
+
+		SearchNode *originalbadGoalTargetNode;
 
 		DirectionalSearchData directionalSearchData[2];
 

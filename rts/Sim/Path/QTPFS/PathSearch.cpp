@@ -105,6 +105,8 @@ void QTPFS::PathSearch::Initialize(
 	nodeLayer = layer;
 	searchExec = nullptr;
 
+	originalbadGoalTargetNode = nullptr;
+
 	// if (/*(searchID == 7340095 || searchID == 10485810)*/ /*&&*/ pathOwner != nullptr && pathOwner->id == 30680){
 	// 	LOG("%s: pathOwner=%d searchID=%d bwd.tgtPoint (%f, %f, %f) fwd.tgtPoint (%f, %f, %f)", __func__
 	// 			, (pathOwner != nullptr) ? pathOwner->id : -1, searchID
@@ -151,6 +153,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData) {
 	searchThreadData = threadData;
 
 	badGoal = false;
+	originalbadGoalTargetNode = nullptr;
 
 	// add 2 just in case the start and end nodes are closed. They can escape those nodes and check
 	// all the open nodes. No more is required because nodes don't link themselves to closed nodes.
@@ -725,6 +728,9 @@ bool QTPFS::PathSearch::FindBetterTargetNode() {
 	tgtNode = altTgtNode;
 	badGoal = true;
 
+	if (originalbadGoalTargetNode == nullptr)
+		originalbadGoalTargetNode = fwd.tgtSearchNode;
+
 	// Check whether the node has already been searched by the forward search.
 	// bool initFwdTarget = searchedFwdNodes.isSet(altTgtNode->GetIndex());
 
@@ -1173,7 +1179,22 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 			// If a complete repair path cannot be found, then abort this search and switch to a full repath.
 			return false;
 		}
-	} 
+	} else if (badGoal && !haveFullPath) {
+		// This particular path isn't applicable to path repairs because a trapped reverse search has to be dropped
+		// instead of retrying at a different point in the same query.
+		if (originalbadGoalTargetNode != nullptr) {
+			// If the goal was on a bad zone and more than one attempt was made to move the goal node and the search
+			// still didn't find a full path, then we should move the target node back to the first attempt at finding
+			// a good node. This is because other partially searched path searches are going to start here and so the
+			// early out should be found as quickly as possible. If we don't do this, then all the reverse searches of
+			// partially shared path searches will have to go through potentially repeat several trapped searches before
+			// detecting an early drop out, which is bad for performance.
+			fwd.tgtSearchNode = originalbadGoalTargetNode;
+			bwd.srcSearchNode = originalbadGoalTargetNode;
+
+			UpdateBadGoal();
+		}
+	}
 	
 	if (searchEarlyDrop) {
 		// move forward only needed for incomplete partial searches,
