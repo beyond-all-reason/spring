@@ -64,6 +64,8 @@ int GLAD_GL_ARB_conservative_depth = 0;
 int GLAD_GL_ARB_clip_control = 0;
 int GLAD_GL_ARB_buffer_storage = 0;
 int GLAD_GL_KHR_debug = 0;
+int GLAD_GL_ARB_compute_shader = 0;
+int GLAD_GL_KHR_shader_subgroup = 0;
 
 GLenum APIENTRY impl_glCheckFramebufferStatus(GLenum target) {
     return GL_FRAMEBUFFER_COMPLETE;

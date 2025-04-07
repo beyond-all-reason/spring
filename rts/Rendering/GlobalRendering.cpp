@@ -116,6 +116,7 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_MEMBER(glDebug),
 	CR_MEMBER(glDebugErrors),
 
+	CR_IGNORED(sdlInitVideo),
 	CR_MEMBER(timeOffset),
 	CR_MEMBER(lastTimeOffset),
 	CR_MEMBER(lastFrameTime),
@@ -200,6 +201,12 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(glslMaxUniformBufferSize),
 	CR_IGNORED(glslMaxStorageBufferBindings),
 	CR_IGNORED(glslMaxStorageBufferSize),
+
+	CR_IGNORED(csMaxInvocations),
+	CR_IGNORED(csWarpSize),
+	CR_IGNORED(csMaxWorkGroupSize),
+	CR_IGNORED(csMaxTotalWorkGroupSize),
+
 	CR_IGNORED(dualScreenMode),
 	CR_IGNORED(dualScreenMiniMapOnLeft),
 
@@ -220,7 +227,8 @@ void CGlobalRendering::InitStatic() { globalRendering = new (globalRenderingMem)
 void CGlobalRendering::KillStatic() { globalRendering->PreKill();  spring::SafeDestruct(globalRendering); }
 
 CGlobalRendering::CGlobalRendering()
-	: timeOffset(0.0f)
+	: sdlInitVideo(false)
+	, timeOffset(0.0f)
 	, lastTimeOffset(0.0f)
 	, lastFrameTime(0.0f)
 	, lastFrameStart(spring_notime)
@@ -330,6 +338,11 @@ CGlobalRendering::CGlobalRendering()
 	, glslMaxUniformBufferSize(0)
 	, glslMaxStorageBufferBindings(0)
 	, glslMaxStorageBufferSize(0)
+
+	, csMaxInvocations{0}
+	, csWarpSize(0)
+	, csMaxWorkGroupSize{0}
+	, csMaxTotalWorkGroupSize(0)
 
 	, dualScreenMode(false)
 	, dualScreenMiniMapOnLeft(false)
@@ -507,6 +520,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		LOG_L(L_FATAL, "[GR::%s] error \"%s\" initializing SDL", __func__, SDL_GetError());
 		return false;
 	}
+
+	// double-check and store
+	sdlInitVideo = (SDL_WasInit(SDL_INIT_VIDEO) > 0);
 
 	if (!CheckAvailableVideoModes()) {
 		handleerror(nullptr, "desktop color-depth should be at least 24 bits per pixel, aborting", "ERROR", MBF_OK | MBF_EXCL);
@@ -923,6 +939,18 @@ void CGlobalRendering::QueryGLMaxVals()
 		glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE,      &glslMaxStorageBufferSize);
 	}
 
+	if (GLAD_GL_ARB_compute_shader) {
+		for (int idx = 0; idx < 3; idx++) {
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, idx, &csMaxInvocations[idx]);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, idx, &csMaxWorkGroupSize[idx]);
+		}
+		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &csMaxTotalWorkGroupSize);
+
+		if (GLAD_GL_KHR_shader_subgroup) {
+			glGetIntegerv(GL_SUBGROUP_SIZE_KHR, &csWarpSize);
+		}
+	}
+
 	glGetIntegerv(GL_MAX_VARYING_FLOATS,                 &glslMaxVaryings);
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS,                 &glslMaxAttributes);
 	glGetIntegerv(GL_MAX_DRAW_BUFFERS,                   &glslMaxDrawBuffers);
@@ -1028,6 +1056,17 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tmax. uniform block-size       : %iKB", glslMaxUniformBufferSize / 1024);
 	LOG("\tmax. storage buffer-bindings  : %i", glslMaxStorageBufferBindings);
 	LOG("\tmax. storage block-size       : %iMB", glslMaxStorageBufferSize / (1024 * 1024));
+
+	LOG("\t");
+	LOG("\tmax. compute shader invocations  (X) : %i", csMaxInvocations[0]);
+	LOG("\tmax. compute shader invocations  (Y) : %i", csMaxInvocations[1]);
+	LOG("\tmax. compute shader invocations  (Z) : %i", csMaxInvocations[2]);
+	LOG("\tmax. compute shader group size   (X) : %i", csMaxWorkGroupSize[0]);
+	LOG("\tmax. compute shader group size   (Y) : %i", csMaxWorkGroupSize[1]);
+	LOG("\tmax. compute shader group size   (Z) : %i", csMaxWorkGroupSize[2]);
+	LOG("\tmax. compute shader group size (XYZ) : %i", csMaxTotalWorkGroupSize);
+	LOG("\tcompute shader subgroup/warp size    : %i", csWarpSize);
+
 	LOG("\t");
 	LOG("\tenable AMD-hacks : %i", amdHacks);
 	LOG("\tcompress MIP-maps: %i", compressTextures);
@@ -1762,18 +1801,18 @@ void main()
 	fragColor = vec4(1.0, 1.0, 1.0, vFloat);
 }
 )";
-	auto testShader = Shader::GLSLProgramObject("[GL-TestShader]");
-	// testShader.Release() as part of the ~GLSLProgramObject() will delete GLSLShaderObject's
-	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
-	testShader.AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
 
-	testShader.SetLogReporting(false); //no need to spam guinea pig shader errors
-	testShader.Link();
-	testShader.Enable();
-	testShader.Disable();
-	testShader.Validate();
+	auto testShader = std::make_unique<Shader::GLSLProgramObject>("[GL-TestShader]");
+	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_VERTEX_SHADER  , vsSrc));
+	testShader->AttachShaderObject(new Shader::GLSLShaderObject(GL_FRAGMENT_SHADER, fsSrc));
+	testShader->SetLogReporting(false); //no need to spam guinea pig shader errors
+	testShader->Link();
+	testShader->Enable();
+	testShader->Disable();
+	testShader->Validate();
 
-	return testShader.IsValid();
+	return testShader->IsValid();
+	//no need for explicit destuction here
 #else
 	return false;
 #endif

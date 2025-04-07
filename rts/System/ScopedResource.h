@@ -7,14 +7,18 @@ namespace spring {
 	class ScopedNullResource {
 	public:
 		template<typename C>
-		ScopedNullResource(C&& c, D d_)
-			:d{ std::move(d_) }
+		ScopedNullResource(C c, D d_)
+			: d{ d_ }
 		{
 			c();
 		}
 		~ScopedNullResource() {
 			d();
 		}
+		ScopedNullResource(ScopedNullResource&& rhs) noexcept = delete;
+		ScopedNullResource& operator=(ScopedNullResource&& rhs) noexcept = delete;
+		ScopedNullResource(const ScopedNullResource& rhs) = delete;
+		ScopedNullResource& operator=(const ScopedNullResource& rhs) = delete;
 	private:
 		D d;
 	};
@@ -23,19 +27,24 @@ namespace spring {
 	class ScopedResource {
 	public:
 		using MyType = ScopedResource<R, D>;
-		ScopedResource(R&& r_, D&& d_)
+		ScopedResource(R&& r_, D d_)
 			: r{ std::forward<R>(r_) }
-			, d{ std::forward<D>(d_) }
+			, d{ d_ }
 			, released{false}
 		{}
-		ScopedResource(const R& r_, D&& d_)
+		ScopedResource(const R& r_, D d_)
 			: r{ r_ }
-			, d{ std::forward<D>(d_) }
+			, d{ d_ }
 			, released{ false }
 		{}
 		~ScopedResource() {
 			Reset();
 		}
+
+		ScopedResource(ScopedResource&& rhs) noexcept = delete;
+		ScopedResource& operator=(ScopedResource&& rhs) noexcept = delete;
+		ScopedResource(const ScopedResource& rhs) = delete;
+		ScopedResource& operator=(const ScopedResource& rhs) = delete;
 
 		R&& Release() {
 			if (released)
@@ -62,7 +71,6 @@ namespace spring {
 		      R& Get()       { return r; };
 
 		MyType& operator=(std::nullptr_t) noexcept { Reset(); return *this; }
-		MyType& operator=(const MyType&) = delete;
 	private:
 		R r;
 		D d;

@@ -129,7 +129,7 @@ public:
 	LuaParser(const std::string& textChunk, const std::string& accessModes, int = 0, const boolean& synced = {false}, const boolean& setup = {true});
 	~LuaParser();
 
-	void SetupLua(bool isSyncedCtxt, bool isDefsParser);
+	void SetupLua(bool isSyncedCtxt, bool isDefsParser, bool baseOnly = false);
 
 	bool Execute();
 	bool IsValid() const { return (L != nullptr); } // true if nothing failed during Execute
@@ -167,7 +167,7 @@ public:
 	const std::string accessModes;
 
 private:
-	void SetupEnv(bool isSyncedCtxt, bool isDefsParser);
+	void SetupEnv(bool isSyncedCtxt, bool isDefsParser, bool baseOnly);
 	void PushParam();
 
 	void AddTable(LuaTable* tbl);

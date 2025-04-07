@@ -134,16 +134,14 @@ private:
 template<typename T>
 inline std::string UniformConstants::SetGLSLDefinition(int binding)
 {
-	const T dummy{};
-
 	std::map<uint32_t, std::pair<std::string, std::string>> membersMap;
-	for (const auto& member : dummy.GetClass()->members) {
+	for (const auto& member : T::StaticClass()->members) {
 		membersMap[member.offset] = std::make_pair(std::string{ member.name }, member.type->GetName());
 	}
 
 	std::ostringstream output;
 
-	output << fmt::format("layout(std140, binding = {}) uniform {} {{\n", binding, dummy.GetClass()->name); // {{ - escaped {
+	output << fmt::format("layout(std140, binding = {}) uniform {} {{\n", binding, T::StaticClass()->name); // {{ - escaped {
 
 	for (const auto& [offset, info] : membersMap) {
 		const auto& [name, tname] = info;

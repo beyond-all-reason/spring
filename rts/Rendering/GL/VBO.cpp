@@ -29,6 +29,7 @@ CONFIG(bool, UsePBO).deprecated(true);
 bool VBO::IsSupported() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	assert(globalRendering->sdlInitVideo); // called before SDL2 was initialized, probably in static member constructor
 	return VBO::IsSupported(curBoundTarget);
 }
 
@@ -36,34 +37,29 @@ bool VBO::IsSupported() const
  * Returns if the current gpu drivers support certain buffer type
  */
 bool VBO::IsSupported(GLenum target) {
-	static bool isRangeMappingSupported = GLAD_GL_ARB_map_buffer_range;
-	if (!isRangeMappingSupported) //TODO glBufferSubData() fallback ?
+	if (!GLAD_GL_ARB_map_buffer_range) //TODO glBufferSubData() fallback ?
 		return false;
-
-	static bool isPBOSupported  = (GLAD_GL_EXT_pixel_buffer_object);
-	static bool isVBOSupported  = (GLAD_GL_ARB_vertex_buffer_object);
-	static bool isUBOSupported  = (GLAD_GL_ARB_uniform_buffer_object);
-	static bool isSSBOSupported = (GLAD_GL_ARB_shader_storage_buffer_object);
-	static bool isCopyBuffSupported = (GLAD_GL_ARB_copy_buffer);
 
 	switch (target) {
-	case GL_PIXEL_PACK_BUFFER:
-	case GL_PIXEL_UNPACK_BUFFER:
-		return isPBOSupported;
-	case GL_ARRAY_BUFFER:
-	case GL_ELEMENT_ARRAY_BUFFER:
-		return isVBOSupported;
-	case GL_UNIFORM_BUFFER:
-		return isUBOSupported;
-	case GL_SHADER_STORAGE_BUFFER:
-		return isSSBOSupported;
-	case GL_COPY_WRITE_BUFFER:
-	case GL_COPY_READ_BUFFER:
-		return isCopyBuffSupported;
-	default: {
-		LOG_L(L_ERROR, "[VBO:%s]: wrong target [%u] is specified", __func__, target);
-		return false;
-	}
+		case GL_PIXEL_PACK_BUFFER:
+		case GL_PIXEL_UNPACK_BUFFER:
+			return GLAD_GL_EXT_pixel_buffer_object;
+		case GL_ARRAY_BUFFER:
+		case GL_ELEMENT_ARRAY_BUFFER:
+			return GLAD_GL_ARB_vertex_buffer_object;
+		case GL_UNIFORM_BUFFER:
+			return GLAD_GL_ARB_uniform_buffer_object;
+		case GL_SHADER_STORAGE_BUFFER:
+			return GLAD_GL_ARB_shader_storage_buffer_object;
+		case GL_COPY_WRITE_BUFFER:
+		case GL_COPY_READ_BUFFER:
+			return GLAD_GL_ARB_copy_buffer;
+		case GL_DISPATCH_INDIRECT_BUFFER:
+			return GLAD_GL_ARB_compute_shader;
+		default: {
+			LOG_L(L_ERROR, "[VBO:%s]: wrong target [%u] is specified", __func__, target);
+			return false;
+		}
 	}
 }
 
@@ -385,6 +381,23 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 	}
 }
 
+bool VBO::ReallocToFit(GLsizeiptr newSize, uint32_t sizeUpMult, uint32_t sizeDownMult, const void* newData)
+{
+	assert(bound);
+
+	if (newSize > GetSize()) // increase buffer size
+		New(newSize * sizeUpMult, usage, nullptr);
+	else if (GetSize() >= newSize * sizeDownMult) // decrease buffer size
+		New(newSize             , usage, nullptr);
+	else
+		return false;
+
+	if (newData)
+		SetBufferSubData(0, newSize, newData);
+
+	return true;
+}
+
 
 GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 {
@@ -517,6 +530,8 @@ size_t VBO::GetOffsetAlignment(GLenum target) {
 		return offsetAlignmentUBO;
 	case GL_SHADER_STORAGE_BUFFER:
 		return offsetAlignmentSSBO;
+	case GL_DISPATCH_INDIRECT_BUFFER:
+		return 4;
 	case GL_PIXEL_PACK_BUFFER:
 	case GL_PIXEL_UNPACK_BUFFER:
 	case GL_ARRAY_BUFFER:

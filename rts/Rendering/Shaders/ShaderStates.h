@@ -231,16 +231,12 @@ namespace Shader {
 			char buf[8192] = {0};
 			char* ptr = &buf[0];
 
-			#define PV(p) ((p).second)
-			#define RC(p) (((p).first).c_str())
-
 			// boolean flags are checked via #ifdef's (not #if's) in a subset of shaders
-			for (const auto& p: bitFlags) { if (PV(p)) ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s\n"   , RC(p)       ); }
-			for (const auto& p: intFlags) {            ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s %d\n", RC(p), PV(p)); }
-			for (const auto& p: fltFlags) {            ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s %f\n", RC(p), PV(p)); }
+			for (const auto& [k, v]: bitFlags) { if (v) ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s\n"   , k.c_str()           ); }
+			for (const auto& [k, v]: intFlags) {        ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s %d\n", k.c_str(), v        ); }
+			for (const auto& [k, v]: fltFlags) {        ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s %f\n", k.c_str(), v        ); }
+			for (const auto& [k, v]: strFlags) {        ptr += snprintf(ptr, sizeof(buf) - (ptr - buf), "#define %s %s\n", k.c_str(), v.c_str()); }
 
-			#undef RC
-			#undef PV
 			return buf;
 		}
 
@@ -251,6 +247,7 @@ namespace Shader {
 			bitFlags.clear();
 			intFlags.clear();
 			fltFlags.clear();
+			strFlags.clear();
 
 			numValUpdates = 0;
 			prvValUpdates = 0;
@@ -286,6 +283,15 @@ namespace Shader {
 			fltFlags[key] = val;
 		}
 
+		void Set(const char* key, const char* val) {
+			const auto it = strFlags.find(key);
+
+			// numFltUpdates += (it == fltFlags.end() || (it->second).second != val);
+			numValUpdates += (it == strFlags.end() || (it->second) != val);
+
+			strFlags[key] = val;
+		}
+
 		template <typename R>
 		bool Get(const char* key, R& val) {
 			if constexpr (std::is_same_v<R, bool>) {
@@ -312,6 +318,14 @@ namespace Shader {
 				val = it->second;
 				return true;
 			}
+			else if constexpr (std::is_same_v<R, std::string>) {
+				const auto it = strFlags.find(key);
+				if (it == strFlags.end())
+					return false;
+
+				val = it->second;
+				return true;
+			}
 
 			assert(false);
 			return false;
@@ -321,9 +335,10 @@ namespace Shader {
 		bool Updated() const { return (numValUpdates != prvValUpdates); }
 
 	private:
-		spring::unsynced_map<std::string,  bool> bitFlags;
-		spring::unsynced_map<std::string,   int> intFlags;
-		spring::unsynced_map<std::string, float> fltFlags;
+		spring::unsynced_map<std::string,        bool> bitFlags;
+		spring::unsynced_map<std::string,         int> intFlags;
+		spring::unsynced_map<std::string,       float> fltFlags;
+		spring::unsynced_map<std::string, std::string> strFlags;
 
 		unsigned int numValUpdates;
 		unsigned int prvValUpdates;
