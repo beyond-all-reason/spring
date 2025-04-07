@@ -2204,11 +2204,11 @@ bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool 
 		return true;
 
 	// maybe a widget is interested?
-	if (luaUI != nullptr)
-		luaUI->GotChatMsg(action.rawline, false); //FIXME add return argument!
+	if (luaUI != nullptr && luaUI->GotChatMsg(action.rawline, false))
+		return true;
 
-	if (luaMenu != nullptr)
-		luaMenu->GotChatMsg(action.rawline, false); //FIXME add return argument!
+	if (luaMenu != nullptr && luaMenu->GotChatMsg(action.rawline, false))
+		return true;
 
 	return false;
 }
