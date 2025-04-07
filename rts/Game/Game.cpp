@@ -2203,14 +2203,15 @@ bool CGame::ProcessAction(const Action& action, int keyCode, int scanCode, bool 
 	if (ActionPressed(keyCode, scanCode, action, isRepeat))
 		return true;
 
+	bool handled = false;
 	// maybe a widget is interested?
 	if (luaUI != nullptr && luaUI->GotChatMsg(action.rawline, false))
-		return true;
+		handled = true;
 
 	if (luaMenu != nullptr && luaMenu->GotChatMsg(action.rawline, false))
-		return true;
+		handled |= true;
 
-	return false;
+	return handled;
 }
 
 void CGame::ActionReceived(const Action& action, int playerID)
