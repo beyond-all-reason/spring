@@ -1243,7 +1243,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 	repeatOrders = false;
 
-	if (c.GetOpts() & META_KEY) {
+	if ((c.GetOpts() & META_KEY) && removeByID) {
 		int firstIndex = 0;
 		int lastIndex = queue->size()-1;
 		if (c.GetNumParams() >= 1)
