@@ -29,6 +29,9 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef) {
 	this->def = weaponDef;
 }
 
+/***
+ * @class InputUnitDefWeapon
+ */
 UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponTable) {
 	*this = UnitDefWeapon();
 	this->def = weaponDef;
@@ -39,27 +42,51 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 	//     <maxAngleDif> specifies the full-width arc,
 	//     but we want the half-width arc internally
 	//     (arcs are always symmetric around mainDir)
+	/***
+	 * @field InputUnitDefWeapon.maxAngleDif number? (Default: `360.0`) The full-width arc, symettrical around `mainDir`.
+	 */
 	this->maxMainDirAngleDif = math::cos((weaponTable.GetFloat("maxAngleDif", 360.0f) * 0.5f) * math::DEG_TO_RAD);
 
+	/*** @field InputUnitDefWeapon.badTargetCategory string? */
 	const string& btcString = weaponTable.GetString("badTargetCategory", "");
+	/*** @field InputUnitDefWeapon.onlyTargetCategory string? */
 	const string& otcString = weaponTable.GetString("onlyTargetCategory", "");
 
 	this->badTargetCat =                                   CCategoryHandler::Instance()->GetCategories(btcString);
 	this->onlyTargetCat = (otcString.empty())? 0xffffffff: CCategoryHandler::Instance()->GetCategories(otcString);
 
+	/*** @field InputUnitDefWeapon.mainDir float3String? (Default: `"0.0 0.0 1.0"`) */
 	this->mainDir = weaponTable.GetFloat3("mainDir", FwdVector);
 	this->mainDir.SafeNormalize();
 
-	// multiplier weight applied to target selection based on how far the weapon has to turn to face the target.
+
+	/***
+	 * @field InputUnitDefWeapon.weaponAimAdjustPriority number? (Default: `1.0`)
+	 * Multiplier weight applied to target selection based on how far the weapon
+	 * has to turn to face the target.
+	 */
 	weaponAimAdjustPriority = weaponTable.GetFloat("weaponAimAdjustPriority", weaponAimAdjustPriority);
 
-	// allow weapon to select a new target immediately after the current target is destroyed, without waiting for slow update.
+	/***
+	 * @field InputUnitDefWeapon.fastAutoRetargeting boolean? (Default: `false`)
+	 * Allow weapon to select a new target immediately after the current target is
+	 * destroyed, without waiting for slow update.
+	 */
 	fastAutoRetargeting = weaponTable.GetBool("fastAutoRetargeting", fastAutoRetargeting);
 
-	// allow weapon to swap muzzles every frame and accurately determine friendly fire, without waiting for slow update.
+	/***
+	 * @field InputUnitDefWeapon.fastQueryPointUpdate boolean? (Default: `false`)
+	 * Allow weapon to swap muzzles every frame and accurately determine friendly
+	 * fire, without waiting for slow update.
+	 */
 	fastQueryPointUpdate = weaponTable.GetBool("fastQueryPointUpdate", fastQueryPointUpdate);
 
-	// Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (default), 1 = don't fire, 2 = fire in current direction of weapon 
+	/***
+	 * @field InputUnitDefWeapon.burstControlWhenOutOfArc (0|1|2)? (Default: `0`)
+	 * Determines how to handle burst fire, when target is out of arc. 0 = no
+	 * restrictions, 1 = don't fire, 2 = fire in current direction of
+	 * weapon.
+	 */
 	burstControlWhenOutOfArc = weaponTable.GetInt("burstControlWhenOutOfArc", burstControlWhenOutOfArc);
 }
 
@@ -266,7 +293,7 @@ UnitDef::UnitDef()
 /***
  * Defines a unit type.
  * 
- * @class UnitDef
+ * @class InputUnitDef
  */
 UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 {
@@ -285,162 +312,162 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	 * if a value is invalid so as not to subtly hide errors, and the key
 	 * matches what is exposed in UnitDefs. */
 
-	/*** @field UnitDef.humanName string? */
+	/*** @field InputUnitDef.humanName string? */
 	humanName = udTable.GetString("humanName", udTable.GetString("name", "")); // note, `UnitDefs[x].name` is the _internal_ name
-	/*** @field UnitDef.description string? */
+	/*** @field InputUnitDef.description string? */
 	tooltip = udTable.GetString("description", name);
-	/*** @field UnitDef.corpse string? */
+	/*** @field InputUnitDef.corpse string? */
 	wreckName = udTable.GetString("corpse", "");
-	/*** @field UnitDef.buildPic string? */
+	/*** @field InputUnitDef.buildPic string? */
 	buildPicName = udTable.GetString("buildPic", "");
-	/*** @field UnitDef.decoyFor string? */
+	/*** @field InputUnitDef.decoyFor string? */
 	decoyName = udTable.GetString("decoyFor", "");
 
 	storage =
-		/*** @field UnitDef.metalStorage number? */
+		/*** @field InputUnitDef.metalStorage number? */
 		{ udTable.GetFloat( "metalStorage", 0.0f)
-		/*** @field UnitDef.energyStorage number? */
+		/*** @field InputUnitDef.energyStorage number? */
 		, udTable.GetFloat("energyStorage", 0.0f)
 	};
 	harvestStorage =
-		/*** @field UnitDef.harvestMetalStorage number? */
+		/*** @field InputUnitDef.harvestMetalStorage number? */
 		{ udTable.GetFloat("harvestMetalStorage", udTable.GetFloat("harvestStorage", 0.0f))
-		/*** @field UnitDef.harvestEnergyStorage number? */
+		/*** @field InputUnitDef.harvestEnergyStorage number? */
 		, udTable.GetFloat("harvestEnergyStorage", 0.0f)
 	};
 
-	/*** @field UnitDef.extractsMetal number? */
+	/*** @field InputUnitDef.extractsMetal number? */
 	extractsMetal  = udTable.GetFloat("extractsMetal",  0.0f);
-	/*** @field UnitDef.windGenerator number? */
+	/*** @field InputUnitDef.windGenerator number? */
 	windGenerator  = udTable.GetFloat("windGenerator",  0.0f);
-	/*** @field UnitDef.tidalGenerator number? */
+	/*** @field InputUnitDef.tidalGenerator number? */
 	tidalGenerator = udTable.GetFloat("tidalGenerator", 0.0f);
 
 	upkeep =
-		/*** @field UnitDef.metalUpkeep number? */
+		/*** @field InputUnitDef.metalUpkeep number? */
 		{ udTable.GetFloat( "metalUpkeep", udTable.GetFloat( "metalUse", 0.0f))
-		/*** @field UnitDef.energyUpkeep number? */
+		/*** @field InputUnitDef.energyUpkeep number? */
 		, udTable.GetFloat("energyUpkeep", udTable.GetFloat("energyUse", 0.0f))
 	};
 	resourceMake =
-		/*** @field UnitDef.metalMake number? */
+		/*** @field InputUnitDef.metalMake number? */
 		{ udTable.GetFloat( "metalMake", 0.0f)
-		/*** @field UnitDef.energyMake number? */
+		/*** @field InputUnitDef.energyMake number? */
 		, udTable.GetFloat("energyMake", 0.0f)
 	};
-	/*** @field UnitDef.makesMetal number? */
+	/*** @field InputUnitDef.makesMetal number? */
 	makesMetal   = udTable.GetFloat("makesMetal", 0.0f);
 
-	/*** @field UnitDef.autoHeal number? */
+	/*** @field InputUnitDef.autoHeal number? */
 	autoHeal     = udTable.GetFloat("autoHeal",      0.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
-	/*** @field UnitDef.idleAutoHeal number? */
+	/*** @field InputUnitDef.idleAutoHeal number? */
 	idleAutoHeal = udTable.GetFloat("idleAutoHeal", 10.0f) * (UNIT_SLOWUPDATE_RATE * INV_GAME_SPEED);
-	/*** @field UnitDef.idleTime integer? (Default: `600`) */
+	/*** @field InputUnitDef.idleTime integer? (Default: `600`) */
 	idleTime     = udTable.GetInt("idleTime", 600);
 
-	/*** @field UnitDef.health number? (Default: `100.0`)*/
+	/*** @field InputUnitDef.health number? (Default: `100.0`)*/
 	health = udTable.GetFloat("health", udTable.GetFloat("maxDamage", 100.0f));
 	if (health <= 0.0f)
 		throw content_error (unitName + ".health <= 0");
 
-	/*** @field UnitDef.metalCost number? */
+	/*** @field InputUnitDef.metalCost number? */
 	cost.metal = udTable.GetFloat("metalCost", udTable.GetFloat("buildCostMetal", 0.0f));
 	if (cost.metal < 0.0f)
 		throw content_error (unitName + ".metalCost < 0");
 
-	/*** @field UnitDef.energyCost number? */
+	/*** @field InputUnitDef.energyCost number? */
 	cost.energy = udTable.GetFloat("energyCost", udTable.GetFloat("buildCostEnergy", 0.0f));
 	if (cost.energy < 0.0f)
 		throw content_error (unitName + ".energyCost < 0");
 
-	/*** @field UnitDef.buildTime number? */
+	/*** @field InputUnitDef.buildTime number? */
 	buildTime = udTable.GetFloat("buildTime", 100.0f);
 	if (buildTime <= 0.0f)
 		throw content_error (unitName + ".buildTime <= 0");
 
-	/*** @field UnitDef.buildeeBuildRadius number? (Default: `-1.0 */
+	/*** @field InputUnitDef.buildeeBuildRadius number? (Default: `-1.0 */
 	buildeeBuildRadius = udTable.GetFloat("buildeeBuildRadius", -1.f);
 
-	/*** @field UnitDef.mass number? (Default: `UnitDef.metalCost`) */
+	/*** @field InputUnitDef.mass number? (Default: `UnitDef.metalCost`) */
 	mass = std::clamp(udTable.GetFloat("mass", cost.metal), CSolidObject::MINIMUM_MASS, CSolidObject::MAXIMUM_MASS);
-	/*** @field UnitDef.crushResistance number? (Default: `UnitDef.mass`) */
+	/*** @field InputUnitDef.crushResistance number? (Default: `UnitDef.mass`) */
 	crushResistance = udTable.GetFloat("crushResistance", mass);
 
-	/*** @field UnitDef.cobID integer? (Default: `-1`) */
+	/*** @field InputUnitDef.cobID integer? (Default: `-1`) */
 	cobID = udTable.GetInt("cobID", -1);
 
-	/*** @field UnitDef.buildRange3D boolean? (Default: `false`) */
+	/*** @field InputUnitDef.buildRange3D boolean? (Default: `false`) */
 	buildRange3D = udTable.GetBool("buildRange3D", false);
 
 	// 128.0f is the ancient default
-	/*** @field UnitDef.buildDistance number? (Default: `128.0`) In range `[38.0, ∞)`. */
+	/*** @field InputUnitDef.buildDistance number? (Default: `128.0`) In range `[38.0, ∞)`. */
 	buildDistance = udTable.GetFloat("buildDistance", 128.0f);
 	// 38.0f was evaluated by bobthedinosaur and FLOZi to be the bare minimum
 	// to not overlap for a 1x1 constructor building a 1x1 structure
 	buildDistance = std::max(38.0f, buildDistance);
-	/*** @field UnitDef.workerTime number? Build speed. */
+	/*** @field InputUnitDef.workerTime number? Build speed. */
 	buildSpeed = udTable.GetFloat("workerTime", 0.0f);
-	/*** @field UnitDef.builder boolean? (Default: `false`) Ignored unless `workerTime` is greater than zero. */
+	/*** @field InputUnitDef.builder boolean? (Default: `false`) Ignored unless `workerTime` is greater than zero. */
 	builder = udTable.GetBool("builder", false);
 	builder &= IsBuilderUnit();
 
-	/*** @field UnitDef.repairSpeed number? (Default: `UnitDef.buildSpeed`) */
+	/*** @field InputUnitDef.repairSpeed number? (Default: `UnitDef.buildSpeed`) */
 	repairSpeed    = udTable.GetFloat("repairSpeed",    buildSpeed);
-	/*** @field UnitDef.maxRepairSpeed number? (Default: `1e20`) */
+	/*** @field InputUnitDef.maxRepairSpeed number? (Default: `1e20`) */
 	maxRepairSpeed = udTable.GetFloat("maxRepairSpeed",      1e20f);
-	/*** @field UnitDef.reclaimSpeed number? (Default: `UnitDef.buildSpeed`) */
+	/*** @field InputUnitDef.reclaimSpeed number? (Default: `UnitDef.buildSpeed`) */
 	reclaimSpeed   = udTable.GetFloat("reclaimSpeed",   buildSpeed);
-	/*** @field UnitDef.resurrectSpeed number? (Default: `UnitDef.buildSpeed`) */
+	/*** @field InputUnitDef.resurrectSpeed number? (Default: `UnitDef.buildSpeed`) */
 	resurrectSpeed = udTable.GetFloat("resurrectSpeed", buildSpeed);
-	/*** @field UnitDef.captureSpeed number? (Default: `UnitDef.buildSpeed`) */
+	/*** @field InputUnitDef.captureSpeed number? (Default: `UnitDef.buildSpeed`) */
 	captureSpeed   = udTable.GetFloat("captureSpeed",   buildSpeed);
-	/*** @field UnitDef.terraformSpeed number? (Default: `UnitDef.buildSpeed`) */
+	/*** @field InputUnitDef.terraformSpeed number? (Default: `UnitDef.buildSpeed`) */
 	terraformSpeed = udTable.GetFloat("terraformSpeed", buildSpeed);
 
-	/*** @field UnitDef.upDirSmoothing number? In range `[0.0, 0.95]`. */
+	/*** @field InputUnitDef.upDirSmoothing number? In range `[0.0, 0.95]`. */
 	upDirSmoothing = std::clamp(udTable.GetFloat("upDirSmoothing", 0.0f), 0.0f, 0.95f);
-	/*** @field UnitDef.separationDistance integer? (Default: `0`) */
+	/*** @field InputUnitDef.separationDistance integer? (Default: `0`) */
 	separationDistance = std::max(udTable.GetInt("separationDistance", 0), 0);
 
-	/*** @field UnitDef.reclaimable boolean? (Default: `true`) */
+	/*** @field InputUnitDef.reclaimable boolean? (Default: `true`) */
 	reclaimable  = udTable.GetBool("reclaimable",  true);
-	/*** @field UnitDef.capturable boolean? (Default: `true`) */
+	/*** @field InputUnitDef.capturable boolean? (Default: `true`) */
 	capturable   = udTable.GetBool("capturable",   true);
-	/*** @field UnitDef.repairable boolean? (Default: `true`) */
+	/*** @field InputUnitDef.repairable boolean? (Default: `true`) */
 	repairable   = udTable.GetBool("repairable",   true);
 
-	/*** @field UnitDef.canMove boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canMove boolean? (Default: `false`) */
 	canmove      = udTable.GetBool("canMove",         false);
-	/*** @field UnitDef.canAttack boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canAttack boolean? (Default: `true`) */
 	canAttack    = udTable.GetBool("canAttack",       true);
-	/*** @field UnitDef.canFight boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canFight boolean? (Default: `true`) */
 	canFight     = udTable.GetBool("canFight",        true);
-	/*** @field UnitDef.canPatrol boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canPatrol boolean? (Default: `true`) */
 	canPatrol    = udTable.GetBool("canPatrol",       true);
-	/*** @field UnitDef.canGuard boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canGuard boolean? (Default: `true`) */
 	canGuard     = udTable.GetBool("canGuard",        true);
-	/*** @field UnitDef.canRepeat boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canRepeat boolean? (Default: `true`) */
 	canRepeat    = udTable.GetBool("canRepeat",       true);
-	/*** @field UnitDef.canCloak boolean? (Default: `UnitDef.cloakCost != 0`) */
+	/*** @field InputUnitDef.canCloak boolean? (Default: `UnitDef.cloakCost != 0`) */
 	canCloak     = udTable.GetBool("canCloak",        (udTable.GetFloat("cloakCost", 0.0f) != 0.0f));
-	/*** @field UnitDef.canSelfDestruct boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canSelfDestruct boolean? (Default: `true`) */
 	canSelfD     = udTable.GetBool("canSelfDestruct", true);
-	/*** @field UnitDef.kamikaze boolean? (Default: `false`) */
+	/*** @field InputUnitDef.kamikaze boolean? (Default: `false`) */
 	canKamikaze  = udTable.GetBool("kamikaze",        false);
 
 	// capture and resurrect count as special abilities
 	// (because captureSpeed and resurrectSpeed default
 	// to buildSpeed, canCapture and canResurrect would
 	// otherwise become true for all regular builders)
-	/*** @field UnitDef.canRestore boolean? (Default: `UnitDef.builder`) Ignored if `terraformSpeed` is zero. */
+	/*** @field InputUnitDef.canRestore boolean? (Default: `UnitDef.builder`) Ignored if `terraformSpeed` is zero. */
 	canRestore   = udTable.GetBool("canRestore",   builder) && (terraformSpeed > 0.0f);
-	/*** @field UnitDef.canRepair boolean? (Default: `UnitDef.builder`) Ignored if `repairSpeed` is zero. */
+	/*** @field InputUnitDef.canRepair boolean? (Default: `UnitDef.builder`) Ignored if `repairSpeed` is zero. */
 	canRepair    = udTable.GetBool("canRepair",    builder) && (   repairSpeed > 0.0f);
-	/*** @field UnitDef.canReclaim boolean? (Default: `UnitDef.builder`) Ignored if `reclaimSpeed` is zero. */
+	/*** @field InputUnitDef.canReclaim boolean? (Default: `UnitDef.builder`) Ignored if `reclaimSpeed` is zero. */
 	canReclaim   = udTable.GetBool("canReclaim",   builder) && (  reclaimSpeed > 0.0f);
-	/*** @field UnitDef.canCapture boolean? (Default: `false`) Ignored if `captureSpeed` is zero. */
+	/*** @field InputUnitDef.canCapture boolean? (Default: `false`) Ignored if `captureSpeed` is zero. */
 	canCapture   = udTable.GetBool("canCapture",     false) && (  captureSpeed > 0.0f);
-	/*** @field UnitDef.canResurrect boolean? (Default: `false`) Ignored if `resurrectSpeed` is zero. */
+	/*** @field InputUnitDef.canResurrect boolean? (Default: `false`) Ignored if `resurrectSpeed` is zero. */
 	canResurrect = udTable.GetBool("canResurrect",   false) && (resurrectSpeed > 0.0f);
 
 	/* Note that a mobile builder with canAssist = false will be able
@@ -451,69 +478,69 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	 * unable to repair an incomplete nanoframe or place a nanoframe
 	 * on top of an existing nanoframe, even if it is the exact same
 	 * structure in the exact same location. */
-	/*** @field UnitDef.canAssist boolean? (Default: `UnitDef.builder`) */
+	/*** @field InputUnitDef.canAssist boolean? (Default: `UnitDef.builder`) */
 	canAssist    = udTable.GetBool("canAssist",    builder);
 
-	/*** @field UnitDef.canBeAssisted boolean? (Default: `true`) */
+	/*** @field InputUnitDef.canBeAssisted boolean? (Default: `true`) */
 	canBeAssisted = udTable.GetBool("canBeAssisted", true);
-	/*** @field UnitDef.canSelfRepair boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canSelfRepair boolean? (Default: `false`) */
 	canSelfRepair = udTable.GetBool("canSelfRepair", false);
 
-	/*** @field UnitDef.noAutoFire boolean? (Default: `false`) */
+	/*** @field InputUnitDef.noAutoFire boolean? (Default: `false`) */
 	canFireControl = !udTable.GetBool("noAutoFire", false);
-	/*** @field UnitDef.canManualFire boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canManualFire boolean? (Default: `false`) */
 	canManualFire = udTable.GetBool("canManualFire", udTable.GetBool("canDGun", false));
 
-	/*** @field UnitDef.fullHealthFactory boolean? (Default: `false`) */
+	/*** @field InputUnitDef.fullHealthFactory boolean? (Default: `false`) */
 	fullHealthFactory = udTable.GetBool("fullHealthFactory", false);
-	/*** @field UnitDef.factoryHeadingTakeoff boolean? (Default: `true`) */
+	/*** @field InputUnitDef.factoryHeadingTakeoff boolean? (Default: `true`) */
 	factoryHeadingTakeoff = udTable.GetBool("factoryHeadingTakeoff", true);
 
-	/*** @field UnitDef.upright boolean? (Default: `false`) */
+	/*** @field InputUnitDef.upright boolean? (Default: `false`) */
 	upright = udTable.GetBool("upright", false);
-	/*** @field UnitDef.blocking boolean? (Default: `true`) */
+	/*** @field InputUnitDef.blocking boolean? (Default: `true`) */
 	collidable = udTable.GetBool("blocking", true);
-	/*** @field UnitDef.collider boolean? (Default: `true`) */
+	/*** @field InputUnitDef.collider boolean? (Default: `true`) */
 	collide = udTable.GetBool("collide", true);
 
-	/*** @field UnitDef.maxSlope number? Maximum slope in degrees. In range `[0, 89.0]` */
+	/*** @field InputUnitDef.maxSlope number? Maximum slope in degrees. In range `[0, 89.0]` */
 	const float maxSlopeDeg = std::clamp(udTable.GetFloat("maxSlope", 0.0f), 0.0f, 89.0f);
 	const float maxSlopeRad = maxSlopeDeg * math::DEG_TO_RAD;
 
 	// FIXME: kill the magic constant
 	maxHeightDif = 40.0f * math::tanf(maxSlopeRad);
 
-	/*** @field UnitDef.minWaterDepth number? (Default: `-10e6`) */
+	/*** @field InputUnitDef.minWaterDepth number? (Default: `-10e6`) */
 	minWaterDepth = udTable.GetFloat("minWaterDepth", -10e6f);
-	/*** @field UnitDef.maxWaterDepth number? (Default: `+10e6`) */
+	/*** @field InputUnitDef.maxWaterDepth number? (Default: `+10e6`) */
 	maxWaterDepth = udTable.GetFloat("maxWaterDepth", +10e6f);
-	/*** @field UnitDef.waterline number? (Default: `0.0`) */
+	/*** @field InputUnitDef.waterline number? (Default: `0.0`) */
 	waterline = udTable.GetFloat("waterline", 0.0f);
-	/*** @field UnitDef.minCollisionSpeed number? (Default: `1.0`) */
+	/*** @field InputUnitDef.minCollisionSpeed number? (Default: `1.0`) */
 	minCollisionSpeed = udTable.GetFloat("minCollisionSpeed", 1.0f);
-	/*** @field UnitDef.slideTolerance number? (Default: `0.0`) */
+	/*** @field InputUnitDef.slideTolerance number? (Default: `0.0`) */
 	slideTolerance = udTable.GetFloat("slideTolerance", 0.0f); // disabled
-	/*** @field UnitDef.rollingResistanceCoefficient number? (Default: `0.05`) */
+	/*** @field InputUnitDef.rollingResistanceCoefficient number? (Default: `0.05`) */
 	rollingResistanceCoefficient = udTable.GetFloat("rollingResistanceCoefficient", 0.05f);
-	/*** @field UnitDef.groundFrictionCoefficient number? (Default: `0.01`) */
+	/*** @field InputUnitDef.groundFrictionCoefficient number? (Default: `0.01`) */
 	groundFrictionCoefficient = udTable.GetFloat("groundFrictionCoefficient", 0.01f);
-	/*** @field UnitDef.atmosphericDragCoefficient number? (Default: `1.0`) */
+	/*** @field InputUnitDef.atmosphericDragCoefficient number? (Default: `1.0`) */
 	atmosphericDragCoefficient = udTable.GetFloat("atmosphericDragCoefficient", 1.0f);
-	/*** @field UnitDef.pushResistant boolean? (Default: `false`) */
+	/*** @field InputUnitDef.pushResistant boolean? (Default: `false`) */
 	pushResistant = udTable.GetBool("pushResistant", false);
-	/*** @field UnitDef.selfDestructCountdown integer? (Default: `5`) */
+	/*** @field InputUnitDef.selfDestructCountdown integer? (Default: `5`) */
 	selfDCountdown = udTable.GetInt("selfDestructCountdown", 5);
 
 	/* Note that the legacy unit is elmo/frame
 	 * whereas the modern one is elmo/second */
 
-	/*** @field UnitDef.speed maxVelocity? (Default: `0`) Maximum speed in elmo/second. */
+	/*** @field InputUnitDef.maxVelocity number? (Default: `0`) Maximum speed in elmo/second. */
 	const decltype(speed) speedLegacy = math::fabs(udTable.GetFloat("maxVelocity", 0.0f) * GAME_SPEED);
 	speed = udTable.GetFloat("speed", speedLegacy);
 	if (speed < 0.0f)
 		throw content_error(unitName + ".speed < 0");
 
-	/*** @field UnitDef.speed maxReverseVelocity? (Default: `0`) Maximum reverse speed in elmo/second. */
+	/*** @field InputUnitDef.maxReverseVelocity number? (Default: `0`) Maximum reverse speed in elmo/second. */
 	const decltype(rSpeed) rSpeedLegacy = math::fabs(udTable.GetFloat("maxReverseVelocity", 0.0f) * GAME_SPEED);
 	rSpeed = udTable.GetFloat("rSpeed", rSpeedLegacy);
 	if (rSpeed < 0.0f)
@@ -523,208 +550,208 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	 * At some point, 'acceleration' should change to elmo/second^2
 	 * and get exposed to UnitDefs. Let games migrate first though. */
 
-	/*** @field UnitDef.speed maxAcc? (Default: `0.5`) Maximum acceleration in elmo/frame². */
+	/*** @field InputUnitDef.maxAcc number? (Default: `0.5`) Maximum acceleration in elmo/frame². */
 	maxAcc = udTable.GetFloat("maxAcc", udTable.GetFloat("acceleration", 0.5f));
 	if (maxAcc < 0.0f)
 		throw content_error(unitName + ".acceleration < 0");
 
-	/*** @field UnitDef.speed maxDec? (Default: `UnitDef.maxAcc`) Maximum deceleration in elmo/frame². */
+	/*** @field InputUnitDef.maxDec number? (Default: `UnitDef.maxAcc`) Maximum deceleration in elmo/frame². */
 	maxDec = udTable.GetFloat("maxDec", udTable.GetFloat("brakeRate", maxAcc));
 	if (maxDec < 0.0f)
 		throw content_error(unitName + ".brakeRate < 0");
 
-	/*** @field UnitDef.fireState integer? (Default: If `UnitDef.noAutoFire` then `FIRESTATE_FIREATWILL`, otherwise `FIRESTATE_NONE`) */
+	/*** @field InputUnitDef.fireState integer? (Default: If `UnitDef.noAutoFire` then `FIRESTATE_FIREATWILL`, otherwise `FIRESTATE_NONE`) */
 	fireState = udTable.GetInt("fireState", canFireControl? FIRESTATE_NONE: FIRESTATE_FIREATWILL);
 	fireState = std::min(fireState, int(FIRESTATE_FIREATNEUTRAL));
-	/*** @field UnitDef.fireState integer? (Default: `MOVESTATE_MANEUVER`, or `MOVESTATE_NONE` if unable to move) */
+	/*** @field InputUnitDef.fireState integer? (Default: `MOVESTATE_MANEUVER`, or `MOVESTATE_NONE` if unable to move) */
 	moveState = udTable.GetInt("moveState", (canmove && speed > 0.0f)? MOVESTATE_NONE: MOVESTATE_MANEUVER);
 	moveState = std::min(moveState, int(MOVESTATE_ROAM));
 
-	/*** @field UnitDef.flankingBonusMode integer? */
+	/*** @field InputUnitDef.flankingBonusMode integer? */
 	flankingBonusMode = udTable.GetInt("flankingBonusMode", modInfo.flankingBonusModeDefault);
-	/*** @field UnitDef.flankingBonusMax number? */
+	/*** @field InputUnitDef.flankingBonusMax number? */
 	flankingBonusMax  = udTable.GetFloat("flankingBonusMax", modInfo.flankingBonusMaxDefault);
-	/*** @field UnitDef.flankingBonusMax number? */
+	/*** @field InputUnitDef.flankingBonusMax number? */
 	flankingBonusMin  = udTable.GetFloat("flankingBonusMin", modInfo.flankingBonusMinDefault);
-	/*** @field UnitDef.flankingBonusDir float3String? */
+	/*** @field InputUnitDef.flankingBonusDir float3String? */
 	flankingBonusDir  = udTable.GetFloat3("flankingBonusDir", FwdVector);
-	/*** @field UnitDef.flankingBonusMobilityAdd number? */
+	/*** @field InputUnitDef.flankingBonusMobilityAdd number? */
 	flankingBonusMobilityAdd = udTable.GetFloat("flankingBonusMobilityAdd", 0.01f);
 
-	/*** @field UnitDef.damageModifier number? (Default: `1.0`) */
+	/*** @field InputUnitDef.damageModifier number? (Default: `1.0`) */
 	armoredMultiple = udTable.GetFloat("damageModifier", 1.0f);
 	armorType = damageArrayHandler.GetTypeFromName(name);
 
-	/*** @field UnitDef.sightEmitHeight number? (Default: `20.0`) */
+	/*** @field InputUnitDef.sightEmitHeight number? (Default: `20.0`) */
 	losHeight = udTable.GetFloat("sightEmitHeight", udTable.GetFloat("losEmitHeight", 20.0f));
-	/*** @field UnitDef.radarEmitHeight number? (Default: `UnitDef.sightEmitHeight`) */
+	/*** @field InputUnitDef.radarEmitHeight number? (Default: `UnitDef.sightEmitHeight`) */
 	radarHeight = udTable.GetFloat("radarEmitHeight", losHeight);
 
-	/*** @field UnitDef.sightDistance number? */
+	/*** @field InputUnitDef.sightDistance number? */
 	losRadius = udTable.GetFloat("sightDistance", 0.0f);
-	/*** @field UnitDef.airSightDistance number? (Default: `1.5 * UnitDef.sightDistance`) */
+	/*** @field InputUnitDef.airSightDistance number? (Default: `1.5 * UnitDef.sightDistance`) */
 	airLosRadius = udTable.GetFloat("airSightDistance", 1.5f * losRadius);
-	/*** @field UnitDef.radarDistance integer? (Default: `0`)*/
+	/*** @field InputUnitDef.radarDistance integer? (Default: `0`)*/
 	radarRadius    = udTable.GetInt("radarDistance",    0);
-	/*** @field UnitDef.sonarDistance integer? (Default: `0`) */
+	/*** @field InputUnitDef.sonarDistance integer? (Default: `0`) */
 	sonarRadius    = udTable.GetInt("sonarDistance",    0);
-	/*** @field UnitDef.radarDistanceJam integer? (Default: `0`) */
+	/*** @field InputUnitDef.radarDistanceJam integer? (Default: `0`) */
 	jammerRadius   = udTable.GetInt("radarDistanceJam", 0);
-	/*** @field UnitDef.sonarDistanceJam integer? (Default: `0`) */
+	/*** @field InputUnitDef.sonarDistanceJam integer? (Default: `0`) */
 	sonarJamRadius = udTable.GetInt("sonarDistanceJam", 0);
 
-	/*** @field UnitDef.seismicDistance integer? (Default: `0`) */
+	/*** @field InputUnitDef.seismicDistance integer? (Default: `0`) */
 	seismicRadius    = udTable.GetInt("seismicDistance", 0);
-	/*** @field UnitDef.seismicDistance number? (Default: `-1.0`) */
+	/*** @field InputUnitDef.seismicDistance number? (Default: `-1.0`) */
 	seismicSignature = udTable.GetFloat("seismicSignature", -1.0f);
 
-	/*** @field UnitDef.stealth boolean? (Default: `false`) */
+	/*** @field InputUnitDef.stealth boolean? (Default: `false`) */
 	stealth        = udTable.GetBool("stealth",            false);
-	/*** @field UnitDef.sonarStealth boolean? (Default: `false`) */
+	/*** @field InputUnitDef.sonarStealth boolean? (Default: `false`) */
 	sonarStealth   = udTable.GetBool("sonarStealth",       false);
-	/*** @field UnitDef.isTargetingUpgrade boolean? (Default: `false`) */
+	/*** @field InputUnitDef.isTargetingUpgrade boolean? (Default: `false`) */
 	targfac        = udTable.GetBool("isTargetingUpgrade", false);
-	/*** @field UnitDef.isFeature boolean? (Default: `false`) */
+	/*** @field InputUnitDef.isFeature boolean? (Default: `false`) */
 	isFeature      = udTable.GetBool("isFeature",          false);
-	/*** @field UnitDef.hideDamage boolean? (Default: `false`) */
+	/*** @field InputUnitDef.hideDamage boolean? (Default: `false`) */
 	hideDamage     = udTable.GetBool("hideDamage",         false);
-	/*** @field UnitDef.showPlayerName boolean? (Default: `false`) */
+	/*** @field InputUnitDef.showPlayerName boolean? (Default: `false`) */
 	showPlayerName = udTable.GetBool("showPlayerName",     false);
 
-	/*** @field UnitDef.cloakCost number? (Default: `0.0`) */
+	/*** @field InputUnitDef.cloakCost number? (Default: `0.0`) */
 	cloakCost = udTable.GetFloat("cloakCost", 0.0f);
-	/*** @field UnitDef.cloakCostMoving number? (Default: `cloakCost`) */
+	/*** @field InputUnitDef.cloakCostMoving number? (Default: `cloakCost`) */
 	cloakCostMoving = udTable.GetFloat("cloakCostMoving", cloakCost);
 
-	/*** @field UnitDef.startCloaked boolean? (Default: `false`) */
+	/*** @field InputUnitDef.startCloaked boolean? (Default: `false`) */
 	startCloaked     = udTable.GetBool("initCloaked", false);
-	/*** @field UnitDef.decloakDistance number? (Default: `0.0`) */
+	/*** @field InputUnitDef.decloakDistance number? (Default: `0.0`) */
 	decloakDistance  = udTable.GetFloat("minCloakDistance", 0.0f);
-	/*** @field UnitDef.decloakSpherical boolean? (Default: `true`) */
+	/*** @field InputUnitDef.decloakSpherical boolean? (Default: `true`) */
 	decloakSpherical = udTable.GetBool("decloakSpherical", true);
-	/*** @field UnitDef.decloakOnFire boolean? (Default: `true`) */
+	/*** @field InputUnitDef.decloakOnFire boolean? (Default: `true`) */
 	decloakOnFire    = udTable.GetBool("decloakOnFire",    true);
 
-	/*** @field UnitDef.highTrajectory integer? (Default: `0`) */
+	/*** @field InputUnitDef.highTrajectory integer? (Default: `0`) */
 	highTrajectoryType = udTable.GetInt("highTrajectory", 0);
 
-	/*** @field UnitDef.kamikazeDistance number? (Default: `-25.0`) 3D kamikaze distance. This number is increased by 25. */
+	/*** @field InputUnitDef.kamikazeDistance number? (Default: `-25.0`) 3D kamikaze distance. This number is increased by 25. */
 	// we count 3d distance while ta count 2d distance so increase slightly
 	kamikazeDist = udTable.GetFloat("kamikazeDistance", -25.0f) + 25.0f;
-	/*** @field UnitDef.kamikazeUseLOS boolean? (Default: `false`) */
+	/*** @field InputUnitDef.kamikazeUseLOS boolean? (Default: `false`) */
 	kamikazeUseLOS = udTable.GetBool("kamikazeUseLOS", false);
 
-	/*** @field UnitDef.showNanoFrame boolean? (Default: `true`) */
+	/*** @field InputUnitDef.showNanoFrame boolean? (Default: `true`) */
 	showNanoFrame = udTable.GetBool("showNanoFrame", true);
-	/*** @field UnitDef.showNanoSpray boolean? (Default: `true`) */
+	/*** @field InputUnitDef.showNanoSpray boolean? (Default: `true`) */
 	showNanoSpray = udTable.GetBool("showNanoSpray", true);
 	nanoColor = udTable.GetFloat3("nanoColor", float3(0.2f,0.7f,0.2f));
 
-	/*** @field UnitDef.canFly boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canFly boolean? (Default: `false`) */
 	canfly      = udTable.GetBool("canFly",      false);
-	/*** @field UnitDef.canSubmerge boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canSubmerge boolean? (Default: `false`) */
 	canSubmerge = udTable.GetBool("canSubmerge", false) && canfly;
 
-	/*** @field UnitDef.airStrafe boolean? (Default: `true`) */
+	/*** @field InputUnitDef.airStrafe boolean? (Default: `true`) */
 	airStrafe      = udTable.GetBool("airStrafe", true);
-	/*** @field UnitDef.hoverAttack boolean? (Default: `false`) */
+	/*** @field InputUnitDef.hoverAttack boolean? (Default: `false`) */
 	hoverAttack    = udTable.GetBool("hoverAttack", false);
-	/*** @field UnitDef.cruiseAltitude number? (Default: `0`) */
+	/*** @field InputUnitDef.cruiseAltitude number? (Default: `0`) */
 	wantedHeight   = udTable.GetFloat("cruiseAltitude", udTable.GetFloat("cruiseAlt", 0.0f));
-	/*** @field UnitDef.airHoverFactor number? (Default: `-1.0`) */
+	/*** @field InputUnitDef.airHoverFactor number? (Default: `-1.0`) */
 	dlHoverFactor  = udTable.GetFloat("airHoverFactor", -1.0f);
-	/*** @field UnitDef.bankingAllowed boolean? (Default: `true`) */
+	/*** @field InputUnitDef.bankingAllowed boolean? (Default: `true`) */
 	bankingAllowed = udTable.GetBool("bankingAllowed", true);
-	/*** @field UnitDef.useSmoothMesh boolean? (Default: `true`) */
+	/*** @field InputUnitDef.useSmoothMesh boolean? (Default: `true`) */
 	useSmoothMesh  = udTable.GetBool("useSmoothMesh", true);
 
-	/*** @field UnitDef.turnRate number? (Default: `0`) */
+	/*** @field InputUnitDef.turnRate number? (Default: `0`) */
 	turnRate    = udTable.GetFloat("turnRate", 0.0f);
-	/*** @field UnitDef.turnInPlace boolean? (Default: `true`) */
+	/*** @field InputUnitDef.turnInPlace boolean? (Default: `true`) */
 	turnInPlace = udTable.GetBool("turnInPlace", true);
 	turnInPlaceSpeedLimit = turnRate / SPRING_CIRCLE_DIVS;
 	turnInPlaceSpeedLimit *= (math::TWOPI * SQUARE_SIZE);
 	turnInPlaceSpeedLimit /= std::max(speed / GAME_SPEED, 1.0f);
-	/*** @field UnitDef.turnInPlaceSpeedLimit number? (Default: `speed`) */
+	/*** @field InputUnitDef.turnInPlaceSpeedLimit number? (Default: `speed`) */
 	turnInPlaceSpeedLimit = udTable.GetFloat("turnInPlaceSpeedLimit", std::min(speed, turnInPlaceSpeedLimit));
-	/*** @field UnitDef.turnInPlaceAngleLimit number? (Default: `0.0`) The turning angle in degrees above which it starts to brake. */
+	/*** @field InputUnitDef.turnInPlaceAngleLimit number? (Default: `0.0`) The turning angle in degrees above which it starts to brake. */
 	turnInPlaceAngleLimit = udTable.GetFloat("turnInPlaceAngleLimit", 0.0f);
 
 
-	/*** @field UnitDef.transportSize integer? (Default: `0`) */
+	/*** @field InputUnitDef.transportSize integer? (Default: `0`) */
 	transportSize     = udTable.GetInt("transportSize",      0);
-	/*** @field UnitDef.minTransportSize integer? (Default: `0`) */
+	/*** @field InputUnitDef.minTransportSize integer? (Default: `0`) */
 	minTransportSize  = udTable.GetInt("minTransportSize",   0);
-	/*** @field UnitDef.transportCapacity integer? (Default: `0`) */
+	/*** @field InputUnitDef.transportCapacity integer? (Default: `0`) */
 	transportCapacity = udTable.GetInt("transportCapacity",  0);
-	/*** @field UnitDef.isFirePlatform boolean? (Default: `false`) */
+	/*** @field InputUnitDef.isFirePlatform boolean? (Default: `false`) */
 	isFirePlatform    = udTable.GetBool("isFirePlatform",    false);
-	/*** @field UnitDef.loadingRadius number? (Default: `220.0`) */
+	/*** @field InputUnitDef.loadingRadius number? (Default: `220.0`) */
 	loadingRadius     = udTable.GetFloat("loadingRadius",    220.0f);
-	/*** @field UnitDef.unloadSpread number? (Default: `5.0`) */
+	/*** @field InputUnitDef.unloadSpread number? (Default: `5.0`) */
 	unloadSpread      = udTable.GetFloat("unloadSpread",     5.0f);
-	/*** @field UnitDef.transportMass number? (Default: `100000.0`) */
+	/*** @field InputUnitDef.transportMass number? (Default: `100000.0`) */
 	transportMass     = udTable.GetFloat("transportMass",    100000.0f);
-	/*** @field UnitDef.minTransportMass number? (Default: `0.0`) */
+	/*** @field InputUnitDef.minTransportMass number? (Default: `0.0`) */
 	minTransportMass  = udTable.GetFloat("minTransportMass", 0.0f);
-	/*** @field UnitDef.holdSteady boolean? (Default: `false`) */
+	/*** @field InputUnitDef.holdSteady boolean? (Default: `false`) */
 	holdSteady        = udTable.GetBool("holdSteady",        false);
-	/*** @field UnitDef.releaseHeld boolean? (Default: `false`) */
+	/*** @field InputUnitDef.releaseHeld boolean? (Default: `false`) */
 	releaseHeld       = udTable.GetBool("releaseHeld",       false);
-	/*** @field UnitDef.cantBeTransported boolean? */
+	/*** @field InputUnitDef.cantBeTransported boolean? */
 	cantBeTransported = udTable.GetBool("cantBeTransported", !RequireMoveDef());
-	/*** @field UnitDef.transportByEnemy boolean? (Default: `true`) */
+	/*** @field InputUnitDef.transportByEnemy boolean? (Default: `true`) */
 	transportByEnemy  = udTable.GetBool("transportByEnemy",  true);
-	/*** @field UnitDef.fallSpeed number? (Default: `0.2`) */
+	/*** @field InputUnitDef.fallSpeed number? (Default: `0.2`) */
 	fallSpeed         = udTable.GetFloat("fallSpeed",    0.2f);
-	/*** @field UnitDef.unitFallSpeed number? (Default: `0`) */
+	/*** @field InputUnitDef.unitFallSpeed number? (Default: `0`) */
 	unitFallSpeed     = udTable.GetFloat("unitFallSpeed",  0);
-	/*** @field UnitDef.transportUnloadMethod integer? (Default: `0`) */
+	/*** @field InputUnitDef.transportUnloadMethod integer? (Default: `0`) */
 	transportUnloadMethod = udTable.GetInt("transportUnloadMethod" , 0);
 
-	/*** @field UnitDef.wingDrag number? (Default: `0.07`) Drag caused by wings. */
+	/*** @field InputUnitDef.wingDrag number? (Default: `0.07`) Drag caused by wings. */
 	wingDrag     = udTable.GetFloat("wingDrag",     0.07f);
 	wingDrag     = std::clamp(wingDrag, 0.0f, 1.0f);
-	/*** @field UnitDef.wingAngle number? (Default: `0.08`) Angle between front and the wing plane. */
+	/*** @field InputUnitDef.wingAngle number? (Default: `0.08`) Angle between front and the wing plane. */
 	wingAngle    = udTable.GetFloat("wingAngle",    0.08f);
-	/*** @field UnitDef.frontToSpeed number? (Default: `0.1`) Fudge factor for lining up speed and front of plane. */
+	/*** @field InputUnitDef.frontToSpeed number? (Default: `0.1`) Fudge factor for lining up speed and front of plane. */
 	frontToSpeed = udTable.GetFloat("frontToSpeed", 0.1f); 
-	/*** @field UnitDef.speedToFront number? (Default: `0.07`) Fudge factor for lining up speed and front of plane. */
+	/*** @field InputUnitDef.speedToFront number? (Default: `0.07`) Fudge factor for lining up speed and front of plane. */
 	speedToFront = udTable.GetFloat("speedToFront", 0.07f);
-	/*** @field UnitDef.myGravity number? (Default: `0.4`) Planes are slower than real airplanes so lower gravity to compensate. */
+	/*** @field InputUnitDef.myGravity number? (Default: `0.4`) Planes are slower than real airplanes so lower gravity to compensate. */
 	myGravity    = udTable.GetFloat("myGravity",    0.4f); 
-	/*** @field UnitDef.crashDrag number? (Default: `0.005`) Drag used when crashing. */
+	/*** @field InputUnitDef.crashDrag number? (Default: `0.005`) Drag used when crashing. */
 	crashDrag    = udTable.GetFloat("crashDrag",    0.005f);
 	crashDrag    = std::clamp(crashDrag, 0.0f, 1.0f);
 
-	/*** @field UnitDef.maxBank number? (Default: `0.8`) Max roll. */
+	/*** @field InputUnitDef.maxBank number? (Default: `0.8`) Max roll. */
 	maxBank = udTable.GetFloat("maxBank", 0.8f);
-	/*** @field UnitDef.maxPitch number? (Default: `0.45`) Max pitch this plane tries to keep. */
+	/*** @field InputUnitDef.maxPitch number? (Default: `0.45`) Max pitch this plane tries to keep. */
 	maxPitch = udTable.GetFloat("maxPitch", 0.45f);
-	/*** @field UnitDef.turnRadius number? (Default: `500.0`) Hint to CStrafeAirMoveType about required turn-radius. */
+	/*** @field InputUnitDef.turnRadius number? (Default: `500.0`) Hint to CStrafeAirMoveType about required turn-radius. */
 	turnRadius = udTable.GetFloat("turnRadius", 500.0f); // hint to CStrafeAirMoveType about required turn-radius
-	/*** @field UnitDef.verticalSpeed number? (Default: `3.0`) Speed of takeoff and landing, at least for gunships. */
+	/*** @field InputUnitDef.verticalSpeed number? (Default: `3.0`) Speed of takeoff and landing, at least for gunships. */
 	verticalSpeed = udTable.GetFloat("verticalSpeed", 3.0f); // speed of takeoff and landing, at least for gunships
 
-	/*** @field UnitDef.maxAileron number? (Default: `0.015`) Turn speed around roll axis. */
+	/*** @field InputUnitDef.maxAileron number? (Default: `0.015`) Turn speed around roll axis. */
 	maxAileron  = udTable.GetFloat("maxAileron",  0.015f);
-	/*** @field UnitDef.maxElevator number? (Default: `0.01`) Turn speed around pitch axis. */
+	/*** @field InputUnitDef.maxElevator number? (Default: `0.01`) Turn speed around pitch axis. */
 	maxElevator = udTable.GetFloat("maxElevator", 0.01f);
-	/*** @field UnitDef.maxRudder number? (Default: `0.004`) Turn speed around yaw axis. */
+	/*** @field InputUnitDef.maxRudder number? (Default: `0.004`) Turn speed around yaw axis. */
 	maxRudder   = udTable.GetFloat("maxRudder",   0.004f);
 
-	/*** @field UnitDef.maxThisUnit integer? (Default: `MAX_UNITS`) Can be overridden by game setup.*/
+	/*** @field InputUnitDef.maxThisUnit integer? (Default: `MAX_UNITS`) Can be overridden by game setup.*/
 	maxThisUnit = udTable.GetInt("maxThisUnit", udTable.GetInt("unitRestricted", MAX_UNITS));
 	maxThisUnit = std::min(maxThisUnit, gameSetup->GetRestrictedUnitLimit(name, MAX_UNITS));
 
-	/*** @field UnitDef.category string? (Default: `""`) */
+	/*** @field InputUnitDef.category string? (Default: `""`) */
 	categoryString = udTable.GetString("category", "");
 
 	category = CCategoryHandler::Instance()->GetCategories(udTable.GetString("category", ""));
-	/*** @field UnitDef.noChaseCategory string? (Default: `""`) */
+	/*** @field InputUnitDef.noChaseCategory string? (Default: `""`) */
 	noChaseCategory = CCategoryHandler::Instance()->GetCategories(udTable.GetString("noChaseCategory", ""));
 
-	/*** @field UnitDef.iconType string? (Default: `"default"`) */
+	/*** @field InputUnitDef.iconType string? (Default: `"default"`) */
 	iconType = icon::iconHandler.GetIcon(udTable.GetString("iconType", "default"));
 
 	shieldWeaponDef    = nullptr;
@@ -733,7 +760,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	maxWeaponRange = 0.0f;
 	maxCoverage = 0.0f;
 
-	/*** @field UnitDef.weapons table[]? */
+	/*** @field InputUnitDef.weapons InputUnitDefWeapon[]? */
 	LuaTable weaponsTable = udTable.SubTable("weapons");
 	ParseWeaponsTable(weaponsTable);
 
@@ -747,7 +774,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		// static structures have no use for either
 		// (but get StaticMoveType instances)
 		if (RequireMoveDef()) {
-			/*** @field UnitDef.movementClass string? (Default: `""`) */
+			/*** @field InputUnitDef.movementClass string? (Default: `""`) */
 			const std::string& moveClass = StringToLower(udTable.GetString("movementClass", ""));
 			const std::string errMsg = "WARNING: Couldn't find a MoveClass named " + moveClass + " (used in UnitDef: " + unitName + ")";
 
@@ -760,7 +787,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 		if (moveDef == nullptr) {
 			upright           |= !canfly;
-			/*** @field UnitDef.floater boolean? (Default: `false`) Does this unit float on water? */
+			/*** @field InputUnitDef.floater boolean? (Default: `false`) Does this unit float on water? */
 			floatOnWater      |= udTable.GetBool("floater", udTable.KeyExists("WaterLine"));
 
 			// we have no MoveDef, so pathType == -1 and IsAirUnit() MIGHT be true
@@ -798,14 +825,14 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	}
 
 
-	/*** @field UnitDef.objectName string? (Default: `""`) */
+	/*** @field InputUnitDef.objectName string? (Default: `""`) */
 	modelName = udTable.GetString("objectName", "");
-	/*** @field UnitDef.scriptName string? (Default: `unitName .. ".cob"`) Path to unit script, relative to `scripts/` folder. Excludes `.cob` file extension. */
+	/*** @field InputUnitDef.scriptName string? (Default: `unitName .. ".cob"`) Path to unit script, relative to `scripts/` folder. Excludes `.cob` file extension. */
 	scriptName = "scripts/" + udTable.GetString("script", unitName + ".cob");
 
-	/*** @field UnitDef.explodeAs string? (Default: `""`) */
+	/*** @field InputUnitDef.explodeAs string? (Default: `""`) */
 	deathExpWeaponDef = weaponDefHandler->GetWeaponDef(udTable.GetString("explodeAs", ""));
-	/*** @field UnitDef.selfDestructAs string? (Default: `UnitDef.explodeAs`) */
+	/*** @field InputUnitDef.selfDestructAs string? (Default: `UnitDef.explodeAs`) */
 	selfdExpWeaponDef = weaponDefHandler->GetWeaponDef(udTable.GetString("selfDestructAs", udTable.GetString("explodeAs", "")));
 
 	if (deathExpWeaponDef == nullptr && (deathExpWeaponDef = weaponDefHandler->GetWeaponDef("NOWEAPON")) == nullptr) {
@@ -815,7 +842,7 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		LOG_L(L_ERROR, "Couldn't find WeaponDef NOWEAPON and selfDestructAs for %s is missing!", unitName.c_str());
 	}
 
-	/*** @field UnitDef.power number? (Default: `cost.metal + (cost.energy / 60.0f)`) */
+	/*** @field InputUnitDef.power number? (Default: `cost.metal + (cost.energy / 60.0f)`) */
 	power = udTable.GetFloat("power", (cost.metal + (cost.energy / 60.0f)));
 
 	// Prevent a division by zero in experience calculations.
@@ -825,9 +852,9 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		power = 1.0e-3f;
 	}
 
-	/*** @field UnitDef.activateWhenBuilt boolean? (Default: `false`) */
+	/*** @field InputUnitDef.activateWhenBuilt boolean? (Default: `false`) */
 	activateWhenBuilt = udTable.GetBool("activateWhenBuilt", false);
-	/*** @field UnitDef.onoffable boolean? (Default: `false`) */
+	/*** @field InputUnitDef.onoffable boolean? (Default: `false`) */
 	onoffable = udTable.GetBool("onoffable", false);
 
 	xsize = std::max(1 * SPRING_FOOTPRINT_SCALE, (udTable.GetInt("footprintX", 1) * SPRING_FOOTPRINT_SCALE));
@@ -839,30 +866,30 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 
 	decalDef.Parse(udTable);
 
-	/*** @field UnitDef.canDropFlare boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canDropFlare boolean? (Default: `false`) */
 	canDropFlare    = udTable.GetBool("canDropFlare", false);
-	/*** @field UnitDef.flareReload number? (Default: `5.0`) */
+	/*** @field InputUnitDef.flareReload number? (Default: `5.0`) */
 	flareReloadTime = udTable.GetFloat("flareReload",     5.0f);
-	/*** @field UnitDef.flareDelay number? (Default: `0.3`) */
+	/*** @field InputUnitDef.flareDelay number? (Default: `0.3`) */
 	flareDelay      = udTable.GetFloat("flareDelay",      0.3f);
-	/*** @field UnitDef.flareEfficiency number? (Default: `0.5`) */
+	/*** @field InputUnitDef.flareEfficiency number? (Default: `0.5`) */
 	flareEfficiency = udTable.GetFloat("flareEfficiency", 0.5f);
-	/*** @field UnitDef.flareDropVector float3String? (Default: `"0 0 0"`) */
+	/*** @field InputUnitDef.flareDropVector float3String? (Default: `"0 0 0"`) */
 	flareDropVector = udTable.GetFloat3("flareDropVector", ZeroVector);
-	/*** @field UnitDef.flareTime integer? (Default: `3`) */
+	/*** @field InputUnitDef.flareTime integer? (Default: `3`) */
 	flareTime       = udTable.GetInt("flareTime", 3) * GAME_SPEED;
-	/*** @field UnitDef.flareSalvoSize integer? (Default: `4`) */
+	/*** @field InputUnitDef.flareSalvoSize integer? (Default: `4`) */
 	flareSalvoSize  = udTable.GetInt("flareSalvoSize",  4);
-	/*** @field UnitDef.flareSalvoDelay integer? (Default: `0`) */
+	/*** @field InputUnitDef.flareSalvoDelay integer? (Default: `0`) */
 	flareSalvoDelay = udTable.GetInt("flareSalvoDelay", 0) * GAME_SPEED;
 
-	/*** @field UnitDef.canLoopbackAttack boolean? (Default: `false`) */
+	/*** @field InputUnitDef.canLoopbackAttack boolean? (Default: `false`) */
 	canLoopbackAttack = udTable.GetBool("canLoopbackAttack", false);
-	/*** @field UnitDef.levelGround boolean? (Default: `true`) */
+	/*** @field InputUnitDef.levelGround boolean? (Default: `true`) */
 	levelGround = udTable.GetBool("levelGround", true);
-	/*** @field UnitDef.strafeToAttack boolean? (Default: `false`) */
+	/*** @field InputUnitDef.strafeToAttack boolean? (Default: `false`) */
 	strafeToAttack = udTable.GetBool("strafeToAttack", false);
-	/*** @field UnitDef.stopToAttack boolean? (Default: `false`) */
+	/*** @field InputUnitDef.stopToAttack boolean? (Default: `false`) */
 	stopToAttack = udTable.GetBool("stopToAttack", false);
 
 
@@ -872,9 +899,9 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 	ParseSelectionVolume(udTable);
 
 	{
-		/*** @field UnitDef.buildOptions table? */
+		/*** @field InputUnitDef.buildOptions table? */
 		const LuaTable& buildsTable = udTable.SubTable("buildOptions");
-		/*** @field UnitDef.customParams table<string, any>? */
+		/*** @field InputUnitDef.customParams table<string, any>? */
 		const LuaTable& paramsTable = udTable.SubTable("customParams");
 
 		if (buildsTable.IsValid())
@@ -884,14 +911,15 @@ UnitDef::UnitDef(const LuaTable& udTable, const std::string& unitName, int id)
 		paramsTable.GetMap(customParams);
 	}
 	{
-		/*** @class UnitDefSFXTypes */
-		/*** @field UnitDef.SFXTypes UnitDefSyxTypes? */
+
+		/*** @class InputUnitDefSFXTypes */
+		/*** @field InputUnitDef.SFXTypes InputUnitDefSFXTypes? */
 		const LuaTable&      sfxTable =  udTable.SubTable("SFXTypes");
-		/*** @field UnitDefSFXTypes.explosionGenerators string[]? */
+		/*** @field InputUnitDefSFXTypes.explosionGenerators string[]? */
 		const LuaTable& modelCEGTable = sfxTable.SubTable(     "explosionGenerators");
-		/*** @field UnitDefSFXTypes.pieceExplosionGenerators string[]? */
+		/*** @field InputUnitDefSFXTypes.pieceExplosionGenerators string[]? */
 		const LuaTable& pieceCEGTable = sfxTable.SubTable("pieceExplosionGenerators");
-		/*** @field UnitDefSFXTypes.crashExplosionGenerators string[]? */
+		/*** @field InputUnitDefSFXTypes.crashExplosionGenerators string[]? */
 		const LuaTable& crashCEGTable = sfxTable.SubTable("crashExplosionGenerators");
 
 		std::vector<int> cegKeys;
@@ -1087,4 +1115,3 @@ bool UnitDef::HasBomberWeapon(unsigned int idx) const {
 	assert(HasWeapon(idx));
 	return (weapons[idx].def->IsAircraftWeapon());
 }
-
