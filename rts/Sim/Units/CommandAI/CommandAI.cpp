@@ -1248,6 +1248,9 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 			return std::nullopt;
 	}
 
+	if (lastIndex < firstIndex)
+		std::swap(lastIndex, firstIndex);
+
 	return std::make_pair(firstIndex, lastIndex);
 }
 
