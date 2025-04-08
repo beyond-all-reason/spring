@@ -1223,9 +1223,9 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 		if (c.GetNumParams() >= 2)
 			lastIndex = std::min<int>(c.GetParam(1), lastIndex);
 	} else if (c.GetNumParams() > 0) {
+		bool foundStart = false, foundEnd = true;
 		unsigned int startTag = (unsigned int)c.GetParam(0);
 		unsigned int endTag = 0;
-		bool foundStart = false, foundEnd = true;
 		if (c.GetNumParams() >= 2) {
 			endTag = (unsigned int)c.GetParam(1);
 			foundEnd = false;
