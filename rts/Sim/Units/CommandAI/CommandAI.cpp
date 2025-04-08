@@ -1212,6 +1212,44 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
+const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const
+{
+	int firstIndex = 0;
+	int lastIndex = queue.size()-1;
+
+	if (c.GetOpts() & ALT_KEY) {
+		if (c.GetNumParams() >= 1)
+			firstIndex = std::max<int>(c.GetParam(0), firstIndex);
+		if (c.GetNumParams() >= 2)
+			lastIndex = std::min<int>(c.GetParam(1), lastIndex);
+	} else if (c.GetNumParams() > 0) {
+		unsigned int startTag = (unsigned int)c.GetParam(0);
+		unsigned int endTag = 0;
+		bool foundStart = false, foundEnd = true;
+		if (c.GetNumParams() >= 2) {
+			endTag = (unsigned int)c.GetParam(1);
+			foundEnd = false;
+		}
+		int idx = 0;
+		for (const auto& curCmd: queue) {
+			if (!foundStart && startTag == curCmd.GetTag()) {
+				firstIndex = idx;
+				foundStart = true;
+			}
+			if (!foundEnd && endTag == curCmd.GetTag()) {
+				lastIndex = idx;
+				foundEnd = true;
+			}
+			if (foundStart && foundEnd)
+				break;
+			++idx;
+		}
+		if (!foundStart || !foundEnd)
+			return std::nullopt;
+	}
+
+	return std::make_pair(firstIndex, lastIndex);
+}
 
 void CCommandAI::ExecuteRemove(const Command& c)
 {
@@ -1243,20 +1281,13 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 	repeatOrders = false;
 
-	if ((c.GetOpts() & META_KEY) && removeByID) {
-		int firstIndex = 0;
-		int lastIndex = queue->size()-1;
-		if (c.GetNumParams() >= 1)
-			firstIndex = (int)c.GetParam(0);
-			if (firstIndex < 0)
-				firstIndex = 0;
-		if (c.GetNumParams() >= 2) {
-			lastIndex = (int)c.GetParam(1);
-			if (lastIndex > queue->size()-1)
-				lastIndex = queue->size()-1;
-		}
+	if (c.GetOpts() & META_KEY) {
+		const auto limits = GetRemoveLimitsFromOptions(c, *queue);
+		if (!limits.has_value())
+			return;
+		const auto [firstIndex, lastIndex] = limits.value();
+		int nElements = lastIndex - firstIndex + 1;
 
-		int nElements = lastIndex - firstIndex + 1 ;
 		CCommandQueue::iterator ci = queue->begin()+lastIndex;
 		while(nElements > 0) {
 			nElements -= 1;

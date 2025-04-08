@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <vector>
+#include <utility>
 
 #include "System/Object.h"
 #include "CommandDescription.h"
@@ -106,6 +107,7 @@ public:
 
 	void ExecuteInsert(const Command& c, bool fromSynced = true);
 	void ExecuteRemove(const Command& c);
+	const std::optional<std::pair<int, int>> GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const;
 
 	void AddStockpileWeapon(CWeapon* weapon);
 	void StockpileChanged(CWeapon* weapon);
