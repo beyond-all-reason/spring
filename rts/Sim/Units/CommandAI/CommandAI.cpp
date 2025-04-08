@@ -1238,10 +1238,63 @@ void CCommandAI::ExecuteRemove(const Command& c)
 		}
 	}
 
-	if ((c.GetNumParams() <= 0) || (queue->size() <= 0))
+	if ((c.GetNumParams() < 0) || (queue->size() <= 0))
 		return;
 
 	repeatOrders = false;
+
+	if (c.GetOpts() & META_KEY) {
+		int firstIndex = 0;
+		int lastIndex = queue->size()-1;
+		if (c.GetNumParams() >= 1)
+			firstIndex = (int)c.GetParam(0);
+		if (c.GetNumParams() >= 2) {
+			lastIndex = (int)c.GetParam(1);
+			if (lastIndex > queue->size()-1) {
+				lastIndex = queue->size()-1;
+			}
+		}
+
+		int nElements = lastIndex - firstIndex + 1 ;
+		CCommandQueue::iterator ci = queue->begin()+lastIndex;
+		while(nElements > 0) {
+			nElements -= 1;
+			const Command& qc = *ci;
+			if (qc.GetID() == CMD_WAIT) {
+				waitCommandsAI.RemoveWaitCommand(owner, qc);
+			}
+
+			if (facBuildQueue) {
+				// if ci == queue->begin() and !queue->empty(), this pop_front()'s
+				// via CFAI::ExecuteStop; otherwise only modifies *ci (not <queue>)
+				if (facCAI->RemoveBuildCommand(ci)) {
+					ci = queue->begin()+firstIndex;
+					break;
+				}
+			}
+
+			if (!facCAI && (ci == queue->begin())) {
+				if (!active) {
+					active = true;
+					FinishCommand();
+					ci = queue->begin()+firstIndex;
+					break;
+				}
+			}
+
+			queue->erase(ci);
+			--ci;
+		}
+		repeatOrders = prevRepeat;
+		// TODO following is maybe not needed and probably
+		// has unwanted side effects
+		commandQue.push_front(c);
+		FinishCommand();
+		return;
+	}
+
+	if (c.GetNumParams() <= 0)
+		return;
 
 	for (unsigned int p = 0; p < c.GetNumParams(); p++) {
 		const int removeValue = c.GetParam(p); // tag or id
