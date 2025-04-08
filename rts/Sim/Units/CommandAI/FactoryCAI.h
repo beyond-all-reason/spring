@@ -26,6 +26,9 @@ public:
 
 	void GiveCommandReal(const Command& c, bool fromSynced = true);
 
+	void ClearBuildQueue();
+	void InsertBuildStop(CCommandQueue::iterator& it, const Command& c);
+
 	void InsertBuildCommand(CCommandQueue::iterator& it, const Command& c);
 	bool RemoveBuildCommand(CCommandQueue::iterator& it);
 

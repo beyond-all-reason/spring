@@ -288,11 +288,67 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
+void CFactoryCAI::ClearBuildQueue()
+{
+	if (!commandQue.empty()) {
+		// reset build counts
+		for (auto &[cmdID, _]: buildOptions) {
+			buildOptions[cmdID] = 0;
+			UpdateIconName(cmdID, 0);
+		}
+		// clear queue
+		waitCommandsAI.ClearUnitQueue(owner, commandQue);
+		CCommandAI::ClearCommandDependencies();
+		commandQue.clear();
+	}
+}
+
+void CFactoryCAI::InsertBuildStop(CCommandQueue::iterator& it,
+                                     const Command& newCmd)
+{
+	// TODO: should this handle WAIT case?
+	if (it == commandQue.begin()) {
+		bool inBuildCommand = commandQue[0].GetID() < 0;
+		// clear everything
+		ClearBuildQueue();
+		if (inBuildCommand) {
+			CFactory* fac = static_cast<CFactory*>(owner);
+			fac->StopBuild();
+		}
+	} else if (it == commandQue.begin() + 1) {
+		// leave first element, clear everything else
+		Command firstCmd = commandQue[0];
+		ClearBuildQueue();
+		commandQue.push_front(firstCmd);
+		AddCommandDependency(firstCmd); // is this needed??
+		if (firstCmd.GetID() < 0) {
+			buildOptions[firstCmd.GetID()] = 1;
+			UpdateIconName(firstCmd.GetID(), 1);
+		}
+	} else {
+		// clear after element 'n', substitute by stops
+		for (; it != commandQue.end(); ++it) {
+			Command& cmd = *it;
+			if (cmd.GetID() < 0)
+				buildOptions[cmd.GetID()] -= 1;
+			cmd = Command(CMD_STOP);
+		}
+		for (auto &[cmdID, n]: buildOptions)
+			UpdateIconName(cmdID, n);
+	}
+	// insert and finish command so CmdDone is called
+	commandQue.push_front(newCmd);
+	FinishCommand();
+}
 
 void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
                                      const Command& newCmd)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (!commandQue.empty() && newCmd.GetID() == CMD_STOP) {
+		InsertBuildStop(it, newCmd);
+		return;
+	}
 	const auto boi = buildOptions.find(newCmd.GetID());
 	auto buildCount = GetCountMultiplierFromOptions(newCmd.GetOpts());
 	if (boi != buildOptions.end()) {
