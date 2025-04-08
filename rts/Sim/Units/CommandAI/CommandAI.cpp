@@ -1287,10 +1287,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 			--ci;
 		}
 		repeatOrders = prevRepeat;
-		// TODO following is maybe not needed and probably
-		// has unwanted side effects
-		commandQue.push_front(c);
-		FinishCommand();
+		eventHandler.UnitCmdDone(owner, c);
 		return;
 	}
 
@@ -1353,6 +1350,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	}
 
 	repeatOrders = prevRepeat;
+	eventHandler.UnitCmdDone(owner, c);
 }
 
 
