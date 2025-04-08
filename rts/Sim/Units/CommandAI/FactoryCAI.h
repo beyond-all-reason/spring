@@ -27,10 +27,12 @@ public:
 	void GiveCommandReal(const Command& c, bool fromSynced = true);
 
 	void ClearBuildQueue();
-	void InsertBuildStop(CCommandQueue::iterator& it, const Command& c);
+	void ClearBuildCommands(CCommandQueue::iterator& it, int nElements);
 
 	void InsertBuildCommand(CCommandQueue::iterator& it, const Command& c);
 	bool RemoveBuildCommand(CCommandQueue::iterator& it);
+
+	void ExecuteFactoryRemove(const Command& newCmd);
 
 	void DecreaseQueueCount(const Command& c, int& buildOption);
 	void FactoryFinishBuild(const Command& command);

@@ -174,6 +174,12 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 			return;
 		}
 
+		/* Alternative path for more efficient factory removal, probably uneeded
+		 * if (cmdID == CMD_REMOVE && c.GetOpts() & META_KEY && !(c.GetOpts() & CONTROL_KEY)) {
+			ExecuteFactoryRemove(c);
+			return;
+		}*/
+
 		if (cmdID == CMD_INSERT || cmdID == CMD_REMOVE) {
 			CCommandAI::GiveAllowedCommand(c);
 			return;
@@ -288,6 +294,33 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
+void CFactoryCAI::ExecuteFactoryRemove(const Command& newCmd)
+{
+	CCommandQueue* queue = &commandQue;
+	/* Not handling CONTROL here
+	 * if (newCmd.GetOpts() & CONTROL_KEY) {
+		queue = &newUnitCommands;
+	}*/
+	if (queue->size() == 0)
+		return;
+	int firstIndex = 0;
+	int lastIndex = queue->size()-1;
+	if (newCmd.GetNumParams() >= 1)
+		firstIndex = (int)newCmd.GetParam(0);
+	if (newCmd.GetNumParams() >= 2) {
+		lastIndex = (int)newCmd.GetParam(1);
+		if (lastIndex > queue->size()-1)
+			lastIndex = queue->size()-1;
+	}
+
+	CCommandQueue::iterator startIt = queue->begin() + firstIndex;
+	ClearBuildCommands(startIt, lastIndex-firstIndex+1);
+
+	// insert and finish command so CmdDone is called
+	commandQue.push_front(newCmd);
+	FinishCommand();
+}
+
 void CFactoryCAI::ClearBuildQueue()
 {
 	if (!commandQue.empty()) {
@@ -303,19 +336,16 @@ void CFactoryCAI::ClearBuildQueue()
 	}
 }
 
-void CFactoryCAI::InsertBuildStop(CCommandQueue::iterator& it,
-                                     const Command& newCmd)
+void CFactoryCAI::ClearBuildCommands(CCommandQueue::iterator& it, int nElements)
 {
+	const int queueSize = commandQue.size();
+	bool cancelBuildCommand = (it == commandQue.begin()) && (commandQue[0].GetID() < 0);
+
 	// TODO: should this handle WAIT case?
-	if (it == commandQue.begin()) {
-		bool inBuildCommand = commandQue[0].GetID() < 0;
+	if (it == commandQue.begin() && nElements == queueSize) {
 		// clear everything
 		ClearBuildQueue();
-		if (inBuildCommand) {
-			CFactory* fac = static_cast<CFactory*>(owner);
-			fac->StopBuild();
-		}
-	} else if (it == commandQue.begin() + 1) {
+	} else if (it == commandQue.begin() + 1 && nElements == queueSize-1) {
 		// leave first element, clear everything else
 		Command firstCmd = commandQue[0];
 		ClearBuildQueue();
@@ -327,7 +357,8 @@ void CFactoryCAI::InsertBuildStop(CCommandQueue::iterator& it,
 		}
 	} else {
 		// clear after element 'n', substitute by stops
-		for (; it != commandQue.end(); ++it) {
+		CCommandQueue::iterator endIt = it+nElements;
+		for (; it != endIt; ++it) {
 			Command& cmd = *it;
 			if (cmd.GetID() < 0)
 				buildOptions[cmd.GetID()] -= 1;
@@ -336,9 +367,10 @@ void CFactoryCAI::InsertBuildStop(CCommandQueue::iterator& it,
 		for (auto &[cmdID, n]: buildOptions)
 			UpdateIconName(cmdID, n);
 	}
-	// insert and finish command so CmdDone is called
-	commandQue.push_front(newCmd);
-	FinishCommand();
+	if (cancelBuildCommand) {
+		CFactory* fac = static_cast<CFactory*>(owner);
+		fac->StopBuild();
+	}
 }
 
 void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
@@ -346,7 +378,11 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!commandQue.empty() && newCmd.GetID() == CMD_STOP) {
-		InsertBuildStop(it, newCmd);
+		ClearBuildCommands(it, commandQue.size());
+
+		// insert and finish command so CmdDone is called
+		commandQue.push_front(newCmd);
+		FinishCommand();
 		return;
 	}
 	const auto boi = buildOptions.find(newCmd.GetID());
