@@ -1250,9 +1250,8 @@ void CCommandAI::ExecuteRemove(const Command& c)
 			firstIndex = (int)c.GetParam(0);
 		if (c.GetNumParams() >= 2) {
 			lastIndex = (int)c.GetParam(1);
-			if (lastIndex > queue->size()-1) {
+			if (lastIndex > queue->size()-1)
 				lastIndex = queue->size()-1;
-			}
 		}
 
 		int nElements = lastIndex - firstIndex + 1 ;
