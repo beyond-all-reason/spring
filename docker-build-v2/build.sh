@@ -2,6 +2,14 @@
 
 set -e -u -o pipefail
 
+if [[ $(id -u) -eq 0 ]]; then
+  echo "You are trying to run build.sh as root, that won't work!"
+  echo ""
+  echo "If you get permission errors when running docker, check if you've finished the"
+  echo "post installation steps and are member of \`docker\` system group."
+  echo "See official docs: https://docs.docker.com/engine/install/linux-postinstall/"
+fi
+
 USAGE="Usage: $0 [--help] [--configure|--compile] [-j|--jobs {number_of_jobs}] {windows|linux} [cmake_flag...]"
 export CONFIGURE=true
 export COMPILE=true
