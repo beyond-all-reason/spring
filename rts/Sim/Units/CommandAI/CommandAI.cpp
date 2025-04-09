@@ -1310,11 +1310,8 @@ void CCommandAI::ExecuteRemove(const Command& c)
 			}
 
 			if (!facCAI && (ci == queue->begin())) {
-				if (!active) {
-					active = true;
-					FinishCommand();
-					break;
-				}
+				FinishCommand();
+				break;
 			}
 
 			queue->erase(ci);
