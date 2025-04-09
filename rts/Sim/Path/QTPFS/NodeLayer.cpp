@@ -320,6 +320,7 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 		( const SRectangle& areaToSearch
 		, int2 referencePoint
 		, std::vector<INode*>& tmpNodes
+		, IsNodeAllowedFunc* isNodeAllowedFunc
 		) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	tmpNodes.clear();
@@ -391,6 +392,8 @@ QTPFS::INode* QTPFS::NodeLayer::GetNearestNodeInArea
 			if (zmin >= childNode->zmax()) { continue; }
 			if (childNode->AllSquaresImpassable()) { continue; }
 			if (childNode->IsExitOnly()) { continue; }
+			if (isNodeAllowedFunc != nullptr)
+				if (!(*isNodeAllowedFunc)(childNode)) { continue; };
 
 			tmpNodes.emplace_back(childNode);
 		}
