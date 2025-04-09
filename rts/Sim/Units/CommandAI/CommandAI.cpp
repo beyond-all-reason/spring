@@ -1281,7 +1281,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 		}
 	}
 
-	if ((c.GetNumParams() < 0) || (queue->size() <= 0))
+	if (queue->empty())
 		return;
 
 	repeatOrders = false;
