@@ -1315,7 +1315,8 @@ void CCommandAI::ExecuteRemove(const Command& c)
 			}
 
 			queue->erase(ci);
-			--ci;
+			// iterator may have been invalidated
+			ci = queue->begin() + firstIndex + nElements - 1;
 		}
 		repeatOrders = prevRepeat;
 		eventHandler.UnitCmdDone(owner, c);
