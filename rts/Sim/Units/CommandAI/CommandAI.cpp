@@ -1227,7 +1227,7 @@ const std::optional<int> CCommandAI::FindTagIndex(const CCommandQueue& queue, un
 const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const
 {
 	int firstIndex = 0;
-	int lastIndex = queue.size()-1;
+	int lastIndex = queue.size() - 1;
 
 	if (c.GetOpts() & ALT_KEY) {
 		if (c.GetNumParams() >= 1)
@@ -1293,7 +1293,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 		const auto [firstIndex, lastIndex] = *limits;
 		int nElements = lastIndex - firstIndex + 1;
 
-		CCommandQueue::iterator ci = queue->begin()+lastIndex;
+		CCommandQueue::iterator ci = queue->begin() + lastIndex;
 		while(nElements > 0) {
 			--nElements;
 			const Command& qc = *ci;
