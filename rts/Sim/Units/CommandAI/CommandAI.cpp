@@ -1288,14 +1288,14 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 	if (c.GetOpts() & META_KEY) {
 		const auto limits = GetRemoveLimitsFromOptions(c, *queue);
-		if (!limits.has_value())
+		if (!limits)
 			return;
-		const auto [firstIndex, lastIndex] = limits.value();
+		const auto [firstIndex, lastIndex] = *limits;
 		int nElements = lastIndex - firstIndex + 1;
 
 		CCommandQueue::iterator ci = queue->begin()+lastIndex;
 		while(nElements > 0) {
-			nElements -= 1;
+			--nElements;
 			const Command& qc = *ci;
 			if (qc.GetID() == CMD_WAIT) {
 				waitCommandsAI.RemoveWaitCommand(owner, qc);
