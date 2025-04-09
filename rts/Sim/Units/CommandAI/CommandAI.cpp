@@ -1212,6 +1212,18 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
+const std::optional<int> CCommandAI::FindTagIndex(const CCommandQueue& queue, unsigned int tag) const
+{
+	int i = 0;
+	for (const auto& qc: queue) {
+		if (qc.GetTag() == tag)
+			return i;
+		++i;
+	}
+	return std::nullopt;
+}
+
+
 const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const
 {
 	int firstIndex = 0;
@@ -1223,29 +1235,18 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 		if (c.GetNumParams() >= 2)
 			lastIndex = std::min<int>(c.GetParam(1), lastIndex);
 	} else if (c.GetNumParams() > 0) {
-		bool foundStart = false, foundEnd = true;
-		unsigned int startTag = (unsigned int)c.GetParam(0);
-		unsigned int endTag = 0;
-		if (c.GetNumParams() >= 2) {
-			endTag = (unsigned int)c.GetParam(1);
-			foundEnd = false;
-		}
-		int idx = 0;
-		for (const auto& curCmd: queue) {
-			if (!foundStart && startTag == curCmd.GetTag()) {
-				firstIndex = idx;
-				foundStart = true;
-			}
-			if (!foundEnd && endTag == curCmd.GetTag()) {
-				lastIndex = idx;
-				foundEnd = true;
-			}
-			if (foundStart && foundEnd)
-				break;
-			++idx;
-		}
-		if (!foundStart || !foundEnd)
+		auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
+		if (!firstTagIndex)
 			return std::nullopt;
+
+		if (c.GetNumParams() >= 2) {
+			auto lastTagIndex = FindTagIndex(queue, c.GetParam(1));
+			if (!lastTagIndex)
+				return std::nullopt;
+			lastIndex = *lastTagIndex;
+		}
+
+		firstIndex = *firstTagIndex;
 	}
 
 	if (lastIndex < firstIndex)
@@ -1253,6 +1254,7 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 
 	return std::make_pair(firstIndex, lastIndex);
 }
+
 
 void CCommandAI::ExecuteRemove(const Command& c)
 {
