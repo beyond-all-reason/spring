@@ -1235,7 +1235,7 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 		if (c.GetNumParams() >= 2)
 			lastIndex = std::min<int>(c.GetParam(1)-1, lastIndex);
 	} else if (c.GetNumParams() >= 1) {
-		auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
+		const auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
 		if (!firstTagIndex)
 			return std::nullopt;
 
