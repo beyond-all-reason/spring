@@ -14,7 +14,7 @@
 CallInsList = {
 	"Shutdown",
 	"LayoutButtons",
-	"ConfigureLayout",
+	"GotChatMsg",
 	"ActiveCommandChanged",
 	"CameraRotationChanged",
 	"CameraPositionChanged",

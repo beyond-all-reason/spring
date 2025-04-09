@@ -93,8 +93,8 @@ function Shutdown()
   return widgetHandler:Shutdown()
 end
 
-function ConfigureLayout(command)
-  return widgetHandler:ConfigureLayout(command)
+function GotChatMsg(command)
+  return widgetHandler:GotChatMsg(command)
 end
 
 function ActiveCommandChanged(id, cmdType)

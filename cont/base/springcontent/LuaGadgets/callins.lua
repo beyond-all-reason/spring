@@ -183,7 +183,6 @@ CALLIN_LIST = {
 
 	"ViewResize", -- FIXME ?
 	"LayoutButtons",
-	"ConfigureLayout",
 
 	"AddConsoleLine",
 	"GroupChanged",

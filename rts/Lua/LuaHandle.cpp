@@ -584,7 +584,9 @@ bool CLuaHandle::GotChatMsg(const string& msg, int playerID)
 	}
 
 	if (!processed && (this == luaUI)) {
-		processed = luaUI->ConfigureLayout(msg); //FIXME deprecated
+		// TODO: remove at a future date, api users should move
+		// to GotChatMsg callin.
+		processed = luaUI->ConfigureLayout(msg);
 	}
 	return processed;
 }
