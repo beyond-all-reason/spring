@@ -1294,7 +1294,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 		int nElements = lastIndex - firstIndex + 1;
 
 		CCommandQueue::iterator ci = queue->begin() + lastIndex;
-		while(nElements > 0) {
+		while (nElements > 0) {
 			--nElements;
 			const Command& qc = *ci;
 			if (qc.GetID() == CMD_WAIT) {
