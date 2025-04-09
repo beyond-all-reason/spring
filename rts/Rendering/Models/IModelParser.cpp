@@ -265,7 +265,7 @@ void CModelLoader::LogErrors()
 
 S3DModel* CModelLoader::LoadModel(std::string name, bool preload)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
+	ZoneScoped;
 	// cannot happen except through SpawnProjectile
 	if (name.empty())
 		return nullptr;
