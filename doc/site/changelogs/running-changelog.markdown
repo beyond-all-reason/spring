@@ -13,6 +13,12 @@ See [the 2025.03 page]({{ site.baseurl }}{% link changelogs/changelog-2025-03.ma
 * removed Python bindings for AI. Apparently unmaintained and unused.
 * removed `UpdateWeaponVectorsMT`, `UpdateBoundingVolumeMT`, and `AnimationMT` springsettings. These were just in case, but MT seems safe enough after some time live testing.
 * removed `/AdvModelShading` command and the `AdvUnitShading` springsetting, the adv mode is now always on. In practice there wasn't any difference since GLSL became mandatory.
+* removed `gl.UnitGL4`, `gl.FeatureGL4`, `gl.FeatureShapeGL4`, and `gl.UnitShapeGL4`. These did not do anything.
+
+### Deprecation notice
+* `wupget:DrawUnit`, `DrawFeature`, `DrawShield` and `DrawMaterial` are deprecated.
+Nothing changes in behaviour, but they are (and have been for a long time) a bad idea to use as a performance anti-pattern.
+Use shaders as a replacement.
 
 # Features
 

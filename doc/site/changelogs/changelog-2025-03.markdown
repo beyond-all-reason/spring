@@ -17,7 +17,10 @@ Existing shaders should generally keep working.
 * missiles now obey `myGravity` when expired.
 * `math.clamp` now errors if the lower bound is higher than the upper bound.
 * added minimap rotation API which can screw up the minimap (see below), set it to nil at LuaUI entry point if you don't want to handle it.
+* added `UnitGhostIconsDimming` numerical springsetting, multiplier for ghost icon color (both on main view and minimap).
+This defaults to 0.5 so icons will be dimmed, set to 1.0 to get the previous behaviour.
 * server no longer automatically forcestarts the game if there is nobody connected after 30s.
+* units no longer drop Guard commands if the target was out of map for more than 5s. For a replacement look for `control_guard.lua` in basecontent.
 * fixed the `SPRING_LOG_SECTIONS` environment var, it no longer requires a comma in front.
 * `gl.GetAtmosphere("skyDir")` now returns nil. The skyDir was never actually used for anything.
 * updated Tracy to v0.11.1, see the changelog at https://github.com/wolfpld/tracy/releases
@@ -135,6 +138,16 @@ Reduces perf spikes if many fonts are used (keep in mind players can send mixed 
 though if many fonts are loaded it can increase peak memory usage.
 * extra optimisations to baseline fonts perf even if you don't touch any of the above.
 
+### rmlUI
+* add deep reactivity to rmlUI data models.
+* add SVG support to rmlUI.
+* fix rmlUI getting blurry with anti-aliasing.
+
+### Building ghosts
+* added `UnitGhostIconsDimming` numerical springsetting, multiplier for ghost icon color (both on main view and minimap).
+This defaults to 0.5 so icons will be dimmed, set to 1.0 to get the previous behaviour.
+* fix minimap icons revealing whether a building ghost was dead or not.
+
 ### Misc
 * add `Spring.GetSoundDevices() → { { name = "...", }, { name = "...", }, ... }`.
 May be extended with more info than just name in the future.
@@ -142,13 +155,18 @@ May be extended with more info than just name in the future.
 * the `Spring.GiveOrder` family of functions now accept `nil` as params (same as `{}`) and options (same as `0`).
 * add `Spring.SetUnitStorage(unitID, "m"|"e", value) → nil`.
 * add `Spring.GetUnitStorage(unitID) → numbers metal, energy`.
+* add `Spring.GetProjectilesInSphere(x, y, z, radius, bool excludeWeaponProjectiles = false, bool excludePieceProjectiles = false) → {projID, projID, ...}`.
+* add "ttl" field to `Spring.Set/GetUnitWeaponState`, projectile lifetime in seconds.
 * added `Game.buildGridResolution`, number which is currently 2. This means that buildings created via native build orders
 are aligned to 2 squares.
 * add `Platform.totalRAM`, in megabytes.
+* add `Spring.SetProjectileTimeToLive(projID, framesTLL) → nil`.
+* add `Spring.GetUnitSeismicSignature(unitID) → number`. The Set was already added earlier.
 * added `Engine.gameSpeed` and `Engine.textColorCodes`, same as the existing entries in `Game.`.
 The practical effect is that the Engine table is available in some LuaParser environments that Game isn't.
 * missiles now obey `myGravity` when expired.
 * NaN and infinity coming from Lua is now sometimes rejected. Coverage isn't yet comprehensive.
+* units no longer drop Guard commands if the target was out of map for more than 5s.
 * `socket.lua` moved from being a loosely distributed file under `./socket.lua` to basecontent `./LuaSocket/socket.lua`.
 * add `experience.experienceGrade` number modrule, same as calling Spring.SetExperienceGrade.
 * the `allowHoverUnitStrafing` modrule now defaults to `false`. Previously it defaulted to `false` for HAPFS and `true` for QTPFS.
@@ -156,6 +174,7 @@ The practical effect is that the Engine table is available in some LuaParser env
 
 ### Fixes
 * fix `Spring.SetUnitHealth(build < 1)` not reverting the unit into a nanoframe.
+* fix rmlUI getting extra blurry with anti-aliasing.
 * fix minimap icons revealing whether a building ghost was dead or not.
 * fix CPU pinning, no longer tries to pin itself to bad choices (efficiency cores,
 hyperthreads on the same physical core, performance cores on a dedicated server)
@@ -166,6 +185,7 @@ hyperthreads on the same physical core, performance cores on a dedicated server)
 * fix landed aircraft starting to levitate when EMPed.
 * fix units being stuck if an overlapping push-resistant unit stops.
 * fix the "modern" sky renderer not adjusting to changes via `Spring.SetAtmosphere`.
+* fix (or at least mostly reduce) a freeze when you remove multiple thousands of units from a factory queue.
 
 ### GL object type constants
 For use with the new `gl.ObjectLabel` (see above):
