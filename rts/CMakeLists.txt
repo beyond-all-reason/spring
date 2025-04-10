@@ -62,13 +62,12 @@ endif (NO_SOUND)
 if    (UNIX AND NOT MINGW)
 	if    (PREFER_STATIC_LIBS)
 		prefer_static_libs()
-		find_library(C_LIBRARY c)
 		find_library(MATH_LIBRARY m)
 		#FIND_LIBRARY(PTHREAD_LIBRARY pthread)
 		#FIND_LIBRARY(OMP_LIBRARY gomp) FIXME it's hidden in some subfolders
 		unprefer_static_libs()
 
-		list(APPEND engineCommonLibraries ${C_LIBRARY} ${MATH_LIBRARY})
+		list(APPEND engineCommonLibraries ${MATH_LIBRARY})
 		#list(APPEND engineCommonLibraries ${PTHREAD_LIBRARY} ${OMP_LIBRARY})
 	endif (PREFER_STATIC_LIBS)
 
