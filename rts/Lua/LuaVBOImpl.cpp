@@ -1008,10 +1008,10 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t de
 	uint32_t teamID = defTeamID;
 
 	const TObj* obj = LuaUtils::SolIdToObject<TObj>(id, __func__);
-	const uint32_t matOffset = static_cast<uint32_t>(matrixUploader.GetElemOffset(obj));
-	const uint32_t uniIndex  = static_cast<uint32_t>(modelsUniformsStorage.GetObjOffset(obj)); //doesn't need to exist for defs and model. Don't check for validity
+	const uint32_t traOffset = static_cast<uint32_t>(transformsUploader.GetElemOffset(obj));
+	const uint32_t uniIndex  = static_cast<uint32_t>(modelUniformsStorage.GetObjOffset(obj)); //doesn't need to exist for defs and model. Don't check for validity
 
-	if (matOffset == ~0u) {
+	if (traOffset == ~0u) {
 		LuaUtils::SolLuaError("[LuaVBOImpl::%s] Invalid data supplied. See infolog for details", __func__);
 	}
 
@@ -1025,14 +1025,14 @@ SInstanceData LuaVBOImpl::InstanceDataFromGetData(int id, int attrID, uint8_t de
 	size_t bposeIndex = 0;
 	if constexpr (std::is_same<TObj, S3DModel>::value) {
 		numPieces = static_cast<uint16_t>(obj->numPieces);
-		bposeIndex = matrixUploader.GetElemOffset(obj);
+		bposeIndex = transformsUploader.GetElemOffset(obj);
 	}
 	else {
 		numPieces = static_cast<uint16_t>(obj->model->numPieces);
-		bposeIndex = matrixUploader.GetElemOffset(obj->model);
+		bposeIndex = transformsUploader.GetElemOffset(obj->model);
 	}
 
-	return SInstanceData(matOffset, teamID, drawFlags, numPieces, uniIndex, bposeIndex);
+	return SInstanceData(traOffset, teamID, drawFlags, numPieces, uniIndex, bposeIndex);
 }
 
 template<typename TObj>
@@ -1200,7 +1200,7 @@ size_t LuaVBOImpl::ModelsVBO()
  * Data Layout:
  * ```
  * SInstanceData:
- *    , matOffset{ matOffset_ }            // updated during the following draw frames
+ *    , traOffset{ matOffset_ }            // updated during the following draw frames
  *    , uniOffset{ uniOffset_ }            // updated during the following draw frames
  *    , info{ teamIndex, drawFlags, 0, 0 } // not updated during the following draw frames
  *    , aux1 { 0u }
@@ -1239,7 +1239,7 @@ size_t LuaVBOImpl::InstanceDataFromUnitDefIDs(const sol::stack_table& ids, int a
  * Data Layout
  * ```
  * SInstanceData:
- *    , matOffset{ matOffset_ }            // updated during the following draw frames
+ *    , traOffset{ matOffset_ }            // updated during the following draw frames
  *    , uniOffset{ uniOffset_ }            // updated during the following draw frames
  *    , info{ teamIndex, drawFlags, 0, 0 } // not updated during the following draw frames
  *    , aux1 { 0u }
@@ -1279,7 +1279,7 @@ size_t LuaVBOImpl::InstanceDataFromFeatureDefIDs(const sol::stack_table& ids, in
  *
  * ```
  * SInstanceData:
- *    , matOffset{ matOffset_ }            // updated during the following draw frames
+ *    , traOffset{ matOffset_ }            // updated during the following draw frames
  *    , uniOffset{ uniOffset_ }            // updated during the following draw frames
  *    , info{ teamIndex, drawFlags, 0, 0 } // not updated during the following draw frames
  *    , aux1 { 0u }
