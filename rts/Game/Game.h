@@ -9,6 +9,7 @@
 
 #include "GameController.h"
 #include "GameJobDispatcher.h"
+#include "GameInputReceiver.h"
 #include "Game/UI/KeySet.h"
 #include "Game/Action.h"
 #include "Rendering/WorldDrawer.h"
@@ -123,6 +124,11 @@ private:
 	int KeyReleased(int keyCode, int scanCode) override;
 	/// Called when the key is pressed by the user (can be called several times due to key repeat)
 	int KeyPressed(int keyCode, int scanCode, bool isRepeat) override;
+
+	bool MousePress(int x, int y, int button) override;
+	bool MouseRelease(int x, int y, int button) override;
+	CInputReceiver* GetInputReceiver() override;
+
 	/// Called when the keymap changes (language or keyboard switch)
 	int KeyMapChanged() override;
 	///
@@ -223,6 +229,8 @@ private:
 
 	/// for reloading the savefile
 	ILoadSaveHandler* saveFileHandler;
+
+	CGameInputReceiver gameInputReceiver;
 
 	std::atomic<bool> loadDone = {false};
 	std::atomic<bool> gameOver = {false};
