@@ -8,12 +8,12 @@
 
 struct lua_State;
 
-
-class CLuaIntro : public CLuaHandle
-{
+class CLuaIntro : public CLuaHandle {
 public:
 	static bool CanLoadHandler() { return true; }
+
 	static bool ReloadHandler() { return (FreeHandler(), LoadFreeHandler()); } // NOTE the ','
+
 	static bool LoadFreeHandler() { return (LoadHandler() || FreeHandler()); }
 
 	static bool LoadHandler();
@@ -39,7 +39,6 @@ private:
 	static bool LoadSyncedReadFunctions(lua_State* L);
 	static bool RemoveSomeOpenGLFunctions(lua_State* L);
 };
-
 
 extern CLuaIntro* luaIntro;
 

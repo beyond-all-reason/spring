@@ -2,31 +2,30 @@
 
 
 #include "RepulseGfx.h"
-#include "Rendering/GlobalRendering.h"
+
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Units/Unit.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CRepulseGfx, CProjectile, )
 
-CR_REG_METADATA(CRepulseGfx,(
-	CR_MEMBER(repulsed),
-	CR_MEMBER(sqMaxOwnerDist),
-	CR_MEMBER(age),
-	CR_MEMBER(color),
-	CR_MEMBER(vertexDists)
-))
+CR_REG_METADATA(CRepulseGfx,
+    (CR_MEMBER(repulsed), CR_MEMBER(sqMaxOwnerDist), CR_MEMBER(age), CR_MEMBER(color), CR_MEMBER(vertexDists)))
 
-
-CRepulseGfx::CRepulseGfx(CUnit* owner, CProjectile* repulsee, float maxOwnerDist, const float4& gfxColor):
-	CProjectile((repulsee != nullptr)? repulsee->pos: ZeroVector, (repulsee != nullptr)? repulsee->speed: ZeroVector, owner, false, false, false),
-	repulsed(repulsee),
-	age(0),
-	sqMaxOwnerDist((maxOwnerDist * maxOwnerDist) + 100.0f),
-	color(gfxColor)
+CRepulseGfx::CRepulseGfx(CUnit* owner, CProjectile* repulsee, float maxOwnerDist, const float4& gfxColor)
+    : CProjectile((repulsee != nullptr) ? repulsee->pos : ZeroVector,
+          (repulsee != nullptr) ? repulsee->speed : ZeroVector,
+          owner,
+          false,
+          false,
+          false)
+    , repulsed(repulsee)
+    , age(0)
+    , sqMaxOwnerDist((maxOwnerDist * maxOwnerDist) + 100.0f)
+    , color(gfxColor)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (repulsed != nullptr)
@@ -51,7 +50,6 @@ CRepulseGfx::CRepulseGfx(CUnit* owner, CProjectile* repulsee, float maxOwnerDist
 		}
 	}
 }
-
 
 void CRepulseGfx::DependentDied(CObject* o)
 {
@@ -84,10 +82,10 @@ void CRepulseGfx::Draw()
 	float alpha = std::min(255.0f, age * 10.0f);
 
 	unsigned char col[4] = {
-		(unsigned char) (color.x * alpha       ),
-		(unsigned char) (color.y * alpha       ),
-		(unsigned char) (color.z * alpha       ),
-		(unsigned char) (color.w * alpha * 0.2f),
+	    (unsigned char)(color.x * alpha),
+	    (unsigned char)(color.y * alpha),
+	    (unsigned char)(color.z * alpha),
+	    (unsigned char)(color.w * alpha * 0.2f),
 	};
 	constexpr unsigned char col2[4] = {0, 0, 0, 0};
 
@@ -110,22 +108,24 @@ void CRepulseGfx::Draw()
 		for (int x = 0; x < loopCountX; ++x) {
 			const float dx = x - 2.00f;
 			const float rx = x * 0.25f;
-			AddEffectsQuad(
-				{ pos + xdirDS * (dx + 0) + ydirDS * (dy + 0) + zdir * vertexDists[(y    ) * 5 + x    ],  txo + (ry        ) * txs, tyo + (rx        ) * tys,  col },
-				{ pos + xdirDS * (dx + 0) + ydirDS * (dy + 1) + zdir * vertexDists[(y + 1) * 5 + x    ],  txo + (ry + 0.25f) * txs, tyo + (rx        ) * tys,  col },
-				{ pos + xdirDS * (dx + 1) + ydirDS * (dy + 1) + zdir * vertexDists[(y + 1) * 5 + x + 1],  txo + (ry + 0.25f) * txs, tyo + (rx + 0.25f) * tys,  col },
-				{ pos + xdirDS * (dx + 1) + ydirDS * (dy + 0) + zdir * vertexDists[(y    ) * 5 + x + 1],  txo + (ry        ) * txs, tyo + (rx + 0.25f) * tys,  col }
-			);
+			AddEffectsQuad({pos + xdirDS * (dx + 0) + ydirDS * (dy + 0) + zdir * vertexDists[(y) * 5 + x],
+			                   txo + (ry)*txs, tyo + (rx)*tys, col},
+			    {pos + xdirDS * (dx + 0) + ydirDS * (dy + 1) + zdir * vertexDists[(y + 1) * 5 + x],
+			        txo + (ry + 0.25f) * txs, tyo + (rx)*tys, col},
+			    {pos + xdirDS * (dx + 1) + ydirDS * (dy + 1) + zdir * vertexDists[(y + 1) * 5 + x + 1],
+			        txo + (ry + 0.25f) * txs, tyo + (rx + 0.25f) * tys, col},
+			    {pos + xdirDS * (dx + 1) + ydirDS * (dy + 0) + zdir * vertexDists[(y) * 5 + x + 1], txo + (ry)*txs,
+			        tyo + (rx + 0.25f) * tys, col});
 		}
 	}
 
 	drawsize = 7.0f;
 	alpha = std::min(10.0f, age / 2.0f);
 
-	col[0] = (unsigned char) (color.x * alpha       );
-	col[1] = (unsigned char) (color.y * alpha       );
-	col[2] = (unsigned char) (color.z * alpha       );
-	col[3] = (unsigned char) (color.w * alpha * 0.4f);
+	col[0] = (unsigned char)(color.x * alpha);
+	col[1] = (unsigned char)(color.y * alpha);
+	col[2] = (unsigned char)(color.z * alpha);
+	col[3] = (unsigned char)(color.w * alpha * 0.4f);
 
 	const AtlasedTexture* ct = projectileDrawer->repulsegfxtex;
 	const float tx = (ct->xend + ct->xstart) * 0.5f;
@@ -134,38 +134,31 @@ void CRepulseGfx::Draw()
 	xdirDS = xdir * drawsize;
 	ydirDS = ydir * drawsize;
 
-	AddEffectsQuad(
-		{ owner->pos + (-xdir + ydir) * drawsize * 0.2f,  tx, ty, col2 },
-		{ owner->pos + ( xdir + ydir) * drawsize * 0.2f,  tx, ty, col2 },
-		{ pos + xdirDS + ydirDS + zdir * vertexDists[6],  tx, ty, col },
-		{ pos - xdirDS + ydirDS + zdir * vertexDists[6],  tx, ty, col }
-	);
+	AddEffectsQuad({owner->pos + (-xdir + ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {owner->pos + (xdir + ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {pos + xdirDS + ydirDS + zdir * vertexDists[6], tx, ty, col},
+	    {pos - xdirDS + ydirDS + zdir * vertexDists[6], tx, ty, col});
 
-	AddEffectsQuad(
-		{ owner->pos + (-xdir - ydir) * drawsize * 0.2f,  tx, ty, col2 },
-		{ owner->pos + ( xdir - ydir) * drawsize * 0.2f,  tx, ty, col2 },
-		{ pos + xdirDS - ydirDS + zdir * vertexDists[6],  tx, ty, col },
-		{ pos - xdirDS - ydirDS + zdir * vertexDists[6],  tx, ty, col }
-	);
+	AddEffectsQuad({owner->pos + (-xdir - ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {owner->pos + (xdir - ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {pos + xdirDS - ydirDS + zdir * vertexDists[6], tx, ty, col},
+	    {pos - xdirDS - ydirDS + zdir * vertexDists[6], tx, ty, col});
 
-	AddEffectsQuad(
-		{ owner->pos + ( xdir - ydir) * drawsize * 0.2f,   tx, ty, col2 },
-		{ owner->pos + ( xdir + ydir) * drawsize * 0.2f,   tx, ty, col2 },
-		{ pos + xdirDS + ydirDS + zdir * vertexDists[6],  tx, ty, col },
-		{ pos + xdirDS - ydirDS + zdir * vertexDists[6],  tx, ty, col }
-	);
+	AddEffectsQuad({owner->pos + (xdir - ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {owner->pos + (xdir + ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {pos + xdirDS + ydirDS + zdir * vertexDists[6], tx, ty, col},
+	    {pos + xdirDS - ydirDS + zdir * vertexDists[6], tx, ty, col});
 
-	AddEffectsQuad(
-		{ owner->pos + (-xdir - ydir) * drawsize * 0.2f,  tx, ty, col2 },
-		{ owner->pos + (-xdir + ydir) * drawsize * 0.2f,  tx, ty, col2 },
-		{ pos - xdirDS + ydirDS + zdir * vertexDists[6],  tx, ty, col },
-		{ pos - xdirDS - ydirDS + zdir * vertexDists[6],  tx, ty, col }
-	);
+	AddEffectsQuad({owner->pos + (-xdir - ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {owner->pos + (-xdir + ydir) * drawsize * 0.2f, tx, ty, col2},
+	    {pos - xdirDS + ydirDS + zdir * vertexDists[6], tx, ty, col},
+	    {pos - xdirDS - ydirDS + zdir * vertexDists[6], tx, ty, col});
 }
 
 void CRepulseGfx::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	age += 1;
-	deleteMe |= (repulsed != nullptr && owner() != nullptr && (repulsed->pos - owner()->pos).SqLength() > sqMaxOwnerDist);
+	deleteMe |=
+	    (repulsed != nullptr && owner() != nullptr && (repulsed->pos - owner()->pos).SqLength() > sqMaxOwnerDist);
 }

@@ -13,6 +13,12 @@
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
+#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
+#include "Rendering/Env/Particles/Classes/HeatCloudProjectile.h"
+#include "Rendering/Env/Particles/Classes/MuzzleFlame.h"
+#include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
+#include "Rendering/Env/Particles/Classes/WakeProjectile.h"
+#include "Rendering/Env/Particles/Classes/WreckProjectile.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/LosHandler.h"
@@ -25,67 +31,58 @@
 #include "Sim/Projectiles/PieceProjectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
-#include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
-#include "Rendering/Env/Particles/Classes/HeatCloudProjectile.h"
-#include "Rendering/Env/Particles/Classes/MuzzleFlame.h"
-#include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
-#include "Rendering/Env/Particles/Classes/WakeProjectile.h"
-#include "Rendering/Env/Particles/Classes/WreckProjectile.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/CommandAI/Command.h"
-#include "Sim/Units/UnitTypes/Factory.h"
-#include "Sim/Units/UnitDef.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
+#include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/FastMath.h"
-#include "System/SpringMath.h"
 #include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-#include "System/Sound/ISoundChannels.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISoundChannels.h"
+#include "System/SpringMath.h"
+#include "System/StringUtil.h"
 
 #endif
 
 CR_BIND_INTERFACE(CUnitScript)
 
-CR_REG_METADATA(CUnitScript, (
-	CR_MEMBER(unit),
-	CR_MEMBER(busy),
-	CR_MEMBER(anims),
-	CR_MEMBER(doneAnims),
+CR_REG_METADATA(CUnitScript,
+    (CR_MEMBER(unit),
+        CR_MEMBER(busy),
+        CR_MEMBER(anims),
+        CR_MEMBER(doneAnims),
 
-	//Populated by children
-	CR_IGNORED(pieces),
-	CR_IGNORED(hasSetSFXOccupy),
-	CR_IGNORED(hasRockUnit),
-	CR_IGNORED(hasStartBuilding)
-))
+        // Populated by children
+        CR_IGNORED(pieces),
+        CR_IGNORED(hasSetSFXOccupy),
+        CR_IGNORED(hasRockUnit),
+        CR_IGNORED(hasStartBuilding)))
 
-CR_BIND(CUnitScript::AnimInfo,)
+CR_BIND(CUnitScript::AnimInfo, )
 
-CR_REG_METADATA_SUB(CUnitScript, AnimInfo,(
-	CR_MEMBER(axis),
-	CR_MEMBER(piece),
-	CR_MEMBER(speed),
-	CR_MEMBER(dest),
-	CR_MEMBER(accel),
-	CR_MEMBER(done),
-	CR_MEMBER(hasWaiting)
-))
-
+CR_REG_METADATA_SUB(CUnitScript,
+    AnimInfo,
+    (CR_MEMBER(axis),
+        CR_MEMBER(piece),
+        CR_MEMBER(speed),
+        CR_MEMBER(dest),
+        CR_MEMBER(accel),
+        CR_MEMBER(done),
+        CR_MEMBER(hasWaiting)))
 
 CUnitScript::CUnitScript(CUnit* unit)
-	: unit(unit)
-	, busy(false)
-	, hasSetSFXOccupy(false)
-	, hasRockUnit(false)
-	, hasStartBuilding(false)
-{ }
-
+    : unit(unit)
+    , busy(false)
+    , hasSetSFXOccupy(false)
+    , hasRockUnit(false)
+    , hasStartBuilding(false)
+{
+}
 
 CUnitScript::~CUnitScript()
 {
@@ -95,7 +92,6 @@ CUnitScript::~CUnitScript()
 
 	unitScriptEngine->RemoveInstance(this);
 }
-
 
 /******************************************************************************/
 
@@ -120,7 +116,6 @@ bool CUnitScript::MoveToward(float& cur, float dest, float speed)
 	return false;
 }
 
-
 /**
  * @brief Updates turn animations
  * @param cur float value to update
@@ -131,7 +126,7 @@ bool CUnitScript::MoveToward(float& cur, float dest, float speed)
 bool CUnitScript::TurnToward(float& cur, float dest, float speed)
 {
 	assert(dest < math::TWOPI);
-	assert(cur  < math::TWOPI);
+	assert(cur < math::TWOPI);
 
 	float delta = math::fmod(dest - cur + math::THREEPI, math::TWOPI) - math::PI;
 
@@ -143,7 +138,6 @@ bool CUnitScript::TurnToward(float& cur, float dest, float speed)
 	cur = ClampRad(cur + speed * Sign(delta));
 	return false;
 }
-
 
 /**
  * @brief Updates spin animations
@@ -162,7 +156,8 @@ bool CUnitScript::DoSpin(float& cur, float dest, float& speed, float accel, int 
 	if (math::fabsf(delta) <= accel) {
 		if ((speed = dest) == 0.0f)
 			return true;
-	} else {
+	}
+	else {
 		// accelerations are defined in speed/frame (at GAME_SPEED fps)
 		speed += (accel * (GAME_SPEED * 1.0f / divisor) * Sign(delta));
 	}
@@ -172,15 +167,16 @@ bool CUnitScript::DoSpin(float& cur, float dest, float& speed, float accel, int 
 }
 
 /**
- * @brief The multithreaded first half of the original CUnitScript::Tick function first does the heavy lifting of calculating all
-			  new piece positions according to the animations
+ * @brief The multithreaded first half of the original CUnitScript::Tick function first does the heavy lifting of
+ calculating all new piece positions according to the animations
 */
 void CUnitScript::TickAllAnims(int deltaTime)
 {
 	ZoneScoped;
 
 	// tick-functions; these never change address
-	static constexpr std::array<TickAnimFunc, AMove + 1> TICK_ANIM_FUNCS = { &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim };
+	static constexpr std::array<TickAnimFunc, AMove + 1> TICK_ANIM_FUNCS = {
+	    &CUnitScript::TickTurnAnim, &CUnitScript::TickSpinAnim, &CUnitScript::TickMoveAnim};
 
 	const int tickRate = 1000 / deltaTime;
 
@@ -189,7 +185,7 @@ void CUnitScript::TickAllAnims(int deltaTime)
 		const auto& currFunc = TICK_ANIM_FUNCS[animType];
 		auto& currDoneAnims = doneAnims[animType];
 
-		for (size_t i = 0; i < currAnims.size(); ) {
+		for (size_t i = 0; i < currAnims.size();) {
 			AnimInfo& ai = currAnims[i];
 			LocalModelPiece& lmp = *pieces[ai.piece];
 
@@ -209,10 +205,10 @@ void CUnitScript::TickAllAnims(int deltaTime)
 
 /**
 * @brief The single threaded second half of this function does the removal of finished animations,
-		and it also is responsible for unblocking the listeners and returning whether we have animations or not.
-		This is not multi threaded as it guarantees that AnimFinished will be called in consistent order for
-		all anims for all participants of the simulation, and guarantees that the order of the animating
-		vector in CUnitScriptEngine::Tick is preserved.
+        and it also is responsible for unblocking the listeners and returning whether we have animations or not.
+        This is not multi threaded as it guarantees that AnimFinished will be called in consistent order for
+        all anims for all participants of the simulation, and guarantees that the order of the animating
+        vector in CUnitScriptEngine::Tick is preserved.
 * @param deltaTime int delta time to update
 * @return true if there are still active animations
 */
@@ -223,8 +219,7 @@ bool CUnitScript::TickAnimFinished(int deltaTime)
 	// Tell listeners to unblock, and remove finished animations from the unit/script.
 	for (int animType = ATurn; animType <= AMove; animType++) {
 		auto& currDoneAnims = doneAnims[animType];
-		for (const auto& ai : currDoneAnims)
-			AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
+		for (const auto& ai: currDoneAnims) AnimFinished(static_cast<AnimType>(animType), ai.piece, ai.axis);
 
 		currDoneAnims.clear();
 	}
@@ -264,10 +259,9 @@ void CUnitScript::RemoveAnim(AnimType type, const AnimContainerTypeIt& animInfoI
 	unitScriptEngine->RemoveInstance(this);
 }
 
-
-//Overwrites old information. This means that threads blocking on turn completion
-//will now wait for this new turn instead. Not sure if this is the expected behaviour
-//Other option would be to kill them. Or perhaps unblock them.
+// Overwrites old information. This means that threads blocking on turn completion
+// will now wait for this new turn instead. Not sure if this is the expected behaviour
+// Other option would be to kill them. Or perhaps unblock them.
 void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float dest, float accel)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -280,7 +274,8 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 
 	if (type == AMove) {
 		destf = pieces[piece]->original->offset[axis] + dest;
-	} else {
+	}
+	else {
 		// clamp destination (angle) for turn-anims
 		destf = mix(dest, ClampRad(dest), type == ATurn);
 	}
@@ -294,21 +289,21 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 	// the system should probably be redesigned to only have two types of
 	// anims (turns and moves), with spin as a bool
 	switch (type) {
-		case ATurn: {
-			overrideType = ASpin;
-			animInfoIt = FindAnim(overrideType, piece, axis);
-		} break;
-		case ASpin: {
-			overrideType = ATurn;
-			animInfoIt = FindAnim(overrideType, piece, axis);
-		} break;
-		case AMove: {
-			// ensure we never remove an animation of this type
-			overrideType = AMove;
-			animInfoIt = anims[overrideType].end();
-		} break;
-		default: {
-		} break;
+	case ATurn: {
+		overrideType = ASpin;
+		animInfoIt = FindAnim(overrideType, piece, axis);
+	} break;
+	case ASpin: {
+		overrideType = ATurn;
+		animInfoIt = FindAnim(overrideType, piece, axis);
+	} break;
+	case AMove: {
+		// ensure we never remove an animation of this type
+		overrideType = AMove;
+		animInfoIt = anims[overrideType].end();
+	} break;
+	default: {
+	} break;
 	}
 	assert(overrideType >= 0);
 
@@ -328,16 +323,16 @@ void CUnitScript::AddAnim(AnimType type, int piece, int axis, float speed, float
 		ai = &anims[type].back();
 		ai->piece = piece;
 		ai->axis = axis;
-	} else {
+	}
+	else {
 		ai = &(*animInfoIt);
 	}
 
-	ai->dest  = destf;
+	ai->dest = destf;
 	ai->speed = speed;
 	ai->accel = accel;
 	ai->done = false;
 }
-
 
 void CUnitScript::Spin(int piece, int axis, float speed, float accel)
 {
@@ -351,7 +346,8 @@ void CUnitScript::Spin(int piece, int axis, float speed, float accel)
 
 		if (accel > 0.0f) {
 			ai->accel = accel;
-		} else {
+		}
+		else {
 			// Go there instantly. Or have a default accel?
 			ai->speed = speed;
 			ai->accel = 0.0f;
@@ -362,12 +358,12 @@ void CUnitScript::Spin(int piece, int axis, float speed, float accel)
 
 	// no acceleration means we start at desired speed instantly
 	if (accel <= 0.0f) {
-		AddAnim(ASpin, piece, axis,  speed, speed, 0.0f);
-	} else {
-		AddAnim(ASpin, piece, axis,   0.0f, speed, accel);
+		AddAnim(ASpin, piece, axis, speed, speed, 0.0f);
+	}
+	else {
+		AddAnim(ASpin, piece, axis, 0.0f, speed, accel);
 	}
 }
-
 
 void CUnitScript::StopSpin(int piece, int axis, float decel)
 {
@@ -376,7 +372,8 @@ void CUnitScript::StopSpin(int piece, int axis, float decel)
 
 	if (decel <= 0.0f) {
 		RemoveAnim(ASpin, animInfoIt);
-	} else {
+	}
+	else {
 		if (animInfoIt == anims[ASpin].end())
 			return;
 
@@ -386,20 +383,17 @@ void CUnitScript::StopSpin(int piece, int axis, float decel)
 	}
 }
 
-
 void CUnitScript::Turn(int piece, int axis, float speed, float destination)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	AddAnim(ATurn, piece, axis, math::fabs(speed), ClampRad(destination), 0);
 }
 
-
 void CUnitScript::Move(int piece, int axis, float speed, float destination)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	AddAnim(AMove, piece, axis, math::fabs(speed), destination, 0);
 }
-
 
 void CUnitScript::MoveNow(int piece, int axis, float destination)
 {
@@ -419,7 +413,6 @@ void CUnitScript::MoveNow(int piece, int axis, float destination)
 	p->SetPosition(pos);
 }
 
-
 void CUnitScript::TurnNow(int piece, int axis, float destination)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -437,7 +430,6 @@ void CUnitScript::TurnNow(int piece, int axis, float destination)
 	p->SetRotation(rot);
 }
 
-
 void CUnitScript::SetVisibility(int piece, bool visible)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -448,7 +440,6 @@ void CUnitScript::SetVisibility(int piece, bool visible)
 
 	pieces[piece]->SetScriptVisible(visible);
 }
-
 
 bool CUnitScript::EmitSfx(int sfxType, int sfxPiece)
 {
@@ -504,164 +495,141 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 	}
 
 	switch (sfxType) {
-		// reverse ship wake
-		case SFX_REVERSE_WAKE:
-		case SFX_REVERSE_WAKE_2: {
-			projMemPool.alloc<CWakeProjectile>(
-				unit,
-				absPos + guRNG.NextVector() * 2.0f,
-				absDir * -0.4f,
-				6.0f + guRNG.NextFloat() * 4.0f,
-				0.15f + guRNG.NextFloat() * 0.3f,
-				wakeAlphaStart, wakeAlphaDecay, wakeFadeupTime
-			);
-		} break;
+	// reverse ship wake
+	case SFX_REVERSE_WAKE:
+	case SFX_REVERSE_WAKE_2: {
+		projMemPool.alloc<CWakeProjectile>(unit, absPos + guRNG.NextVector() * 2.0f, absDir * -0.4f,
+		    6.0f + guRNG.NextFloat() * 4.0f, 0.15f + guRNG.NextFloat() * 0.3f, wakeAlphaStart, wakeAlphaDecay,
+		    wakeFadeupTime);
+	} break;
 
-		// regular ship wake
-		case SFX_WAKE_2:
-		case SFX_WAKE: {
-			projMemPool.alloc<CWakeProjectile>(
-				unit,
-				absPos + guRNG.NextVector() * 2.0f,
-				absDir * 0.4f,
-				6.0f + guRNG.NextFloat() * 4.0f,
-				0.15f + guRNG.NextFloat() * 0.3f,
-				wakeAlphaStart, wakeAlphaDecay, wakeFadeupTime
-			);
-		} break;
+	// regular ship wake
+	case SFX_WAKE_2:
+	case SFX_WAKE: {
+		projMemPool.alloc<CWakeProjectile>(unit, absPos + guRNG.NextVector() * 2.0f, absDir * 0.4f,
+		    6.0f + guRNG.NextFloat() * 4.0f, 0.15f + guRNG.NextFloat() * 0.3f, wakeAlphaStart, wakeAlphaDecay,
+		    wakeFadeupTime);
+	} break;
 
-		// submarine bubble; does not provide direction through piece vertices
-		case SFX_BUBBLE: {
-			const float3 pspeed = guRNG.NextVector() * 0.1f;
+	// submarine bubble; does not provide direction through piece vertices
+	case SFX_BUBBLE: {
+		const float3 pspeed = guRNG.NextVector() * 0.1f;
 
-			projMemPool.alloc<CBubbleProjectile>(
-				unit,
-				absPos + guRNG.NextVector() * 2.0f,
-				pspeed + UpVector * 0.2f,
-				40.0f + guRNG.NextFloat() * GAME_SPEED,
-				1.0f + guRNG.NextFloat() * 2.0f,
-				0.01f,
-				0.3f + guRNG.NextFloat() * 0.3f
-			);
-		} break;
+		projMemPool.alloc<CBubbleProjectile>(unit, absPos + guRNG.NextVector() * 2.0f, pspeed + UpVector * 0.2f,
+		    40.0f + guRNG.NextFloat() * GAME_SPEED, 1.0f + guRNG.NextFloat() * 2.0f, 0.01f,
+		    0.3f + guRNG.NextFloat() * 0.3f);
+	} break;
 
-		// damaged unit smoke
-		case SFX_WHITE_SMOKE: {
-			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.5f);
-		} break;
-		case SFX_BLACK_SMOKE: {
-			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.6f);
-		} break;
+	// damaged unit smoke
+	case SFX_WHITE_SMOKE: {
+		projMemPool.alloc<CSmokeProjectile>(
+		    unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.5f);
+	} break;
+	case SFX_BLACK_SMOKE: {
+		projMemPool.alloc<CSmokeProjectile>(
+		    unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.6f);
+	} break;
 
-		case SFX_VTOL: {
-			const float4 scale = {0.5f, 0.5f, 0.5f, 0.7f};
-			const float3 speed =
-				unit->speed    * scale.w +
-				unit->frontdir * scale.z *             relDir.z  +
-				unit->updir    * scale.y * -math::fabs(relDir.y) +
-				unit->rightdir * scale.x *             relDir.x;
+	case SFX_VTOL: {
+		const float4 scale = {0.5f, 0.5f, 0.5f, 0.7f};
+		const float3 speed = unit->speed * scale.w + unit->frontdir * scale.z * relDir.z +
+		                     unit->updir * scale.y * -math::fabs(relDir.y) + unit->rightdir * scale.x * relDir.x;
 
-			CHeatCloudProjectile* hc = projMemPool.alloc<CHeatCloudProjectile>(
-				unit,
-				absPos,
-				speed,
-				10.0f + guRNG.NextFloat() * 5.0f,
-				3.0f + guRNG.NextFloat() * 2.0f
-			);
+		CHeatCloudProjectile* hc = projMemPool.alloc<CHeatCloudProjectile>(
+		    unit, absPos, speed, 10.0f + guRNG.NextFloat() * 5.0f, 3.0f + guRNG.NextFloat() * 2.0f);
 
-			hc->size = 3;
-		} break;
+		hc->size = 3;
+	} break;
 
-		default: {
-			if ((sfxType & SFX_GLOBAL) != 0) {
-				// emit defined explosion-generator (can only be custom, not standard)
-				// index is made valid by callee, an ID of -1 means CEG failed to load
-				explGenHandler.GenExplosion(sfxType - SFX_GLOBAL, absPos, absDir, unit->cegDamage, 1.0f, 0.0f, unit, nullptr);
-				return true;
-			}
-			if ((sfxType & SFX_CEG) != 0) {
-				// emit defined explosion-generator (can only be custom, not standard)
-				// index is made valid by callee, an ID of -1 means CEG failed to load
-				explGenHandler.GenExplosion(ud->GetModelExpGenID(sfxType - SFX_CEG), absPos, absDir, unit->cegDamage, 1.0f, 0.0f, unit, nullptr);
-				return true;
+	default: {
+		if ((sfxType & SFX_GLOBAL) != 0) {
+			// emit defined explosion-generator (can only be custom, not standard)
+			// index is made valid by callee, an ID of -1 means CEG failed to load
+			explGenHandler.GenExplosion(
+			    sfxType - SFX_GLOBAL, absPos, absDir, unit->cegDamage, 1.0f, 0.0f, unit, nullptr);
+			return true;
+		}
+		if ((sfxType & SFX_CEG) != 0) {
+			// emit defined explosion-generator (can only be custom, not standard)
+			// index is made valid by callee, an ID of -1 means CEG failed to load
+			explGenHandler.GenExplosion(
+			    ud->GetModelExpGenID(sfxType - SFX_CEG), absPos, absDir, unit->cegDamage, 1.0f, 0.0f, unit, nullptr);
+			return true;
+		}
+
+		if ((sfxType & SFX_FIRE_WEAPON) != 0) {
+			// make a weapon fire from the piece
+			const unsigned int index = sfxType - SFX_FIRE_WEAPON;
+
+			if (index >= unit->weapons.size()) {
+				ShowUnitScriptError("[US::EmitSFX::FIRE_WEAPON] invalid weapon index");
+				break;
 			}
 
-			if ((sfxType & SFX_FIRE_WEAPON) != 0) {
-				// make a weapon fire from the piece
-				const unsigned int index = sfxType - SFX_FIRE_WEAPON;
+			CWeapon* w = unit->weapons[index];
 
-				if (index >= unit->weapons.size()) {
-					ShowUnitScriptError("[US::EmitSFX::FIRE_WEAPON] invalid weapon index");
-					break;
-				}
+			const SWeaponTarget origTarget = w->GetCurrentTarget();
 
-				CWeapon* w = unit->weapons[index];
+			// Ideally the below should be absPos + absDir * w->range,
+			// but since the weapon could be a ballistic one, it's likely not safe.
+			// So keep the target one elmo in front of the emit position
+			const SWeaponTarget emitTarget = {absPos + absDir};
 
-				const SWeaponTarget origTarget = w->GetCurrentTarget();
+			const float3 origWeaponMuzzlePos = w->weaponMuzzlePos;
 
-				// Ideally the below should be absPos + absDir * w->range,
-				// but since the weapon could be a ballistic one, it's likely not safe.
-				// So keep the target one elmo in front of the emit position
-				const SWeaponTarget emitTarget = { absPos + absDir };
+			w->SetAttackTarget(emitTarget);
+			w->weaponMuzzlePos = absPos;
+			w->Fire(true);
+			w->weaponMuzzlePos = origWeaponMuzzlePos;
 
-				const float3 origWeaponMuzzlePos = w->weaponMuzzlePos;
+			// the w->Fire(true); call above might have killed the same original target
+			// Drop the original target in such case, otherwise the weapon will
+			// continue to shoot at `emitTarget` and given how close it's to the emit point
+			// it will look like a random "ghosts" shooting
+			// See https://github.com/beyond-all-reason/spring/issues/1269
+			if (!w->Attack(origTarget))
+				w->DropCurrentTarget();
 
-				w->SetAttackTarget(emitTarget);
-				w->weaponMuzzlePos = absPos;
-				w->Fire(true);
-				w->weaponMuzzlePos = origWeaponMuzzlePos;
+			return true;
+		}
 
-				// the w->Fire(true); call above might have killed the same original target
-				// Drop the original target in such case, otherwise the weapon will
-				// continue to shoot at `emitTarget` and given how close it's to the emit point
-				// it will look like a random "ghosts" shooting
-				// See https://github.com/beyond-all-reason/spring/issues/1269
-				if (!w->Attack(origTarget))
-					w->DropCurrentTarget();
+		if ((sfxType & SFX_DETONATE_WEAPON) != 0) {
+			const unsigned index = sfxType - SFX_DETONATE_WEAPON;
 
-				return true;
+			if (index >= unit->weapons.size()) {
+				ShowUnitScriptError("[US::EmitSFX::DETONATE_WEAPON] invalid weapon index");
+				break;
 			}
 
-			if ((sfxType & SFX_DETONATE_WEAPON) != 0) {
-				const unsigned index = sfxType - SFX_DETONATE_WEAPON;
+			// detonate weapon from piece
+			const CWeapon* weapon = unit->weapons[index];
+			const WeaponDef* weaponDef = weapon->weaponDef;
 
-				if (index >= unit->weapons.size()) {
-					ShowUnitScriptError("[US::EmitSFX::DETONATE_WEAPON] invalid weapon index");
-					break;
-				}
+			const CExplosionParams params = {.pos = absPos,
+			    .dir = ZeroVector,
+			    .damages = *weapon->damages,
+			    .weaponDef = weaponDef,
+			    .owner = unit,
+			    .hitUnit = nullptr,
+			    .hitFeature = nullptr,
+			    .craterAreaOfEffect = weapon->damages->craterAreaOfEffect,
+			    .damageAreaOfEffect = weapon->damages->damageAreaOfEffect,
+			    .edgeEffectiveness = weapon->damages->edgeEffectiveness,
+			    .explosionSpeed = weapon->damages->explosionSpeed,
+			    .gfxMod = 1.0f,
+			    .maxGroundDeformation = 0.0f,
+			    .impactOnly = weaponDef->impactOnly,
+			    .ignoreOwner = weaponDef->noSelfDamage,
+			    .damageGround = true,
+			    .projectileID = static_cast<uint32_t>(-1u)};
 
-				// detonate weapon from piece
-				const CWeapon* weapon = unit->weapons[index];
-				const WeaponDef* weaponDef = weapon->weaponDef;
-
-				const CExplosionParams params = {
-					.pos                  = absPos,
-					.dir                  = ZeroVector,
-					.damages              = *weapon->damages,
-					.weaponDef            = weaponDef,
-					.owner                = unit,
-					.hitUnit              = nullptr,
-					.hitFeature           = nullptr,
-					.craterAreaOfEffect   = weapon->damages->craterAreaOfEffect,
-					.damageAreaOfEffect   = weapon->damages->damageAreaOfEffect,
-					.edgeEffectiveness    = weapon->damages->edgeEffectiveness,
-					.explosionSpeed       = weapon->damages->explosionSpeed,
-					.gfxMod               = 1.0f,
-					.maxGroundDeformation = 0.0f,
-					.impactOnly           = weaponDef->impactOnly,
-					.ignoreOwner          = weaponDef->noSelfDamage,
-					.damageGround         = true,
-					.projectileID         = static_cast<uint32_t>(-1u)
-				};
-
-				helper->Explosion(params);
-			}
-		} break;
+			helper->Explosion(params);
+		}
+	} break;
 	}
 
 	return true;
 }
-
 
 void CUnitScript::AttachUnit(int piece, int u)
 {
@@ -682,7 +650,6 @@ void CUnitScript::AttachUnit(int piece, int u)
 #endif
 }
 
-
 void CUnitScript::DropUnit(int u)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -696,8 +663,7 @@ void CUnitScript::DropUnit(int u)
 #endif
 }
 
-
-//Returns true if there was an animation to listen to
+// Returns true if there was an animation to listen to
 bool CUnitScript::NeedsWait(AnimType type, int piece, int axis)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -725,8 +691,7 @@ bool CUnitScript::NeedsWait(AnimType type, int piece, int axis)
 	return (ai.hasWaiting = true);
 }
 
-
-//Flags as defined by the cob standard
+// Flags as defined by the cob standard
 void CUnitScript::Explode(int piece, int flags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -758,15 +723,15 @@ void CUnitScript::Explode(int piece, int flags)
 	// This means that we are going to do a full fledged piece explosion!
 	float3 baseSpeed = unit->speed;
 	float3 explSpeed;
-	explSpeed.x = (0.5f -  gsRNG.NextFloat()) * 6.0f;
-	explSpeed.y =  1.2f + (gsRNG.NextFloat()  * 5.0f);
-	explSpeed.z = (0.5f -  gsRNG.NextFloat()) * 6.0f;
+	explSpeed.x = (0.5f - gsRNG.NextFloat()) * 6.0f;
+	explSpeed.y = 1.2f + (gsRNG.NextFloat() * 5.0f);
+	explSpeed.z = (0.5f - gsRNG.NextFloat()) * 6.0f;
 
 	if (unit->pos.y - CGround::GetApproximateHeight(unit->pos.x, unit->pos.z) > 15)
 		explSpeed.y = (0.5f - gsRNG.NextFloat()) * 6.0f;
 
 	if (baseSpeed.SqLength() > 9.0f) {
-		const float l  = baseSpeed.Length();
+		const float l = baseSpeed.Length();
 		const float l2 = 3.0f + math::sqrt(l - 3.0f);
 		baseSpeed *= (l2 / l);
 	}
@@ -774,16 +739,15 @@ void CUnitScript::Explode(int piece, int flags)
 	const float partSat = projectileHandler.GetParticleSaturation();
 
 	unsigned int newFlags = 0;
-	newFlags |= (PF_Explode    *  ((flags & PF_Explode   ) != 0)                    );
-	newFlags |= (PF_Smoke      * (((flags & PF_Smoke     ) != 0) && partSat < 0.95f));
-	newFlags |= (PF_Fire       * (((flags & PF_Fire      ) != 0) && partSat < 0.95f));
-	newFlags |= (PF_NoCEGTrail *  ((flags & PF_NoCEGTrail) != 0)                    );
-	newFlags |= (PF_Recursive  *  ((flags & PF_Recursive ) != 0)                    );
+	newFlags |= (PF_Explode * ((flags & PF_Explode) != 0));
+	newFlags |= (PF_Smoke * (((flags & PF_Smoke) != 0) && partSat < 0.95f));
+	newFlags |= (PF_Fire * (((flags & PF_Fire) != 0) && partSat < 0.95f));
+	newFlags |= (PF_NoCEGTrail * ((flags & PF_NoCEGTrail) != 0));
+	newFlags |= (PF_Recursive * ((flags & PF_Recursive) != 0));
 
 	projMemPool.alloc<CPieceProjectile>(unit, pieces[piece], absPos, explSpeed + baseSpeed, newFlags, 0.5f);
 #endif
 }
-
 
 void CUnitScript::Shatter(int piece, const float3& pos, const float3& speed)
 {
@@ -794,13 +758,13 @@ void CUnitScript::Shatter(int piece, const float3& pos, const float3& speed)
 	if (!omp->HasGeometryData())
 		return;
 
-	const float pieceChance = 1.0f - (projectileHandler.GetCurrentParticles() - (projectileHandler.maxParticles - 2000)) / 2000.0f;
+	const float pieceChance =
+	    1.0f - (projectileHandler.GetCurrentParticles() - (projectileHandler.maxParticles - 2000)) / 2000.0f;
 	if (pieceChance > 0.0f) {
 		const CMatrix44f m = unit->GetTransformMatrix() * lmp->GetModelSpaceMatrix();
 		omp->Shatter(pieceChance, unit->model->type, unit->model->textureType, unit->team, pos, speed, m);
 	}
 }
-
 
 void CUnitScript::ShowFlare(int piece)
 {
@@ -817,7 +781,6 @@ void CUnitScript::ShowFlare(int piece)
 #endif
 }
 
-
 /******************************************************************************/
 int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 {
@@ -830,14 +793,9 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 
 #ifndef _CONSOLE
 	switch (val) {
-	case ACTIVATION:
-		return (unit->activated);
-	case STANDINGMOVEORDERS:
-		return unit->moveState;
-		break;
-	case STANDINGFIREORDERS:
-		return unit->fireState;
-		break;
+	case ACTIVATION: return (unit->activated);
+	case STANDINGMOVEORDERS: return unit->moveState; break;
+	case STANDINGFIREORDERS: return unit->fireState; break;
 
 	case HEALTH: {
 		if (p1 <= 0)
@@ -911,43 +869,27 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		return int(u->radius * COBSCALE);
 	} break;
 
-	case XZ_ATAN:
-		return int(RAD2TAANG*math::atan2((float)UNPACKX(p1), (float)UNPACKZ(p1)) + 32768 - unit->heading);
-	case XZ_HYPOT:
-		return int(math::hypot((float)UNPACKX(p1), (float)UNPACKZ(p1)) * COBSCALE);
-	case ATAN:
-		return int(RAD2TAANG*math::atan2((float)p1, (float)p2));
-	case HYPOT:
-		return int(math::hypot((float)p1, (float)p2));
-	case GROUND_HEIGHT:
-		return int(CGround::GetHeightAboveWater(UNPACKX(p1), UNPACKZ(p1)) * COBSCALE);
-	case GROUND_WATER_HEIGHT:
-		return int(CGround::GetHeightReal(UNPACKX(p1), UNPACKZ(p1)) * COBSCALE);
-	case BUILD_PERCENT_LEFT:
-		return int((1.0f - unit->buildProgress) * 100);
+	case XZ_ATAN: return int(RAD2TAANG * math::atan2((float)UNPACKX(p1), (float)UNPACKZ(p1)) + 32768 - unit->heading);
+	case XZ_HYPOT: return int(math::hypot((float)UNPACKX(p1), (float)UNPACKZ(p1)) * COBSCALE);
+	case ATAN: return int(RAD2TAANG * math::atan2((float)p1, (float)p2));
+	case HYPOT: return int(math::hypot((float)p1, (float)p2));
+	case GROUND_HEIGHT: return int(CGround::GetHeightAboveWater(UNPACKX(p1), UNPACKZ(p1)) * COBSCALE);
+	case GROUND_WATER_HEIGHT: return int(CGround::GetHeightReal(UNPACKX(p1), UNPACKZ(p1)) * COBSCALE);
+	case BUILD_PERCENT_LEFT: return int((1.0f - unit->buildProgress) * 100);
 
-	case YARD_OPEN:
-		return (unit->yardOpen) ? 1 : 0;
-	case BUGGER_OFF:
-		break;
-	case ARMORED:
-		return (unit->armoredState) ? 1 : 0;
-	case VETERAN_LEVEL:
-		return int(100 * unit->experience);
-	case CURRENT_SPEED:
-		return int(unit->speed.w * COBSCALE);
-	case ON_ROAD:
-		return 0;
-	case IN_WATER:
-		return (unit->IsInWater());
-	case MAX_ID:
-		return unitHandler.MaxUnits()-1;
-	case MY_ID:
-		return unit->id;
+	case YARD_OPEN: return (unit->yardOpen) ? 1 : 0;
+	case BUGGER_OFF: break;
+	case ARMORED: return (unit->armoredState) ? 1 : 0;
+	case VETERAN_LEVEL: return int(100 * unit->experience);
+	case CURRENT_SPEED: return int(unit->speed.w * COBSCALE);
+	case ON_ROAD: return 0;
+	case IN_WATER: return (unit->IsInWater());
+	case MAX_ID: return unitHandler.MaxUnits() - 1;
+	case MY_ID: return unit->id;
 
 	case UNIT_TEAM: {
 		const CUnit* u = unitHandler.GetUnit(p1);
-		return (u != nullptr)? unit->team : 0;
+		return (u != nullptr) ? unit->team : 0;
 	} break;
 	case UNIT_ALLIED: {
 		const CUnit* u = unitHandler.GetUnit(p1);
@@ -970,18 +912,14 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 	} break;
 	case REVERSING: {
 		CGroundMoveType* gmt = dynamic_cast<CGroundMoveType*>(unit->moveType);
-		return ((gmt != nullptr)? int(gmt->IsReversing()): 0);
+		return ((gmt != nullptr) ? int(gmt->IsReversing()) : 0);
 	} break;
-	case CLOAKED:
-		return !!unit->isCloaked;
-	case WANT_CLOAK:
-		return !!unit->wantCloak;
-	case UPRIGHT:
-		return !!unit->upright;
-	case POW:
-		return int(math::pow((p1 * 1.0f) / COBSCALE, (p2 * 1.0f) / COBSCALE) * COBSCALE);
+	case CLOAKED: return !!unit->isCloaked;
+	case WANT_CLOAK: return !!unit->wantCloak;
+	case UPRIGHT: return !!unit->upright;
+	case POW: return int(math::pow((p1 * 1.0f) / COBSCALE, (p2 * 1.0f) / COBSCALE) * COBSCALE);
 	case PRINT: {
-		const char*   unitName = unit->unitDef->name.c_str();
+		const char* unitName = unit->unitDef->name.c_str();
 		const char* scriptName = unit->unitDef->scriptName.c_str();
 
 		LOG("[UnitScript::PRINT][unit=%s script=%s] p1=%d p2=%d p3=%d p4=%d", unitName, scriptName, p1, p2, p3, p4);
@@ -1002,40 +940,31 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 			const CWeapon* w = unit->weapons[p1 - 1];
 			const auto curTarget = w->GetCurrentTarget();
 			switch (curTarget.type) {
-				case Target_Unit:      return curTarget.unit->id;
-				case Target_None:      return -1;
-				case Target_Pos:       return -2;
-				case Target_Intercept: return -3;
+			case Target_Unit: return curTarget.unit->id;
+			case Target_None: return -1;
+			case Target_Pos: return -2;
+			case Target_Intercept: return -3;
 			}
 		}
 		return -4; // weapon does not exist
 	} break;
 
-	case LAST_ATTACKER_ID:
-		return ((unit->lastAttacker != nullptr)? unit->lastAttacker->id: -1);
-	case LOS_RADIUS:
-		return unit->realLosRadius;
-	case AIR_LOS_RADIUS:
-		return unit->realAirLosRadius;
-	case RADAR_RADIUS:
-		return unit->radarRadius;
-	case JAMMER_RADIUS:
-		return unit->jammerRadius;
-	case SONAR_RADIUS:
-		return unit->sonarRadius;
-	case SONAR_JAM_RADIUS:
-		return unit->sonarJamRadius;
-	case SEISMIC_RADIUS:
-		return unit->seismicRadius;
+	case LAST_ATTACKER_ID: return ((unit->lastAttacker != nullptr) ? unit->lastAttacker->id : -1);
+	case LOS_RADIUS: return unit->realLosRadius;
+	case AIR_LOS_RADIUS: return unit->realAirLosRadius;
+	case RADAR_RADIUS: return unit->radarRadius;
+	case JAMMER_RADIUS: return unit->jammerRadius;
+	case SONAR_RADIUS: return unit->sonarRadius;
+	case SONAR_JAM_RADIUS: return unit->sonarJamRadius;
+	case SEISMIC_RADIUS: return unit->seismicRadius;
 
 	case DO_SEISMIC_PING: {
-		unit->DoSeismicPing((p1 == 0)? unit->seismicSignature: p1);
+		unit->DoSeismicPing((p1 == 0) ? unit->seismicSignature : p1);
 	} break;
 
-	case CURRENT_FUEL: //deprecated
+	case CURRENT_FUEL: // deprecated
 		return 0;
-	case TRANSPORT_ID:
-		return ((unit->transporter != nullptr)? unit->transporter->id: -1);
+	case TRANSPORT_ID: return ((unit->transporter != nullptr) ? unit->transporter->id : -1);
 
 	case SHIELD_POWER: {
 		const CWeapon* shield = unit->shieldWeapon;
@@ -1053,80 +982,80 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		return unit->sonarStealth;
 	} break;
 
-	case CRASHING:
-		return (unit->IsCrashing());
+	case CRASHING: return (unit->IsCrashing());
 
 	case COB_ID: {
 		if (p1 <= 0)
 			return unit->unitDef->cobID;
 
 		const CUnit* u = unitHandler.GetUnit(p1);
-		return ((u == nullptr)? -1 : u->unitDef->cobID);
+		return ((u == nullptr) ? -1 : u->unitDef->cobID);
 	} break;
 
- 	case PLAY_SOUND: {
- 		// FIXME: this currently only works for CCobInstance, because Lua can not get sound IDs
- 		// (however, for Lua scripts there is already LuaUnsyncedCtrl::PlaySoundFile)
- 		CCobInstance* cobInst = dynamic_cast<CCobInstance*>(this);
+	case PLAY_SOUND: {
+		// FIXME: this currently only works for CCobInstance, because Lua can not get sound IDs
+		// (however, for Lua scripts there is already LuaUnsyncedCtrl::PlaySoundFile)
+		CCobInstance* cobInst = dynamic_cast<CCobInstance*>(this);
 
- 		if (cobInst == nullptr)
- 			return 1;
+		if (cobInst == nullptr)
+			return 1;
 
- 		const CCobFile* cobFile = cobInst->GetFile();
+		const CCobFile* cobFile = cobInst->GetFile();
 
- 		if (cobFile == nullptr)
- 			return 1;
+		if (cobFile == nullptr)
+			return 1;
 
 		if ((p1 < 0) || (static_cast<size_t>(p1) >= cobFile->sounds.size()))
 			return 1;
 
 		// who hears the sound
 		switch (p3) {
-			case 0: {
-				// ALOS
-				if (!losHandler->InAirLos(unit, gu->myAllyTeam))
-					return 0;
-			} break;
-			case 1: {
-				// LOS
-				if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS))
-					return 0;
-			} break;
-			case 2: {
-				// ALOS or radar
-				if (!(losHandler->InAirLos(unit, gu->myAllyTeam) || unit->losStatus[gu->myAllyTeam] & (LOS_INRADAR)))
-					return 0;
-			} break;
-			case 3: {
-				// LOS or radar
-				if (!(unit->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_INRADAR)))
-					return 0;
-			} break;
-			case 4: {
-				// everyone
-			} break;
-			case 5: {
-				// allies
-				if (unit->allyteam != gu->myAllyTeam)
-					return 0;
-			} break;
-			case 6: {
-				// team
-				if (unit->team != gu->myTeam)
-					return 0;
-			} break;
-			case 7: {
-				// enemies
-				if (unit->allyteam == gu->myAllyTeam)
-					return 0;
-			} break;
-			default: {
-			} break;
+		case 0: {
+			// ALOS
+			if (!losHandler->InAirLos(unit, gu->myAllyTeam))
+				return 0;
+		} break;
+		case 1: {
+			// LOS
+			if (!(unit->losStatus[gu->myAllyTeam] & LOS_INLOS))
+				return 0;
+		} break;
+		case 2: {
+			// ALOS or radar
+			if (!(losHandler->InAirLos(unit, gu->myAllyTeam) || unit->losStatus[gu->myAllyTeam] & (LOS_INRADAR)))
+				return 0;
+		} break;
+		case 3: {
+			// LOS or radar
+			if (!(unit->losStatus[gu->myAllyTeam] & (LOS_INLOS | LOS_INRADAR)))
+				return 0;
+		} break;
+		case 4: {
+			// everyone
+		} break;
+		case 5: {
+			// allies
+			if (unit->allyteam != gu->myAllyTeam)
+				return 0;
+		} break;
+		case 6: {
+			// team
+			if (unit->team != gu->myTeam)
+				return 0;
+		} break;
+		case 7: {
+			// enemies
+			if (unit->allyteam == gu->myAllyTeam)
+				return 0;
+		} break;
+		default: {
+		} break;
 		}
 
 		if (p4 == 0) {
 			Channels::General->PlaySample(cobFile->sounds[p1], unit->pos, unit->speed, float(p2) / COBSCALE);
-		} else {
+		}
+		else {
 			Channels::General->PlaySample(cobFile->sounds[p1], float(p2) / COBSCALE);
 		}
 
@@ -1148,16 +1077,14 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 
 		// if targetID is 0, just sets weapon->haveUserTarget
 		// to false (and targetType to None) without attacking
-		CUnit* target = (targetID > 0)? unitHandler.GetUnit(targetID): nullptr;
+		CUnit* target = (targetID > 0) ? unitHandler.GetUnit(targetID) : nullptr;
 		return (weapon->Attack(SWeaponTarget(target, userTarget)));
 	} break;
 
 	case SET_WEAPON_GROUND_TARGET: {
 		const unsigned int weaponID = p1 - 1;
 
-		const float3 pos = float3(float(UNPACKX(p2)),
-		                          float(p3) / float(COBSCALE),
-		                          float(UNPACKZ(p2)));
+		const float3 pos = float3(float(UNPACKX(p2)), float(p3) / float(COBSCALE), float(UNPACKZ(p2)));
 		const bool userTarget = !!p4;
 
 		if (weaponID >= unit->weapons.size())
@@ -1171,44 +1098,36 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		return weapon->Attack(SWeaponTarget(pos, userTarget)) ? 1 : 0;
 	} break;
 
-	case COB_MIN:
-		return std::min(p1, p2);
-	case COB_MAX:
-		return std::max(p1, p2);
-	case ABS:
-		return std::abs(p1);
-	case KSIN:
-		return int(1024*math::sinf(TAANG2RAD*(float)p1));
-	case KCOS:
-		return int(1024*math::cosf(TAANG2RAD*(float)p1));
-	case KTAN:
-		return int(1024*math::tanf(TAANG2RAD*(float)p1));
-	case SQRT:
-		return int(math::sqrt((float)p1));
+	case COB_MIN: return std::min(p1, p2);
+	case COB_MAX: return std::max(p1, p2);
+	case ABS: return std::abs(p1);
+	case KSIN: return int(1024 * math::sinf(TAANG2RAD * (float)p1));
+	case KCOS: return int(1024 * math::cosf(TAANG2RAD * (float)p1));
+	case KTAN: return int(1024 * math::tanf(TAANG2RAD * (float)p1));
+	case SQRT: return int(math::sqrt((float)p1));
 
-	case FLANK_B_MODE:
-		return unit->flankingBonusMode;
+	case FLANK_B_MODE: return unit->flankingBonusMode;
 	case FLANK_B_DIR:
 		switch (p1) {
-			case 1: return int(unit->flankingBonusDir.x * COBSCALE);
-			case 2: return int(unit->flankingBonusDir.y * COBSCALE);
-			case 3: return int(unit->flankingBonusDir.z * COBSCALE);
-			case 4: unit->flankingBonusDir.x = (p2 / (float)COBSCALE); return 0;
-			case 5: unit->flankingBonusDir.y = (p2 / (float)COBSCALE); return 0;
-			case 6: unit->flankingBonusDir.z = (p2 / (float)COBSCALE); return 0;
-			case 7: unit->flankingBonusDir = float3(p2/(float)COBSCALE, p3/(float)COBSCALE, p4/(float)COBSCALE).Normalize(); return 0;
-			default: return(-1);
+		case 1: return int(unit->flankingBonusDir.x * COBSCALE);
+		case 2: return int(unit->flankingBonusDir.y * COBSCALE);
+		case 3: return int(unit->flankingBonusDir.z * COBSCALE);
+		case 4: unit->flankingBonusDir.x = (p2 / (float)COBSCALE); return 0;
+		case 5: unit->flankingBonusDir.y = (p2 / (float)COBSCALE); return 0;
+		case 6: unit->flankingBonusDir.z = (p2 / (float)COBSCALE); return 0;
+		case 7:
+			unit->flankingBonusDir =
+			    float3(p2 / (float)COBSCALE, p3 / (float)COBSCALE, p4 / (float)COBSCALE).Normalize();
+			return 0;
+		default: return (-1);
 		}
-	case FLANK_B_MOBILITY_ADD:
-		return int(unit->flankingBonusMobilityAdd * COBSCALE);
-	case FLANK_B_MAX_DAMAGE:
-		return int((unit->flankingBonusAvgDamage + unit->flankingBonusDifDamage) * COBSCALE);
-	case FLANK_B_MIN_DAMAGE:
-		return int((unit->flankingBonusAvgDamage - unit->flankingBonusDifDamage) * COBSCALE);
+	case FLANK_B_MOBILITY_ADD: return int(unit->flankingBonusMobilityAdd * COBSCALE);
+	case FLANK_B_MAX_DAMAGE: return int((unit->flankingBonusAvgDamage + unit->flankingBonusDifDamage) * COBSCALE);
+	case FLANK_B_MIN_DAMAGE: return int((unit->flankingBonusAvgDamage - unit->flankingBonusDifDamage) * COBSCALE);
 
 	case KILL_UNIT: {
 		// ID 0 is reserved for the script's owner
-		CUnit* u = (p1 > 0)? unitHandler.GetUnit(p1): this->unit;
+		CUnit* u = (p1 > 0) ? unitHandler.GetUnit(p1) : this->unit;
 
 		if (u == nullptr)
 			return 0;
@@ -1216,7 +1135,8 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		if (u->beingBuilt) {
 			// no explosions and no corpse for units under construction
 			u->KillUnit(nullptr, false, true, -CSolidObject::DAMAGE_UNIT_SCRIPT);
-		} else {
+		}
+		else {
 			u->KillUnit(nullptr, p2 != 0, p3 != 0, -CSolidObject::DAMAGE_UNIT_SCRIPT);
 		}
 
@@ -1297,7 +1217,7 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		if (-p1 > 0 && static_cast<size_t>(-p1) <= unit->weapons.size()) {
 			CWeapon* w = unit->weapons[-p1 - 1];
 
-			const float  wr = w->range * COBSCALE;
+			const float wr = w->range * COBSCALE;
 			const float nwr = float(p2) / COBSCALE;
 
 			w->UpdateRange(nwr);
@@ -1316,7 +1236,7 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		if (-p1 > 0 && static_cast<size_t>(-p1) <= unit->weapons.size()) {
 			CWeapon* w = unit->weapons[-p1 - 1];
 
-			const float  wps = w->projectileSpeed * COBSCALE;
+			const float wps = w->projectileSpeed * COBSCALE;
 			const float nwps = float(p2) / COBSCALE;
 
 			w->UpdateProjectileSpeed(nwps);
@@ -1332,13 +1252,14 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 	} break;
 
 	default:
-		ShowUnitScriptError("[US::GetUnitVal] unknown get-constant " + IntToString(val) + " (params = " + IntToString(p1) + " " + IntToString(p2) + " " + IntToString(p3) + " " + IntToString(p4) + ")");
+		ShowUnitScriptError("[US::GetUnitVal] unknown get-constant " + IntToString(val) +
+		                    " (params = " + IntToString(p1) + " " + IntToString(p2) + " " + IntToString(p3) + " " +
+		                    IntToString(p4) + ")");
 	}
 #endif
 
 	return 0;
 }
-
 
 void CUnitScript::SetUnitVal(int val, int param)
 {
@@ -1351,231 +1272,243 @@ void CUnitScript::SetUnitVal(int val, int param)
 
 #ifndef _CONSOLE
 	switch (val) {
-		case ACTIVATION: {
-			if (unit->unitDef->onoffable) {
-				Command c(CMD_ONOFF, 0, (param == 0) ? 0 : 1);
-				unit->commandAI->GiveCommand(c);
-			} else {
-				if (param == 0) {
-					unit->Deactivate();
-				} else {
-					unit->Activate();
-				}
-			}
-		} break;
-
-		case STANDINGMOVEORDERS: {
-			if (param >= 0 && param <= MOVESTATE_ROAM) {
-				Command c(CMD_MOVE_STATE, 0, param);
-				unit->commandAI->GiveCommand(c);
-			}
-		} break;
-
-		case STANDINGFIREORDERS: {
-			if (param >= 0 && param <= FIRESTATE_FIREATNEUTRAL) {
-				Command c(CMD_FIRE_STATE, 0, param);
-				unit->commandAI->GiveCommand(c);
-			}
-		} break;
-
-		case HEALTH: {
-		} break;
-		case INBUILDSTANCE: {
-			unit->inBuildStance = (param != 0);
-		} break;
-
-		case BUSY: {
-			busy = (param != 0);
-		} break;
-
-		case PIECE_XZ: {
-		} break;
-
-		case PIECE_Y: {
-		} break;
-
-		case UNIT_XZ: {
-		} break;
-
-		case UNIT_Y: {
-		} break;
-
-		case UNIT_HEIGHT: {
-		} break;
-
-		case XZ_ATAN: {
-		} break;
-
-		case XZ_HYPOT: {
-		} break;
-
-		case ATAN: {
-		} break;
-
-		case HYPOT: {
-		} break;
-
-		case GROUND_HEIGHT: {
-		} break;
-
-		case GROUND_WATER_HEIGHT: {
-		} break;
-
-		case BUILD_PERCENT_LEFT: {
-		} break;
-
-		case YARD_OPEN: {
-			if (unit->GetBlockMap() != nullptr) {
-				// note: if this unit is a factory, engine-controlled
-				// OpenYard() and CloseYard() calls can interfere with
-				// the yardOpen state (they probably should be removed
-				// at some point)
-				if (param == 0) {
-					if (groundBlockingObjectMap.CanCloseYard(unit))
-						groundBlockingObjectMap.CloseBlockingYard(unit);
-
-				} else {
-					if (groundBlockingObjectMap.CanOpenYard(unit))
-						groundBlockingObjectMap.OpenBlockingYard(unit);
-
-				}
-			}
-		} break;
-
-		case BUGGER_OFF: {
-			if (param != 0) {
-				if (const auto* f = dynamic_cast<CFactory*>(unit)) {
-					float3 boDir = (f->boRelHeading == 0) ? static_cast<float3>(f->frontdir) : GetVectorFromHeading((f->heading + f->boRelHeading) % SPRING_MAX_HEADING);
-					CGameHelper::BuggerOff(f->pos + boDir * f->boOffset, f->boRadius, f->boSherical, f->boForced, f->team, nullptr);
-				} else {
-					assert(false); //should not be happening with non-factory units?
-					CGameHelper::BuggerOff(unit->pos + unit->frontdir * unit->radius, unit->radius * 1.5f, true, false, unit->team, nullptr);
-				}
-			}
-		} break;
-
-		case ARMORED: {
-			unit->curArmorMultiple = mix(1.0f, unit->armoredMultiple, param != 0);
-			unit->armoredState = (param != 0);
-		} break;
-
-		case VETERAN_LEVEL: {
-			unit->experience = param * 0.01f;
-		} break;
-
-		case MAX_SPEED: {
-			if (param >= 0) {
-				unit->moveType->SetMaxSpeed(param / float(COBSCALE));
-			} else {
-				// temporarily (until the next command is issued) change unit's speed
-				unit->moveType->SetWantedMaxSpeed(-param / float(COBSCALE));
-			}
-		} break;
-
-		case CLOAKED: {
-			unit->wantCloak = !!param;
-		} break;
-
-		case WANT_CLOAK: {
-			unit->wantCloak = !!param;
-		} break;
-
-		case UPRIGHT: {
-			unit->upright = !!param;
-		} break;
-
-		case HEADING: {
-			unit->SetHeading(param % COBSCALE, !unit->upright && unit->IsOnGround(), false, unit->unitDef->upDirSmoothing);
-		} break;
-		case LOS_RADIUS: {
-			unit->ChangeLos(unit->realLosRadius = param, unit->realAirLosRadius);
-		} break;
-
-		case AIR_LOS_RADIUS: {
-			unit->ChangeLos(unit->realLosRadius, unit->realAirLosRadius = param);
-		} break;
-
-		case RADAR_RADIUS: {
-			unit->radarRadius = param;
-		} break;
-
-		case JAMMER_RADIUS: {
-			unit->jammerRadius = param;
-		} break;
-
-		case SONAR_RADIUS: {
-			unit->sonarRadius = param;
-		} break;
-
-		case SONAR_JAM_RADIUS: {
-			unit->sonarJamRadius = param;
-		} break;
-
-		case SEISMIC_RADIUS: {
-			unit->seismicRadius = param;
-		} break;
-
-		case CURRENT_FUEL: { // deprecated
-		} break;
-
-		case SHIELD_POWER: {
-			if (unit->shieldWeapon != nullptr) {
-				CPlasmaRepulser* shield = static_cast<CPlasmaRepulser*>(unit->shieldWeapon);
-				shield->SetCurPower(std::max(0.0f, float(param) / float(COBSCALE)));
-			}
-		} break;
-
-		case STEALTH: {
-			unit->stealth = !!param;
-		} break;
-
-		case SONAR_STEALTH: {
-			unit->sonarStealth = !!param;
-		} break;
-
-		case CRASHING: {
-			AAirMoveType* amt = dynamic_cast<AAirMoveType*>(unit->moveType);
-			if (amt != nullptr) {
-				if (!!param) {
-					amt->SetState(AAirMoveType::AIRCRAFT_CRASHING);
-				} else {
-					amt->SetState(AAirMoveType::AIRCRAFT_FLYING);
-				}
-			}
-		} break;
-
-		case CHANGE_TARGET: {
-			if (param <                     0) { return; }
-			if (param >= unit->weapons.size()) { return; }
-
-			unit->weapons[param]->avoidTarget = true;
-		} break;
-
-		case CEG_DAMAGE: {
-			unit->cegDamage = param;
-		} break;
-
-		case FLANK_B_MODE: {
-			unit->flankingBonusMode = param;
-		} break;
-		case FLANK_B_MOBILITY_ADD: {
-			unit->flankingBonusMobilityAdd = (param / (float)COBSCALE);
-		} break;
-		case FLANK_B_MAX_DAMAGE: {
-			const float mindamage = unit->flankingBonusAvgDamage - unit->flankingBonusDifDamage;
-			unit->flankingBonusAvgDamage = (param / (float)COBSCALE + mindamage) * 0.5f;
-			unit->flankingBonusDifDamage = (param / (float)COBSCALE - mindamage) * 0.5f;
-		} break;
-
-		case FLANK_B_MIN_DAMAGE: {
-			const float maxdamage = unit->flankingBonusAvgDamage + unit->flankingBonusDifDamage;
-			unit->flankingBonusAvgDamage = (maxdamage + param / (float)COBSCALE) * 0.5f;
-			unit->flankingBonusDifDamage = (maxdamage - param / (float)COBSCALE) * 0.5f;
-		} break;
-
-		default: {
-			ShowUnitScriptError("[US::SetUnitVal] unknown set-constant " + IntToString(val));
+	case ACTIVATION: {
+		if (unit->unitDef->onoffable) {
+			Command c(CMD_ONOFF, 0, (param == 0) ? 0 : 1);
+			unit->commandAI->GiveCommand(c);
 		}
+		else {
+			if (param == 0) {
+				unit->Deactivate();
+			}
+			else {
+				unit->Activate();
+			}
+		}
+	} break;
+
+	case STANDINGMOVEORDERS: {
+		if (param >= 0 && param <= MOVESTATE_ROAM) {
+			Command c(CMD_MOVE_STATE, 0, param);
+			unit->commandAI->GiveCommand(c);
+		}
+	} break;
+
+	case STANDINGFIREORDERS: {
+		if (param >= 0 && param <= FIRESTATE_FIREATNEUTRAL) {
+			Command c(CMD_FIRE_STATE, 0, param);
+			unit->commandAI->GiveCommand(c);
+		}
+	} break;
+
+	case HEALTH: {
+	} break;
+	case INBUILDSTANCE: {
+		unit->inBuildStance = (param != 0);
+	} break;
+
+	case BUSY: {
+		busy = (param != 0);
+	} break;
+
+	case PIECE_XZ: {
+	} break;
+
+	case PIECE_Y: {
+	} break;
+
+	case UNIT_XZ: {
+	} break;
+
+	case UNIT_Y: {
+	} break;
+
+	case UNIT_HEIGHT: {
+	} break;
+
+	case XZ_ATAN: {
+	} break;
+
+	case XZ_HYPOT: {
+	} break;
+
+	case ATAN: {
+	} break;
+
+	case HYPOT: {
+	} break;
+
+	case GROUND_HEIGHT: {
+	} break;
+
+	case GROUND_WATER_HEIGHT: {
+	} break;
+
+	case BUILD_PERCENT_LEFT: {
+	} break;
+
+	case YARD_OPEN: {
+		if (unit->GetBlockMap() != nullptr) {
+			// note: if this unit is a factory, engine-controlled
+			// OpenYard() and CloseYard() calls can interfere with
+			// the yardOpen state (they probably should be removed
+			// at some point)
+			if (param == 0) {
+				if (groundBlockingObjectMap.CanCloseYard(unit))
+					groundBlockingObjectMap.CloseBlockingYard(unit);
+			}
+			else {
+				if (groundBlockingObjectMap.CanOpenYard(unit))
+					groundBlockingObjectMap.OpenBlockingYard(unit);
+			}
+		}
+	} break;
+
+	case BUGGER_OFF: {
+		if (param != 0) {
+			if (const auto* f = dynamic_cast<CFactory*>(unit)) {
+				float3 boDir = (f->boRelHeading == 0) ?
+				                   static_cast<float3>(f->frontdir) :
+				                   GetVectorFromHeading((f->heading + f->boRelHeading) % SPRING_MAX_HEADING);
+				CGameHelper::BuggerOff(
+				    f->pos + boDir * f->boOffset, f->boRadius, f->boSherical, f->boForced, f->team, nullptr);
+			}
+			else {
+				assert(false); // should not be happening with non-factory units?
+				CGameHelper::BuggerOff(
+				    unit->pos + unit->frontdir * unit->radius, unit->radius * 1.5f, true, false, unit->team, nullptr);
+			}
+		}
+	} break;
+
+	case ARMORED: {
+		unit->curArmorMultiple = mix(1.0f, unit->armoredMultiple, param != 0);
+		unit->armoredState = (param != 0);
+	} break;
+
+	case VETERAN_LEVEL: {
+		unit->experience = param * 0.01f;
+	} break;
+
+	case MAX_SPEED: {
+		if (param >= 0) {
+			unit->moveType->SetMaxSpeed(param / float(COBSCALE));
+		}
+		else {
+			// temporarily (until the next command is issued) change unit's speed
+			unit->moveType->SetWantedMaxSpeed(-param / float(COBSCALE));
+		}
+	} break;
+
+	case CLOAKED: {
+		unit->wantCloak = !!param;
+	} break;
+
+	case WANT_CLOAK: {
+		unit->wantCloak = !!param;
+	} break;
+
+	case UPRIGHT: {
+		unit->upright = !!param;
+	} break;
+
+	case HEADING: {
+		unit->SetHeading(param % COBSCALE, !unit->upright && unit->IsOnGround(), false, unit->unitDef->upDirSmoothing);
+	} break;
+	case LOS_RADIUS: {
+		unit->ChangeLos(unit->realLosRadius = param, unit->realAirLosRadius);
+	} break;
+
+	case AIR_LOS_RADIUS: {
+		unit->ChangeLos(unit->realLosRadius, unit->realAirLosRadius = param);
+	} break;
+
+	case RADAR_RADIUS: {
+		unit->radarRadius = param;
+	} break;
+
+	case JAMMER_RADIUS: {
+		unit->jammerRadius = param;
+	} break;
+
+	case SONAR_RADIUS: {
+		unit->sonarRadius = param;
+	} break;
+
+	case SONAR_JAM_RADIUS: {
+		unit->sonarJamRadius = param;
+	} break;
+
+	case SEISMIC_RADIUS: {
+		unit->seismicRadius = param;
+	} break;
+
+	case CURRENT_FUEL: { // deprecated
+	} break;
+
+	case SHIELD_POWER: {
+		if (unit->shieldWeapon != nullptr) {
+			CPlasmaRepulser* shield = static_cast<CPlasmaRepulser*>(unit->shieldWeapon);
+			shield->SetCurPower(std::max(0.0f, float(param) / float(COBSCALE)));
+		}
+	} break;
+
+	case STEALTH: {
+		unit->stealth = !!param;
+	} break;
+
+	case SONAR_STEALTH: {
+		unit->sonarStealth = !!param;
+	} break;
+
+	case CRASHING: {
+		AAirMoveType* amt = dynamic_cast<AAirMoveType*>(unit->moveType);
+		if (amt != nullptr) {
+			if (!!param) {
+				amt->SetState(AAirMoveType::AIRCRAFT_CRASHING);
+			}
+			else {
+				amt->SetState(AAirMoveType::AIRCRAFT_FLYING);
+			}
+		}
+	} break;
+
+	case CHANGE_TARGET: {
+		if (param < 0) {
+			return;
+		}
+		if (param >= unit->weapons.size()) {
+			return;
+		}
+
+		unit->weapons[param]->avoidTarget = true;
+	} break;
+
+	case CEG_DAMAGE: {
+		unit->cegDamage = param;
+	} break;
+
+	case FLANK_B_MODE: {
+		unit->flankingBonusMode = param;
+	} break;
+	case FLANK_B_MOBILITY_ADD: {
+		unit->flankingBonusMobilityAdd = (param / (float)COBSCALE);
+	} break;
+	case FLANK_B_MAX_DAMAGE: {
+		const float mindamage = unit->flankingBonusAvgDamage - unit->flankingBonusDifDamage;
+		unit->flankingBonusAvgDamage = (param / (float)COBSCALE + mindamage) * 0.5f;
+		unit->flankingBonusDifDamage = (param / (float)COBSCALE - mindamage) * 0.5f;
+	} break;
+
+	case FLANK_B_MIN_DAMAGE: {
+		const float maxdamage = unit->flankingBonusAvgDamage + unit->flankingBonusDifDamage;
+		unit->flankingBonusAvgDamage = (maxdamage + param / (float)COBSCALE) * 0.5f;
+		unit->flankingBonusDifDamage = (maxdamage - param / (float)COBSCALE) * 0.5f;
+	} break;
+
+	default: {
+		ShowUnitScriptError("[US::SetUnitVal] unknown set-constant " + IntToString(val));
+	}
 	}
 #endif
 }
@@ -1583,7 +1516,8 @@ void CUnitScript::SetUnitVal(int val, int param)
 /******************************************************************************/
 /******************************************************************************/
 
-int CUnitScript::ScriptToModel(int scriptPieceNum) const {
+int CUnitScript::ScriptToModel(int scriptPieceNum) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!PieceExists(scriptPieceNum))
 		return -1;
@@ -1593,7 +1527,8 @@ int CUnitScript::ScriptToModel(int scriptPieceNum) const {
 	return (smp->GetLModelPieceIndex());
 }
 
-int CUnitScript::ModelToScript(int lmodelPieceNum) const {
+int CUnitScript::ModelToScript(int lmodelPieceNum) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	LocalModel& lm = unit->localModel;
 
@@ -1610,8 +1545,9 @@ void CUnitScript::ShowUnitScriptError(const std::string& error)
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (unit == nullptr) {
 		ShowScriptError("unitID=null error=\"" + error + "\"");
-	} else {
-		ShowScriptError("unitID=" + IntToString(unit->id) + " defName=" + unit->unitDef->name + " error=\"" + error + "\"");
+	}
+	else {
+		ShowScriptError(
+		    "unitID=" + IntToString(unit->id) + " defName=" + unit->unitDef->name + " error=\"" + error + "\"");
 	}
 }
-

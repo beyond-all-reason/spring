@@ -3,13 +3,12 @@
 #ifndef _MOVE_DATA_H
 #define _MOVE_DATA_H
 
-#include <vector>
-#include <map>
-#include <string>
-#include <functional>
-
 #include "System/creg/creg_cond.h"
 
+#include <functional>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace springLegacyAI {
 
@@ -18,40 +17,42 @@ struct MoveData {
 	CR_DECLARE_STRUCT(MoveData)
 
 	MoveData()
-		: moveType(MoveData::Ground_Move)
-		, moveFamily(MoveData::Tank)
-		, terrainClass(MoveData::Mixed)
-		, followGround(true)
-		, xsize(0)
-		, zsize(0)
-		, depth(0.0f)
-		, maxSlope(0.0f)
-		, slopeMod(0.0f)
-		, pathType(0)
-		, crushStrength(0.0f)
-		, name("tank")
-		, maxSpeed(0.0f)
-		, maxTurnRate(0)
-		, maxAcceleration(0.0f)
-		, maxBreaking(0.0f)
-		, subMarine(false)
-		, heatMapping(true)
-		, heatMod(0.05f)
-		, heatProduced(30)
+	    : moveType(MoveData::Ground_Move)
+	    , moveFamily(MoveData::Tank)
+	    , terrainClass(MoveData::Mixed)
+	    , followGround(true)
+	    , xsize(0)
+	    , zsize(0)
+	    , depth(0.0f)
+	    , maxSlope(0.0f)
+	    , slopeMod(0.0f)
+	    , pathType(0)
+	    , crushStrength(0.0f)
+	    , name("tank")
+	    , maxSpeed(0.0f)
+	    , maxTurnRate(0)
+	    , maxAcceleration(0.0f)
+	    , maxBreaking(0.0f)
+	    , subMarine(false)
+	    , heatMapping(true)
+	    , heatMod(0.05f)
+	    , heatProduced(30)
 	{
 	}
 
 	enum MoveType {
 		Ground_Move = 0,
-		Hover_Move  = 1,
-		Ship_Move   = 2
+		Hover_Move = 1,
+		Ship_Move = 2
 	};
+
 	enum MoveFamily {
-		Tank  = 0,
-		KBot  = 1,
+		Tank = 0,
+		KBot = 1,
 		Hover = 2,
-		Ship  = 3
+		Ship = 3
 	};
+
 	enum TerrainClass {
 		/// we are restricted to "land" (terrain with height >= 0)
 		Land = 0,
@@ -75,7 +76,7 @@ struct MoveData {
 	float depth;
 	float maxSlope;
 	float slopeMod;
-	std::function<float (float height)> GetDepthMod;
+	std::function<float(float height)> GetDepthMod;
 
 	int pathType;
 	float crushStrength;

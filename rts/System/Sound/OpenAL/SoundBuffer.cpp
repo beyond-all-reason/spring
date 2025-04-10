@@ -2,18 +2,19 @@
 
 #include "SoundBuffer.h"
 
-
-#include "System/Sound/SoundLog.h"
 #include "ALShared.h"
-#include "System/Platform/byteorder.h"
-#include "OggDecoder.h"
 #include "Mp3Decoder.h"
+#include "OggDecoder.h"
 
-#include <vorbis/vorbisfile.h>
-#include <ogg/ogg.h>
+#include "System/Platform/byteorder.h"
+#include "System/Sound/SoundLog.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+
+#include <ogg/ogg.h>
+#include <vorbis/vorbisfile.h>
 
 
 SoundBuffer::bufferMapT SoundBuffer::bufferMap;
@@ -23,24 +24,24 @@ static std::vector<std::uint8_t> decodeBuffer;
 
 
 #pragma pack(push, 1)
+
 // Header copied from WavLib by Michael McTernan
-struct WAVHeader
-{
-	std::uint8_t riff[4];        // "RIFF"
+struct WAVHeader {
+	std::uint8_t riff[4]; // "RIFF"
 	std::int32_t totalLength;
-	std::uint8_t wavefmt[8];     // WAVEfmt "
-	std::int32_t length;         // Remaining length 4 bytes
+	std::uint8_t wavefmt[8]; // WAVEfmt "
+	std::int32_t length;     // Remaining length 4 bytes
 	std::int16_t format_tag;
-	std::int16_t channels;       // Mono=1 Stereo=2
+	std::int16_t channels; // Mono=1 Stereo=2
 	std::int32_t SamplesPerSec;
 	std::int32_t AvgBytesPerSec;
 	std::int16_t BlockAlign;
 	std::int16_t BitsPerSample;
-	std::uint8_t data[4];        // "data"
-	std::int32_t datalen;        // Raw data length 4 bytes
+	std::uint8_t data[4]; // "data"
+	std::int32_t datalen; // Raw data length 4 bytes
 };
-#pragma pack(pop)
 
+#pragma pack(pop)
 
 bool SoundBuffer::LoadWAV(const std::string& file, const std::vector<std::uint8_t>& buffer)
 {
@@ -73,18 +74,24 @@ bool SoundBuffer::LoadWAV(const std::string& file, const std::vector<std::uint8_
 
 	ALenum format;
 	if (header->channels == 1) {
-		if (header->BitsPerSample == 8) format = AL_FORMAT_MONO8;
-		else if (header->BitsPerSample == 16) format = AL_FORMAT_MONO16;
+		if (header->BitsPerSample == 8)
+			format = AL_FORMAT_MONO8;
+		else if (header->BitsPerSample == 16)
+			format = AL_FORMAT_MONO16;
 		else {
-			LOG_L(L_ERROR, "[%s(%s)] invalid number of bits per sample (mono; %d)", __func__, file.c_str(), header->BitsPerSample);
+			LOG_L(L_ERROR, "[%s(%s)] invalid number of bits per sample (mono; %d)", __func__, file.c_str(),
+			    header->BitsPerSample);
 			return false;
 		}
 	}
 	else if (header->channels == 2) {
-		if (header->BitsPerSample == 8) format = AL_FORMAT_STEREO8;
-		else if (header->BitsPerSample == 16) format = AL_FORMAT_STEREO16;
+		if (header->BitsPerSample == 8)
+			format = AL_FORMAT_STEREO8;
+		else if (header->BitsPerSample == 16)
+			format = AL_FORMAT_STEREO16;
 		else {
-			LOG_L(L_ERROR, "[%s(%s)] invalid number of bits per sample (stereo; %d)", __func__, file.c_str(), header->BitsPerSample);
+			LOG_L(L_ERROR, "[%s(%s)] invalid number of bits per sample (stereo; %d)", __func__, file.c_str(),
+			    header->BitsPerSample);
 			return false;
 		}
 	}
@@ -94,23 +101,22 @@ bool SoundBuffer::LoadWAV(const std::string& file, const std::vector<std::uint8_
 	}
 
 	if (static_cast<unsigned>(header->datalen) > buffer.size() - sizeof(WAVHeader)) {
-		LOG_L(L_ERROR,
-				"[%s(%s)] data length %i greater than actual data length %i",
-				__func__, file.c_str(), header->datalen,
-				(int)(buffer.size() - sizeof(WAVHeader)));
+		LOG_L(L_ERROR, "[%s(%s)] data length %i greater than actual data length %i", __func__, file.c_str(),
+		    header->datalen, (int)(buffer.size() - sizeof(WAVHeader)));
 
-//		LOG_L(L_WARNING, "OpenAL: size %d\n", size);
-//		LOG_L(L_WARNING, "OpenAL: sizeof(WAVHeader) %d\n", sizeof(WAVHeader));
-//		LOG_L(L_WARNING, "OpenAL: format_tag %d\n", header->format_tag);
-//		LOG_L(L_WARNING, "OpenAL: channels %d\n", header->channels);
-//		LOG_L(L_WARNING, "OpenAL: BlockAlign %d\n", header->BlockAlign);
-//		LOG_L(L_WARNING, "OpenAL: BitsPerSample %d\n", header->BitsPerSample);
-//		LOG_L(L_WARNING, "OpenAL: totalLength %d\n", header->totalLength);
-//		LOG_L(L_WARNING, "OpenAL: length %d\n", header->length);
-//		LOG_L(L_WARNING, "OpenAL: SamplesPerSec %d\n", header->SamplesPerSec);
-//		LOG_L(L_WARNING, "OpenAL: AvgBytesPerSec %d\n", header->AvgBytesPerSec);
+		//		LOG_L(L_WARNING, "OpenAL: size %d\n", size);
+		//		LOG_L(L_WARNING, "OpenAL: sizeof(WAVHeader) %d\n", sizeof(WAVHeader));
+		//		LOG_L(L_WARNING, "OpenAL: format_tag %d\n", header->format_tag);
+		//		LOG_L(L_WARNING, "OpenAL: channels %d\n", header->channels);
+		//		LOG_L(L_WARNING, "OpenAL: BlockAlign %d\n", header->BlockAlign);
+		//		LOG_L(L_WARNING, "OpenAL: BitsPerSample %d\n", header->BitsPerSample);
+		//		LOG_L(L_WARNING, "OpenAL: totalLength %d\n", header->totalLength);
+		//		LOG_L(L_WARNING, "OpenAL: length %d\n", header->length);
+		//		LOG_L(L_WARNING, "OpenAL: SamplesPerSec %d\n", header->SamplesPerSec);
+		//		LOG_L(L_WARNING, "OpenAL: AvgBytesPerSec %d\n", header->AvgBytesPerSec);
 
-		header->datalen = std::uint32_t(buffer.size() - sizeof(WAVHeader))&(~std::uint32_t((header->BitsPerSample*header->channels)/8 -1));
+		header->datalen = std::uint32_t(buffer.size() - sizeof(WAVHeader)) &
+		                  (~std::uint32_t((header->BitsPerSample * header->channels) / 8 - 1));
 	}
 
 	if (!AlGenBuffer(file, format, &buffer[sizeof(WAVHeader)], header->datalen, header->SamplesPerSec))
@@ -118,7 +124,7 @@ bool SoundBuffer::LoadWAV(const std::string& file, const std::vector<std::uint8_
 
 	filename = file;
 	channels = header->channels;
-	length   = float(header->datalen) / (header->channels * header->SamplesPerSec * header->BitsPerSample);
+	length = float(header->datalen) / (header->channels * header->SamplesPerSec * header->BitsPerSample);
 
 	return true;
 }
@@ -134,12 +140,16 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 	ALenum format;
 
 	switch (decoder.GetChannels()) {
-		case  1: { format = AL_FORMAT_MONO16  ; } break;
-		case  2: { format = AL_FORMAT_STEREO16; } break;
-		default: {
-			LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), decoder.GetChannels());
-			return false;
-		}
+	case 1: {
+		format = AL_FORMAT_MONO16;
+	} break;
+	case 2: {
+		format = AL_FORMAT_STEREO16;
+	} break;
+	default: {
+		LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), decoder.GetChannels());
+		return false;
+	}
 	}
 
 	size_t pos = 0;
@@ -153,17 +163,12 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 		if ((4 * pos) > (3 * decodeBuffer.size()))
 			decodeBuffer.resize(decodeBuffer.size() * 2);
 		switch ((read = decoder.Read(&decodeBuffer[pos], decodeBuffer.size() - pos, 0, 2, 1, &section))) {
-			case OV_HOLE:
-				LOG_L(L_WARNING, "[%s(%s)] garbage or corrupt page in stream (non-fatal)", __func__, file.c_str());
-				continue; // read next
-			case OV_EBADLINK:
-				LOG_L(L_WARNING, "[%s(%s)] corrupted stream", __func__, file.c_str());
-				return false; // abort
-			case OV_EINVAL:
-				LOG_L(L_WARNING, "[%s(%s)] corrupted headers", __func__, file.c_str());
-				return false; // abort
-			default:
-				break; // all good
+		case OV_HOLE:
+			LOG_L(L_WARNING, "[%s(%s)] garbage or corrupt page in stream (non-fatal)", __func__, file.c_str());
+			continue; // read next
+		case OV_EBADLINK: LOG_L(L_WARNING, "[%s(%s)] corrupted stream", __func__, file.c_str()); return false; // abort
+		case OV_EINVAL: LOG_L(L_WARNING, "[%s(%s)] corrupted headers", __func__, file.c_str()); return false;  // abort
+		default: break; // all good
 		}
 
 		pos += read;
@@ -174,7 +179,7 @@ bool SoundBuffer::LoadVorbis(const std::string& file, const std::vector<std::uin
 
 	filename = file;
 	channels = decoder.GetChannels();
-	length   = decoder.GetTotalTime();
+	length = decoder.GetTotalTime();
 	return true;
 }
 
@@ -189,12 +194,16 @@ bool SoundBuffer::LoadMp3(const std::string& file, const std::vector<std::uint8_
 	ALenum format;
 
 	switch (decoder.GetChannels()) {
-		case  1: { format = AL_FORMAT_MONO16  ; } break;
-		case  2: { format = AL_FORMAT_STEREO16; } break;
-		default: {
-			LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), decoder.GetChannels());
-			return false;
-		}
+	case 1: {
+		format = AL_FORMAT_MONO16;
+	} break;
+	case 2: {
+		format = AL_FORMAT_STEREO16;
+	} break;
+	default: {
+		LOG_L(L_ERROR, "[%s(%s)] invalid number of channels (%i)", __func__, file.c_str(), decoder.GetChannels());
+		return false;
+	}
 	}
 
 	size_t pos = 0;
@@ -219,26 +228,30 @@ bool SoundBuffer::LoadMp3(const std::string& file, const std::vector<std::uint8_
 
 	filename = file;
 	channels = decoder.GetChannels();
-	length   = decoder.GetTotalTime();
+	length = decoder.GetTotalTime();
 	return true;
 }
 
-bool SoundBuffer::AlGenBuffer(const std::string& file, ALenum format, const std::uint8_t* data, size_t datalength, int rate)
+bool SoundBuffer::AlGenBuffer(const std::string& file,
+    ALenum format,
+    const std::uint8_t* data,
+    size_t datalength,
+    int rate)
 {
 	alGenBuffers(1, &id);
 	if (!CheckError("SoundBuffer::alGenBuffers"))
 		return false;
-	alBufferData(id, format, (ALvoid*) data, datalength, rate);
+	alBufferData(id, format, (ALvoid*)data, datalength, rate);
 	return CheckError("SoundBuffer::alBufferData");
 }
 
-bool SoundBuffer::Release() {
+bool SoundBuffer::Release()
+{
 	if (id == 0)
 		return false;
 	alDeleteBuffers(1, &id);
 	return true;
 }
-
 
 int SoundBuffer::BufferSize() const
 {
@@ -246,7 +259,6 @@ int SoundBuffer::BufferSize() const
 	alGetBufferi(id, AL_SIZE, &size);
 	return static_cast<int>(size);
 }
-
 
 size_t SoundBuffer::GetId(const std::string& name)
 {
@@ -264,12 +276,10 @@ SoundBuffer& SoundBuffer::GetById(const size_t id)
 	return buffers.at(id);
 }
 
-
 size_t SoundBuffer::AllocedSize()
 {
 	size_t numBytes = 0;
-	for (auto it = ++buffers.cbegin(); it != buffers.cend(); ++it)
-		numBytes += it->BufferSize();
+	for (auto it = ++buffers.cbegin(); it != buffers.cend(); ++it) numBytes += it->BufferSize();
 	return numBytes;
 }
 
@@ -282,4 +292,3 @@ size_t SoundBuffer::Insert(SoundBuffer&& buffer)
 
 	return bufId;
 }
-

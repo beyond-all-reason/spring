@@ -3,10 +3,10 @@
 #ifndef QTPFS_SYSTEMS_PATH_H__
 #define QTPFS_SYSTEMS_PATH_H__
 
-#include <vector>
-
-#include "System/float3.h"
 #include "System/Ecs/Components/BaseComponents.h"
+#include "System/float3.h"
+
+#include <vector>
 
 namespace QTPFS {
 
@@ -14,20 +14,26 @@ struct SharedPathChain {
 	SharedPathChain() {}
 
 	SharedPathChain(entt::entity initPrev, entt::entity initNext)
-		: prev(initPrev), next(initNext) {}
+	    : prev(initPrev)
+	    , next(initNext)
+	{
+	}
 
-    entt::entity prev{entt::null};
-    entt::entity next{entt::null};
+	entt::entity prev{entt::null};
+	entt::entity next{entt::null};
 };
 
 struct PartialSharedPathChain {
 	PartialSharedPathChain() {}
 
 	PartialSharedPathChain(entt::entity initPrev, entt::entity initNext)
-		: prev(initPrev), next(initNext) {}
+	    : prev(initPrev)
+	    , next(initNext)
+	{
+	}
 
-    entt::entity prev{entt::null};
-    entt::entity next{entt::null};
+	entt::entity prev{entt::null};
+	entt::entity next{entt::null};
 };
 
 VOID_COMPONENT(PathIsTemp);
@@ -39,6 +45,6 @@ VOID_COMPONENT(ProcessPath);
 ALIAS_COMPONENT(PathSearchRef, entt::entity);
 ALIAS_COMPONENT(PathRequeueSearch, bool);
 
-}
+} // namespace QTPFS
 
 #endif

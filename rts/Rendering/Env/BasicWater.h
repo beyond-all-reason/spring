@@ -4,22 +4,27 @@
 #define BASIC_WATER_H
 
 #include "IWater.h"
-#include "Rendering/GL/VertexArrayTypes.h"
-#include "Rendering/GL/RenderBuffers.h"
 
-class CBasicWater : public IWater
-{
+#include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/VertexArrayTypes.h"
+
+class CBasicWater : public IWater {
 public:
 	~CBasicWater() override { FreeResources(); }
+
 	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
 	void Draw() override;
-	void UpdateWater(const CGame* game)  override {}
+
+	void UpdateWater(const CGame* game) override {}
+
 	WATER_RENDERER GetID() const override { return WATER_RENDERER_BASIC; }
 
 	bool CanDrawReflectionPass() const override { return false; }
+
 	bool CanDrawRefractionPass() const override { return false; }
+
 private:
 	void GenWaterQuadsRB();
 	TypedRenderBuffer<VA_TYPE_T> rb;

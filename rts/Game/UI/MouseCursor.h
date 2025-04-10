@@ -3,10 +3,10 @@
 #ifndef MOUSECURSOR_H
 #define MOUSECURSOR_H
 
+#include "Rendering/GL/VertexArrayTypes.h"
+
 #include <string>
 #include <vector>
-
-#include "Rendering/GL/VertexArrayTypes.h"
 
 
 class CBitmap;
@@ -14,34 +14,43 @@ class IHardwareCursor;
 
 class CMouseCursor {
 public:
-	enum HotSpot {TopLeft, Center};
+	enum HotSpot {
+		TopLeft,
+		Center
+	};
 
 public:
 	CMouseCursor() = default; // null-cursor
 	CMouseCursor(const std::string& name, HotSpot hs);
 	CMouseCursor(const CMouseCursor& mc) = delete;
+
 	CMouseCursor(CMouseCursor&& mc) { *this = std::move(mc); }
+
 	~CMouseCursor();
 
-	CMouseCursor& operator = (const CMouseCursor& mc) = delete;
-	CMouseCursor& operator = (CMouseCursor&& mc) noexcept;
+	CMouseCursor& operator=(const CMouseCursor& mc) = delete;
+	CMouseCursor& operator=(CMouseCursor&& mc) noexcept;
 
 	void Update();
-	void Draw(int x, int y, float scale) const;   // software cursor draw
-	void BindTexture() const;                     // software mouse cursor
-	void UpdateHwCursor() const;                  // hardware mouse cursor animation
-	void BindHwCursor() const;                    // hardware mouse cursor
+	void Draw(int x, int y, float scale) const; // software cursor draw
+	void BindTexture() const;                   // software mouse cursor
+	void UpdateHwCursor() const;                // hardware mouse cursor animation
+	void BindHwCursor() const;                  // hardware mouse cursor
 
 	int GetMaxSizeX() const { return xmaxsize; }
+
 	int GetMaxSizeY() const { return ymaxsize; }
 
 	bool IsHWValid() const { return hwValid; }
+
 	bool IsValid() const { return (!frames.empty()); }
 
 	const std::string& GetName() const { return name; }
+
 	const HotSpot GetHotSpot() const { return hotSpot; }
 
 	float4 CalcFrameMatrixParams(const float3& winCoors, const float2& winScale) const;
+
 private:
 	struct ImageData;
 
@@ -52,18 +61,18 @@ private:
 	bool BuildFromFileNames(const std::string& name, int lastFrame);
 
 public:
-	static constexpr float MIN_FRAME_LENGTH = 0.010f;  // seconds
-	static constexpr float DEF_FRAME_LENGTH = 0.100f;  // seconds
+	static constexpr float MIN_FRAME_LENGTH = 0.010f; // seconds
+	static constexpr float DEF_FRAME_LENGTH = 0.100f; // seconds
 
 	static constexpr size_t HWC_MEM_SIZE = 136;
 
 
 private:
 	static constexpr VA_TYPE_TC CURSOR_VERTS[] = {
-		VA_TYPE_TC{{0.0f, 0.0f, 0.0f}, 0.0f, 0.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // tl
-		VA_TYPE_TC{{1.0f, 0.0f, 0.0f}, 1.0f, 0.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // tr
-		VA_TYPE_TC{{1.0f, 1.0f, 0.0f}, 1.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // br
-		VA_TYPE_TC{{0.0f, 1.0f, 0.0f}, 0.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // bl
+	    VA_TYPE_TC{{0.0f, 0.0f, 0.0f}, 0.0f, 0.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // tl
+	    VA_TYPE_TC{{1.0f, 0.0f, 0.0f}, 1.0f, 0.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // tr
+	    VA_TYPE_TC{{1.0f, 1.0f, 0.0f}, 1.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // br
+	    VA_TYPE_TC{{0.0f, 1.0f, 0.0f}, 0.0f, 1.0f, {1.0f, 1.0f, 1.0f, 1.0f}}, // bl
 	};
 
 	struct ImageData {
@@ -73,8 +82,13 @@ private:
 		int xAlignedSize = 0;
 		int yAlignedSize = 0;
 	};
+
 	struct FrameData {
-		FrameData(unsigned int idx, float time): imageIdx(idx), length(time) {}
+		FrameData(unsigned int idx, float time)
+		    : imageIdx(idx)
+		    , length(time)
+		{
+		}
 
 		unsigned int imageIdx = 0;
 
@@ -82,6 +96,7 @@ private:
 		float startTime = 0.0f;
 		float endTime = 0.0f;
 	};
+
 	std::string name;
 
 	std::vector<ImageData> images;

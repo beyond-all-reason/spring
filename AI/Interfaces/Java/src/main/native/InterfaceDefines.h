@@ -9,9 +9,9 @@ extern "C" {
 
 #define JAVA_SKIRMISH_AI_PROPERTY_CLASS_NAME "className"
 
-#define MY_LOG_FILE       "interface-log.txt"
+#define MY_LOG_FILE "interface-log.txt"
 #define JAVA_AI_INTERFACE_LIBRARY_FILE_NAME "AIInterface.jar"
-#define NATIVE_LIBS_DIR   "lib"
+#define NATIVE_LIBS_DIR "lib"
 #define JRE_LOCATION_FILE "jre-location.txt"
 
 #include <stddef.h> // for NULL

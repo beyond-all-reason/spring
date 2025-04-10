@@ -52,7 +52,7 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/Log/LogSinkHandler.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Log/LogUtil.c
 	${ENGINE_SRC_ROOT_DIR}/System/Log/ConsoleSink.cpp
-	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c	
+	${ENGINE_SRC_ROOT_DIR}/System/SafeCStrings.c
 	${ENGINE_SRC_ROOT_DIR}/System/creg/Serializer.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/creg/VarTypes.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/creg/creg.cpp

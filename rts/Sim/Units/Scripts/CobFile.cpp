@@ -1,26 +1,24 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "Sim/Misc/GlobalConstants.h"
 #include "CobFile.h"
+
+#include "Sim/Misc/GlobalConstants.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Log/ILog.h"
-#include "System/Sound/ISound.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Platform/byteorder.h"
+#include "System/Sound/ISound.h"
 #include "System/StringUtil.h"
 
 #include <algorithm>
-#include <locale>
 #include <cctype>
 #include <cstring>
+#include <locale>
 
-#include "System/Misc/TracyDefs.h"
-
-
-//The following structure is taken from http://visualta.tauniverse.com/Downloads/ta-cob-fmt.txt
-//Information on missing fields from Format_Cob.pas
-typedef struct tagCOBHeader
-{
+// The following structure is taken from http://visualta.tauniverse.com/Downloads/ta-cob-fmt.txt
+// Information on missing fields from Format_Cob.pas
+typedef struct tagCOBHeader {
 	int VersionSignature; // 4 for TA, 6 for TA:K
 	int NumberOfScripts;
 	int NumberOfPieces;
@@ -33,59 +31,57 @@ typedef struct tagCOBHeader
 	int OffsetToScriptCode;
 	int Unknown_3; /* Always seems to point to first script name */
 
-	int OffsetToSoundNameArray;		// These two are only found in TA:K scripts
+	int OffsetToSoundNameArray; // These two are only found in TA:K scripts
 	int NumberOfSounds;
 } COBHeader;
 
-
-#define READ_COBHEADER(ch,src)						\
-do {									\
-	unsigned int __tmp;						\
-	unsigned short __isize = sizeof(unsigned int);			\
-	unsigned int __c = 0;						\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).VersionSignature = (int)swabDWord(__tmp);			\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).NumberOfScripts = (int)swabDWord(__tmp);			\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).NumberOfPieces = (int)swabDWord(__tmp);			\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).TotalScriptLen = (int)swabDWord(__tmp);			\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).NumberOfStaticVars = (int)swabDWord(__tmp);		\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).Unknown_2 = (int)swabDWord(__tmp);				\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).OffsetToScriptCodeIndexArray = (int)swabDWord(__tmp);	\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).OffsetToScriptNameOffsetArray = (int)swabDWord(__tmp);	\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).OffsetToPieceNameOffsetArray = (int)swabDWord(__tmp);	\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).OffsetToScriptCode = (int)swabDWord(__tmp);		\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).Unknown_3 = (int)swabDWord(__tmp);				\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).OffsetToSoundNameArray = (int)swabDWord(__tmp);		\
-	__c+=__isize;							\
-	memcpy(&__tmp,&((src)[__c]),__isize);				\
-	(ch).NumberOfSounds = (int)swabDWord(__tmp);			\
-} while (0)
+#define READ_COBHEADER(ch, src)                                     \
+	do {                                                            \
+		unsigned int __tmp;                                         \
+		unsigned short __isize = sizeof(unsigned int);              \
+		unsigned int __c = 0;                                       \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).VersionSignature = (int)swabDWord(__tmp);              \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).NumberOfScripts = (int)swabDWord(__tmp);               \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).NumberOfPieces = (int)swabDWord(__tmp);                \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).TotalScriptLen = (int)swabDWord(__tmp);                \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).NumberOfStaticVars = (int)swabDWord(__tmp);            \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).Unknown_2 = (int)swabDWord(__tmp);                     \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).OffsetToScriptCodeIndexArray = (int)swabDWord(__tmp);  \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).OffsetToScriptNameOffsetArray = (int)swabDWord(__tmp); \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).OffsetToPieceNameOffsetArray = (int)swabDWord(__tmp);  \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).OffsetToScriptCode = (int)swabDWord(__tmp);            \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).Unknown_3 = (int)swabDWord(__tmp);                     \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).OffsetToSoundNameArray = (int)swabDWord(__tmp);        \
+		__c += __isize;                                             \
+		memcpy(&__tmp, &((src)[__c]), __isize);                     \
+		(ch).NumberOfSounds = (int)swabDWord(__tmp);                \
+	} while (0)
 
 
 static std::vector<uint8_t> cobFileData;
-
 
 CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 {
@@ -104,7 +100,8 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 		cobFileData.resize(in.FileSize());
 		// read the entire thing, we will need it
 		in.Read(cobFileData.data(), cobFileData.size());
-	} else {
+	}
+	else {
 		cobFileData = std::move(in.GetBuffer());
 	}
 
@@ -125,17 +122,18 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 	pieceNames.reserve(ch.NumberOfPieces);
 
 	for (int i = 0; i < ch.NumberOfScripts; ++i) {
-		int ofs = *(int *) &cobFileData[ch.OffsetToScriptNameOffsetArray + i * 4];
+		int ofs = *(int*)&cobFileData[ch.OffsetToScriptNameOffsetArray + i * 4];
 		swabDWordInPlace(ofs);
 		scriptNames.emplace_back(reinterpret_cast<const char*>(&cobFileData[ofs]));
 
 		if (scriptNames[scriptNames.size() - 1].find("lua_") == 0) {
 			luaScripts.emplace_back(scriptNames[scriptNames.size() - 1].c_str() + sizeof("lua_") - 1);
-		} else {
+		}
+		else {
 			luaScripts.emplace_back("");
 		}
 
-		ofs = *(int *) &cobFileData[ch.OffsetToScriptCodeIndexArray + i * 4];
+		ofs = *(int*)&cobFileData[ch.OffsetToScriptCodeIndexArray + i * 4];
 		swabDWordInPlace(ofs);
 		scriptOffsets.push_back(ofs);
 	}
@@ -149,7 +147,7 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 
 
 	for (int i = 0; i < ch.NumberOfPieces; ++i) {
-		int ofs = *(int *) &cobFileData[ch.OffsetToPieceNameOffsetArray + i * 4];
+		int ofs = *(int*)&cobFileData[ch.OffsetToPieceNameOffsetArray + i * 4];
 		swabDWordInPlace(ofs);
 		pieceNames.emplace_back(StringToLower(reinterpret_cast<const char*>(&cobFileData[ofs])));
 	}
@@ -169,7 +167,7 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 		sounds.reserve(ch.NumberOfSounds);
 
 		for (int i = 0; i < ch.NumberOfSounds; ++i) {
-			int ofs = *(int *) &cobFileData[ch.OffsetToSoundNameArray + i * 4];
+			int ofs = *(int*)&cobFileData[ch.OffsetToSoundNameArray + i * 4];
 			// FIXME: this probably isn't correct
 			swabDWordInPlace(ofs);
 
@@ -177,7 +175,8 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 
 			if (sound->HasSoundItem(s)) {
 				sounds.push_back(sound->GetSoundId(s));
-			} else {
+			}
+			else {
 				// Load the wave file and store the ID for future use
 				sounds.push_back(sound->GetSoundId("sounds/" + s + ".wav"));
 			}
@@ -200,7 +199,6 @@ CCobFile::CCobFile(CFileHandler& in, const std::string& scriptName)
 		scriptIndex[pair.second] = fn;
 	}
 }
-
 
 int CCobFile::GetFunctionId(const std::string& name)
 {

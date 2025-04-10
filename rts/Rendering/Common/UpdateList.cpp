@@ -1,14 +1,11 @@
 #include "UpdateList.h"
+
 #include "System/Misc/TracyDefs.h"
 
 #include <algorithm>
 
 CR_BIND(UpdateList, )
-CR_REG_METADATA(UpdateList, (
-	CR_MEMBER(updateList),
-	CR_MEMBER(changed)
-))
-
+CR_REG_METADATA(UpdateList, (CR_MEMBER(updateList), CR_MEMBER(changed)))
 
 void UpdateList::SetNeedUpdateAll()
 {
@@ -72,17 +69,17 @@ void UpdateList::PopBack()
 
 void UpdateList::PopBack(size_t N)
 {
-	while (N-- >= 0)
-		updateList.pop_back();
+	while (N-- >= 0) updateList.pop_back();
 
 	changed = true;
 }
 
-std::optional<UpdateList::ConstIteratorPair> UpdateList::GetNext(const std::optional<UpdateList::ConstIteratorPair>& prev) const
+std::optional<UpdateList::ConstIteratorPair> UpdateList::GetNext(
+    const std::optional<UpdateList::ConstIteratorPair>& prev) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto beg = prev.has_value() ? prev.value().second : updateList.begin();
-	     beg = std::find(beg, updateList.end(),  true);
+	beg = std::find(beg, updateList.end(), true);
 	auto end = std::find(beg, updateList.end(), false);
 
 	if (beg == end)
@@ -94,8 +91,5 @@ std::optional<UpdateList::ConstIteratorPair> UpdateList::GetNext(const std::opti
 std::pair<size_t, size_t> UpdateList::GetOffsetAndSize(const UpdateList::ConstIteratorPair& it) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::make_pair(
-		std::distance(updateList.begin(), it.first ),
-		std::distance(it.first          , it.second)
-	);
+	return std::make_pair(std::distance(updateList.begin(), it.first), std::distance(it.first, it.second));
 }

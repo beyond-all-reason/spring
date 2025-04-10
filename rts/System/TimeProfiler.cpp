@@ -1,21 +1,22 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "System/TimeProfiler.h"
+
+#include "System/GlobalRNG.h"
+#include "System/Log/ILog.h"
+#include "System/StringHash.h"
+#include "System/Threading/SpringThreading.h"
+
 #include <algorithm>
 #include <climits>
 #include <cstring>
 
-#include "System/TimeProfiler.h"
-#include "System/GlobalRNG.h"
-#include "System/StringHash.h"
-#include "System/Log/ILog.h"
-#include "System/Threading/SpringThreading.h"
-
 #ifdef THREADPOOL
-	#include "System/Threading/ThreadPool.h"
+#include "System/Threading/ThreadPool.h"
 #endif
 
-using ProfileMutexType = spring::mutex; //spring::spinlock
-using HashNamMutexType = spring::mutex; //spring::spinlock
+using ProfileMutexType = spring::mutex; // spring::spinlock
+using HashNamMutexType = spring::mutex; // spring::spinlock
 
 static ProfileMutexType profileMutex;
 static HashNamMutexType hashToNameMutex;
@@ -25,26 +26,30 @@ static spring::unordered_map<unsigned, int> refCounters;
 static CGlobalUnsyncedRNG profileColorRNG;
 
 const std::array<CTimeProfiler::ProfileSortFunc, CTimeProfiler::SortType::ST_COUNT> CTimeProfiler::SortingFunctions = {
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.first          < b.first         ); }, // ST_ALPHABETICAL = 0,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.total   > b.second.total  ); }, // ST_TOTALTIME    = 1,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.y > b.second.stats.y); }, // ST_CURRENTTIME  = 2,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.z > b.second.stats.z); }, // ST_MAXTIME      = 3,
-	[](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.second.stats.x > b.second.stats.x); }, // ST_LAG          = 4,
+    [](const TimeRecordPair& a, const TimeRecordPair& b) { return (a.first < b.first); }, // ST_ALPHABETICAL = 0,
+    [](const TimeRecordPair& a, const TimeRecordPair& b) {
+	return (a.second.total > b.second.total);
+}, // ST_TOTALTIME    = 1,
+    [](const TimeRecordPair& a, const TimeRecordPair& b) {
+	return (a.second.stats.y > b.second.stats.y);
+}, // ST_CURRENTTIME  = 2,
+    [](const TimeRecordPair& a, const TimeRecordPair& b) {
+	return (a.second.stats.z > b.second.stats.z);
+}, // ST_MAXTIME      = 3,
+    [](const TimeRecordPair& a, const TimeRecordPair& b) {
+	return (a.second.stats.x > b.second.stats.x);
+}, // ST_LAG          = 4,
 };
 
-
-spring_time BasicTimer::GetDuration() const
-{
-	return spring_difftime(spring_gettime(), startTime);
-}
+spring_time BasicTimer::GetDuration() const { return spring_difftime(spring_gettime(), startTime); }
 
 ScopedTimer::ScopedTimer(const unsigned _nameHash, bool _autoShowGraph, bool _specialTimer)
-	: BasicTimer(_nameHash)
+    : BasicTimer(_nameHash)
 
-	// Game::SendClientProcUsage depends on "Sim" and "Draw" percentages, BenchMark on "Lua"
-	// note that address-comparison is intended here, timer names are (and must be) literals
-	, autoShowGraph(_autoShowGraph)
-	, specialTimer(_specialTimer)
+    // Game::SendClientProcUsage depends on "Sim" and "Draw" percentages, BenchMark on "Lua"
+    // note that address-comparison is intended here, timer names are (and must be) literals
+    , autoShowGraph(_autoShowGraph)
+    , specialTimer(_specialTimer)
 {
 	auto iter = refCounters.find(nameHash);
 
@@ -67,9 +72,8 @@ ScopedTimer::~ScopedTimer()
 	}
 }
 
-
-
-ScopedOnceTimer::ScopedOnceTimer(const char* timerName, const char* timerFrmt): startTime(spring_gettime())
+ScopedOnceTimer::ScopedOnceTimer(const char* timerName, const char* timerFrmt)
+    : startTime(spring_gettime())
 {
 	strncpy(name, timerName, sizeof(name));
 	strncpy(frmt, timerFrmt, sizeof(frmt));
@@ -78,30 +82,23 @@ ScopedOnceTimer::ScopedOnceTimer(const char* timerName, const char* timerFrmt): 
 	frmt[sizeof(frmt) - 1] = 0;
 }
 
-ScopedOnceTimer::ScopedOnceTimer(const std::string& timerName, const char* timerFrmt): startTime(spring_gettime())
+ScopedOnceTimer::ScopedOnceTimer(const std::string& timerName, const char* timerFrmt)
+    : startTime(spring_gettime())
 {
 	strncpy(name, timerName.c_str(), sizeof(name));
-	strncpy(frmt, timerFrmt        , sizeof(frmt));
+	strncpy(frmt, timerFrmt, sizeof(frmt));
 
 	name[sizeof(name) - 1] = 0;
 	frmt[sizeof(frmt) - 1] = 0;
 }
 
-ScopedOnceTimer::~ScopedOnceTimer()
-{
-	LOG(frmt, __func__, name, int(GetDuration().toMilliSecsi()));
-}
+ScopedOnceTimer::~ScopedOnceTimer() { LOG(frmt, __func__, name, int(GetDuration().toMilliSecsi())); }
 
-spring_time ScopedOnceTimer::GetDuration() const
-{
-	return spring_difftime(spring_gettime(), startTime);
-}
-
-
+spring_time ScopedOnceTimer::GetDuration() const { return spring_difftime(spring_gettime(), startTime); }
 
 ScopedMtTimer::ScopedMtTimer(unsigned _nameHash, bool _autoShowGraph)
-	: BasicTimer(_nameHash)
-	, autoShowGraph(_autoShowGraph)
+    : BasicTimer(_nameHash)
+    , autoShowGraph(_autoShowGraph)
 {
 }
 
@@ -109,8 +106,6 @@ ScopedMtTimer::~ScopedMtTimer()
 {
 	CTimeProfiler::GetInstance().AddTime(nameHash, startTime, GetDuration(), autoShowGraph, false, true);
 }
-
-
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -180,18 +175,18 @@ bool CTimeProfiler::UnRegisterTimer(const char* timerName)
 	return true;
 }
 
-
-void CTimeProfiler::ResetState() {
+void CTimeProfiler::ResetState()
+{
 	// grab lock; ThreadPool workers might already be running SCOPED_MT_TIMER
 	std::lock_guard<ProfileMutexType> lock(profileMutex);
 
 	profiles.clear();
 	profiles.reserve(128);
 	sortedProfiles.clear();
-	#ifdef THREADPOOL
+#ifdef THREADPOOL
 	threadProfiles.clear();
 	threadProfiles.resize(ThreadPool::GetMaxThreads());
-	#endif
+#endif
 
 	profileColorRNG.Seed(spring_tomsecs(lastBigUpdate = spring_gettime()));
 
@@ -205,11 +200,11 @@ void CTimeProfiler::ToggleLock(bool lock)
 {
 	if (lock) {
 		profileMutex.lock();
-	} else {
+	}
+	else {
 		profileMutex.unlock();
 	}
 }
-
 
 void CTimeProfiler::Update()
 {
@@ -261,7 +256,6 @@ void CTimeProfiler::UpdateRaw()
 				continue;
 
 			p.stats.z = p.stats.y;
-
 		}
 
 		lastBigUpdate = curTime;
@@ -305,7 +299,6 @@ void CTimeProfiler::ResortProfilesRaw()
 	}
 }
 
-
 void CTimeProfiler::RefreshProfiles()
 {
 	// ProfileDrawer calls this, and is only enabled when we are
@@ -333,19 +326,20 @@ void CTimeProfiler::RefreshProfilesRaw()
 
 void CTimeProfiler::CleanupOldThreadProfiles()
 {
-	#ifdef THREADPOOL
+#ifdef THREADPOOL
 	const spring_time curTime = spring_gettime();
 	const spring_time maxTime = spring_secs(MAX_THREAD_HIST_TIME);
 	const size_t numThreads = std::min(threadProfiles.size(), (size_t)ThreadPool::GetNumThreads());
 	size_t i = 0;
 
 	for (auto& threadProf: threadProfiles) {
-		if (i++ >= numThreads) break;
+		if (i++ >= numThreads)
+			break;
 		while (!threadProf.empty() && (curTime - threadProf.front().second) > maxTime) {
 			threadProf.pop_front();
 		}
 	}
-	#endif
+#endif
 }
 
 const CTimeProfiler::TimeRecord& CTimeProfiler::GetTimeRecord(const char* name) const
@@ -360,15 +354,13 @@ const CTimeProfiler::TimeRecord& CTimeProfiler::GetTimeRecord(const char* name) 
 	return (GetTimeRecordRaw(name));
 }
 
-
-void CTimeProfiler::AddTime(
-	const unsigned nameHash,
-	const spring_time startTime,
-	const spring_time deltaTime,
-	const bool showGraph,
-	const bool specialTimer,
-	const bool threadTimer
-) {
+void CTimeProfiler::AddTime(const unsigned nameHash,
+    const spring_time startTime,
+    const spring_time deltaTime,
+    const bool showGraph,
+    const bool specialTimer,
+    const bool threadTimer)
+{
 	const spring_time t0 = spring_now();
 
 	if (!enabled) {
@@ -389,32 +381,32 @@ void CTimeProfiler::AddTime(
 	AddTimeRaw(hashString("Misc::Profiler::AddTime"), t0, spring_now() - t0, false, false);
 }
 
-void CTimeProfiler::AddTimeRaw(
-	const unsigned nameHash,
-	const spring_time startTime,
-	const spring_time deltaTime,
-	const bool showGraph,
-	const bool threadTimer
-) {
+void CTimeProfiler::AddTimeRaw(const unsigned nameHash,
+    const spring_time startTime,
+    const spring_time deltaTime,
+    const bool showGraph,
+    const bool threadTimer)
+{
 #ifdef THREADPOOL
 	if (threadTimer)
 		threadProfiles[ThreadPool::GetThreadNum()].emplace_back(startTime, spring_gettime());
 #endif
 
 	auto pi = profiles.find(nameHash);
-	auto& p = (pi != profiles.end()) ? pi->second: profiles[nameHash];
+	auto& p = (pi != profiles.end()) ? pi->second : profiles[nameHash];
 
 	// these are 0 if just created, works for both paths
-	p.total   += deltaTime;
+	p.total += deltaTime;
 	p.current += deltaTime;
 
 	p.newLagPeak = (p.stats.x > 0.0f && deltaTime.toMilliSecsf() > p.stats.x);
-	p.stats.x    = std::max(p.stats.x, deltaTime.toMilliSecsf());
+	p.stats.x = std::max(p.stats.x, deltaTime.toMilliSecsf());
 
 	if (pi != profiles.end()) {
 		// profile already exists, add dt
 		p.frames[currentPosition] += deltaTime;
-	} else {
+	}
+	else {
 		// new profile, new color
 		p.color.x = profileColorRNG.NextFloat();
 		p.color.y = profileColorRNG.NextFloat();
@@ -439,4 +431,3 @@ void CTimeProfiler::PrintProfilingInfo() const
 		LOG("%35s %16.2fms %5.2f%%", name.c_str(), tr.total.toMilliSecsf(), tr.stats.y * 100);
 	}
 }
-

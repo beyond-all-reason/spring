@@ -3,16 +3,15 @@
 #ifndef _DEMO_H
 #define _DEMO_H
 
-#include <string>
-
 #include "demofile.h"
+
+#include <string>
 
 /**
 @brief base class for all demo stuff
 Subclass other demo stuff from this
 */
-class CDemo
-{
+class CDemo {
 public:
 	CDemo();
 	virtual ~CDemo() {};
@@ -25,4 +24,3 @@ protected:
 };
 
 #endif // _DEMO_H
-

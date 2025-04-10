@@ -3,19 +3,19 @@
 #ifndef SIMPLE_PROFILER_H
 #define SIMPLE_PROFILER_H
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-#if       !defined PROFILING_ENABLED && defined DEBUG
-	// Always enable profiling in debug binaries
-	#define PROFILING_ENABLED 1
+#if !defined PROFILING_ENABLED && defined DEBUG
+// Always enable profiling in debug binaries
+#define PROFILING_ENABLED 1
 #endif // !defined PROFILING_ENABLED && defined DEBUG
 
 /**
  * Adds a specified amount of time (in milli-seconds) to a certain part
  */
-void          simpleProfiler_addTime(const char* const part, unsigned time);
+void simpleProfiler_addTime(const char* const part, unsigned time);
 
 /**
  * Returns the total amount of time (in milli-seconds)
@@ -26,38 +26,38 @@ unsigned long simpleProfiler_getTime(const char* const part);
 /**
  * Returns the total number of profiling parts
  */
-unsigned      simpleProfiler_getParts();
+unsigned simpleProfiler_getParts();
 
 /**
  * Returns the name of a certain part by index.
  * @see simpleProfiler_getParts()
  */
-const char*   simpleProfiler_getPartName(unsigned partIndex);
+const char* simpleProfiler_getPartName(unsigned partIndex);
 
 /**
  * Allows fetching the list of names of the profiling parts.
  * @return number of parts
  */
-unsigned      simpleProfiler_getPartNames(const char** parts, const unsigned parts_sizeMax);
+unsigned simpleProfiler_getPartNames(const char** parts, const unsigned parts_sizeMax);
 
 /**
  * Returns a summary string, consisting or name and total-time
  * of all profiling parts, each on a separate line.
  * Note: You have to free(...) the return value.
  */
-char*         simpleProfiler_getSummaryString();
+char* simpleProfiler_getSummaryString();
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
 
-#if       defined __cplusplus
+#if defined __cplusplus
 
-#if       defined PROFILING_ENABLED
-	#define SCOPED_TIMER(part, profiler) ScopedTimer myScopedTimerFromMakro(part, profiler);
-#else  // defined PROFILING_ENABLED
-	#define SCOPED_TIMER(part, profiler)
+#if defined PROFILING_ENABLED
+#define SCOPED_TIMER(part, profiler) ScopedTimer myScopedTimerFromMakro(part, profiler);
+#else // defined PROFILING_ENABLED
+#define SCOPED_TIMER(part, profiler)
 #endif // defined PROFILING_ENABLED
 
 #define DEFAULT_SCOPED_TIMER(part) SCOPED_TIMER(part, Profiler::GetDefault());
@@ -66,8 +66,7 @@ char*         simpleProfiler_getSummaryString();
 #include <map>
 #include <string>
 
-class Profiler
-{
+class Profiler {
 public:
 	static Profiler* GetDefault();
 
@@ -93,8 +92,7 @@ private:
  * Construct an instance of this class where you want to begin time measuring,
  * and destruct it at the end (or let it be autodestructed).
  */
-class ScopedTimer
-{
+class ScopedTimer {
 public:
 	ScopedTimer(const char* const part, Profiler* profiler = Profiler::GetDefault());
 	/**

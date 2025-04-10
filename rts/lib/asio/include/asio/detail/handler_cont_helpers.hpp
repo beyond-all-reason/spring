@@ -12,29 +12,26 @@
 #define ASIO_DETAIL_HANDLER_CONT_HELPERS_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 #include "asio/detail/memory.hpp"
-#include "asio/handler_continuation_hook.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/handler_continuation_hook.hpp"
 
 // Calls to asio_handler_is_continuation must be made from a namespace that
 // does not contain overloads of this function. This namespace is defined here
 // for that purpose.
 namespace asio_handler_cont_helpers {
 
-template <typename Context>
-inline bool is_continuation(Context& context)
+template<typename Context> inline bool is_continuation(Context& context)
 {
 #if !defined(ASIO_HAS_HANDLER_HOOKS)
-  return false;
+	return false;
 #else
-  using asio::asio_handler_is_continuation;
-  return asio_handler_is_continuation(
-      asio::detail::addressof(context));
+	using asio::asio_handler_is_continuation;
+	return asio_handler_is_continuation(asio::detail::addressof(context));
 #endif
 }
 

@@ -3,18 +3,18 @@
 #ifndef S3O_TEXTURE_HANDLER_H
 #define S3O_TEXTURE_HANDLER_H
 
-#include <string>
-#include <vector>
-
 #include "Bitmap.h"
+
 #include "System/Threading/SpringThreading.h"
 #include "System/UnorderedMap.hpp"
+
+#include <string>
+#include <vector>
 
 struct S3DModel;
 class CBitmap;
 
-class CS3OTextureHandler
-{
+class CS3OTextureHandler {
 public:
 	struct S3OTexMat {
 		int num;
@@ -45,7 +45,8 @@ public:
 	void PreloadTexture(S3DModel* model, bool invertAxis = false, bool invertAlpha = false);
 
 public:
-	const S3OTexMat* GetTexture(unsigned int num) {
+	const S3OTexMat* GetTexture(unsigned int num)
+	{
 		if (num < textures.size())
 			return &textures[num];
 
@@ -53,13 +54,11 @@ public:
 	}
 
 private:
-	unsigned int LoadAndCacheTexture(
-		const S3DModel* model,
-		unsigned int texNum,
-		bool invertAxis,
-		bool invertAlpha,
-		bool preloadCall
-	);
+	unsigned int LoadAndCacheTexture(const S3DModel* model,
+	    unsigned int texNum,
+	    bool invertAxis,
+	    bool invertAlpha,
+	    bool preloadCall);
 	unsigned int InsertTextureMat(const S3DModel* model);
 
 private:

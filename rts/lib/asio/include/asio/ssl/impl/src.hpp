@@ -16,13 +16,13 @@
 #include "asio/detail/config.hpp"
 
 #if defined(ASIO_HEADER_ONLY)
-# error Do not compile Asio library source with ASIO_HEADER_ONLY defined
+#error Do not compile Asio library source with ASIO_HEADER_ONLY defined
 #endif
 
-#include "asio/ssl/impl/context.ipp"
-#include "asio/ssl/impl/error.ipp"
 #include "asio/ssl/detail/impl/engine.ipp"
 #include "asio/ssl/detail/impl/openssl_init.ipp"
+#include "asio/ssl/impl/context.ipp"
+#include "asio/ssl/impl/error.ipp"
 #include "asio/ssl/impl/host_name_verification.ipp"
 #include "asio/ssl/impl/rfc2818_verification.ipp"
 

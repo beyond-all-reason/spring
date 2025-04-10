@@ -41,39 +41,38 @@ static constexpr uint32_t QTPFS_MAP_DAMAGE_SIZE = 16;
 static constexpr uint32_t QTPFS_NODE_NUMBER_SHIFT_STEP = 3;
 
 namespace QTPFS {
-    constexpr int SEARCH_DIRS = 2;
+constexpr int SEARCH_DIRS = 2;
 
-	struct PathHashType {
-	private:
-		uint64_t low;
-		uint64_t high;
-	public:
-		PathHashType()
-			: low(0)
-			, high(0)
-		{}
+struct PathHashType {
+private:
+	uint64_t low;
+	uint64_t high;
 
-		constexpr PathHashType(uint64_t _low, uint64_t _high)
-			: low(_low)
-			, high(_high)
-		{}
+public:
+	PathHashType()
+	    : low(0)
+	    , high(0)
+	{
+	}
 
-		bool operator==(const PathHashType& other) const {
-			return (high == other.high) ? (low == other.low) : false;
-		}
+	constexpr PathHashType(uint64_t _low, uint64_t _high)
+	    : low(_low)
+	    , high(_high)
+	{
+	}
 
-		bool operator!=(const PathHashType& other) const {
-			return (high != other.high) ? true : (low != other.low);
-		}
+	bool operator==(const PathHashType& other) const { return (high == other.high) ? (low == other.low) : false; }
 
-        bool operator<(const PathHashType& other) const {
-			return (high < other.high) ? true : ((high == other.high) ? (low < other.low) : false);
-		}
-	};
+	bool operator!=(const PathHashType& other) const { return (high != other.high) ? true : (low != other.low); }
 
-    constexpr uint64_t BAD_HASH_PART = std::numeric_limits<std::uint64_t>::max();
-    constexpr PathHashType BAD_HASH{BAD_HASH_PART, BAD_HASH_PART};
-}
+	bool operator<(const PathHashType& other) const
+	{
+		return (high < other.high) ? true : ((high == other.high) ? (low < other.low) : false);
+	}
+};
+
+constexpr uint64_t BAD_HASH_PART = std::numeric_limits<std::uint64_t>::max();
+constexpr PathHashType BAD_HASH{BAD_HASH_PART, BAD_HASH_PART};
+} // namespace QTPFS
 
 #endif
-

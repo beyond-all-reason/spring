@@ -36,7 +36,7 @@ local print     = print
 local pairs     = pairs
 local ipairs    = ipairs
 local getn      = table.getn
-local insert    = table.insert           
+local insert    = table.insert
 local str_find  = string.find
 local str_gfind = string.gfind
 local str_gsub  = string.gsub
@@ -180,7 +180,7 @@ local function ParseColor(words, wc)
     return nil
   end
   c[4] = 1.0
-  return c  
+  return c
 end
 
 
@@ -205,7 +205,7 @@ local function ParseMtlLine(mtlfile)
 
   elseif (cmd == "map_Kd") then
     currmtl.texture = words[1]
-    
+
   elseif (cmd == "Ka") then
     local color = ParseColor(words, wc)
     if (color == nil) then
@@ -232,7 +232,7 @@ local function ParseMtlLine(mtlfile)
     if (color == nil) then
       return LineError("bad emission color")
     end
-    currmtl.emission = color 
+    currmtl.emission = color
 
   elseif (cmd == "d") then
     currmtl.alpha = tonumber(words[1])
@@ -255,7 +255,7 @@ local function ParseMtlLine(mtlfile)
     currmtl.lighting = (illum > 0)
 
   end
-  
+
   return true
 end
 
@@ -285,7 +285,7 @@ local function ParseMTL(mtlfile)
 
   io.close(infile)
 
-  line     = oldLine  
+  line     = oldLine
   linenum  = oldLinenum
   filename = oldFilename
   return true
@@ -353,7 +353,7 @@ local function ParseObjLine()
 
   -- smoothing group
   elseif (cmd == 'g') then
-    
+
 
   -- face
   elseif (cmd == 'f') then
@@ -451,7 +451,7 @@ local function ParseOBJ()
   end
 
   io.close(infile)
-  
+
   return true
 end
 

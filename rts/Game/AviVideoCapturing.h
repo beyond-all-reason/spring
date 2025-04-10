@@ -3,12 +3,11 @@
 #ifndef _AVI_VIDEO_CAPTURING_H
 #define _AVI_VIDEO_CAPTURING_H
 
-#if       defined AVI_CAPTURING
+#if defined AVI_CAPTURING
 
 #include "IVideoCapturing.h"
 
 class CAVIGenerator;
-
 
 class AviVideoCapturing : public IVideoCapturing {
 	friend class IVideoCapturing;

@@ -3,7 +3,7 @@
 
 /**
  * Important! Group ownerships used on this registry:
- * 
+ *
  * group<PathSearch, ProcessPath>()
  *  used to group path searches to be processed this frame
  *  those searches are removed afterwards; however if a request was a raw path and failed, then
@@ -17,10 +17,10 @@
 #include "System/Ecs/Utils/SystemUtils.h"
 
 namespace QTPFS {
-    extern entt::registry registry;
-    extern SystemGlobals::SystemGlobal systemGlobals;
-    extern SystemUtils::SystemUtils systemUtils;
-    extern ecs_dll::DoubleLinkList linkedListHelper;
-}
+extern entt::registry registry;
+extern SystemGlobals::SystemGlobal systemGlobals;
+extern SystemUtils::SystemUtils systemUtils;
+extern ecs_dll::DoubleLinkList linkedListHelper;
+} // namespace QTPFS
 
 #endif

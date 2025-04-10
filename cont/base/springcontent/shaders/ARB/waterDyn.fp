@@ -75,7 +75,7 @@ ADD temp.x, 1, angle.x;
 MUL temp.y, temp.x, temp.x;
 MUL temp.y, temp.y, temp.y;
 MUL temp.x, temp.x, temp.y;
-MAD temp.x, temp.x, program.env[6].y, program.env[6].x; 
+MAD temp.x, temp.x, program.env[6].y, program.env[6].x;
 LRP clearcolor, temp.x, reflectColor, refractColor;
 
 DP3_SAT temp.x, waterNormal, program.env[9];

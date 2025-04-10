@@ -5,20 +5,18 @@
 
 #ifdef _WIN32
 
-#include "System/Threading/SpringThreading.h"
 #include "System/Misc/NonCopyable.h"
+#include "System/Threading/SpringThreading.h"
 
-#include <windows.h>
-#include <vfw.h>
-
-#include <string>
 #include <deque>
+#include <string>
 #include <vector>
 
+#include <vfw.h>
+#include <windows.h>
 
 class CAVIGenerator : spring::noncopyable {
 public:
-
 	CAVIGenerator(const std::string& fileName, int videoSizeX, int videoSizeY, DWORD videoFPS);
 	~CAVIGenerator();
 
@@ -26,7 +24,7 @@ public:
 	bool InitEngine();
 
 	/// Returns last error message
-	std::string GetLastErrorMessage() const	{return errorMsg;}
+	std::string GetLastErrorMessage() const { return errorMsg; }
 
 	bool readOpenglPixelDataThreaded();
 
@@ -61,8 +59,8 @@ private:
 	spring::mutex AVIMutex;
 	spring::condition_variable_any AVICondition;
 
-	std::deque< unsigned char* > freeImageBuffers;
-	std::deque< unsigned char* > imageBuffers;
+	std::deque<unsigned char*> freeImageBuffers;
+	std::deque<unsigned char*> imageBuffers;
 
 	unsigned char* readBuf;
 
@@ -78,19 +76,20 @@ private:
 	/// Holds compression settings
 	COMPVARS cv;
 
-	typedef DWORD (__stdcall *VideoForWindowsVersion_type)(void);
-	typedef void (__stdcall *AVIFileInit_type)(void);
-	typedef HRESULT (__stdcall *AVIFileOpenA_type)(PAVIFILE FAR *, LPCSTR, UINT, LPCLSID);
-	typedef HRESULT (__stdcall *AVIFileCreateStreamA_type)(PAVIFILE, PAVISTREAM FAR *, AVISTREAMINFOA FAR *);
-	typedef HRESULT (__stdcall *AVIMakeCompressedStream_type)(PAVISTREAM FAR *, PAVISTREAM, AVICOMPRESSOPTIONS FAR *, CLSID FAR *);
-	typedef HRESULT (__stdcall *AVIStreamSetFormat_type)(PAVISTREAM, LONG, LPVOID, LONG);
-	typedef ULONG (__stdcall *AVIStreamRelease_type)(PAVISTREAM);
-	typedef ULONG (__stdcall *AVIFileRelease_type)(PAVIFILE);
-	typedef void (__stdcall *AVIFileExit_type)(void);
-	typedef HRESULT (__stdcall *AVIStreamWrite_type)(PAVISTREAM, LONG, LONG, LPVOID, LONG, DWORD, LONG FAR *, LONG FAR *);
-	typedef BOOL (__stdcall *ICCompressorChoose_type)(HWND, UINT, LPVOID, LPVOID, PCOMPVARS, LPSTR);
-	typedef void (__stdcall *ICCompressorFree_type)(PCOMPVARS);
-	typedef HIC (__stdcall *ICOpen_type)(DWORD, DWORD, UINT);
+	typedef DWORD(__stdcall* VideoForWindowsVersion_type)(void);
+	typedef void(__stdcall* AVIFileInit_type)(void);
+	typedef HRESULT(__stdcall* AVIFileOpenA_type)(PAVIFILE FAR*, LPCSTR, UINT, LPCLSID);
+	typedef HRESULT(__stdcall* AVIFileCreateStreamA_type)(PAVIFILE, PAVISTREAM FAR*, AVISTREAMINFOA FAR*);
+	typedef HRESULT(
+	    __stdcall* AVIMakeCompressedStream_type)(PAVISTREAM FAR*, PAVISTREAM, AVICOMPRESSOPTIONS FAR*, CLSID FAR*);
+	typedef HRESULT(__stdcall* AVIStreamSetFormat_type)(PAVISTREAM, LONG, LPVOID, LONG);
+	typedef ULONG(__stdcall* AVIStreamRelease_type)(PAVISTREAM);
+	typedef ULONG(__stdcall* AVIFileRelease_type)(PAVIFILE);
+	typedef void(__stdcall* AVIFileExit_type)(void);
+	typedef HRESULT(__stdcall* AVIStreamWrite_type)(PAVISTREAM, LONG, LONG, LPVOID, LONG, DWORD, LONG FAR*, LONG FAR*);
+	typedef BOOL(__stdcall* ICCompressorChoose_type)(HWND, UINT, LPVOID, LPVOID, PCOMPVARS, LPSTR);
+	typedef void(__stdcall* ICCompressorFree_type)(PCOMPVARS);
+	typedef HIC(__stdcall* ICOpen_type)(DWORD, DWORD, UINT);
 
 
 	VideoForWindowsVersion_type VideoForWindowsVersion_ptr;

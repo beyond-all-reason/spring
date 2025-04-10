@@ -4,7 +4,7 @@
 #define SYSTEM_GLOBAL_UTILS_H__
 
 #include "System/Ecs/EcsMain.h"
-//#include "System/Ecs/Components/SystemGlobalComponents.h"
+// #include "System/Ecs/Components/SystemGlobalComponents.h"
 #include "System/creg/creg.h"
 
 namespace SystemGlobals {
@@ -12,39 +12,38 @@ namespace SystemGlobals {
 
 class SystemGlobal {
 public:
-    SystemGlobal(entt::registry& registryReference)
-        : registry(registryReference)
-    {}
+	SystemGlobal(entt::registry& registryReference)
+	    : registry(registryReference)
+	{
+	}
 
-    template<class T>
-    T& CreateSystemComponent() {
-        if (! registry.valid(systemGlobalsEntity))
-            systemGlobalsEntity = registry.create();
+	template<class T> T& CreateSystemComponent()
+	{
+		if (!registry.valid(systemGlobalsEntity))
+			systemGlobalsEntity = registry.create();
 
-        return registry.emplace_or_replace<T>(systemGlobalsEntity);
-    };
+		return registry.emplace_or_replace<T>(systemGlobalsEntity);
+	};
 
-    template<class T>
-    T& GetSystemComponent() { return registry.get<T>(systemGlobalsEntity); }
+	template<class T> T& GetSystemComponent() { return registry.get<T>(systemGlobalsEntity); }
 
-    template<class T>
-    bool IsSystemActive() { return (nullptr != registry.try_get<T>(systemGlobalsEntity)); }
+	template<class T> bool IsSystemActive() { return (nullptr != registry.try_get<T>(systemGlobalsEntity)); }
 
-    void ClearComponents() {
-        if (registry.valid(systemGlobalsEntity))
-            registry.destroy(systemGlobalsEntity);
+	void ClearComponents()
+	{
+		if (registry.valid(systemGlobalsEntity))
+			registry.destroy(systemGlobalsEntity);
 
-        systemGlobalsEntity = entt::null;
-    }
+		systemGlobalsEntity = entt::null;
+	}
 
-    template<class Archive>
-    void serialize(Archive &ar) { ar(systemGlobalsEntity); }
+	template<class Archive> void serialize(Archive& ar) { ar(systemGlobalsEntity); }
 
 private:
-    entt::entity systemGlobalsEntity = entt::null;
-    entt::registry& registry;
+	entt::entity systemGlobalsEntity = entt::null;
+	entt::registry& registry;
 };
 
-}
+} // namespace SystemGlobals
 
 #endif

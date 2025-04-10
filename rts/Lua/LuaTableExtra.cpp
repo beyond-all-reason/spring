@@ -1,11 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaTableExtra.h"
+
 #include "LuaUtils.h"
 
 /******************************************************************************
  * Table extensions
-******************************************************************************/
+ ******************************************************************************/
 
 /*** Returns a table with preallocated memory
  *
@@ -22,7 +23,7 @@
 static int TableExtra_new(lua_State* L)
 {
 	int nArray = luaL_optinteger(L, 1, 0);
-	int nHash  = luaL_optinteger(L, 2, 0);
+	int nHash = luaL_optinteger(L, 2, 0);
 
 	if (nArray < 0)
 		nArray = 0;

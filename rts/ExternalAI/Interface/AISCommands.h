@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #ifndef AI_S_COMMANDS_H
-#define	AI_S_COMMANDS_H
+#define AI_S_COMMANDS_H
 
 // IMPORTANT NOTE: external systems parse this file,
 // so DO NOT CHANGE the style and format it uses without
@@ -9,7 +9,7 @@
 
 #include "aidefines.h"
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -36,113 +36,113 @@ extern "C" {
  * @see SSkirmishAICallback.handleCommand()
  */
 enum CommandTopic {
-	COMMAND_NULL                                  =  0,
-	COMMAND_DRAWER_POINT_ADD                      =  1,
-	COMMAND_DRAWER_LINE_ADD                       =  2,
-	COMMAND_DRAWER_POINT_REMOVE                   =  3,
-	COMMAND_SEND_START_POS                        =  4,
-	COMMAND_CHEATS_SET_MY_INCOME_MULTIPLIER       =  5,
-	COMMAND_SEND_TEXT_MESSAGE                     =  6,
-	COMMAND_SET_LAST_POS_MESSAGE                  =  7,
-	COMMAND_SEND_RESOURCES                        =  8,
-	COMMAND_SEND_UNITS                            =  9,
-	COMMAND_UNUSED_0                              = 10, // unused
-	COMMAND_UNUSED_1                              = 11, // unused
-	COMMAND_GROUP_CREATE                          = 12, // unused
-	COMMAND_GROUP_ERASE                           = 13, // unused
-	COMMAND_GROUP_ADD_UNIT                        = 14, // unused
-	COMMAND_GROUP_REMOVE_UNIT                     = 15, // unused
-	COMMAND_PATH_INIT                             = 16,
-	COMMAND_PATH_GET_APPROXIMATE_LENGTH           = 17,
-	COMMAND_PATH_GET_NEXT_WAYPOINT                = 18,
-	COMMAND_PATH_FREE                             = 19,
-	COMMAND_CHEATS_GIVE_ME_RESOURCE               = 20,
-	COMMAND_CALL_LUA_RULES                        = 21,
-	COMMAND_DRAWER_ADD_NOTIFICATION               = 22,
-	COMMAND_DRAWER_DRAW_UNIT                      = 23,
-	COMMAND_DRAWER_PATH_START                     = 24,
-	COMMAND_DRAWER_PATH_FINISH                    = 25,
-	COMMAND_DRAWER_PATH_DRAW_LINE                 = 26,
-	COMMAND_DRAWER_PATH_DRAW_LINE_AND_ICON        = 27,
-	COMMAND_DRAWER_PATH_DRAW_ICON_AT_LAST_POS     = 28,
-	COMMAND_DRAWER_PATH_BREAK                     = 29,
-	COMMAND_DRAWER_PATH_RESTART                   = 30,
-	COMMAND_DRAWER_FIGURE_CREATE_SPLINE           = 31,
-	COMMAND_DRAWER_FIGURE_CREATE_LINE             = 32,
-	COMMAND_DRAWER_FIGURE_SET_COLOR               = 33,
-	COMMAND_DRAWER_FIGURE_DELETE                  = 34,
-	COMMAND_UNIT_BUILD                            = 35,
-	COMMAND_UNIT_STOP                             = 36,
-	COMMAND_UNIT_WAIT                             = 37,
-	COMMAND_UNIT_WAIT_TIME                        = 38,
-	COMMAND_UNIT_WAIT_DEATH                       = 39,
-	COMMAND_UNIT_WAIT_SQUAD                       = 40,
-	COMMAND_UNIT_WAIT_GATHER                      = 41,
-	COMMAND_UNIT_MOVE                             = 42,
-	COMMAND_UNIT_PATROL                           = 43,
-	COMMAND_UNIT_FIGHT                            = 44,
-	COMMAND_UNIT_ATTACK                           = 45,
-	COMMAND_UNIT_ATTACK_AREA                      = 46,
-	COMMAND_UNIT_GUARD                            = 47,
+	COMMAND_NULL = 0,
+	COMMAND_DRAWER_POINT_ADD = 1,
+	COMMAND_DRAWER_LINE_ADD = 2,
+	COMMAND_DRAWER_POINT_REMOVE = 3,
+	COMMAND_SEND_START_POS = 4,
+	COMMAND_CHEATS_SET_MY_INCOME_MULTIPLIER = 5,
+	COMMAND_SEND_TEXT_MESSAGE = 6,
+	COMMAND_SET_LAST_POS_MESSAGE = 7,
+	COMMAND_SEND_RESOURCES = 8,
+	COMMAND_SEND_UNITS = 9,
+	COMMAND_UNUSED_0 = 10,          // unused
+	COMMAND_UNUSED_1 = 11,          // unused
+	COMMAND_GROUP_CREATE = 12,      // unused
+	COMMAND_GROUP_ERASE = 13,       // unused
+	COMMAND_GROUP_ADD_UNIT = 14,    // unused
+	COMMAND_GROUP_REMOVE_UNIT = 15, // unused
+	COMMAND_PATH_INIT = 16,
+	COMMAND_PATH_GET_APPROXIMATE_LENGTH = 17,
+	COMMAND_PATH_GET_NEXT_WAYPOINT = 18,
+	COMMAND_PATH_FREE = 19,
+	COMMAND_CHEATS_GIVE_ME_RESOURCE = 20,
+	COMMAND_CALL_LUA_RULES = 21,
+	COMMAND_DRAWER_ADD_NOTIFICATION = 22,
+	COMMAND_DRAWER_DRAW_UNIT = 23,
+	COMMAND_DRAWER_PATH_START = 24,
+	COMMAND_DRAWER_PATH_FINISH = 25,
+	COMMAND_DRAWER_PATH_DRAW_LINE = 26,
+	COMMAND_DRAWER_PATH_DRAW_LINE_AND_ICON = 27,
+	COMMAND_DRAWER_PATH_DRAW_ICON_AT_LAST_POS = 28,
+	COMMAND_DRAWER_PATH_BREAK = 29,
+	COMMAND_DRAWER_PATH_RESTART = 30,
+	COMMAND_DRAWER_FIGURE_CREATE_SPLINE = 31,
+	COMMAND_DRAWER_FIGURE_CREATE_LINE = 32,
+	COMMAND_DRAWER_FIGURE_SET_COLOR = 33,
+	COMMAND_DRAWER_FIGURE_DELETE = 34,
+	COMMAND_UNIT_BUILD = 35,
+	COMMAND_UNIT_STOP = 36,
+	COMMAND_UNIT_WAIT = 37,
+	COMMAND_UNIT_WAIT_TIME = 38,
+	COMMAND_UNIT_WAIT_DEATH = 39,
+	COMMAND_UNIT_WAIT_SQUAD = 40,
+	COMMAND_UNIT_WAIT_GATHER = 41,
+	COMMAND_UNIT_MOVE = 42,
+	COMMAND_UNIT_PATROL = 43,
+	COMMAND_UNIT_FIGHT = 44,
+	COMMAND_UNIT_ATTACK = 45,
+	COMMAND_UNIT_ATTACK_AREA = 46,
+	COMMAND_UNIT_GUARD = 47,
 	// 48 removed
-	COMMAND_UNIT_GROUP_ADD                        = 49,
-	COMMAND_UNIT_GROUP_CLEAR                      = 50,
-	COMMAND_UNIT_REPAIR                           = 51,
-	COMMAND_UNIT_SET_FIRE_STATE                   = 52,
-	COMMAND_UNIT_SET_MOVE_STATE                   = 53,
-	COMMAND_UNIT_SET_BASE                         = 54,
-	COMMAND_UNIT_SELF_DESTROY                     = 55,
-	COMMAND_UNIT_SET_WANTED_MAX_SPEED             = 56, // unused
-	COMMAND_UNIT_LOAD_UNITS                       = 57,
-	COMMAND_UNIT_LOAD_UNITS_AREA                  = 58,
-	COMMAND_UNIT_LOAD_ONTO                        = 59,
-	COMMAND_UNIT_UNLOAD_UNITS_AREA                = 60,
-	COMMAND_UNIT_UNLOAD_UNIT                      = 61,
-	COMMAND_UNIT_SET_ON_OFF                       = 62,
-	COMMAND_UNIT_RECLAIM_UNIT                     = 63,
-	COMMAND_UNIT_RECLAIM_AREA                     = 64,
-	COMMAND_UNIT_CLOAK                            = 65,
-	COMMAND_UNIT_STOCKPILE                        = 66,
-	COMMAND_UNIT_D_GUN                            = 67,
-	COMMAND_UNIT_D_GUN_POS                        = 68,
-	COMMAND_UNIT_RESTORE_AREA                     = 69,
-	COMMAND_UNIT_SET_REPEAT                       = 70,
-	COMMAND_UNIT_SET_TRAJECTORY                   = 71,
-	COMMAND_UNIT_RESURRECT                        = 72,
-	COMMAND_UNIT_RESURRECT_AREA                   = 73,
-	COMMAND_UNIT_CAPTURE                          = 74,
-	COMMAND_UNIT_CAPTURE_AREA                     = 75,
-	COMMAND_UNIT_SET_AUTO_REPAIR_LEVEL            = 76,
-	COMMAND_UNIT_SET_IDLE_MODE                    = 77,
-	COMMAND_UNIT_CUSTOM                           = 78,
-	COMMAND_CHEATS_GIVE_ME_NEW_UNIT               = 79,
-	COMMAND_TRACE_RAY                             = 80,
-	COMMAND_PAUSE                                 = 81,
-	COMMAND_UNIT_RECLAIM_FEATURE                  = 82,
-//const int COMMAND_UNIT_ATTACK_POS
-//const int COMMAND_UNIT_INSERT
-//const int COMMAND_UNIT_REMOVE
-//const int COMMAND_UNIT_ATTACK_AREA
-//const int COMMAND_UNIT_ATTACK_LOOPBACK
-//const int COMMAND_UNIT_GROUP_SELECT
-//const int COMMAND_UNIT_INTERNAL
-	COMMAND_DEBUG_DRAWER_GRAPH_SET_POS            = 83,
-	COMMAND_DEBUG_DRAWER_GRAPH_SET_SIZE           = 84,
-	COMMAND_DEBUG_DRAWER_GRAPH_LINE_ADD_POINT     = 85,
+	COMMAND_UNIT_GROUP_ADD = 49,
+	COMMAND_UNIT_GROUP_CLEAR = 50,
+	COMMAND_UNIT_REPAIR = 51,
+	COMMAND_UNIT_SET_FIRE_STATE = 52,
+	COMMAND_UNIT_SET_MOVE_STATE = 53,
+	COMMAND_UNIT_SET_BASE = 54,
+	COMMAND_UNIT_SELF_DESTROY = 55,
+	COMMAND_UNIT_SET_WANTED_MAX_SPEED = 56, // unused
+	COMMAND_UNIT_LOAD_UNITS = 57,
+	COMMAND_UNIT_LOAD_UNITS_AREA = 58,
+	COMMAND_UNIT_LOAD_ONTO = 59,
+	COMMAND_UNIT_UNLOAD_UNITS_AREA = 60,
+	COMMAND_UNIT_UNLOAD_UNIT = 61,
+	COMMAND_UNIT_SET_ON_OFF = 62,
+	COMMAND_UNIT_RECLAIM_UNIT = 63,
+	COMMAND_UNIT_RECLAIM_AREA = 64,
+	COMMAND_UNIT_CLOAK = 65,
+	COMMAND_UNIT_STOCKPILE = 66,
+	COMMAND_UNIT_D_GUN = 67,
+	COMMAND_UNIT_D_GUN_POS = 68,
+	COMMAND_UNIT_RESTORE_AREA = 69,
+	COMMAND_UNIT_SET_REPEAT = 70,
+	COMMAND_UNIT_SET_TRAJECTORY = 71,
+	COMMAND_UNIT_RESURRECT = 72,
+	COMMAND_UNIT_RESURRECT_AREA = 73,
+	COMMAND_UNIT_CAPTURE = 74,
+	COMMAND_UNIT_CAPTURE_AREA = 75,
+	COMMAND_UNIT_SET_AUTO_REPAIR_LEVEL = 76,
+	COMMAND_UNIT_SET_IDLE_MODE = 77,
+	COMMAND_UNIT_CUSTOM = 78,
+	COMMAND_CHEATS_GIVE_ME_NEW_UNIT = 79,
+	COMMAND_TRACE_RAY = 80,
+	COMMAND_PAUSE = 81,
+	COMMAND_UNIT_RECLAIM_FEATURE = 82,
+	// const int COMMAND_UNIT_ATTACK_POS
+	// const int COMMAND_UNIT_INSERT
+	// const int COMMAND_UNIT_REMOVE
+	// const int COMMAND_UNIT_ATTACK_AREA
+	// const int COMMAND_UNIT_ATTACK_LOOPBACK
+	// const int COMMAND_UNIT_GROUP_SELECT
+	// const int COMMAND_UNIT_INTERNAL
+	COMMAND_DEBUG_DRAWER_GRAPH_SET_POS = 83,
+	COMMAND_DEBUG_DRAWER_GRAPH_SET_SIZE = 84,
+	COMMAND_DEBUG_DRAWER_GRAPH_LINE_ADD_POINT = 85,
 	COMMAND_DEBUG_DRAWER_GRAPH_LINE_DELETE_POINTS = 86,
-	COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_COLOR     = 87,
-	COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_LABEL     = 88,
-	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_ADD       = 89,
-	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_UPDATE    = 90,
-	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_DELETE    = 91,
-	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_POS   = 92,
-	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_SIZE  = 93,
+	COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_COLOR = 87,
+	COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_LABEL = 88,
+	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_ADD = 89,
+	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_UPDATE = 90,
+	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_DELETE = 91,
+	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_POS = 92,
+	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_SIZE = 93,
 	COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_LABEL = 94,
-	COMMAND_TRACE_RAY_FEATURE                     = 95,
-	COMMAND_CALL_LUA_UI                           = 96,
+	COMMAND_TRACE_RAY_FEATURE = 95,
+	COMMAND_CALL_LUA_UI = 96,
 };
-const int NUM_CMD_TOPICS = 97;
 
+const int NUM_CMD_TOPICS = 97;
 
 /**
  * These are used in all S*UnitCommand's,
@@ -155,110 +155,61 @@ const int NUM_CMD_TOPICS = 97;
  *
  */
 enum UnitCommandOptions {
-	UNIT_COMMAND_OPTION_INTERNAL_ORDER    = (1 << 3), //   8
-	UNIT_COMMAND_OPTION_RIGHT_MOUSE_KEY   = (1 << 4), //  16
-	UNIT_COMMAND_OPTION_SHIFT_KEY         = (1 << 5), //  32
-	UNIT_COMMAND_OPTION_CONTROL_KEY       = (1 << 6), //  64
-	UNIT_COMMAND_OPTION_ALT_KEY           = (1 << 7), // 128
+	UNIT_COMMAND_OPTION_INTERNAL_ORDER = (1 << 3),  //   8
+	UNIT_COMMAND_OPTION_RIGHT_MOUSE_KEY = (1 << 4), //  16
+	UNIT_COMMAND_OPTION_SHIFT_KEY = (1 << 5),       //  32
+	UNIT_COMMAND_OPTION_CONTROL_KEY = (1 << 6),     //  64
+	UNIT_COMMAND_OPTION_ALT_KEY = (1 << 7),         // 128
 };
-
 
 #define UNIT_COMMAND_BUILD_NO_FACING -1
 
 
-#define AIINTERFACE_COMMANDS_ABI_VERSION     ( \
-		  sizeof(struct SSetMyIncomeMultiplierCheatCommand) \
-		+ sizeof(struct SGiveMeResourceCheatCommand) \
-		+ sizeof(struct SGiveMeNewUnitCheatCommand) \
-		+ sizeof(struct SSendTextMessageCommand) \
-		+ sizeof(struct SSetLastPosMessageCommand) \
-		+ sizeof(struct SSendResourcesCommand) \
-		+ sizeof(struct SSendUnitsCommand) \
-		+ sizeof(struct SCreateGroupCommand) \
-		+ sizeof(struct SEraseGroupCommand) \
-		+ sizeof(struct SInitPathCommand) \
-		+ sizeof(struct SGetApproximateLengthPathCommand) \
-		+ sizeof(struct SGetNextWaypointPathCommand) \
-		+ sizeof(struct SFreePathCommand) \
-		+ sizeof(struct SCallLuaRulesCommand) \
-		+ sizeof(struct SCallLuaUICommand) \
-		+ sizeof(struct SSendStartPosCommand) \
-		+ sizeof(struct SAddNotificationDrawerCommand) \
-		+ sizeof(struct SAddPointDrawCommand) \
-		+ sizeof(struct SRemovePointDrawCommand) \
-		+ sizeof(struct SAddLineDrawCommand) \
-		+ sizeof(struct SStartPathDrawerCommand) \
-		+ sizeof(struct SFinishPathDrawerCommand) \
-		+ sizeof(struct SDrawLinePathDrawerCommand) \
-		+ sizeof(struct SDrawLineAndIconPathDrawerCommand) \
-		+ sizeof(struct SDrawIconAtLastPosPathDrawerCommand) \
-		+ sizeof(struct SBreakPathDrawerCommand) \
-		+ sizeof(struct SRestartPathDrawerCommand) \
-		+ sizeof(struct SCreateSplineFigureDrawerCommand) \
-		+ sizeof(struct SCreateLineFigureDrawerCommand) \
-		+ sizeof(struct SSetColorFigureDrawerCommand) \
-		+ sizeof(struct SDeleteFigureDrawerCommand) \
-		+ sizeof(struct SDrawUnitDrawerCommand) \
-		+ sizeof(struct SBuildUnitCommand) \
-		+ sizeof(struct SStopUnitCommand) \
-		+ sizeof(struct SWaitUnitCommand) \
-		+ sizeof(struct STimeWaitUnitCommand) \
-		+ sizeof(struct SDeathWaitUnitCommand) \
-		+ sizeof(struct SSquadWaitUnitCommand) \
-		+ sizeof(struct SGatherWaitUnitCommand) \
-		+ sizeof(struct SMoveUnitCommand) \
-		+ sizeof(struct SPatrolUnitCommand) \
-		+ sizeof(struct SFightUnitCommand) \
-		+ sizeof(struct SAttackUnitCommand) \
-		+ sizeof(struct SAttackAreaUnitCommand) \
-		+ sizeof(struct SGuardUnitCommand) \
-		+ sizeof(struct SGroupAddUnitCommand) \
-		+ sizeof(struct SGroupClearUnitCommand) \
-		+ sizeof(struct SRepairUnitCommand) \
-		+ sizeof(struct SSetFireStateUnitCommand) \
-		+ sizeof(struct SSetMoveStateUnitCommand) \
-		+ sizeof(struct SSetBaseUnitCommand) \
-		+ sizeof(struct SSelfDestroyUnitCommand) \
-		+ sizeof(struct SLoadUnitsUnitCommand) \
-		+ sizeof(struct SLoadUnitsAreaUnitCommand) \
-		+ sizeof(struct SLoadOntoUnitCommand) \
-		+ sizeof(struct SUnloadUnitCommand) \
-		+ sizeof(struct SUnloadUnitsAreaUnitCommand) \
-		+ sizeof(struct SSetOnOffUnitCommand) \
-		+ sizeof(struct SReclaimUnitUnitCommand) \
-		+ sizeof(struct SReclaimAreaUnitCommand) \
-		+ sizeof(struct SCloakUnitCommand) \
-		+ sizeof(struct SStockpileUnitCommand) \
-		+ sizeof(struct SDGunUnitCommand) \
-		+ sizeof(struct SDGunPosUnitCommand) \
-		+ sizeof(struct SRestoreAreaUnitCommand) \
-		+ sizeof(struct SSetRepeatUnitCommand) \
-		+ sizeof(struct SSetTrajectoryUnitCommand) \
-		+ sizeof(struct SResurrectUnitCommand) \
-		+ sizeof(struct SResurrectAreaUnitCommand) \
-		+ sizeof(struct SCaptureUnitCommand) \
-		+ sizeof(struct SCaptureAreaUnitCommand) \
-		+ sizeof(struct SSetAutoRepairLevelUnitCommand) \
-		+ sizeof(struct SSetIdleModeUnitCommand) \
-		+ sizeof(struct SCustomUnitCommand) \
-		+ sizeof(struct STraceRayCommand) \
-		+ sizeof(struct SPauseCommand) \
-		+ sizeof(struct SReclaimFeatureUnitCommand) \
-		+ sizeof(struct SSetPositionGraphDrawerDebugCommand) \
-		+ sizeof(struct SSetSizeGraphDrawerDebugCommand) \
-		+ sizeof(struct SAddPointLineGraphDrawerDebugCommand) \
-		+ sizeof(struct SDeletePointsLineGraphDrawerDebugCommand) \
-		+ sizeof(struct SSetColorLineGraphDrawerDebugCommand) \
-		+ sizeof(struct SSetLabelLineGraphDrawerDebugCommand) \
-		+ sizeof(struct SAddOverlayTextureDrawerDebugCommand) \
-		+ sizeof(struct SUpdateOverlayTextureDrawerDebugCommand) \
-		+ sizeof(struct SDeleteOverlayTextureDrawerDebugCommand) \
-		+ sizeof(struct SSetPositionOverlayTextureDrawerDebugCommand) \
-		+ sizeof(struct SSetSizeOverlayTextureDrawerDebugCommand) \
-		+ sizeof(struct SSetLabelOverlayTextureDrawerDebugCommand) \
-		+ sizeof(struct SFeatureTraceRayCommand) \
-		+ 16 \
-		)
+#define AIINTERFACE_COMMANDS_ABI_VERSION                                                                               \
+	(sizeof(struct SSetMyIncomeMultiplierCheatCommand) + sizeof(struct SGiveMeResourceCheatCommand) +                  \
+	    sizeof(struct SGiveMeNewUnitCheatCommand) + sizeof(struct SSendTextMessageCommand) +                           \
+	    sizeof(struct SSetLastPosMessageCommand) + sizeof(struct SSendResourcesCommand) +                              \
+	    sizeof(struct SSendUnitsCommand) + sizeof(struct SCreateGroupCommand) + sizeof(struct SEraseGroupCommand) +    \
+	    sizeof(struct SInitPathCommand) + sizeof(struct SGetApproximateLengthPathCommand) +                            \
+	    sizeof(struct SGetNextWaypointPathCommand) + sizeof(struct SFreePathCommand) +                                 \
+	    sizeof(struct SCallLuaRulesCommand) + sizeof(struct SCallLuaUICommand) + sizeof(struct SSendStartPosCommand) + \
+	    sizeof(struct SAddNotificationDrawerCommand) + sizeof(struct SAddPointDrawCommand) +                           \
+	    sizeof(struct SRemovePointDrawCommand) + sizeof(struct SAddLineDrawCommand) +                                  \
+	    sizeof(struct SStartPathDrawerCommand) + sizeof(struct SFinishPathDrawerCommand) +                             \
+	    sizeof(struct SDrawLinePathDrawerCommand) + sizeof(struct SDrawLineAndIconPathDrawerCommand) +                 \
+	    sizeof(struct SDrawIconAtLastPosPathDrawerCommand) + sizeof(struct SBreakPathDrawerCommand) +                  \
+	    sizeof(struct SRestartPathDrawerCommand) + sizeof(struct SCreateSplineFigureDrawerCommand) +                   \
+	    sizeof(struct SCreateLineFigureDrawerCommand) + sizeof(struct SSetColorFigureDrawerCommand) +                  \
+	    sizeof(struct SDeleteFigureDrawerCommand) + sizeof(struct SDrawUnitDrawerCommand) +                            \
+	    sizeof(struct SBuildUnitCommand) + sizeof(struct SStopUnitCommand) + sizeof(struct SWaitUnitCommand) +         \
+	    sizeof(struct STimeWaitUnitCommand) + sizeof(struct SDeathWaitUnitCommand) +                                   \
+	    sizeof(struct SSquadWaitUnitCommand) + sizeof(struct SGatherWaitUnitCommand) +                                 \
+	    sizeof(struct SMoveUnitCommand) + sizeof(struct SPatrolUnitCommand) + sizeof(struct SFightUnitCommand) +       \
+	    sizeof(struct SAttackUnitCommand) + sizeof(struct SAttackAreaUnitCommand) + sizeof(struct SGuardUnitCommand) + \
+	    sizeof(struct SGroupAddUnitCommand) + sizeof(struct SGroupClearUnitCommand) +                                  \
+	    sizeof(struct SRepairUnitCommand) + sizeof(struct SSetFireStateUnitCommand) +                                  \
+	    sizeof(struct SSetMoveStateUnitCommand) + sizeof(struct SSetBaseUnitCommand) +                                 \
+	    sizeof(struct SSelfDestroyUnitCommand) + sizeof(struct SLoadUnitsUnitCommand) +                                \
+	    sizeof(struct SLoadUnitsAreaUnitCommand) + sizeof(struct SLoadOntoUnitCommand) +                               \
+	    sizeof(struct SUnloadUnitCommand) + sizeof(struct SUnloadUnitsAreaUnitCommand) +                               \
+	    sizeof(struct SSetOnOffUnitCommand) + sizeof(struct SReclaimUnitUnitCommand) +                                 \
+	    sizeof(struct SReclaimAreaUnitCommand) + sizeof(struct SCloakUnitCommand) +                                    \
+	    sizeof(struct SStockpileUnitCommand) + sizeof(struct SDGunUnitCommand) + sizeof(struct SDGunPosUnitCommand) +  \
+	    sizeof(struct SRestoreAreaUnitCommand) + sizeof(struct SSetRepeatUnitCommand) +                                \
+	    sizeof(struct SSetTrajectoryUnitCommand) + sizeof(struct SResurrectUnitCommand) +                              \
+	    sizeof(struct SResurrectAreaUnitCommand) + sizeof(struct SCaptureUnitCommand) +                                \
+	    sizeof(struct SCaptureAreaUnitCommand) + sizeof(struct SSetAutoRepairLevelUnitCommand) +                       \
+	    sizeof(struct SSetIdleModeUnitCommand) + sizeof(struct SCustomUnitCommand) + sizeof(struct STraceRayCommand) + \
+	    sizeof(struct SPauseCommand) + sizeof(struct SReclaimFeatureUnitCommand) +                                     \
+	    sizeof(struct SSetPositionGraphDrawerDebugCommand) + sizeof(struct SSetSizeGraphDrawerDebugCommand) +          \
+	    sizeof(struct SAddPointLineGraphDrawerDebugCommand) +                                                          \
+	    sizeof(struct SDeletePointsLineGraphDrawerDebugCommand) +                                                      \
+	    sizeof(struct SSetColorLineGraphDrawerDebugCommand) + sizeof(struct SSetLabelLineGraphDrawerDebugCommand) +    \
+	    sizeof(struct SAddOverlayTextureDrawerDebugCommand) + sizeof(struct SUpdateOverlayTextureDrawerDebugCommand) + \
+	    sizeof(struct SDeleteOverlayTextureDrawerDebugCommand) +                                                       \
+	    sizeof(struct SSetPositionOverlayTextureDrawerDebugCommand) +                                                  \
+	    sizeof(struct SSetSizeOverlayTextureDrawerDebugCommand) +                                                      \
+	    sizeof(struct SSetLabelOverlayTextureDrawerDebugCommand) + sizeof(struct SFeatureTraceRayCommand) + 16)
 
 /* FIXME: the +16 is because stuff got removed,
  * which this """versioning scheme""" doesn't support.
@@ -494,7 +445,6 @@ struct SRestartPathDrawerCommand {
 	bool sameColor;
 }; //$ COMMAND_DRAWER_PATH_RESTART Map_Drawer_PathDrawer_restart
 
-
 /**
  * @brief Creates a cubic Bezier spline figure
  * Creates a cubic Bezier spline figure from pos1 to pos4,
@@ -522,7 +472,8 @@ struct SCreateSplineFigureDrawerCommand {
 	int figureGroupId;
 	/// the new group
 	int ret_newFigureGroupId;
-}; //$ COMMAND_DRAWER_FIGURE_CREATE_SPLINE Map_Drawer_Figure_drawSpline REF:figureGroupId->FigureGroup REF:ret_newFigureGroupId->FigureGroup
+}; //$ COMMAND_DRAWER_FIGURE_CREATE_SPLINE Map_Drawer_Figure_drawSpline REF:figureGroupId->FigureGroup
+   //REF:ret_newFigureGroupId->FigureGroup
 
 /**
  * @brief Creates a straight line
@@ -547,7 +498,8 @@ struct SCreateLineFigureDrawerCommand {
 	int figureGroupId;
 	/// the new group
 	int ret_newFigureGroupId;
-}; //$ COMMAND_DRAWER_FIGURE_CREATE_LINE Map_Drawer_Figure_drawLine REF:figureGroupId->FigureGroup REF:ret_newFigureGroupId->FigureGroup
+}; //$ COMMAND_DRAWER_FIGURE_CREATE_LINE Map_Drawer_Figure_drawLine REF:figureGroupId->FigureGroup
+   //REF:ret_newFigureGroupId->FigureGroup
 
 /**
  * Sets the color used to draw all lines of figures in a figure group.
@@ -584,8 +536,6 @@ struct SDrawUnitDrawerCommand {
 	bool drawBorder;
 	int facing;
 }; //$ COMMAND_DRAWER_DRAW_UNIT Map_Drawer_drawUnit REF:toDrawUnitDefId->UnitDef
-
-
 
 struct SBuildUnitCommand {
 	int unitId;
@@ -624,19 +574,19 @@ struct SStopUnitCommand {
 	int timeOut;
 }; //$ COMMAND_UNIT_STOP Unit_stop
 
-//struct SInsertUnitCommand {
+// struct SInsertUnitCommand {
 //	int unitId;
 //	int groupId;
 //	short options; // see enum UnitCommandOptions
 //	int timeOut; // command execution-time in ?seconds?
-//};
+// };
 //
-//struct SRemoveUnitCommand {
+// struct SRemoveUnitCommand {
 //	int unitId;
 //	int groupId;
 //	short options; // see enum UnitCommandOptions
 //	int timeOut; // command execution-time in ?seconds?
-//};
+// };
 
 struct SWaitUnitCommand {
 	int unitId;
@@ -841,13 +791,13 @@ struct SAttackAreaUnitCommand {
 	float radius;
 }; //$ COMMAND_UNIT_ATTACK_AREA Unit_attackArea
 
-//struct SAttackAreaUnitCommand {
+// struct SAttackAreaUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-//};
+// };
 
 struct SGuardUnitCommand {
 	int unitId;
@@ -867,14 +817,13 @@ struct SGuardUnitCommand {
 	int toGuardUnitId;
 }; //$ COMMAND_UNIT_GUARD Unit_guard REF:toGuardUnitId->Unit
 
-
-//struct SGroupSelectUnitCommand {
+// struct SGroupSelectUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-//};
+// };
 
 struct SGroupAddUnitCommand {
 	int unitId;
@@ -984,13 +933,13 @@ struct SSetBaseUnitCommand {
 	float* basePos_posF3;
 }; //$ COMMAND_UNIT_SET_BASE Unit_setBase
 
-//struct SInternalUnitCommand {
+// struct SInternalUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-//};
+// };
 
 struct SSelfDestroyUnitCommand {
 	int unitId;
@@ -1391,13 +1340,13 @@ struct SSetAutoRepairLevelUnitCommand {
 	int autoRepairLevel;
 }; //$ COMMAND_UNIT_SET_AUTO_REPAIR_LEVEL Unit_setAutoRepairLevel
 
-//struct SAttackLoopbackUnitCommand {
+// struct SAttackLoopbackUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-//};
+// };
 
 /**
  * Set what a unit should do when it is idle.
@@ -1473,7 +1422,6 @@ struct SPauseCommand {
 	const char* reason;
 }; //$ COMMAND_PAUSE Game_setPause
 
-
 struct SSetPositionGraphDrawerDebugCommand {
 	float x;
 	float y;
@@ -1504,7 +1452,6 @@ struct SSetLabelLineGraphDrawerDebugCommand {
 	int lineId;
 	const char* label;
 }; //$ COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_LABEL Debug_GraphDrawer_GraphLine_setLabel
-
 
 struct SAddOverlayTextureDrawerDebugCommand {
 	int ret_overlayTextureId;
@@ -1544,14 +1491,12 @@ struct SSetLabelOverlayTextureDrawerDebugCommand {
 }; //$ COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_LABEL Debug_OverlayTexture_setLabel
 
 
-
-#ifdef	__cplusplus
-}	// extern "C"
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 
-
-#ifdef	__cplusplus
+#ifdef __cplusplus
 struct Command;
 
 
@@ -1578,8 +1523,7 @@ int extractAICommandTopic(const Command* internalUnitCmd, int maxUnits);
  */
 bool newCommand(void* sUnitCommandData, int sCommandId, int maxUnits, Command* c);
 
-#endif	// __cplusplus
+#endif // __cplusplus
 
 
-
-#endif	// AI_S_COMMANDS_H
+#endif // AI_S_COMMANDS_H

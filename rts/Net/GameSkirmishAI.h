@@ -5,21 +5,25 @@
 
 #include "ExternalAI/SkirmishAIBase.h"
 
-class GameSkirmishAI : public SkirmishAIBase
-{
+class GameSkirmishAI : public SkirmishAIBase {
 public:
-	GameSkirmishAI() :
-		SkirmishAIBase()
-		//, cpuUsage (0.0f)
-		{}
+	GameSkirmishAI()
+	    : SkirmishAIBase()
+	//, cpuUsage (0.0f)
+	{
+	}
 
-	GameSkirmishAI& operator=(const SkirmishAIBase& base) { SkirmishAIBase::operator=(base); return *this; };
+	GameSkirmishAI& operator=(const SkirmishAIBase& base)
+	{
+		SkirmishAIBase::operator=(base);
+		return *this;
+	};
 
-	//State myState;
+	// State myState;
 
-	//float cpuUsage;
+	// float cpuUsage;
 
-	//bool isLocal;
+	// bool isLocal;
 	SkirmishAIStatistics lastStats;
 };
 

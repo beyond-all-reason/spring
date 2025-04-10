@@ -1,7 +1,7 @@
 #pragma once
 
-#include "System/float4.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/float4.h"
 
 class alignas(4) ModelUniformData {
 public:
@@ -10,6 +10,7 @@ public:
 
 	union {
 		uint32_t composite;
+
 		struct {
 			uint8_t drawFlag;
 			uint8_t unused1;
@@ -30,9 +31,12 @@ public:
 	float4 speed;
 
 	float userDefined[MAX_MODEL_UD_UNIFORMS];
+
 public:
 	static void Init() { SetGLSLDefinition(1); }
+
 	static const std::string& GetGLSLDefinition() { return glslDefinition; }
+
 private:
 	static void SetGLSLDefinition(int binding);
 	static inline std::string glslDefinition;
@@ -40,4 +44,5 @@ private:
 
 static_assert(sizeof(ModelUniformData) == 128, "");
 static_assert(alignof(ModelUniformData) == 4, "");
-static_assert(sizeof(ModelUniformData::userDefined) % 4 == 0, ""); //due to GLSL std140 userDefined must be a multiple of 4
+static_assert(sizeof(ModelUniformData::userDefined) % 4 == 0,
+    ""); // due to GLSL std140 userDefined must be a multiple of 4

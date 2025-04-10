@@ -3,11 +3,11 @@
 #ifndef SKIRMISH_AI_LIBRARY_INFO_H
 #define SKIRMISH_AI_LIBRARY_INFO_H
 
-#include <map>
-#include <vector>
-#include <string>
-
 #include "System/Option.h"
+
+#include <map>
+#include <string>
+#include <vector>
 
 class SkirmishAIKey;
 struct Option;
@@ -15,6 +15,7 @@ struct Option;
 class CSkirmishAILibraryInfo {
 public:
 	CSkirmishAILibraryInfo() {}
+
 	CSkirmishAILibraryInfo(const CSkirmishAILibraryInfo& aiInfo);
 
 	/**
@@ -29,6 +30,7 @@ public:
 	CSkirmishAILibraryInfo(const std::map<std::string, std::string>& aiInfo, const std::string& aiOptionLua = "");
 
 	size_t size() const { return info_keys.size(); }
+
 	const std::string& GetKeyAt(size_t index) const;
 	const std::string& GetValueAt(size_t index) const;
 	const std::string& GetDescriptionAt(size_t index) const;

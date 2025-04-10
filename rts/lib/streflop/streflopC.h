@@ -1,7 +1,7 @@
 /* Copyright (C) 2009 Tobi Vollebregt */
 
 /*
-	Serves as a C compatible interface to the most basic streflop functions.
+    Serves as a C compatible interface to the most basic streflop functions.
 */
 
 #ifndef STREFLOP_C_H

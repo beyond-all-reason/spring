@@ -2,4 +2,3 @@
 return {
 	allowUserWidgets = true,
 }
-		

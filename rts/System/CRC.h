@@ -7,12 +7,11 @@
 #include <string>
 
 /** @brief An updateable CRC-32 checksum. */
-class CRC
-{
+class CRC {
 private:
-	template<class T>
-	CRC& Up(T data) {
-		Update((void*) &data, sizeof(data));
+	template<class T> CRC& Up(T data)
+	{
+		Update((void*)&data, sizeof(data));
 		return *this;
 	}
 
@@ -31,13 +30,14 @@ public:
 	/** @brief Update CRC over the 4 bytes of data. */
 	CRC& Update(uint32_t data);
 
-	CRC& operator << ( int32_t data) { return Up(data); }
-	CRC& operator << (uint32_t data) { return Up(data); }
-	CRC& operator << (   float data) { return Up(data); }
+	CRC& operator<<(int32_t data) { return Up(data); }
+
+	CRC& operator<<(uint32_t data) { return Up(data); }
+
+	CRC& operator<<(float data) { return Up(data); }
 
 private:
 	uint32_t crc;
 };
 
 #endif // !CRC_H
-

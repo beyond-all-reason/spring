@@ -57,4 +57,4 @@ void main()
 
 	gl_Position = gl_ModelViewProjectionMatrix * vec4(pos, 1.0);
 	gl_Position = gl_Position.xyww;
-}  
+}

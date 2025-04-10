@@ -12,12 +12,12 @@
 #define ASIO_SYSTEM_TIMER_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio/detail/config.hpp"
 #include "asio/basic_waitable_timer.hpp"
 #include "asio/detail/chrono.hpp"
+#include "asio/detail/config.hpp"
 
 namespace asio {
 

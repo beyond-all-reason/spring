@@ -37,7 +37,7 @@ The *SOURCE* describes the set of units that you want to filter and pick a selec
 
 ## Filter
 
-The *FILTER* is an arbitrarily long list of filters. 
+The *FILTER* is an arbitrarily long list of filters.
 
 Here are the filters. Note that "units" generally means both buildings and mobile units. Typing both got old real quick.
 
@@ -191,11 +191,11 @@ Some examples. Again, "unit" also includes buildings.
   Selects everything on the entire map.
 
 - `AllMap+_Builder_Idle+_ClearSelection_SelectOne+`
-  
+
   Selects any (one) idle builder (unit or building) on entire map. Repeatedly running this command will cycle through all idle builders.
 
 - `AllMap+_Buildoptions_Building+_ClearSelection_SelectNum_1+`
-  
+
   Selects any (one) building that can produce units (i.e. factories), map-wide. Repeatedly running this command will cycle through all factories. Unlike the above example, this selector will **not** snap the camera to the factory. Replace `SelectNum_1` with `SelectOne` in order to achieve this.
 
 - `AllMap+_Radar+_ClearSelection_SelectAll+`

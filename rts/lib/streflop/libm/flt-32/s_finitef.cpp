@@ -24,20 +24,19 @@ static char rcsid[] = "$NetBSD: s_finitef.c,v 1.4f 1995/05/10 20:47:18 jtc Exp $
  */
 
 #include "SMath.h"
+
 #include "math_private.h"
 
 namespace streflop_libm {
 #ifdef __STDC__
-	int __finitef(Simple x)
+int __finitef(Simple x)
 #else
-	int __finitef(x)
-	Simple x;
+int __finitef(x) Simple x;
 #endif
 {
 	int32_t ix;
-	GET_FLOAT_WORD(ix,x);
-	return (int)((u_int32_t)((ix&0x7fffffff)-0x7f800000)>>31);
+	GET_FLOAT_WORD(ix, x);
+	return (int)((u_int32_t)((ix & 0x7fffffff) - 0x7f800000) >> 31);
 }
-hidden_def (__finitef)
-weak_alias (__finitef, finitef)
-}
+hidden_def(__finitef) weak_alias(__finitef, finitef)
+} // namespace streflop_libm

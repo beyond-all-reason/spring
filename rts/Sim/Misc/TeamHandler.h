@@ -5,22 +5,23 @@
 #ifndef TEAMHANDLER_H
 #define TEAMHANDLER_H
 
-#include "System/creg/creg_cond.h"
-#include "Team.h"
 #include "AllyTeam.h"
+#include "Team.h"
+
+#include "System/creg/creg_cond.h"
 
 class CGameSetup;
 
-
 /** @brief Handles teams and allyteams */
-class CTeamHandler
-{
+class CTeamHandler {
 	CR_DECLARE_STRUCT(CTeamHandler)
 
 public:
 	void LoadFromSetup(const CGameSetup* setup);
 	void SetDefaultStartPositions(const CGameSetup* setup);
-	void ResetState() {
+
+	void ResetState()
+	{
 		teams.clear();
 		allyTeams.clear();
 
@@ -37,8 +38,8 @@ public:
 	 */
 	CTeam* Team(int i)
 	{
-		assert(i >=            0);
-		assert(i <  teams.size());
+		assert(i >= 0);
+		assert(i < teams.size());
 		return &teams[i];
 	}
 
@@ -60,12 +61,10 @@ public:
 	 * returns the team2ally at given index
 	 */
 	int AllyTeam(int team) const { return teams[team].teamAllyteam; }
+
 	::AllyTeam& GetAllyTeam(size_t id) { return allyTeams[id]; };
 
-	bool ValidAllyTeam(size_t id) const
-	{
-		return (id < allyTeams.size());
-	}
+	bool ValidAllyTeam(size_t id) const { return (id < allyTeams.size()); }
 
 	/**
 	 * @brief allied teams
@@ -86,7 +85,6 @@ public:
 	 * Tests whether allyteams are allied
 	 */
 	bool AlliedAllyTeams(int allyA, int allyB) const { return allyTeams[allyA].allies[allyB]; }
-
 
 	/**
 	 * @brief set ally team
@@ -117,15 +115,21 @@ public:
 	 *
 	 * Sets start box for an ally team
 	 */
-	void SetAllyTeamStartBox(int allyteam, float startRectLeft, float startRectTop, float startRectRight, float startRectBottom) {
-		allyTeams[allyteam].startRectLeft   = std::clamp(startRectLeft, 0.0f, 1.0f);
-		allyTeams[allyteam].startRectTop    = std::clamp(startRectTop, 0.0f, 1.0f);
-		allyTeams[allyteam].startRectRight  = std::clamp(startRectRight, 0.0f, 1.0f);
+	void SetAllyTeamStartBox(int allyteam,
+	    float startRectLeft,
+	    float startRectTop,
+	    float startRectRight,
+	    float startRectBottom)
+	{
+		allyTeams[allyteam].startRectLeft = std::clamp(startRectLeft, 0.0f, 1.0f);
+		allyTeams[allyteam].startRectTop = std::clamp(startRectTop, 0.0f, 1.0f);
+		allyTeams[allyteam].startRectRight = std::clamp(startRectRight, 0.0f, 1.0f);
 		allyTeams[allyteam].startRectBottom = std::clamp(startRectBottom, 0.0f, 1.0f);
 	}
 
 	// accessors
 	int GaiaTeamID() const { return gaiaTeamID; }
+
 	int GaiaAllyTeamID() const { return gaiaAllyTeamID; }
 
 	// number of teams and allyteams that were *INITIALLY* part
@@ -135,21 +139,16 @@ public:
 	//
 	// NOTE: TEAM INSTANCES ARE NEVER DELETED UNTIL SHUTDOWN, THEY ONLY GET MARKED AS DEAD!
 	int ActiveTeams() const { return teams.size(); }
+
 	int ActiveAllyTeams() const { return allyTeams.size(); }
 
-	bool IsValidTeam(int id) const {
-		return ((id >= 0) && (id < ActiveTeams()));
-	}
-	bool IsActiveTeam(int id) const {
-		return (IsValidTeam(id) && !teams[id].isDead);
-	}
+	bool IsValidTeam(int id) const { return ((id >= 0) && (id < ActiveTeams())); }
 
-	bool IsValidAllyTeam(int id) const {
-		return ((id >= 0) && (id < ActiveAllyTeams()));
-	}
-	bool IsActiveAllyTeam(int id) const {
-		return (IsValidAllyTeam(id) /*&& !allyTeams[id].isDead*/);
-	}
+	bool IsActiveTeam(int id) const { return (IsValidTeam(id) && !teams[id].isDead); }
+
+	bool IsValidAllyTeam(int id) const { return ((id >= 0) && (id < ActiveAllyTeams())); }
+
+	bool IsActiveAllyTeam(int id) const { return (IsValidAllyTeam(id) /*&& !allyTeams[id].isDead*/); }
 
 	unsigned int GetNumTeamsInAllyTeam(unsigned int allyTeam, bool countDeadTeams) const;
 
@@ -159,7 +158,6 @@ public:
 	void UpdateTeamUnitLimitsPreDeath(int deadTeamNum);
 
 private:
-
 	/**
 	 * @brief gaia team
 	 *
@@ -180,7 +178,7 @@ private:
 	 * Array of CTeam instances for teams in game
 	 */
 	std::vector<CTeam> teams;
-	std::vector< ::AllyTeam > allyTeams;
+	std::vector<::AllyTeam> allyTeams;
 };
 
 extern CTeamHandler teamHandler;

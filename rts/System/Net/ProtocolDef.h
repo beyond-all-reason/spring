@@ -5,8 +5,7 @@
 
 namespace netcode {
 
-class ProtocolDef
-{
+class ProtocolDef {
 public:
 	static ProtocolDef* GetInstance();
 

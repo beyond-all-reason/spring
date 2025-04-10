@@ -4,15 +4,15 @@
 #define LARGE_BEAM_LASER_PROJECTILE_H
 
 #include "WeaponProjectile.h"
+
 #include "Rendering/Textures/TextureAtlas.h"
 #include "System/Color.h"
 
-class CLargeBeamLaserProjectile : public CWeaponProjectile
-{
+class CLargeBeamLaserProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CLargeBeamLaserProjectile)
 public:
 	// creg only
-	CLargeBeamLaserProjectile() { }
+	CLargeBeamLaserProjectile() {}
 
 	CLargeBeamLaserProjectile(const ProjectileParams& params);
 

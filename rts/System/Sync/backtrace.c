@@ -12,10 +12,9 @@
 void *stack_end;
 
 /* Taken from sysdeps/generic/frame.h: */
-struct layout
-{
-	void *__unbounded next;
-	void *__unbounded return_address;
+struct layout {
+  void *__unbounded next;
+  void *__unbounded return_address;
 };
 
 /* Taken from sysdeps/generic/backtrace.c: */
@@ -64,52 +63,54 @@ FP -> | previous FP --------> | previous FP ------>...
 /* Get some notion of the current stack.  Need not be exactly the top
    of the stack, just something somewhere in the current frame.  */
 #ifndef CURRENT_STACK_FRAME
-# define CURRENT_STACK_FRAME  ({ char __csf; &__csf; })
+#define CURRENT_STACK_FRAME                                                    \
+  ({                                                                           \
+    char __csf;                                                                \
+    &__csf;                                                                    \
+  })
 #endif
 
 /* By default we assume that the stack grows downward.  */
 #ifndef INNER_THAN
-# define INNER_THAN <
+#define INNER_THAN <
 #endif
 
 /* By default assume the `next' pointer in struct layout points to the
    next struct layout.  */
 #ifndef ADVANCE_STACK_FRAME
-# define ADVANCE_STACK_FRAME(next) BOUNDED_1 ((struct layout *) (next))
+#define ADVANCE_STACK_FRAME(next) BOUNDED_1((struct layout *)(next))
 #endif
 
 /* By default, the frame pointer is just what we get from gcc.  */
 #ifndef FIRST_FRAME_POINTER
-# define FIRST_FRAME_POINTER  __builtin_frame_address (0)
+#define FIRST_FRAME_POINTER __builtin_frame_address(0)
 #endif
 
-int backtrace (void **array, int size)
-{
-	struct layout *current;
-	void *__unbounded top_frame;
-	void *__unbounded top_stack;
-	int cnt = 0;
+int backtrace(void **array, int size) {
+  struct layout *current;
+  void *__unbounded top_frame;
+  void *__unbounded top_stack;
+  int cnt = 0;
 
-	top_frame = FIRST_FRAME_POINTER;
-	top_stack = CURRENT_STACK_FRAME;
+  top_frame = FIRST_FRAME_POINTER;
+  top_stack = CURRENT_STACK_FRAME;
 
-	/* We skip the call to this function, it makes no sense to record it.  */
-	current = BOUNDED_1 ((struct layout *) top_frame);
-	while (cnt < size)
-	{
-		if ((void *) current INNER_THAN top_stack
-				   || !((void *) current INNER_THAN stack_end))
-			/* This means the address is out of range.  Note that for the
-			toplevel we see a frame pointer with value NULL which clearly is
-			out of range.  */
-			break;
+  /* We skip the call to this function, it makes no sense to record it.  */
+  current = BOUNDED_1((struct layout *)top_frame);
+  while (cnt < size) {
+    if ((void *)current INNER_THAN top_stack ||
+        !((void *)current INNER_THAN stack_end))
+      /* This means the address is out of range.  Note that for the
+      toplevel we see a frame pointer with value NULL which clearly is
+      out of range.  */
+      break;
 
-		array[cnt++] = current->return_address;
+    array[cnt++] = current->return_address;
 
-		current = ADVANCE_STACK_FRAME (current->next);
-	}
+    current = ADVANCE_STACK_FRAME(current->next);
+  }
 
-	return cnt;
+  return cnt;
 }
 
 #endif // __MINGW32__
@@ -118,23 +119,22 @@ int backtrace (void **array, int size)
 // Might actually work on mingw as well, feel free to test and replace.
 #if defined _MSC_VER
 #include <Windows.h>
-int backtrace(void **array, int framesToCapture)
-{
-	int frames = 0;
+int backtrace(void **array, int framesToCapture) {
+  int frames = 0;
 #ifdef _M_X64
-	frames = CaptureStackBackTrace(0, framesToCapture, array, 0);
+  frames = CaptureStackBackTrace(0, framesToCapture, array, 0);
 #else
-	__try {
-		void **frame = 0;
-		__asm { mov frame, ebp }
-		while (frame && frames < framesToCapture) {
-			array[frames] = frame[1];
-			frames++;
-			frame = (void **) frame[0];
-		}
-	}
-	__except (1 /*EXCEPTION_EXECUTE_HANDLER*/) { }
+  __try {
+    void **frame = 0;
+    __asm { mov frame, ebp }
+    while (frame && frames < framesToCapture) {
+      array[frames] = frame[1];
+      frames++;
+      frame = (void **)frame[0];
+    }
+  } __except (1 /*EXCEPTION_EXECUTE_HANDLER*/) {
+  }
 #endif
-	return frames;
+  return frames;
 }
 #endif

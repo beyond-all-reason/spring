@@ -30,13 +30,13 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 namespace std {
-  __future_base::_Result_base::_Result_base() = default;
+__future_base::_Result_base::_Result_base() = default;
 
-  __future_base::_Result_base::~_Result_base() = default;
+__future_base::_Result_base::~_Result_base() = default;
 
 #if defined(__GNUC__) && (__GNUC__ == 4) && (__GNUC_MINOR__ < 9)
-  __future_base::_State_base::~_State_base() = default;
+__future_base::_State_base::~_State_base() = default;
 #endif
-}
+} // namespace std
 
 #endif

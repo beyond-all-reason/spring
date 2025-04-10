@@ -92,76 +92,66 @@ extern void log_frontend_cleanup();
 #include "Level.h"
 #include "Section.h"
 
-#define _LOG_IS_ENABLED_LEVEL_STATIC(level) \
-	(LOG_LEVE##level >= _LOG_LEVEL_MIN)
-
+#define _LOG_IS_ENABLED_LEVEL_STATIC(level) (LOG_LEVE##level >= _LOG_LEVEL_MIN)
 
 
 // enable all log sections at compile-time
-#define _LOG_IS_ENABLED_SECTION_STATIC(section) \
-	true
-#define _LOG_IS_ENABLED_SECTION_DEFINED_STATIC(section) \
-	_LOG_IS_ENABLED_SECTION_STATIC(LOG_SECTION_CURRENT)
+#define _LOG_IS_ENABLED_SECTION_STATIC(section) true
+#define _LOG_IS_ENABLED_SECTION_DEFINED_STATIC(section) _LOG_IS_ENABLED_SECTION_STATIC(LOG_SECTION_CURRENT)
 
 
-#define _LOG_IS_ENABLED_RUNTIME(section, level) \
-	log_frontend_isEnabled(LOG_LEVE##level, section)
+#define _LOG_IS_ENABLED_RUNTIME(section, level) log_frontend_isEnabled(LOG_LEVE##level, section)
 
-#define _LOG_REGISTER_SECTION_RAW(section) \
-	log_frontend_register_section(section);
+#define _LOG_REGISTER_SECTION_RAW(section) log_frontend_register_section(section);
 
 /*
  * Pre-processor trickery, useful to create unique identifiers.
  * see http://stackoverflow.com/questions/461062/c-anonymous-variables
  */
-#define _STR_CONCAT_SUB(start, end)   start##end
-#define _STR_CONCAT(start, end)   _STR_CONCAT_SUB(start, end)
-#define _UNIQUE_IDENT(prefix)   _STR_CONCAT(prefix##__, _STR_CONCAT(_STR_CONCAT(__COUNTER__, __), __LINE__))
+#define _STR_CONCAT_SUB(start, end) start##end
+#define _STR_CONCAT(start, end) _STR_CONCAT_SUB(start, end)
+#define _UNIQUE_IDENT(prefix) _STR_CONCAT(prefix##__, _STR_CONCAT(_STR_CONCAT(__COUNTER__, __), __LINE__))
 
 // Register a section (only the first time the code is run)
 #if defined(__cplusplus)
-	/*
-	 * This would also be C++ compatible, but a bit slower.
-	 * It can be used globally (outside of a function), where it would register
-	 * the section before main() is called.
-	 * When placed somewhere in a function, it will only register the function
-	 * when and if that code is called.
-	 */
-	#define _LOG_REGISTER_SECTION_SUB(section, className)         \
-		struct className {                                        \
-			className() {                                         \
-				_LOG_REGISTER_SECTION_RAW(section);               \
-			}                                                     \
-		} _UNIQUE_IDENT(secReg);
+/*
+ * This would also be C++ compatible, but a bit slower.
+ * It can be used globally (outside of a function), where it would register
+ * the section before main() is called.
+ * When placed somewhere in a function, it will only register the function
+ * when and if that code is called.
+ */
+#define _LOG_REGISTER_SECTION_SUB(section, className)       \
+	struct className {                                      \
+		className() { _LOG_REGISTER_SECTION_RAW(section); } \
+	} _UNIQUE_IDENT(secReg);
 
-	#define _LOG_REGISTER_SECTION(section) \
-		_LOG_REGISTER_SECTION_SUB(section, _UNIQUE_IDENT(SectionRegistrator))
+#define _LOG_REGISTER_SECTION(section) _LOG_REGISTER_SECTION_SUB(section, _UNIQUE_IDENT(SectionRegistrator))
 
-	#define _LOG_REGISTER_SECTION_GLOBAL(section) \
-		namespace {                               \
-			_LOG_REGISTER_SECTION(section)        \
-		} // namespace
+#define _LOG_REGISTER_SECTION_GLOBAL(section) \
+	namespace {                               \
+	_LOG_REGISTER_SECTION(section)            \
+	} // namespace
 
-#else  // defined(__cplusplus)
+#else // defined(__cplusplus)
 
-	/*
-	 * This would also be C++ compatible, but it is a bit slower.
-	 * Still, branch-prediction should work well here.
-	 * It can not be used globally (outside of a function), and therefore will
-	 * only register a section when the invoking code is executed, instead of
-	 * before main() is called.
-	 */
-	#define _LOG_REGISTER_SECTION(section)           \
-		{                                            \
-			static bool sectionRegistered = false;   \
-			if (!sectionRegistered) {                \
-				sectionRegistered = true;            \
-				_LOG_REGISTER_SECTION_RAW(section);  \
-			}                                        \
-		}
-	#define _LOG_REGISTER_SECTION_GLOBAL(section)
+/*
+ * This would also be C++ compatible, but it is a bit slower.
+ * Still, branch-prediction should work well here.
+ * It can not be used globally (outside of a function), and therefore will
+ * only register a section when the invoking code is executed, instead of
+ * before main() is called.
+ */
+#define _LOG_REGISTER_SECTION(section)          \
+	{                                           \
+		static bool sectionRegistered = false;  \
+		if (!sectionRegistered) {               \
+			sectionRegistered = true;           \
+			_LOG_REGISTER_SECTION_RAW(section); \
+		}                                       \
+	}
+#define _LOG_REGISTER_SECTION_GLOBAL(section)
 #endif // defined(__cplusplus)
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -182,37 +172,35 @@ extern void log_frontend_cleanup();
  */
 
 /// Redirect to runtime processing
-#define _LOG_RECORD(section, level, fmt, ...)   log_frontend_record(LOG_LEVE##level, section, fmt, ##__VA_ARGS__)
+#define _LOG_RECORD(section, level, fmt, ...) log_frontend_record(LOG_LEVE##level, section, fmt, ##__VA_ARGS__)
 
 /// per level compile-time filter
-#define _LOG_FILTER(section, level, fmt, ...) if (_LOG_IS_ENABLED_LEVEL_STATIC(level)) _LOG_RECORD(section, level, fmt, ##__VA_ARGS__)
+#define _LOG_FILTER(section, level, fmt, ...)       \
+	if (_LOG_IS_ENABLED_LEVEL_STATIC(level))        \
+	_LOG_RECORD(section, level, fmt, ##__VA_ARGS__)
 
 /// Registers the section and connects to the filter macro
-#define _LOG_SECTION(section, level, fmt, ...)   _LOG_FILTER(section, level, fmt, ##__VA_ARGS__)
+#define _LOG_SECTION(section, level, fmt, ...) _LOG_FILTER(section, level, fmt, ##__VA_ARGS__)
 
 /// Uses the section defined in LOG_SECTION
-#define _LOG_SECTION_DEFINED(level, fmt, ...)   _LOG_SECTION(LOG_SECTION_CURRENT, level, fmt, ##__VA_ARGS__)
+#define _LOG_SECTION_DEFINED(level, fmt, ...) _LOG_SECTION(LOG_SECTION_CURRENT, level, fmt, ##__VA_ARGS__)
 
 /// Entry point for frontend-internal processing
-#define _LOG(level, fmt, ...)   _LOG_SECTION_DEFINED(level, fmt, ##__VA_ARGS__)
+#define _LOG(level, fmt, ...) _LOG_SECTION_DEFINED(level, fmt, ##__VA_ARGS__)
 
 
-#define _LOG_IS_ENABLED_STATIC_S(section, level) \
-	(  _LOG_IS_ENABLED_LEVEL_STATIC(level) \
-	&& _LOG_IS_ENABLED_SECTION_STATIC(section))
+#define _LOG_IS_ENABLED_STATIC_S(section, level)                                     \
+	(_LOG_IS_ENABLED_LEVEL_STATIC(level) && _LOG_IS_ENABLED_SECTION_STATIC(section))
 
-#define _LOG_IS_ENABLED_S(section, level) \
-	(  _LOG_IS_ENABLED_STATIC_S(section, level) \
-	&& _LOG_IS_ENABLED_RUNTIME(section, level))
+#define _LOG_IS_ENABLED_S(section, level)                                                 \
+	(_LOG_IS_ENABLED_STATIC_S(section, level) && _LOG_IS_ENABLED_RUNTIME(section, level))
 
-#define _LOG_IS_ENABLED_STATIC(level)   _LOG_IS_ENABLED_STATIC_S(LOG_SECTION_CURRENT, level)
-#define _LOG_IS_ENABLED(level)   _LOG_IS_ENABLED_S(LOG_SECTION_CURRENT, level)
+#define _LOG_IS_ENABLED_STATIC(level) _LOG_IS_ENABLED_STATIC_S(LOG_SECTION_CURRENT, level)
+#define _LOG_IS_ENABLED(level) _LOG_IS_ENABLED_S(LOG_SECTION_CURRENT, level)
 
 
 /// Redirect to runtime processing
-#define _LOG_CLEANUP() \
-	log_frontend_cleanup()
-
+#define _LOG_CLEANUP() log_frontend_cleanup()
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -231,8 +219,7 @@ extern void log_frontend_cleanup();
  * This will only register the section when and if that code is called.
  * @see LOG_REGISTER_SECTION_GLOBAL
  */
-#define LOG_REGISTER_SECTION(section) \
-	_LOG_REGISTER_SECTION(section);
+#define LOG_REGISTER_SECTION(section) _LOG_REGISTER_SECTION(section);
 
 /**
  * Register a section name with the underlying log record processing system.
@@ -240,8 +227,7 @@ extern void log_frontend_cleanup();
  * This registers the section before main() is called.
  * NOTE: This is supported in C++ only, not in C.
  */
-#define LOG_REGISTER_SECTION_GLOBAL(section) \
-	_LOG_REGISTER_SECTION_GLOBAL(section)
+#define LOG_REGISTER_SECTION_GLOBAL(section) _LOG_REGISTER_SECTION_GLOBAL(section)
 
 /**
  * Returns whether logging for the current section and the supplied level is
@@ -259,8 +245,7 @@ extern void log_frontend_cleanup();
  * @see LOG_IS_ENABLED_STATIC_S
  * @see LOG_IS_ENABLED
  */
-#define LOG_IS_ENABLED_STATIC(level) \
-	_LOG_IS_ENABLED_STATIC(level)
+#define LOG_IS_ENABLED_STATIC(level) _LOG_IS_ENABLED_STATIC(level)
 
 /**
  * Returns whether logging for a specific section and the supplied level is
@@ -268,8 +253,7 @@ extern void log_frontend_cleanup();
  * @see LOG_IS_ENABLED_STATIC
  * @see LOG_IS_ENABLED_S
  */
-#define LOG_IS_ENABLED_STATIC_S(section, level) \
-	_LOG_IS_ENABLED_STATIC_S(section, level)
+#define LOG_IS_ENABLED_STATIC_S(section, level) _LOG_IS_ENABLED_STATIC_S(section, level)
 
 /**
  * Returns whether logging for the current section and the supplied level is
@@ -284,8 +268,7 @@ extern void log_frontend_cleanup();
  * @see LOG_IS_ENABLED_S
  * @see LOG_IS_ENABLED_STATIC
  */
-#define LOG_IS_ENABLED(level) \
-	_LOG_IS_ENABLED(level)
+#define LOG_IS_ENABLED(level) _LOG_IS_ENABLED(level)
 
 /**
  * Returns whether logging for a specific section and the supplied level is
@@ -293,8 +276,7 @@ extern void log_frontend_cleanup();
  * @see LOG_IS_ENABLED
  * @see LOG_IS_ENABLED_STATIC_S
  */
-#define LOG_IS_ENABLED_S(section, level) \
-	_LOG_IS_ENABLED_S(section, level)
+#define LOG_IS_ENABLED_S(section, level) _LOG_IS_ENABLED_S(section, level)
 
 
 /**
@@ -309,8 +291,7 @@ extern void log_frontend_cleanup();
  * @see LOG_L()
  * @see LOG_IS_ENABLED()
  */
-#define LOG(fmt, ...) \
-	_LOG(DEFAULT_LOG_LEVEL_SHORT, fmt, ##__VA_ARGS__)
+#define LOG(fmt, ...) _LOG(DEFAULT_LOG_LEVEL_SHORT, fmt, ##__VA_ARGS__)
 
 /**
  * Registers a log message with a specifiable level.
@@ -320,8 +301,7 @@ extern void log_frontend_cleanup();
  * </code>
  * @see LOG()
  */
-#define LOG_L(level, fmt, ...) \
-	_LOG(level, fmt, ##__VA_ARGS__)
+#define LOG_L(level, fmt, ...) _LOG(level, fmt, ##__VA_ARGS__)
 
 /**
  * Registers a log message with a specifiable section.
@@ -332,8 +312,7 @@ extern void log_frontend_cleanup();
  * @see LOG()
  * @see LOG_SECTION
  */
-#define LOG_S(section, fmt, ...) \
-	_LOG_SECTION(section, L_INFO, fmt, ##__VA_ARGS__)
+#define LOG_S(section, fmt, ...) _LOG_SECTION(section, L_INFO, fmt, ##__VA_ARGS__)
 
 /**
  * Registers a log message with a specifiable section and level.
@@ -345,8 +324,7 @@ extern void log_frontend_cleanup();
  * @see LOG_S()
  * @see LOG_SECTION
  */
-#define LOG_SL(section, level, fmt, ...) \
-	_LOG_SECTION(section, level, fmt, ##__VA_ARGS__)
+#define LOG_SL(section, level, fmt, ...) _LOG_SECTION(section, level, fmt, ##__VA_ARGS__)
 
 /**
  * Registers a log message with a specifiable integer level.
@@ -358,12 +336,12 @@ extern void log_frontend_cleanup();
  * @see LOG()
  * @see LOG_L()
  */
-#define LOG_I(level, fmt, ...) \
-{ \
-	if (level >= _LOG_LEVEL_MIN) { \
-		log_frontend_record(level, LOG_SECTION_CURRENT, fmt, ##__VA_ARGS__); \
-	} \
-}
+#define LOG_I(level, fmt, ...)                                                   \
+	{                                                                            \
+		if (level >= _LOG_LEVEL_MIN) {                                           \
+			log_frontend_record(level, LOG_SECTION_CURRENT, fmt, ##__VA_ARGS__); \
+		}                                                                        \
+	}
 
 /**
  * Registers a log message with a specifiable section and integer level.
@@ -376,12 +354,12 @@ extern void log_frontend_cleanup();
  * @see LOG_S()
  * @see LOG_SECTION
  */
-#define LOG_SI(section, level, fmt, ...) \
-{ \
-	if (level >= _LOG_LEVEL_MIN) { \
-		log_frontend_record(level, section, fmt, ##__VA_ARGS__); \
-	} \
-}
+#define LOG_SI(section, level, fmt, ...)                             \
+	{                                                                \
+		if (level >= _LOG_LEVEL_MIN) {                               \
+			log_frontend_record(level, section, fmt, ##__VA_ARGS__); \
+		}                                                            \
+	}
 
 /**
  * Informs all registered sinks to cleanup their state,
@@ -389,8 +367,7 @@ extern void log_frontend_cleanup();
  * NOTE This is not a general way to cleanup the log sinks, but to be used in
  * exceptional occasions only, for example while handling a graceful crash.
  */
-#define LOG_CLEANUP() \
-	_LOG_CLEANUP()
+#define LOG_CLEANUP() _LOG_CLEANUP()
 
 ///@}
 

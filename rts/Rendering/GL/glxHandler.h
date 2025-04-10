@@ -8,6 +8,7 @@ struct GLX {
 	static void Load(SDL_Window* window);
 	static void Unload();
 	static bool GetVideoMemInfoMESA(int* memInfo);
+
 private:
 	static inline bool supported = false;
 };

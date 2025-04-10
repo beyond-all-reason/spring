@@ -6,9 +6,9 @@
 #include <string>
 
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 
-	bool LoadFromLua(Shader::IProgramObject* program, const std::string& filename);
-};
+bool LoadFromLua(Shader::IProgramObject* program, const std::string& filename);
+}; // namespace Shader
 
 #endif // _LUA_SHADER_CONTAINER_H

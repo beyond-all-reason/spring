@@ -48,7 +48,7 @@ Control of a *team* is also not permanent.
 In particular *players* can also control no team at all, in which case they're just spectators.
 It is up to the game to let *players* change their *team* to a different one (they cannot do so at will), though they can always become a spectator.
 
-To go with the analogy above, if the US Army is a *team* then Patton and Eisenhower are *players*: they both have control over the army (simultaneously with each other), and the army itself is generally unaffected by personal changes in the command staff: it is not bound to its generals, but the generals are bound to the army. 
+To go with the analogy above, if the US Army is a *team* then Patton and Eisenhower are *players*: they both have control over the army (simultaneously with each other), and the army itself is generally unaffected by personal changes in the command staff: it is not bound to its generals, but the generals are bound to the army.
 
 A *team* can also have no controllers.
 This usually happens when somebody disconnects, but you can have teams that are uncontrolled by design (for example to have a perspective change in a singleplayer mission, or to have rescuable units).
@@ -64,7 +64,7 @@ The engine also has an option to allow new players to join mid-game (as opposed 
 
 An AI fulfils a similar role to a *player*, being there to control a *team*.
 One difference is that an AI is permanently bound to a *team* and cannot spectate.
-The API to deal with AIs is also separate to *players* (so, for example, the function to get all *players* will not return them, and a *team* may look uncontrolled if care is not taken to handle both of its *player* and AI controllers). 
+The API to deal with AIs is also separate to *players* (so, for example, the function to get all *players* will not return them, and a *team* may look uncontrolled if care is not taken to handle both of its *player* and AI controllers).
 There are two main types of AI: Lua AI and Skirmish AI.
 
 ### Lua AI vs Skirmish AI
@@ -76,7 +76,7 @@ On the other hand, only the host player is taking on the burden of simulating th
 There are currently Skirmish AI bindings for C and Java (though distributing the Java runtime environment for a Java skirmish AI is up to the game).
 A game does not need explicit support for this kind of AI (meaning for example, somebody can homebrew one), though it will likely want to handle distribution and infrastructure issues (for example to block homebrew AI).
 
-A Lua AI generally has two components: a piece of game mechanics, and the AI instance itself which is just a handle to tell game mechanics which teams are legal to control. 
+A Lua AI generally has two components: a piece of game mechanics, and the AI instance itself which is just a handle to tell game mechanics which teams are legal to control.
 Since game mechanics have full control over the game state, this type of AI can do things like spawn units on its own (for a sort of PvE experience) .
 It can also control teams that aren't explicitly marked for control by the LuaAI handle (for example a LuaAI can be made to automatically control AFK players' teams, or Gaia units - see below).
 This type of AI is written in Lua (like all game code), has to be included in the game itself, and the code runs for every player in the game.

@@ -2,27 +2,24 @@
 
 #include "ZipArchive.h"
 
-#include <algorithm>
-#include <stdexcept>
-#include <cassert>
-
-#include "System/StringUtil.h"
 #include "System/Log/ILog.h"
+#include "System/StringUtil.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeUtil.h"
 
-IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const
-{
-	return new CZipArchive(filePath);
-}
+#include <algorithm>
+#include <cassert>
+#include <stdexcept>
+
+IArchive* CZipArchiveFactory::DoCreateArchive(const std::string& filePath) const { return new CZipArchive(filePath); }
 
 CZipArchive::CZipArchive(const std::string& archiveName)
-	: CBufferedArchive(archiveName)
+    : CBufferedArchive(archiveName)
 {
 	static_assert(ThreadPool::MAX_THREADS <= CZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
 	static_assert(sizeof(decltype(afi)::ValueType) * 8 >= ThreadPool::MAX_THREADS);
 
-	std::scoped_lock lck(archiveLock); //not needed?
+	std::scoped_lock lck(archiveLock); // not needed?
 
 	unzFile zip = nullptr;
 
@@ -57,12 +54,11 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 		unz_file_pos fp{};
 		unzGetFilePos(zip, &fp);
 
-		const auto& fd = fileEntries.emplace_back(
-			std::move(fp), //fp
-			info.uncompressed_size, //size
-			fName, //origName
-			info.crc, //crc
-			static_cast<uint32_t>(CTimeUtil::DosTimeToTime64(info.dosDate)) //modTime
+		const auto& fd = fileEntries.emplace_back(std::move(fp),            // fp
+		    info.uncompressed_size,                                         // size
+		    fName,                                                          // origName
+		    info.crc,                                                       // crc
+		    static_cast<uint32_t>(CTimeUtil::DosTimeToTime64(info.dosDate)) // modTime
 		);
 
 		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size() - 1);
@@ -70,7 +66,8 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 
 	zipPerThread[0] = zip;
 
-	parallelAccessNum = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no longer needs to be mutex locked
+	parallelAccessNum = ThreadPool::GetNumThreads(); // will open NumThreads parallel archives, this way GetFile() is no
+	                                                 // longer needs to be mutex locked
 	sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
 	const auto maxBitMask = (1u << parallelAccessNum) - 1;
 	afi.SetMaxBitsMask(maxBitMask);
@@ -78,16 +75,15 @@ CZipArchive::CZipArchive(const std::string& archiveName)
 
 CZipArchive::~CZipArchive()
 {
-	std::scoped_lock lck(archiveLock); //not needed?
+	std::scoped_lock lck(archiveLock); // not needed?
 
-	for (auto& zip : zipPerThread) {
+	for (auto& zip: zipPerThread) {
 		if (zip) {
 			unzClose(zip);
 			zip = nullptr;
 		}
 	}
 }
-
 
 const std::string& CZipArchive::FileName(uint32_t fid) const
 {
@@ -105,12 +101,7 @@ IArchive::SFileInfo CZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	const auto& fe = fileEntries[fid];
-	return IArchive::SFileInfo {
-		.fileName = fe.origName,
-		.specialFileName = "",
-		.size = fe.size,
-		.modTime = fe.modTime
-	};
+	return IArchive::SFileInfo{.fileName = fe.origName, .specialFileName = "", .size = fe.size, .modTime = fe.modTime};
 }
 
 // To simplify things, files are always read completely into memory from
@@ -122,7 +113,7 @@ int CZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	// in case actual number of parallel threads entering this function is
 	// less than ThreadPool::GetThreadNum(). E.g. when counting_semaphore
 	// dictates for less than ThreadPool::GetThreadNum() simultaneous IO operations
-	//unzFile& thisThreadZip = zipPerThread[ThreadPool::GetThreadNum()];
+	// unzFile& thisThreadZip = zipPerThread[ThreadPool::GetThreadNum()];
 
 	const auto tnum = afi.AcquireScoped();
 	assert(tnum < parallelAccessNum);
@@ -161,4 +152,3 @@ int CZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 
 	return ret;
 }
-

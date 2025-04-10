@@ -2,20 +2,18 @@
 
 #include "IVideoCapturing.h"
 
-#if       defined AVI_CAPTURING
+#if defined AVI_CAPTURING
 #include "AviVideoCapturing.h"
-#else  // defined AVI_CAPTURING
+#else // defined AVI_CAPTURING
 #include "DummyVideoCapturing.h"
 #endif // defined AVI_CAPTURING
 
 #include "Rendering/GlobalRendering.h"
-
 #include "System/Misc/TracyDefs.h"
-
 
 IVideoCapturing* IVideoCapturing::GetInstance()
 {
-#if       defined AVI_CAPTURING
+#if defined AVI_CAPTURING
 	static AviVideoCapturing instance;
 #else  // defined AVI_CAPTURING
 	static DummyVideoCapturing instance;
@@ -24,13 +22,11 @@ IVideoCapturing* IVideoCapturing::GetInstance()
 	return &instance;
 }
 
-
 void IVideoCapturing::FreeInstance()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	SetCapturing(false);
 }
-
 
 bool IVideoCapturing::SetCapturing(bool enable)
 {
@@ -48,4 +44,3 @@ bool IVideoCapturing::SetCapturing(bool enable)
 
 	return false;
 }
-

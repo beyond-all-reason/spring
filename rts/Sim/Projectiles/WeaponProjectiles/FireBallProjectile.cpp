@@ -3,36 +3,27 @@
 
 
 #include "FireBallProjectile.h"
+
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
+#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/Textures/TextureAtlas.h"
-#include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Weapons/WeaponDef.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND_DERIVED(CFireBallProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CFireBallProjectile,(
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(sparks),
-	CR_MEMBER(numSparks)
-))
+CR_REG_METADATA(CFireBallProjectile, (CR_SETFLAG(CF_Synced), CR_MEMBER(sparks), CR_MEMBER(numSparks)))
 
 
 CR_BIND(CFireBallProjectile::Spark, )
-CR_REG_METADATA_SUB(CFireBallProjectile, Spark, (
-	CR_MEMBER(pos),
-	CR_MEMBER(speed),
-	CR_MEMBER(size),
-	CR_MEMBER(ttl)
-))
+CR_REG_METADATA_SUB(CFireBallProjectile, Spark, (CR_MEMBER(pos), CR_MEMBER(speed), CR_MEMBER(size), CR_MEMBER(ttl)))
 
-
-CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params): CWeaponProjectile(params)
+CFireBallProjectile::CFireBallProjectile(const ProjectileParams& params)
+    : CWeaponProjectile(params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_FIREBALL_PROJECTILE;
@@ -65,33 +56,38 @@ void CFireBallProjectile::Draw()
 	const unsigned int maxCol = mix(numFire, 10u, checkCol);
 
 	if (validTextures[1])
-	for (unsigned int i = 0; i < numSparks; i++) {
-		col[0] = (numSparks - i) * 12;
-		col[1] = (numSparks - i) *  6;
-		col[2] = (numSparks - i) *  4;
+		for (unsigned int i = 0; i < numSparks; i++) {
+			col[0] = (numSparks - i) * 12;
+			col[1] = (numSparks - i) * 6;
+			col[2] = (numSparks - i) * 4;
 
-		const auto* ept = projectileDrawer->explotex;
-		AddWeaponEffectsQuad<1>(
-			{ sparks[i].pos - camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xstart, ept->ystart, col },
-			{ sparks[i].pos + camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xend  , ept->ystart, col },
-			{ sparks[i].pos + camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xend  , ept->yend  , col },
-			{ sparks[i].pos - camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xstart, ept->yend  , col }
-		);
-	}
+			const auto* ept = projectileDrawer->explotex;
+			AddWeaponEffectsQuad<1>(
+			    {sparks[i].pos - camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xstart,
+			        ept->ystart, col},
+			    {sparks[i].pos + camera->GetRight() * sparks[i].size - camera->GetUp() * sparks[i].size, ept->xend,
+			        ept->ystart, col},
+			    {sparks[i].pos + camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xend,
+			        ept->yend, col},
+			    {sparks[i].pos - camera->GetRight() * sparks[i].size + camera->GetUp() * sparks[i].size, ept->xstart,
+			        ept->yend, col});
+		}
 
 	if (validTextures[2])
-	for (unsigned int i = 0; i < numFire; i++) {
-		col[0] = (maxCol - i) * 25;
-		col[1] = (maxCol - i) * 15;
-		col[2] = (maxCol - i) * 10;
-		const auto* dgt = projectileDrawer->dguntex;
-		AddWeaponEffectsQuad<2>(
-			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size - camera->GetUp() * size, dgt->xstart, dgt->ystart, col },
-			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size - camera->GetUp() * size, dgt->xend ,  dgt->ystart, col },
-			{ interPos - (speed * 0.5f * i) + camera->GetRight() * size + camera->GetUp() * size, dgt->xend ,  dgt->yend  , col },
-			{ interPos - (speed * 0.5f * i) - camera->GetRight() * size + camera->GetUp() * size, dgt->xstart, dgt->yend  , col }
-		);
-	}
+		for (unsigned int i = 0; i < numFire; i++) {
+			col[0] = (maxCol - i) * 25;
+			col[1] = (maxCol - i) * 15;
+			col[2] = (maxCol - i) * 10;
+			const auto* dgt = projectileDrawer->dguntex;
+			AddWeaponEffectsQuad<2>({interPos - (speed * 0.5f * i) - camera->GetRight() * size - camera->GetUp() * size,
+			                            dgt->xstart, dgt->ystart, col},
+			    {interPos - (speed * 0.5f * i) + camera->GetRight() * size - camera->GetUp() * size, dgt->xend,
+			        dgt->ystart, col},
+			    {interPos - (speed * 0.5f * i) + camera->GetRight() * size + camera->GetUp() * size, dgt->xend,
+			        dgt->yend, col},
+			    {interPos - (speed * 0.5f * i) - camera->GetRight() * size + camera->GetUp() * size, dgt->xstart,
+			        dgt->yend, col});
+		}
 }
 
 void CFireBallProjectile::Update()
@@ -104,7 +100,8 @@ void CFireBallProjectile::Update()
 		checkCol = !(weaponDef->noExplode && TraveledRange());
 
 		EmitSpark();
-	} else {
+	}
+	else {
 		deleteMe |= (numSparks == 0);
 	}
 
@@ -112,7 +109,6 @@ void CFireBallProjectile::Update()
 	UpdateGroundBounce();
 	UpdateInterception();
 }
-
 
 void CFireBallProjectile::EmitSpark()
 {
@@ -137,7 +133,7 @@ void CFireBallProjectile::EmitSpark()
 void CFireBallProjectile::TickSparks()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (unsigned int i = 0; i < numSparks; ) {
+	for (unsigned int i = 0; i < numSparks;) {
 		if ((--sparks[i].ttl) <= 0) {
 			sparks[i] = sparks[--numSparks];
 			continue;
@@ -149,9 +145,9 @@ void CFireBallProjectile::TickSparks()
 		i++;
 	}
 
-	explGenHandler.GenExplosion(cegID, pos, speed, ttl, (numSparks > 0)? sparks[0].size: 0.0f, 0.0f, owner(), nullptr);
+	explGenHandler.GenExplosion(
+	    cegID, pos, speed, ttl, (numSparks > 0) ? sparks[0].size : 0.0f, 0.0f, owner(), nullptr);
 }
-
 
 void CFireBallProjectile::Collision()
 {
@@ -163,8 +159,5 @@ void CFireBallProjectile::Collision()
 int CFireBallProjectile::GetProjectilesCount() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return
-		validTextures[1] * numSparks +
-		validTextures[2] * std::min(10u, numSparks);
+	return validTextures[1] * numSparks + validTextures[2] * std::min(10u, numSparks);
 }
-

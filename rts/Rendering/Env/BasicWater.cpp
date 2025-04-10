@@ -2,17 +2,17 @@
 
 
 #include "BasicWater.h"
+
 #include "ISky.h"
 #include "WaterRendering.h"
 
-#include "Rendering/GL/myGL.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
+#include "Rendering/GL/myGL.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "System/Log/ILog.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -23,10 +23,11 @@ void CBasicWater::InitResources(bool loadShader)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CBitmap waterTexBM;
 	if (!waterTexBM.Load(waterRendering->texture)) {
-		LOG_L(L_WARNING, "[%s] could not read water texture from file \"%s\"", __FUNCTION__, waterRendering->texture.c_str());
+		LOG_L(L_WARNING, "[%s] could not read water texture from file \"%s\"", __FUNCTION__,
+		    waterRendering->texture.c_str());
 
 		// fallback
-		waterTexBM.AllocDummy(SColor(0,0,255,255));
+		waterTexBM.AllocDummy(SColor(0, 0, 255, 255));
 	}
 
 	// create mipmapped texture
@@ -71,17 +72,17 @@ void CBasicWater::GenWaterQuadsRB()
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
 			rb.AddQuadTriangles(
-				{ { (x + 0) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16 }, (x + 0) * repeatX, (y + 0) * repeatY },
-				{ { (x + 0) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16 }, (x + 0) * repeatX, (y + 1) * repeatY },
-				{ { (x + 1) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16 }, (x + 1) * repeatX, (y + 1) * repeatY },
-				{ { (x + 1) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16 }, (x + 1) * repeatX, (y + 0) * repeatY }
-			);
+			    {
+			        {(x + 0) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16},
+                    (x + 0) * repeatX, (y + 0) * repeatY
+            },
+			    {{(x + 0) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16}, (x + 0) * repeatX, (y + 1) * repeatY},
+			    {{(x + 1) * mapSizeX * div16, 0, (y + 1) * mapSizeY * div16}, (x + 1) * repeatX, (y + 1) * repeatY},
+			    {{(x + 1) * mapSizeX * div16, 0, (y + 0) * mapSizeY * div16}, (x + 1) * repeatX, (y + 0) * repeatY});
 		}
 	}
 	rb.SetReadonly();
 }
-
-
 
 void CBasicWater::Draw()
 {
@@ -108,7 +109,7 @@ void CBasicWater::Draw()
 	sh.SetUniform("ucolor", 1.0f, 1.0f, 1.0f, 1.0f);
 	sh.Disable();
 
-	glBindTexture(GL_TEXTURE_2D,         0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glPopAttrib();
 }

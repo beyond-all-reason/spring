@@ -9,4 +9,3 @@ The softfloat.cpp file is compiled from the main streflop Makefile.
 
 
 This version is released under the GNU LGPL. See the original SoftFloat documentation for the original SoftFloat license and disclaimer.
-

@@ -13,7 +13,7 @@
 #define STREFLOP_H
 
 // protect against bad defines
-#if   defined(STREFLOP_SSE) && defined(STREFLOP_X87)
+#if defined(STREFLOP_SSE) && defined(STREFLOP_X87)
 #error You have to define exactly one of STREFLOP_SSE STREFLOP_X87 STREFLOP_SOFT, but you defined both STREFLOP_SSE and STREFLOP_X87
 #elif defined(STREFLOP_SSE) && defined(STREFLOP_SOFT)
 #error You have to define exactly one of STREFLOP_SSE STREFLOP_X87 STREFLOP_SOFT, but you defined both STREFLOP_SSE and STREFLOP_SOFT
@@ -29,36 +29,36 @@ namespace streflop {
 // Handle the 6 cells of the configuration array. See README.txt
 #if defined(STREFLOP_SSE)
 
-    // SSE always uses native types, denormals are handled by FPU flags
-    typedef float Simple;
-    typedef double Double;
-    #undef Extended
+// SSE always uses native types, denormals are handled by FPU flags
+typedef float Simple;
+typedef double Double;
+#undef Extended
 
 #elif defined(STREFLOP_X87)
 
-    // X87 uses a wrapper for no denormals case
+// X87 uses a wrapper for no denormals case
 #if defined(STREFLOP_NO_DENORMALS)
 #include "X87DenormalSquasher.h"
-    typedef X87DenormalSquasher<float> Simple;
-    typedef X87DenormalSquasher<double> Double;
-    typedef X87DenormalSquasher<long double> Extended;
-    #define Extended Extended
+typedef X87DenormalSquasher<float> Simple;
+typedef X87DenormalSquasher<double> Double;
+typedef X87DenormalSquasher<long double> Extended;
+#define Extended Extended
 
 #else
-    // Use FPU flags for x87 with denormals
-    typedef float Simple;
-    typedef double Double;
-    typedef long double Extended;
-    #define Extended Extended
+// Use FPU flags for x87 with denormals
+typedef float Simple;
+typedef double Double;
+typedef long double Extended;
+#define Extended Extended
 #endif
 
 #elif defined(STREFLOP_SOFT) && !defined(STREFLOP_NO_DENORMALS)
-    // Use SoftFloat wrapper
+// Use SoftFloat wrapper
 #include "SoftFloatWrapper.h"
-    typedef SoftFloatWrapper<32> Simple;
-    typedef SoftFloatWrapper<64> Double;
-    typedef SoftFloatWrapper<96> Extended;
-    #define Extended Extended
+typedef SoftFloatWrapper<32> Simple;
+typedef SoftFloatWrapper<64> Double;
+typedef SoftFloatWrapper<96> Extended;
+#define Extended Extended
 
 #else
 
@@ -66,8 +66,7 @@ namespace streflop {
 
 #endif
 
-}
-
+} // namespace streflop
 
 // Include the FPU settings file, so the user can initialize the library
 #include "FPUSettings.h"
@@ -79,4 +78,3 @@ namespace streflop {
 #include "Random.h"
 
 #endif
-

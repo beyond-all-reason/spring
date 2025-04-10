@@ -12,27 +12,23 @@
 #define ASIO_DETAIL_NON_CONST_LVALUE_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include "asio/detail/type_traits.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/detail/type_traits.hpp"
 
 namespace asio {
 namespace detail {
 
-template <typename T>
-struct non_const_lvalue
-{
-  explicit non_const_lvalue(T& t)
-    : value(static_cast<conditional_t<
-        is_same<T, decay_t<T>>::value, decay_t<T>&, T&&>>(t))
-  {
-  }
+template<typename T> struct non_const_lvalue {
+	explicit non_const_lvalue(T& t)
+	    : value(static_cast<conditional_t<is_same<T, decay_t<T>>::value, decay_t<T>&, T&&>>(t))
+	{
+	}
 
-  conditional_t<is_same<T, decay_t<T>>::value, decay_t<T>&, decay_t<T>> value;
+	conditional_t<is_same<T, decay_t<T>>::value, decay_t<T>&, decay_t<T>> value;
 };
 
 } // namespace detail

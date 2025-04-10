@@ -3,16 +3,16 @@
 #ifndef LUA_GAIA_H
 #define LUA_GAIA_H
 
-#include <string>
-
 #include "LuaHandleSynced.h"
 
+#include <string>
 
-class CLuaGaia : public CSplitLuaHandle
-{
+class CLuaGaia : public CSplitLuaHandle {
 public:
 	static bool CanLoadHandler();
+
 	static bool ReloadHandler() { return (FreeHandler(), LoadFreeHandler()); } // NOTE the ','
+
 	static bool LoadFreeHandler(bool dryRun = false) { return (LoadHandler(dryRun) || FreeHandler()); }
 
 	static bool LoadHandler(bool dryRun);
@@ -20,6 +20,7 @@ public:
 
 protected:
 	bool AddSyncedCode(lua_State* L) override { return true; }
+
 	bool AddUnsyncedCode(lua_State* L) override { return true; }
 
 	std::string GetUnsyncedFileName() const;
@@ -31,7 +32,6 @@ private:
 	CLuaGaia(bool dryRun);
 	virtual ~CLuaGaia();
 };
-
 
 extern CLuaGaia* luaGaia;
 

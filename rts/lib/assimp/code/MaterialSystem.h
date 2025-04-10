@@ -50,7 +50,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct aiMaterial;
 
-namespace Assimp    {
+namespace Assimp {
 
 // ------------------------------------------------------------------------------
 /** Computes a hash (hopefully unique) from all material properties
@@ -66,6 +66,6 @@ namespace Assimp    {
 uint32_t ComputeMaterialHash(const aiMaterial* mat, bool includeMatName = false);
 
 
-} // ! namespace Assimp
+} // namespace Assimp
 
 #endif //!! AI_MATERIALSYSTEM_H_INC

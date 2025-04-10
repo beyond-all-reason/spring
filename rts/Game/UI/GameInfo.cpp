@@ -2,35 +2,35 @@
 
 
 #include "GameInfo.h"
+
 #include "MouseHandler.h"
+
 #include "Game/GameSetup.h"
 #include "Game/GameVersion.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "Rendering/GL/myGL.h"
-#include "Rendering/GL/glExtra.h"
 #include "Rendering/Fonts/glFont.h"
+#include "Rendering/GL/glExtra.h"
+#include "Rendering/GL/myGL.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/Team.h"
 #include "Sim/Misc/Wind.h"
-#include "Sim/Misc/ModInfo.h"
 #include "Sim/Path/IPathManager.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringUtil.h"
 
-#include <SDL_keycode.h>
 #include <cstdio>
 
-#include "System/Misc/TracyDefs.h"
+#include <SDL_keycode.h>
 
 using std::string;
 using std::vector;
 
-
-
 static const char* boolString(bool value)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return (value)? "True": "False";
+	return (value) ? "True" : "False";
 }
 
 static const char* floatString(float value)
@@ -41,22 +41,17 @@ static const char* floatString(float value)
 	return buf;
 }
 
-static void StringListStats(
-	const vector<CGameInfo::FontString>& list,
-	float& maxWidth,
-	float& maxHeight
-) {
+static void StringListStats(const vector<CGameInfo::FontString>& list, float& maxWidth, float& maxHeight)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	maxWidth = 0.0f;
 	maxHeight = 0.0f;
 
-	for (const CGameInfo::FontString& fs : list) {
+	for (const CGameInfo::FontString& fs: list) {
 		maxWidth = std::max(maxWidth, fs.width);
 		maxHeight = std::max(maxHeight, fs.height);
 	}
 }
-
-
 
 static CGameInfo* instance = nullptr;
 
@@ -79,8 +74,6 @@ bool CGameInfo::IsActive()
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (instance != nullptr);
 }
-
-
 
 CGameInfo::CGameInfo()
 {
@@ -118,7 +111,8 @@ CGameInfo::CGameInfo()
 	values.emplace_back(envResHandler.GetCurrentTidalStrength());
 
 	labels.emplace_back("Map Wind:");
-	sprintf(buf, "%.2f - %.2f (%.2f)", envResHandler.GetMinWindStrength(), envResHandler.GetMaxWindStrength(), envResHandler.GetAverageWindStrength());
+	sprintf(buf, "%.2f - %.2f (%.2f)", envResHandler.GetMinWindStrength(), envResHandler.GetMaxWindStrength(),
+	    envResHandler.GetAverageWindStrength());
 	values.emplace_back(buf);
 
 	labels.emplace_back("Map Size:");
@@ -133,10 +127,18 @@ CGameInfo::CGameInfo()
 
 	labels.emplace_back("PFS Name:");
 	switch (pathManager->GetPathFinderType()) {
-		case NOPFS_TYPE: { values.emplace_back("NOPFS"  ); } break;
-		case HAPFS_TYPE: { values.emplace_back("HAPFS"  ); } break;
-		case QTPFS_TYPE: { values.emplace_back("QTPFS"  ); } break;
-		default        : { values.emplace_back("UNKNOWN"); } break; // not reachable
+	case NOPFS_TYPE: {
+		values.emplace_back("NOPFS");
+	} break;
+	case HAPFS_TYPE: {
+		values.emplace_back("HAPFS");
+	} break;
+	case QTPFS_TYPE: {
+		values.emplace_back("QTPFS");
+	} break;
+	default: {
+		values.emplace_back("UNKNOWN");
+	} break; // not reachable
 	}
 
 	labels.emplace_back("CHEATS:");
@@ -149,28 +151,43 @@ CGameInfo::~CGameInfo()
 	instance = nullptr;
 }
 
+CGameInfo::FontString::FontString(const char* c)
+    : msg(c)
+{
+	CalcDimensions();
+}
 
+CGameInfo::FontString::FontString(const std::string& s)
+    : msg(s)
+{
+	CalcDimensions();
+}
 
-CGameInfo::FontString::FontString(const char* c): msg(c)        { CalcDimensions(); }
-CGameInfo::FontString::FontString(const std::string& s): msg(s) { CalcDimensions(); }
-CGameInfo::FontString::FontString(bool b): msg(boolString(b))   { CalcDimensions(); }
-CGameInfo::FontString::FontString(float f): msg(floatString(f)) { CalcDimensions(); }
+CGameInfo::FontString::FontString(bool b)
+    : msg(boolString(b))
+{
+	CalcDimensions();
+}
 
-void CGameInfo::FontString::CalcDimensions() {
-	width  = font->GetSize() * font->GetTextWidth(msg) * globalRendering->pixelX;
+CGameInfo::FontString::FontString(float f)
+    : msg(floatString(f))
+{
+	CalcDimensions();
+}
+
+void CGameInfo::FontString::CalcDimensions()
+{
+	width = font->GetSize() * font->GetTextWidth(msg) * globalRendering->pixelX;
 	height = font->GetSize() * font->GetLineHeight() * globalRendering->pixelY;
 }
 
-
-
 /******************************************************************************/
 
-std::string CGameInfo::GetTooltip(int x,int y)
+std::string CGameInfo::GetTooltip(int x, int y)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return "Game Information";
 }
-
 
 bool CGameInfo::IsAbove(int x, int y)
 {
@@ -180,13 +197,11 @@ bool CGameInfo::IsAbove(int x, int y)
 	return InBox(mx, my, box);
 }
 
-
 bool CGameInfo::MousePress(int x, int y, int button)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (IsAbove(x, y));
 }
-
 
 void CGameInfo::MouseRelease(int x, int y, int button)
 {
@@ -200,7 +215,6 @@ void CGameInfo::MouseRelease(int x, int y, int button)
 	delete this;
 }
 
-
 bool CGameInfo::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -211,13 +225,13 @@ bool CGameInfo::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	return false;
 }
 
-
 void CGameInfo::Draw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->cheatEnabled) {
 		values[values.size() - 1] = "ENABLED";
-	} else {
+	}
+	else {
 		values[values.size() - 1] = "DISABLED";
 	}
 
@@ -226,23 +240,23 @@ void CGameInfo::Draw()
 
 
 	// in screen fractions
-	const float   split = 10.0f * globalRendering->pixelX;
-	const float xBorder =  5.0f * globalRendering->pixelX;
-	const float yBorder =  5.0f * globalRendering->pixelY;
+	const float split = 10.0f * globalRendering->pixelX;
+	const float xBorder = 5.0f * globalRendering->pixelX;
+	const float yBorder = 5.0f * globalRendering->pixelY;
 
 	float labelsWidth, labelsHeight;
 	float valuesWidth, valuesHeight;
 	StringListStats(labels, labelsWidth, labelsHeight);
 	StringListStats(values, valuesWidth, valuesHeight);
 
-	const float    width = labelsWidth + valuesWidth + split + 2.0f * xBorder;
+	const float width = labelsWidth + valuesWidth + split + 2.0f * xBorder;
 	const float rowHeight = std::max(labelsHeight, valuesHeight) + 2.0f * yBorder;
-	const float    height = rowHeight * labels.size();
+	const float height = rowHeight * labels.size();
 
 	const float dy = height / labels.size();
 
-	box.x1 = 0.5f - ( width * 0.5f);
-	box.x2 = 0.5f + ( width * 0.5f);
+	box.x1 = 0.5f - (width * 0.5f);
+	box.x2 = 0.5f + (width * 0.5f);
 	box.y1 = 0.5f - (height * 0.5f);
 	box.y2 = 0.5f + (height * 0.5f);
 
@@ -251,17 +265,17 @@ void CGameInfo::Draw()
 
 	// draw the boxes
 	for (size_t i = 0; i < labels.size(); i++) {
-		constexpr float colors[][4]  = {
-			{0.6f, 0.3f, 0.3f, 0.8f}, // red
-			{0.3f, 0.6f, 0.3f, 0.8f}, // green
-			{0.3f, 0.3f, 0.6f, 0.8f}, // blue
+		constexpr float colors[][4] = {
+		    {0.6f, 0.3f, 0.3f, 0.8f}, // red
+		    {0.3f, 0.6f, 0.3f, 0.8f}, // green
+		    {0.3f, 0.3f, 0.6f, 0.8f}, // blue
 		};
 
 		TRectangle<float> b;
 		b.x1 = box.x1;
 		b.x2 = box.x2;
 		b.y2 = box.y2 - (dy * i);
-		b.y1 =   b.y2 -  dy;
+		b.y1 = b.y2 - dy;
 
 		gleDrawQuadC(b, SColor(colors[i % 3]), rb);
 	}

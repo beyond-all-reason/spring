@@ -12,7 +12,7 @@
 #define ASIO_DETAIL_SOURCE_LOCATION_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
@@ -20,11 +20,11 @@
 #if defined(ASIO_HAS_SOURCE_LOCATION)
 
 #if defined(ASIO_HAS_STD_SOURCE_LOCATION)
-# include <source_location>
+#include <source_location>
 #elif defined(ASIO_HAS_STD_EXPERIMENTAL_SOURCE_LOCATION)
-# include <experimental/source_location>
+#include <experimental/source_location>
 #else // defined(ASIO_HAS_STD_EXPERIMENTAL_SOURCE_LOCATION)
-# error ASIO_HAS_SOURCE_LOCATION is set \
+#error ASIO_HAS_SOURCE_LOCATION is set \
   but no source_location is available
 #endif // defined(ASIO_HAS_STD_EXPERIMENTAL_SOURCE_LOCATION)
 

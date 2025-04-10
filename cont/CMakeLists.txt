@@ -67,4 +67,3 @@ if    (MINGW)
 #	endif()
 #	install(FILES ${PTHREADGC2_LIBRARY} DESTINATION ${BINDIR})
 endif (MINGW)
-

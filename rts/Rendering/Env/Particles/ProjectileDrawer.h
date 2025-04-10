@@ -2,19 +2,19 @@
 
 #pragma once
 
-#include <array>
-#include <memory>
-
-#include "Sim/Projectiles/Projectile.h"
-#include "Rendering/GL/myGL.h"
+#include "Rendering/DepthBufferCopy.h"
 #include "Rendering/GL/FBO.h"
-#include "Rendering/Shaders/ShaderHandler.h"
-#include "Rendering/Shaders/Shader.h"
+#include "Rendering/GL/myGL.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/ModelRenderContainer.h"
-#include "Rendering/DepthBufferCopy.h"
+#include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "Sim/Projectiles/Projectile.h"
 #include "System/EventClient.h"
 #include "System/UnorderedSet.hpp"
+
+#include <array>
+#include <memory>
 
 class CSolidObject;
 class CTextureAtlas;
@@ -23,10 +23,13 @@ class CGroundFlash;
 struct FlyingPiece;
 class LuaTable;
 
-
-class CProjectileDrawer: public CEventClient {
+class CProjectileDrawer : public CEventClient {
 public:
-	CProjectileDrawer(): CEventClient("[CProjectileDrawer]", 123456, false), perlinFB(true) {}
+	CProjectileDrawer()
+	    : CEventClient("[CProjectileDrawer]", 123456, false)
+	    , perlinFB(true)
+	{
+	}
 
 	static void InitStatic();
 	static void KillStatic(bool reload);
@@ -49,13 +52,13 @@ public:
 	void LoadWeaponTextures();
 	void UpdateTextures();
 
-
-	bool WantsEvent(const std::string& eventName) {
-		return
-			(eventName == "RenderProjectileCreated") ||
-			(eventName == "RenderProjectileDestroyed");
+	bool WantsEvent(const std::string& eventName)
+	{
+		return (eventName == "RenderProjectileCreated") || (eventName == "RenderProjectileDestroyed");
 	}
+
 	bool GetFullRead() const { return true; }
+
 	int GetReadAllyTeam() const { return AllAccessTeam; }
 
 	void RenderProjectileCreated(const CProjectile* projectile);
@@ -64,23 +67,26 @@ public:
 	unsigned int NumSmokeTextures() const { return (smokeTextures.size()); }
 
 	void IncPerlinTexObjectCount() { perlinTexObjects++; }
+
 	void DecPerlinTexObjectCount() { perlinTexObjects--; }
 
-	bool EnableSorting(bool b) { return (drawSorted =           b); }
-	bool ToggleSorting(      ) { return (drawSorted = !drawSorted); }
+	bool EnableSorting(bool b) { return (drawSorted = b); }
+
+	bool ToggleSorting() { return (drawSorted = !drawSorted); }
 
 	static bool CheckSoftenExt();
-	bool CanDrawSoften() {
-		return
-			CheckSoftenExt() &&
-			fxShaders[1] && fxShaders[1]->IsValid() &&
-			depthBufferCopy->IsValid(false);
+
+	bool CanDrawSoften()
+	{
+		return CheckSoftenExt() && fxShaders[1] && fxShaders[1]->IsValid() && depthBufferCopy->IsValid(false);
 	};
 
 	int EnableSoften(int b) { return CanDrawSoften() ? (wantSoften = std::clamp(b, 0, WANT_SOFTEN_COUNT - 1)) : 0; }
+
 	int ToggleSoften() { return EnableSoften((wantSoften + 1) % WANT_SOFTEN_COUNT); }
 
 	int EnableDrawOrder(int b) { return wantDrawOrder = b; }
+
 	int ToggleDrawOrder() { return EnableDrawOrder((wantDrawOrder + 1) % 2); }
 
 	const AtlasedTexture* GetSmokeTexture(unsigned int i) const { return smokeTextures[i]; }
@@ -103,15 +109,15 @@ public:
 	AtlasedTexture* explofadetex = nullptr;
 	AtlasedTexture* heatcloudtex = nullptr;
 	AtlasedTexture* circularthingytex = nullptr;
-	AtlasedTexture* bubbletex = nullptr;          ///< torpedo trail texture
-	AtlasedTexture* geosquaretex = nullptr;       ///< unknown use
-	AtlasedTexture* gfxtex = nullptr;             ///< nanospray texture
-	AtlasedTexture* projectiletex = nullptr;      ///< appears to be unused
-	AtlasedTexture* repulsegfxtex = nullptr;      ///< used by repulsor
-	AtlasedTexture* sphereparttex = nullptr;      ///< sphere explosion texture
-	AtlasedTexture* torpedotex = nullptr;         ///< appears in-game as a 1 texel texture
-	AtlasedTexture* wrecktex = nullptr;           ///< smoking explosion part texture
-	AtlasedTexture* plasmatex = nullptr;          ///< default plasma texture
+	AtlasedTexture* bubbletex = nullptr;     ///< torpedo trail texture
+	AtlasedTexture* geosquaretex = nullptr;  ///< unknown use
+	AtlasedTexture* gfxtex = nullptr;        ///< nanospray texture
+	AtlasedTexture* projectiletex = nullptr; ///< appears to be unused
+	AtlasedTexture* repulsegfxtex = nullptr; ///< used by repulsor
+	AtlasedTexture* sphereparttex = nullptr; ///< sphere explosion texture
+	AtlasedTexture* torpedotex = nullptr;    ///< appears in-game as a 1 texel texture
+	AtlasedTexture* wrecktex = nullptr;      ///< smoking explosion part texture
+	AtlasedTexture* plasmatex = nullptr;     ///< default plasma texture
 	AtlasedTexture* laserendtex = nullptr;
 	AtlasedTexture* laserfallofftex = nullptr;
 	AtlasedTexture* randdotstex = nullptr;
@@ -124,9 +130,11 @@ public:
 	AtlasedTexture* groundringtex = nullptr;
 
 	AtlasedTexture* seismictex = nullptr;
+
 public:
 	static bool CanDrawProjectile(const CProjectile* pro, int allyTeam);
 	static bool ShouldDrawProjectile(const CProjectile* pro, uint8_t thisPassMask);
+
 private:
 	static void ParseAtlasTextures(const bool, const LuaTable&, spring::unordered_set<std::string>&, CTextureAtlas*);
 
@@ -145,8 +153,8 @@ private:
 
 	// start edge fading of regular CEGs if height difference is less than [0]
 	// fade out groundflashes to 0 as height difference reaches [1]
-	static constexpr float softenThreshold[2] = { 8.0f, 350.0f };
-	static constexpr float softenExponent[2]  = { 0.6f, 8.0f };
+	static constexpr float softenThreshold[2] = {8.0f, 350.0f};
+	static constexpr float softenExponent[2] = {0.6f, 8.0f};
 
 	GLuint perlinBlendTex[8];
 	float perlinBlend[4];
@@ -169,7 +177,7 @@ private:
 
 	bool drawSorted = true;
 
-	std::array<Shader::IProgramObject*, 2> fxShaders = { nullptr };
+	std::array<Shader::IProgramObject*, 2> fxShaders = {nullptr};
 	Shader::IProgramObject* fsShadowShader = nullptr;
 
 	constexpr static int WANT_SOFTEN_COUNT = 2;

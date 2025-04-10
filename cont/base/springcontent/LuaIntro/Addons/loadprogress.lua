@@ -38,4 +38,3 @@ function addon.Shutdown()
 	cachedLoadTimes[Game.modShortName][Game.mapName] = os.clock() - startTime
 	table.save(cachedLoadTimes, "loadprogress_cached.lua")
 end
-

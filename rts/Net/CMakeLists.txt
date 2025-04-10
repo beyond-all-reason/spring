@@ -14,4 +14,3 @@ make_global_var(sources_engine_Net
 		${sources_engine_NetServer}
 		${sources_engine_NetClient}
 	)
-

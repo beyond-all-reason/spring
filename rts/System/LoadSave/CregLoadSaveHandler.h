@@ -3,12 +3,12 @@
 #ifndef CREG_LOAD_SAVE_HANDLER_H
 #define CREG_LOAD_SAVE_HANDLER_H
 
-#include <string>
-#include <sstream>
 #include "LoadSaveHandler.h"
 
-class CCregLoadSaveHandler : public ILoadSaveHandler
-{
+#include <sstream>
+#include <string>
+
+class CCregLoadSaveHandler : public ILoadSaveHandler {
 public:
 	CCregLoadSaveHandler();
 	~CCregLoadSaveHandler();

@@ -3,12 +3,12 @@
 #ifndef _FILE_HANDLER_H
 #define _FILE_HANDLER_H
 
-#include <vector>
-#include <string>
-#include <fstream>
-#include <cinttypes>
-
 #include "VFSModes.h"
+
+#include <cinttypes>
+#include <fstream>
+#include <string>
+#include <vector>
 
 /**
  * This is for direct VFS file content access.
@@ -19,12 +19,13 @@
  * CFileHandler pointing to the same file simultaneously) as long as there are
  * no new Archives added to the VFS (which should not happen after PreGame).
  */
-class CFileHandler
-{
+class CFileHandler {
 public:
 	CFileHandler() { Close(); }
+
 	CFileHandler(const char* fileName, const char* modes = SPRING_VFS_RAW_FIRST);
 	CFileHandler(const std::string& fileName, const std::string& modes = SPRING_VFS_RAW_FIRST);
+
 	virtual ~CFileHandler() { Close(); }
 
 	void Open(const std::string& fileName, const std::string& modes = SPRING_VFS_RAW_FIRST);
@@ -35,14 +36,18 @@ public:
 	void Seek(int pos, std::ios_base::seekdir where = std::ios_base::beg);
 
 	static bool FileExists(const std::string& filePath, const std::string& modes);
+
 	// true if any of TryReadFrom{RawFS,PWD,VFS} succeed
 	bool FileExists() const { return (fileSize >= 0); }
+
 	// true if (and only if) TryReadFromVFS succeeds
 	bool IsBuffered() const { return (!fileBuffer.empty()); }
 
 	bool Eof() const;
 	int GetPos();
+
 	int FileSize() const { return fileSize; }
+
 	int LoadCode() const { return loadCode; }
 
 	bool LoadStringData(std::string& data);
@@ -56,24 +61,39 @@ public:
 	static bool InWriteDir(const std::string& path);
 
 	static std::vector<std::string> FindFiles(const std::string& path, const std::string& pattern);
-	static std::vector<std::string> DirList(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
-	static std::vector<std::string> SubDirs(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
+	static std::vector<std::string>
+	DirList(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
+	static std::vector<std::string>
+	SubDirs(const std::string& path, const std::string& pattern, const std::string& modes, bool recursive);
 
 	static std::string AllowModes(const std::string& modes, const std::string& allowed);
 	static std::string ForbidModes(const std::string& modes, const std::string& forbidden);
 
 
 protected:
-
 	virtual bool TryReadFromPWD(const std::string& fileName);
 	virtual bool TryReadFromRawFS(const std::string& fileName);
 	virtual bool TryReadFromVFS(const std::string& fileName, int section);
 
-	static bool InsertRawFiles(std::vector<std::string>& fileSet, const std::string& path, const std::string& pattern, bool recursive);
-	static bool InsertVFSFiles(std::vector<std::string>& fileSet, const std::string& path, const std::string& pattern, bool recursive, int section);
+	static bool InsertRawFiles(std::vector<std::string>& fileSet,
+	    const std::string& path,
+	    const std::string& pattern,
+	    bool recursive);
+	static bool InsertVFSFiles(std::vector<std::string>& fileSet,
+	    const std::string& path,
+	    const std::string& pattern,
+	    bool recursive,
+	    int section);
 
-	static bool InsertRawDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, bool recursive);
-	static bool InsertVFSDirs(std::vector<std::string>& dirSet, const std::string& path, const std::string& pattern, bool recursive, int section);
+	static bool InsertRawDirs(std::vector<std::string>& dirSet,
+	    const std::string& path,
+	    const std::string& pattern,
+	    bool recursive);
+	static bool InsertVFSDirs(std::vector<std::string>& dirSet,
+	    const std::string& path,
+	    const std::string& pattern,
+	    bool recursive,
+	    int section);
 
 	std::string fileName;
 	std::ifstream ifs;

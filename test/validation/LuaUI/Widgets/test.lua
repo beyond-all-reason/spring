@@ -65,4 +65,3 @@ end
 function widget:UnitDestroyed(unitID, unitDefID, unitTeam)
 	unitsdestroyed = unitsdestroyed + 1
 end
-

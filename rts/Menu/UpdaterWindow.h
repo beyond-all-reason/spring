@@ -5,15 +5,13 @@
 
 #include "aGui/Window.h"
 
-namespace agui
-{
-	class TextElement;
-	class LineEdit;
-};
+namespace agui {
+class TextElement;
+class LineEdit;
+}; // namespace agui
 class Connection;
 
-class UpdaterWindow : public agui::Window
-{
+class UpdaterWindow : public agui::Window {
 public:
 	UpdaterWindow(Connection* con);
 	~UpdaterWindow();

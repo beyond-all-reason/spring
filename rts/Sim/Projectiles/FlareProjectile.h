@@ -3,11 +3,11 @@
 #ifndef FLARE_PROJECTILE_H
 #define FLARE_PROJECTILE_H
 
-#include <array>
 #include "Projectile.h"
 
-class CFlareProjectile : public CProjectile
-{
+#include <array>
+
+class CFlareProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CFlareProjectile)
 
 public:
@@ -33,8 +33,7 @@ public:
 	float alphaFalloff;
 
 private:
-	CFlareProjectile() { }
-
+	CFlareProjectile() {}
 };
 
 #endif // FLARE_PROJECTILE_H

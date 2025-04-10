@@ -1,8 +1,8 @@
 /*
  * CUnitSyncJNIVersion.java
- * 
+ *
  * Created on 15-Sep-2007, 13:35:52
- * 
+ *
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -42,6 +42,6 @@ public class CUnitSyncJNIVersion {
         //        }*/
         return loaded;
     }
-    
+
     public static native int GetVersion();
 }

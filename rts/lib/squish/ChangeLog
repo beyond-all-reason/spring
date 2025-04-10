@@ -15,7 +15,7 @@ Castano from NVIDIA
 
 1.7
 * Fixed floating-point equality issue in clusterfit sort (x86 affected only)
-* Implemented proper SSE(2) floor function for 50% speedup on SSE builds 
+* Implemented proper SSE(2) floor function for 50% speedup on SSE builds
 * The range fit implementation now uses the correct colour metric
 
 1.6
@@ -49,4 +49,3 @@ Castano from NVIDIA
 
 1.0
 * Initial release
-

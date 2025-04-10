@@ -3,97 +3,98 @@
 #ifndef KEYBINDINGS_H
 #define KEYBINDINGS_H
 
-#include <string>
-#include <vector>
-
 #include "KeySet.h"
-#include "Game/Console.h"
+
 #include "Game/Action.h"
+#include "Game/Console.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
 
+#include <string>
+#include <vector>
 
-class CKeyBindings : public CommandReceiver
-{
-	public:
-		typedef std::vector<std::string> HotkeyList;
-		typedef std::function<bool (Action, Action)> ActionComparison;
+class CKeyBindings : public CommandReceiver {
+public:
+	typedef std::vector<std::string> HotkeyList;
+	typedef std::function<bool(Action, Action)> ActionComparison;
 
-	protected:
-		struct KeySetHash {
-			uint64_t operator ()(const CKeySet& ks) const {
-				return (((unsigned long long)ks.Key() * 6364136223846793005ull + ks.Mod() * 9600629759793949339ull) % 15726070495360670683ull);
-			}
-		};
+protected:
+	struct KeySetHash {
+		uint64_t operator()(const CKeySet& ks) const
+		{
+			return (((unsigned long long)ks.Key() * 6364136223846793005ull + ks.Mod() * 9600629759793949339ull) %
+			        15726070495360670683ull);
+		}
+	};
 
-		typedef spring::unsynced_map<CKeySet, ActionList, KeySetHash> KeyMap; // keyset to action
-		typedef spring::unsynced_map<std::string, HotkeyList> ActionMap; // action to keyset
+	typedef spring::unsynced_map<CKeySet, ActionList, KeySetHash> KeyMap; // keyset to action
+	typedef spring::unsynced_map<std::string, HotkeyList> ActionMap;      // action to keyset
 
-	public:
-		static const std::string DEFAULT_FILENAME;
+public:
+	static const std::string DEFAULT_FILENAME;
 
-		void Init();
-		void Kill();
+	void Init();
+	void Kill();
 
-		bool Load(const std::string& filename = DEFAULT_FILENAME);
-		bool Save(const std::string& filename) const;
-		void Print() const;
-		void LoadDefaults();
+	bool Load(const std::string& filename = DEFAULT_FILENAME);
+	bool Save(const std::string& filename) const;
+	void Print() const;
+	void LoadDefaults();
 
-		ActionList GetActionList() const;
-		ActionList GetActionList(int keyCode, int scanCode) const;
-		ActionList GetActionList(int keyCode, int scanCode, unsigned char modifiers) const;
-		ActionList GetActionList(const CKeyChain& kc) const;
-		ActionList GetActionList(const CKeyChain& kc, const CKeyChain& sc) const;
-		const HotkeyList& GetHotkeys(const std::string& action) const;
+	ActionList GetActionList() const;
+	ActionList GetActionList(int keyCode, int scanCode) const;
+	ActionList GetActionList(int keyCode, int scanCode, unsigned char modifiers) const;
+	ActionList GetActionList(const CKeyChain& kc) const;
+	ActionList GetActionList(const CKeyChain& kc, const CKeyChain& sc) const;
+	const HotkeyList& GetHotkeys(const std::string& action) const;
 
-		virtual void PushAction(const Action&);
-		bool ExecuteCommand(const std::string& line);
+	virtual void PushAction(const Action&);
+	bool ExecuteCommand(const std::string& line);
 
-		// Receive configuration notifications (for KeyChainTimeout)
-		void ConfigNotify(const std::string& key, const std::string& value);
+	// Receive configuration notifications (for KeyChainTimeout)
+	void ConfigNotify(const std::string& key, const std::string& value);
 
-		int GetFakeMetaKey() const { return fakeMetaKey; }
-		int GetKeyChainTimeout() const { return keyChainTimeout; }
+	int GetFakeMetaKey() const { return fakeMetaKey; }
 
-	protected:
-		void BuildHotkeyMap();
-		void DebugActionList(const ActionList& actionList) const;
+	int GetKeyChainTimeout() const { return keyChainTimeout; }
 
-		void AddActionToKeyMap(KeyMap& bindings, Action& action);
-		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
+protected:
+	void BuildHotkeyMap();
+	void DebugActionList(const ActionList& actionList) const;
 
-		bool Bind(const std::string& keystring, const std::string& action);
-		bool UnBind(const std::string& keystring, const std::string& action);
-		bool UnBindKeyset(const std::string& keystr);
-		bool UnBindAction(const std::string& action);
-		bool SetFakeMetaKey(const std::string& keystring);
-		bool AddKeySymbol(const std::string& keysym, const std::string& code);
+	void AddActionToKeyMap(KeyMap& bindings, Action& action);
+	static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
 
-		static bool RemoveCommandFromList(ActionList& al, const std::string& command);
+	bool Bind(const std::string& keystring, const std::string& action);
+	bool UnBind(const std::string& keystring, const std::string& action);
+	bool UnBindKeyset(const std::string& keystr);
+	bool UnBindAction(const std::string& action);
+	bool SetFakeMetaKey(const std::string& keystring);
+	bool AddKeySymbol(const std::string& keysym, const std::string& code);
 
-		bool FileSave(FILE* file) const;
+	static bool RemoveCommandFromList(ActionList& al, const std::string& command);
 
-  protected:
-		const ActionList & GetActionList(const CKeySet& ks, bool forceAny) const;
+	bool FileSave(FILE* file) const;
 
-		KeyMap codeBindings;
-		KeyMap scanBindings;
-		ActionMap hotkeys;
-		std::vector<std::string> loadStack;
-		int bindingsCount;
+protected:
+	const ActionList& GetActionList(const CKeySet& ks, bool forceAny) const;
 
-		// commands that use both Up and Down key presses
-		spring::unsynced_set<std::string> statefulCommands;
+	KeyMap codeBindings;
+	KeyMap scanBindings;
+	ActionMap hotkeys;
+	std::vector<std::string> loadStack;
+	int bindingsCount;
 
-	private:
-		int fakeMetaKey = -1;
-		int keyChainTimeout = 750;
+	// commands that use both Up and Down key presses
+	spring::unsynced_set<std::string> statefulCommands;
 
-		bool buildHotkeyMap = true;
-		bool debugEnabled = false;
+private:
+	int fakeMetaKey = -1;
+	int keyChainTimeout = 750;
+
+	bool buildHotkeyMap = true;
+	bool debugEnabled = false;
 };
-
 
 extern CKeyBindings keyBindings;
 

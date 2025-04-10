@@ -1,30 +1,30 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <stdio.h>
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <cctype>
-
 #include "UnitDefHandler.h"
+
 #include "UnitDef.h"
+
 #include "Lua/LuaParser.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-#include "System/Sound/ISound.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISound.h"
+#include "System/StringUtil.h"
+
+#include <algorithm>
+#include <cctype>
+#include <iostream>
+#include <locale>
+
+#include <stdio.h>
 
 static CUnitDefHandler gUnitDefHandler;
 CUnitDefHandler* unitDefHandler = &gUnitDefHandler;
 
 
 #if defined(_MSC_VER) && (_MSC_VER < 1800)
-bool isblank(int c) {
-	return (c == ' ') || (c == '\t') || (c == '\r') || (c == '\n');
-}
+bool isblank(int c) { return (c == ' ') || (c == '\t') || (c == '\r') || (c == '\n'); }
 #endif
 
 
@@ -57,8 +57,6 @@ void CUnitDefHandler::Init(LuaParser* defsParser)
 	ProcessDecoys();
 }
 
-
-
 int CUnitDefHandler::PushNewUnitDef(const std::string& unitName, const LuaTable& udTable)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -79,7 +77,8 @@ int CUnitDefHandler::PushNewUnitDef(const std::string& unitName, const LuaTable&
 		// force-initialize the real* members
 		newDef.SetNoCost(true);
 		newDef.SetNoCost(noCost);
-	} catch (const content_error& err) {
+	}
+	catch (const content_error& err) {
 		LOG_L(L_ERROR, "%s", err.what());
 		return 0;
 	}
@@ -87,7 +86,6 @@ int CUnitDefHandler::PushNewUnitDef(const std::string& unitName, const LuaTable&
 	unitDefIDs[unitName] = defID;
 	return defID;
 }
-
 
 void CUnitDefHandler::CleanBuildOptions()
 {
@@ -107,7 +105,8 @@ void CUnitDefHandler::CleanBuildOptions()
 			const UnitDef* bd = GetUnitDefByName(buildOpt.second);
 
 			if (bd == nullptr /*|| bd->maxThisUnit <= 0*/) {
-				LOG_L(L_WARNING, "removed the \"%s\" entry from the \"%s\" build menu", buildOpt.second.c_str(), ud.name.c_str());
+				LOG_L(L_WARNING, "removed the \"%s\" entry from the \"%s\" build menu", buildOpt.second.c_str(),
+				    ud.name.c_str());
 				eraseOpts.push_back(buildOpt.first);
 			}
 		}
@@ -117,7 +116,6 @@ void CUnitDefHandler::CleanBuildOptions()
 		}
 	}
 }
-
 
 void CUnitDefHandler::ProcessDecoys()
 {
@@ -150,22 +148,20 @@ void CUnitDefHandler::ProcessDecoys()
 	decoyNameMap.clear();
 }
 
-
 void CUnitDefHandler::UnitDefLoadSounds(UnitDef* ud, const LuaTable& udTable)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LuaTable soundsTable = udTable.SubTable("sounds");
 
-	LoadSounds(soundsTable, ud->sounds.ok,          "ok");      // eg. "ok1", "ok2", ...
-	LoadSounds(soundsTable, ud->sounds.select,      "select");  // eg. "select1", "select2", ...
-	LoadSounds(soundsTable, ud->sounds.arrived,     "arrived"); // eg. "arrived1", "arrived2", ...
-	LoadSounds(soundsTable, ud->sounds.build,       "build");
-	LoadSounds(soundsTable, ud->sounds.activate,    "activate");
-	LoadSounds(soundsTable, ud->sounds.deactivate,  "deactivate");
-	LoadSounds(soundsTable, ud->sounds.cant,        "cant");
+	LoadSounds(soundsTable, ud->sounds.ok, "ok");           // eg. "ok1", "ok2", ...
+	LoadSounds(soundsTable, ud->sounds.select, "select");   // eg. "select1", "select2", ...
+	LoadSounds(soundsTable, ud->sounds.arrived, "arrived"); // eg. "arrived1", "arrived2", ...
+	LoadSounds(soundsTable, ud->sounds.build, "build");
+	LoadSounds(soundsTable, ud->sounds.activate, "activate");
+	LoadSounds(soundsTable, ud->sounds.deactivate, "deactivate");
+	LoadSounds(soundsTable, ud->sounds.cant, "cant");
 	LoadSounds(soundsTable, ud->sounds.underattack, "underattack");
 }
-
 
 void CUnitDefHandler::LoadSounds(const LuaTable& soundsTable, GuiSoundSet& gsound, const string& soundName)
 {
@@ -190,8 +186,8 @@ void CUnitDefHandler::LoadSounds(const LuaTable& soundsTable, GuiSoundSet& gsoun
 
 			if (volume > 0.0f)
 				CommonDefHandler::AddSoundSetData(gsound, fileName, volume);
-
-		} else {
+		}
+		else {
 			fileName = sndTable.GetString(i, "");
 
 			if (fileName.empty())
@@ -201,7 +197,6 @@ void CUnitDefHandler::LoadSounds(const LuaTable& soundsTable, GuiSoundSet& gsoun
 		}
 	}
 }
-
 
 const UnitDef* CUnitDefHandler::GetUnitDefByName(std::string name)
 {
@@ -215,7 +210,6 @@ const UnitDef* CUnitDefHandler::GetUnitDefByName(std::string name)
 
 	return &unitDefsVector[it->second];
 }
-
 
 void CUnitDefHandler::SetNoCost(bool value)
 {
@@ -232,7 +226,7 @@ void CUnitDefHandler::SetNoCost(bool value)
 
 void CUnitDefHandler::SanitizeUnitDefs()
 {
-	for (auto &ud : unitDefsVector) {
+	for (auto& ud: unitDefsVector) {
 		// Factories cannot assist another builder
 		if (ud.IsFactoryUnit())
 			ud.canAssist = false;

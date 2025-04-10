@@ -3,27 +3,27 @@
 #include "UDPListener.h"
 
 #ifdef DEBUG
-	#include "System/SpringFormat.h"
+#include "System/SpringFormat.h"
 #endif
-#include "System/Misc/NonCopyable.h"
-
-#include <memory>
-#include <asio.hpp>
-#include <cinttypes>
-#include <queue>
-
 #include "ProtocolDef.h"
-#include "UDPConnection.h"
 #include "Socket.h"
+#include "UDPConnection.h"
+
 #include "System/Log/ILog.h"
+#include "System/Misc/NonCopyable.h"
 #include "System/Platform/errorhandler.h"
 
+#include <cinttypes>
+#include <memory>
+#include <queue>
 
-namespace netcode
-{
+#include <asio.hpp>
+
+namespace netcode {
 using namespace asio;
 
-UDPListener::UDPListener(int port, const std::string& ip): acceptNewConnections(false)
+UDPListener::UDPListener(int port, const std::string& ip)
+    : acceptNewConnections(false)
 {
 	// resets socket on any exception
 	const std::string err = TryBindSocket(port, socket, ip);
@@ -37,12 +37,12 @@ UDPListener::UDPListener(int port, const std::string& ip): acceptNewConnections(
 	LOG("[%s] successfully bound socket on port %i", __func__, socket->local_endpoint().port());
 }
 
-UDPListener::~UDPListener() {
+UDPListener::~UDPListener()
+{
 	for (const auto& p: dropMap) {
-		LOG("[%s] dropped %lu packets from unknown IP %s", __func__, (unsigned long) p.second, (p.first).c_str());
+		LOG("[%s] dropped %lu packets from unknown IP %s", __func__, (unsigned long)p.second, (p.first).c_str());
 	}
 }
-
 
 std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::socket>& sock, const std::string& ip)
 {
@@ -73,7 +73,9 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 			throw std::runtime_error("[UDPListener] IPv6 not supported, can not use address " + address.to_string());
 
 		if (address.is_loopback())
-			LOG_L(L_WARNING, "[UDPListener::%s] opening socket on loopback address, other users will not be able to connect!", __func__);
+			LOG_L(L_WARNING,
+			    "[UDPListener::%s] opening socket on loopback address, other users will not be able to connect!",
+			    __func__);
 
 		if (address.is_v4()) {
 			if (supportsIPv6)
@@ -87,11 +89,10 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 
 		sock->bind(endpoint);
 
-		LOG(
-			"[UDPListener::%s] binding UDP socket to IPv%d-address %s (%s) on port %i",
-			__func__, (address.is_v6()? 6: 4), address.to_string().c_str(), ip.c_str(), endpoint.port()
-		);
-	} catch (const std::runtime_error& ex) {
+		LOG("[UDPListener::%s] binding UDP socket to IPv%d-address %s (%s) on port %i", __func__,
+		    (address.is_v6() ? 6 : 4), address.to_string().c_str(), ip.c_str(), endpoint.port());
+	}
+	catch (const std::runtime_error& ex) {
 		// ex includes asio::system_error and std::range_error
 		sock.reset();
 		errorMsg = ex.what();
@@ -99,13 +100,15 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 		if (errorMsg.empty())
 			errorMsg = "Unknown problem";
 
-		LOG_L(L_ERROR, "[UDPListener::%s] binding UDP socket to IP %s failed: %s", __func__, ip.c_str(), errorMsg.c_str());
+		LOG_L(L_ERROR, "[UDPListener::%s] binding UDP socket to IP %s failed: %s", __func__, ip.c_str(),
+		    errorMsg.c_str());
 	}
 
 	return errorMsg;
 }
 
-void UDPListener::Update() {
+void UDPListener::Update()
+{
 	netservice.poll();
 
 	size_t bytesAvailable = 0;
@@ -141,7 +144,7 @@ void UDPListener::Update() {
 
 
 		// unknown connection but still have the packet, maybe a new client wants to connect from sender's address
-		if (acceptNewConnections && data.lastContinuous == -1 && data.nakType == 0)	{
+		if (acceptNewConnections && data.lastContinuous == -1 && data.nakType == 0) {
 			if (!data.chunks.empty() && (*data.chunks.begin())->chunkNumber == 0) {
 				std::shared_ptr<UDPConnection> incoming(new UDPConnection(socket, udpEndPoint));
 				waiting.push(incoming);
@@ -157,24 +160,27 @@ void UDPListener::Update() {
 		const std::string& senderIP = senderAddr.to_string();
 
 		if (dropMap.find(senderIP) == dropMap.end()) {
-			LOG_L(L_DEBUG, "[UDPListener::%s] dropping packet from unknown IP: [%s]:%i", __func__, senderIP.c_str(), udpEndPoint.port());
+			LOG_L(L_DEBUG, "[UDPListener::%s] dropping packet from unknown IP: [%s]:%i", __func__, senderIP.c_str(),
+			    udpEndPoint.port());
 			dropMap[senderIP] = 0;
-		} else {
+		}
+		else {
 			dropMap[senderIP] += 1;
 		}
 
-	#ifdef DEBUG
+#ifdef DEBUG
 		std::string conns;
 		for (auto it = connMap.cbegin(); it != connMap.cend(); ++it) {
-			conns += spring::format(" [%s]:%i;", it->first.address().to_string().c_str(),it->first.port());
+			conns += spring::format(" [%s]:%i;", it->first.address().to_string().c_str(), it->first.port());
 		}
 		LOG_L(L_DEBUG, "[UDPListener::%s] open connections: %s", __func__, conns.c_str());
-	#endif
+#endif
 	}
 
-	for (auto i = connMap.cbegin(); i != connMap.cend(); ) {
+	for (auto i = connMap.cbegin(); i != connMap.cend();) {
 		if (i->second.expired()) {
-			LOG_L(L_DEBUG, "[UDPListener::%s] connection closed: [%s]:%i", __func__, i->first.address().to_string().c_str(), i->first.port());
+			LOG_L(L_DEBUG, "[UDPListener::%s] connection closed: [%s]:%i", __func__,
+			    i->first.address().to_string().c_str(), i->first.port());
 			i = connMap.erase(i);
 			continue;
 		}
@@ -182,7 +188,6 @@ void UDPListener::Update() {
 		++i;
 	}
 }
-
 
 std::shared_ptr<UDPConnection> UDPListener::SpawnConnection(const std::string& ip, const unsigned port)
 {
@@ -199,9 +204,9 @@ std::shared_ptr<UDPConnection> UDPListener::AcceptConnection()
 	return newConn;
 }
 
-
-void UDPListener::UpdateConnections() {
-	for (auto i = connMap.begin(); i != connMap.end(); ) {
+void UDPListener::UpdateConnections()
+{
+	for (auto i = connMap.begin(); i != connMap.end();) {
 		std::shared_ptr<UDPConnection> uc = i->second.lock();
 
 		if (uc && i->first != uc->GetEndpoint()) {
@@ -214,4 +219,4 @@ void UDPListener::UpdateConnections() {
 	}
 }
 
-}
+} // namespace netcode

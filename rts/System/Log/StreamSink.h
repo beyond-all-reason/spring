@@ -26,4 +26,3 @@ void log_sink_stream_setLogStream(std::ostream* logStream);
 ///@}
 
 #endif // LOG_STREAM_SINK_H
-

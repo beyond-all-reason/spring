@@ -15,9 +15,9 @@ extern void good_fpu_control_registers(const char* text);
 extern void good_fpu_init();
 
 namespace springproc {
-	unsigned int GetProcMaxStandardLevel();
-	unsigned int GetProcMaxExtendedLevel();
-	unsigned int GetProcSSEBits();
-}
+unsigned int GetProcMaxStandardLevel();
+unsigned int GetProcMaxExtendedLevel();
+unsigned int GetProcSSEBits();
+} // namespace springproc
 
 #endif // !_FPU_CHECK_H

@@ -1,28 +1,27 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Height.h"
+
 #include "Map/HeightLinePalette.h"
 #include "Map/ReadMap.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
 #include "System/Color.h"
-#include "System/Exceptions.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
 
-
 // currently defined in HeightLinePalette.cpp
-//CONFIG(bool, ColorElev).defaultValue(true).description("If heightmap (default hotkey [F1]) should be colored or not.");
-
+// CONFIG(bool, ColorElev).defaultValue(true).description("If heightmap (default hotkey [F1]) should be colored or
+// not.");
 
 
 CHeightTexture::CHeightTexture()
-: CPboInfoTexture("height")
-, CEventClient("[CHeightTexture]", 271990, false)
-, needUpdate(true)
+    : CPboInfoTexture("height")
+    , CEventClient("[CHeightTexture]", 271990, false)
+    , needUpdate(true)
 {
 	eventHandler.AddClient(this);
 
@@ -44,13 +43,15 @@ CHeightTexture::CHeightTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	RecoilTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 256, 2);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, &CHeightLinePalette::paletteColored[0].r);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, &CHeightLinePalette::paletteBlackAndWhite[0].r);
+	glTexSubImage2D(
+	    GL_TEXTURE_2D, 0, 0, 0, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, &CHeightLinePalette::paletteColored[0].r);
+	glTexSubImage2D(
+	    GL_TEXTURE_2D, 0, 0, 1, 256, 1, GL_RGBA, GL_UNSIGNED_BYTE, &CHeightLinePalette::paletteBlackAndWhite[0].r);
 
 	if (FBO::IsSupported()) {
 		fbo.Bind();
 		fbo.AttachTexture(texture);
-		/*bool status =*/ fbo.CheckStatus("CHeightTexture");
+		/*bool status =*/fbo.CheckStatus("CHeightTexture");
 		FBO::Unbind();
 	}
 
@@ -80,13 +81,14 @@ CHeightTexture::CHeightTexture()
 	)";
 
 	shader = shaderHandler->CreateProgramObject("[CHeightTexture]", "CHeightTexture");
-	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode,   "", GL_VERTEX_SHADER));
+	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode, "", GL_VERTEX_SHADER));
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(fragmentCode, "", GL_FRAGMENT_SHADER));
 	shader->Link();
 	if (!shader->IsValid()) {
 		const char* fmt = "%s-shader compilation error: %s";
 		LOG_L(L_ERROR, fmt, shader->GetName().c_str(), shader->GetLog().c_str());
-	} else {
+	}
+	else {
 		shader->Enable();
 		shader->SetUniform("texHeight", 0);
 		shader->SetUniform("texPalette", 1);
@@ -103,7 +105,6 @@ CHeightTexture::CHeightTexture()
 		throw opengl_error("");
 	}
 }
-
 
 void CHeightTexture::UpdateCPU()
 {
@@ -131,14 +132,12 @@ void CHeightTexture::UpdateCPU()
 	infoTexPBO.Unbind();
 }
 
-
 CHeightTexture::~CHeightTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &paletteTex);
 	shaderHandler->ReleaseProgramObject("[CHeightTexture]", "CHeightTexture");
 }
-
 
 void CHeightTexture::Update()
 {
@@ -151,7 +150,7 @@ void CHeightTexture::Update()
 		return UpdateCPU();
 
 	fbo.Bind();
-	glViewport(0,0, texSize.x, texSize.y);
+	glViewport(0, 0, texSize.x, texSize.y);
 	shader->Enable();
 	glDisable(GL_BLEND);
 	glActiveTexture(GL_TEXTURE1);
@@ -160,10 +159,10 @@ void CHeightTexture::Update()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, hmTexID);
 	glBegin(GL_QUADS);
-		glVertex2f(0.f, 0.f);
-		glVertex2f(0.f, 1.f);
-		glVertex2f(1.f, 1.f);
-		glVertex2f(1.f, 0.f);
+	glVertex2f(0.f, 0.f);
+	glVertex2f(0.f, 1.f);
+	glVertex2f(1.f, 1.f);
+	glVertex2f(1.f, 0.f);
 	glEnd();
 	shader->Disable();
 	globalRendering->LoadViewport();
@@ -175,13 +174,11 @@ void CHeightTexture::Update()
 	glActiveTexture(GL_TEXTURE0);
 }
 
-
 void CHeightTexture::UnsyncedHeightMapUpdate(const SRectangle& rect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	needUpdate = true;
 }
-
 
 bool CHeightTexture::IsUpdateNeeded()
 {

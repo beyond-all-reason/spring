@@ -2,15 +2,15 @@
 
 #include "SkirmishAILibraryInfo.h"
 
-#include "Interface/aidefines.h"
-#include "Interface/SSkirmishAILibrary.h"
 #include "SkirmishAIKey.h"
-#include "System/StringUtil.h"
-#include "System/Info.h"
-#include "System/Option.h"
-#include "System/Log/ILog.h"
 
+#include "Interface/SSkirmishAILibrary.h"
+#include "Interface/aidefines.h"
 #include "System/FileSystem/VFSModes.h"
+#include "System/Info.h"
+#include "System/Log/ILog.h"
+#include "System/Option.h"
+#include "System/StringUtil.h"
 
 
 static const char* BAD_CHARS = "\t _#";
@@ -18,10 +18,8 @@ static const std::string DEFAULT_VALUE;
 
 CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(const CSkirmishAILibraryInfo& aiInfo) = default;
 
-CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(
-	const std::string& aiInfoFile,
-	const std::string& aiOptionFile
-) {
+CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(const std::string& aiInfoFile, const std::string& aiOptionFile)
+{
 	std::vector<InfoItem> tmpInfo;
 	info_parseInfo(tmpInfo, aiInfoFile);
 
@@ -35,10 +33,9 @@ CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(
 	}
 }
 
-CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(
-	const std::map<std::string, std::string>& aiInfo,
-	const std::string& aiOptionLua
-) {
+CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(const std::map<std::string, std::string>& aiInfo,
+    const std::string& aiOptionLua)
+{
 	for (const auto& info: aiInfo) {
 		SetInfo(info.first, info.second);
 	}
@@ -48,56 +45,51 @@ CSkirmishAILibraryInfo::CSkirmishAILibraryInfo(
 	}
 }
 
-
-const std::string& CSkirmishAILibraryInfo::GetKeyAt(size_t index) const {
+const std::string& CSkirmishAILibraryInfo::GetKeyAt(size_t index) const
+{
 	if (index < info_keys.size())
 		return *(info_keys.begin() + index);
 
 	return DEFAULT_VALUE;
 }
 
-const std::string& CSkirmishAILibraryInfo::GetValueAt(size_t index) const {
+const std::string& CSkirmishAILibraryInfo::GetValueAt(size_t index) const
+{
 	if (index < info_keys.size())
 		return info_key_value.find(GetKeyAt(index))->second;
 
 	return DEFAULT_VALUE;
 }
 
-const std::string& CSkirmishAILibraryInfo::GetDescriptionAt(size_t index) const {
+const std::string& CSkirmishAILibraryInfo::GetDescriptionAt(size_t index) const
+{
 	if (index < info_keys.size())
 		return info_key_description.find(GetKeyAt(index))->second;
 
 	return DEFAULT_VALUE;
 }
 
+SkirmishAIKey CSkirmishAILibraryInfo::GetKey() const { return SkirmishAIKey(GetShortName(), GetVersion()); }
 
-SkirmishAIKey CSkirmishAILibraryInfo::GetKey() const {
-	return SkirmishAIKey(GetShortName(), GetVersion());
-}
+const std::string& CSkirmishAILibraryInfo::GetDataDir() const { return GetInfo(SKIRMISH_AI_PROPERTY_DATA_DIR); }
 
-const std::string& CSkirmishAILibraryInfo::GetDataDir() const {
-	return GetInfo(SKIRMISH_AI_PROPERTY_DATA_DIR);
-}
-const std::string& CSkirmishAILibraryInfo::GetDataDirCommon() const {
+const std::string& CSkirmishAILibraryInfo::GetDataDirCommon() const
+{
 	return GetInfo(SKIRMISH_AI_PROPERTY_DATA_DIR_COMMON);
 }
-const std::string& CSkirmishAILibraryInfo::GetShortName() const {
-	return GetInfo(SKIRMISH_AI_PROPERTY_SHORT_NAME);
-}
-const std::string& CSkirmishAILibraryInfo::GetVersion() const {
-	return GetInfo(SKIRMISH_AI_PROPERTY_VERSION);
-}
-const std::string& CSkirmishAILibraryInfo::GetName() const {
-	return GetInfo(SKIRMISH_AI_PROPERTY_NAME);
-}
-const std::string& CSkirmishAILibraryInfo::GetDescription() const {
-	return GetInfo(SKIRMISH_AI_PROPERTY_DESCRIPTION);
-}
-const std::string& CSkirmishAILibraryInfo::GetURL() const {
-	return GetInfo(SKIRMISH_AI_PROPERTY_URL);
-}
 
-bool CSkirmishAILibraryInfo::IsLuaAI() const {
+const std::string& CSkirmishAILibraryInfo::GetShortName() const { return GetInfo(SKIRMISH_AI_PROPERTY_SHORT_NAME); }
+
+const std::string& CSkirmishAILibraryInfo::GetVersion() const { return GetInfo(SKIRMISH_AI_PROPERTY_VERSION); }
+
+const std::string& CSkirmishAILibraryInfo::GetName() const { return GetInfo(SKIRMISH_AI_PROPERTY_NAME); }
+
+const std::string& CSkirmishAILibraryInfo::GetDescription() const { return GetInfo(SKIRMISH_AI_PROPERTY_DESCRIPTION); }
+
+const std::string& CSkirmishAILibraryInfo::GetURL() const { return GetInfo(SKIRMISH_AI_PROPERTY_URL); }
+
+bool CSkirmishAILibraryInfo::IsLuaAI() const
+{
 	const std::string& isLuaStr = GetInfo("isLuaAI");
 
 	if (!isLuaStr.empty())
@@ -106,14 +98,18 @@ bool CSkirmishAILibraryInfo::IsLuaAI() const {
 	return false;
 }
 
-const std::string& CSkirmishAILibraryInfo::GetInterfaceShortName() const {
+const std::string& CSkirmishAILibraryInfo::GetInterfaceShortName() const
+{
 	return GetInfo(SKIRMISH_AI_PROPERTY_INTERFACE_SHORT_NAME);
 }
-const std::string& CSkirmishAILibraryInfo::GetInterfaceVersion() const {
+
+const std::string& CSkirmishAILibraryInfo::GetInterfaceVersion() const
+{
 	return GetInfo(SKIRMISH_AI_PROPERTY_INTERFACE_VERSION);
 }
 
-const std::string& CSkirmishAILibraryInfo::GetInfo(const std::string& key) const {
+const std::string& CSkirmishAILibraryInfo::GetInfo(const std::string& key) const
+{
 	// get real key through lower case key
 	auto strPair = info_keyLower_key.find(StringToLower(key));
 	bool found = (strPair != info_keyLower_key.end());
@@ -132,50 +128,45 @@ const std::string& CSkirmishAILibraryInfo::GetInfo(const std::string& key) const
 	return strPair->second;
 }
 
+void CSkirmishAILibraryInfo::SetDataDir(const std::string& dataDir) { SetInfo(SKIRMISH_AI_PROPERTY_DATA_DIR, dataDir); }
 
-void CSkirmishAILibraryInfo::SetDataDir(const std::string& dataDir) {
-	SetInfo(SKIRMISH_AI_PROPERTY_DATA_DIR, dataDir);
-}
-void CSkirmishAILibraryInfo::SetDataDirCommon(const std::string& dataDirCommon) {
+void CSkirmishAILibraryInfo::SetDataDirCommon(const std::string& dataDirCommon)
+{
 	SetInfo(SKIRMISH_AI_PROPERTY_DATA_DIR_COMMON, dataDirCommon);
 }
-void CSkirmishAILibraryInfo::SetShortName(const std::string& shortName) {
+
+void CSkirmishAILibraryInfo::SetShortName(const std::string& shortName)
+{
 	SetInfo(SKIRMISH_AI_PROPERTY_SHORT_NAME, shortName);
 }
-void CSkirmishAILibraryInfo::SetVersion(const std::string& version) {
-	SetInfo(SKIRMISH_AI_PROPERTY_VERSION, version);
-}
-void CSkirmishAILibraryInfo::SetName(const std::string& name) {
-	SetInfo(SKIRMISH_AI_PROPERTY_NAME, name);
-}
-void CSkirmishAILibraryInfo::SetDescription(const std::string& description) {
+
+void CSkirmishAILibraryInfo::SetVersion(const std::string& version) { SetInfo(SKIRMISH_AI_PROPERTY_VERSION, version); }
+
+void CSkirmishAILibraryInfo::SetName(const std::string& name) { SetInfo(SKIRMISH_AI_PROPERTY_NAME, name); }
+
+void CSkirmishAILibraryInfo::SetDescription(const std::string& description)
+{
 	SetInfo(SKIRMISH_AI_PROPERTY_DESCRIPTION, description);
 }
-void CSkirmishAILibraryInfo::SetURL(const std::string& url) {
-	SetInfo(SKIRMISH_AI_PROPERTY_URL, url);
-}
-void CSkirmishAILibraryInfo::SetLuaAI(const std::string& isLua) {
-	SetInfo("isLuaAI", isLua);
-}
-void CSkirmishAILibraryInfo::SetLuaAI(const bool isLua) {
-	SetLuaAI(std::string(isLua ? "yes" : "no"));
-}
 
+void CSkirmishAILibraryInfo::SetURL(const std::string& url) { SetInfo(SKIRMISH_AI_PROPERTY_URL, url); }
 
-void CSkirmishAILibraryInfo::SetInterfaceShortName(const std::string& interfaceShortName) {
+void CSkirmishAILibraryInfo::SetLuaAI(const std::string& isLua) { SetInfo("isLuaAI", isLua); }
+
+void CSkirmishAILibraryInfo::SetLuaAI(const bool isLua) { SetLuaAI(std::string(isLua ? "yes" : "no")); }
+
+void CSkirmishAILibraryInfo::SetInterfaceShortName(const std::string& interfaceShortName)
+{
 	SetInfo(SKIRMISH_AI_PROPERTY_INTERFACE_SHORT_NAME, interfaceShortName);
 }
 
-void CSkirmishAILibraryInfo::SetInterfaceVersion(const std::string& interfaceVersion) {
+void CSkirmishAILibraryInfo::SetInterfaceVersion(const std::string& interfaceVersion)
+{
 	SetInfo(SKIRMISH_AI_PROPERTY_INTERFACE_VERSION, interfaceVersion);
 }
 
-
-bool CSkirmishAILibraryInfo::SetInfo(
-	const std::string& key,
-	const std::string& value,
-	const std::string& description
-) {
+bool CSkirmishAILibraryInfo::SetInfo(const std::string& key, const std::string& value, const std::string& description)
+{
 	static const std::string snKey = StringToLower(SKIRMISH_AI_PROPERTY_SHORT_NAME);
 	static const std::string vKey = StringToLower(SKIRMISH_AI_PROPERTY_VERSION);
 
@@ -183,11 +174,8 @@ bool CSkirmishAILibraryInfo::SetInfo(
 
 	if (keyLower == snKey || keyLower == vKey) {
 		if (value.find_first_of(BAD_CHARS) != std::string::npos) {
-
-			LOG_L(
-				L_WARNING, "Skirmish AI property (%s or %s) contains illegal characters (%s).",
-				SKIRMISH_AI_PROPERTY_SHORT_NAME, SKIRMISH_AI_PROPERTY_VERSION, BAD_CHARS
-			);
+			LOG_L(L_WARNING, "Skirmish AI property (%s or %s) contains illegal characters (%s).",
+			    SKIRMISH_AI_PROPERTY_SHORT_NAME, SKIRMISH_AI_PROPERTY_VERSION, BAD_CHARS);
 
 			return false;
 		}
@@ -203,4 +191,3 @@ bool CSkirmishAILibraryInfo::SetInfo(
 
 	return true;
 }
-

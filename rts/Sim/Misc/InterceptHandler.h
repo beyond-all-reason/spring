@@ -3,17 +3,17 @@
 #ifndef INTERCEPT_HANDLER_H
 #define INTERCEPT_HANDLER_H
 
-#include <deque>
 #include "System/Misc/NonCopyable.h"
 #include "System/Object.h"
+
+#include <deque>
 
 class CWeapon;
 class CWeaponProjectile;
 class CProjectile;
 class float3;
 
-class CInterceptHandler : public CObject, spring::noncopyable
-{
+class CInterceptHandler : public CObject, spring::noncopyable {
 	CR_DECLARE(CInterceptHandler)
 
 public:

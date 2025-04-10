@@ -26,51 +26,43 @@
 
 static const Simple huge = 1.0e30f;
 
-
 namespace streflop_libm {
-Simple
-__roundf (Simple x)
+Simple __roundf(Simple x)
 {
-  int32_t i0, j0;
+	int32_t i0, j0;
 
-  GET_FLOAT_WORD (i0, x);
-  j0 = ((i0 >> 23) & 0xff) - 0x7f;
-  if (j0 < 23)
-    {
-      if (j0 < 0)
-	{
-	  if (huge + x > 0.0f)
-	    {
-	      i0 &= 0x80000000;
-	      if (j0 == -1)
-		i0 |= 0x3f800000;
-	    }
+	GET_FLOAT_WORD(i0, x);
+	j0 = ((i0 >> 23) & 0xff) - 0x7f;
+	if (j0 < 23) {
+		if (j0 < 0) {
+			if (huge + x > 0.0f) {
+				i0 &= 0x80000000;
+				if (j0 == -1)
+					i0 |= 0x3f800000;
+			}
+		}
+		else {
+			u_int32_t i = 0x007fffff >> j0;
+			if ((i0 & i) == 0)
+				/* X is integral.  */
+				return x;
+			if (huge + x > 0.0f) {
+				/* Raise inexact if x != 0.  */
+				i0 += 0x00400000 >> j0;
+				i0 &= ~i;
+			}
+		}
 	}
-      else
-	{
-	  u_int32_t i = 0x007fffff >> j0;
-	  if ((i0 & i) == 0)
-	    /* X is integral.  */
-	    return x;
-	  if (huge + x > 0.0f)
-	    {
-	      /* Raise inexact if x != 0.  */
-	      i0 += 0x00400000 >> j0;
-	      i0 &= ~i;
-	    }
+	else {
+		if (j0 == 0x80)
+			/* Inf or NaN.  */
+			return x + x;
+		else
+			return x;
 	}
-    }
-  else
-    {
-      if (j0 == 0x80)
-	/* Inf or NaN.  */
-	return x + x;
-      else
+
+	SET_FLOAT_WORD(x, i0);
 	return x;
-    }
-
-  SET_FLOAT_WORD (x, i0);
-  return x;
 }
-weak_alias (__roundf, roundf)
-}
+weak_alias(__roundf, roundf)
+} // namespace streflop_libm

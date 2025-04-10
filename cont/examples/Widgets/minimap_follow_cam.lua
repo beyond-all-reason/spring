@@ -29,7 +29,7 @@ function widget:CameraRotationChanged(_, roty)
 	prevSnappedRot = snappedRot
 
 	local shouldBeWider = (mapAspect > 1.0) ~= (snappedRot == math.pi/2) or (snappedRot == 3*math.pi/2)
-	
+
 	local px, py, sx, sy = spGetMiniMapGeo()
 	if shouldBeWider ~= (sx > sy) then
 		gl.ConfigMiniMap(px, py, sy, sx)

@@ -9,7 +9,7 @@
 #define RECOIL_FORCE_INLINE [[gnu::always_inline]] inline
 
 #elif defined(_MSC_VER)
-#pragma warning(error: 4714)
+#pragma warning(error : 4714)
 #define RECOIL_FORCE_INLINE __forceinline
 
 #else

@@ -123,7 +123,7 @@ local mapDefaults = {
       hover = 1.0,
       ship  = 1.0,
     },
-  },  
+  },
 }
 
 

@@ -6,28 +6,27 @@
 #include "RawPacket.h"
 
 #include <algorithm>
+#include <cstring>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <cstring>
-#include <stdexcept>
-#include <memory>
 
-namespace netcode
-{
+namespace netcode {
 
 class UnpackPacketException : public std::runtime_error {
 public:
-	UnpackPacketException(const std::string& what) : std::runtime_error(what) {}
+	UnpackPacketException(const std::string& what)
+	    : std::runtime_error(what)
+	{
+	}
 };
 
-
-class UnpackPacket
-{
+class UnpackPacket {
 public:
 	UnpackPacket(std::shared_ptr<const RawPacket>, size_t skipBytes = 0);
 
-	template <typename T>
-	void operator>>(T& t)
+	template<typename T> void operator>>(T& t)
 	{
 		if ((pos + sizeof(T)) > pckt->length)
 			throw UnpackPacketException("Unpack failure (type)");
@@ -36,8 +35,7 @@ public:
 		pos += sizeof(T);
 	}
 
-	template <typename T>
-	void operator>>(std::vector<T>& vec)
+	template<typename T> void operator>>(std::vector<T>& vec)
 	{
 		if (vec.empty())
 			return;
@@ -55,7 +53,7 @@ public:
 	{
 		const auto beg = pckt->data + pos;
 		const auto end = pckt->data + pckt->length;
-		const auto  it = std::find(beg, end, 0);
+		const auto it = std::find(beg, end, 0);
 
 		// for strings, require a null-term to have been added during packing
 		if (it == end)

@@ -77,4 +77,3 @@ make_global_var(sources_engine_Game
 		"${CMAKE_CURRENT_SOURCE_DIR}/WaitCommandsAI.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/WordCompletion.cpp"
 	)
-

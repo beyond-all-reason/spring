@@ -2,4 +2,3 @@
 
 // Include bridge, just in case math_private is not included
 #include "../streflop_libm_bridge.h"
-

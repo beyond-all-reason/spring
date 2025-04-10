@@ -3,14 +3,11 @@
 #ifndef SPLASHSCREEN_H
 #define SPLASHSCREEN_H
 
-#include <string>
 #include <functional>
+#include <string>
 
-void ShowSplashScreen(
-	const std::string& splashScreenFile,
-	const std::string& springVersionStr,
-	const std::function<bool()>& testDoneFunc
-);
+void ShowSplashScreen(const std::string& splashScreenFile,
+    const std::string& springVersionStr,
+    const std::function<bool()>& testDoneFunc);
 
 #endif
-

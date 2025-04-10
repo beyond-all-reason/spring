@@ -6,38 +6,22 @@
 #include "EFXPresets.h"
 #include "EFXfuncs.h"
 
-#include "System/Sound/SoundLog.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Sound/SoundLog.h"
 #include "System/SpringMath.h"
 
 
 /******************************************************************************/
 /******************************************************************************/
 
-static const std::string default_preset = "outdoors_valley";//"bathroom";
+static const std::string default_preset = "outdoors_valley"; //"bathroom";
 
 
-static constexpr ALuint effects[] = {
-	AL_EFFECT_REVERB,
-	AL_EFFECT_EAXREVERB,
-	AL_EFFECT_CHORUS,
-	AL_EFFECT_DISTORTION,
-	AL_EFFECT_ECHO,
-	AL_EFFECT_FLANGER,
-	AL_EFFECT_FREQUENCY_SHIFTER,
-	AL_EFFECT_VOCAL_MORPHER,
-	AL_EFFECT_PITCH_SHIFTER,
-	AL_EFFECT_RING_MODULATOR,
-	AL_EFFECT_AUTOWAH,
-	AL_EFFECT_COMPRESSOR,
-	AL_EFFECT_EQUALIZER
-};
+static constexpr ALuint effects[] = {AL_EFFECT_REVERB, AL_EFFECT_EAXREVERB, AL_EFFECT_CHORUS, AL_EFFECT_DISTORTION,
+    AL_EFFECT_ECHO, AL_EFFECT_FLANGER, AL_EFFECT_FREQUENCY_SHIFTER, AL_EFFECT_VOCAL_MORPHER, AL_EFFECT_PITCH_SHIFTER,
+    AL_EFFECT_RING_MODULATOR, AL_EFFECT_AUTOWAH, AL_EFFECT_COMPRESSOR, AL_EFFECT_EQUALIZER};
 
-static constexpr ALuint filters[] = {
-	AL_FILTER_LOWPASS,
-	AL_FILTER_HIGHPASS,
-	AL_FILTER_BANDPASS
-};
+static constexpr ALuint filters[] = {AL_FILTER_LOWPASS, AL_FILTER_HIGHPASS, AL_FILTER_BANDPASS};
 
 
 /******************************************************************************/
@@ -45,8 +29,8 @@ static constexpr ALuint filters[] = {
 
 CEFX efx;
 
-
-void CEFX::Init(ALCdevice* device) {
+void CEFX::Init(ALCdevice* device)
+{
 	SetAirAbsorptionFactor(configHandler->GetFloat("snd_airAbsorption"));
 
 	const bool hasExtension = alcIsExtensionPresent(device, "ALC_EXT_EFX");
@@ -58,7 +42,8 @@ void CEFX::Init(ALCdevice* device) {
 	if (!(supported = (hasExtension && alGenEffects && alDeleteEffects))) {
 		if (!hasExtension) {
 			LOG("  EFX Supported: no");
-		} else {
+		}
+		else {
 			LOG("  EFX is supported but software does not seem to work properly");
 		}
 		return;
@@ -115,11 +100,8 @@ void CEFX::Init(ALCdevice* device) {
 
 
 	// check requirements
-	if (!effectsSupported[AL_EFFECT_EAXREVERB]
-		|| !filtersSupported[AL_FILTER_LOWPASS]
-		|| (maxSlots < 1)
-		|| (maxSlotsPerSource < 1)
-	) {
+	if (!effectsSupported[AL_EFFECT_EAXREVERB] || !filtersSupported[AL_FILTER_LOWPASS] || (maxSlots < 1) ||
+	    (maxSlotsPerSource < 1)) {
 		if (enabled)
 			LOG_L(L_WARNING, "  EFX Supported: no");
 
@@ -170,7 +152,6 @@ void CEFX::Init(ALCdevice* device) {
 	configHandler->NotifyOnChange(this, {"snd_airAbsorption"});
 }
 
-
 void CEFX::Kill()
 {
 	configHandler->RemoveObserver(this);
@@ -182,7 +163,6 @@ void CEFX::Kill()
 		alDeleteAuxiliaryEffectSlots(1, &sfxSlot);
 	}
 }
-
 
 void CEFX::Enable()
 {
@@ -202,7 +182,6 @@ void CEFX::Disable()
 	}
 }
 
-
 void CEFX::SetPreset(const std::string& name, bool verbose, bool commit)
 {
 	if (!supported)
@@ -221,7 +200,6 @@ void CEFX::SetPreset(const std::string& name, bool verbose, bool commit)
 		LOG("EAX Preset changed to: %s", name.c_str());
 }
 
-
 void CEFX::SetHeightRolloffModifer(float mod)
 {
 	heightRolloffModifier = mod;
@@ -229,10 +207,10 @@ void CEFX::SetHeightRolloffModifer(float mod)
 	if (!supported)
 		return;
 
-	alEffectf(sfxReverb, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, sfxProperties.reverb_props_f[AL_EAXREVERB_ROOM_ROLLOFF_FACTOR] * heightRolloffModifier);
+	alEffectf(sfxReverb, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR,
+	    sfxProperties.reverb_props_f[AL_EAXREVERB_ROOM_ROLLOFF_FACTOR] * heightRolloffModifier);
 	alAuxiliaryEffectSloti(sfxSlot, AL_EFFECTSLOT_EFFECT, sfxReverb);
 }
-
 
 void CEFX::CommitEffects(const EAXSfxProps* sfxProps)
 {
@@ -242,11 +220,15 @@ void CEFX::CommitEffects(const EAXSfxProps* sfxProps)
 		sfxProperties = *sfxProps;
 
 	// commit reverb properties
-	for (auto it = sfxProperties.reverb_props_f.begin(); it != sfxProperties.reverb_props_f.end(); ++it) alEffectf (sfxReverb, it->first, it->second);
-	for (auto it = sfxProperties.reverb_props_i.begin(); it != sfxProperties.reverb_props_i.end(); ++it) alEffecti (sfxReverb, it->first, it->second);
-	for (auto it = sfxProperties.reverb_props_v.begin(); it != sfxProperties.reverb_props_v.end(); ++it) alEffectfv(sfxReverb, it->first, (ALfloat*)&it->second[0]);
+	for (auto it = sfxProperties.reverb_props_f.begin(); it != sfxProperties.reverb_props_f.end(); ++it)
+		alEffectf(sfxReverb, it->first, it->second);
+	for (auto it = sfxProperties.reverb_props_i.begin(); it != sfxProperties.reverb_props_i.end(); ++it)
+		alEffecti(sfxReverb, it->first, it->second);
+	for (auto it = sfxProperties.reverb_props_v.begin(); it != sfxProperties.reverb_props_v.end(); ++it)
+		alEffectfv(sfxReverb, it->first, (ALfloat*)&it->second[0]);
 
-	alEffectf(sfxReverb, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, sfxProperties.reverb_props_f[AL_EAXREVERB_ROOM_ROLLOFF_FACTOR] * heightRolloffModifier);
+	alEffectf(sfxReverb, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR,
+	    sfxProperties.reverb_props_f[AL_EAXREVERB_ROOM_ROLLOFF_FACTOR] * heightRolloffModifier);
 	alAuxiliaryEffectSloti(sfxSlot, AL_EFFECTSLOT_EFFECT, sfxReverb);
 
 	// commit filter properties

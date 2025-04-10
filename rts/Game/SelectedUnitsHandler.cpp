@@ -1,59 +1,59 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "SelectedUnitsHandler.h"
-#include "SelectedUnitsAI.h"
+
 #include "Camera.h"
 #include "GlobalUnsynced.h"
+#include "SelectedUnitsAI.h"
 #include "WaitCommandsAI.h"
-#include "Game/Players/Player.h"
-#include "Game/Players/PlayerHandler.h"
-#include "UI/CommandColors.h"
-#include "UI/GuiHandler.h"
-#include "UI/TooltipConsole.h"
+
 #include "ExternalAI/EngineOutHandler.h"
 #include "ExternalAI/SkirmishAIHandler.h"
+#include "Game/Players/Player.h"
+#include "Game/Players/PlayerHandler.h"
+#include "Game/UI/Groups/Group.h"
+#include "Game/UI/Groups/GroupHandler.h"
+#include "Net/Protocol/NetProtocol.h"
 #include "Rendering/CommandDrawer.h"
-#include "Rendering/LineDrawer.h"
-#include "Rendering/GL/myGL.h"
 #include "Rendering/GL/RenderBuffers.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/GlobalSynced.h"
-#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Rendering/GL/myGL.h"
+#include "Rendering/LineDrawer.h"
 #include "Sim/Features/Feature.h"
+#include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/TeamHandler.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/Units/CommandAI/BuilderCAI.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitToolTipMap.hpp"
-#include "Sim/Units/CommandAI/BuilderCAI.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
-#include "Game/UI/Groups/GroupHandler.h"
-#include "Game/UI/Groups/Group.h"
-#include "System/Config/ConfigHandler.h"
 #include "System/Color.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-#include "Net/Protocol/NetProtocol.h"
-#include "System/Net/PackPacket.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Input/KeyInput.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/Net/PackPacket.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
+#include "System/StringUtil.h"
+#include "UI/CommandColors.h"
+#include "UI/GuiHandler.h"
+#include "UI/TooltipConsole.h"
 
-#include <SDL_mouse.h>
 #include <SDL_keycode.h>
-
-#include "System/Misc/TracyDefs.h"
-
+#include <SDL_mouse.h>
 
 
 CONFIG(bool, BuildIconsFirst).defaultValue(false);
-CONFIG(bool, AutoAddBuiltUnitsToFactoryGroup).defaultValue(false).description("Controls whether or not units built by factories will inherit that factory's unit group.");
+CONFIG(bool, AutoAddBuiltUnitsToFactoryGroup)
+    .defaultValue(false)
+    .description("Controls whether or not units built by factories will inherit that factory's unit group.");
 CONFIG(bool, AutoAddBuiltUnitsToSelectedGroup).defaultValue(false);
 
 CSelectedUnitsHandler selectedUnitsHandler;
-
-
 
 void CSelectedUnitsHandler::Init(unsigned numPlayers)
 {
@@ -65,7 +65,6 @@ void CSelectedUnitsHandler::Init(unsigned numPlayers)
 
 	netSelected.resize(numPlayers);
 }
-
 
 bool CSelectedUnitsHandler::IsUnitSelected(const CUnit* unit) const
 {
@@ -79,14 +78,12 @@ bool CSelectedUnitsHandler::IsUnitSelected(const int unitID) const
 	return (IsUnitSelected(unitHandler.GetUnit(unitID)));
 }
 
-
 void CSelectedUnitsHandler::ToggleBuildIconsFirst()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	buildIconsFirst = !buildIconsFirst;
 	possibleCommandsChanged = true;
 }
-
 
 CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailableCommands()
 {
@@ -154,7 +151,6 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 	return ac;
 }
 
-
 void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -174,7 +170,8 @@ void CSelectedUnitsHandler::GiveCommand(const Command& c, bool fromUser)
 
 		if (selectedGroup != -1) {
 			myPlayerStats->unitCommands += uiGroupHandlers[gu->myTeam].GetGroupSize(selectedGroup);
-		} else {
+		}
+		else {
 			myPlayerStats->unitCommands += selectedUnits.size();
 		}
 	}
@@ -285,7 +282,10 @@ bool CSelectedUnitsHandler::CanISelectTeam(const CPlayer* myPlayer, int teamID)
 	return false;
 }
 
-void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, const float4& planeLeft, const float4& planeTop, const float4& planeBottom)
+void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight,
+    const float4& planeLeft,
+    const float4& planeTop,
+    const float4& planeBottom)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* unit = nullptr;
@@ -329,22 +329,21 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 	}
 
 	switch (numUnits) {
-		case 0: {
-		} break;
-		case 1: {
-			Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
-		} break;
-		default: {
-			Channels::UserInterface->PlaySample(soundMultiselID);
-		} break;
+	case 0: {
+	} break;
+	case 1: {
+		Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
+	} break;
+	default: {
+		Channels::UserInterface->PlaySample(soundMultiselID);
+	} break;
 	}
 }
-
 
 void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doInViewTest, bool selectType)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//FIXME make modular?
+	// FIXME make modular?
 	if (unit == nullptr)
 		return;
 
@@ -355,11 +354,12 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 	if (!selectType) {
 		if (KeyInput::GetKeyModState(KMOD_CTRL) && (selectedUnits.find(unit->id) != selectedUnits.end())) {
 			RemoveUnit(unit);
-		} else {
+		}
+		else {
 			AddUnit(unit);
 		}
-	} else {
-
+	}
+	else {
 		// double click, select all units of same type (on screen, unless CTRL is pressed)
 		int minTeam = gu->myTeam;
 		int maxTeam = gu->myTeam;
@@ -385,8 +385,6 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 
 	Channels::UnitReply->PlayRandomSample(unit->unitDef->sounds.select, unit);
 }
-
-
 
 void CSelectedUnitsHandler::AddUnit(CUnit* unit)
 {
@@ -415,7 +413,6 @@ void CSelectedUnitsHandler::AddUnit(CUnit* unit)
 	}
 }
 
-
 void CSelectedUnitsHandler::RemoveUnit(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -429,7 +426,6 @@ void CSelectedUnitsHandler::RemoveUnit(CUnit* unit)
 	}
 	assert(!unit->isSelected);
 }
-
 
 void CSelectedUnitsHandler::ClearSelected()
 {
@@ -458,7 +454,6 @@ void CSelectedUnitsHandler::ClearSelected()
 	selectedGroup = -1;
 }
 
-
 void CSelectedUnitsHandler::SetGroup(CGroup* group, bool fromFactory, bool autoSelect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -471,7 +466,6 @@ void CSelectedUnitsHandler::SetGroup(CGroup* group, bool fromFactory, bool autoS
 		u->SetGroup(group, fromFactory, autoSelect);
 	}
 }
-
 
 void CSelectedUnitsHandler::SelectGroup(int num)
 {
@@ -497,14 +491,14 @@ void CSelectedUnitsHandler::SelectGroup(int num)
 	}
 }
 
-
 void CSelectedUnitsHandler::SelectUnits(const std::string& line)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (const std::string& arg : CSimpleParser::Tokenize(line, 0)) {
+	for (const std::string& arg: CSimpleParser::Tokenize(line, 0)) {
 		if (arg == "clear") {
 			selectedUnitsHandler.ClearSelected();
-		} else if ((arg[0] == '+') || (arg[0] == '-')) {
+		}
+		else if ((arg[0] == '+') || (arg[0] == '-')) {
 			char* endPtr;
 			const char* startPtr = arg.c_str() + 1;
 			const int unitIndex = strtol(startPtr, &endPtr, 10);
@@ -524,13 +518,13 @@ void CSelectedUnitsHandler::SelectUnits(const std::string& line)
 			// perform the selection
 			if (arg[0] == '+') {
 				AddUnit(unit);
-			} else {
+			}
+			else {
 				RemoveUnit(unit);
 			}
 		}
 	}
 }
-
 
 void CSelectedUnitsHandler::SelectCycle(const std::string& command)
 {
@@ -601,7 +595,6 @@ void CSelectedUnitsHandler::SelectCycle(const std::string& command)
 	AddUnit(unitHandler.GetUnit(lastID = *unitIDs.begin()));
 }
 
-
 void CSelectedUnitsHandler::Draw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -634,7 +627,7 @@ void CSelectedUnitsHandler::Draw()
 
 		static auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_C>();
 
-		for (const int unitID : *unitSet) {
+		for (const int unitID: *unitSet) {
 			const CUnit* unit = unitHandler.GetUnit(unitID);
 			const MoveDef* moveDef = unit->moveDef;
 
@@ -643,41 +636,35 @@ void CSelectedUnitsHandler::Draw()
 			if (!IsUnitSelected(unit))
 				continue;
 
-			const int
-				uhxsize = (unit->xsize * SQUARE_SIZE) >> 1,
-				uhzsize = (unit->zsize * SQUARE_SIZE) >> 1,
-				mhxsize = (moveDef == nullptr) ? uhxsize : ((moveDef->xsize * SQUARE_SIZE) >> 1),
-				mhzsize = (moveDef == nullptr) ? uhzsize : ((moveDef->zsize * SQUARE_SIZE) >> 1);
+			const int uhxsize = (unit->xsize * SQUARE_SIZE) >> 1, uhzsize = (unit->zsize * SQUARE_SIZE) >> 1,
+			          mhxsize = (moveDef == nullptr) ? uhxsize : ((moveDef->xsize * SQUARE_SIZE) >> 1),
+			          mhzsize = (moveDef == nullptr) ? uhzsize : ((moveDef->zsize * SQUARE_SIZE) >> 1);
 
 			// UnitDef footprint corners
-			rb.AddQuadLines(
-				{ float3(unit->drawPos.x + uhxsize, unit->drawPos.y, unit->drawPos.z + uhzsize), color1 },
-				{ float3(unit->drawPos.x - uhxsize, unit->drawPos.y, unit->drawPos.z + uhzsize), color1 },
-				{ float3(unit->drawPos.x - uhxsize, unit->drawPos.y, unit->drawPos.z - uhzsize), color1 },
-				{ float3(unit->drawPos.x + uhxsize, unit->drawPos.y, unit->drawPos.z - uhzsize), color1 }
-			);
+			rb.AddQuadLines({float3(unit->drawPos.x + uhxsize, unit->drawPos.y, unit->drawPos.z + uhzsize), color1},
+			    {float3(unit->drawPos.x - uhxsize, unit->drawPos.y, unit->drawPos.z + uhzsize), color1},
+			    {float3(unit->drawPos.x - uhxsize, unit->drawPos.y, unit->drawPos.z - uhzsize), color1},
+			    {float3(unit->drawPos.x + uhxsize, unit->drawPos.y, unit->drawPos.z - uhzsize), color1});
 
 			if (globalRendering->drawDebug && (mhxsize != uhxsize || mhzsize != uhzsize)) {
 				// MoveDef footprint corners
-				rb.AddQuadLines(
-					{ float3(unit->drawPos.x + mhxsize, unit->drawPos.y, unit->drawPos.z + mhzsize), color2 },
-					{ float3(unit->drawPos.x - mhxsize, unit->drawPos.y, unit->drawPos.z + mhzsize), color2 },
-					{ float3(unit->drawPos.x - mhxsize, unit->drawPos.y, unit->drawPos.z - mhzsize), color2 },
-					{ float3(unit->drawPos.x + mhxsize, unit->drawPos.y, unit->drawPos.z - mhzsize), color2 }
-				);
+				rb.AddQuadLines({float3(unit->drawPos.x + mhxsize, unit->drawPos.y, unit->drawPos.z + mhzsize), color2},
+				    {float3(unit->drawPos.x - mhxsize, unit->drawPos.y, unit->drawPos.z + mhzsize), color2},
+				    {float3(unit->drawPos.x - mhxsize, unit->drawPos.y, unit->drawPos.z - mhzsize), color2},
+				    {float3(unit->drawPos.x + mhxsize, unit->drawPos.y, unit->drawPos.z - mhzsize), color2});
 			}
 		}
 
 		auto& shader = rb.GetShader();
 		shader.Enable();
-		//shader.SetUniformMatrix4x4("transformMatrix", false, camera->GetViewProjectionMatrix().m);
-		//glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadMatrixf(camera->GetViewMatrix());
-		//glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadMatrixf(camera->GetProjectionMatrix());
+		// shader.SetUniformMatrix4x4("transformMatrix", false, camera->GetViewProjectionMatrix().m);
+		// glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadMatrixf(camera->GetViewMatrix());
+		// glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadMatrixf(camera->GetProjectionMatrix());
 
 		rb.DrawElements(GL_LINES);
 
 		///*glMatrixMode(GL_PROJECTION);*/ glPopMatrix();
-		//glMatrixMode(GL_MODELVIEW);      glPopMatrix();
+		// glMatrixMode(GL_MODELVIEW);      glPopMatrix();
 
 		shader.Disable();
 	}
@@ -686,15 +673,13 @@ void CSelectedUnitsHandler::Draw()
 	// (or old-style, whenever the shift key is being held down)
 	if (cmdColors.buildBox[3] > 0.0f) {
 		if (!selectedUnits.empty() &&
-				((cmdColors.BuildBoxesOnShift() && KeyInput::GetKeyModState(KMOD_SHIFT)) ||
-				 ((guihandler->inCommand >= 0) &&
-					(guihandler->inCommand < int(guihandler->commands.size())) &&
-					(guihandler->commands[guihandler->inCommand].id < 0)))) {
-
+		    ((cmdColors.BuildBoxesOnShift() && KeyInput::GetKeyModState(KMOD_SHIFT)) ||
+		        ((guihandler->inCommand >= 0) && (guihandler->inCommand < int(guihandler->commands.size())) &&
+		            (guihandler->commands[guihandler->inCommand].id < 0)))) {
 			bool myColor = true;
 			glColor4fv(cmdColors.buildBox);
 
-			for (const auto& [bid, builderCAI] : unitHandler.GetBuilderCAIs()) {
+			for (const auto& [bid, builderCAI]: unitHandler.GetBuilderCAIs()) {
 				const CUnit* builder = builderCAI->owner;
 
 				if (builder->team == gu->myTeam) {
@@ -724,7 +709,6 @@ void CSelectedUnitsHandler::Draw()
 	glEnable(GL_TEXTURE_2D);
 }
 
-
 void CSelectedUnitsHandler::DependentDied(CObject* o)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -733,7 +717,6 @@ void CSelectedUnitsHandler::DependentDied(CObject* o)
 	selectionChanged = true;
 	possibleCommandsChanged = true;
 }
-
 
 // handles NETMSG_SELECT's
 void CSelectedUnitsHandler::NetSelect(std::vector<int>& s, int playerId)
@@ -782,7 +765,8 @@ void CSelectedUnitsHandler::AINetOrder(int unitID, int aiTeamID, int playerID, c
 	// AI's are hosted by players, but do not have any Player representation
 	// themselves and should not be automatically controllable by their host
 	// on the other hand they should always be able to control their OWN team
-	if ((aiTeamID == MAX_TEAMS && !player->CanControlTeam(unit->team)) || (aiTeamID != MAX_TEAMS && aiTeamID != unit->team))
+	if ((aiTeamID == MAX_TEAMS && !player->CanControlTeam(unit->team)) ||
+	    (aiTeamID != MAX_TEAMS && aiTeamID != unit->team))
 		return;
 
 	// always pulled from net, synced command by definition
@@ -790,7 +774,6 @@ void CSelectedUnitsHandler::AINetOrder(int unitID, int aiTeamID, int playerID, c
 	// synced or unsynced randomized position sampling, etc)
 	unit->commandAI->GiveCommand(c, playerID, true, false);
 }
-
 
 /******************************************************************************/
 //
@@ -800,7 +783,6 @@ void CSelectedUnitsHandler::AINetOrder(int unitID, int aiTeamID, int playerID, c
 static bool targetIsEnemy = false;
 static const CUnit* targetUnit = nullptr;
 static const CFeature* targetFeature = nullptr;
-
 
 static inline bool IsBetterLeader(const UnitDef* newDef, const UnitDef* oldDef)
 {
@@ -813,53 +795,53 @@ static inline bool IsBetterLeader(const UnitDef* newDef, const UnitDef* oldDef)
 			const bool newCanDamage = newDef->CanDamage();
 			const bool oldCanDamage = oldDef->CanDamage();
 
-			if ( newCanDamage && !oldCanDamage)
+			if (newCanDamage && !oldCanDamage)
 				return true;
-			if (!newCanDamage &&  oldCanDamage)
+			if (!newCanDamage && oldCanDamage)
 				return false;
 			if (!targetUnit->unitDef->CanDamage()) {
-				if ( newDef->canReclaim && !oldDef->canReclaim)
+				if (newDef->canReclaim && !oldDef->canReclaim)
 					return true;
-				if (!newDef->canReclaim &&  oldDef->canReclaim)
+				if (!newDef->canReclaim && oldDef->canReclaim)
 					return false;
 			}
-		} else { // targetIsAlly
+		}
+		else { // targetIsAlly
 			if (targetUnit->health < targetUnit->maxHealth) {
-				if ( newDef->canRepair && !oldDef->canRepair)
+				if (newDef->canRepair && !oldDef->canRepair)
 					return true;
-				if (!newDef->canRepair &&  oldDef->canRepair)
+				if (!newDef->canRepair && oldDef->canRepair)
 					return false;
 			}
 
 			const bool newCanLoad = (newDef->transportCapacity > 0);
 			const bool oldCanLoad = (oldDef->transportCapacity > 0);
 
-			if ( newCanLoad && !oldCanLoad)
+			if (newCanLoad && !oldCanLoad)
 				return true;
-			if (!newCanLoad &&  oldCanLoad)
+			if (!newCanLoad && oldCanLoad)
 				return false;
-			if ( newDef->canGuard && !oldDef->canGuard)
+			if (newDef->canGuard && !oldDef->canGuard)
 				return true;
-			if (!newDef->canGuard &&  oldDef->canGuard)
+			if (!newDef->canGuard && oldDef->canGuard)
 				return false;
 		}
 	}
 	else if (targetFeature != nullptr) {
 		if (targetFeature->udef != nullptr) {
-			if ( newDef->canResurrect && !oldDef->canResurrect)
+			if (newDef->canResurrect && !oldDef->canResurrect)
 				return true;
-			if (!newDef->canResurrect &&  oldDef->canResurrect)
+			if (!newDef->canResurrect && oldDef->canResurrect)
 				return false;
 		}
-		if ( newDef->canReclaim && !oldDef->canReclaim)
+		if (newDef->canReclaim && !oldDef->canReclaim)
 			return true;
-		if (!newDef->canReclaim &&  oldDef->canReclaim)
+		if (!newDef->canReclaim && oldDef->canReclaim)
 			return false;
 	}
 
 	return (newDef->speed > oldDef->speed); // CMD_MOVE?
 }
-
 
 // CALLINFO:
 // DrawMapStuff --> CGuiHandler::GetDefaultCommand --> GetDefaultCmd
@@ -902,7 +884,6 @@ int CSelectedUnitsHandler::GetDefaultCmd(const CUnit* unit, const CFeature* feat
 	return cmd;
 }
 
-
 /******************************************************************************/
 
 void CSelectedUnitsHandler::PossibleCommandChange(CUnit* sender)
@@ -919,14 +900,12 @@ void CSelectedUnitsHandler::DrawCommands()
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);
 
-	lineDrawer.Configure(cmdColors.UseColorRestarts(),
-	                     cmdColors.UseRestartColor(),
-	                     cmdColors.restart,
-	                     cmdColors.RestartAlpha());
+	lineDrawer.Configure(
+	    cmdColors.UseColorRestarts(), cmdColors.UseRestartColor(), cmdColors.restart, cmdColors.RestartAlpha());
 	lineDrawer.SetupLineStipple();
 
 	glEnable(GL_BLEND);
-	glBlendFunc((GLenum) cmdColors.QueuedBlendSrc(), (GLenum) cmdColors.QueuedBlendDst());
+	glBlendFunc((GLenum)cmdColors.QueuedBlendSrc(), (GLenum)cmdColors.QueuedBlendDst());
 
 	glLineWidth(cmdColors.QueuedLineWidth());
 
@@ -937,7 +916,8 @@ void CSelectedUnitsHandler::DrawCommands()
 		for (const int unitID: groupUnits) {
 			commandDrawer->Draw((unitHandler.GetUnit(unitID))->commandAI);
 		}
-	} else {
+	}
+	else {
 		for (const int unitID: selectedUnits) {
 			commandDrawer->Draw((unitHandler.GetUnit(unitID))->commandAI);
 		}
@@ -950,7 +930,6 @@ void CSelectedUnitsHandler::DrawCommands()
 
 	glEnable(GL_DEPTH_TEST);
 }
-
 
 // CALLINFO:
 // CTooltipConsole::Draw --> CMouseHandler::GetCurrentTooltip
@@ -973,7 +952,8 @@ std::string CSelectedUnitsHandler::GetTooltip()
 		if (unit->unitDef->showPlayerName) {
 			team = teamHandler.Team(unit->team);
 			s = team->GetControllerName();
-		} else {
+		}
+		else {
 			s = unitToolTipMap.Get(unit->id);
 		}
 	}
@@ -983,8 +963,8 @@ std::string CSelectedUnitsHandler::GetTooltip()
 		return custom;
 
 	{
-		#define NO_TEAM -32
-		#define MULTI_TEAM -64
+#define NO_TEAM -32
+#define MULTI_TEAM -64
 		int ctrlTeam = NO_TEAM;
 
 		SUnitStats stats;
@@ -995,7 +975,8 @@ std::string CSelectedUnitsHandler::GetTooltip()
 
 			if (ctrlTeam == NO_TEAM) {
 				ctrlTeam = unit->team;
-			} else if (ctrlTeam != unit->team) {
+			}
+			else if (ctrlTeam != unit->team) {
 				ctrlTeam = MULTI_TEAM;
 			}
 		}
@@ -1006,7 +987,8 @@ std::string CSelectedUnitsHandler::GetTooltip()
 
 		if (ctrlTeam == MULTI_TEAM) {
 			ctrlName = "(Multiple teams)";
-		} else if (ctrlTeam != NO_TEAM) {
+		}
+		else if (ctrlTeam != NO_TEAM) {
 			ctrlName = teamHandler.Team(ctrlTeam)->GetControllerName();
 		}
 
@@ -1015,7 +997,6 @@ std::string CSelectedUnitsHandler::GetTooltip()
 		return s;
 	}
 }
-
 
 void CSelectedUnitsHandler::SetCommandPage(int page)
 {
@@ -1027,13 +1008,12 @@ void CSelectedUnitsHandler::SetCommandPage(int page)
 	}
 }
 
-
-
 void CSelectedUnitsHandler::SendCommand(const Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	SendSelect();
-	clientNet->Send(CBaseNetProtocol::Get().SendCommand(gu->myPlayerNum, c.GetID(), c.GetTimeOut(), c.GetOpts(), c.GetNumParams(), c.GetParams()));
+	clientNet->Send(CBaseNetProtocol::Get().SendCommand(
+	    gu->myPlayerNum, c.GetID(), c.GetTimeOut(), c.GetOpts(), c.GetNumParams(), c.GetParams()));
 }
 
 void CSelectedUnitsHandler::SendSelect()
@@ -1051,9 +1031,10 @@ void CSelectedUnitsHandler::SendSelect()
 	}
 }
 
-
 // despite the NETMSG_AICOMMANDS packet-id, this only services LuaUnsyncedCtrl
-void CSelectedUnitsHandler::SendCommandsToUnits(const std::vector<int>& unitIDs, const std::vector<Command>& commands, bool pairwise)
+void CSelectedUnitsHandler::SendCommandsToUnits(const std::vector<int>& unitIDs,
+    const std::vector<Command>& commands,
+    bool pairwise)
 {
 	// do not waste bandwidth (units can be selected
 	// by any spectator, but not given orders without
@@ -1062,7 +1043,7 @@ void CSelectedUnitsHandler::SendCommandsToUnits(const std::vector<int>& unitIDs,
 	if (gu->spectating && gs->godMode == 0)
 		return;
 
-	const unsigned unitIDCount  = unitIDs.size();
+	const unsigned unitIDCount = unitIDs.size();
 	const unsigned commandCount = commands.size();
 
 	if ((unitIDCount == 0) || (commandCount == 0))
@@ -1091,19 +1072,16 @@ void CSelectedUnitsHandler::SendCommandsToUnits(const std::vector<int>& unitIDs,
 	unsigned int totalPacketLen = 0;
 
 	// optional data per command (cmdID, cmdOpts, #cmdParams)
-	optBytesPerCmd += (sizeof(uint32_t) * (refCmdID   == 0     ));
-	optBytesPerCmd += (sizeof(uint8_t ) * (refCmdOpts == 0xFF  ));
+	optBytesPerCmd += (sizeof(uint32_t) * (refCmdID == 0));
+	optBytesPerCmd += (sizeof(uint8_t) * (refCmdOpts == 0xFF));
 	optBytesPerCmd += (sizeof(uint16_t) * (refCmdSize == 0xFFFF));
 
 	// msg type, msg size
 	totalPacketLen += (sizeof(uint8_t) + sizeof(static_cast<uint16_t>(totalPacketLen)));
 	// player ID, AI ID, pairwise
 	totalPacketLen += (sizeof(uint8_t) * 3);
-	totalPacketLen += (
-		sizeof(static_cast<uint32_t>(refCmdID  )) +
-		sizeof(static_cast<uint8_t >(refCmdOpts)) +
-		sizeof(static_cast<uint16_t>(refCmdSize))
-	);
+	totalPacketLen += (sizeof(static_cast<uint32_t>(refCmdID)) + sizeof(static_cast<uint8_t>(refCmdOpts)) +
+	                   sizeof(static_cast<uint16_t>(refCmdSize)));
 
 	totalPacketLen += sizeof(static_cast<uint16_t>(unitIDCount));
 	totalPacketLen += (unitIDCount * sizeof(uint16_t));
@@ -1118,16 +1096,13 @@ void CSelectedUnitsHandler::SendCommandsToUnits(const std::vector<int>& unitIDs,
 	}
 
 	netcode::PackPacket* packet = new netcode::PackPacket(totalPacketLen);
-	*packet << static_cast<uint8_t >(NETMSG_AICOMMANDS)
-	        << static_cast<uint16_t>(totalPacketLen)
+	*packet << static_cast<uint8_t>(NETMSG_AICOMMANDS) << static_cast<uint16_t>(totalPacketLen)
 
 	        << static_cast<uint8_t>(gu->myPlayerNum)
 	        << static_cast<uint8_t>(MAX_AIS)
 	        // << static_cast<uint8_t>(MAX_TEAMS)
 
-	        << static_cast<uint8_t >(pairwise)
-	        << static_cast<uint32_t>(refCmdID)
-	        << static_cast<uint8_t >(refCmdOpts)
+	        << static_cast<uint8_t>(pairwise) << static_cast<uint32_t>(refCmdID) << static_cast<uint8_t>(refCmdOpts)
 	        << static_cast<uint16_t>(refCmdSize);
 
 	// NOTE: does not check for invalid unitIDs
@@ -1155,4 +1130,3 @@ void CSelectedUnitsHandler::SendCommandsToUnits(const std::vector<int>& unitIDs,
 
 	clientNet->Send(std::shared_ptr<netcode::RawPacket>(packet));
 }
-

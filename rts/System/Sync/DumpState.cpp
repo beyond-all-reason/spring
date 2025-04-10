@@ -1,19 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <string>
-#include <fstream>
-#include <vector>
-#include <list>
-
-#include "fmt/format.h"
-#include "fmt/printf.h"
-
 #include "DumpState.h"
 
 #include "Game/Game.h"
 #include "Game/GameSetup.h"
-#include "Game/GlobalUnsynced.h"
 #include "Game/GameVersion.h"
+#include "Game/GlobalUnsynced.h"
+#include "Map/ReadMap.h"
 #include "Net/GameServer.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
@@ -21,11 +14,11 @@
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/GlobalSynced.h"
-#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
-#include "Sim/MoveTypes/MoveType.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/GroundMoveType.h"
+#include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
@@ -36,81 +29,97 @@
 #include "Sim/Units/UnitTypes/Builder.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
-#include "Map/ReadMap.h"
-#include "System/StringUtil.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/Log/ILog.h"
 #include "System/SpringHash.h"
+#include "System/StringUtil.h"
+#include "fmt/format.h"
+#include "fmt/printf.h"
+
+#include <fstream>
+#include <list>
+#include <string>
+#include <vector>
 
 static bool onlyHash = true;
 
 namespace {
-	inline std::string TapFloats(const float v) {
-		std::ostringstream str;
-		if (onlyHash) {
-			str << reinterpret_cast<const uint32_t&>(v) << "\n";
-		}
-		else {
-			str << reinterpret_cast<const uint32_t&>(v) << fmt::format(" <{}>\n", v);
-		}
-
-		return str.str();
+inline std::string TapFloats(const float v)
+{
+	std::ostringstream str;
+	if (onlyHash) {
+		str << reinterpret_cast<const uint32_t&>(v) << "\n";
 	}
-	inline std::string TapFloats(const float3& v) {
-		std::ostringstream str;
-		if (onlyHash) {
-			str << spring::LiteHash(v) << "\n";
-		}
-		else {
-			str << spring::LiteHash(v) << fmt::format(" <{},{},{}>\n", v.x, v.y, v.z);
-		}
-
-
-		return str.str();
-	}
-	inline std::string TapFloats(const float4& v) {
-		std::ostringstream str;
-		if (onlyHash) {
-			str << spring::LiteHash(v) << "\n";
-		}
-		else {
-			str << spring::LiteHash(v) << fmt::format(" <{},{},{},{}>\n", v.x, v.y, v.z, v.w);
-		}
-
-
-		return str.str();
-	}
-	inline std::string TapFloats(const CMatrix44f& v) {
-		std::ostringstream str;
-		if (onlyHash) {
-			str << spring::LiteHash(v) << "\n";
-		}
-		else {
-			str << spring::LiteHash(v) << fmt::format(" <{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}>\n",
-				v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
-		}
-
-		return str.str();
+	else {
+		str << reinterpret_cast<const uint32_t&>(v) << fmt::format(" <{}>\n", v);
 	}
 
-	inline std::string DumpSolidObjectID(const CSolidObject* so) {
-		std::string s = so ? std::to_string(so->id) : "(nullptr)";
-		s.append("\n");
-		return s;
-	}
-
-	inline std::string DumpGameID(const uint8_t* p) {
-		return fmt::sprintf(
-			"%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x",
-			p[0], p[1], p[ 2], p[ 3], p[ 4], p[ 5], p[ 6], p[ 7],
-			p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
-		);
-	}
+	return str.str();
 }
 
+inline std::string TapFloats(const float3& v)
+{
+	std::ostringstream str;
+	if (onlyHash) {
+		str << spring::LiteHash(v) << "\n";
+	}
+	else {
+		str << spring::LiteHash(v) << fmt::format(" <{},{},{}>\n", v.x, v.y, v.z);
+	}
 
-void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::optional<bool> outputFloats, bool serverRequest)
+
+	return str.str();
+}
+
+inline std::string TapFloats(const float4& v)
+{
+	std::ostringstream str;
+	if (onlyHash) {
+		str << spring::LiteHash(v) << "\n";
+	}
+	else {
+		str << spring::LiteHash(v) << fmt::format(" <{},{},{},{}>\n", v.x, v.y, v.z, v.w);
+	}
+
+
+	return str.str();
+}
+
+inline std::string TapFloats(const CMatrix44f& v)
+{
+	std::ostringstream str;
+	if (onlyHash) {
+		str << spring::LiteHash(v) << "\n";
+	}
+	else {
+		str << spring::LiteHash(v)
+		    << fmt::format(" <{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}>\n", v[0], v[1], v[2], v[3], v[4], v[5],
+		           v[6], v[7], v[8], v[9], v[10], v[11], v[12], v[13], v[14], v[15]);
+	}
+
+	return str.str();
+}
+
+inline std::string DumpSolidObjectID(const CSolidObject* so)
+{
+	std::string s = so ? std::to_string(so->id) : "(nullptr)";
+	s.append("\n");
+	return s;
+}
+
+inline std::string DumpGameID(const uint8_t* p)
+{
+	return fmt::sprintf("%02x%02x%02x%02x%02x%02x%02x%02x"
+	                    "%02x%02x%02x%02x%02x%02x%02x%02x",
+	    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+}
+} // namespace
+
+void DumpState(int newMinFrameNum,
+    int newMaxFrameNum,
+    int newFramePeriod,
+    std::optional<bool> outputFloats,
+    bool serverRequest)
 {
 	if (outputFloats.has_value())
 		onlyHash = !outputFloats.value();
@@ -118,7 +127,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	static std::fstream file;
 	static int gMinFrameNum = -1;
 	static int gMaxFrameNum = -1;
-	static int gFramePeriod =  1;
+	static int gFramePeriod = 1;
 
 	const int oldMinFrameNum = gMinFrameNum;
 	const int oldMaxFrameNum = gMaxFrameNum;
@@ -130,9 +139,12 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		return;
 
 	// adjust the bounds if the new values are valid
-	if (newMinFrameNum >= 0) gMinFrameNum = newMinFrameNum;
-	if (newMaxFrameNum >= 0) gMaxFrameNum = newMaxFrameNum;
-	if (newFramePeriod >= 1) gFramePeriod = newFramePeriod;
+	if (newMinFrameNum >= 0)
+		gMinFrameNum = newMinFrameNum;
+	if (newMaxFrameNum >= 0)
+		gMaxFrameNum = newMaxFrameNum;
+	if (newFramePeriod >= 1)
+		gFramePeriod = newFramePeriod;
 
 	if ((gMinFrameNum != oldMinFrameNum) || (gMaxFrameNum != oldMaxFrameNum)) {
 		LOG("[%s] dumping state (from %d to %d step %d)", __func__, gMinFrameNum, gMaxFrameNum, gFramePeriod);
@@ -142,7 +154,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file.close();
 		}
 
-		std::string name = (gameServer != nullptr)? "Server": "Client";
+		std::string name = (gameServer != nullptr) ? "Server" : "Client";
 		name += "GameState-";
 		name += IntToString(guRNG.NextInt());
 		name += "-[";
@@ -184,30 +196,30 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	file << "frame: " << gs->frameNum << ", seed: " << gsRNG.GetLastSeed() << "\n";
 
-	#define DUMP_MATH_CONST
-	#define DUMP_MODEL_DATA
-	#define DUMP_CS_DATA
-	#define DUMP_UNIT_DATA
-	#define DUMP_UNIT_PIECE_DATA
-	#define DUMP_UNIT_WEAPON_DATA
-	#define DUMP_UNIT_COMMANDAI_DATA
-	#define DUMP_UNIT_MOVETYPE_DATA
-	#define DUMP_UNIT_BUILDER_DATA
-	#define DUMP_UNIT_SCRIPT_DATA
-	#define DUMP_FEATURE_DATA
-	#define DUMP_PROJECTILE_DATA
-	#define DUMP_TEAM_DATA
-	//#define DUMP_ALLYTEAM_DATA
-	#define DUMP_ALLYTEAM_DATA_CHECKSUM
-	//#define DUMP_HEIGHTMAP
-	#define DUMP_HEIGHTMAP_CHECKSUM
-	//#define DUMP_SMOOTHMESH
-	#define DUMP_SMOOTHMESH_CHECKSUM
+#define DUMP_MATH_CONST
+#define DUMP_MODEL_DATA
+#define DUMP_CS_DATA
+#define DUMP_UNIT_DATA
+#define DUMP_UNIT_PIECE_DATA
+#define DUMP_UNIT_WEAPON_DATA
+#define DUMP_UNIT_COMMANDAI_DATA
+#define DUMP_UNIT_MOVETYPE_DATA
+#define DUMP_UNIT_BUILDER_DATA
+#define DUMP_UNIT_SCRIPT_DATA
+#define DUMP_FEATURE_DATA
+#define DUMP_PROJECTILE_DATA
+#define DUMP_TEAM_DATA
+// #define DUMP_ALLYTEAM_DATA
+#define DUMP_ALLYTEAM_DATA_CHECKSUM
+// #define DUMP_HEIGHTMAP
+#define DUMP_HEIGHTMAP_CHECKSUM
+// #define DUMP_SMOOTHMESH
+#define DUMP_SMOOTHMESH_CHECKSUM
 
-	#ifdef DUMP_MATH_CONST
-	if (gs->frameNum == gMinFrameNum) { //dump once
+#ifdef DUMP_MATH_CONST
+	if (gs->frameNum == gMinFrameNum) { // dump once
 		file << "\tmath constants:\n";
-		#define TAP_MATH_CONST(name) file << "\t\t" << #name << ": " << TapFloats(math::name)
+#define TAP_MATH_CONST(name) file << "\t\t" << #name << ": " << TapFloats(math::name)
 		TAP_MATH_CONST(PI);
 		TAP_MATH_CONST(INVPI);
 		TAP_MATH_CONST(INVPI);
@@ -227,38 +239,38 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 		TAP_MATH_CONST(RAD_TO_DEG);
 		TAP_MATH_CONST(DEG_TO_RAD);
-		#undef TAP_MATH_CONST
+#undef TAP_MATH_CONST
 	}
-	#endif
+#endif
 
-	#ifdef DUMP_CS_DATA
-	if (gs->frameNum == gMinFrameNum) { //dump once
+#ifdef DUMP_CS_DATA
+	if (gs->frameNum == gMinFrameNum) { // dump once
 		sha512::hex_digest hexDigest;
 		{
-			hexDigest = { 0 };
+			hexDigest = {0};
 			const auto mapCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->mapName);
 			sha512::dump_digest(mapCheckSum, hexDigest);
 			file << "\tmapCheckSum: " << std::string(hexDigest.data()) << "\n";
 		}
 		{
-			hexDigest = { 0 };
+			hexDigest = {0};
 			const auto modCheckSum = archiveScanner->GetArchiveCompleteChecksumBytes(gameSetup->modName);
 			sha512::dump_digest(modCheckSum, hexDigest);
 			file << "\tmodCheckSum: " << std::string(hexDigest.data()) << "\n";
 		}
 		/*
 		for (const auto& ari : archiveScanner->GetAllArchives()) {
-			hexDigest = { 0 };
-			const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(ari.GetNameVersioned());
-			sha512::dump_digest(cs, hexDigest);
-			file << "\tArchive: " << ari.GetNameVersioned() << " checkSum: " << std::string(hexDigest.data()) << "\n";
+		    hexDigest = { 0 };
+		    const auto cs = archiveScanner->GetArchiveCompleteChecksumBytes(ari.GetNameVersioned());
+		    sha512::dump_digest(cs, hexDigest);
+		    file << "\tArchive: " << ari.GetNameVersioned() << " checkSum: " << std::string(hexDigest.data()) << "\n";
 		}
 		*/
 	}
-	#endif
+#endif
 
-	#ifdef DUMP_MODEL_DATA
-	if (gs->frameNum == gMinFrameNum) { //dump once
+#ifdef DUMP_MODEL_DATA
+	if (gs->frameNum == gMinFrameNum) { // dump once
 		// models no longer have same order and IDs across different runs due to MT preload.
 		// Need to sort them to ease comparison
 		std::map<std::string, size_t> sortedModelNames;
@@ -271,11 +283,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		}
 
 		file << "\tloaded models: " << sortedModelNames.size() << "\n";
-		for (const auto& smn : sortedModelNames) {
+		for (const auto& smn: sortedModelNames) {
 			const auto& m = mv[smn.second];
 			file << "\t\tname: " << m.name << "\n";
 			file << "\t\tnumPieces: " << m.numPieces << "\n";
-			//file << "\t\ttextureType: " << m.textureType << "\n";
+			// file << "\t\ttextureType: " << m.textureType << "\n";
 			file << "\t\tmodelType: " << m.type << "\n";
 			file << "\t\tradius: " << TapFloats(m.radius);
 			file << "\t\theight: " << TapFloats(m.height);
@@ -283,7 +295,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\tmaxs: " << TapFloats(m.maxs);
 			file << "\t\trelMidPos: " << TapFloats(m.relMidPos);
 			file << "\t\tpieceObjects: " << m.pieceObjects.size() << "\n";
-			for (const auto* p : m.pieceObjects) {
+			for (const auto* p: m.pieceObjects) {
 				file << "\t\t\tname: " << p->name << "\n";
 				file << "\t\t\tchildrenNum: " << p->children.size() << "\n";
 				file << "\t\t\tparentName: " << (p->parent ? p->parent->name : "(NULL)") << "\n";
@@ -315,17 +327,17 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\n";
 		}
 	}
-	#endif
+#endif
 
 	file << "\tunits: " << activeUnits.size() << "\n";
 
-	#ifdef DUMP_UNIT_DATA
+#ifdef DUMP_UNIT_DATA
 	for (const CUnit* u: activeUnits) {
 		const std::vector<CWeapon*>& weapons = u->weapons;
 		const LocalModel& lm = u->localModel;
 		const std::vector<LocalModelPiece>& pieces = lm.pieces;
 
-		const auto& pos  = u->pos;
+		const auto& pos = u->pos;
 		const auto& xdir = u->rightdir;
 		const auto& ydir = u->updir;
 		const auto& zdir = u->frontdir;
@@ -349,24 +361,25 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\tpieces: " << pieces.size() << "\n";
 		file << "\t\t\tinBuildStance " << u->inBuildStance << "\n";
 
-		#ifdef DUMP_UNIT_PIECE_DATA
+#ifdef DUMP_UNIT_PIECE_DATA
 		for (const LocalModelPiece& lmp: pieces) {
 			const S3DModelPiece* omp = lmp.original;
 			const S3DModelPiece* par = omp->parent;
 			const float3& ppos = lmp.GetPosition();
 			const float3& prot = lmp.GetRotation();
 
-			file << "\t\t\t\tname: " << omp->name << " (parentName: " << ((par != nullptr)? par->name: "[null]") << ")\n";
+			file << "\t\t\t\tname: " << omp->name << " (parentName: " << ((par != nullptr) ? par->name : "[null]")
+			     << ")\n";
 			file << "\t\t\t\tpos: " << TapFloats(ppos);
 			file << "\t\t\t\trot: " << TapFloats(prot);
 			file << "\t\t\t\tvisible: " << lmp.GetScriptVisible() << "\n";
 			file << "\n";
 		}
-		#endif
+#endif
 
 		file << "\t\t\tweapons: " << weapons.size() << "\n";
 
-		#ifdef DUMP_UNIT_WEAPON_DATA
+#ifdef DUMP_UNIT_WEAPON_DATA
 		for (const CWeapon* w: weapons) {
 			const float3& awp = w->aimFromPos;
 			const float3& rwp = w->relAimFromPos;
@@ -381,14 +394,14 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\t\t\trelWeaponMuzzlePos: " << TapFloats(rmp);
 			file << "\n";
 		}
-		#endif
+#endif
 
-		#ifdef DUMP_UNIT_COMMANDAI_DATA
+#ifdef DUMP_UNIT_COMMANDAI_DATA
 		const CCommandAI* cai = u->commandAI;
 		const CCommandQueue& cq = cai->commandQue;
 
 		file << "\t\t\tcommandAI:\n";
-		file << "\t\t\t\torderTarget->id: " << ((cai->orderTarget != nullptr)? cai->orderTarget->id: -1) << "\n";
+		file << "\t\t\t\torderTarget->id: " << ((cai->orderTarget != nullptr) ? cai->orderTarget->id : -1) << "\n";
 		file << "\t\t\t\tcommandQue.size(): " << cq.size() << "\n";
 
 		for (const Command& c: cq) {
@@ -400,9 +413,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 				file << "\t\t\t\t\t\t" << c.GetParam(n) << "\n";
 			}
 		}
-		#endif
+#endif
 
-		#ifdef DUMP_UNIT_MOVETYPE_DATA
+#ifdef DUMP_UNIT_MOVETYPE_DATA
 		const AMoveType* amt = u->moveType;
 		const float3& goalPos = amt->goalPos;
 		const float3& oldUpdatePos = amt->oldPos;
@@ -421,9 +434,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\t\t\t\tcurrWayPoint: " << TapFloats(gmt->GetCurrWayPoint());
 			file << "\t\t\t\t\tnextWayPoint: " << TapFloats(gmt->GetNextWayPoint());
 		}
-		#endif
+#endif
 
-		#ifdef DUMP_UNIT_BUILDER_DATA
+#ifdef DUMP_UNIT_BUILDER_DATA
 		if (const CBuilder* b = dynamic_cast<const CBuilder*>(u); b != nullptr) {
 			file << "\t\t\tThe unit is CBuilder:\n";
 			file << "\t\t\t\tcurResurrect: " << DumpSolidObjectID(b->curResurrect);
@@ -441,34 +454,33 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file << "\t\t\t\tterraformCenter: " << TapFloats(b->terraformCenter);
 			file << "\t\t\t\tterraformRadius: " << TapFloats(b->terraformRadius);
 		}
-		#endif
+#endif
 	}
 	file << "\tunitsToBeRemoved: " << unitHandler.GetUnitsToBeRemoved().size() << "\n";
-	for (auto* u : unitHandler.GetUnitsToBeRemoved()) {
+	for (auto* u: unitHandler.GetUnitsToBeRemoved()) {
 		file << "\t\tunitID: " << u->id << " (name: " << u->unitDef->name << ")\n";
 	}
-	#endif
-	#ifdef DUMP_UNIT_SCRIPT_DATA
+#endif
+#ifdef DUMP_UNIT_SCRIPT_DATA
 	{
 		file << "\tCobEngine:\n";
 		file << "\t\tcurrentTime: " << cobEngine->GetCurrTime();
 		file << "\t\tCobThreads: " << cobEngine->GetThreadInstances().size() << "\n";
-		for (const auto& [tid, thread] : cobEngine->GetThreadInstances()) {
+		for (const auto& [tid, thread]: cobEngine->GetThreadInstances()) {
 			auto ownerID = thread.cobInst->GetUnit() ? thread.cobInst->GetUnit()->id : -1;
-			file << "\t\t\tid: " << tid << " t.id " << thread.GetID() << " t.wt " << thread.GetWakeTime()
-				 << " owner " << ownerID
-				 << " t.state " << +thread.GetState() << " t.sigmask " << thread.GetSignalMask()
-				 << " t.retc " << thread.GetRetCode()
-				 << " dead|gargage|waiting " << thread.IsDead() << "|" << thread.IsGarbage() << "|" << thread.IsWaiting() << "\n";
+			file << "\t\t\tid: " << tid << " t.id " << thread.GetID() << " t.wt " << thread.GetWakeTime() << " owner "
+			     << ownerID << " t.state " << +thread.GetState() << " t.sigmask " << thread.GetSignalMask()
+			     << " t.retc " << thread.GetRetCode() << " dead|gargage|waiting " << thread.IsDead() << "|"
+			     << thread.IsGarbage() << "|" << thread.IsWaiting() << "\n";
 		}
 		file << "\t\tWaitingThreads: " << cobEngine->GetWaitingThreadIDs().size();
 		file << "\t\t\tids:";
-		for (const auto id : cobEngine->GetWaitingThreadIDs()) {
+		for (const auto id: cobEngine->GetWaitingThreadIDs()) {
 			file << " " << id;
 		}
 		file << "\n";
 
-		auto zzzThreads = cobEngine->GetSleepingThreadIDs(); //copied on purpose
+		auto zzzThreads = cobEngine->GetSleepingThreadIDs(); // copied on purpose
 		file << "\t\tSleepingThreads: " << zzzThreads.size();
 		file << "\t\t\twts|ids:";
 		while (!zzzThreads.empty()) {
@@ -478,15 +490,15 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		}
 		file << "\n";
 	}
-	#endif
+#endif
 
 	file << "\tfeatures: " << activeFeatureIDs.size() << "\n";
 
-	#ifdef DUMP_FEATURE_DATA
+#ifdef DUMP_FEATURE_DATA
 	for (const int featureID: activeFeatureIDs) {
 		const CFeature* f = featureHandler.GetFeature(featureID);
 
-		const auto& pos  = f->pos;
+		const auto& pos = f->pos;
 		const auto& xdir = f->rightdir;
 		const auto& ydir = f->updir;
 		const auto& zdir = f->frontdir;
@@ -504,11 +516,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\thealth: " << TapFloats(f->health);
 		file << "\t\t\treclaimLeft: " << TapFloats(f->reclaimLeft);
 	}
-	#endif
+#endif
 
 	file << "\tprojectiles: " << projectiles.size() << "\n";
 
-	#ifdef DUMP_PROJECTILE_DATA
+#ifdef DUMP_PROJECTILE_DATA
 	for (const CProjectile* p: projectiles) {
 		file << "\t\tprojectileID: " << p->id << "\n";
 		file << "\t\t\tpos: <" << TapFloats(p->pos);
@@ -517,11 +529,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\tweapon: " << p->weapon << ", piece: " << p->piece << "\n";
 		file << "\t\t\tcheckCol: " << p->checkCol << ", deleteMe: " << p->deleteMe << "\n";
 	}
-	#endif
+#endif
 
 	file << "\tteams: " << teamHandler.ActiveTeams() << "\n";
 
-	#ifdef DUMP_TEAM_DATA
+#ifdef DUMP_TEAM_DATA
 	for (int a = 0; a < teamHandler.ActiveTeams(); ++a) {
 		const CTeam* t = teamHandler.Team(a);
 
@@ -535,20 +547,13 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		file << "\t\t\tmetalExpense: " << TapFloats(t->resExpense.metal);
 		file << "\t\t\tenergyExpense: " << TapFloats(t->resExpense.energy);
 	}
-	#endif
+#endif
 
 	file << "\tallyteams: " << teamHandler.ActiveAllyTeams() << "\n";
 
-	std::array<ILosType*, 7> losTypes = {
-		&losHandler->los,
-		&losHandler->airLos,
-		&losHandler->radar,
-		&losHandler->sonar,
-		&losHandler->seismic,
-		&losHandler->jammer,
-		&losHandler->sonarJammer
-	};
-	#if defined(DUMP_ALLYTEAM_DATA) || defined(DUMP_ALLYTEAM_DATA_CHECKSUM)
+	std::array<ILosType*, 7> losTypes = {&losHandler->los, &losHandler->airLos, &losHandler->radar, &losHandler->sonar,
+	    &losHandler->seismic, &losHandler->jammer, &losHandler->sonarJammer};
+#if defined(DUMP_ALLYTEAM_DATA) || defined(DUMP_ALLYTEAM_DATA_CHECKSUM)
 	for (int a = 0; a < teamHandler.ActiveAllyTeams(); ++a) {
 		file << "\t\tallyteamID: " << a << "\n";
 
@@ -557,29 +562,29 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			const auto lt = losTypes[lti];
 			const auto* lm = &lt->losMaps[a].front();
 
-			#ifdef DUMP_ALLYTEAM_DATA
+#ifdef DUMP_ALLYTEAM_DATA
 			file << "\t\t\t\t";
 			for (unsigned int i = 0; i < (lt->size.x * lt->size.y); i++) {
 				file << lm[i] << " ";
 			}
 			file << "\n";
-			#endif
+#endif
 
-			#ifdef DUMP_ALLYTEAM_DATA_CHECKSUM
+#ifdef DUMP_ALLYTEAM_DATA_CHECKSUM
 			uint32_t adCs = 0;
 			for (unsigned int i = 0; i < (lt->size.x * lt->size.y); i++) {
 				adCs = spring::LiteHash(lm[i], adCs);
 			}
 			file << "\t\t\t\thash: " << adCs << "\n";
-			#endif
+#endif
 		}
 	}
-	#endif
+#endif
 
 	const auto heightmap = readMap->GetCornerHeightMapSynced();
 	const auto centerNormals = readMap->GetCenterNormalsSynced();
 	const auto faceNormals = readMap->GetFaceNormalsSynced();
-	#ifdef DUMP_HEIGHTMAP
+#ifdef DUMP_HEIGHTMAP
 	file << "\theightmap as uint32t: " << "\n";
 	file << "\t\t";
 	for (unsigned int i = 0; i < (mapDims.mapxp1 * mapDims.mapyp1); i++) {
@@ -609,9 +614,9 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	}
 	file << "\n";
 
-	#endif
+#endif
 
-	#ifdef DUMP_HEIGHTMAP_CHECKSUM
+#ifdef DUMP_HEIGHTMAP_CHECKSUM
 	uint32_t hmCs = 0;
 	uint32_t cnCs = 0;
 	uint32_t fnCs = 0;
@@ -629,25 +634,25 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	file << "\theightmap checksum as uint32t: " << hmCs << "\n";
 	file << "\tcenterNormals checksum as uint32t: " << cnCs << "\n";
 	file << "\tfaceNormals checksum as uint32t: " << fnCs << "\n";
-	#endif
+#endif
 
 	const auto smoothMesh = smoothGround.GetMeshData();
-	#ifdef DUMP_SMOOTHMESH
+#ifdef DUMP_SMOOTHMESH
 	file << "\tsmoothMesh as uint32t: " << "\n";
 	file << "\t\t";
 	for (unsigned int i = 0; i < (smoothGround.GetMaxX() * smoothGround.GetMaxY()); i++) {
 		file << *reinterpret_cast<const uint32_t*>(&smoothMesh[i]) << " ";
 	}
 	file << "\n";
-	#endif
+#endif
 
-	#ifdef DUMP_SMOOTHMESH_CHECKSUM
+#ifdef DUMP_SMOOTHMESH_CHECKSUM
 	uint32_t smCs = 0;
 	for (unsigned int i = 0; i < (smoothGround.GetMaxX() * smoothGround.GetMaxY()); i++) {
 		smCs = spring::LiteHash(smoothMesh[i], smCs);
 	}
 	file << "\tsmoothMesh checksum as uint32t: " << smCs << "\n";
-	#endif
+#endif
 
 	file.flush();
 	if (gs->frameNum == gMaxFrameNum)
@@ -655,7 +660,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	gMinFrameNum = -1;
 	gMaxFrameNum = -1;
-	gFramePeriod =  1;
+	gFramePeriod = 1;
 }
 
 void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
@@ -675,8 +680,10 @@ void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
 
 
 	// adjust the bounds if the new values are valid
-	if (newMinFrameNum >= 0) gMinFrameNum = newMinFrameNum;
-	if (newMaxFrameNum >= 0) gMaxFrameNum = newMaxFrameNum;
+	if (newMinFrameNum >= 0)
+		gMinFrameNum = newMinFrameNum;
+	if (newMaxFrameNum >= 0)
+		gMaxFrameNum = newMaxFrameNum;
 
 	if ((gMinFrameNum != oldMinFrameNum) || (gMaxFrameNum != oldMaxFrameNum)) {
 		LOG("[%s] dumping RNG state (from %d to %d)", __func__, gMinFrameNum, gMaxFrameNum);
@@ -712,7 +719,8 @@ void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
 	if (file.bad() || !file.is_open())
 		return;
 
-	if (gs->frameNum == gMaxFrameNum + 1) { //close the file and remove debug callback early next frame after gMaxFrameNum
+	if (gs->frameNum ==
+	    gMaxFrameNum + 1) { // close the file and remove debug callback early next frame after gMaxFrameNum
 		gsRNG.SetDebug();
 		file.close();
 		gMinFrameNum = -1;
@@ -724,14 +732,12 @@ void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
 	if (gs->frameNum > gMaxFrameNum)
 		return;
 
-	//must be static to not get destroyed when the function scope is lost
-	static auto fcb = [](auto N, auto R) {
-		file << "N=" << N << ", R=" << R << "\n";
-	};
+	// must be static to not get destroyed when the function scope is lost
+	static auto fcb = [](auto N, auto R) { file << "N=" << N << ", R=" << R << "\n"; };
 
 	if (gs->frameNum == gMinFrameNum)
 		gsRNG.SetDebug(fcb);
 
-	file.flush(); //before the next frame begins
+	file.flush(); // before the next frame begins
 	file << "frame: " << gs->frameNum << ", seed: " << gsRNG.GetLastSeed() << "\n";
 }

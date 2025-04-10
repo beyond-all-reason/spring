@@ -13,8 +13,8 @@
 #include "AIInterfaceKey.h"
 
 #include "System/creg/creg_cond.h"
-#include <string>
 
+#include <string>
 
 /**
  * Used to uniquely identify a Skirmish AI within the engine.
@@ -23,31 +23,44 @@ class SkirmishAIKey {
 	CR_DECLARE_STRUCT(SkirmishAIKey)
 
 public:
-	SkirmishAIKey(
-			const std::string& shortName = "",
-			const std::string& version = "",
-			const AIInterfaceKey& interface = AIInterfaceKey());
+	SkirmishAIKey(const std::string& shortName = "",
+	    const std::string& version = "",
+	    const AIInterfaceKey& interface = AIInterfaceKey());
 	SkirmishAIKey(const SkirmishAIKey& base, const AIInterfaceKey& interface);
 	SkirmishAIKey(const SkirmishAIKey& toCopy);
 
 	const std::string& GetShortName() const { return shortName; }
+
 	const std::string& GetVersion() const { return version; }
+
 	const AIInterfaceKey& GetInterface() const { return interface; }
 
 	bool IsUnspecified() const { return (shortName.empty()); }
+
 	bool IsFullySpecified() const { return (!shortName.empty() || !interface.IsUnspecified()); }
+
 	std::string ToString() const { return (GetShortName() + " " + GetVersion()); }
 
 	bool operator==(const SkirmishAIKey& otherKey) const { return (isEqual(otherKey)); }
+
 	bool operator!=(const SkirmishAIKey& otherKey) const { return (!isEqual(otherKey)); }
+
 	bool operator<(const SkirmishAIKey& otherKey) const { return (isLessThen(otherKey)); }
+
 	bool operator>(const SkirmishAIKey& otherKey) const { return (!isLessThen(otherKey) && !isEqual(otherKey)); }
+
 	bool operator<=(const SkirmishAIKey& otherKey) const { return (isLessThen(otherKey) || isEqual(otherKey)); }
+
 	bool operator>=(const SkirmishAIKey& otherKey) const { return (!isLessThen(otherKey)); }
 
 private:
-	bool isEqual(const SkirmishAIKey& otherKey) const { return (shortName == otherKey.shortName && version == otherKey.version); }
-	bool isLessThen(const SkirmishAIKey& otherKey) const {
+	bool isEqual(const SkirmishAIKey& otherKey) const
+	{
+		return (shortName == otherKey.shortName && version == otherKey.version);
+	}
+
+	bool isLessThen(const SkirmishAIKey& otherKey) const
+	{
 		if (shortName == otherKey.shortName)
 			return (version < otherKey.version);
 

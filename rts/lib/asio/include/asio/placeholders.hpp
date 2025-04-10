@@ -12,12 +12,11 @@
 #define ASIO_PLACEHOLDERS_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 #include "asio/detail/functional.hpp"
-
 #include "asio/detail/push_options.hpp"
 
 namespace asio {

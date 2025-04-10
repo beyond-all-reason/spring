@@ -8,13 +8,12 @@
 class IArchive;
 
 #ifndef zipFile
-	// might be defined through zip.h already
-	typedef void* zipFile;
+// might be defined through zip.h already
+typedef void* zipFile;
 #endif
 
 
-class CLuaLoadSaveHandler : public ILoadSaveHandler
-{
+class CLuaLoadSaveHandler : public ILoadSaveHandler {
 public:
 	CLuaLoadSaveHandler();
 	~CLuaLoadSaveHandler();

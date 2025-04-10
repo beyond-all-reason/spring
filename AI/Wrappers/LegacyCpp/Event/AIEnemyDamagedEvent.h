@@ -4,17 +4,22 @@
 #define _AI_ENEMY_DAMAGED_EVENT_H
 
 #include "AIEvent.h"
-#include "System/float3.h"
 
+#include "System/float3.h"
 
 namespace springLegacyAI {
 
 class CAIEnemyDamagedEvent : public CAIEvent {
 public:
-	CAIEnemyDamagedEvent(const SEnemyDamagedEvent& event) : event(event) {}
+	CAIEnemyDamagedEvent(const SEnemyDamagedEvent& event)
+	    : event(event)
+	{
+	}
+
 	~CAIEnemyDamagedEvent() {}
 
-	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) {
+	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL)
+	{
 		ai.EnemyDamaged(event.enemy, event.attacker, event.damage, float3(event.dir_posF3));
 	}
 

@@ -6,11 +6,9 @@
 #include "GuiElement.h"
 #include "Layout.h"
 
-namespace agui
-{
+namespace agui {
 
-class HorizontalLayout : public GuiElement, public Layout
-{
+class HorizontalLayout : public GuiElement, public Layout {
 public:
 	HorizontalLayout(GuiElement* parent = NULL);
 
@@ -19,6 +17,6 @@ private:
 	virtual void GeometryChangeSelf();
 };
 
-}
+} // namespace agui
 
 #endif

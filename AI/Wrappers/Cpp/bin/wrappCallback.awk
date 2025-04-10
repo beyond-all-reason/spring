@@ -791,7 +791,7 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 	indent_m            = "\t";
 	memId_m             = clsName_m "," memName_m;
 	retType             = cls_memberId_retType[memId_m]; # this may be changed
-	retType_int         = retType;     
+	retType_int         = retType;
 	params              = cls_memberId_params[memId_m];                  # this is a const var
 	#if (isClbRootCls_m) {
 	#	params = "int skirmishAIId, " params;
@@ -821,7 +821,7 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 	conversionCode_exc1 = "";
 	thrownExceptions    = "";
 	ommitMainCall       = 0;
-	
+
 	if (!isVoid_int_m) {
 		declaredVarsCode = "\t\t" retType_int " " retVar_int_m ";" "\n" declaredVarsCode;
 	}
@@ -1215,7 +1215,7 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 			print("Error: no generic array type defined");
 			exit(1);
 		}
-		_arrListType     = "std::vector<" _arrListGenType ">";    
+		_arrListType     = "std::vector<" _arrListGenType ">";
 		_arrListImplType = "std::vector<" _arrListGenType ">";  # TODO: should be unused, but needs check
 
 		_isFetching = sub("(, )?int " _arraySizeMaxPaNa, "", params);

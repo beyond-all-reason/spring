@@ -6,8 +6,7 @@
 #include <string>
 #include <vector>
 
-struct DataDir
-{
+struct DataDir {
 	/**
 	 * @brief construct a data directory object
 	 *
@@ -19,8 +18,7 @@ struct DataDir
 	bool writable = false;
 };
 
-class DataDirLocater
-{
+class DataDirLocater {
 public:
 	static DataDirLocater& GetInstance();
 	static void FreeInstance();
@@ -51,6 +49,7 @@ public:
 	void Check();
 
 	const std::vector<DataDir>& GetDataDirs() const;
+
 	const DataDir* GetWriteDir() const { return writeDir; }
 
 	/**

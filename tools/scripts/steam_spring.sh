@@ -18,4 +18,3 @@ export LD_LIBRARY_PATH="${LIBPATHS}:${STEAMLIBS}:$LD_LIBRARY_PATH"
 export LD_PRELOAD="${STEAMPATH}/${USRLIBPATH}/libcurl.so.3:${STEAMHOME}/ubuntu12_64/gameoverlayrenderer.so"
 
 ./spring $@
-

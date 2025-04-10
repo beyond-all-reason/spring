@@ -18,4 +18,3 @@ VIAddVersionKey "CompanyName"      "Spring community"
 VIAddVersionKey "LegalCopyright"   "GNU GPL V2 and V3"
 VIAddVersionKey "FileDescription"  "Engine launcher executable"
 VIAddVersionKey "FileVersion"      "${VERSION_TAG}"
-

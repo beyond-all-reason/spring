@@ -3,22 +3,22 @@
 #ifndef I_GAME_COMMANDS_H
 #define I_GAME_COMMANDS_H
 
+#include "Game/SyncedActionExecutor.h"
+#include "Game/UnsyncedActionExecutor.h"
 #include "System/StringUtil.h"
 #include "System/UnorderedMap.hpp"
-#include "Game/UnsyncedActionExecutor.h"
-#include "Game/SyncedActionExecutor.h"
 
 #include <array>
-#include <string>
 #include <cassert>
-#include <json/writer.h>
-#include <json/json.h>
+#include <string>
 
-template<class TActionExecutor>
-class IGameCommands
-{
+#include <json/json.h>
+#include <json/writer.h>
+
+template<class TActionExecutor> class IGameCommands {
 protected:
 	IGameCommands() { actionExecutors.reserve(64); }
+
 	virtual ~IGameCommands() { RemoveAllActionExecutors(); }
 
 public:
@@ -35,7 +35,8 @@ public:
 	 * @param executor has to be new'ed, will be delete'ed internally.
 	 * @see RemoveActionExecutor
 	 */
-	void AddActionExecutor(TActionExecutor* executor) {
+	void AddActionExecutor(TActionExecutor* executor)
+	{
 		const std::string& commandLower = StringToLower(executor->GetCommand());
 
 		// prevent registering a duplicate action-executor for command
@@ -51,7 +52,8 @@ public:
 	 * @return the action-executor for the given command, or NULL, if none is
 	 *   registered.
 	 */
-	const TActionExecutor* GetActionExecutor(const std::string& command) const {
+	const TActionExecutor* GetActionExecutor(const std::string& command) const
+	{
 		const auto aei = actionExecutors.find(StringToLower(command));
 
 		if (aei == actionExecutors.end())
@@ -60,9 +62,10 @@ public:
 		return aei->second;
 	}
 
-
 	const spring::unsynced_map<std::string, TActionExecutor*>& GetActionExecutors() const { return actionExecutors; }
-	const std::vector< std::pair<std::string, TActionExecutor*> >& GetSortedActionExecutors() {
+
+	const std::vector<std::pair<std::string, TActionExecutor*>>& GetSortedActionExecutors()
+	{
 		using P = typename decltype(sortedExecutors)::value_type;
 
 		// no need for caching, very rarely called
@@ -73,11 +76,13 @@ public:
 			sortedExecutors.emplace_back(pair);
 		}
 
-		std::sort(sortedExecutors.begin(), sortedExecutors.end(), [](const P& a, const P& b) { return (a.first < b.first); });
+		std::sort(
+		    sortedExecutors.begin(), sortedExecutors.end(), [](const P& a, const P& b) { return (a.first < b.first); });
 		return sortedExecutors;
 	}
 
-	std::string JsonOutput() {
+	std::string JsonOutput()
+	{
 		Json::Value root;
 
 		const auto actions = GetActionExecutors();
@@ -108,7 +113,8 @@ private:
 	 * Deregisters all currently registered action-executor for chat commands.
 	 * @see RemoveActionExecutor
 	 */
-	void RemoveAllActionExecutors() {
+	void RemoveAllActionExecutors()
+	{
 		for (const auto& pair: actionExecutors) {
 			pair.second->~TActionExecutor();
 		}
@@ -118,7 +124,8 @@ private:
 	}
 
 protected:
-	template<typename T, typename... A> T* AllocActionExecutor(A&&... a) {
+	template<typename T, typename... A> T* AllocActionExecutor(A&&... a)
+	{
 		constexpr size_t size = sizeof(T);
 
 		if ((actionExecMemIndex + size) > actionExecutorMem.size()) {
@@ -132,7 +139,7 @@ protected:
 protected:
 	// currently registered lower-case commands with their respective action-executors
 	spring::unsynced_map<std::string, TActionExecutor*> actionExecutors;
-	std::vector< std::pair<std::string, TActionExecutor*> > sortedExecutors;
+	std::vector<std::pair<std::string, TActionExecutor*>> sortedExecutors;
 
 	std::array<uint8_t, 1 << 16> actionExecutorMem;
 
@@ -141,4 +148,3 @@ protected:
 };
 
 #endif // I_GAME_COMMANDS_H
-

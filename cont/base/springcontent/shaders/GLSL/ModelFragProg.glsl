@@ -129,4 +129,3 @@ void main(void)
 	gl_FragColor.a   = alpha;
 #endif
 }
-

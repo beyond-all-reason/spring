@@ -7,9 +7,10 @@
 
 struct lua_State;
 
-class LuaVFSDownload: public CEventClient {
+class LuaVFSDownload : public CEventClient {
 public:
-	static LuaVFSDownload* GetInstance() {
+	static LuaVFSDownload* GetInstance()
+	{
 		static LuaVFSDownload instance;
 		return &instance;
 	}
@@ -19,10 +20,7 @@ public:
 
 	static bool PushEntries(lua_State* L);
 
-
-	bool WantsEvent(const std::string& eventName) override {
-		return (eventName == "Update");
-	}
+	bool WantsEvent(const std::string& eventName) override { return (eventName == "Update"); }
 
 	// checks if events have arrived from download-threads and processes them
 	void Update() override;

@@ -9,8 +9,8 @@ class IArchive;
 struct lua_State;
 
 #ifndef zipFile
-	// might be defined through zip.h already
-	typedef void* zipFile;
+// might be defined through zip.h already
+typedef void* zipFile;
 #endif
 
 
@@ -31,7 +31,6 @@ private: // metatable methods
 	static int meta_write(lua_State* L);
 };
 
-
 class LuaZipFileReader {
 public:
 	LuaZipFileReader();
@@ -51,7 +50,11 @@ private: // metatable methods
 
 class LuaZipFolder {
 public:
-    static int ZipFolder(lua_State* L, const std::string& folderPath, const std::string& zipFilePath, bool includeFolder, const std::string& modes);
+	static int ZipFolder(lua_State* L,
+	    const std::string& folderPath,
+	    const std::string& zipFilePath,
+	    bool includeFolder,
+	    const std::string& modes);
 };
 
 

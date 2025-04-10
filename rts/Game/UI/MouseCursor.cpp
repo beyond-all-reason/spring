@@ -1,31 +1,32 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
+#include "MouseCursor.h"
+
+#include "CommandColors.h"
+#include "HwMouseCursor.h"
+
+#include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GL/myGL.h"
+#include "Rendering/GlobalRendering.h"
+#include "Rendering/Textures/Bitmap.h"
+#include "System/FileSystem/FileHandler.h"
+#include "System/FileSystem/FileSystem.h"
+#include "System/FileSystem/SimpleParser.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
+#include "System/SpringMath.h"
+#include "System/StringUtil.h"
+#include "System/UnorderedMap.hpp"
+
 #include <array>
 #include <bit>
 #include <cstring>
 
-#include "CommandColors.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/GL/myGL.h"
-#include "Rendering/GL/RenderBuffers.h"
-#include "Rendering/Textures/Bitmap.h"
-#include "MouseCursor.h"
-#include "HwMouseCursor.h"
-#include "System/Log/ILog.h"
-#include "System/SpringMath.h"
-#include "System/SafeUtil.h"
-#include "System/StringUtil.h"
-#include "System/UnorderedMap.hpp"
-#include "System/FileSystem/FileHandler.h"
-#include "System/FileSystem/FileSystem.h"
-#include "System/FileSystem/SimpleParser.h"
-
-#include "System/Misc/TracyDefs.h"
-
 CMouseCursor::CMouseCursor(const std::string& name_, HotSpot hs)
-	: name(name_)
-	, hotSpot(hs)
+    : name(name_)
+    , hotSpot(hs)
 {
 	frames.reserve(8);
 	images.reserve(8);
@@ -59,8 +60,8 @@ CMouseCursor::~CMouseCursor()
 	}
 }
 
-
-CMouseCursor& CMouseCursor::operator = (CMouseCursor&& mc) noexcept {
+CMouseCursor& CMouseCursor::operator=(CMouseCursor&& mc) noexcept
+{
 	name = std::move(mc.name);
 	images = std::move(mc.images);
 	frames = std::move(mc.frames);
@@ -89,7 +90,6 @@ CMouseCursor& CMouseCursor::operator = (CMouseCursor&& mc) noexcept {
 	return *this;
 }
 
-
 bool CMouseCursor::Build(const std::string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -117,8 +117,10 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 	CFileHandler specFile(specFileName);
 	CSimpleParser specParser(specFile);
 
-	const std::array<std::pair<std::string, int>, 3> commandsMap = {{{"frame", 0}, {"hotspot", 1}, {"lastframe", 2}}};
-		  spring::unsynced_map<std::string, int>     imageIdxMap;
+	const std::array<std::pair<std::string, int>, 3> commandsMap = {
+	    {{"frame", 0}, {"hotspot", 1}, {"lastframe", 2}}
+    };
+	spring::unsynced_map<std::string, int> imageIdxMap;
 
 	for (std::string line = specParser.GetCleanLine(); !line.empty(); line = specParser.GetCleanLine()) {
 		const std::vector<std::string>& words = specParser.Tokenize(line, 2);
@@ -128,7 +130,8 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 		const auto cmdIter = std::find_if(commandsMap.cbegin(), commandsMap.cend(), cmdPred);
 
 		if (cmdIter == commandsMap.end()) {
-			LOG_L(L_ERROR, "[MouseCursor::%s] unknown command \"%s\" in file \"%s\"", __func__, command.c_str(), specFileName.c_str());
+			LOG_L(L_ERROR, "[MouseCursor::%s] unknown command \"%s\" in file \"%s\"", __func__, command.c_str(),
+			    specFileName.c_str());
 			continue;
 		}
 
@@ -170,7 +173,8 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 				continue;
 			}
 
-			LOG_L(L_ERROR, "[MouseCursor::%s] unknown hotspot \"%s\" in file \"%s\"", __func__, words[1].c_str(), specFileName.c_str());
+			LOG_L(L_ERROR, "[MouseCursor::%s] unknown hotspot \"%s\" in file \"%s\"", __func__, words[1].c_str(),
+			    specFileName.c_str());
 			continue;
 		}
 
@@ -182,7 +186,6 @@ bool CMouseCursor::BuildFromSpecFile(const std::string& name, int& lastFrame)
 
 	return (IsValid());
 }
-
 
 bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 {
@@ -203,7 +206,8 @@ bool CMouseCursor::BuildFromFileNames(const std::string& name, int lastFrame)
 
 	while (int(frames.size()) < lastFrame) {
 		memset(animFrameStr, 0, sizeof(animFrameStr));
-		snprintf(animFrameStr, sizeof(animFrameStr) - 1, "anims/%s_%d.%s", name.c_str(), static_cast<int>(frames.size()), ext);
+		snprintf(animFrameStr, sizeof(animFrameStr) - 1, "anims/%s_%d.%s", name.c_str(),
+		    static_cast<int>(frames.size()), ext);
 
 		ImageData image;
 
@@ -221,14 +225,14 @@ float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2&
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (winCoors.z > 1.0f || frames.empty())
-		return { 0.0f, 0.0f, 0.0f, 0.0f };
+		return {0.0f, 0.0f, 0.0f, 0.0f};
 
 	const FrameData& frame = frames[currentFrame];
 	const ImageData& image = images[frame.imageIdx];
 
 	const float qis = winScale.x;
-	const float  xs = image.xAlignedSize * qis;
-	const float  ys = image.yAlignedSize * qis;
+	const float xs = image.xAlignedSize * qis;
+	const float ys = image.yAlignedSize * qis;
 
 	const float rxs = xs * globalRendering->pixelX;
 	const float rys = ys * globalRendering->pixelY;
@@ -237,7 +241,7 @@ float4 CMouseCursor::CalcFrameMatrixParams(const float3& winCoors, const float2&
 	const float xp = (winCoors.x - (xofs * qis)) * globalRendering->pixelX;
 	const float yp = (winCoors.y - winScale.y * (ys - (yofs * qis))) * globalRendering->pixelY;
 
-	return { xp, yp, rxs, rys };
+	return {xp, yp, rxs, rys};
 }
 
 #if 0
@@ -284,15 +288,16 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 		// WINDOWS
 		b.ReverseYAxis();
 		hwCursor->PushImage(b.xsize, b.ysize, b.GetRawMem());
-	} else {
+	}
+	else {
 		// X11
 		hwCursor->PushImage(b.xsize, b.ysize, b.GetRawMem());
 		b.ReverseYAxis();
 	}
 
 
-	const int nx = std::bit_ceil <uint32_t> (b.xsize);
-	const int ny = std::bit_ceil <uint32_t> (b.ysize);
+	const int nx = std::bit_ceil<uint32_t>(b.xsize);
+	const int ny = std::bit_ceil<uint32_t>(b.ysize);
 
 	if (b.xsize != nx || b.ysize != ny) {
 		CBitmap bn;
@@ -304,7 +309,8 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 		image.yOrigSize = b.ysize;
 		image.xAlignedSize = bn.xsize;
 		image.yAlignedSize = bn.ysize;
-	} else {
+	}
+	else {
 		image.texture = b.CreateTexture();
 		image.xOrigSize = b.xsize;
 		image.yOrigSize = b.ysize;
@@ -314,7 +320,6 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 
 	return true;
 }
-
 
 void CMouseCursor::Draw(int x, int y, float scale) const
 {
@@ -328,13 +333,13 @@ void CMouseCursor::Draw(int x, int y, float scale) const
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_TC>();
 	auto& sh = rb.GetShader();
 
-	const float3 winCoors = { x * 1.0f, (globalRendering->viewSizeY - y) * 1.0f, 0.0f };
-	const float2 winScale = { std::max(scale, -scale), 1.0f };
+	const float3 winCoors = {x * 1.0f, (globalRendering->viewSizeY - y) * 1.0f, 0.0f};
+	const float2 winScale = {std::max(scale, -scale), 1.0f};
 	const float4& matParams = CalcFrameMatrixParams(winCoors, winScale);
 
 	CMatrix44f cursorMat;
 	cursorMat.Translate(matParams.x, matParams.y, 0.0f);
-	cursorMat.Scale({ matParams.z, matParams.w, 1.0f });
+	cursorMat.Scale({matParams.z, matParams.w, 1.0f});
 
 	rb.AddQuadTriangles(CURSOR_VERTS);
 
@@ -386,7 +391,6 @@ void CMouseCursor::Update()
 	}
 }
 
-
 void CMouseCursor::BindTexture() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -409,6 +413,6 @@ void CMouseCursor::BindHwCursor() const
 void CMouseCursor::UpdateHwCursor() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-    assert(hwCursor != nullptr);
-    hwCursor->Update(animTime);
+	assert(hwCursor != nullptr);
+	hwCursor->Update(animTime);
 }

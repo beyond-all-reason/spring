@@ -2,43 +2,37 @@
 
 #include "SimpleProfiler.h"
 
-#include <sstream>
-#include <string>
-#include <map>
-#include <string.h>
-
 #include "TimeUtil.h"
 #include "Util.h"
+
 #include "System/MainDefines.h"
 #include "System/SafeCStrings.h"
+
+#include <map>
+#include <sstream>
+#include <string>
+
+#include <string.h>
 
 
 Profiler Profiler::def("");
 
-Profiler* Profiler::GetDefault() {
-	return &Profiler::def;
-}
+Profiler* Profiler::GetDefault() { return &Profiler::def; }
 
 Profiler::Profiler(const char* const name)
-	: name(name)
+    : name(name)
 {
 }
 
-const char* Profiler::GetName() const {
-	return name;
-}
+const char* Profiler::GetName() const { return name; }
 
-void Profiler::AddTime(const char* const part, unsigned long time) {
-	parts[part] += time;
-}
+void Profiler::AddTime(const char* const part, unsigned long time) { parts[part] += time; }
 
-const std::map<const char* const, unsigned long>& Profiler::GetParts() {
-	return parts;
-}
+const std::map<const char* const, unsigned long>& Profiler::GetParts() { return parts; }
 
-std::string Profiler::ToString() const {
-
-    std::ostringstream res;
+std::string Profiler::ToString() const
+{
+	std::ostringstream res;
 
 	static const size_t line_sizeMax = 256;
 	char line[line_sizeMax];
@@ -54,12 +48,10 @@ std::string Profiler::ToString() const {
 	return res.str();
 }
 
-
-
 ScopedTimer::ScopedTimer(const char* const part, Profiler* profiler)
-	: part(part)
-	, profiler(profiler ? profiler : Profiler::GetDefault())
-	, startTime(timeUtil_getCurrentTimeMillis())
+    : part(part)
+    , profiler(profiler ? profiler : Profiler::GetDefault())
+    , startTime(timeUtil_getCurrentTimeMillis())
 {
 }
 
@@ -69,35 +61,30 @@ ScopedTimer::~ScopedTimer()
 	profiler->AddTime(part, stopTime - startTime);
 }
 
+void simpleProfiler_addTime(const char* const part, unsigned time) { Profiler::GetDefault()->AddTime(part, time); }
 
-
-
-void          simpleProfiler_addTime(const char* const part, unsigned time) {
-	Profiler::GetDefault()->AddTime(part, time);
-}
-
-unsigned long simpleProfiler_getTime(const char* const part) {
+unsigned long simpleProfiler_getTime(const char* const part)
+{
 	return Profiler::GetDefault()->GetParts().find(part)->second;
 }
 
-unsigned      simpleProfiler_getParts() {
-	return Profiler::GetDefault()->GetParts().size();
-}
+unsigned simpleProfiler_getParts() { return Profiler::GetDefault()->GetParts().size(); }
 
-unsigned      simpleProfiler_getPartNames(const char** parts, const unsigned parts_sizeMax) {
-
+unsigned simpleProfiler_getPartNames(const char** parts, const unsigned parts_sizeMax)
+{
 	unsigned p = 0;
 
 	std::map<const char* const, unsigned long>::const_iterator pi;
-	for (pi = Profiler::GetDefault()->GetParts().begin(); (pi != Profiler::GetDefault()->GetParts().end()) && (p < parts_sizeMax); ++pi) {
+	for (pi = Profiler::GetDefault()->GetParts().begin();
+	    (pi != Profiler::GetDefault()->GetParts().end()) && (p < parts_sizeMax); ++pi) {
 		parts[p++] = pi->first;
 	}
 
 	return p;
 }
 
-char*         simpleProfiler_getSummaryString() {
-
+char* simpleProfiler_getSummaryString()
+{
 	const std::string& summaryStr = Profiler::GetDefault()->ToString();
 	const int length = summaryStr.length();
 	char* summary = util_allocStr(length);

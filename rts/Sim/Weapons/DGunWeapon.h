@@ -5,11 +5,13 @@
 
 #include "Weapon.h"
 
-class CDGunWeapon: public CWeapon
-{
+class CDGunWeapon : public CWeapon {
 	CR_DECLARE_DERIVED(CDGunWeapon)
 public:
-	CDGunWeapon(CUnit* owner = nullptr, const WeaponDef* def = nullptr): CWeapon(owner, def) {}
+	CDGunWeapon(CUnit* owner = nullptr, const WeaponDef* def = nullptr)
+	    : CWeapon(owner, def)
+	{
+	}
 
 	void Fire();
 	void Init() override final;
@@ -19,4 +21,3 @@ private:
 };
 
 #endif // _DGUN_WEAPON_H
-

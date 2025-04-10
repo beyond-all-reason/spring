@@ -1,8 +1,8 @@
 /*
  * Main.java
- * 
+ *
  * Created on 15-Sep-2007, 12:47:38
- * 
+ *
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -28,7 +28,7 @@ public class Main {
             }
         });
     }
-    
+
     /**
      * Creates the programs GUI window
      */
@@ -44,7 +44,7 @@ public class Main {
         } catch (IllegalAccessException ex) {
             ex.printStackTrace ();
         }
-        
+
         CGUI c =new CGUI ();
         c.setVisible (true);
     }

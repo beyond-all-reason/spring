@@ -32,7 +32,7 @@ include("widgets.lua")  -- the widget handler
 
 if (RestartCount == nil) then
   RestartCount = 0
-else 
+else
   RestartCount = RestartCount + 1
 end
 
@@ -166,4 +166,3 @@ end
 
 
 --------------------------------------------------------------------------------
-

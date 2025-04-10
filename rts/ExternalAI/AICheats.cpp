@@ -3,18 +3,18 @@
 #include "AICheats.h"
 
 #include "ExternalAI/SkirmishAIWrapper.h"
+#include "Game/GameSetup.h"
 #include "Game/TraceRay.h"
-#include "Sim/Units/Unit.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
-#include "Sim/Misc/QuadField.h"
+#include "Net/GameServer.h"
+#include "Sim/Features/Feature.h"
 #include "Sim/Misc/GlobalConstants.h" // needed for MAX_UNITS
+#include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/QuadField.h"
+#include "Sim/Misc/TeamHandler.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitLoader.h"
-#include "Sim/Features/Feature.h"
-#include "Sim/Misc/GlobalSynced.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Net/GameServer.h"
-#include "Game/GameSetup.h"
 #include "System/SpringMath.h"
 
 #include <vector>
@@ -29,7 +29,6 @@ CUnit* CAICheats::GetUnit(int unitId) const
 
 	return nullptr;
 }
-
 
 bool CAICheats::OnlyPassiveCheats()
 {
@@ -47,8 +46,6 @@ void CAICheats::EnableCheatEvents(bool enable)
 	// enable sending of EnemyCreated, etc. events
 	ai->SetCheatEvents(enable);
 }
-
-
 
 void CAICheats::SetMyIncomeMultiplier(float incomeMultiplier)
 {
@@ -79,7 +76,8 @@ int CAICheats::CreateUnit(const char* name, const float3& pos)
 	if (OnlyPassiveCheats())
 		return 0;
 
-	const UnitLoadParams unitParams = {nullptr, nullptr, pos, ZeroVector, -1, ai->GetTeamId(), FACING_SOUTH, false, false};
+	const UnitLoadParams unitParams = {
+	    nullptr, nullptr, pos, ZeroVector, -1, ai->GetTeamId(), FACING_SOUTH, false, false};
 	const CUnit* unit = unitLoader->LoadUnit(name, unitParams);
 
 	if (unit != nullptr)
@@ -97,8 +95,6 @@ const UnitDef* CAICheats::GetUnitDef(int unitId) const
 
 	return nullptr;
 }
-
-
 
 float3 CAICheats::GetUnitPos(int unitId) const
 {
@@ -120,8 +116,10 @@ float3 CAICheats::GetUnitVelocity(int unitId) const
 	return ZeroVector;
 }
 
-
-static int FilterUnitsVector(const std::vector<CUnit*>& units, int* unitIds, int unitIds_max, bool (*includeUnit)(CUnit*) = nullptr)
+static int FilterUnitsVector(const std::vector<CUnit*>& units,
+    int* unitIds,
+    int unitIds_max,
+    bool (*includeUnit)(CUnit*) = nullptr)
 {
 	int a = 0;
 
@@ -146,17 +144,15 @@ static int FilterUnitsVector(const std::vector<CUnit*>& units, int* unitIds, int
 	return a;
 }
 
-static inline bool unit_IsNeutral(CUnit* unit) {
-	return unit->IsNeutral();
-}
+static inline bool unit_IsNeutral(CUnit* unit) { return unit->IsNeutral(); }
 
 static int myAllyTeamId = -1;
 
 /// You have to set myAllyTeamId before callign this function. NOT thread safe!
-static inline bool unit_IsEnemy(CUnit* unit) {
+static inline bool unit_IsEnemy(CUnit* unit)
+{
 	return (!teamHandler.Ally(unit->allyteam, myAllyTeamId) && !unit_IsNeutral(unit));
 }
-
 
 int CAICheats::GetEnemyUnits(int* unitIds, int unitIds_max)
 {
@@ -164,8 +160,7 @@ int CAICheats::GetEnemyUnits(int* unitIds, int unitIds_max)
 	return FilterUnitsVector(unitHandler.GetActiveUnits(), unitIds, unitIds_max, &unit_IsEnemy);
 }
 
-int CAICheats::GetEnemyUnits(int* unitIds, const float3& pos, float radius, bool spherical,
-		int unitIds_max)
+int CAICheats::GetEnemyUnits(int* unitIds, const float3& pos, float radius, bool spherical, int unitIds_max)
 {
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, pos, radius, spherical);
@@ -178,24 +173,24 @@ int CAICheats::GetNeutralUnits(int* unitIds, int unitIds_max)
 	return FilterUnitsVector(unitHandler.GetActiveUnits(), unitIds, unitIds_max, &unit_IsNeutral);
 }
 
-int CAICheats::GetNeutralUnits(int* unitIds, const float3& pos, float radius, bool spherical,
-		int unitIds_max)
+int CAICheats::GetNeutralUnits(int* unitIds, const float3& pos, float radius, bool spherical, int unitIds_max)
 {
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, pos, radius, spherical);
 	return FilterUnitsVector(*qfQuery.units, unitIds, unitIds_max, &unit_IsNeutral);
 }
 
-int CAICheats::GetFeatures(int* features, int max) const {
-	// this method is never called anyway, see SSkirmishAICallbackImpl.cpp
-	return 0;
-}
-int CAICheats::GetFeatures(int* features, int max, const float3& pos, float radius, bool spherical) const {
+int CAICheats::GetFeatures(int* features, int max) const
+{
 	// this method is never called anyway, see SSkirmishAICallbackImpl.cpp
 	return 0;
 }
 
-
+int CAICheats::GetFeatures(int* features, int max, const float3& pos, float radius, bool spherical) const
+{
+	// this method is never called anyway, see SSkirmishAICallbackImpl.cpp
+	return 0;
+}
 
 int CAICheats::GetUnitTeam(int unitId) const
 {
@@ -285,9 +280,9 @@ bool CAICheats::GetUnitResourceInfo(int unitId, UnitResourceInfo* unitResInf) co
 		return false;
 
 	unitResInf->energyMake = unit->resourcesMake.energy;
-	unitResInf->energyUse  = unit->resourcesUse.energy;
-	unitResInf->metalMake  = unit->resourcesMake.metal;
-	unitResInf->metalUse   = unit->resourcesUse.metal;
+	unitResInf->energyUse = unit->resourcesUse.energy;
+	unitResInf->metalMake = unit->resourcesMake.metal;
+	unitResInf->metalUse = unit->resourcesUse.metal;
 	return true;
 }
 
@@ -331,7 +326,6 @@ bool CAICheats::IsUnitParalyzed(int unitId) const
 	return false;
 }
 
-
 bool CAICheats::IsUnitNeutral(int unitId) const
 {
 	const CUnit* unit = GetUnit(unitId);
@@ -342,83 +336,80 @@ bool CAICheats::IsUnitNeutral(int unitId) const
 	return false;
 }
 
-
 bool CAICheats::GetProperty(int id, int property, void* data) const
 {
 	switch (property) {
-		case AIVAL_UNITDEF: {
-			const CUnit* unit = GetUnit(id);
+	case AIVAL_UNITDEF: {
+		const CUnit* unit = GetUnit(id);
 
-			if (unit != nullptr) {
-				(*(const UnitDef**) data) = unit->unitDef;
-				return true;
-			}
-		} break;
+		if (unit != nullptr) {
+			(*(const UnitDef**)data) = unit->unitDef;
+			return true;
+		}
+	} break;
 
-		default: {
-		} break;
+	default: {
+	} break;
 	}
 
 	return false;
 }
 
-bool CAICheats::GetValue(int id, void* data) const
-{
-	return false;
-}
+bool CAICheats::GetValue(int id, void* data) const { return false; }
 
 int CAICheats::HandleCommand(int commandId, void* data)
 {
 	int ret = 0; // handling failed
 
 	switch (commandId) {
-		case AIHCQuerySubVersionId: {
-			ret = 1; // current version of Handle Command interface
-		} break;
+	case AIHCQuerySubVersionId: {
+		ret = 1; // current version of Handle Command interface
+	} break;
 
-		case AIHCTraceRayId: {
-			AIHCTraceRay* cmdData = static_cast<AIHCTraceRay*>(data);
+	case AIHCTraceRayId: {
+		AIHCTraceRay* cmdData = static_cast<AIHCTraceRay*>(data);
 
-			if (CHECK_UNITID(cmdData->srcUID)) {
-				const CUnit* srcUnit = unitHandler.GetUnit(cmdData->srcUID);
+		if (CHECK_UNITID(cmdData->srcUID)) {
+			const CUnit* srcUnit = unitHandler.GetUnit(cmdData->srcUID);
 
-				CUnit* hitUnit = nullptr;
-				CFeature* hitFeature = nullptr;
+			CUnit* hitUnit = nullptr;
+			CFeature* hitFeature = nullptr;
 
-				if (srcUnit != nullptr) {
-					//FIXME ignore features?
-					cmdData->rayLen = TraceRay::TraceRay(cmdData->rayPos, cmdData->rayDir, cmdData->rayLen, cmdData->flags, srcUnit, hitUnit, hitFeature);
-					cmdData->hitUID = (hitUnit != nullptr)? hitUnit->id: -1;
-				}
+			if (srcUnit != nullptr) {
+				// FIXME ignore features?
+				cmdData->rayLen = TraceRay::TraceRay(
+				    cmdData->rayPos, cmdData->rayDir, cmdData->rayLen, cmdData->flags, srcUnit, hitUnit, hitFeature);
+				cmdData->hitUID = (hitUnit != nullptr) ? hitUnit->id : -1;
 			}
+		}
 
-			ret = 1;
-		} break;
+		ret = 1;
+	} break;
 
-		case AIHCFeatureTraceRayId: {
-			AIHCFeatureTraceRay* cmdData = static_cast<AIHCFeatureTraceRay*>(data);
+	case AIHCFeatureTraceRayId: {
+		AIHCFeatureTraceRay* cmdData = static_cast<AIHCFeatureTraceRay*>(data);
 
-			if (CHECK_UNITID(cmdData->srcUID)) {
-				const CUnit* srcUnit = unitHandler.GetUnit(cmdData->srcUID);
+		if (CHECK_UNITID(cmdData->srcUID)) {
+			const CUnit* srcUnit = unitHandler.GetUnit(cmdData->srcUID);
 
-				CUnit* hitUnit = nullptr;
-				CFeature* hitFeature = nullptr;
+			CUnit* hitUnit = nullptr;
+			CFeature* hitFeature = nullptr;
 
-				if (srcUnit != nullptr) {
-					//FIXME ignore units?
-					cmdData->rayLen = TraceRay::TraceRay(cmdData->rayPos, cmdData->rayDir, cmdData->rayLen, cmdData->flags, srcUnit, hitUnit, hitFeature);
-					cmdData->hitFID = (hitFeature != nullptr)? hitFeature->id: -1;
-				}
+			if (srcUnit != nullptr) {
+				// FIXME ignore units?
+				cmdData->rayLen = TraceRay::TraceRay(
+				    cmdData->rayPos, cmdData->rayDir, cmdData->rayLen, cmdData->flags, srcUnit, hitUnit, hitFeature);
+				cmdData->hitFID = (hitFeature != nullptr) ? hitFeature->id : -1;
 			}
+		}
 
-			ret = 1;
-		} break;
+		ret = 1;
+	} break;
 
-		default: {
-			ret = 0; // handling failed
-		} break;
+	default: {
+		ret = 0; // handling failed
+	} break;
 	}
 
 	return ret;
 }
-

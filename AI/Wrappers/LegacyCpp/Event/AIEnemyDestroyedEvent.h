@@ -5,15 +5,19 @@
 
 #include "AIEvent.h"
 
-
 namespace springLegacyAI {
 
 class CAIEnemyDestroyedEvent : public CAIEvent {
 public:
-	CAIEnemyDestroyedEvent(const SEnemyDestroyedEvent& event) : event(event) {}
+	CAIEnemyDestroyedEvent(const SEnemyDestroyedEvent& event)
+	    : event(event)
+	{
+	}
+
 	~CAIEnemyDestroyedEvent() {}
 
-	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) {
+	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL)
+	{
 		ai.EnemyDestroyed(event.enemy, event.attacker);
 	}
 

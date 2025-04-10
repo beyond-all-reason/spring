@@ -4,12 +4,12 @@
 #define MP3DECODER_H
 
 #include "lib/dr_mp3/dr_mp3.h"
+
 #include <cstdint>
 
-class Mp3Decoder
-{
+class Mp3Decoder {
 public:
-	long Read(uint8_t *buffer, int length, int , int , int , int *);
+	long Read(uint8_t* buffer, int length, int, int, int, int*);
 	bool LoadData(const uint8_t* mem, size_t len);
 	int GetChannels() const;
 	long GetRate() const;

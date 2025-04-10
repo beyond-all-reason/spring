@@ -8,21 +8,18 @@
 
 class CUnit;
 
-class CSmokeProjectile : public CProjectile
-{
+class CSmokeProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CSmokeProjectile)
 
 public:
 	CSmokeProjectile();
-	CSmokeProjectile(
-		CUnit* owner,
-		const float3& pos,
-		const float3& speed,
-		float ttl,
-		float startSize,
-		float sizeExpansion,
-		float color
-	);
+	CSmokeProjectile(CUnit* owner,
+	    const float3& pos,
+	    const float3& speed,
+	    float ttl,
+	    float startSize,
+	    float sizeExpansion,
+	    float color);
 
 	void Update() override;
 	void Draw() override;
@@ -36,8 +33,10 @@ private:
 	float color;
 	float age;
 	float ageSpeed;
+
 public:
 	float size;
+
 private:
 	float startSize;
 	float sizeExpansion;

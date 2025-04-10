@@ -19,4 +19,3 @@ while i <= #DEFS.moveDefs do
 end
 
 return {}
-

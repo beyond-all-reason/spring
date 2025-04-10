@@ -1,14 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-
 #include "UnitHandler.h"
+
 #include "Unit.h"
 #include "UnitDefHandler.h"
 #include "UnitMemPool.h"
-#include "UnitTypes/Builder.h"
-#include "UnitTypes/ExtractorBuilding.h"
-#include "UnitTypes/Factory.h"
 
 #include "CommandAI/BuilderCAI.h"
 #include "Sim/Ecs/Registry.h"
@@ -19,51 +15,50 @@
 #include "Sim/MoveTypes/Systems/GeneralMoveSystem.h"
 #include "Sim/MoveTypes/Systems/GroundMoveSystem.h"
 #include "Sim/MoveTypes/Systems/UnitTrapCheckSystem.h"
+#include "Sim/Path/HAPFS/PathGlobal.h"
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Weapons/Weapon.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/TimeProfiler.h"
 #include "System/creg/STL_Deque.h"
 #include "System/creg/STL_Set.h"
-#include "System/Threading/ThreadPool.h"
-#include "Sim/Path/HAPFS/PathGlobal.h"
+#include "UnitTypes/Builder.h"
+#include "UnitTypes/ExtractorBuilding.h"
+#include "UnitTypes/Factory.h"
 
-#include "System/Misc/TracyDefs.h"
-
-#include "System/Config/ConfigHandler.h"
+#include <cassert>
 CONFIG(bool, UpdateWeaponVectorsMT).deprecated(true);
 CONFIG(bool, UpdateBoundingVolumeMT).deprecated(true);
 
 
 CR_BIND(CUnitHandler, )
-CR_REG_METADATA(CUnitHandler, (
-	CR_MEMBER(idPool),
+CR_REG_METADATA(CUnitHandler,
+    (CR_MEMBER(idPool),
 
-	CR_MEMBER(units),
-	CR_MEMBER(unitsByDefs),
-	CR_MEMBER(activeUnits),
-	CR_MEMBER(unitsToBeRemoved),
+        CR_MEMBER(units),
+        CR_MEMBER(unitsByDefs),
+        CR_MEMBER(activeUnits),
+        CR_MEMBER(unitsToBeRemoved),
 
-	CR_MEMBER(builderCAIs),
+        CR_MEMBER(builderCAIs),
 
-	CR_MEMBER(activeSlowUpdateUnit),
-	CR_MEMBER(activeUpdateUnit),
+        CR_MEMBER(activeSlowUpdateUnit),
+        CR_MEMBER(activeUpdateUnit),
 
-	CR_MEMBER(maxUnits),
-	CR_MEMBER(maxUnitRadius),
+        CR_MEMBER(maxUnits),
+        CR_MEMBER(maxUnitRadius),
 
-	CR_MEMBER(inUpdateCall)
-))
-
+        CR_MEMBER(inUpdateCall)))
 
 
 UnitMemPool unitMemPool;
 
 CUnitHandler unitHandler;
-
 
 CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 {
@@ -91,9 +86,8 @@ CUnit* CUnitHandler::NewUnit(const UnitDef* ud)
 	return (unitMemPool.alloc<CUnit>());
 }
 
-
-
-void CUnitHandler::Init() {
+void CUnitHandler::Init()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	GroundMoveSystem::Init();
 	GeneralMoveSystem::Init();
@@ -131,7 +125,6 @@ void CUnitHandler::Init() {
 	}
 }
 
-
 void CUnitHandler::Kill()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -167,7 +160,6 @@ void CUnitHandler::Kill()
 	}
 }
 
-
 void CUnitHandler::DeleteScripts()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -178,7 +170,6 @@ void CUnitHandler::DeleteScripts()
 	}
 }
 
-
 void CUnitHandler::InsertActiveUnit(CUnit* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -187,7 +178,7 @@ void CUnitHandler::InsertActiveUnit(CUnit* unit)
 	assert(unit->id < units.size());
 	assert(units[unit->id] == nullptr);
 
-	#if 0
+#if 0
 	// randomized insertion is supposed to break up peak loads
 	// during the (staggered) SlowUpdate step, but also causes
 	// more jumping around in memory for regular Updates
@@ -206,13 +197,12 @@ void CUnitHandler::InsertActiveUnit(CUnit* unit)
 	activeSlowUpdateUnit += (insertionPos <= activeSlowUpdateUnit);
 	activeUpdateUnit += (insertionPos <= activeUpdateUnit);
 
-	#else
+#else
 	activeUnits.push_back(unit);
-	#endif
+#endif
 
 	units[unit->id] = unit;
 }
-
 
 bool CUnitHandler::AddUnit(CUnit* unit)
 {
@@ -226,13 +216,12 @@ bool CUnitHandler::AddUnit(CUnit* unit)
 
 	// 0 is not a valid UnitDef id, so just use unitsByDefs[team][0]
 	// as an unsorted bin to store all units belonging to unit->team
-	spring::VectorInsertUnique(GetUnitsByTeamAndDef(unit->team,                 0), unit, false);
+	spring::VectorInsertUnique(GetUnitsByTeamAndDef(unit->team, 0), unit, false);
 	spring::VectorInsertUnique(GetUnitsByTeamAndDef(unit->team, unit->unitDef->id), unit, false);
 
 	maxUnitRadius = std::max(unit->radius, maxUnitRadius);
 	return true;
 }
-
 
 bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 {
@@ -250,7 +239,6 @@ bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 
 	return (idPool.RecycleID(id));
 }
-
 
 void CUnitHandler::QueueDeleteUnits()
 {
@@ -274,7 +262,6 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 	unitsToBeRemoved.push_back(unit);
 	return true;
 }
-
 
 void CUnitHandler::DeleteUnits()
 {
@@ -309,7 +296,7 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 
 	activeUnits.erase(it);
 
-	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam,           0), delUnit);
+	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam, 0), delUnit);
 	spring::VectorErase(GetUnitsByTeamAndDef(delUnitTeam, delUnitType), delUnit);
 
 	idPool.FreeID(delUnit->id, true);
@@ -322,7 +309,7 @@ void CUnitHandler::DeleteUnit(CUnit* delUnit)
 	unitMemPool.free(delUnit);
 	CSolidObject::SetDeletingRefID(-1);
 
-	assert( Sim::registry.valid(delUnitEntity) );
+	assert(Sim::registry.valid(delUnitEntity));
 	Sim::registry.destroy(delUnitEntity);
 }
 
@@ -344,7 +331,6 @@ void CUnitHandler::UpdateUnitLosStates()
 		}
 	}
 }
-
 
 void CUnitHandler::SlowUpdateUnits()
 {
@@ -385,9 +371,8 @@ void CUnitHandler::SlowUpdateUnits()
 	// They dont have much of an effect if updated late-ish.
 	{
 		ZoneScopedN("Sim::Unit::SlowUpdateMT");
-		for_mt(0, updateBoundingVolumeList.size(), [](int i) {
-			updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume();
-		});
+		for_mt(0, updateBoundingVolumeList.size(),
+		    [](int i) { updateBoundingVolumeList[i]->localModel.UpdateBoundingVolume(); });
 	}
 }
 
@@ -428,7 +413,6 @@ void CUnitHandler::UpdateUnitWeapons()
 	}
 }
 
-
 void CUnitHandler::Update()
 {
 	inUpdateCall = true;
@@ -443,8 +427,6 @@ void CUnitHandler::Update()
 
 	inUpdateCall = false;
 }
-
-
 
 void CUnitHandler::AddBuilderCAI(CBuilderCAI* b)
 {
@@ -461,16 +443,14 @@ void CUnitHandler::RemoveBuilderCAI(CBuilderCAI* b)
 	builderCAIs.erase(b->owner->id);
 }
 
-
 void CUnitHandler::ChangeUnitTeam(CUnit* unit, int oldTeamNum, int newTeamNum)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	spring::VectorErase       (GetUnitsByTeamAndDef(oldTeamNum,                 0), unit       );
-	spring::VectorErase       (GetUnitsByTeamAndDef(oldTeamNum, unit->unitDef->id), unit       );
-	spring::VectorInsertUnique(GetUnitsByTeamAndDef(newTeamNum,                 0), unit, false);
+	spring::VectorErase(GetUnitsByTeamAndDef(oldTeamNum, 0), unit);
+	spring::VectorErase(GetUnitsByTeamAndDef(oldTeamNum, unit->unitDef->id), unit);
+	spring::VectorInsertUnique(GetUnitsByTeamAndDef(newTeamNum, 0), unit, false);
 	spring::VectorInsertUnique(GetUnitsByTeamAndDef(newTeamNum, unit->unitDef->id), unit, false);
 }
-
 
 bool CUnitHandler::CanBuildUnit(const UnitDef* unitdef, int team) const
 {
@@ -492,4 +472,3 @@ unsigned int CUnitHandler::CalcMaxUnits() const
 
 	return n;
 }
-

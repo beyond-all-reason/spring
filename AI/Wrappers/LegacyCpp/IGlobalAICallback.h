@@ -12,8 +12,7 @@ class IAICallback;
  * Each (legacy) C++ Skirmish AI receives one of these during initialization,
  * to be able to query things form the engine.
  */
-class IGlobalAICallback
-{
+class IGlobalAICallback {
 public:
 	virtual IAICallback* GetAICallback() = 0;
 	/**

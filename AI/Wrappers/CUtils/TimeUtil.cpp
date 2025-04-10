@@ -5,7 +5,7 @@
 #include <time.h>
 
 
-#if       defined _WIN32
+#if defined _WIN32
 
 /*
  * This emulates the POSIX gettimeofday(timeval, timezone) function on Windows.
@@ -13,20 +13,22 @@
  * @see http://www.suacommunity.com/dictionary/gettimeofday-entry.php
  */
 
-#include <windows.h>
 #include <iostream>
 
+#include <windows.h>
+
 using namespace std;
- 
+
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-	#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
-	#include <winsock2.h>
+#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
+#include <winsock2.h>
 #else
-	#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+#define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
 #endif
 
 /// Definition of a gettimeofday function
-int gettimeofday(struct timeval* tv, struct timezone* tz) {
+int gettimeofday(struct timeval* tv, struct timezone* tz)
+{
 	// Define a structure to receive the current Windows filetime
 	FILETIME ft;
 
@@ -36,8 +38,8 @@ int gettimeofday(struct timeval* tv, struct timezone* tz) {
 
 		GetSystemTimeAsFileTime(&ft);
 
-		// The GetSystemTimeAsFileTime returns the number of 100 nanosecond 
-		// intervals since Jan 1, 1601 in a structure. Copy the high bits to 
+		// The GetSystemTimeAsFileTime returns the number of 100 nanosecond
+		// intervals since Jan 1, 1601 in a structure. Copy the high bits to
 		// the 64 bit tmpres, shift it left by 32 then or in the low 32 bits.
 		tmpres |= ft.dwHighDateTime;
 		tmpres <<= 32;
@@ -46,11 +48,11 @@ int gettimeofday(struct timeval* tv, struct timezone* tz) {
 		// Convert to microseconds by dividing by 10
 		tmpres /= 10;
 
-		// The Unix epoch starts on Jan 1 1970.  Need to subtract the difference 
+		// The Unix epoch starts on Jan 1 1970.  Need to subtract the difference
 		// in seconds from Jan 1 1601.
 		tmpres -= DELTA_EPOCH_IN_MICROSECS;
 
-		// Finally change microseconds to seconds and place in the seconds value. 
+		// Finally change microseconds to seconds and place in the seconds value.
 		// The modulus picks up the microseconds.
 		tv->tv_sec = (long)(tmpres / 1000000UL);
 		tv->tv_usec = (long)(tmpres % 1000000UL);
@@ -73,13 +75,13 @@ int gettimeofday(struct timeval* tv, struct timezone* tz) {
 	return 0;
 }
 
-#else  // defined _WIN32
+#else // defined _WIN32
 #include <sys/time.h>
 #endif // defined _WIN32
 
 
-unsigned long timeUtil_getCurrentTimeMillis() {
-
+unsigned long timeUtil_getCurrentTimeMillis()
+{
 	struct timeval timediff;
 	gettimeofday(&timediff, NULL);
 	const unsigned long milliSeconds = (timediff.tv_sec * 1000UL) + ((timediff.tv_usec + 500UL) / 1000UL);

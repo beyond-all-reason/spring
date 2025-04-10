@@ -3,144 +3,167 @@
 #ifndef KEYSET_H
 #define KEYSET_H
 
-#include <string>
-#include <deque>
 #include "IKeys.h"
+
 #include "System/Misc/SpringTime.h"
 
+#include <deque>
+#include <string>
 
 class CKeySet {
-	public:
+public:
+	enum CKeySetType {
+		KSScanCode,
+		KSKeyCode
+	};
 
-		enum CKeySetType { KSScanCode, KSKeyCode };
+	CKeySet() { Reset(); }
 
-		CKeySet() { Reset(); }
-		CKeySet(int key);
-		CKeySet(int key, CKeySetType codeType);
-		CKeySet(int key, unsigned char modifiers, CKeySetType codeType);
+	CKeySet(int key);
+	CKeySet(int key, CKeySetType codeType);
+	CKeySet(int key, unsigned char modifiers, CKeySetType codeType);
 
-		static unsigned char GetCurrentModifiers();
-		static std::string GetHumanModifiers(unsigned char modifiers);
+	static unsigned char GetCurrentModifiers();
+	static std::string GetHumanModifiers(unsigned char modifiers);
 
-		void Reset();
-		void SetAnyBit();
-		void ClearModifiers();
-		bool Parse(const std::string& token, bool showerror = true);
+	void Reset();
+	void SetAnyBit();
+	void ClearModifiers();
+	bool Parse(const std::string& token, bool showerror = true);
 
-		std::string GetString(bool useDefaultKeysym) const;
-		std::string GetCodeString() const;
+	std::string GetString(bool useDefaultKeysym) const;
+	std::string GetCodeString() const;
 
-		enum CKeySetModifiers {
-			KS_ALT     = (1 << 0),
-			KS_CTRL    = (1 << 1),
-			KS_META    = (1 << 2),
-			KS_SHIFT   = (1 << 3),
-			KS_ANYMOD  = (1 << 4),
-			//KS_RELEASE = (1 << 5) Deprecated, need rework for enabling separate release bindings
-		};
+	enum CKeySetModifiers {
+		KS_ALT = (1 << 0),
+		KS_CTRL = (1 << 1),
+		KS_META = (1 << 2),
+		KS_SHIFT = (1 << 3),
+		KS_ANYMOD = (1 << 4),
+		// KS_RELEASE = (1 << 5) Deprecated, need rework for enabling separate release bindings
+	};
 
-		int  Key()     const { return key; }
-		unsigned char Mod() const { return modifiers; }
-		bool Alt()     const { return !!(modifiers & KS_ALT); }
-		bool Ctrl()    const { return !!(modifiers & KS_CTRL); }
-		bool Meta()    const { return !!(modifiers & KS_META); }
-		bool Shift()   const { return !!(modifiers & KS_SHIFT); }
-		bool AnyMod()  const { return !!(modifiers & KS_ANYMOD); }
+	int Key() const { return key; }
 
-		bool IsPureModifier() const;
-		bool IsModifier() const;
-		bool IsKeyCode() const;
-		IKeys* GetKeys() const;
+	unsigned char Mod() const { return modifiers; }
 
-		bool operator<(const CKeySet& ks) const
-		{
-			if (key < ks.key) { return true; }
-			if (key > ks.key) { return false; }
-			if (modifiers < ks.modifiers) { return true; }
-			if (modifiers > ks.modifiers) { return false; }
+	bool Alt() const { return !!(modifiers & KS_ALT); }
+
+	bool Ctrl() const { return !!(modifiers & KS_CTRL); }
+
+	bool Meta() const { return !!(modifiers & KS_META); }
+
+	bool Shift() const { return !!(modifiers & KS_SHIFT); }
+
+	bool AnyMod() const { return !!(modifiers & KS_ANYMOD); }
+
+	bool IsPureModifier() const;
+	bool IsModifier() const;
+	bool IsKeyCode() const;
+	IKeys* GetKeys() const;
+
+	bool operator<(const CKeySet& ks) const
+	{
+		if (key < ks.key) {
+			return true;
+		}
+		if (key > ks.key) {
 			return false;
 		}
-
-		bool fit(const CKeySet& ks) const
-		{
-			return (type == ks.type) && (key == ks.key) && ((modifiers == ks.modifiers) || AnyMod() || ks.AnyMod());
+		if (modifiers < ks.modifiers) {
+			return true;
 		}
-
-		bool operator==(const CKeySet& ks) const
-		{
-			return (type == ks.type) && (key == ks.key) && (modifiers == ks.modifiers);
+		if (modifiers > ks.modifiers) {
+			return false;
 		}
+		return false;
+	}
 
-		bool operator!=(const CKeySet& ks) const
-		{
-			return (type != ks.type) || (key != ks.key) || (modifiers != ks.modifiers);
-		}
+	bool fit(const CKeySet& ks) const
+	{
+		return (type == ks.type) && (key == ks.key) && ((modifiers == ks.modifiers) || AnyMod() || ks.AnyMod());
+	}
 
-	protected:
-		bool ParseModifier(std::string& s, const std::string& token, const std::string& abbr);
+	bool operator==(const CKeySet& ks) const
+	{
+		return (type == ks.type) && (key == ks.key) && (modifiers == ks.modifiers);
+	}
 
-	protected:
-		int key;
-		CKeySetType type;
-		unsigned char modifiers;
+	bool operator!=(const CKeySet& ks) const
+	{
+		return (type != ks.type) || (key != ks.key) || (modifiers != ks.modifiers);
+	}
+
+protected:
+	bool ParseModifier(std::string& s, const std::string& token, const std::string& abbr);
+
+protected:
+	int key;
+	CKeySetType type;
+	unsigned char modifiers;
 };
 
-
-class CKeyChain : public std::deque<CKeySet>
-{
-	public:
-		bool operator<(const CKeyChain& kc) const
-		{
-			if (size() < kc.size()) { return true;  }
-			if (size() > kc.size()) { return false; }
-			if (empty())            { return false; }
-			return (back() < kc.back());
+class CKeyChain : public std::deque<CKeySet> {
+public:
+	bool operator<(const CKeyChain& kc) const
+	{
+		if (size() < kc.size()) {
+			return true;
 		}
-
-		bool operator==(const CKeyChain& needle) const
-		{
-			if (size() != needle.size())
-				return false;
-
-			return std::equal(needle.rbegin(), needle.rend(), rbegin());
+		if (size() > kc.size()) {
+			return false;
 		}
-
-		bool fit(const CKeyChain& needle) const
-		{
-			// Scans the chain (*this) for a needle from the _back_
-			// e.g. chain=a,b,c,d will fit needle=b,c,d but won't fit needle=a,b,c!
-
-			if (size() < needle.size())
-				return false;
-
-			return std::equal(needle.rbegin(), needle.rend(), rbegin(), [](const CKeySet& a, const CKeySet& b) { return b.fit(a); });
+		if (empty()) {
+			return false;
 		}
+		return (back() < kc.back());
+	}
 
-		std::string GetString() const
-		{
-			std::string s;
-			for (const CKeySet& ks: *this) {
-				if (!s.empty()) s += ",";
-				s += ks.GetString(true);
-			}
-			return s;
+	bool operator==(const CKeyChain& needle) const
+	{
+		if (size() != needle.size())
+			return false;
+
+		return std::equal(needle.rbegin(), needle.rend(), rbegin());
+	}
+
+	bool fit(const CKeyChain& needle) const
+	{
+		// Scans the chain (*this) for a needle from the _back_
+		// e.g. chain=a,b,c,d will fit needle=b,c,d but won't fit needle=a,b,c!
+
+		if (size() < needle.size())
+			return false;
+
+		return std::equal(
+		    needle.rbegin(), needle.rend(), rbegin(), [](const CKeySet& a, const CKeySet& b) { return b.fit(a); });
+	}
+
+	std::string GetString() const
+	{
+		std::string s;
+		for (const CKeySet& ks: *this) {
+			if (!s.empty())
+				s += ",";
+			s += ks.GetString(true);
 		}
+		return s;
+	}
 };
 
+class CTimedKeyChain : public CKeyChain {
+public:
+	std::deque<spring_time> times;
 
-class CTimedKeyChain : public CKeyChain
-{
-	public:
-		std::deque<spring_time> times;
+	void clear()
+	{
+		CKeyChain::clear();
+		times.clear();
+	}
 
-		void clear()
-		{
-			CKeyChain::clear();
-			times.clear();
-		}
+	void push_back(const CKeySet& ks, const spring_time t, const bool isRepeat);
 
-		void push_back(const CKeySet& ks, const spring_time t, const bool isRepeat);
-		void emplace_back(const CKeySet& ks, const spring_time t) { assert(false); }
+	void emplace_back(const CKeySet& ks, const spring_time t) { assert(false); }
 };
 
 

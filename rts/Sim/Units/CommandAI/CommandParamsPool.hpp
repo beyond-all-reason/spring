@@ -3,11 +3,11 @@
 #ifndef COMMAND_PARAMS_POOL_H
 #define COMMAND_PARAMS_POOL_H
 
-#include <cassert>
-#include <algorithm>
-#include <vector>
-
 #include "System/creg/creg_cond.h"
+
+#include <algorithm>
+#include <cassert>
+#include <vector>
 
 /* Commands can normally have up to N parameters inline (where N is something low), for performance reasons.
  * However advanced commands can have an arbitrary number of parameters and sometimes the command needs to
@@ -22,23 +22,41 @@
  * still allowing arbitrarily large commands in semi-rare cases. */
 template<typename T, size_t N, size_t S> struct TCommandParamsPool {
 public:
-	const T* GetPtr(unsigned int i, unsigned int j     ) const { assert(i < pages.size()); return (pages[i].data( ) + j); }
-	//    T* GetPtr(unsigned int i, unsigned int j     )       { assert(i < pages.size()); return (pages[i].data( ) + j); }
-	      T  Get   (unsigned int i, unsigned int j     ) const { assert(i < pages.size()); return (pages[i].at  (j)    ); }
-	      T  Set   (unsigned int i, unsigned int j, T v)       { assert(i < pages.size()); return (pages[i].at  (j) = v); }
+	const T* GetPtr(unsigned int i, unsigned int j) const
+	{
+		assert(i < pages.size());
+		return (pages[i].data() + j);
+	}
 
-	size_t Push(unsigned int i, T v) {
+	//    T* GetPtr(unsigned int i, unsigned int j     )       { assert(i < pages.size()); return (pages[i].data( ) +
+	//    j); }
+	T Get(unsigned int i, unsigned int j) const
+	{
+		assert(i < pages.size());
+		return (pages[i].at(j));
+	}
+
+	T Set(unsigned int i, unsigned int j, T v)
+	{
+		assert(i < pages.size());
+		return (pages[i].at(j) = v);
+	}
+
+	size_t Push(unsigned int i, T v)
+	{
 		assert(i < pages.size());
 		pages[i].push_back(v);
 		return (pages[i].size());
 	}
 
-	void ReleasePage(unsigned int i) {
+	void ReleasePage(unsigned int i)
+	{
 		assert(i < pages.size());
 		indcs.push_back(i);
 	}
 
-	unsigned int AcquirePage() {
+	unsigned int AcquirePage()
+	{
 		if (indcs.empty()) {
 			const size_t numIndices = indcs.size();
 
@@ -62,7 +80,7 @@ public:
 	}
 
 private:
-	std::vector< std::vector<T> > pages;
+	std::vector<std::vector<T>> pages;
 	std::vector<unsigned int> indcs;
 };
 
@@ -72,4 +90,3 @@ typedef TCommandParamsPool<float, 256, 32> CommandParamsPool;
 extern CommandParamsPool cmdParamsPool;
 
 #endif
-

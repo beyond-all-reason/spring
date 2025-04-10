@@ -16,7 +16,7 @@ import java.awt.Color;
  * @author  AF-StandardUsr
  */
 public class CGUI extends javax.swing.JFrame {
-    
+
     /** Creates new form CGUI */
     public CGUI() {
         initComponents();
@@ -26,7 +26,7 @@ public class CGUI extends javax.swing.JFrame {
             }
         });
     }
-    
+
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -113,35 +113,35 @@ public class CGUI extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         jButton1.setEnabled(false);
-        
+
         CUnitSyncJNIBindings.LoadUnitSync("unitsync");
         if(CUnitSyncJNIBindings.loaded){
             Test1.setForeground(Color.GREEN);
         }else{
             Test1.setForeground(Color.RED);
         }
-        
+
         CUnitSyncJNIVersion.LoadUnitSync("unitsync");
         if(CUnitSyncJNIVersion.loaded){
             Test3.setForeground(Color.GREEN);
         }else{
             Test3.setForeground(Color.RED);
         }
-        
+
         CUnitSyncJNIBindings.LoadUnitSync("unitsyncvs2005");
         if(CUnitSyncJNIBindings.loaded){
             Test2.setForeground(Color.GREEN);
         }else{
             Test2.setForeground(Color.RED);
         }
-        
+
         CUnitSyncJNIVersion.LoadUnitSync("unitsyncvs2005");
         if(CUnitSyncJNIVersion.loaded){
             Test4.setForeground(Color.GREEN);
         }else{
             Test4.setForeground(Color.RED);
         }
-        
+
         try{
             CJNAUnitsync c1 = CJNAUnitsync.INSTANCE;
             String s = c1.GetSpringVersion();
@@ -151,7 +151,7 @@ public class CGUI extends javax.swing.JFrame {
             Test5.setForeground(Color.RED);
             Test5.setText("Test 5 (JNA Mingw32)");
         }
-        
+
         try{
             CJNAUnitsync c1 = CJNAUnitsync.INSTANCE2;
             String s = c1.GetSpringVersion();
@@ -162,7 +162,7 @@ public class CGUI extends javax.swing.JFrame {
             Test6.setText("Test 6 (JNA VS2005)");
         }
     }//GEN-LAST:event_jButton1ActionPerformed
-    
+
     /**
      * @param args the command line arguments
      */
@@ -173,7 +173,7 @@ public class CGUI extends javax.swing.JFrame {
             }
         });
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Test1;
     private javax.swing.JLabel Test2;
@@ -184,5 +184,5 @@ public class CGUI extends javax.swing.JFrame {
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
-    
+
 }

@@ -3,12 +3,12 @@
 #ifndef _VFS_HANDLER_H
 #define _VFS_HANDLER_H
 
+#include "System/UnorderedMap.hpp"
+
 #include <array>
+#include <cinttypes>
 #include <string>
 #include <vector>
-#include <cinttypes>
-
-#include "System/UnorderedMap.hpp"
 
 class IArchive;
 
@@ -17,10 +17,14 @@ class IArchive;
  * This only allows accessing the VFS (files in archives
  * registered with the VFS), NOT the real file system.
  */
-class CVFSHandler
-{
+class CVFSHandler {
 public:
-	CVFSHandler(const char* s) { SetName(s); ReserveArchives(); }
+	CVFSHandler(const char* s)
+	{
+		SetName(s);
+		ReserveArchives();
+	}
+
 	~CVFSHandler() { DeleteArchives(); }
 
 	const char* GetName() const { return vfsName; }
@@ -28,12 +32,14 @@ public:
 	void SetName(const char* s) { vfsName = s; }
 
 	void BlockInsertArchive() { insertAllowed = false; }
-	void AllowInsertArchive() { insertAllowed =  true; }
+
+	void AllowInsertArchive() { insertAllowed = true; }
+
 	void BlockRemoveArchive() { removeAllowed = false; }
-	void AllowRemoveArchive() { removeAllowed =  true; }
 
+	void AllowRemoveArchive() { removeAllowed = true; }
 
-	enum Section: int {
+	enum Section : int {
 		Mod,
 		Map,
 		Base,
@@ -50,10 +56,11 @@ public:
 	static Section GetModeSection(char mode);
 	static Section GetModTypeSection(int modtype);
 	static Section GetArchiveSection(const std::string& archiveName);
-	static Section GetTempArchiveSection(const std::string& archiveName) {
+
+	static Section GetTempArchiveSection(const std::string& archiveName)
+	{
 		return Section(GetArchiveSection(archiveName) + (Section::TempMod - Section::Mod));
 	}
-
 
 	static void GrabLock();
 	static void FreeLock();
@@ -121,10 +128,16 @@ public:
 	 */
 	std::vector<std::string> GetDirsInDir(const std::string& dir, bool recursive, Section section);
 
+	bool HasTempArchive(const std::string& archiveName) const
+	{
+		return (HasArchive(archiveName, GetTempArchiveSection(archiveName)));
+	}
 
-	bool HasTempArchive(const std::string& archiveName) const { return (HasArchive(archiveName, GetTempArchiveSection(archiveName))); }
+	bool HasArchive(const std::string& archiveName) const
+	{
+		return (HasArchive(archiveName, GetArchiveSection(archiveName)));
+	}
 
-	bool HasArchive(const std::string& archiveName) const { return (HasArchive(archiveName, GetArchiveSection(archiveName))); }
 	bool HasArchive(const std::string& archiveName, Section archiveSection) const;
 
 	/**
@@ -133,7 +146,9 @@ public:
 	 *   entry in the VFS is overwritten or not.
 	 */
 	bool AddArchive(const std::string& archiveName, bool overwrite);
-	bool AddArchiveIf(const std::string& archiveName, bool overwrite) {
+
+	bool AddArchiveIf(const std::string& archiveName, bool overwrite)
+	{
 		return (!archiveName.empty() && !HasArchive(archiveName) && AddArchive(archiveName, overwrite));
 	}
 
@@ -163,6 +178,7 @@ private:
 		IArchive* ar;
 		int size;
 	};
+
 	typedef std::pair<std::string, FileData> FileEntry;
 
 	std::string GetNormalizedPath(const std::string& rawPath);

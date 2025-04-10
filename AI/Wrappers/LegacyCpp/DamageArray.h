@@ -3,19 +3,17 @@
 #ifndef _DAMAGE_ARRAY_H_
 #define _DAMAGE_ARRAY_H_
 
-#include <algorithm>
-#include <vector>
 #include "System/creg/creg_cond.h"
 
+#include <algorithm>
+#include <vector>
 
 namespace springLegacyAI {
 
-struct DamageArray
-{
+struct DamageArray {
 	CR_DECLARE_STRUCT(DamageArray)
 
 public:
-
 	DamageArray();
 	DamageArray(const float mul);
 	/**
@@ -25,7 +23,8 @@ public:
 	DamageArray(const std::vector<float>& dmg);
 	DamageArray(const DamageArray& other);
 
-	DamageArray& operator=(const DamageArray& other) {
+	DamageArray& operator=(const DamageArray& other)
+	{
 		paralyzeDamageTime = other.paralyzeDamageTime;
 		impulseFactor = other.impulseFactor;
 		impulseBoost = other.impulseBoost;
@@ -34,27 +33,31 @@ public:
 		damages = other.damages;
 		return *this;
 	}
+
 	float& operator[](int i) { return damages[i]; }
+
 	float operator[](int i) const { return damages[i]; }
 
-	DamageArray operator*(float mul) const {
+	DamageArray operator*(float mul) const
+	{
 		DamageArray da(*this);
-		for (int a = 0; a < damages.size(); ++a)
-			da.damages[a] *= mul;
+		for (int a = 0; a < damages.size(); ++a) da.damages[a] *= mul;
 		return da;
 	}
 
 	int GetNumTypes() const { return damages.size(); }
+
 	float GetTypeDamage(int typeIndex) const { return damages[typeIndex]; }
+
 	float GetDefaultDamage() const { return damages[0]; }
 
 	int paralyzeDamageTime;
 	float impulseFactor, impulseBoost, craterMult, craterBoost;
 
 private:
-	#ifdef USING_CREG
+#ifdef USING_CREG
 	void creg_Serialize(creg::ISerializer* s);
-	#endif // USING_CREG
+#endif // USING_CREG
 
 	std::vector<float> damages;
 };

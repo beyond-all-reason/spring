@@ -2,25 +2,25 @@
 
 
 #include "StaticMoveType.h"
+
 #include "Components/MoveTypesComponents.h"
 #include "Map/Ground.h"
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-
 #include "System/Misc/TracyDefs.h"
 
 using namespace MoveTypes;
 
 CR_BIND_DERIVED(CStaticMoveType, AMoveType, (nullptr))
-CR_REG_METADATA(CStaticMoveType, (
-	CR_PREALLOC(GetPreallocContainer)
-))
+CR_REG_METADATA(CStaticMoveType, (CR_PREALLOC(GetPreallocContainer)))
 
-CStaticMoveType::CStaticMoveType(CUnit* unit) : AMoveType(unit) {
+CStaticMoveType::CStaticMoveType(CUnit* unit)
+    : AMoveType(unit)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	useWantedSpeed[false] = false;
-	useWantedSpeed[ true] = false;
+	useWantedSpeed[true] = false;
 
 	// creg
 	if (unit == nullptr)
@@ -42,7 +42,8 @@ void CStaticMoveType::SlowUpdate()
 	// FIXME: intercept heightmapUpdate events and update buildings y-pos only on-demand!
 	if (owner->FloatOnWater() && owner->IsInWater()) {
 		owner->Move(UpVector * (-waterline - owner->pos.y), true);
-	} else {
+	}
+	else {
 		owner->Move(UpVector * (CGround::GetHeightReal(owner->pos.x, owner->pos.z) - owner->pos.y), true);
 	}
 }

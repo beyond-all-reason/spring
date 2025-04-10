@@ -1,18 +1,18 @@
 /*
-	Copyright (c) 2008 Robin Vobruba <hoijui.quaero@gmail.com>
+    Copyright (c) 2008 Robin Vobruba <hoijui.quaero@gmail.com>
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef _CUTILS_UTIL_H
@@ -45,8 +45,7 @@ char* util_allocStrSubCpy(const char* toCopy, int fromPos, int toPos);
 /**
  * Allocates fresh memory and copies a part of the supplied string into it.
  */
-char* util_allocStrSubCpyByPointers(const char* toCopy,
-		const char* fromPos, const char* toPos);
+char* util_allocStrSubCpyByPointers(const char* toCopy, const char* fromPos, const char* toPos);
 
 /**
  * Concatenates a variable number of C strings into newly allocated memory.
@@ -80,8 +79,7 @@ void util_strTrim(char* toTrim);
 char* util_allocStrTrimed(const char* toTrim);
 
 void util_strReplaceChar(char* toChange, char toFind, char replacer);
-char* util_allocStrReplaceStr(const char* toChange, const char* toFind,
-		const char* replacer);
+char* util_allocStrReplaceStr(const char* toChange, const char* toFind, const char* replacer);
 
 bool util_startsWith(const char* str, const char* prefix);
 bool util_endsWith(const char* str, const char* suffix);
@@ -120,8 +118,8 @@ bool util_isPathAbsolute(const char* path);
  * @param recursive    list files recursively
  * @param maxFileNames max files to return
  */
-unsigned int util_listFiles(const char* dir, const char* suffix,
-		char** fileNames, bool recursive, const unsigned int maxFileNames);
+unsigned int
+util_listFiles(const char* dir, const char* suffix, char** fileNames, bool recursive, const unsigned int maxFileNames);
 
 /**
  * Removes a slash ('/' or '\') from the end of a string, if there is one.
@@ -163,9 +161,11 @@ bool util_getParentDir(char* path);
  *
  * @return  true if the file exists
  */
-bool util_findFile(const char* dirs[], unsigned int numDirs,
-		const char* relativeFilePath, char* absoluteFilePath,
-		bool searchOnlyWriteable);
+bool util_findFile(const char* dirs[],
+    unsigned int numDirs,
+    const char* relativeFilePath,
+    char* absoluteFilePath,
+    bool searchOnlyWriteable);
 
 /**
  * Finds a directory under dirs with the relativeDirPath
@@ -176,9 +176,12 @@ bool util_findFile(const char* dirs[], unsigned int numDirs,
  *
  * @return  true if the file existed or was created
  */
-bool util_findDir(const char* dirs[], unsigned int numDirs,
-		const char* relativeDirPath, char* absoluteDirPath,
-		bool searchOnlyWriteable, bool create);
+bool util_findDir(const char* dirs[],
+    unsigned int numDirs,
+    const char* relativeDirPath,
+    char* absoluteDirPath,
+    bool searchOnlyWriteable,
+    bool create);
 
 /**
  * Parses a properties file into a C [string, string] map.
@@ -189,8 +192,7 @@ bool util_findDir(const char* dirs[], unsigned int numDirs,
  * The strings in the \<keys\> and \<values\> arrays have to
  * be freed by the callee.
  */
-int util_parsePropertiesFile(const char* propertiesFile,
-		const char* keys[], const char* values[], int maxProperties);
+int util_parsePropertiesFile(const char* propertiesFile, const char* keys[], const char* values[], int maxProperties);
 
 // END: File system related functions
 
@@ -199,10 +201,7 @@ int util_parsePropertiesFile(const char* propertiesFile,
  * Find the value assigned to a key in a C [string, string] map.
  * @return  the assigned value or NULL if the key was not found
  */
-const char* util_map_getValueByKey(
-		unsigned int mapSize,
-		const char** mapKeys, const char** mapValues,
-		const char* key);
+const char* util_map_getValueByKey(unsigned int mapSize, const char** mapKeys, const char** mapValues, const char* key);
 
 
 #ifdef __cplusplus

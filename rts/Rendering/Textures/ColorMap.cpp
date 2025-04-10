@@ -1,35 +1,34 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <array>
-#include <cstring> // memcpy
-
 #include "ColorMap.h"
+
 #include "Bitmap.h"
-#include "System/Log/ILog.h"
+
 #include "System/Exceptions.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringUtil.h"
 #include "System/UnorderedMap.hpp"
 #include "System/creg/STL_Map.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <array>
+#include <cstring> // memcpy
 
 CR_BIND(CColorMap, )
-CR_REG_METADATA(CColorMap, (
-	CR_MEMBER(xsize),
-	CR_IGNORED(nxsize),
-	CR_MEMBER(ysize),
-	CR_IGNORED(map),
+CR_REG_METADATA(CColorMap,
+    (CR_MEMBER(xsize),
+        CR_IGNORED(nxsize),
+        CR_MEMBER(ysize),
+        CR_IGNORED(map),
 
-	CR_SERIALIZER(Serialize),
-	CR_POSTLOAD(PostLoad)
-))
+        CR_SERIALIZER(Serialize),
+        CR_POSTLOAD(PostLoad)))
 
 
 static std::array<CColorMap, 2048 + 2> colorMapsCache;
 static spring::unordered_map<std::string, CColorMap*> namedColorMaps;
 
 static size_t numColorMaps = 0;
-
 
 void CColorMap::InitStatic()
 {
@@ -94,7 +93,6 @@ CColorMap* CColorMap::LoadFromRawVector(const float* data, size_t size)
 	return &colorMapsCache[numColorMaps++];
 }
 
-
 CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -117,8 +115,6 @@ CColorMap* CColorMap::LoadFromDefString(const std::string& defString)
 	return (CColorMap::LoadFromRawVector(vec.data(), idx));
 }
 
-
-
 CColorMap::CColorMap(const std::string& fileName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -132,13 +128,12 @@ CColorMap::CColorMap(const std::string& fileName)
 	if (bitmap.compressed || (bitmap.channels != 4) || (bitmap.xsize < 2))
 		throw content_error("[ColorMap] unsupported bitmap format in file " + fileName);
 
-	xsize  = bitmap.xsize;
-	ysize  = bitmap.ysize;
+	xsize = bitmap.xsize;
+	ysize = bitmap.ysize;
 	nxsize = xsize - 1;
 
 	LoadMap(bitmap.GetRawMem(), xsize * ysize);
 }
-
 
 void CColorMap::Load(const float* data, size_t size)
 {
@@ -146,11 +141,11 @@ void CColorMap::Load(const float* data, size_t size)
 	if (size < 8)
 		throw content_error("[ColorMap] less than two RGBA colors specified");
 
-	xsize  = (size - (size % 4)) / 4;
-	ysize  = 1;
+	xsize = (size - (size % 4)) / 4;
+	ysize = 1;
 	nxsize = xsize - 1;
 
-	static std::array<SColor, 4096> cmap; //to move it off the stack
+	static std::array<SColor, 4096> cmap; // to move it off the stack
 
 	for (size_t i = 0, n = std::min(size_t(xsize), cmap.size()); i < n; ++i) {
 		cmap[i] = SColor(&data[i * 4]);
@@ -183,10 +178,10 @@ void CColorMap::GetColor(unsigned char* color, float pos)
 
 	const float fposn = pos * nxsize;
 	const float fracn = fposn - indices.first;
-	const auto aa = (int) (fracn * 256);
+	const auto aa = (int)(fracn * 256);
 	const auto ia = 256 - aa;
 
-	const auto* col1 = static_cast<uint8_t*>(map[indices.first ]);
+	const auto* col1 = static_cast<uint8_t*>(map[indices.first]);
 	const auto* col2 = static_cast<uint8_t*>(map[indices.second]);
 
 	color[0] = ((col1[0] * ia) + (col2[0] * aa)) >> 8;

@@ -4,24 +4,27 @@
 #define _AI_INIT_EVENT_H
 
 #include "AIEvent.h"
-#include "../IGlobalAICallback.h"
-#include "../AIGlobalAICallback.h"
 
+#include "../AIGlobalAICallback.h"
+#include "../IGlobalAICallback.h"
 
 namespace springLegacyAI {
 
 class CAIInitEvent : public CAIEvent {
 public:
-	CAIInitEvent(const SInitEvent& event): event(event) {}
+	CAIInitEvent(const SInitEvent& event)
+	    : event(event)
+	{
+	}
 
-	#if 0
+#if 0
 	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) {
 		ai.InitAI(wrappedClb, wrappedClb->GetInnerCallback()->SkirmishAI_getTeamId(event.skirmishAIId));
 	}
-	#else
+#else
 	// done in AIAI::handleEvent (cleaner)
 	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) {}
-	#endif
+#endif
 
 private:
 	SInitEvent event;

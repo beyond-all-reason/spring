@@ -1,8 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include "SmokeProjectile.h"
 #include "WreckProjectile.h"
+
+#include "SmokeProjectile.h"
+
 #include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Rendering/Colors.h"
@@ -12,15 +14,13 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CWreckProjectile, CProjectile, )
 CR_REG_METADATA(CWreckProjectile, )
 
-
 CWreckProjectile::CWreckProjectile(CUnit* owner, float3 pos, float3 speed, float temperature)
-	: CProjectile(pos, speed, owner, false, false, false)
+    : CProjectile(pos, speed, owner, false, false, false)
 {
 	checkCol = false;
 	drawRadius = 2.0f;
@@ -52,28 +52,24 @@ void CWreckProjectile::Draw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char col[4];
-	col[0] = (unsigned char) (0.15f * 200);
-	col[1] = (unsigned char) (0.1f  * 200);
-	col[2] = (unsigned char) (0.05f * 200);
+	col[0] = (unsigned char)(0.15f * 200);
+	col[1] = (unsigned char)(0.1f * 200);
+	col[2] = (unsigned char)(0.05f * 200);
 	col[3] = 200;
 
-	#define wt projectileDrawer->wrecktex
+#define wt projectileDrawer->wrecktex
 	AddEffectsQuad(
-		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xstart, wt->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xend,   wt->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xend,   wt->yend,   col },
-		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xstart, wt->yend,   col }
-	);
-	#undef wt
+	    {drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xstart, wt->ystart, col},
+	    {drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, wt->xend, wt->ystart, col},
+	    {drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xend, wt->yend, col},
+	    {drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, wt->xstart, wt->yend, col});
+#undef wt
 }
 
 void CWreckProjectile::DrawOnMinimap() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	AddMiniMapVertices({ pos        , color4::redA }, { pos + speed, color4::redA });
+	AddMiniMapVertices({pos, color4::redA}, {pos + speed, color4::redA});
 }
 
-int CWreckProjectile::GetProjectilesCount() const
-{
-	return 1;
-}
+int CWreckProjectile::GetProjectilesCount() const { return 1; }

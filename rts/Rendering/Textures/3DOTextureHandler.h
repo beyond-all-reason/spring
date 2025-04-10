@@ -3,18 +3,17 @@
 #ifndef _3DO_TEXTURE_HANDLER_H
 #define _3DO_TEXTURE_HANDLER_H
 
+#include "Rendering/GL/myGL.h"
+#include "Rendering/Textures/TAPalette.h"
+#include "System/UnorderedMap.hpp"
+#include "System/float4.h"
+
 #include <string>
 #include <vector>
 
-#include "Rendering/GL/myGL.h"
-#include "Rendering/Textures/TAPalette.h"
-#include "System/float4.h"
-#include "System/UnorderedMap.hpp"
-
 struct TexFile;
 
-class C3DOTextureHandler
-{
+class C3DOTextureHandler {
 public:
 	typedef float4 UnitTexture;
 
@@ -25,8 +24,11 @@ public:
 	UnitTexture* Get3DOTexture(const std::string& name);
 
 	unsigned int GetAtlasTex1ID() const { return atlas3do1; }
+
 	unsigned int GetAtlasTex2ID() const { return atlas3do2; }
+
 	unsigned int GetAtlasTexSizeX() const { return bigTexX; }
+
 	unsigned int GetAtlasTexSizeY() const { return bigTexY; }
 
 	const spring::unordered_map<std::string, UnitTexture>& GetAtlasTextures() const { return textures; }

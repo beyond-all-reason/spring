@@ -5,16 +5,16 @@
 
 // check if the correct defines are set by the build system
 #if !defined BUILDING_AI_INTERFACE
-#	error BUILDING_AI_INTERFACE should be defined when building AI Interfaces
+#error BUILDING_AI_INTERFACE should be defined when building AI Interfaces
 #endif
 #if !defined BUILDING_AI
-#	error BUILDING_AI should be defined when building AI Interfaces
+#error BUILDING_AI should be defined when building AI Interfaces
 #endif
 #if defined BUILDING_SKIRMISH_AI
-#	error BUILDING_SKIRMISH_AI should not be defined when building AI Interfaces
+#error BUILDING_SKIRMISH_AI should not be defined when building AI Interfaces
 #endif
 #if defined SYNCIFY
-#	error SYNCIFY should not be defined when building AI Interfaces
+#error SYNCIFY should not be defined when building AI Interfaces
 #endif
 
 
@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-//#include "ExternalAI/Interface/ELevelOfSupport.h"
+// #include "ExternalAI/Interface/ELevelOfSupport.h"
 
 struct SSkirmishAILibrary;
 struct SAIInterfaceCallback;
@@ -38,20 +38,14 @@ struct SAIInterfaceCallback;
 
 EXPORT(int) initStatic(int interfaceId, const SAIInterfaceCallback* callback);
 EXPORT(int) releaseStatic();
-//EXPORT(enum LevelOfSupport) getLevelOfSupportFor(
+// EXPORT(enum LevelOfSupport) getLevelOfSupportFor(
 //		const char* engineVersion, int engineAIInterfaceGeneratedVersion);
 
 
 // skirmish AI related methods
 
-EXPORT(const SSkirmishAILibrary*) loadSkirmishAILibrary(
-	const char* const shortName,
-	const char* const version
-);
-EXPORT(int) unloadSkirmishAILibrary(
-	const char* const shortName,
-	const char* const version
-);
+EXPORT(const SSkirmishAILibrary*) loadSkirmishAILibrary(const char* const shortName, const char* const version);
+EXPORT(int) unloadSkirmishAILibrary(const char* const shortName, const char* const version);
 EXPORT(int) unloadAllSkirmishAILibraries();
 
 #ifdef __cplusplus

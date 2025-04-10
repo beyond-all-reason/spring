@@ -26,11 +26,11 @@ exit
 
 #include "../unitsync_api.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <string>
 #include <vector>
+
+#include <stdio.h>
+#include <stdlib.h>
 
 
 /******************************************************************************/
@@ -47,89 +47,85 @@ static FILE* outfile = NULL;
 /******************************************************************************/
 
 // from VFSModes.h
-#define SPRING_VFS_RAW  "r"
-#define SPRING_VFS_MOD  "M"
-#define SPRING_VFS_MAP  "m"
+#define SPRING_VFS_RAW "r"
+#define SPRING_VFS_MOD "M"
+#define SPRING_VFS_MAP "m"
 #define SPRING_VFS_BASE "b"
 #define SPRING_VFS_NONE " "
-#define SPRING_VFS_MOD_BASE   SPRING_VFS_MOD  SPRING_VFS_BASE
-#define SPRING_VFS_ZIP        SPRING_VFS_MOD  SPRING_VFS_MAP  SPRING_VFS_BASE
-
+#define SPRING_VFS_MOD_BASE SPRING_VFS_MOD SPRING_VFS_BASE
+#define SPRING_VFS_ZIP SPRING_VFS_MOD SPRING_VFS_MAP SPRING_VFS_BASE
 
 /******************************************************************************/
 /******************************************************************************/
 
 int main(int argc, char** argv)
 {
-  if (argc < 2) {
-    printf("usage:  %s <mod>\n", argv[0]);
-    exit(1);
-  }
-  const std::string mod = argv[1];
-  printf("MOD = %s\n", mod.c_str());
+	if (argc < 2) {
+		printf("usage:  %s <mod>\n", argv[0]);
+		exit(1);
+	}
+	const std::string mod = argv[1];
+	printf("MOD = %s\n", mod.c_str());
 
-  // open the output file in the local directory, before
-  // initializing unitsync (which changes the working directory)
-  const std::string outName = mod + ".php";
-  printf("outName = %s\n", outName.c_str());
-  outfile = fopen(outName.c_str(), "w");
-  if (outfile == NULL) {
-    perror("fopen");
-    return 1;
-  }
+	// open the output file in the local directory, before
+	// initializing unitsync (which changes the working directory)
+	const std::string outName = mod + ".php";
+	printf("outName = %s\n", outName.c_str());
+	outfile = fopen(outName.c_str(), "w");
+	if (outfile == NULL) {
+		perror("fopen");
+		return 1;
+	}
 
-  Init(false, 0);
+	Init(false, 0);
 
-  printf("GetSpringVersion() = %s\n", GetSpringVersion());
+	printf("GetSpringVersion() = %s\n", GetSpringVersion());
 
-  // load the mod archives
-  AddAllArchives(mod.c_str());
+	// load the mod archives
+	AddAllArchives(mod.c_str());
 
-  // print the defs
-  lpOpenFile("gamedata/defs.lua", SPRING_VFS_MOD_BASE , SPRING_VFS_ZIP);
-  if (!lpExecute()) {
-    printf("%s\n", lpErrorLog());
-  }
-  else {
-    lpRootTable();
-    OUTF("<?php\n");
-    OUTF("$defs = array(\n");
-    OutputPHPTable("\t");
-    OUTF(");\n");
-    OUTF("?>\n");
-  }
-  lpClose();
+	// print the defs
+	lpOpenFile("gamedata/defs.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
+	if (!lpExecute()) {
+		printf("%s\n", lpErrorLog());
+	}
+	else {
+		lpRootTable();
+		OUTF("<?php\n");
+		OUTF("$defs = array(\n");
+		OutputPHPTable("\t");
+		OUTF(");\n");
+		OUTF("?>\n");
+	}
+	lpClose();
 
-  UnInit();
+	UnInit();
 
-  fclose(outfile);
+	fclose(outfile);
 
-  printf("%s has been created\n", outName.c_str());
+	printf("%s has been created\n", outName.c_str());
 
-  return 0;
+	return 0;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
 
 static void GetIntKeys(std::vector<int>& keys)
 {
-  const int count = lpGetIntKeyListCount();
-  for (int i = 0; i < count; i++) {
-    keys.push_back(lpGetIntKeyListEntry(i));
-  }
+	const int count = lpGetIntKeyListCount();
+	for (int i = 0; i < count; i++) {
+		keys.push_back(lpGetIntKeyListEntry(i));
+	}
 }
-
 
 static void GetStrKeys(std::vector<std::string>& keys)
 {
-  const int count = lpGetStrKeyListCount();
-  for (int i = 0; i < count; i++) {
-    keys.push_back(lpGetStrKeyListEntry(i));
-  }
+	const int count = lpGetStrKeyListCount();
+	for (int i = 0; i < count; i++) {
+		keys.push_back(lpGetStrKeyListEntry(i));
+	}
 }
-
 
 static inline std::string IntToString(int i, const std::string& format = "%i")
 {
@@ -138,89 +134,92 @@ static inline std::string IntToString(int i, const std::string& format = "%i")
 	return std::string(buf);
 }
 
-
 // from lua.h
-#define LUA_TNONE          (-1)
-#define LUA_TNIL           0
-#define LUA_TBOOLEAN       1
+#define LUA_TNONE (-1)
+#define LUA_TNIL 0
+#define LUA_TBOOLEAN 1
 #define LUA_TLIGHTUSERDATA 2
-#define LUA_TNUMBER        3
-#define LUA_TSTRING        4
-#define LUA_TTABLE         5
-#define LUA_TFUNCTION      6
-#define LUA_TUSERDATA      7
-#define LUA_TTHREAD        8
-
+#define LUA_TNUMBER 3
+#define LUA_TSTRING 4
+#define LUA_TTABLE 5
+#define LUA_TFUNCTION 6
+#define LUA_TUSERDATA 7
+#define LUA_TTHREAD 8
 
 static std::string SafeStr(const std::string& str, char escChar = '\'')
 {
-  std::string newStr;
-  for (unsigned int i = 0; i < str.size(); i++) {
-    const char c = str[i];
-    if (c == escChar)  {
-      newStr.push_back('\\');
-    }
-    newStr.push_back(c);
-  }
-  return newStr;
+	std::string newStr;
+	for (unsigned int i = 0; i < str.size(); i++) {
+		const char c = str[i];
+		if (c == escChar) {
+			newStr.push_back('\\');
+		}
+		newStr.push_back(c);
+	}
+	return newStr;
 }
-
 
 static void OutputPHPTable(const std::string& indent)
 {
-  std::vector<int>         intKeys; GetIntKeys(intKeys);
-  std::vector<std::string> strKeys; GetStrKeys(strKeys);
+	std::vector<int> intKeys;
+	GetIntKeys(intKeys);
+	std::vector<std::string> strKeys;
+	GetStrKeys(strKeys);
 
-  const char* ind = indent.c_str();
+	const char* ind = indent.c_str();
 
-  for (int i = 0; i < intKeys.size(); i++) {
-    const int key = intKeys[i];
-    const int type = lpGetIntKeyType(key);
-    if (type == LUA_TTABLE) {
-      lpSubTableInt(key);
-      OUTF("%s%i => array(\n", ind, key);
-      OutputPHPTable(indent + "\t");
-      OUTF("%s),\n", ind);
-      lpPopTable();
-    } else {
-      if (type == LUA_TNUMBER) {
-        OUTF("%s%i => %g,\n",   ind, key, lpGetIntKeyFloatVal(key, 0.0f));
-      } else if (type == LUA_TBOOLEAN) {
-        OUTF("%s%i => %s,\n",   ind, key, lpGetIntKeyBoolVal(key, 0) ? "true" : "false");
-      } else if (type == LUA_TSTRING) {
-        OUTF("%s%i => '%s',\n", ind, key,
-             SafeStr(lpGetIntKeyStrVal(key, "BOGUS")).c_str());
-      } else {
-        OUTF("//%s%i => bad type (%i)\n", ind, key, type);
-      }
-    }
-  }
+	for (int i = 0; i < intKeys.size(); i++) {
+		const int key = intKeys[i];
+		const int type = lpGetIntKeyType(key);
+		if (type == LUA_TTABLE) {
+			lpSubTableInt(key);
+			OUTF("%s%i => array(\n", ind, key);
+			OutputPHPTable(indent + "\t");
+			OUTF("%s),\n", ind);
+			lpPopTable();
+		}
+		else {
+			if (type == LUA_TNUMBER) {
+				OUTF("%s%i => %g,\n", ind, key, lpGetIntKeyFloatVal(key, 0.0f));
+			}
+			else if (type == LUA_TBOOLEAN) {
+				OUTF("%s%i => %s,\n", ind, key, lpGetIntKeyBoolVal(key, 0) ? "true" : "false");
+			}
+			else if (type == LUA_TSTRING) {
+				OUTF("%s%i => '%s',\n", ind, key, SafeStr(lpGetIntKeyStrVal(key, "BOGUS")).c_str());
+			}
+			else {
+				OUTF("//%s%i => bad type (%i)\n", ind, key, type);
+			}
+		}
+	}
 
-  for (int i = 0; i < strKeys.size(); i++) {
-    const char* key = strKeys[i].c_str();
-    const int type = lpGetStrKeyType(key);
-    if (type == LUA_TTABLE) {
-      lpSubTableStr(key);
-      OUTF("%s\"%s\" => array(\n", ind, key);
-      OutputPHPTable(indent + "\t");
-      OUTF("%s),\n", ind);
-      lpPopTable();
-    } else {
-      if (type == LUA_TNUMBER) {
-        OUTF("%s\"%s\" => %g,\n",   ind, key, lpGetStrKeyFloatVal(key, 0.0f));
-      } else if (type == LUA_TBOOLEAN) {
-        OUTF("%s\"%s\" => %s,\n",   ind, key, lpGetStrKeyBoolVal(key, 0) ? "true" : "false");
-      } else if (type == LUA_TSTRING) {
-        OUTF("%s\"%s\" => '%s',\n", ind, key,
-             SafeStr(lpGetStrKeyStrVal(key, "BOGUS")).c_str());
-      } else {
-        OUTF("//%s\"%s\" => bad type (%i)\n", ind, key, type);
-      }
-    }
-  }
+	for (int i = 0; i < strKeys.size(); i++) {
+		const char* key = strKeys[i].c_str();
+		const int type = lpGetStrKeyType(key);
+		if (type == LUA_TTABLE) {
+			lpSubTableStr(key);
+			OUTF("%s\"%s\" => array(\n", ind, key);
+			OutputPHPTable(indent + "\t");
+			OUTF("%s),\n", ind);
+			lpPopTable();
+		}
+		else {
+			if (type == LUA_TNUMBER) {
+				OUTF("%s\"%s\" => %g,\n", ind, key, lpGetStrKeyFloatVal(key, 0.0f));
+			}
+			else if (type == LUA_TBOOLEAN) {
+				OUTF("%s\"%s\" => %s,\n", ind, key, lpGetStrKeyBoolVal(key, 0) ? "true" : "false");
+			}
+			else if (type == LUA_TSTRING) {
+				OUTF("%s\"%s\" => '%s',\n", ind, key, SafeStr(lpGetStrKeyStrVal(key, "BOGUS")).c_str());
+			}
+			else {
+				OUTF("//%s\"%s\" => bad type (%i)\n", ind, key, type);
+			}
+		}
+	}
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
-

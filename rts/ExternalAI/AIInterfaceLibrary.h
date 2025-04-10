@@ -3,14 +3,14 @@
 #ifndef AI_INTERFACE_LIBRARY_H
 #define AI_INTERFACE_LIBRARY_H
 
-#include "System/Platform/SharedLib.h"
 #include "ExternalAI/Interface/ELevelOfSupport.h"
-#include "ExternalAI/Interface/SAIInterfaceLibrary.h"
 #include "ExternalAI/Interface/SAIInterfaceCallback.h"
+#include "ExternalAI/Interface/SAIInterfaceLibrary.h"
 #include "ExternalAI/SkirmishAIKey.h"
+#include "System/Platform/SharedLib.h"
 
-#include <string>
 #include <map>
+#include <string>
 
 class CAIInterfaceLibraryInfo;
 class CSkirmishAILibrary;
@@ -28,8 +28,7 @@ public:
 
 	AIInterfaceKey GetKey() const;
 
-	LevelOfSupport GetLevelOfSupportFor(
-			const std::string& engineVersionString, int engineVersionNumber) const;
+	LevelOfSupport GetLevelOfSupportFor(const std::string& engineVersionString, int engineVersionNumber) const;
 
 	int GetSkirmishAICount() const;
 	std::map<std::string, std::string> GetSkirmishAIInfos(int aiIndex) const;
@@ -68,12 +67,11 @@ public:
 	 * loaded multiple times (load counter).
 	 */
 	int GetSkirmishAILibraryLoadCount(const SkirmishAIKey& sAISpecifier) const;
+
 	/**
 	 * @brief	is the Skirmish AI library loaded
 	 */
-	bool IsSkirmishAILibraryLoaded(const SkirmishAIKey& key) const {
-		return (GetSkirmishAILibraryLoadCount(key) > 0);
-	}
+	bool IsSkirmishAILibraryLoaded(const SkirmishAIKey& key) const { return (GetSkirmishAILibraryLoadCount(key) > 0); }
 
 	/**
 	 * @brief	unloads all AIs
@@ -96,10 +94,7 @@ private:
 	void InitStatic();
 	void ReleaseStatic();
 
-	static void reportInterfaceFunctionError(
-		const std::string& libFileName,
-		const std::string& functionName
-	);
+	static void reportInterfaceFunctionError(const std::string& libFileName, const std::string& functionName);
 	int InitializeFromLib(const std::string& libFilePath);
 
 	std::string FindLibFile();

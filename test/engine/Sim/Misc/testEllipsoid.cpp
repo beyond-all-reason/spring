@@ -1,17 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/float3.h"
 #include "System/SpringMath.h"
-#include <stdlib.h>
-#include <time.h>
+#include "System/float3.h"
 
 #include <catch_amalgamated.hpp>
-
+#include <stdlib.h>
+#include <time.h>
 
 static inline float3 randfloat3()
 {
 	float3 r(rand() + 1.0f, rand() + 1.0f, rand() + 1.0f);
-	//Disallow insane ellipsoids
+	// Disallow insane ellipsoids
 	float minValue = std::fmax(r.x, std::max(r.y, r.z)) * 0.02;
 	r.x = std::max(r.x, minValue);
 	r.y = std::max(r.y, minValue);
@@ -20,7 +19,8 @@ static inline float3 randfloat3()
 	return r;
 }
 
-static inline float getdistSq(float x, float y, float z, float a, float b, float c, float theta, float phi) {
+static inline float getdistSq(float x, float y, float z, float a, float b, float c, float theta, float phi)
+{
 	const float cost = cos(theta);
 	const float sint = sin(theta);
 	const float sinp = sin(phi);
@@ -32,24 +32,23 @@ static inline float getdistSq(float x, float y, float z, float a, float b, float
 	return fx * fx + fy * fy + fz * fz;
 }
 
-
 #define TEST_RUNS 100000
 #define MAX_ITERATIONS 20
 #define THRESHOLD 0.001
-#define MAX_FAILS 5 //allow some fails
+#define MAX_FAILS 5 // allow some fails
 
-//We Fail if after half the iterations we have error > 5%
+// We Fail if after half the iterations we have error > 5%
 #define FAIL_THRESHOLD 0.05f
 
 TEST_CASE("Ellipsoid")
 {
-	srand( time(NULL) );
+	srand(time(NULL));
 	unsigned failCount = 0;
 
 	float relError[MAX_ITERATIONS + 1] = {};
 	float maxError[MAX_ITERATIONS + 1] = {};
 	float tempdist[MAX_ITERATIONS + 1] = {};
-	float  errorsq[MAX_ITERATIONS + 1] = {};
+	float errorsq[MAX_ITERATIONS + 1] = {};
 
 	unsigned finalIteration[MAX_ITERATIONS + 1] = {};
 
@@ -62,11 +61,11 @@ TEST_CASE("Ellipsoid")
 		const float& x = pv.x;
 		const float& y = pv.y;
 		const float& z = pv.z;
-		float weightedLengthSq = (x * x) / (a * a)  + (y * y) / (b * b) + (z * z) / (c * c);
+		float weightedLengthSq = (x * x) / (a * a) + (y * y) / (b * b) + (z * z) / (c * c);
 		while (weightedLengthSq <= 1.0f) {
 			halfScales = randfloat3();
 			pv = randfloat3();
-			weightedLengthSq = (x * x) / (a * a)  + (y * y) / (b * b) + (z * z) / (c * c);
+			weightedLengthSq = (x * x) / (a * a) + (y * y) / (b * b) + (z * z) / (c * c);
 		}
 
 		const float a2 = a * a;
@@ -80,13 +79,13 @@ TEST_CASE("Ellipsoid")
 		const float zc = z * c;
 
 
-		//Initial guess
+		// Initial guess
 		float theta = math::atan2(a * y, b * x);
 		float phi = math::atan2(z, c * math::sqrt(x2 / a2 + y2 / b2));
 
 
-		//Iterations
-		for (int i = 0; true; ) {
+		// Iterations
+		for (int i = 0; true;) {
 			const float cost = math::cos(theta);
 			const float sint = math::sin(theta);
 			const float sinp = math::sin(phi);
@@ -115,7 +114,7 @@ TEST_CASE("Ellipsoid")
 					break;
 			}
 
-			//Derivative matrix
+			// Derivative matrix
 			const float a11 = a2b2 * (1 - 2 * sin2t) * cosp - xacost_ybsint;
 			const float a12 = -a2b2costsint * sinp;
 			const float a21 = 2 * a12 * cosp + sinp * xasint_ybcost;
@@ -124,15 +123,15 @@ TEST_CASE("Ellipsoid")
 			const float invDet = 1.0f / (a11 * a22 - a21 * a12);
 
 			theta += (a12 * d2 - a22 * d1) * invDet;
-			theta  = std::clamp(theta, 0.0f, math::HALFPI);
+			theta = std::clamp(theta, 0.0f, math::HALFPI);
 			phi += (a21 * d1 - a11 * d2) * invDet;
-			phi  = std::clamp(phi, 0.0f, math::HALFPI);
+			phi = std::clamp(phi, 0.0f, math::HALFPI);
 		}
 
 		bool failed = false;
 
 		for (int i = 0; i < MAX_ITERATIONS; ++i) {
-			//Relative error for every iteration
+			// Relative error for every iteration
 			const float tempError = std::abs(tempdist[i] - tempdist[MAX_ITERATIONS]) / tempdist[MAX_ITERATIONS];
 
 			relError[i] += tempError;
@@ -141,8 +140,7 @@ TEST_CASE("Ellipsoid")
 			if (i > MAX_ITERATIONS / 2 && tempError > FAIL_THRESHOLD && !failed) {
 				failed = true;
 				++failCount;
-				printf("x: %f, y: %f, z: %f, a: %f, b: %f, c: %f\n", x,y,z,a,b,c);
-
+				printf("x: %f, y: %f, z: %f, a: %f, b: %f, c: %f\n", x, y, z, a, b, c);
 			}
 			errorsq[i] += tempError * tempError;
 		}
@@ -150,10 +148,11 @@ TEST_CASE("Ellipsoid")
 
 	for (int i = 0; i < MAX_ITERATIONS; ++i) {
 		const float meanError = relError[i] / TEST_RUNS;
-		const float  devError = math::sqrt(errorsq[i] / TEST_RUNS - meanError * meanError);
+		const float devError = math::sqrt(errorsq[i] / TEST_RUNS - meanError * meanError);
 		const float pct = 100.0f * (1.0f - float(finalIteration[i]) / TEST_RUNS);
 
-		printf("Iteration %d:\n\tError: (Mean: %f, Dev: %f, Max: %f)\n\tPercent remaining: %.3f%%\n", i, meanError, devError, maxError[i], pct);
+		printf("Iteration %d:\n\tError: (Mean: %f, Dev: %f, Max: %f)\n\tPercent remaining: %.3f%%\n", i, meanError,
+		    devError, maxError[i], pct);
 	}
 
 	INFO("Inaccurate ellipsoid distance approximation!");

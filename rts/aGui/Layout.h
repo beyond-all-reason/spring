@@ -3,8 +3,7 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
 
-class Layout
-{
+class Layout {
 public:
 	Layout()
 	{
@@ -12,19 +11,12 @@ public:
 		borderSpacing = 0.005f;
 		borderWidth = 0.0f;
 	};
-	
-	void SetBorder(float thickness)
-	{
-		borderWidth = thickness;
-	};
-	void SetBorderSpacing(float width)
-	{
-		borderSpacing = width;
-	};
-	void SetItemSpacing(float width)
-	{
-		itemSpacing = width;
-	};
+
+	void SetBorder(float thickness) { borderWidth = thickness; };
+
+	void SetBorderSpacing(float width) { borderSpacing = width; };
+
+	void SetItemSpacing(float width) { itemSpacing = width; };
 
 protected:
 	float borderSpacing;

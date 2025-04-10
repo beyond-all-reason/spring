@@ -1,13 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "System/Platform/MessageBox.h"
+
+#include "System/Platform/errorhandler.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include "System/Platform/MessageBox.h"
-#include "System/Platform/errorhandler.h"
 
 namespace Platform {
 
@@ -58,69 +60,72 @@ void MsgBox(const char* message, const char* caption, unsigned int flags)
 
 	// fork a child
 	switch (pid = fork()) {
-		case 0: {
-			// child process
-			const char* kde   = getenv("KDE_FULL_SESSION");
-			const char* gnome = getenv("GNOME_DESKTOP_SESSION_ID");
-			const char* type = "--error";
+	case 0: {
+		// child process
+		const char* kde = getenv("KDE_FULL_SESSION");
+		const char* gnome = getenv("GNOME_DESKTOP_SESSION_ID");
+		const char* type = "--error";
 
-			if (gnome) {
-				if (flags & MBF_EXCL) {
-					// --warning shows 2 buttons, so it should only be used with a true _warning_
-					// ie. one which allows you to continue/cancel execution
-					//type = "--warning";
-					type = "--error";
-				}
-				else if (flags & MBF_CRASH) {
-					type = "--error";
-				}
-				else if (flags & MBF_INFO) {
-					type = "--info";
-				}
-				execlp("zenity", "zenity", "--title", cap, type, "--text", msg, (char*)nullptr);
+		if (gnome) {
+			if (flags & MBF_EXCL) {
+				// --warning shows 2 buttons, so it should only be used with a true _warning_
+				// ie. one which allows you to continue/cancel execution
+				// type = "--warning";
+				type = "--error";
 			}
-			if (kde && strstr(kde, "true")) {
-				if (flags & MBF_CRASH) {
-					type = "--error";
-				}
-				else if (flags & MBF_EXCL) {
-					type = "--sorry";
-				}
-				else if (flags & MBF_INFO) {
-					type = "--msgbox";
-				}
-				execlp("kdialog", "kdialog", "--title", cap, type, msg, (char*)nullptr);
+			else if (flags & MBF_CRASH) {
+				type = "--error";
 			}
-			execlp("xmessage", "xmessage", "-title", cap, "-buttons", "OK:0", "-default", "OK", "-center", msg, (char*)nullptr);
-
-			// if execution reaches here, it means execlp failed
-			_exit(EXIT_FAILURE);
-		} break;
-
-		default: {
-			// parent process
-			waitpid(pid, &status, 0);
-
-			const bool okButton = (!WIFEXITED(status) || (WEXITSTATUS(status) != 0));
-
-			if (!okButton)
-				break;
+			else if (flags & MBF_INFO) {
+				type = "--info";
+			}
+			execlp("zenity", "zenity", "--title", cap, type, "--text", msg, (char*)nullptr);
 		}
-
-		case -1: {
-			// fork error
-			if (flags & MBF_INFO) {
-				fputs("Info: ", stderr);
-			} else if (flags & MBF_EXCL) {
-				fputs("Warning: ", stderr);
-			} else {
-				fputs("Error: ", stderr);
+		if (kde && strstr(kde, "true")) {
+			if (flags & MBF_CRASH) {
+				type = "--error";
 			}
-			fputs(cap, stderr);
-			fputs("  ", stderr);
-			fputs(msg, stderr);
-		} break;
+			else if (flags & MBF_EXCL) {
+				type = "--sorry";
+			}
+			else if (flags & MBF_INFO) {
+				type = "--msgbox";
+			}
+			execlp("kdialog", "kdialog", "--title", cap, type, msg, (char*)nullptr);
+		}
+		execlp("xmessage", "xmessage", "-title", cap, "-buttons", "OK:0", "-default", "OK", "-center", msg,
+		    (char*)nullptr);
+
+		// if execution reaches here, it means execlp failed
+		_exit(EXIT_FAILURE);
+	} break;
+
+	default: {
+		// parent process
+		waitpid(pid, &status, 0);
+
+		const bool okButton = (!WIFEXITED(status) || (WEXITSTATUS(status) != 0));
+
+		if (!okButton)
+			break;
+	}
+
+	case -1: {
+		// fork error
+		if (flags & MBF_INFO) {
+			fputs("Info: ", stderr);
+		}
+		else if (flags & MBF_EXCL) {
+			fputs("Warning: ", stderr);
+		}
+		else {
+			fputs("Error: ", stderr);
+		}
+		fputs(cap, stderr);
+		fputs("  ", stderr);
+		fputs(msg, stderr);
+	} break;
 	}
 }
 
-} //namespace Platform
+} // namespace Platform

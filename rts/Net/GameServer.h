@@ -5,34 +5,33 @@
 
 // #include <asio/ip/udp.hpp>
 
-#include <atomic>
-#include <memory>
-#include <string>
-#include <array>
-#include <deque>
-#include <map>
-#include <set>
-#include <vector>
-
 #include "Game/GameData.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/TeamBase.h"
-#include "System/float3.h"
 #include "System/GlobalRNG.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Threading/SpringThreading.h"
+#include "System/float3.h"
+
+#include <array>
+#include <atomic>
+#include <deque>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
 
 /**
  * "player" number for GameServer-generated messages
  */
 #define SERVER_PLAYER 255
 
-namespace netcode
-{
-	class RawPacket;
-	class CConnection;
-	class UDPListener;
-}
+namespace netcode {
+class RawPacket;
+class CConnection;
+class UDPListener;
+} // namespace netcode
 class CDemoReader;
 class Action;
 class CDemoRecorder;
@@ -43,13 +42,21 @@ class ChatMessage;
 class GameParticipant;
 class GameSkirmishAI;
 
-class GameTeam : public TeamBase
-{
+class GameTeam : public TeamBase {
 public:
-	GameTeam() : active(false) {}
-	GameTeam& operator=(const TeamBase& base) { TeamBase::operator=(base); return *this; }
+	GameTeam()
+	    : active(false)
+	{
+	}
+
+	GameTeam& operator=(const TeamBase& base)
+	{
+		TeamBase::operator=(base);
+		return *this;
+	}
 
 	void SetActive(bool b) { active = b; }
+
 	bool IsActive() const { return active; }
 
 private:
@@ -62,15 +69,12 @@ private:
  * checking and forwarding gamedata to the clients. It keeps track of the sync,
  * cpu and other stats and informs all clients about events.
  */
-class CGameServer
-{
+class CGameServer {
 	friend class CCregLoadSaveHandler; // For initializing server state after load
 public:
-	CGameServer(
-		const std::shared_ptr<const ClientSetup> newClientSetup,
-		const std::shared_ptr<const    GameData> newGameData,
-		const std::shared_ptr<const  CGameSetup> newGameSetup
-	);
+	CGameServer(const std::shared_ptr<const ClientSetup> newClientSetup,
+	    const std::shared_ptr<const GameData> newGameData,
+	    const std::shared_ptr<const CGameSetup> newGameSetup);
 
 	CGameServer(const CGameServer&) = delete; // no-copy
 	~CGameServer();
@@ -90,19 +94,25 @@ public:
 	void CreateNewFrame(bool fromServerThread, bool fixedFrameTime);
 
 	void SetGamePausable(const bool arg);
+
 	void SetReloading(const bool arg) { reloadingServer = arg; }
 
 	bool PreSimFrame() const { return (serverFrameNum == -1); }
+
 	bool HasStarted() const { return gameHasStarted; }
+
 	bool HasGameID() const { return generatedGameID; }
+
 	bool HasLocalClient() const { return (localClientNumber != -1u); }
+
 	/// Is the server still running?
 	bool HasFinished() const;
 
 	void UpdateSpeedControl(int speedCtrl);
 	static std::string SpeedControlToString(int speedCtrl);
 
-	static bool IsServerCommand(const std::string& cmd) {
+	static bool IsServerCommand(const std::string& cmd)
+	{
 		const auto pred = [](const std::string& a, const std::string& b) { return (a < b); };
 		const auto iter = std::lower_bound(commandBlacklist.begin(), commandBlacklist.end(), cmd, pred);
 		return (iter != commandBlacklist.end() && *iter == cmd);
@@ -111,10 +121,13 @@ public:
 	std::string GetPlayerNames(const std::vector<int>& indices) const;
 
 	const std::shared_ptr<const ClientSetup> GetClientSetup() const { return myClientSetup; }
-	const std::shared_ptr<const    GameData> GetGameData() const { return myGameData; }
-	const std::shared_ptr<const  CGameSetup> GetGameSetup() const { return myGameSetup; }
+
+	const std::shared_ptr<const GameData> GetGameData() const { return myGameData; }
+
+	const std::shared_ptr<const CGameSetup> GetGameSetup() const { return myGameSetup; }
 
 	const std::unique_ptr<CDemoReader>& GetDemoReader() const { return demoReader; }
+
 	const std::unique_ptr<CDemoRecorder>& GetDemoRecorder() const { return demoRecorder; }
 
 private:
@@ -144,16 +157,14 @@ private:
 
 	bool CheckPlayerPassword(const int playerNum, const std::string& pw) const;
 
-	unsigned BindConnection(
-		std::shared_ptr<netcode::CConnection> clientLink,
-		std::string clientName,
-		const std::string& clientPassword,
-		const std::string& clientVersion,
-		const std::string& clientPlatform,
-		bool isLocal,
-		bool reconnect = false,
-		int netloss = 0
-	);
+	unsigned BindConnection(std::shared_ptr<netcode::CConnection> clientLink,
+	    std::string clientName,
+	    const std::string& clientPassword,
+	    const std::string& clientVersion,
+	    const std::string& clientPlatform,
+	    bool isLocal,
+	    bool reconnect = false,
+	    int netloss = 0);
 
 	void CheckForGameStart(bool forced = false);
 	void StartGame(bool forced);
@@ -193,35 +204,40 @@ private:
 	void InternalSpeedChange(float newSpeed);
 	void UserSpeedChange(float newSpeed, int player);
 
-	void AddAdditionalUser( const std::string& name, const std::string& passwd, bool fromDemo = false, bool spectator = true, int team = 0, int playerNum = -1);
+	void AddAdditionalUser(const std::string& name,
+	    const std::string& passwd,
+	    bool fromDemo = false,
+	    bool spectator = true,
+	    int team = 0,
+	    int playerNum = -1);
 
 	uint8_t ReserveSkirmishAIId();
 
 private:
 	/////////////////// game settings ///////////////////
 	std::shared_ptr<const ClientSetup> myClientSetup;
-	std::shared_ptr<const    GameData> myGameData;
-	std::shared_ptr<const  CGameSetup> myGameSetup;
+	std::shared_ptr<const GameData> myGameData;
+	std::shared_ptr<const CGameSetup> myGameSetup;
 
 
-	std::vector< std::pair<bool, GameSkirmishAI> > skirmishAIs;
+	std::vector<std::pair<bool, GameSkirmishAI>> skirmishAIs;
 	std::vector<uint8_t> freeSkirmishAIs;
 
 	std::vector<GameParticipant> players;
 	std::vector<GameTeam> teams;
 	std::vector<unsigned char> winningAllyTeams;
 
-	std::array<           spring_time           , MAX_PLAYERS> netPingTimings; // throttles NETMSG_PING
-	std::array< std::pair<spring_time, uint32_t>, MAX_PLAYERS> mapDrawTimings; // throttles NETMSG_MAPDRAW
-	std::array< std::pair<       bool,     bool>, MAX_PLAYERS> chatMutedFlags; // blocks NETMSG_{CHAT,DRAW}
-	std::array<                            bool , MAX_PLAYERS> aiControlFlags; // blocks NETMSG_AI_CREATED (aicontrol)
+	std::array<spring_time, MAX_PLAYERS> netPingTimings;                      // throttles NETMSG_PING
+	std::array<std::pair<spring_time, uint32_t>, MAX_PLAYERS> mapDrawTimings; // throttles NETMSG_MAPDRAW
+	std::array<std::pair<bool, bool>, MAX_PLAYERS> chatMutedFlags;            // blocks NETMSG_{CHAT,DRAW}
+	std::array<bool, MAX_PLAYERS> aiControlFlags;                             // blocks NETMSG_AI_CREATED (aicontrol)
 
 	// std::map<asio::ip::udp::endpoint, int> rejectedConnections;
 	std::map<std::string, int> rejectedConnections;
 
 	std::pair<std::string, std::string> refClientVersion;
 
-	std::deque< std::shared_ptr<const netcode::RawPacket> > packetCache;
+	std::deque<std::shared_ptr<const netcode::RawPacket>> packetCache;
 
 	/////////////////// sync stuff ///////////////////
 #ifdef SYNCCHECK

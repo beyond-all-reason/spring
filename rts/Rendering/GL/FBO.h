@@ -3,11 +3,12 @@
 #ifndef FBO_H
 #define FBO_H
 
-#include <vector>
-#include <array>
-
 #include "myGL.h"
+
 #include "System/UnorderedMap.hpp"
+
+#include <array>
+#include <vector>
 
 // TODO: add multisample buffers
 
@@ -16,8 +17,7 @@
  *
  * Framebuffer Object class (EXT_framebuffer_object).
  */
-class FBO
-{
+class FBO {
 public:
 	/**
 	 * @brief IsSupported
@@ -27,8 +27,10 @@ public:
 	static bool IsSupported();
 	static GLint GetCurrentBoundFBO();
 
-	FBO(         ) { Init(false); }
-	explicit FBO(bool noop) { Init( noop); }
+	FBO() { Init(false); }
+
+	explicit FBO(bool noop) { Init(noop); }
+
 	~FBO() { Kill(); }
 
 	void Init(bool noop);
@@ -71,8 +73,13 @@ public:
 	 */
 	bool IsValid() const;
 
-
-	void AttachTextures(const GLuint* ids, const GLenum* attachments, const GLenum texTarget, const unsigned int texCount, const int mipLevel = 0, const int zSlice = 0) {
+	void AttachTextures(const GLuint* ids,
+	    const GLenum* attachments,
+	    const GLenum texTarget,
+	    const unsigned int texCount,
+	    const int mipLevel = 0,
+	    const int zSlice = 0)
+	{
 		for (unsigned int i = 0; i < texCount; i++) {
 			AttachTexture(ids[i], texTarget, attachments[i], mipLevel, zSlice);
 		}
@@ -86,7 +93,11 @@ public:
 	 * @param mipLevel miplevel to attach
 	 * @param zSlice z offset (3d textures only)
 	 */
-	void AttachTexture(const GLuint texId, const GLenum texTarget = GL_TEXTURE_2D, const GLenum attachment = GL_COLOR_ATTACHMENT0_EXT, const int mipLevel = 0, const int zSlice = 0);
+	void AttachTexture(const GLuint texId,
+	    const GLenum texTarget = GL_TEXTURE_2D,
+	    const GLenum attachment = GL_COLOR_ATTACHMENT0_EXT,
+	    const int mipLevel = 0,
+	    const int zSlice = 0);
 
 	/**
 	 * @brief AttachRenderBuffer
@@ -112,7 +123,11 @@ public:
 	 * @param height
 	 * @param samples
 	 */
-	void CreateRenderBufferMultisample(const GLenum attachment, const GLenum format, const GLsizei width, const GLsizei height, GLsizei samples);
+	void CreateRenderBufferMultisample(const GLenum attachment,
+	    const GLenum format,
+	    const GLsizei width,
+	    const GLsizei height,
+	    GLsizei samples);
 
 	/**
 	 * @brief Detach
@@ -135,14 +150,12 @@ public:
 	 */
 	static void Unbind();
 
-	static bool Blit(
-		int32_t fromID,
-		int32_t toID,
-		const std::array<int, 4>& srcRect,
-		const std::array<int, 4>& dstRect,
-		uint32_t mask = GL_DEPTH_BUFFER_BIT,
-		uint32_t filter = GL_NEAREST
-	);
+	static bool Blit(int32_t fromID,
+	    int32_t toID,
+	    const std::array<int, 4>& srcRect,
+	    const std::array<int, 4>& dstRect,
+	    uint32_t mask = GL_DEPTH_BUFFER_BIT,
+	    uint32_t filter = GL_NEAREST);
 
 	/**
 	 * @brief GLContextLost (post atl-tab)
@@ -165,12 +178,14 @@ private:
 	 */
 	std::vector<GLuint> rboIDs;
 
-
 	struct TexData {
 	public:
 		TexData() { id = 0; }
+
 		TexData(const TexData& td) { assert(td.id == 0); } // = delete;
-		TexData(TexData&& td) {
+
+		TexData(TexData&& td)
+		{
 			id = td.id;
 
 			xsize = td.xsize;
@@ -179,7 +194,7 @@ private:
 
 			target = td.target;
 			format = td.format;
-			type   = td.type;
+			type = td.type;
 
 			pixels = std::move(td.pixels);
 		}

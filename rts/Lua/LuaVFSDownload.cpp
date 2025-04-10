@@ -1,63 +1,86 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaVFSDownload.h"
-#include "System/SafeUtil.h"
-#include "System/EventHandler.h"
-#include "System/Platform/Threading.h" // Is{Main,GameLoad}Thread
-#include "System/Threading/SpringThreading.h"
-#include "System/FileSystem/ArchiveScanner.h"
-#include "System/FileSystem/DataDirLocater.h"
-#include "../tools/pr-downloader/src/pr-downloader.h"
 
 #include "LuaInclude.h"
 #include "LuaUtils.h"
 
+#include "../tools/pr-downloader/src/pr-downloader.h"
+#include "System/EventHandler.h"
+#include "System/FileSystem/ArchiveScanner.h"
+#include "System/FileSystem/DataDirLocater.h"
+#include "System/Platform/Threading.h" // Is{Main,GameLoad}Thread
+#include "System/SafeUtil.h"
+#include "System/Threading/SpringThreading.h"
+
 #include <deque>
 #include <memory>
 
-
 struct DLEvent {
-	DLEvent(int _id): id(_id) {}
+	DLEvent(int _id)
+	    : id(_id)
+	{
+	}
+
 	virtual ~DLEvent() = default;
 	virtual void Process() const = 0;
 
 	int id;
 };
 
-struct DLStartedEvent: public DLEvent {
-	DLStartedEvent(int _id): DLEvent(_id) {}
-	void Process() const override {
+struct DLStartedEvent : public DLEvent {
+	DLStartedEvent(int _id)
+	    : DLEvent(_id)
+	{
+	}
+
+	void Process() const override
+	{
 		// handled by DLFinishedEvent
 		// archiveScanner->ScanAllDirs();
 		eventHandler.DownloadStarted(id);
 	}
 };
 
-struct DLFinishedEvent: public DLEvent {
-	DLFinishedEvent(int _id): DLEvent(_id) {}
-	void Process() const override {
+struct DLFinishedEvent : public DLEvent {
+	DLFinishedEvent(int _id)
+	    : DLEvent(_id)
+	{
+	}
+
+	void Process() const override
+	{
 		// rescan before notifying clients; typically blocks less than ~50ms
 		archiveScanner->ScanAllDirs();
 		eventHandler.DownloadFinished(id);
 	}
 };
 
-struct DLFailedEvent: public DLEvent {
-	DLFailedEvent(int _id, int _errorID): DLEvent(_id), errorID(_errorID) {}
+struct DLFailedEvent : public DLEvent {
+	DLFailedEvent(int _id, int _errorID)
+	    : DLEvent(_id)
+	    , errorID(_errorID)
+	{
+	}
+
 	void Process() const override { eventHandler.DownloadFailed(id, errorID); }
 
 	int errorID;
 };
 
-struct DLProgressEvent: public DLEvent {
-	DLProgressEvent(int _id, long _downloaded, long _total): DLEvent(_id), downloaded(_downloaded), total(_total) {}
+struct DLProgressEvent : public DLEvent {
+	DLProgressEvent(int _id, long _downloaded, long _total)
+	    : DLEvent(_id)
+	    , downloaded(_downloaded)
+	    , total(_total)
+	{
+	}
+
 	void Process() const override { eventHandler.DownloadProgress(id, downloaded, total); }
 
 	long downloaded;
 	long total;
 };
-
-
 
 struct DownloadItem {
 	int id;
@@ -65,13 +88,19 @@ struct DownloadItem {
 	DownloadEnum::Category cat;
 
 	DownloadItem() = default;
-	DownloadItem(int id_, const std::string& filename_, DownloadEnum::Category& cat_) : id(id_), filename(filename_), cat(cat_) {}
-};
 
+	DownloadItem(int id_, const std::string& filename_, DownloadEnum::Category& cat_)
+	    : id(id_)
+	    , filename(filename_)
+	    , cat(cat_)
+	{
+	}
+};
 
 struct DownloadQueue {
 public:
 	DownloadQueue() = default;
+
 	~DownloadQueue() { Join(); }
 
 	void Pump();
@@ -88,30 +117,32 @@ private:
 	bool breakLoop = false;
 };
 
-
 static DownloadQueue downloadQueue;
 
-static std::deque< std::shared_ptr<DLEvent> > dlEventQueue;
+static std::deque<std::shared_ptr<DLEvent>> dlEventQueue;
 static spring::mutex dlEventQueueMutex;
 
 static int queueIDCount = -1;
 static int currentDownloadID = -1;
 
-
-
-static void AddQueueEvent(std::shared_ptr<DLEvent> ev) {
+static void AddQueueEvent(std::shared_ptr<DLEvent> ev)
+{
 	std::lock_guard<spring::mutex> lck(dlEventQueueMutex);
 	dlEventQueue.push_back(ev);
 }
 
 static void QueueDownloadStarted(int id) { AddQueueEvent(std::make_shared<DLStartedEvent>(id)); }
+
 static void QueueDownloadFinished(int id) { AddQueueEvent(std::make_shared<DLFinishedEvent>(id)); }
+
 static void QueueDownloadFailed(int id, int errorID) { AddQueueEvent(std::make_shared<DLFailedEvent>(id, errorID)); }
-static void QueueDownloadProgress(int id, long downloaded, long total) { AddQueueEvent(std::make_shared<DLProgressEvent>(id, downloaded, total)); }
+
+static void QueueDownloadProgress(int id, long downloaded, long total)
+{
+	AddQueueEvent(std::make_shared<DLProgressEvent>(id, downloaded, total));
+}
 
 static void UpdateProgress(int done, int size) { QueueDownloadProgress(currentDownloadID, done, size); }
-
-
 
 static int StartDownloadJob(int id, const std::string& filename, DownloadEnum::Category cat)
 {
@@ -160,8 +191,6 @@ static int StartDownloadJob(int id, const std::string& filename, DownloadEnum::C
 	return (DownloadStart());
 }
 
-
-
 void DownloadQueue::Join()
 {
 	breakLoop = true;
@@ -190,7 +219,8 @@ void DownloadQueue::Pump()
 
 			if (result == 0) {
 				QueueDownloadFinished(downloadItem.id);
-			} else {
+			}
+			else {
 				QueueDownloadFailed(downloadItem.id, result);
 			}
 		}
@@ -241,7 +271,8 @@ bool DownloadQueue::Remove(int id)
 			SetAbortDownloads(false);
 
 			thread = spring::thread(&DownloadQueue::Pump, this);
-		} else {
+		}
+		else {
 			queue.erase(it);
 		}
 
@@ -251,27 +282,16 @@ bool DownloadQueue::Remove(int id)
 	return false;
 }
 
-
-
-
-
-
-LuaVFSDownload::LuaVFSDownload(): CEventClient("[LuaVFSDownload]", 314161, false)
+LuaVFSDownload::LuaVFSDownload()
+    : CEventClient("[LuaVFSDownload]", 314161, false)
 {
 	DownloadInit();
 	DownloadSetConfig(CONFIG_FILESYSTEM_WRITEPATH, dataDirLocater.GetWriteDirPath().c_str());
 }
 
-LuaVFSDownload::~LuaVFSDownload()
-{
-	DownloadShutdown();
-}
+LuaVFSDownload::~LuaVFSDownload() { DownloadShutdown(); }
 
-
-void LuaVFSDownload::Init()
-{
-	eventHandler.AddClient(luaVFSDownload);
-}
+void LuaVFSDownload::Init() { eventHandler.AddClient(luaVFSDownload); }
 
 void LuaVFSDownload::Free(bool stopDownloads)
 {
@@ -282,7 +302,6 @@ void LuaVFSDownload::Free(bool stopDownloads)
 		downloadQueue.Join();
 	}
 }
-
 
 void LuaVFSDownload::Update()
 {
@@ -301,8 +320,6 @@ void LuaVFSDownload::Update()
 		}
 	}
 }
-
-
 
 bool LuaVFSDownload::PushEntries(lua_State* L)
 {
@@ -323,11 +340,14 @@ int LuaVFSDownload::DownloadArchive(lua_State* L)
 	DownloadEnum::Category cat;
 	if (categoryStr == "map") {
 		cat = DownloadEnum::CAT_MAP;
-	} else if (categoryStr == "game") {
+	}
+	else if (categoryStr == "game") {
 		cat = DownloadEnum::CAT_GAME;
-	} else if (categoryStr == "engine") {
+	}
+	else if (categoryStr == "engine") {
 		cat = DownloadEnum::CAT_ENGINE;
-	} else {
+	}
+	else {
 		return luaL_error(L, "Category must be one of: map, game, engine.");
 	}
 

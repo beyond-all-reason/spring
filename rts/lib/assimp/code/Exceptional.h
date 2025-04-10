@@ -42,26 +42,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define INCLUDED_EXCEPTIONAL_H
 
 #include <stdexcept>
+
 #include <assimp/DefaultIOStream.h>
 using std::runtime_error;
 
 #ifdef _MSC_VER
-#   pragma warning(disable : 4275)
+#pragma warning(disable : 4275)
 #endif
 
 // ---------------------------------------------------------------------------
 /** FOR IMPORTER PLUGINS ONLY: Simple exception class to be thrown if an
  *  unrecoverable error occurs while importing. Loading APIs return
  *  NULL instead of a valid aiScene then.  */
-class DeadlyImportError
-    : public runtime_error
-{
+class DeadlyImportError : public runtime_error {
 public:
-    /** Constructor with arguments */
-    explicit DeadlyImportError( const std::string& errorText)
-        : runtime_error(errorText)
-    {
-    }
+	/** Constructor with arguments */
+	explicit DeadlyImportError(const std::string& errorText)
+	    : runtime_error(errorText)
+	{
+	}
 
 private:
 };
@@ -69,57 +68,46 @@ private:
 typedef DeadlyImportError DeadlyExportError;
 
 #ifdef _MSC_VER
-#   pragma warning(default : 4275)
+#pragma warning(default : 4275)
 #endif
 
 // ---------------------------------------------------------------------------
-template <typename T>
-struct ExceptionSwallower   {
-    T operator ()() const {
-        return T();
-    }
+template<typename T> struct ExceptionSwallower {
+	T operator()() const { return T(); }
 };
 
 // ---------------------------------------------------------------------------
-template <typename T>
-struct ExceptionSwallower<T*>   {
-    T* operator ()() const {
-        return NULL;
-    }
+template<typename T> struct ExceptionSwallower<T*> {
+	T* operator()() const { return NULL; }
 };
 
 // ---------------------------------------------------------------------------
-template <>
-struct ExceptionSwallower<aiReturn> {
-    aiReturn operator ()() const {
-        try {
-            throw;
-        }
-        catch (std::bad_alloc&) {
-            return aiReturn_OUTOFMEMORY;
-        }
-        catch (...) {
-            return aiReturn_FAILURE;
-        }
-    }
+template<> struct ExceptionSwallower<aiReturn> {
+	aiReturn operator()() const
+	{
+		try {
+			throw;
+		}
+		catch (std::bad_alloc&) {
+			return aiReturn_OUTOFMEMORY;
+		}
+		catch (...) {
+			return aiReturn_FAILURE;
+		}
+	}
 };
 
 // ---------------------------------------------------------------------------
-template <>
-struct ExceptionSwallower<void> {
-    void operator ()() const {
-        return;
-    }
+template<> struct ExceptionSwallower<void> {
+	void operator()() const { return; }
 };
 
-#define ASSIMP_BEGIN_EXCEPTION_REGION()\
-{\
-    try {
-
-#define ASSIMP_END_EXCEPTION_REGION(type)\
-    } catch(...) {\
-        return ExceptionSwallower<type>()();\
-    }\
-}
+#define ASSIMP_BEGIN_EXCEPTION_REGION() \
+	{                                   \
+		try {
+#define ASSIMP_END_EXCEPTION_REGION(type)                \
+	}                                                    \
+	catch (...) { return ExceptionSwallower<type>()(); } \
+	}
 
 #endif // INCLUDED_EXCEPTIONAL_H

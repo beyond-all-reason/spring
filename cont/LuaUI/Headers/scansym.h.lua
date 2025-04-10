@@ -197,10 +197,10 @@ SCANSYMS = {
     SC_MUTE = 127,
     SC_VOLUMEUP = 128,
     SC_VOLUMEDOWN = 129,
--- not sure whether there's a reason to enable these 
---     LOCKINGCAPSLOCK = 130,  
---     LOCKINGNUMLOCK = 131, 
---     LOCKINGSCROLLLOCK = 132, 
+-- not sure whether there's a reason to enable these
+--     LOCKINGCAPSLOCK = 130,
+--     LOCKINGNUMLOCK = 131,
+--     LOCKINGSCROLLLOCK = 132,
     SC_KP_COMMA = 133,
     SC_KP_EQUALSAS400 = 134,
     SC_INTERNATIONAL1 = 135, --[[< used on Asian keyboards, see
@@ -343,8 +343,7 @@ SCANSYMS = {
     -- @{ --
     SC_AUDIOREWIND = 285,
     SC_AUDIOFASTFORWARD = 286,
-    -- @} -- -- Usage page 0x0C (additional media keys) -- 
-    -- Add any other keys here. -- 
+    -- @} -- -- Usage page 0x0C (additional media keys) --
+    -- Add any other keys here. --
     SDL_NUM_SCANCODES = 512 --< not a key, just marks the number of scancodes
 }
-               

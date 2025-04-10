@@ -4,15 +4,13 @@
 #include "RotOverheadController.h"
 
 #include "Game/Camera.h"
+#include "Game/CameraHandler.h"
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
-#include "System/SpringMath.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
-
-#include "Game/CameraHandler.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CONFIG(float, RotOverheadMouseScale).defaultValue(0.01f);
 CONFIG(int, RotOverheadScrollSpeed).defaultValue(10);
@@ -20,17 +18,17 @@ CONFIG(bool, RotOverheadEnabled).defaultValue(true).headlessValue(false);
 CONFIG(float, RotOverheadFOV).defaultValue(45.0f);
 CONFIG(bool, RotOverheadClampMap).defaultValue(true).headlessValue(true);
 
-
-CRotOverheadController::CRotOverheadController(): oldHeight(500.0f), rot(2.677f, 0.0f, 0.0f)
+CRotOverheadController::CRotOverheadController()
+    : oldHeight(500.0f)
+    , rot(2.677f, 0.0f, 0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	mouseScale  = configHandler->GetFloat("RotOverheadMouseScale");
+	mouseScale = configHandler->GetFloat("RotOverheadMouseScale");
 	scrollSpeed = configHandler->GetInt("RotOverheadScrollSpeed") * 0.1f;
-	enabled     = configHandler->GetBool("RotOverheadEnabled");
-	fov         = configHandler->GetFloat("RotOverheadFOV");
+	enabled = configHandler->GetBool("RotOverheadEnabled");
+	fov = configHandler->GetFloat("RotOverheadFOV");
 	clampToMap = configHandler->GetBool("RotOverheadClampMap");
 }
-
 
 void CRotOverheadController::KeyMove(float3 move)
 {
@@ -38,7 +36,7 @@ void CRotOverheadController::KeyMove(float3 move)
 	move *= math::sqrt(move.z) * 400;
 
 	float3 flatForward = camera->GetDir();
-	if(camera->GetDir().y < -0.9f)
+	if (camera->GetDir().y < -0.9f)
 		flatForward += camera->GetUp();
 	flatForward.y = 0;
 	flatForward.ANormalize();
@@ -47,23 +45,20 @@ void CRotOverheadController::KeyMove(float3 move)
 	Update();
 }
 
-
 void CRotOverheadController::MouseMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	rot.x = std::clamp(rot.x + mouseScale * move.y * move.z, math::PI * 0.4999f, math::PI * 0.9999f);
-	rot.y += mouseScale * move.x ;
+	rot.y += mouseScale * move.x;
 	dir = CCamera::GetFwdFromRot(rot);
 	Update();
 }
-
 
 void CRotOverheadController::ScreenEdgeMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	KeyMove(move);
 }
-
 
 void CRotOverheadController::MouseWheelMove(float move)
 {
@@ -102,13 +97,11 @@ void CRotOverheadController::SetPos(const float3& newPos)
 	Update();
 }
 
-
 float3 CRotOverheadController::SwitchFrom() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return pos;
 }
-
 
 void CRotOverheadController::SwitchTo(const CCameraController* oldCam, const bool showText)
 {
@@ -126,18 +119,16 @@ void CRotOverheadController::SwitchTo(const CCameraController* oldCam, const boo
 	rot = oldCam->GetRot();
 }
 
-
 void CRotOverheadController::GetState(StateMap& sm) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
 
 	sm["oldHeight"] = oldHeight;
-	sm["rx"]   = rot.x;
-	sm["ry"]   = rot.y;
-	sm["rz"]   = rot.z;
+	sm["rx"] = rot.x;
+	sm["ry"] = rot.y;
+	sm["rz"] = rot.z;
 }
-
 
 bool CRotOverheadController::SetState(const StateMap& sm)
 {
@@ -145,10 +136,9 @@ bool CRotOverheadController::SetState(const StateMap& sm)
 	CCameraController::SetState(sm);
 
 	SetStateFloat(sm, "oldHeight", oldHeight);
-	SetStateFloat(sm, "rx",   rot.x);
-	SetStateFloat(sm, "ry",   rot.y);
-	SetStateFloat(sm, "rz",   rot.z);
+	SetStateFloat(sm, "rx", rot.x);
+	SetStateFloat(sm, "ry", rot.y);
+	SetStateFloat(sm, "rz", rot.z);
 
 	return true;
 }
-

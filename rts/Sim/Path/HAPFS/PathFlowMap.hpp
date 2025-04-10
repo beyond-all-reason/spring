@@ -3,15 +3,16 @@
 #ifndef PATH_FLOWMAP_HDR
 #define PATH_FLOWMAP_HDR
 
+#include "System/UnorderedSet.hpp"
+#include "System/float3.h"
+#include "System/type2.h"
+
 #include <array>
 #include <vector>
 
-#include "System/type2.h"
-#include "System/float3.h"
-#include "System/UnorderedSet.hpp"
-
 struct MoveDef;
 class CSolidObject;
+
 class PathFlowMap {
 public:
 	struct FlowCell {
@@ -25,7 +26,9 @@ public:
 	static void FreeInstance(PathFlowMap*);
 
 	void Init(unsigned int scalex, unsigned int scalez);
-	void Kill() {
+
+	void Kill()
+	{
 		buffers[fBufferIdx].clear();
 		buffers[bBufferIdx].clear();
 		indices[fBufferIdx].clear();
@@ -37,12 +40,15 @@ public:
 
 	const float3& GetFlowVec(unsigned int hmx, unsigned int hmz) const;
 	float GetFlowCost(unsigned int x, unsigned int z, const MoveDef&, unsigned int opt) const;
+
 	float GetMaxFlow() const { return maxFlow[fBufferIdx]; }
 
 	unsigned int GetFrontBufferIdx() const { return fBufferIdx; }
+
 	unsigned int GetBackBufferIdx() const { return bBufferIdx; }
 
 	const std::vector<FlowCell>& GetFrontBuffer() { return buffers[fBufferIdx]; }
+
 	const std::vector<FlowCell>& GetBackBuffer() { return buffers[bBufferIdx]; }
 
 private:

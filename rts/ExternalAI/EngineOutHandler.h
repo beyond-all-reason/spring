@@ -4,12 +4,13 @@
 #define ENGINE_OUT_HANDLER_H
 
 #include "SkirmishAIWrapper.h"
-#include "System/Object.h"
+
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/Object.h"
 
 #include <array>
-#include <vector>
 #include <string>
+#include <vector>
 
 struct Command;
 class float3;
@@ -19,7 +20,6 @@ struct WeaponDef;
 class SkirmishAIKey;
 class CSkirmishAIWrapper;
 struct SSkirmishAICallback;
-
 
 class CEngineOutHandler {
 	CR_DECLARE_STRUCT(CEngineOutHandler)
@@ -32,7 +32,9 @@ public:
 	static void Destroy();
 
 	void Init() { activeSkirmishAIs.reserve(16); }
-	void Kill() {
+
+	void Kill()
+	{
 		PreDestroy();
 
 		// release leftover active AI's
@@ -61,7 +63,12 @@ public:
 	void UnitCreated(const CUnit& unit, const CUnit* builder);
 	void UnitFinished(const CUnit& unit);
 	void UnitDestroyed(const CUnit& destroyed, const CUnit* attacker, int weaponDefID);
-	void UnitDamaged(const CUnit& damaged, const CUnit* attacker, float damage, int weaponDefID, int projectileID, bool paralyzer);
+	void UnitDamaged(const CUnit& damaged,
+	    const CUnit* attacker,
+	    float damage,
+	    int weaponDefID,
+	    int projectileID,
+	    bool paralyzer);
 	void UnitMoveFailed(const CUnit& unit);
 	void UnitCaptured(const CUnit& unit, int oldTeam, int newTeam);
 	void UnitGiven(const CUnit& unit, int oldTeam, int newTeam);
@@ -73,7 +80,7 @@ public:
 	/**
 	 * A specific unit has finished a specific command,
 	 * might be a good idea to give new orders to it.
-	*/
+	 */
 	void CommandFinished(const CUnit& unit, const Command& command);
 	void SendChatMessage(const char* msg, int playerId);
 
@@ -84,6 +91,7 @@ public:
 	// Skirmish AI stuff
 	void CreateSkirmishAI(const uint8_t skirmishAIId, bool savedGame);
 	void PostLoadSkirmishAI(const uint8_t skirmishAIId);
+
 	/**
 	 * Sets a local Skirmish AI to block events.
 	 * Do not call this if you want to kill a local AI, but use
@@ -93,6 +101,7 @@ public:
 	 * @see DestroySkirmishAI()
 	 */
 	void BlockSkirmishAIEvents(const uint8_t skirmishAIId) { hostSkirmishAIs[skirmishAIId].SetBlockEvents(true); }
+
 	/**
 	 * Destructs a local Skirmish AI for real.
 	 * Do not call this if you want to kill a local AI, but use
@@ -108,7 +117,7 @@ public:
 
 private:
 	/// Contains all local Skirmish AIs, indexed by their ID
-	std::array<CSkirmishAIWrapper, MAX_AIS > hostSkirmishAIs;
+	std::array<CSkirmishAIWrapper, MAX_AIS> hostSkirmishAIs;
 
 	/**
 	 * Array mapping team IDs to local Skirmish AI instances.

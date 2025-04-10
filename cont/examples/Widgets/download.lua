@@ -41,4 +41,3 @@ end
 function widget:DownloadProgress(id, downloaded, total)
 	Spring.Log(LOG_SECTION, LOG.NOTICE, "Download progress. ID: " .. id .. ", progress: " .. downloaded .. "/" .. total)
 end
-

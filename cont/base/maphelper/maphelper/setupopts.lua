@@ -68,7 +68,7 @@ local function CreateWantedOpts(optSel)
       return nil
     end
   elseif (type(optSel) == 'table') then
-  
+
   end
   return wantedOpts
 end
@@ -165,7 +165,7 @@ end
 --  Option Definitions
 --
 
--- key: option selector key 
+-- key: option selector key
 --   1: option key
 --   2: option name
 --   3: option description
@@ -267,7 +267,7 @@ local function SetupOpts(mapInfo)
   if (not optionDefs) then
     Spring.Log(section, LOG.ERROR, 'could not create map options')
     return {}
-  end  
+  end
 
   local options = {}
 

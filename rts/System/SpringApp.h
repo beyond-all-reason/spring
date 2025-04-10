@@ -3,11 +3,11 @@
 #ifndef SPRING_APP
 #define SPRING_APP
 
-#include <string>
-#include <memory>
-
-#include "System/Log/ConsoleSink.h"
 #include "System/Input/InputHandler.h"
+#include "System/Log/ConsoleSink.h"
+
+#include <memory>
+#include <string>
 
 class ClientSetup;
 class CGameController;
@@ -15,7 +15,7 @@ class CGameController;
 union SDL_Event;
 
 namespace Threading {
-	struct Error;
+struct Error;
 };
 
 /**
@@ -23,37 +23,36 @@ namespace Threading {
  *
  * Main Spring application class launched by main()
  */
-class SpringApp
-{
+class SpringApp {
 public:
 	SpringApp(int argc, char** argv);
 	~SpringApp();
 
 	static int PostKill(Threading::Error&&);
-	static void Kill(bool fromRun);                 //!< Shuts down application
+	static void Kill(bool fromRun); //!< Shuts down application
 
 private:
 	static void UpdateInterfaceGeometry();
 	static void SaveWindowPosAndSize();
 
 public:
-	int Run();                                      //!< Run game loop
+	int Run(); //!< Run game loop
 
 private:
-	bool Init();                                    //!< Initializes engine
-	bool InitWindow(const char* title);             //!< Initializes window
+	bool Init();                        //!< Initializes engine
+	bool InitWindow(const char* title); //!< Initializes window
 	bool InitPlatformLibs();
 	bool InitFonts();
 	static void CleanFonts();
 	bool InitFileSystem();
-	bool MainEventHandler(const SDL_Event& ev);     //!< Handles SDL input events
-	bool Update();                                  //!< Run simulation and rendering
+	bool MainEventHandler(const SDL_Event& ev); //!< Handles SDL input events
+	bool Update();                              //!< Run simulation and rendering
 
-	void ParseCmdLine(int argc, char* argv[]);      //!< Parse command line
-	void Startup();                                 //!< Parses startup data (script etc.) and starts SelectMenu or PreGame
-	void StartScript(const std::string& script);    //!< Starts game from specified script.txt
-	void Reload(const std::string script);          //!< Returns from game back to menu, or directly starts a new game
-	void LoadSpringMenu();                          //!< Load menu (old or luaified depending on start parameters)
+	void ParseCmdLine(int argc, char* argv[]);   //!< Parse command line
+	void Startup();                              //!< Parses startup data (script etc.) and starts SelectMenu or PreGame
+	void StartScript(const std::string& script); //!< Starts game from specified script.txt
+	void Reload(const std::string script);       //!< Returns from game back to menu, or directly starts a new game
+	void LoadSpringMenu();                       //!< Load menu (old or luaified depending on start parameters)
 
 	CGameController* RunScript(const std::string& buf);
 	CGameController* LoadSaveFile(const std::string& saveName); //!< Starts game from a specified save

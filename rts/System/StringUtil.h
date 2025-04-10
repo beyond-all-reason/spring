@@ -3,36 +3,41 @@
 #ifndef STRING_UTIL_H
 #define STRING_UTIL_H
 
-#include <cstdint>
-#include <algorithm>
-#include <cstring>
-#include <string>
-#include <sstream>
-#include <vector>
-
 #include "System/MainDefines.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <sstream>
+#include <string>
+#include <vector>
 
 /*
  * Pre-processor trickery, useful to create unique identifiers.
  * see http://stackoverflow.com/questions/461062/c-anonymous-variables
  */
-#define _UTIL_CONCAT_SUB(start, end) \
-	start##end
-#define _UTIL_CONCAT(start, end) \
-	_UTIL_CONCAT_SUB(start, end)
+#define _UTIL_CONCAT_SUB(start, end) start##end
+#define _UTIL_CONCAT(start, end) _UTIL_CONCAT_SUB(start, end)
 
 
+#define DO_ONCE(func)                       \
+	struct do_once##func {                  \
+		do_once##func() { func(); }         \
+	};                                      \
+	static do_once##func do_once_var##func;
 
-#define DO_ONCE(func) \
-	struct do_once##func { do_once##func() {func();} }; static do_once##func do_once_var##func;
-
-#define DO_ONCE_FNC(code) \
-	struct _UTIL_CONCAT(doOnce, __LINE__) { _UTIL_CONCAT(doOnce, __LINE__)() { code; } }; static _UTIL_CONCAT(doOnce, __LINE__) _UTIL_CONCAT(doOnceVar, __LINE__);
+#define DO_ONCE_FNC(code)                                                    \
+	struct _UTIL_CONCAT(doOnce, __LINE__) {                                  \
+		_UTIL_CONCAT(doOnce, __LINE__)() { code; }                           \
+	};                                                                       \
+	static _UTIL_CONCAT(doOnce, __LINE__) _UTIL_CONCAT(doOnceVar, __LINE__);
 
 
 static char lcstr[32768];
 static char lcsub[32768];
-static inline const char* StrCaseStr(const char* str, const char* sub) {
+
+static inline const char* StrCaseStr(const char* str, const char* sub)
+{
 	const char* pos = nullptr;
 
 	if (str == nullptr)
@@ -42,8 +47,8 @@ static inline const char* StrCaseStr(const char* str, const char* sub) {
 
 	std::strncpy(lcstr, str, sizeof(lcstr) - 1);
 	std::strncpy(lcsub, sub, sizeof(lcsub) - 1);
-	std::transform(lcstr, lcstr + sizeof(lcstr), lcstr, (int (*)(int)) tolower);
-	std::transform(lcsub, lcsub + sizeof(lcsub), lcsub, (int (*)(int)) tolower);
+	std::transform(lcstr, lcstr + sizeof(lcstr), lcstr, (int (*)(int))tolower);
+	std::transform(lcsub, lcsub + sizeof(lcsub), lcsub, (int (*)(int))tolower);
 
 	if ((pos = std::strstr(lcstr, lcsub)) == nullptr)
 		return nullptr;
@@ -51,14 +56,14 @@ static inline const char* StrCaseStr(const char* str, const char* sub) {
 	return (str + (pos - lcstr));
 }
 
-
-static inline void StringToLower(const char* in, char* out, size_t len) {
-	std::transform(in, in + len, out, (int (*)(int)) tolower);
+static inline void StringToLower(const char* in, char* out, size_t len)
+{
+	std::transform(in, in + len, out, (int (*)(int))tolower);
 }
 
 static inline void StringToLowerInPlace(std::string& s)
 {
-	std::transform(s.begin(), s.end(), s.begin(), (int (*)(int)) tolower);
+	std::transform(s.begin(), s.end(), s.begin(), (int (*)(int))tolower);
 }
 
 static inline std::string StringToLower(std::string s)
@@ -75,13 +80,13 @@ static inline std::string Quote(std::string esc)
 	std::string::size_type pos = 0;
 	while ((pos = esc.find_first_of("\"\\\b\f\n\r\t", pos)) != std::string::npos) {
 		switch (esc[pos]) {
-			case '\"':
-			case '\\': esc.insert(pos, "\\"); break;
-			case '\b': esc.replace(pos, 1, "\\b"); break;
-			case '\f': esc.replace(pos, 1, "\\f"); break;
-			case '\n': esc.replace(pos, 1, "\\n"); break;
-			case '\r': esc.replace(pos, 1, "\\r"); break;
-			case '\t': esc.replace(pos, 1, "\\t"); break;
+		case '\"':
+		case '\\': esc.insert(pos, "\\"); break;
+		case '\b': esc.replace(pos, 1, "\\b"); break;
+		case '\f': esc.replace(pos, 1, "\\f"); break;
+		case '\n': esc.replace(pos, 1, "\\n"); break;
+		case '\r': esc.replace(pos, 1, "\\r"); break;
+		case '\t': esc.replace(pos, 1, "\\t"); break;
 		}
 		pos += 2;
 	}
@@ -90,7 +95,6 @@ static inline std::string Quote(std::string esc)
 	buf << "\"" << esc << "\"";
 	return buf.str();
 }
-
 
 /**
  * @brief Escape special characters and wrap in double quotes.
@@ -121,9 +125,7 @@ static inline std::string& StringReplaceInPlace(std::string& s, char c, char d)
  * Replaces all instances of <code>from</code> to <code>to</code>
  * in <code>text</code>.
  */
-std::string StringReplace(const std::string& text,
-                          const std::string& from,
-                          const std::string& to);
+std::string StringReplace(const std::string& text, const std::string& from, const std::string& to);
 
 /// strips any occurrences of characters in <chars> from <str>
 std::string StringStrip(const std::string& str, const std::string& chars);
@@ -132,7 +134,6 @@ std::string StringStrip(const std::string& str, const std::string& chars);
 void StringTrimInPlace(std::string& str, const std::string& ws = " \t\n\r");
 /// Removes leading and trailing whitespace from a string, in a copy.
 std::string StringTrim(const std::string& str, const std::string& ws = " \t\n\r");
-
 
 static inline std::string IntToString(int i, const std::string& format = "%i")
 {
@@ -148,8 +149,7 @@ static inline std::string FloatToString(float f, const std::string& format = "%f
 	return std::string(buf);
 }
 
-template<typename int_type = int>
-static inline int_type StringToInt(const std::string & str, bool* failed = NULL)
+template<typename int_type = int> static inline int_type StringToInt(const std::string& str, bool* failed = NULL)
 {
 	std::istringstream stream(str);
 	int_type buffer = 0;
@@ -182,7 +182,6 @@ static inline bool StringEndsWith(const std::string& str, const std::string& pos
 	return StringEndsWith(str, postfix.c_str());
 }
 
-
 /// Appends postfix, when it doesn't already ends with it
 static inline void EnsureEndsWith(std::string* str, const char* postfix)
 {
@@ -190,7 +189,6 @@ static inline void EnsureEndsWith(std::string* str, const char* postfix)
 		*str += postfix;
 	}
 }
-
 
 /**
  * Sets a bool according to the value encoded in a string.
@@ -201,45 +199,43 @@ static inline void EnsureEndsWith(std::string* str, const char* postfix)
  */
 void InverseOrSetBool(bool& b, const std::string& argValue, const bool inverseArg = false);
 
-
 namespace utf8 {
-	char32_t GetNextChar(const std::string& text, int& pos, bool advance = true);
-	std::string FromUnicode(char32_t ch);
+char32_t GetNextChar(const std::string& text, int& pos, bool advance = true);
+std::string FromUnicode(char32_t ch);
 
+static inline int CharLen(const std::string& str, int pos)
+{
+	const auto oldPos = pos;
+	utf8::GetNextChar(str, pos);
+	return pos - oldPos;
+}
 
-	static inline int CharLen(const std::string& str, int pos)
-	{
-		const auto oldPos = pos;
-		utf8::GetNextChar(str, pos);
-		return pos - oldPos;
+static inline int NextChar(const std::string& str, int pos)
+{
+	utf8::GetNextChar(str, pos);
+	return pos;
+}
+
+static inline int PrevChar(const std::string& str, int pos)
+{
+	int startPos = std::max(pos - 4, 0);
+	int oldPos = startPos;
+	while (startPos < pos) {
+		oldPos = startPos;
+		utf8::GetNextChar(str, startPos);
 	}
-
-	static inline int NextChar(const std::string& str, int pos)
-	{
-		utf8::GetNextChar(str, pos);
-		return pos;
-	}
-
-	static inline int PrevChar(const std::string& str, int pos)
-	{
-		int startPos = std::max(pos - 4, 0);
-		int oldPos   = startPos;
-		while (startPos < pos) {
-			oldPos = startPos;
-			utf8::GetNextChar(str, startPos);
-		}
-		return oldPos;
-	}
-};
+	return oldPos;
+}
+}; // namespace utf8
 
 #if !defined(UNITSYNC) && !defined(UNIT_TEST) && !defined(BUILDING_AI)
 namespace zlib {
-	std::vector<std::uint8_t> deflate(const std::uint8_t* inflData, unsigned long inflSize);
-	std::vector<std::uint8_t> inflate(const std::uint8_t* deflData, unsigned long deflSize);
+std::vector<std::uint8_t> deflate(const std::uint8_t* inflData, unsigned long inflSize);
+std::vector<std::uint8_t> inflate(const std::uint8_t* deflData, unsigned long deflSize);
 
-	std::vector<std::uint8_t> deflate(const std::vector<std::uint8_t>& inflData);
-	std::vector<std::uint8_t> inflate(const std::vector<std::uint8_t>& deflData);
-};
-#endif //UNITSYNC
+std::vector<std::uint8_t> deflate(const std::vector<std::uint8_t>& inflData);
+std::vector<std::uint8_t> inflate(const std::vector<std::uint8_t>& deflData);
+}; // namespace zlib
+#endif // UNITSYNC
 
 #endif // UTIL_H

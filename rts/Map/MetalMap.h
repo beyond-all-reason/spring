@@ -3,24 +3,24 @@
 #ifndef METAL_MAP_H
 #define METAL_MAP_H
 
+#include "Sim/Misc/GlobalConstants.h"
+#include "System/creg/creg_cond.h"
+
 #include <array>
 #include <vector>
-
-#include "System/creg/creg_cond.h"
-#include "Sim/Misc/GlobalConstants.h"
 
 // each metalmap square covers 2x2 normal squares
 static constexpr float METAL_MAP_SQUARE_SIZE = SQUARE_SIZE * 2;
 
-
-class CMetalMap
-{
+class CMetalMap {
 	CR_DECLARE_STRUCT(CMetalMap)
 
 public:
 	/** Receiving a map over all metal, and creating a map over extraction. */
 	void Init(const unsigned char* map, int sizeX, int sizeZ, float metalScale);
-	void Kill() {
+
+	void Kill()
+	{
 		distributionMap.clear();
 		extractionMap.clear();
 	}
@@ -50,17 +50,20 @@ public:
 	int GetMetalExtraction(int x, int z) const;
 
 	int GetSizeX() const { return sizeX; }
+
 	int GetSizeZ() const { return sizeZ; }
 
-	const unsigned char* GetTexturePalette () const { return  texturePalette.data(); }
+	const unsigned char* GetTexturePalette() const { return texturePalette.data(); }
+
 	const unsigned char* GetDistributionMap() const { return distributionMap.data(); }
-	const         float* GetExtractionMap  () const { return   extractionMap.data(); }
+
+	const float* GetExtractionMap() const { return extractionMap.data(); }
 
 private:
 	std::array<unsigned char, 256 * 3> texturePalette;
 
 	std::vector<unsigned char> distributionMap;
-	std::vector<        float> extractionMap;
+	std::vector<float> extractionMap;
 
 	float metalScale = 0.0f;
 
@@ -71,4 +74,3 @@ private:
 extern CMetalMap metalMap;
 
 #endif
-

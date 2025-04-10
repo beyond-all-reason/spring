@@ -5,6 +5,7 @@
 #include "ALShared.h"
 #include "SoundItem.h"
 #include "SoundSource.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/GuiSoundSet.h"
 #include "Sim/Objects/WorldObject.h"
@@ -15,8 +16,6 @@
 #include <climits>
 
 extern spring::recursive_mutex soundMutex;
-
-
 
 void AudioChannel::SetVolume(float newVolume)
 {
@@ -34,7 +33,6 @@ void AudioChannel::SetVolume(float newVolume)
 	CheckError("AudioChannel::SetVolume");
 }
 
-
 void AudioChannel::Enable(bool newState)
 {
 	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
@@ -45,7 +43,6 @@ void AudioChannel::Enable(bool newState)
 	SetVolume(0.0f);
 }
 
-
 void AudioChannel::SoundSourceFinished(CSoundSource* sndSource)
 {
 	// FIXME broken queue
@@ -55,14 +52,14 @@ void AudioChannel::SoundSourceFinished(CSoundSource* sndSource)
 		if (!streamQueue.empty()) {
 			StreamPlay(streamQueue.front(), false);
 			streamQueue.pop_front();
-		} else {
+		}
+		else {
 			curStreamSrc = nullptr;
 		}
 	}
 
 	curSources.erase(sndSource);
 }
-
 
 void AudioChannel::FindSourceAndPlay(size_t id, const float3& pos, const float3& velocity, float volume, bool relative)
 {
@@ -87,7 +84,8 @@ void AudioChannel::FindSourceAndPlay(size_t id, const float3& pos, const float3&
 		if (!relative)
 			return;
 
-		LOG("[AudioChannel::%s] maximum distance ignored for relative playback of sound-item \"%s\"", __func__, (sndItem->Name()).c_str());
+		LOG("[AudioChannel::%s] maximum distance ignored for relative playback of sound-item \"%s\"", __func__,
+		    (sndItem->Name()).c_str());
 	}
 
 	// don't spam to many sounds per frame
@@ -104,13 +102,14 @@ void AudioChannel::FindSourceAndPlay(size_t id, const float3& pos, const float3&
 
 		for (CSoundSource* tmp: curSources) {
 			if (tmp->GetCurrentPriority() < prio) {
-				src  = tmp;
+				src = tmp;
 				prio = src->GetCurrentPriority();
 			}
 		}
 
 		if (src == nullptr || prio > sndItem->GetPriority()) {
-			LOG_L(L_DEBUG, "[AudioChannel::%s] maximum concurrent playbacks reached for sound-item %s", __func__, (sndItem->Name()).c_str());
+			LOG_L(L_DEBUG, "[AudioChannel::%s] maximum concurrent playbacks reached for sound-item %s", __func__,
+			    (sndItem->Name()).c_str());
 			return;
 		}
 
@@ -132,11 +131,7 @@ void AudioChannel::FindSourceAndPlay(size_t id, const float3& pos, const float3&
 	curSources.insert(sndSource);
 }
 
-
-void AudioChannel::PlaySample(size_t id, float volume)
-{
-	FindSourceAndPlay(id, -FwdVector, ZeroVector, volume, true);
-}
+void AudioChannel::PlaySample(size_t id, float volume) { FindSourceAndPlay(id, -FwdVector, ZeroVector, volume, true); }
 
 void AudioChannel::PlaySample(size_t id, const float3& pos, float volume)
 {
@@ -153,21 +148,29 @@ void AudioChannel::PlaySample(size_t id, const CWorldObject* obj, float volume)
 	FindSourceAndPlay(id, obj->pos, obj->speed, volume, false);
 }
 
+void AudioChannel::PlayRandomSample(const GuiSoundSet& soundSet, const CWorldObject* obj)
+{
+	PlayRandomSample(soundSet, obj->pos, obj->speed);
+}
 
-void AudioChannel::PlayRandomSample(const GuiSoundSet& soundSet, const CWorldObject* obj) { PlayRandomSample(soundSet, obj->pos, obj->speed); }
 void AudioChannel::PlayRandomSample(const GuiSoundSet& soundSet, const float3& pos, const float3& vel)
 {
 	int soundIdx = -1;
 
 	switch (soundSet.NumSounds()) {
-		case  0: {                                         return; } break;
-		case  1: { soundIdx =                                   0; } break;
-		default: { soundIdx = guRNG.NextInt(soundSet.NumSounds()); } break;
+	case 0: {
+		return;
+	} break;
+	case 1: {
+		soundIdx = 0;
+	} break;
+	default: {
+		soundIdx = guRNG.NextInt(soundSet.NumSounds());
+	} break;
 	}
 
 	FindSourceAndPlay(soundSet.getID(soundIdx), pos, vel, soundSet.getVolume(soundIdx), false);
 }
-
 
 void AudioChannel::StreamPlay(const std::string& filepath, float volume, bool enqueue)
 {

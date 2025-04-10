@@ -12,54 +12,54 @@
 ; input, none
 ; output, top of stack (replaces, with e.g. whatever)
 ; modifies no other variables.
- 
+
 Function GetParameters
- 
+
   Push $R0
   Push $R1
   Push $R2
   Push $R3
- 
+
   StrCpy $R2 1
   StrLen $R3 $CMDLINE
- 
+
   ;Check for quote or space
   StrCpy $R0 $CMDLINE $R2
   StrCmp $R0 '"' 0 +3
     StrCpy $R1 '"'
     Goto loop
   StrCpy $R1 " "
- 
+
   loop:
     IntOp $R2 $R2 + 1
     StrCpy $R0 $CMDLINE 1 $R2
     StrCmp $R0 $R1 get
     StrCmp $R2 $R3 get
     Goto loop
- 
+
   get:
     IntOp $R2 $R2 + 1
     StrCpy $R0 $CMDLINE 1 $R2
     StrCmp $R0 " " get
     StrCpy $R0 $CMDLINE "" $R2
- 
+
   Pop $R3
   Pop $R2
   Pop $R1
   Exch $R0
- 
+
 FunctionEnd
 
 ; Retrieved from http://nsis.sourceforge.net/StrStr
 !define StrStr "!insertmacro StrStr"
- 
+
 !macro StrStr ResultVar String SubString
   Push `${String}`
   Push `${SubString}`
   Call StrStr
   Pop `${ResultVar}`
 !macroend
- 
+
 Function StrStr
 /*After this point:
   ------------------------------------------
@@ -69,7 +69,7 @@ Function StrStr
   $R3 = StrLen (temp)
   $R4 = StartCharPos (temp)
   $R5 = TempStr (temp)*/
- 
+
   ;Get input from user
   Exch $R0
   Exch
@@ -78,18 +78,18 @@ Function StrStr
   Push $R3
   Push $R4
   Push $R5
- 
+
   ;Get "String" and "SubString" length
   StrLen $R2 $R0
   StrLen $R3 $R1
   ;Start "StartCharPos" counter
   StrCpy $R4 0
- 
+
   ;Loop until "SubString" is found or "String" reaches its end
   loop:
     ;Remove everything before and after the searched part ("TempStr")
     StrCpy $R5 $R1 $R2 $R4
- 
+
     ;Compare "TempStr" with "SubString"
     StrCmp $R5 $R0 done
     ;If not "SubString", this could be "String"'s end
@@ -98,14 +98,14 @@ Function StrStr
     IntOp $R4 $R4 + 1
     Goto loop
   done:
- 
+
 /*After this point:
   ------------------------------------------
   $R0 = ResultVar (output)*/
- 
+
   ;Remove part before "SubString" on "String" (if there has one)
   StrCpy $R0 $R1 `` $R4
- 
+
   ;Return output to user
   Pop $R5
   Pop $R4
@@ -145,24 +145,24 @@ FunctionEnd
 ;$R3 - the command line string
 ;$R4 - result from StrStr calls
 ;$R5 - search for ' ' or '"'
- 
+
 Function getParameterValue
   Exch $R0  ; get the top of the stack(default parameter) into R0
   Exch      ; exchange the top of the stack(default) with
             ; the second in the stack(parameter to search for)
   Exch $R1  ; get the top of the stack(search parameter) into $R1
- 
+
   ;Preserve on the stack the registers used in this function
   Push $R2
   Push $R3
   Push $R4
   Push $R5
- 
+
   Strlen $R2 $R1+2    ; store the length of the search string into R2
- 
+
   Call GetParameters  ; get the command line parameters
   Pop $R3             ; store the command line string in R3
- 
+
   # search for quoted search string
   StrCpy $R5 '"'      ; later on we want to search for a open quote
   Push $R3            ; push the 'search in' string onto the stack
@@ -171,7 +171,7 @@ Function getParameterValue
   Pop $R4
   StrCpy $R4 $R4 "" 1   ; skip over open quote character, "" means no maxlen
   StrCmp $R4 "" "" next ; if we didn't find an empty string go to next
- 
+
   # search for non-quoted search string
   StrCpy $R5 ' '      ; later on we want to search for a space since we
                       ; didn't start with an open quote '"' we shouldn't
@@ -180,7 +180,7 @@ Function getParameterValue
   Push '/$R1='        ; search for the non-quoted search string
   Call StrStr
   Pop $R4
- 
+
   ; $R4 now contains the parameter string starting at the search string,
   ; if it was found
 next:
@@ -206,7 +206,7 @@ next:
                       ; copy only the value into $R0
   goto done           ; if we are in the parameter retrieval path skip over
                       ; the check for a command line switch
- 
+
 ; See if the parameter was specified as a command line switch, like '/output'
 check_for_switch:
   Push $R3            ; push the command line back on the stack for searching
@@ -216,7 +216,7 @@ check_for_switch:
   StrCmp $R4 "" done  ; if we didn't find anything then use the default
   StrCpy $R0 ""       ; otherwise copy in an empty string since we found the
                       ; parameter, just didn't find a value
- 
+
 done:
   Pop $R5
   Pop $R4
@@ -225,4 +225,3 @@ done:
   Pop $R1
   Exch $R0 ; put the value in $R0 at the top of the stack
 FunctionEnd
-

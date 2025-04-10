@@ -2,23 +2,23 @@
 
 #include "SoundSource.h"
 
-#include <climits>
-#include <alc.h>
-
 #include "ALShared.h"
 #include "EFX.h"
-#include "System/Sound/IAudioChannel.h"
 #include "MusicStream.h"
-#include "System/Sound/SoundLog.h"
+#include "Sound.h" //remove when unified ElmoInMeters
 #include "SoundBuffer.h"
 #include "SoundItem.h"
 
-#include "Sound.h" //remove when unified ElmoInMeters
-
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/float3.h"
-#include "System/StringUtil.h"
+#include "System/Sound/IAudioChannel.h"
+#include "System/Sound/SoundLog.h"
 #include "System/SpringMath.h"
+#include "System/StringUtil.h"
+#include "System/float3.h"
+
+#include <climits>
+
+#include <alc.h>
 
 
 static constexpr float ROLLOFF_FACTOR = 5.0f;
@@ -53,12 +53,12 @@ CSoundSource::CSoundSource()
 
 	if (!CheckError("CSoundSource::CSoundSource")) {
 		id = 0;
-	} else {
+	}
+	else {
 		alSourcef(id, AL_REFERENCE_DISTANCE, REFERENCE_DIST * ELMOS_TO_METERS);
 		CheckError("CSoundSource::CSoundSource");
 	}
 }
-
 
 CSoundSource::CSoundSource(CSoundSource&& src)
 {
@@ -66,28 +66,28 @@ CSoundSource::CSoundSource(CSoundSource&& src)
 	this->swap(src);
 }
 
-CSoundSource& CSoundSource::operator = (CSoundSource&& src) {
+CSoundSource& CSoundSource::operator=(CSoundSource&& src)
+{
 	this->swap(src);
 	return *this;
 }
 
-CSoundSource::~CSoundSource()
-{
-	Delete();
-}
+CSoundSource::~CSoundSource() { Delete(); }
 
 void CSoundSource::Update()
 {
 	if (asyncPlayItem.id != 0) {
 		// Sound::Update() holds mutex, soundItems can not be accessed concurrently
-		Play(asyncPlayItem.channel, sound->GetSoundItem(asyncPlayItem.id), asyncPlayItem.position, asyncPlayItem.velocity, asyncPlayItem.volume, asyncPlayItem.relative);
+		Play(asyncPlayItem.channel, sound->GetSoundItem(asyncPlayItem.id), asyncPlayItem.position,
+		    asyncPlayItem.velocity, asyncPlayItem.volume, asyncPlayItem.relative);
 		asyncPlayItem = AsyncSoundItemData();
 	}
 
 	if (curPlayingItem.id != 0) {
 		if (in3D && (efxEnabled != efx.Enabled())) {
 			alSourcef(id, AL_AIR_ABSORPTION_FACTOR, (efx.Enabled()) ? efx.GetAirAbsorptionFactor() : 0);
-			alSource3i(id, AL_AUXILIARY_SEND_FILTER, (efx.Enabled()) ? efx.sfxSlot : AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
+			alSource3i(
+			    id, AL_AUXILIARY_SEND_FILTER, (efx.Enabled()) ? efx.sfxSlot : AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
 			alSourcei(id, AL_DIRECT_FILTER, (efx.Enabled()) ? efx.sfxFilter : AL_FILTER_NULL);
 			efxEnabled = efx.Enabled();
 			efxUpdates = efx.updates;
@@ -105,7 +105,8 @@ void CSoundSource::Update()
 	if (curStream) {
 		if (curStream->IsFinished()) {
 			Stop();
-		} else {
+		}
+		else {
 			curStream->Update();
 			CheckError("CSoundSource::Update");
 		}
@@ -130,7 +131,6 @@ void CSoundSource::Delete()
 	alDeleteSources(1, &id);
 	CheckError("CSoundSource::Delete");
 }
-
 
 int CSoundSource::GetCurrentPriority() const
 {
@@ -168,7 +168,6 @@ bool CSoundSource::IsPlaying(const bool checkOpenAl) const
 	return (state == AL_PLAYING);
 }
 
-
 void CSoundSource::Stop()
 {
 	alSourceStop(id);
@@ -200,7 +199,12 @@ void CSoundSource::Stop()
 	CheckError("CSoundSource::Stop");
 }
 
-void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, float3 velocity, float volume, bool relative)
+void CSoundSource::Play(IAudioChannel* channel,
+    SoundItem* item,
+    float3 pos,
+    float3 velocity,
+    float volume,
+    bool relative)
 {
 	assert(!curStream);
 	assert(channel);
@@ -213,7 +217,7 @@ void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, flo
 	Stop();
 
 	curVolume = volume;
-	curPlayingItem = {item->soundItemID,  item->loopTime, item->priority,  item->GetGain(), item->rolloff};
+	curPlayingItem = {item->soundItemID, item->loopTime, item->priority, item->GetGain(), item->rolloff};
 	curChannel = channel;
 
 	alSourcei(id, AL_BUFFER, itemBuffer.GetId());
@@ -239,7 +243,8 @@ void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, flo
 #if defined(__APPLE__) || defined(__OpenBSD__)
 		alSourcef(id, AL_REFERENCE_DISTANCE, REFERENCE_DIST * ELMOS_TO_METERS);
 #endif
-	} else {
+	}
+	else {
 		if (itemBuffer.GetChannels() > 1)
 			LOG_L(L_WARNING, "Can not play non-mono \"%s\" in 3d.", itemBuffer.GetFilename().c_str());
 
@@ -264,7 +269,8 @@ void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, flo
 		// Max distance is too small by default on my Mac...
 		ALfloat gain = channel->volume * item->GetGain() * volume;
 		if (gain > 1.0f) {
-			// OpenAL on Mac cannot handle AL_GAIN > 1 well, so we will adjust settings to get the same output with AL_GAIN = 1.
+			// OpenAL on Mac cannot handle AL_GAIN > 1 well, so we will adjust settings to get the same output with
+			// AL_GAIN = 1.
 			const ALint model = alGetInteger(AL_DISTANCE_MODEL);
 			const ALfloat rolloff = ROLLOFF_FACTOR * item->rolloff * heightRolloffModifier;
 			const ALfloat refDist = REFERENCE_DIST * ELMOS_TO_METERS;
@@ -274,35 +280,40 @@ void CSoundSource::Play(IAudioChannel* channel, SoundItem* item, float3 pos, flo
 				alSourcef(id, AL_ROLLOFF_FACTOR, (gain + rolloff - 1.0f) / gain);
 				alSourcef(id, AL_GAIN, 1.0f);
 			}
-		} else {
+		}
+		else {
 			alSourcef(id, AL_REFERENCE_DISTANCE, REFERENCE_DIST * ELMOS_TO_METERS);
 		}
 #endif
-
 	}
 	alSourcePlay(id);
 
 	if (itemBuffer.GetId() == 0)
-		LOG_L(L_WARNING, "CSoundSource::Play: Empty buffer for item %s (file %s)", item->name.c_str(), itemBuffer.GetFilename().c_str());
+		LOG_L(L_WARNING, "CSoundSource::Play: Empty buffer for item %s (file %s)", item->name.c_str(),
+		    itemBuffer.GetFilename().c_str());
 
 	CheckError("CSoundSource::Play");
 }
 
-
-void CSoundSource::PlayAsync(IAudioChannel* channel, size_t id, float3 pos, float3 velocity, float volume, float priority, bool relative)
+void CSoundSource::PlayAsync(IAudioChannel* channel,
+    size_t id,
+    float3 pos,
+    float3 velocity,
+    float volume,
+    float priority,
+    bool relative)
 {
-	asyncPlayItem.channel  = channel;
-	asyncPlayItem.id       = id;
+	asyncPlayItem.channel = channel;
+	asyncPlayItem.id = id;
 
 	asyncPlayItem.position = pos;
 	asyncPlayItem.velocity = velocity;
 
-	asyncPlayItem.volume   = volume;
+	asyncPlayItem.volume = volume;
 	asyncPlayItem.priority = priority;
 
 	asyncPlayItem.relative = relative;
 }
-
 
 void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, float volume)
 {
@@ -310,7 +321,7 @@ void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, f
 	Stop();
 
 	if (!curStream)
-		curStream = std::make_unique <MusicStream> ();
+		curStream = std::make_unique<MusicStream>();
 
 	// OpenAL params
 	curChannel = channel;
@@ -323,12 +334,12 @@ void CSoundSource::PlayStream(IAudioChannel* channel, const std::string& file, f
 		efxEnabled = false;
 	}
 
-	alSource3f(id, AL_POSITION,       0.0f, 0.0f, 0.0f);
-	alSourcef(id, AL_GAIN,            volume);
-	alSourcef(id, AL_PITCH,           globalPitch);
-	alSource3f(id, AL_VELOCITY,       0.0f,  0.0f,  0.0f);
-	alSource3f(id, AL_DIRECTION,      0.0f,  0.0f,  0.0f);
-	alSourcef(id, AL_ROLLOFF_FACTOR,  0.0f);
+	alSource3f(id, AL_POSITION, 0.0f, 0.0f, 0.0f);
+	alSourcef(id, AL_GAIN, volume);
+	alSourcef(id, AL_PITCH, globalPitch);
+	alSource3f(id, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+	alSource3f(id, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
+	alSourcef(id, AL_ROLLOFF_FACTOR, 0.0f);
 	alSourcei(id, AL_SOURCE_RELATIVE, AL_TRUE);
 
 	// COggStreams only appends buffers, giving errors when a buffer of another format is still assigned
@@ -357,21 +368,9 @@ void CSoundSource::StreamPause()
 		alSourcePlay(id);
 }
 
-float CSoundSource::GetStreamTime()
-{
-	return curStream
-		? curStream->GetTotalTime()
-		: 0.0f
-	;
-}
+float CSoundSource::GetStreamTime() { return curStream ? curStream->GetTotalTime() : 0.0f; }
 
-float CSoundSource::GetStreamPlayTime()
-{
-	return curStream
-		? curStream->GetPlayTime()
-		: 0.0f
-	;
-}
+float CSoundSource::GetStreamPlayTime() { return curStream ? curStream->GetPlayTime() : 0.0f; }
 
 void CSoundSource::UpdateVolume()
 {
@@ -387,4 +386,3 @@ void CSoundSource::UpdateVolume()
 		return;
 	}
 }
-

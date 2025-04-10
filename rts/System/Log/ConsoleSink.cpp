@@ -9,6 +9,7 @@
 #include "Backend.h"
 #include "FramePrefixer.h"
 #include "Level.h" // for LOG_LEVEL_*
+
 #include "System/MainDefines.h"
 
 #include <cstdio>
@@ -20,8 +21,6 @@ extern "C" {
 
 static bool colorizedOutput = false;
 
-
-
 /**
  * @name logging_sink_console
  * ILog.h sink implementation.
@@ -29,10 +28,7 @@ static bool colorizedOutput = false;
 ///@{
 
 
-void log_console_colorizedOutput(bool enable) {
-	colorizedOutput = enable;
-}
-
+void log_console_colorizedOutput(bool enable) { colorizedOutput = enable; }
 
 /// Records a log entry
 static void log_sink_record_console(int level, const char* section, const char* record)
@@ -40,17 +36,20 @@ static void log_sink_record_console(int level, const char* section, const char* 
 	char framePrefix[128] = {'\0'};
 	log_framePrefixer_createPrefix(framePrefix, sizeof(framePrefix));
 
-	FILE* outStream = (level >= LOG_LEVEL_WARNING)? stderr: stdout;
+	FILE* outStream = (level >= LOG_LEVEL_WARNING) ? stderr : stdout;
 
 	const char* fstr = "%s%s\n";
 	if (colorizedOutput) {
 		if (level >= LOG_LEVEL_ERROR) {
 			fstr = "\033[90m%s\033[31m%s\033[39m\n";
-		} else if (level == LOG_LEVEL_DEPRECATED) {
+		}
+		else if (level == LOG_LEVEL_DEPRECATED) {
 			fstr = "\033[90m%s\033[34m%s\033[39m\n";
-		} else if (level >= LOG_LEVEL_WARNING) {
+		}
+		else if (level >= LOG_LEVEL_WARNING) {
 			fstr = "\033[90m%s\033[33m%s\033[39m\n";
-		} else {
+		}
+		else {
 			fstr = "\033[90m%s\033[39m%s\n";
 		}
 	}
@@ -68,9 +67,6 @@ static void log_sink_record_console(int level, const char* section, const char* 
 } // extern "C"
 #endif
 
-ConsoleSinkRegistrator::ConsoleSinkRegistrator() {
-	log_backend_registerSink(&log_sink_record_console);
-}
-ConsoleSinkRegistrator::~ConsoleSinkRegistrator() {
-	log_backend_unregisterSink(&log_sink_record_console);
-}
+ConsoleSinkRegistrator::ConsoleSinkRegistrator() { log_backend_registerSink(&log_sink_record_console); }
+
+ConsoleSinkRegistrator::~ConsoleSinkRegistrator() { log_backend_unregisterSink(&log_sink_record_console); }

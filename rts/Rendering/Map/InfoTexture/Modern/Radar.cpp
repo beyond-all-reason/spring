@@ -1,24 +1,23 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Radar.h"
+
 #include "InfoTextureHandler.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/ModInfo.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
 
-
-
 CRadarTexture::CRadarTexture()
-: CPboInfoTexture("radar")
-, uploadTexRadar(0)
-, uploadTexJammer(0)
+    : CPboInfoTexture("radar")
+    , uploadTexRadar(0)
+    , uploadTexJammer(0)
 {
 	texSize = losHandler->radar.size;
 	texChannels = 2;
@@ -38,7 +37,7 @@ CRadarTexture::CRadarTexture()
 	if (FBO::IsSupported()) {
 		fbo.Bind();
 		fbo.AttachTexture(texture);
-		/*bool status =*/ fbo.CheckStatus("CRadarTexture");
+		/*bool status =*/fbo.CheckStatus("CRadarTexture");
 		FBO::Unbind();
 	}
 
@@ -71,17 +70,18 @@ CRadarTexture::CRadarTexture()
 	)";
 
 	shader = shaderHandler->CreateProgramObject("[CRadarTexture]", "CRadarTexture");
-	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode,   "", GL_VERTEX_SHADER));
+	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode, "", GL_VERTEX_SHADER));
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(fragmentCode, "", GL_FRAGMENT_SHADER));
 	shader->Link();
 	if (!shader->IsValid()) {
 		const char* fmt = "%s-shader compilation error: %s";
 		LOG_L(L_ERROR, fmt, shader->GetName().c_str(), shader->GetLog().c_str());
-	} else {
+	}
+	else {
 		shader->Enable();
-		shader->SetUniform("texRadar",  1);
+		shader->SetUniform("texRadar", 1);
 		shader->SetUniform("texJammer", 0);
-		shader->SetUniform("texLoS",    2);
+		shader->SetUniform("texLoS", 2);
 		shader->Disable();
 		shader->Validate();
 		if (!shader->IsValid()) {
@@ -113,7 +113,6 @@ CRadarTexture::CRadarTexture()
 	}
 }
 
-
 CRadarTexture::~CRadarTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -121,7 +120,6 @@ CRadarTexture::~CRadarTexture()
 	glDeleteTextures(1, &uploadTexJammer);
 	shaderHandler->ReleaseProgramObject("[CRadarTexture]", "CRadarTexture");
 }
-
 
 void CRadarTexture::UpdateCPU()
 {
@@ -134,16 +132,17 @@ void CRadarTexture::UpdateCPU()
 
 		const unsigned short* myLos = &losHandler->los.losMaps[gu->myAllyTeam].front();
 
-		const unsigned short* myRadar  = &losHandler->radar.losMaps[gu->myAllyTeam].front();
+		const unsigned short* myRadar = &losHandler->radar.losMaps[gu->myAllyTeam].front();
 		const unsigned short* myJammer = &losHandler->jammer.losMaps[jammerAllyTeam].front();
 		for (int y = 0; y < texSize.y; ++y) {
 			for (int x = 0; x < texSize.x; ++x) {
 				const int idx = y * texSize.x + x;
-				infoTexMem[idx * 2 + 0] = ( myRadar[idx] != 0) ? 255 : 0;
+				infoTexMem[idx * 2 + 0] = (myRadar[idx] != 0) ? 255 : 0;
 				infoTexMem[idx * 2 + 1] = (myJammer[idx] != 0 && myLos[idx] != 0) ? 255 : 0;
 			}
 		}
-	} else {
+	}
+	else {
 		for (int y = 0; y < texSize.y; ++y) {
 			for (int x = 0; x < texSize.x; ++x) {
 				const int idx = y * texSize.x + x;
@@ -159,7 +158,6 @@ void CRadarTexture::UpdateCPU()
 	infoTexPBO.Invalidate();
 	infoTexPBO.Unbind();
 }
-
 
 void CRadarTexture::Update()
 {
@@ -185,23 +183,24 @@ void CRadarTexture::Update()
 	infoTexPBO.Bind();
 	const size_t arraySize = texSize.x * texSize.y * sizeof(unsigned short);
 	auto infoTexMem = reinterpret_cast<unsigned char*>(infoTexPBO.MapBuffer());
-	const unsigned short* myRadar  = &losHandler->radar.losMaps[gu->myAllyTeam].front();
+	const unsigned short* myRadar = &losHandler->radar.losMaps[gu->myAllyTeam].front();
 	const unsigned short* myJammer = &losHandler->jammer.losMaps[jammerAllyTeam].front();
-	memcpy(infoTexMem,  myRadar, arraySize);
+	memcpy(infoTexMem, myRadar, arraySize);
 	infoTexMem += arraySize;
 	memcpy(infoTexMem, myJammer, arraySize);
 	infoTexPBO.UnmapBuffer();
 
-	//Trick: Upload the ushort as 2 ubytes, and then check both for `!=0` in the shader.
-	// Faster than doing it on the CPU! And uploading it as shorts would be slow, cause the GPU
-	// has no native support for them and so the transformation would happen on the CPU, too.
+	// Trick: Upload the ushort as 2 ubytes, and then check both for `!=0` in the shader.
+	//  Faster than doing it on the CPU! And uploading it as shorts would be slow, cause the GPU
+	//  has no native support for them and so the transformation would happen on the CPU, too.
 	glActiveTexture(GL_TEXTURE1);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, uploadTexRadar);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texSize.x, texSize.y, GL_RG, GL_UNSIGNED_BYTE, infoTexPBO.GetPtr());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, uploadTexJammer);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texSize.x, texSize.y, GL_RG, GL_UNSIGNED_BYTE, infoTexPBO.GetPtr(arraySize));
+	glTexSubImage2D(
+	    GL_TEXTURE_2D, 0, 0, 0, texSize.x, texSize.y, GL_RG, GL_UNSIGNED_BYTE, infoTexPBO.GetPtr(arraySize));
 	infoTexPBO.Invalidate();
 	infoTexPBO.Unbind();
 
@@ -214,10 +213,10 @@ void CRadarTexture::Update()
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetInfoTexture("los")->GetTexture());
 	glBegin(GL_QUADS);
-		glVertex2f(-1.f, -1.f);
-		glVertex2f(-1.f, +1.f);
-		glVertex2f(+1.f, +1.f);
-		glVertex2f(+1.f, -1.f);
+	glVertex2f(-1.f, -1.f);
+	glVertex2f(-1.f, +1.f);
+	glVertex2f(+1.f, +1.f);
+	glVertex2f(+1.f, -1.f);
 	glEnd();
 	shader->Disable();
 	globalRendering->LoadViewport();

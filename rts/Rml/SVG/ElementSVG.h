@@ -44,7 +44,7 @@ class ElementSVG : public Rml::Element {
 public:
 	RMLUI_RTTI_DefineWithParent(ElementSVG, Element)
 
-	ElementSVG(const Rml::String& tag);
+	    ElementSVG(const Rml::String& tag);
 	virtual ~ElementSVG();
 
 	/// Returns the element's inherent size.
@@ -91,6 +91,6 @@ private:
 	Rml::UniquePtr<lunasvg::Document> svg_document;
 };
 
-}
+} // namespace RmlGui
 
 #endif

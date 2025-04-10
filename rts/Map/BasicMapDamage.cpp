@@ -2,21 +2,21 @@
 
 
 #include "BasicMapDamage.h"
-#include "ReadMap.h"
+
 #include "MapInfo.h"
+#include "ReadMap.h"
+
 #include "Rendering/Env/GrassDrawer.h"
+#include "Sim/Features/FeatureHandler.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/SmoothHeightMesh.h"
+#include "Sim/Path/IPathManager.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
-#include "Sim/Path/IPathManager.h"
-#include "Sim/Features/FeatureHandler.h"
-#include "System/TimeProfiler.h"
-
 #include "System/Misc/TracyDefs.h"
-
+#include "System/TimeProfiler.h"
 
 void CBasicMapDamage::Init()
 {
@@ -24,7 +24,7 @@ void CBasicMapDamage::Init()
 	mapHardness = mapInfo->map.hardness;
 
 	for (int a = 0; a <= CRATER_TABLE_SIZE; ++a) {
-		const float r  = a / float(CRATER_TABLE_SIZE);
+		const float r = a / float(CRATER_TABLE_SIZE);
 		const float c1 = math::cos((r - 0.1f) * (math::PI + 0.3f));
 		const float c2 = math::cos(std::max(0.0f, r * 3.0f - 2.0f) * math::PI);
 
@@ -59,7 +59,6 @@ void CBasicMapDamage::Init()
 	std::fill(explosionSquaresPool.begin(), explosionSquaresPool.end(), 0.0f);
 }
 
-
 void CBasicMapDamage::TerrainTypeHardnessChanged(int ttIndex)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -79,11 +78,11 @@ void CBasicMapDamage::TerrainTypeSpeedModChanged(int ttIndex)
 			if (typeMap[tz * mapDims.hmapx + tx] != ttIndex)
 				continue;
 
-			pathManager->TerrainChange((tx << 1), (tz << 1),  (tx << 1) + 1, (tz << 1) + 1,  TERRAINCHANGE_TYPEMAP_SPEED_VALUES);
+			pathManager->TerrainChange(
+			    (tx << 1), (tz << 1), (tx << 1) + 1, (tz << 1) + 1, TERRAINCHANGE_TYPEMAP_SPEED_VALUES);
 		}
 	}
 }
-
 
 void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius, float& maxHeightDiff)
 {
@@ -101,10 +100,10 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 	e.strength = strength;
 	e.radius = radius;
 	e.ttl = EXPLOSION_LIFETIME;
-	e.x1 = std::clamp <int> ((pos.x - radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
-	e.x2 = std::clamp <int> ((pos.x + radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
-	e.y1 = std::clamp <int> ((pos.z - radius) / SQUARE_SIZE, 1, mapDims.mapym1);
-	e.y2 = std::clamp <int> ((pos.z + radius) / SQUARE_SIZE, 1, mapDims.mapym1);
+	e.x1 = std::clamp<int>((pos.x - radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
+	e.x2 = std::clamp<int>((pos.x + radius) / SQUARE_SIZE, 1, mapDims.mapxm1);
+	e.y1 = std::clamp<int>((pos.z - radius) / SQUARE_SIZE, 1, mapDims.mapym1);
+	e.y2 = std::clamp<int>((pos.z + radius) / SQUARE_SIZE, 1, mapDims.mapym1);
 	e.idx = explSquaresPoolIdx;
 
 	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
@@ -114,7 +113,7 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 	const float baseStrength = -math::pow(strength, 0.6f) * 3.0f;
 	const float invRadius = 1.0f / radius;
 
-	float2 minMax = { std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest() };
+	float2 minMax = {std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest()};
 
 	// figure out how much height to add to each square
 	for (int y = e.y1; y <= e.y2; ++y) {
@@ -156,7 +155,7 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 
 			// FIXME: compensate for flattened ground under dead buildings
 			const float prevDif = curHeightMap[y * mapDims.mapxp1 + x] - orgHeightMap[y * mapDims.mapxp1 + x];
-			      float explDif = baseStrength;
+			float explDif = baseStrength;
 
 			explDif *= craterTable[tableIdx];
 			explDif *= avgInvHardness;
@@ -199,7 +198,7 @@ void CBasicMapDamage::Explosion(const float3& pos, float strength, float radius,
 				const unsigned int ttypeIdx = typeMap[(z >> 1) * mapDims.hmapx + (x >> 1)];
 
 				const float prevDif = curHeightMap[z * mapDims.mapxp1 + x] - orgHeightMap[z * mapDims.mapxp1 + x];
-				      float explDif = baseStrength;
+				float explDif = baseStrength;
 
 				explDif *= craterTable[tableIdx];
 				explDif *= invHardness[ttypeIdx];
@@ -231,8 +230,10 @@ void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
 	if (!readMap->GetHeightMapUpdated())
 		return;
 
-	x1 = std::max(x1, 0); x2 = std::clamp(x2, x1, mapDims.mapx);
-	y1 = std::max(y1, 0); y2 = std::clamp(y2, y1, mapDims.mapy);
+	x1 = std::max(x1, 0);
+	x2 = std::clamp(x2, x1, mapDims.mapx);
+	y1 = std::max(y1, 0);
+	y2 = std::clamp(y2, y1, mapDims.mapy);
 
 	// do not bother with zero-area updates
 	const SRectangle updRect(x1, y1, x2, y2);
@@ -252,7 +253,6 @@ void CBasicMapDamage::RecalcArea(int x1, int x2, int y1, int y2)
 	}
 }
 
-
 void CBasicMapDamage::Update()
 {
 	SCOPED_TIMER("Sim::BasicMapDamage");
@@ -268,7 +268,8 @@ void CBasicMapDamage::Update()
 
 		for (int y = e.y1; y <= e.y2; ++y) {
 			for (int x = e.x1; x <= e.x2; ++x) {
-				readMap->AddHeight(y * mapDims.mapxp1 + x, explosionSquaresPool[ (expSquarePoolIdx++) % explosionSquaresPool.size() ]);
+				readMap->AddHeight(
+				    y * mapDims.mapxp1 + x, explosionSquaresPool[(expSquarePoolIdx++) % explosionSquaresPool.size()]);
 			}
 		}
 
@@ -308,4 +309,3 @@ void CBasicMapDamage::Update()
 	explosionUpdateQueue.clear();
 	explUpdateQueueIdx = 0;
 }
-

@@ -1,20 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm>
-
 #include "ArchiveLoader.h"
 
-#include "Archives/IArchiveFactory.h"
-#include "Archives/IArchive.h"
-#include "Archives/PoolArchive.h"
+#include "DataDirsAccess.h"
+#include "FileSystem.h"
+
 #include "Archives/DirArchive.h"
-#include "Archives/ZipArchive.h"
+#include "Archives/IArchive.h"
+#include "Archives/IArchiveFactory.h"
+#include "Archives/PoolArchive.h"
 #include "Archives/SevenZipArchive.h"
 #include "Archives/VirtualArchive.h"
-
-#include "FileSystem.h"
-#include "DataDirsAccess.h"
+#include "Archives/ZipArchive.h"
 #include "System/Log/ILog.h"
+
+#include <algorithm>
 
 static CPoolArchiveFactory sdpArchiveFactory;
 static CDirArchiveFactory sddArchiveFactory;
@@ -34,16 +34,15 @@ CArchiveLoader::CArchiveLoader()
 	AddFactory(ARCHIVE_TYPE_SDV, sdvArchiveFactory);
 
 	using P = decltype(archiveFactories)::value_type;
-	std::sort(archiveFactories.begin(), archiveFactories.end(), [](const P& a, const P& b) { return (a.first < b.first); });
+	std::sort(
+	    archiveFactories.begin(), archiveFactories.end(), [](const P& a, const P& b) { return (a.first < b.first); });
 }
-
 
 const CArchiveLoader& CArchiveLoader::GetInstance()
 {
 	static const CArchiveLoader singleton;
 	return singleton;
 }
-
 
 bool CArchiveLoader::IsArchiveFile(const std::string& fileName) const
 {
@@ -56,7 +55,6 @@ bool CArchiveLoader::IsArchiveFile(const std::string& fileName) const
 
 	return (iter != archiveFactories.end() && iter->first == fileExt);
 }
-
 
 IArchive* CArchiveLoader::OpenArchive(const std::string& fileName, const std::string& type) const
 {
@@ -76,9 +74,9 @@ IArchive* CArchiveLoader::OpenArchive(const std::string& fileName, const std::st
 	if (ret != nullptr && ret->IsOpen())
 		return ret;
 
-	LOG_L(L_INFO, "[ArchiveLoader::%s(name=\"%s\" type=\"%s\")] could not load or open archive %p", __func__, fileName.c_str(), type.c_str(), ret);
+	LOG_L(L_INFO, "[ArchiveLoader::%s(name=\"%s\" type=\"%s\")] could not load or open archive %p", __func__,
+	    fileName.c_str(), type.c_str(), ret);
 
 	delete ret;
 	return nullptr;
 }
-

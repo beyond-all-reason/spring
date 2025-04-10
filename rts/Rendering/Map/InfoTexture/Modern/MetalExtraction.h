@@ -4,19 +4,18 @@
 #define _METAL_EXTRACTION_TEXTURE_H
 
 #include "PboInfoTexture.h"
+
 #include "Rendering/GL/FBO.h"
 
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
-
-class CMetalExtractionTexture : public CPboInfoTexture
-{
+class CMetalExtractionTexture : public CPboInfoTexture {
 public:
 	CMetalExtractionTexture();
 	~CMetalExtractionTexture() override;
+
 public:
 	void Update() override;
 	bool IsUpdateNeeded() override;

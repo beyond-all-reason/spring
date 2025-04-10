@@ -3,12 +3,12 @@
 #ifndef HAPFS_IPATH_FINDER_H
 #define HAPFS_IPATH_FINDER_H
 
-#include <cstdlib>
-
 #include "IPath.h"
 #include "PathCache.h"
 #include "PathConstants.h"
 #include "PathDataTypes.h"
+
+#include <cstdlib>
 
 struct MoveDef;
 class CPathFinderDef;
@@ -33,10 +33,12 @@ public:
 	PathNodeStateBuffer& GetNodeStateBuffer() { return blockStates; }
 
 	unsigned int GetBlockSize() const { return BLOCK_SIZE; }
-	int2 GetNumBlocks() const { return nbrOfBlocks; }
-	int2 BlockIdxToPos(const unsigned idx) const { return int2(idx % nbrOfBlocks.x, idx / nbrOfBlocks.x); }
-	int  BlockPosToIdx(const int2 pos) const { return (pos.y * nbrOfBlocks.x + pos.x); }
 
+	int2 GetNumBlocks() const { return nbrOfBlocks; }
+
+	int2 BlockIdxToPos(const unsigned idx) const { return int2(idx % nbrOfBlocks.x, idx / nbrOfBlocks.x); }
+
+	int BlockPosToIdx(const int2 pos) const { return (pos.y * nbrOfBlocks.x + pos.x); }
 
 	/**
 	 * Gives a path from given starting location to target defined in
@@ -60,14 +62,12 @@ public:
 	 *   allowed to analyze. This restriction could be used in cases where
 	 *   CPU-consumption is critical.
 	 */
-	IPath::SearchResult GetPath(
-		const MoveDef& moveDef,
-		const CPathFinderDef& pfDef,
-		const CSolidObject* owner,
-		float3 startPos,
-		IPath::Path& path,
-		const unsigned int maxNodes
-	);
+	IPath::SearchResult GetPath(const MoveDef& moveDef,
+	    const CPathFinderDef& pfDef,
+	    const CSolidObject* owner,
+	    float3 startPos,
+	    IPath::Path& path,
+	    const unsigned int maxNodes);
 
 	virtual IPathFinder* GetParent() { return nullptr; }
 
@@ -78,22 +78,24 @@ protected:
 	/// Clear things up from last search.
 	void ResetSearch();
 
-	virtual IPath::SearchResult DoRawSearch(const MoveDef&, const CPathFinderDef&, const CSolidObject* owner) { return IPath::Error; }
+	virtual IPath::SearchResult DoRawSearch(const MoveDef&, const CPathFinderDef&, const CSolidObject* owner)
+	{
+		return IPath::Error;
+	}
+
 	virtual IPath::SearchResult DoSearch(const MoveDef&, const CPathFinderDef&, const CSolidObject* owner) = 0;
 
 	/**
 	 * Test the availability and value of a block,
 	 * and possibly add it to the queue of open blocks.
 	 */
-	virtual bool TestBlock(
-		const MoveDef& moveDef,
-		const CPathFinderDef& pfDef,
-		const PathNode* parentSquare,
-		const CSolidObject* owner,
-		const unsigned int pathOptDir,
-		const unsigned int blockStatus,
-		float speedMod
-	) = 0;
+	virtual bool TestBlock(const MoveDef& moveDef,
+	    const CPathFinderDef& pfDef,
+	    const PathNode* parentSquare,
+	    const CSolidObject* owner,
+	    const unsigned int pathOptDir,
+	    const unsigned int blockStatus,
+	    float speedMod) = 0;
 
 	/**
 	 * Recreates the path found by pathfinder.
@@ -104,30 +106,19 @@ protected:
 	virtual void FinishSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, IPath::Path& path) const = 0;
 
 
-	virtual const CPathCache::CacheItem& GetCache(
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType,
-		const bool synced
-	) const = 0;
+	virtual const CPathCache::CacheItem&
+	GetCache(const int2 strtBlock, const int2 goalBlock, float goalRadius, int pathType, const bool synced) const = 0;
 
-	virtual void AddCache(
-		const IPath::Path* path,
-		const IPath::SearchResult result,
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType,
-		const bool synced
-	) = 0;
+	virtual void AddCache(const IPath::Path* path,
+	    const IPath::SearchResult result,
+	    const int2 strtBlock,
+	    const int2 goalBlock,
+	    float goalRadius,
+	    int pathType,
+	    const bool synced) = 0;
 
-	virtual bool SetStartBlock(
-		const MoveDef& moveDef,
-		const CPathFinderDef& peDef,
-		const CSolidObject* owner,
-		float3 startPos
-	);
+	virtual bool
+	SetStartBlock(const MoveDef& moveDef, const CPathFinderDef& peDef, const CSolidObject* owner, float3 startPos);
 
 	virtual float GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const = 0;
 
@@ -160,6 +151,6 @@ public:
 	PathNodeStateBuffer* psBlockStates = nullptr;
 };
 
-}
+} // namespace HAPFS
 
 #endif // IPATH_FINDER_H

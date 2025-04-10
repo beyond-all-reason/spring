@@ -2,36 +2,34 @@
 
 #include "Interface.h"
 
-#include "CUtils/SimpleLog.h"
 #include "CUtils/SharedLibrary.h"
-
-#include "ExternalAI/Interface/aidefines.h"
+#include "CUtils/SimpleLog.h"
+#include "ExternalAI/Interface/SAIInterfaceCallback.h"
 #include "ExternalAI/Interface/SAIInterfaceLibrary.h"
 #include "ExternalAI/Interface/SSkirmishAILibrary.h"
-#include "ExternalAI/Interface/SAIInterfaceCallback.h"
+#include "ExternalAI/Interface/aidefines.h"
 #include "System/StringUtil.h"
 
-CInterface::CInterface(int interfaceId, const SAIInterfaceCallback* callback):
-	interfaceId(interfaceId),
-	callback(callback)
+CInterface::CInterface(int interfaceId, const SAIInterfaceCallback* callback)
+    : interfaceId(interfaceId)
+    , callback(callback)
 {
 	simpleLog_initcallback(interfaceId, "C Interface", callback->Log_logsl, LOG_LEVEL_INFO);
 
-	const char* const myShortName = callback->AIInterface_Info_getValueByKey(interfaceId, AI_INTERFACE_PROPERTY_SHORT_NAME);
+	const char* const myShortName =
+	    callback->AIInterface_Info_getValueByKey(interfaceId, AI_INTERFACE_PROPERTY_SHORT_NAME);
 	const char* const myVersion = callback->AIInterface_Info_getValueByKey(interfaceId, AI_INTERFACE_PROPERTY_VERSION);
 
 	simpleLog_log("This is the log-file of the %s v%s AI Interface", myShortName, myVersion);
 }
 
-//LevelOfSupport CInterface::GetLevelOfSupportFor(
+// LevelOfSupport CInterface::GetLevelOfSupportFor(
 //		const char* engineVersion, int engineAIInterfaceGeneratedVersion) {
 //	return LOS_Working;
-//}
+// }
 
-const SSkirmishAILibrary* CInterface::LoadSkirmishAILibrary(
-	const char* const shortName,
-	const char* const version
-) {
+const SSkirmishAILibrary* CInterface::LoadSkirmishAILibrary(const char* const shortName, const char* const version)
+{
 	SSkirmishAISpecifier spec;
 	spec.shortName = shortName;
 	spec.version = version;
@@ -57,10 +55,8 @@ const SSkirmishAILibrary* CInterface::LoadSkirmishAILibrary(
 	return (&myLoadedSkirmishAIs[spec]);
 }
 
-int CInterface::UnloadSkirmishAILibrary(
-	const char* const shortName,
-	const char* const version
-) {
+int CInterface::UnloadSkirmishAILibrary(const char* const shortName, const char* const version)
+{
 	SSkirmishAISpecifier spec;
 	spec.shortName = shortName;
 	spec.version = version;
@@ -90,20 +86,15 @@ int CInterface::UnloadAllSkirmishAILibraries()
 	return 0; // signal: ok
 }
 
-
 // private functions following
 
-sharedLib_t CInterface::Load(
-	const SSkirmishAISpecifier& spec,
-	SSkirmishAILibrary* skirmishAILibrary
-) {
+sharedLib_t CInterface::Load(const SSkirmishAISpecifier& spec, SSkirmishAILibrary* skirmishAILibrary)
+{
 	return LoadSkirmishAILib(FindLibFile(spec), skirmishAILibrary);
 }
 
-sharedLib_t CInterface::LoadSkirmishAILib(
-	const std::string& libFilePath,
-	SSkirmishAILibrary* skirmishAILibrary
-) {
+sharedLib_t CInterface::LoadSkirmishAILib(const std::string& libFilePath, SSkirmishAILibrary* skirmishAILibrary)
+{
 	sharedLib_t sharedLib = sharedLib_load(libFilePath.c_str());
 
 	if (!sharedLib_isLoaded(sharedLib)) {
@@ -116,58 +107,44 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 	std::string funcName = "getLevelOfSupportFor";
 	void* funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV *)(
-		const char* aiShortName,
-		const char* aiVersion,
-		const char* engineVersionString,
-		int engineVersionNumber,
-		const char* aiInterfaceShortName,
-		const char* aiInterfaceVersion
-	)) funcAddr;
+	skirmishAILibrary->getLevelOfSupportFor =
+	    (LevelOfSupport(CALLING_CONV*)(const char* aiShortName, const char* aiVersion, const char* engineVersionString,
+	        int engineVersionNumber, const char* aiInterfaceShortName, const char* aiInterfaceVersion))funcAddr;
 
 	if (skirmishAILibrary->getLevelOfSupportFor == nullptr) {
 		// do nothing: it is permitted that an AI does not export this function
-		//reportInterfaceFunctionError(libFilePath, funcName);
+		// reportInterfaceFunctionError(libFilePath, funcName);
 	}
 
 
 	funcName = "init";
 	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->init = (int (CALLING_CONV *)(
-		int skirmishAIId,
-		const SSkirmishAICallback*
-	)) funcAddr;
+	skirmishAILibrary->init = (int(CALLING_CONV*)(int skirmishAIId, const SSkirmishAICallback*))funcAddr;
 
 	if (skirmishAILibrary->init == nullptr) {
 		// do nothing: it is permitted that an AI does not export this function,
 		// as it can still use EVENT_INIT instead
-		//reportInterfaceFunctionError(libFilePath, funcName);
+		// reportInterfaceFunctionError(libFilePath, funcName);
 	}
 
 
 	funcName = "release";
 	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->release = (int (CALLING_CONV *)(
-		int skirmishAIId
-	)) funcAddr;
+	skirmishAILibrary->release = (int(CALLING_CONV*)(int skirmishAIId))funcAddr;
 
 	if (skirmishAILibrary->release == nullptr) {
 		// do nothing: it is permitted that an AI does not export this function,
 		// as it can still use EVENT_RELEASE instead
-		//reportInterfaceFunctionError(libFilePath, funcName);
+		// reportInterfaceFunctionError(libFilePath, funcName);
 	}
 
 
 	funcName = "handleEvent";
 	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
 
-	skirmishAILibrary->handleEvent = (int (CALLING_CONV *)(
-		int skirmishAIId,
-		int topicId,
-		const void* data
-	)) funcAddr;
+	skirmishAILibrary->handleEvent = (int(CALLING_CONV*)(int skirmishAIId, int topicId, const void* data))funcAddr;
 
 	if (skirmishAILibrary->handleEvent == nullptr) {
 		reportInterfaceFunctionError(libFilePath, funcName);
@@ -176,21 +153,15 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 	return sharedLib;
 }
 
-
-void CInterface::reportInterfaceFunctionError(
-	const std::string& libFilePath,
-	const std::string& functionName
-) {
+void CInterface::reportInterfaceFunctionError(const std::string& libFilePath, const std::string& functionName)
+{
 	std::string msg;
 	msg += ("Failed loading AI Library from file \"" + libFilePath);
 	msg += ("\": no \"" + functionName + "\" function exported");
 	reportError(msg);
 }
 
-void CInterface::reportError(const std::string& msg) {
-	simpleLog_logL(LOG_LEVEL_ERROR, msg.c_str());
-}
-
+void CInterface::reportError(const std::string& msg) { simpleLog_logL(LOG_LEVEL_ERROR, msg.c_str()); }
 
 std::string CInterface::FindLibFile(const SSkirmishAISpecifier& spec)
 {
@@ -210,4 +181,3 @@ std::string CInterface::FindLibFile(const SSkirmishAISpecifier& spec)
 
 	return (dataDir + cPS + libFileName);
 }
-

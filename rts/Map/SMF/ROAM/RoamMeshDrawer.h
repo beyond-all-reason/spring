@@ -3,19 +3,17 @@
 #ifndef _ROAM_MESH_DRAWER_H_
 #define _ROAM_MESH_DRAWER_H_
 
-#include <vector>
-
 #include "Patch.h"
+
 #include "Map/BaseGroundDrawer.h"
 #include "Map/SMF/IMeshDrawer.h"
 #include "System/EventHandler.h"
 
+#include <vector>
 
 
 class CSMFGroundDrawer;
 class CCamera;
-
-
 
 // Visualize visible patches in Minimap for debugging?
 // #define DRAW_DEBUG_IN_MINIMAP
@@ -25,15 +23,17 @@ class CCamera;
  * Map mesh drawer implementation; based on the Tread Marks engine
  * by Longbow Digital Arts (www.LongbowDigitalArts.com, circa 2000)
  */
-class CRoamMeshDrawer : public IMeshDrawer, public CEventClient
-{
+class CRoamMeshDrawer : public IMeshDrawer, public CEventClient {
 public:
 	// CEventClient interface
-	bool WantsEvent(const std::string& eventName) {
+	bool WantsEvent(const std::string& eventName)
+	{
 		return (eventName == "UnsyncedHeightMapUpdate") || (eventName == "DrawInMiniMap");
 	}
+
 	bool GetFullRead() const { return true; }
-	int  GetReadAllyTeam() const { return AllAccessTeam; }
+
+	int GetReadAllyTeam() const { return AllAccessTeam; }
 
 	void UnsyncedHeightMapUpdate(const SRectangle& rect);
 	void DrawInMiniMap();
@@ -42,7 +42,7 @@ public:
 	enum {
 		MESH_NORMAL = 0,
 		MESH_SHADOW = 1,
-		MESH_COUNT  = 2,
+		MESH_COUNT = 2,
 	};
 
 	CRoamMeshDrawer(CSMFGroundDrawer* gd);
@@ -53,7 +53,8 @@ public:
 	void DrawMesh(const DrawPass::e& drawPass);
 	void DrawBorderMesh(const DrawPass::e& drawPass);
 
-	static void ForceNextTesselation(bool normal, bool shadow) {
+	static void ForceNextTesselation(bool normal, bool shadow)
+	{
 		forceNextTesselation[MESH_NORMAL] = normal;
 		forceNextTesselation[MESH_SHADOW] = shadow;
 	}
@@ -79,8 +80,8 @@ private:
 	std::function<bool(std::vector<Patch>&, const CCamera*, int, bool)> tesselateFuncs[2];
 
 	// [1] is used for the shadow pass, [0] is used for all other passes
-	std::vector< Patch > patchMeshGrid[MESH_COUNT];
-	std::vector< Patch*> borderPatches[MESH_COUNT];
+	std::vector<Patch> patchMeshGrid[MESH_COUNT];
+	std::vector<Patch*> borderPatches[MESH_COUNT];
 
 	// char instead of bool, accessors to different elements must be thread-safe
 	std::vector<uint8_t> patchVisFlags[MESH_COUNT];

@@ -3,24 +3,26 @@
 #ifndef LUA_TEXTURES_H
 #define LUA_TEXTURES_H
 
-#include <string>
-#include <vector>
-
 #include "Rendering/GL/myGL.h"
 
+#include <string>
+#include <vector>
 
 class LuaTextures {
 public:
 	static constexpr char prefix = '!';
 
 	~LuaTextures() { FreeAll(); }
-	LuaTextures() {
+
+	LuaTextures()
+	{
 		textureVec.reserve(128);
 		textureMap.reserve(128);
 		lastCode = 0;
 	}
 
-	void Clear() {
+	void Clear()
+	{
 		textureVec.clear();
 		textureMap.clear();
 		freeIndices.clear();
@@ -36,9 +38,9 @@ public:
 		GLenum target = GL_TEXTURE_2D;
 		GLenum format = GL_RGBA8;
 
-		GLsizei xsize   = 0;
-		GLsizei ysize   = 0;
-		GLsizei zsize   = 0;
+		GLsizei xsize = 0;
+		GLsizei ysize = 0;
+		GLsizei zsize = 0;
 		GLsizei samples = 0;
 
 		GLint border = 0;
@@ -67,11 +69,17 @@ public:
 
 	size_t GetIdx(const std::string& name) const;
 
-	const Texture* GetInfo(size_t texIdx) const { return ((texIdx < textureVec.size())? &textureVec[texIdx]: nullptr); }
-	      Texture* GetInfo(size_t texIdx)       { return ((texIdx < textureVec.size())? &textureVec[texIdx]: nullptr); }
+	const Texture* GetInfo(size_t texIdx) const
+	{
+		return ((texIdx < textureVec.size()) ? &textureVec[texIdx] : nullptr);
+	}
+
+	Texture* GetInfo(size_t texIdx) { return ((texIdx < textureVec.size()) ? &textureVec[texIdx] : nullptr); }
 
 	const Texture* GetInfo(const std::string& name) const { return (GetInfo(GetIdx(name))); }
-	      Texture* GetInfo(const std::string& name)       { return (GetInfo(GetIdx(name))); }
+
+	Texture* GetInfo(const std::string& name) { return (GetInfo(GetIdx(name))); }
+
 private:
 	int lastCode;
 

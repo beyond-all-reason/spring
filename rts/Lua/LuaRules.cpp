@@ -2,25 +2,24 @@
 
 #include "LuaRules.h"
 
-#include "LuaInclude.h"
-
-#include "LuaUtils.h"
-#include "LuaObjectRendering.h"
 #include "LuaCallInCheck.h"
+#include "LuaInclude.h"
+#include "LuaObjectRendering.h"
+#include "LuaUtils.h"
 
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Units/Scripts/CobInstance.h" // for UNPACK{X,Z}
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "Sim/Units/Scripts/CobInstance.h" // for UNPACK{X,Z}
-#include "System/Log/ILog.h"
 #include "System/FileSystem/VFSModes.h" // for SPRING_VFS_*
+#include "System/Log/ILog.h"
 #include "System/Threading/SpringThreading.h"
 
 #include <cassert>
 
 CLuaRules* luaRules = nullptr;
 
-static const char* LuaRulesSyncedFilename   = "LuaRules/main.lua";
+static const char* LuaRulesSyncedFilename = "LuaRules/main.lua";
 static const char* LuaRulesUnsyncedFilename = "LuaRules/draw.lua";
 
 const int* CLuaRules::currentCobArgs = nullptr;
@@ -34,11 +33,11 @@ static spring::mutex m_singleton;
 DECL_LOAD_SPLIT_HANDLER(CLuaRules, luaRules)
 DECL_FREE_HANDLER(CLuaRules, luaRules)
 
-
 /******************************************************************************/
 /******************************************************************************/
 
-CLuaRules::CLuaRules(bool dryRun): CSplitLuaHandle("LuaRules", LUA_HANDLE_ORDER_RULES)
+CLuaRules::CLuaRules(bool dryRun)
+    : CSplitLuaHandle("LuaRules", LUA_HANDLE_ORDER_RULES)
 {
 	currentCobArgs = nullptr;
 
@@ -54,33 +53,19 @@ CLuaRules::~CLuaRules()
 	currentCobArgs = nullptr;
 }
 
+std::string CLuaRules::GetUnsyncedFileName() const { return LuaRulesUnsyncedFilename; }
 
-std::string CLuaRules::GetUnsyncedFileName() const
-{
-	return LuaRulesUnsyncedFilename;
-}
+std::string CLuaRules::GetSyncedFileName() const { return LuaRulesSyncedFilename; }
 
-std::string CLuaRules::GetSyncedFileName() const
-{
-	return LuaRulesSyncedFilename;
-}
+std::string CLuaRules::GetInitFileModes() const { return SPRING_VFS_MOD_BASE; }
 
-std::string CLuaRules::GetInitFileModes() const
-{
-	return SPRING_VFS_MOD_BASE;
-}
-
-int CLuaRules::GetInitSelectTeam() const
-{
-	return CEventClient::AllAccessTeam;
-}
-
+int CLuaRules::GetInitSelectTeam() const { return CEventClient::AllAccessTeam; }
 
 /******************************************************************************
  * Lua Rules
  *
  * @see rts/Lua/LuaRules.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 
 bool CLuaRules::AddSyncedCode(lua_State* L)
@@ -91,7 +76,6 @@ bool CLuaRules::AddSyncedCode(lua_State* L)
 
 	return true;
 }
-
 
 bool CLuaRules::AddUnsyncedCode(lua_State* L)
 {
@@ -112,7 +96,6 @@ bool CLuaRules::AddUnsyncedCode(lua_State* L)
 	return true;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -131,9 +114,7 @@ int CLuaRules::UnpackCobArg(lua_State* L)
 	return 2;
 }
 
-
-void CLuaRules::Cob2Lua(const LuaHashString& name, const CUnit* unit,
-                        int& argsCount, int args[MAX_LUA_COB_ARGS])
+void CLuaRules::Cob2Lua(const LuaHashString& name, const CUnit* unit, int& argsCount, int args[MAX_LUA_COB_ARGS])
 {
 	static int callDepth = 0;
 	if (callDepth >= 16) {
@@ -203,7 +184,8 @@ void CLuaRules::Cob2Lua(const LuaHashString& name, const CUnit* unit,
 				const int x = lua_toint(L, -2);
 				const int z = lua_toint(L, -1);
 				args[a] = PACKXZ(x, z);
-			} else {
+			}
+			else {
 				args[a] = 0;
 			}
 			lua_pop(L, 2);
@@ -217,7 +199,6 @@ void CLuaRules::Cob2Lua(const LuaHashString& name, const CUnit* unit,
 	lua_settop(L, top);
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 //
@@ -230,8 +211,7 @@ int CLuaRules::PermitHelperAIs(lua_State* L)
 		luaL_error(L, "Incorrect argument to PermitHelperAIs()");
 	}
 	gs->noHelperAIs = !lua_toboolean(L, 1);
-	LOG("LuaRules has %s helper AIs",
-			(gs->noHelperAIs ? "disabled" : "enabled"));
+	LOG("LuaRules has %s helper AIs", (gs->noHelperAIs ? "disabled" : "enabled"));
 	return 0;
 }
 

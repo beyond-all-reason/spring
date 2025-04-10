@@ -3,27 +3,30 @@
 #ifndef WEAPONDEFHANDLER_H
 #define WEAPONDEFHANDLER_H
 
-#include <string>
-#include <vector>
+#include "WeaponDef.h"
 
 #include "Sim/Misc/CommonDefHandler.h"
 #include "Sim/Misc/GuiSoundSet.h"
-#include "WeaponDef.h"
 #include "System/float3.h"
+
+#include <string>
+#include <vector>
 
 class LuaParser;
 class LuaTable;
 
-class CWeaponDefHandler : CommonDefHandler
-{
+class CWeaponDefHandler : CommonDefHandler {
 public:
 	void Init(LuaParser* defsParser);
-	void Kill() {
+
+	void Kill()
+	{
 		weaponDefsVector.clear();
 		weaponDefIDs.clear(); // never iterated
 	}
 
-	bool IsValidWeaponDefID(const int id) const {
+	bool IsValidWeaponDefID(const int id) const
+	{
 		return (id >= 0) && (static_cast<size_t>(id) < weaponDefsVector.size());
 	}
 
@@ -40,8 +43,6 @@ private:
 	std::vector<WeaponDef> weaponDefsVector;
 	spring::unordered_map<std::string, int> weaponDefIDs;
 };
-
-
 
 extern CWeaponDefHandler* weaponDefHandler;
 

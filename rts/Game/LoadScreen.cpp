@@ -1,64 +1,68 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <SDL.h>
-#include <functional>
-
-#include "Rendering/GL/myGL.h"
 #include "LoadScreen.h"
+
 #include "Game.h"
 #include "GlobalUnsynced.h"
+
+#include "ExternalAI/SkirmishAIHandler.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Game/UI/MouseHandler.h"
-#include "ExternalAI/SkirmishAIHandler.h"
 #include "Lua/LuaIntro.h"
 #include "Lua/LuaMenu.h"
 #include "Map/MapInfo.h"
+#include "Net/Protocol/NetProtocol.h"
 #include "Rendering/Fonts/glFont.h"
+#include "Rendering/GL/myGL.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/NamedTextures.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Path/IPathManager.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
-#include "System/Sync/FPUCheck.h"
-#include "System/Log/ILog.h"
-#include "Net/Protocol/NetProtocol.h"
-#include "System/Misc/UnfreezeSpring.h"
-#include "System/Matrix44f.h"
-#include "System/SafeUtil.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Platform/Watchdog.h"
+#include "System/LoadLock.h"
+#include "System/Log/ILog.h"
+#include "System/Matrix44f.h"
+#include "System/Misc/UnfreezeSpring.h"
 #include "System/Platform/Threading.h"
+#include "System/Platform/Watchdog.h"
+#include "System/SafeUtil.h"
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
-#include "System/LoadLock.h"
+#include "System/Sync/FPUCheck.h"
+
+#include <functional>
+
+#include <SDL.h>
 
 #if !defined(HEADLESS) && !defined(NO_SOUND)
 #include "System/Sound/OpenAL/EFX.h"
 #include "System/Sound/OpenAL/EFXPresets.h"
 #endif
 
-#include <vector>
-
 #include "System/Misc/TracyDefs.h"
 
+#include <vector>
+
 CONFIG(int, LoadingMT)
-	.description("Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
-	.defaultValue(0)
-	.safemodeValue(0);
+    .description(
+        "Experimental option to load the game in separate thread. Expect visual glitches, crashes and deadlocks")
+    .defaultValue(0)
+    .safemodeValue(0);
 
 
 CLoadScreen* CLoadScreen::singleton = nullptr;
 
 CLoadScreen::CLoadScreen(std::string&& _mapFileName, std::string&& _modFileName, ILoadSaveHandler* _saveFile)
-	: saveFile(_saveFile)
+    : saveFile(_saveFile)
 
-	, mapFileName(std::move(_mapFileName))
-	, modFileName(std::move(_modFileName))
+    , mapFileName(std::move(_mapFileName))
+    , modFileName(std::move(_modFileName))
 
-	, mtLoading(true)
-	, lastDrawTime(0)
+    , mtLoading(true)
+    , lastDrawTime(0)
 {
 }
 
@@ -85,7 +89,6 @@ CLoadScreen::~CLoadScreen()
 		activeController = nullptr;
 }
 
-
 bool CLoadScreen::Init()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -105,7 +108,8 @@ bool CLoadScreen::Init()
 #endif
 
 
-	// Create a thread during the loading that pings the host/server, so it knows that this client is still alive/loading
+	// Create a thread during the loading that pings the host/server, so it knows that this client is still
+	// alive/loading
 	clientNet->KeepUpdating(true);
 
 	netHeartbeatThread = spring::thread(Threading::CreateNewThread(std::bind(&CNetProtocol::UpdateLoop, clientNet)));
@@ -119,8 +123,10 @@ bool CLoadScreen::Init()
 			gameLoadThread = CGameLoadThread(std::bind(&CGame::Load, game, mapFileName));
 
 			while (!Watchdog::HasThread(WDT_LOAD));
-		} catch (const opengl_error& gle) {
-			LOG_L(L_WARNING, "[LoadScreen::%s] offscreen GL context creation failed (error: \"%s\")", __func__, gle.what());
+		}
+		catch (const opengl_error& gle) {
+			LOG_L(L_WARNING, "[LoadScreen::%s] offscreen GL context creation failed (error: \"%s\")", __func__,
+			    gle.what());
 
 			mtLoading = false;
 			CglFont::sync.SetThreadSafety(false);
@@ -169,7 +175,6 @@ void CLoadScreen::Kill()
 	globalRendering->ToggleMultisampling();
 }
 
-
 /******************************************************************************/
 
 static void FinishedLoading()
@@ -182,17 +187,16 @@ static void FinishedLoading()
 	const CPlayer* p = playerHandler.Player(gu->myPlayerNum);
 
 	clientNet->Send(CBaseNetProtocol::Get().SendPlayerName(gu->myPlayerNum, p->name));
-	#ifdef SYNCCHECK
+#ifdef SYNCCHECK
 	clientNet->Send(CBaseNetProtocol::Get().SendPathCheckSum(gu->myPlayerNum, pathManager->GetPathCheckSum()));
-	#endif
+#endif
 	mouse->ShowMouse();
 
-	#if !defined(HEADLESS) && !defined(NO_SOUND)
+#if !defined(HEADLESS) && !defined(NO_SOUND)
 	// NB: sound is initialized at this point, but EFX support is *not* guaranteed
 	efx.CommitEffects(mapInfo->efxprops);
-	#endif
+#endif
 }
-
 
 void CLoadScreen::CreateDeleteInstance(std::string&& mapFileName, std::string&& modFileName, ILoadSaveHandler* saveFile)
 {
@@ -225,7 +229,6 @@ void CLoadScreen::DeleteInstance()
 	spring::SafeDelete(singleton);
 }
 
-
 /******************************************************************************/
 
 void CLoadScreen::ResizeEvent()
@@ -235,11 +238,10 @@ void CLoadScreen::ResizeEvent()
 		luaIntro->ViewResize();
 }
 
-
 int CLoadScreen::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//FIXME add mouse events
+	// FIXME add mouse events
 	if (luaIntro != nullptr)
 		luaIntro->KeyPress(keyCode, scanCode, isRepeat);
 
@@ -254,7 +256,6 @@ int CLoadScreen::KeyReleased(int keyCode, int scanCode)
 
 	return 0;
 }
-
 
 bool CLoadScreen::Update()
 {
@@ -284,7 +285,6 @@ bool CLoadScreen::Update()
 
 	return true;
 }
-
 
 bool CLoadScreen::Draw()
 {
@@ -321,7 +321,6 @@ bool CLoadScreen::Draw()
 	return true;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -348,4 +347,3 @@ void CLoadScreen::SetLoadMessage(const std::string& text, bool replaceLast)
 	Update();
 	Draw();
 }
-

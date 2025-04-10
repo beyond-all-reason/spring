@@ -204,7 +204,7 @@ function printClasses() {
 			clsAvailInd_memberId_cls[_memberId] = _availCls;
 		}
 	}
-	
+
 	c_size_cs = cls_id_name["*"];
 	for (c=0; c < c_size_cs; c++) {
 		cls_cs      = cls_id_name[c];
@@ -616,7 +616,7 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 	conversionCode_post = "";
 	thrownExceptions    = "";
 	ommitMainCall       = 0;
-	
+
 	if (!isVoid_int_m) {
 		declaredVarsCode = "\t\t" retType_int " " retVar_int_m ";" "\n" declaredVarsCode;
 	}
@@ -974,7 +974,7 @@ function printMember(fullName_m, memName_m, additionalIndices_m) {
 		} else if (_isNative) {
 			_arrListGenType  = convertJavaBuiltinTypeToClass(_arrayType);
 		}
-		_arrListType     = "java.util.List<" _arrListGenType ">";    
+		_arrListType     = "java.util.List<" _arrListGenType ">";
 		_arrListImplType = "java.util.ArrayList<" _arrListGenType ">";
 
 		_isFetching = sub("(, )?int " _arraySizeMaxPaNa, "", params);

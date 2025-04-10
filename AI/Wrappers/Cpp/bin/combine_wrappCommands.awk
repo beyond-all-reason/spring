@@ -180,14 +180,14 @@ function printNativeFP2F() {
 				paramList_commonEnd = paramList;
 				sub(/, short options, int timeOut/, "", paramList_commonEnd);
 				paramList_commonEnd = paramList_commonEnd ", short options, int timeOut";
-				
+
 				# Unit version:
 				paramList_unit = paramList_commonEnd;
 				sub(/int groupId, /, "", paramList_unit);
 				printFunctionComment_Common(outFile_nh, cmdsDocComment, cmdIndex, "");
 				print("EXPORT(" retType ") " outName "(" paramList_unit ");" commentEol) >> outFile_nh;
 				print("") >> outFile_nh;
-				
+
 				# Group version:
 				paramList_group = paramList_commonEnd;
 				sub(/int unitId, /, "", paramList_group);
@@ -251,7 +251,7 @@ function printNativeFP2F() {
 				print("\t" "return internal_" outName "(" paramListNoTypes ");") >> outFile_nc;
 				print("}") >> outFile_nc;
 				print("") >> outFile_nc;
-	
+
 				# Group version:
 				print("EXPORT(" retType ") " outName_group "(" paramList_group ") {" commentEol) >> outFile_nc;
 				print("") >> outFile_nc;

@@ -2,14 +2,25 @@
 
 #include "System/Misc/BitwiseEnum.h"
 
-#include <stdlib.h>
-
 #include <catch_amalgamated.hpp>
+#include <stdlib.h>
 
 using namespace Bitwise;
 
-namespace Colors { enum Colors {red, green, blue}; };
-enum Vehicles {car, bus, train};
+namespace Colors {
+enum Colors {
+	red,
+	green,
+	blue
+};
+}; // namespace Colors
+
+enum Vehicles {
+	car,
+	bus,
+	train
+};
+
 typedef BitwiseEnum<Colors::Colors> Color;
 
 bool foo(Color c) { return true; }

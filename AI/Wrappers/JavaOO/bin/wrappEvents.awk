@@ -513,7 +513,7 @@ function printOOEventClass(retType_ec, evtName_ec, ooParams_ec, meta_ec, ind_evt
 }
 
 function printOOEventInterface(int_name_ei) {
-	
+
 	outFile = JAVA_GENERATED_SOURCE_DIR "/" myPkgEvtD "/" int_name_ei "AIEvent.java";
 
 	int_params_ei = int_names[int_name_ei];

@@ -45,54 +45,56 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef AI_CIOSYSTEM_H_INCLUDED
 #define AI_CIOSYSTEM_H_INCLUDED
 
-#include <assimp/cfileio.h>
 #include <assimp/IOStream.hpp>
 #include <assimp/IOSystem.hpp>
+#include <assimp/cfileio.h>
 
-namespace Assimp    {
+namespace Assimp {
 
 class CIOSystemWrapper;
 
 // ------------------------------------------------------------------------------------------------
 // Custom IOStream implementation for the C-API
-class CIOStreamWrapper : public IOStream
-{
+class CIOStreamWrapper : public IOStream {
 public:
-    explicit CIOStreamWrapper(aiFile* pFile, CIOSystemWrapper* io)
-        : mFile(pFile),
-        mIO(io)
-    {}
-    ~CIOStreamWrapper(void);
+	explicit CIOStreamWrapper(aiFile* pFile, CIOSystemWrapper* io)
+	    : mFile(pFile)
+	    , mIO(io)
+	{
+	}
 
-    size_t Read(void* pvBuffer, size_t pSize, size_t pCount);
-    size_t Write(const void* pvBuffer, size_t pSize, size_t pCount);
-    aiReturn Seek(size_t pOffset, aiOrigin pOrigin);
-    size_t Tell(void) const;
-    size_t FileSize() const;
-    void Flush();
+	~CIOStreamWrapper(void);
+
+	size_t Read(void* pvBuffer, size_t pSize, size_t pCount);
+	size_t Write(const void* pvBuffer, size_t pSize, size_t pCount);
+	aiReturn Seek(size_t pOffset, aiOrigin pOrigin);
+	size_t Tell(void) const;
+	size_t FileSize() const;
+	void Flush();
 
 private:
-    aiFile* mFile;
-    CIOSystemWrapper* mIO;
+	aiFile* mFile;
+	CIOSystemWrapper* mIO;
 };
 
-class CIOSystemWrapper : public IOSystem
-{
-    friend class CIOStreamWrapper;
+class CIOSystemWrapper : public IOSystem {
+	friend class CIOStreamWrapper;
+
 public:
-    explicit CIOSystemWrapper(aiFileIO* pFile)
-        : mFileSystem(pFile)
-    {}
+	explicit CIOSystemWrapper(aiFileIO* pFile)
+	    : mFileSystem(pFile)
+	{
+	}
 
-    bool Exists( const char* pFile) const;
-    char getOsSeparator() const;
-    IOStream* Open(const char* pFile,const char* pMode = "rb");
-    void Close( IOStream* pFile);
+	bool Exists(const char* pFile) const;
+	char getOsSeparator() const;
+	IOStream* Open(const char* pFile, const char* pMode = "rb");
+	void Close(IOStream* pFile);
+
 private:
-    aiFileIO* mFileSystem;
+	aiFileIO* mFileSystem;
 };
 
-}
+} // namespace Assimp
 
 #endif
-

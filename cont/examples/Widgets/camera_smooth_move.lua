@@ -189,7 +189,7 @@ function widget:MouseWheel(up, value)
     local dz = gpos[3] - cs.pz
     local d = math.sqrt((dx * dx) + (dy * dy) + (dz * dz))
     local s = (up and 1 or -1) * (1 / 8)
-    
+
     dx = dx * s
     dy = dy * s
     dz = dz * s
@@ -247,4 +247,3 @@ end
 
 
 --------------------------------------------------------------------------------
-

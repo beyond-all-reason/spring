@@ -78,12 +78,12 @@ function widget:Update(deltaTime)
   local eNow, eMax = spGetTeamResources(spGetMyTeamID(), "energy")
   local mFrac = (mNow / mMax)
   local eFrac = (eNow / eMax)
-  
+
   if (currentState) then
     if ((eFrac < OFF_ENERGY_LIMIT) or (mFrac > OFF_METAL_LIMIT)) then
       SetMetalMakers(false)
     end
-  else 
+  else
     if ((eFrac > ON_ENERGY_LIMIT) and (mFrac < ON_METAL_LIMIT)) then
       SetMetalMakers(true)
     end

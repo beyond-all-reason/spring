@@ -307,10 +307,10 @@ void main()
    // If the distorted coordinate is closer to the screen in Z, then set the mixback to 1.0
     float mixback = clamp(texZ - fragZ, 0.0, 1.0);
 
-    // Sample the undistorted refraction screencopy, so we know what to replace it with. 
+    // Sample the undistorted refraction screencopy, so we know what to replace it with.
     vec3 origRefrColor = texture2D(refraction, screencoord).rgb;
 
-    // Replace the distorted screencopy with the original if the fragment is above the water. 
+    // Replace the distorted screencopy with the original if the fragment is above the water.
     refrColor = mix(refrColor, origRefrColor, mixback);
 
     gl_FragColor.rgb = mix(refrColor, waterSurface, 0.1 + surfaceMix * 0.100);

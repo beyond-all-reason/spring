@@ -3,36 +3,29 @@
 
 #include "GZFileHandler.h"
 
-#include <cassert>
-#include <string>
-#include <zlib.h>
-
 #include "FileQueryFlags.h"
 #include "FileSystem.h"
 
+#include <cassert>
+#include <string>
+
+#include <zlib.h>
+
 
 #ifndef TOOLS
-	#include "DataDirsAccess.h"
-	#include "System/StringUtil.h"
-	#include "System/Platform/Misc.h"
+#include "DataDirsAccess.h"
+
+#include "System/Platform/Misc.h"
+#include "System/StringUtil.h"
 #endif
 
 #define BUFFER_SIZE 8192
 
+// We must call Open from here since in the CFileHandler ctor
+// virtual functions aren't called.
+CGZFileHandler::CGZFileHandler(const char* fileName, const char* modes) { Open(fileName, modes); }
 
-//We must call Open from here since in the CFileHandler ctor
-//virtual functions aren't called.
-CGZFileHandler::CGZFileHandler(const char* fileName, const char* modes)
-{
-	Open(fileName, modes);
-}
-
-
-CGZFileHandler::CGZFileHandler(const std::string& fileName, const std::string& modes)
-{
-	Open(fileName, modes);
-}
-
+CGZFileHandler::CGZFileHandler(const std::string& fileName, const std::string& modes) { Open(fileName, modes); }
 
 bool CGZFileHandler::ReadToBuffer(const std::string& path)
 {
@@ -71,14 +64,14 @@ bool CGZFileHandler::UncompressBuffer()
 	z_stream zstream;
 	zstream.opaque = Z_NULL;
 	zstream.zalloc = Z_NULL;
-	zstream.zfree  = Z_NULL;
+	zstream.zfree = Z_NULL;
 	zstream.data_type = Z_BINARY;
 
 	//+16 marks it's a gzip header
 	inflateInit2(&zstream, 15 + 16);
 
-	zstream.next_in   = &compressed[0];
-	zstream.avail_in  = compressed.size();
+	zstream.next_in = &compressed[0];
+	zstream.avail_in = compressed.size();
 
 	std::uint8_t unzipBuffer[BUFFER_SIZE];
 
@@ -106,7 +99,6 @@ bool CGZFileHandler::UncompressBuffer()
 	return true;
 }
 
-
 bool CGZFileHandler::TryReadFromPWD(const std::string& fileName)
 {
 #ifndef TOOLS
@@ -119,7 +111,6 @@ bool CGZFileHandler::TryReadFromPWD(const std::string& fileName)
 	return ReadToBuffer(fullpath);
 }
 
-
 bool CGZFileHandler::TryReadFromRawFS(const std::string& fileName)
 {
 #ifndef TOOLS
@@ -129,7 +120,6 @@ bool CGZFileHandler::TryReadFromRawFS(const std::string& fileName)
 	return false;
 #endif
 }
-
 
 bool CGZFileHandler::TryReadFromVFS(const std::string& fileName, int section)
 {

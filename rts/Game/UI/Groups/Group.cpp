@@ -2,24 +2,23 @@
 
 
 #include "Group.h"
+
 #include "GroupHandler.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/EventHandler.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/creg/STL_Set.h"
 #include "System/float3.h"
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND(CGroup, (0, 0))
-CR_REG_METADATA(CGroup, (
-	CR_MEMBER(id),
-	CR_MEMBER(ghIndex),
-	CR_MEMBER(units),
+CR_REG_METADATA(CGroup,
+    (CR_MEMBER(id),
+        CR_MEMBER(ghIndex),
+        CR_MEMBER(units),
 
-	CR_POSTLOAD(PostLoad)
-))
-
+        CR_POSTLOAD(PostLoad)))
 
 void CGroup::PostLoad()
 {
@@ -62,7 +61,7 @@ void CGroup::RemoveIfEmptySpecialGroup()
 	if (id < CGroupHandler::FIRST_SPECIAL_GROUP)
 		return;
 
-	//HACK so Global AI groups do not get erased DEPRECATED
+	// HACK so Global AI groups do not get erased DEPRECATED
 	if (uiGroupHandlers[ghIndex].GetTeam() != gu->myTeam)
 		return;
 

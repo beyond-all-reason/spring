@@ -1,21 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 // included first due to "WinSock.h has already been included" error on Windows
-#include "System/Net/UDPConnection.h"
-#include "System/Net/LocalConnection.h"
-
 #include "NetProtocol.h"
+
 #include "Game/ClientSetup.h"
 #include "Game/GlobalUnsynced.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/LoadSave/DemoRecorder.h"
+#include "System/Net/LocalConnection.h"
+#include "System/Net/UDPConnection.h"
 // #include "System/Net/LocalConnection.h"
 // #include "System/Net/UDPConnection.h"
-#include "System/Net/UnpackPacket.h"
-#include "System/Platform/Threading.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/GlobalConfig.h"
 #include "System/Log/ILog.h"
+#include "System/Net/UnpackPacket.h"
+#include "System/Platform/Threading.h"
 #include "System/SafeUtil.h"
 
 CONFIG(int, SourcePort).defaultValue(0);
@@ -23,7 +23,8 @@ CONFIG(int, SourcePort).defaultValue(0);
 
 CNetProtocol* clientNet = nullptr;
 
-CNetProtocol::CNetProtocol() {
+CNetProtocol::CNetProtocol()
+{
 	static_assert(sizeof(serverConnMem) >= sizeof(netcode::UDPConnection), "");
 	static_assert(sizeof(serverConnMem) >= sizeof(netcode::CLocalConnection), "");
 	static_assert(sizeof(demoRecordMem) >= sizeof(CDemoRecorder), "");
@@ -42,24 +43,28 @@ CNetProtocol::~CNetProtocol()
 	Send(CBaseNetProtocol::Get().SendQuit(__func__));
 	Close(true);
 
-	LOG("[NetProto::%s] %s",__func__, serverConnPtr->Statistics().c_str());
+	LOG("[NetProto::%s] %s", __func__, serverConnPtr->Statistics().c_str());
 
 	spring::SafeDestruct(serverConnPtr);
 	spring::SafeDestruct(demoRecordPtr);
 }
 
-
-void CNetProtocol::InitClient(std::shared_ptr<ClientSetup> clientSetup, const std::string& clientVersion, const std::string& clientPlatform)
+void CNetProtocol::InitClient(std::shared_ptr<ClientSetup> clientSetup,
+    const std::string& clientVersion,
+    const std::string& clientPlatform)
 {
 	userName = clientSetup->myPlayerName;
 	userPasswd = clientSetup->myPasswd;
 
-	serverConnPtr = new (serverConnMem) netcode::UDPConnection(configHandler->GetInt("SourcePort"), clientSetup->hostIP, clientSetup->hostPort);
+	serverConnPtr = new (serverConnMem)
+	    netcode::UDPConnection(configHandler->GetInt("SourcePort"), clientSetup->hostIP, clientSetup->hostPort);
 	serverConnPtr->Unmute();
-	serverConnPtr->SendData(CBaseNetProtocol::Get().SendAttemptConnect(userName, userPasswd, clientVersion, clientPlatform, globalConfig.networkLossFactor));
+	serverConnPtr->SendData(CBaseNetProtocol::Get().SendAttemptConnect(
+	    userName, userPasswd, clientVersion, clientPlatform, globalConfig.networkLossFactor));
 	serverConnPtr->Flush(true);
 
-	LOG("[NetProto::%s] connecting to IP %s on port %i using name %s", __func__, clientSetup->hostIP.c_str(), clientSetup->hostPort, userName.c_str());
+	LOG("[NetProto::%s] connecting to IP %s on port %i using name %s", __func__, clientSetup->hostIP.c_str(),
+	    clientSetup->hostPort, userName.c_str());
 }
 
 void CNetProtocol::InitLocalClient()
@@ -70,36 +75,26 @@ void CNetProtocol::InitLocalClient()
 	LOG("[NetProto::%s] connecting to local server", __func__);
 }
 
-
 void CNetProtocol::AttemptReconnect(const std::string& myVersion, const std::string& myPlatform)
 {
 	netcode::UDPConnection conn(*serverConnPtr);
 
 	conn.Unmute();
-	conn.SendData(CBaseNetProtocol::Get().SendAttemptConnect(userName, userPasswd, myVersion, myPlatform, globalConfig.networkLossFactor, true));
+	conn.SendData(CBaseNetProtocol::Get().SendAttemptConnect(
+	    userName, userPasswd, myVersion, myPlatform, globalConfig.networkLossFactor, true));
 	conn.Flush(true);
 
-	LOG("[NetProto::%s] reconnecting to server... %ds", __func__, dynamic_cast<decltype(conn)*>(serverConnPtr)->GetReconnectSecs());
+	LOG("[NetProto::%s] reconnecting to server... %ds", __func__,
+	    dynamic_cast<decltype(conn)*>(serverConnPtr)->GetReconnectSecs());
 }
 
+bool CNetProtocol::NeedsReconnect() { return serverConnPtr->NeedsReconnect(); }
 
-bool CNetProtocol::NeedsReconnect() {
-	return serverConnPtr->NeedsReconnect();
-}
+bool CNetProtocol::CheckTimeout(int nsecs, bool initial) const { return serverConnPtr->CheckTimeout(nsecs, initial); }
 
-bool CNetProtocol::CheckTimeout(int nsecs, bool initial) const {
-	return serverConnPtr->CheckTimeout(nsecs, initial);
-}
+bool CNetProtocol::Connected() const { return (serverConnPtr->GetDataReceived() > 0); }
 
-bool CNetProtocol::Connected() const
-{
-	return (serverConnPtr->GetDataReceived() > 0);
-}
-
-std::string CNetProtocol::ConnectionStr() const
-{
-	return serverConnPtr->GetFullAddress();
-}
+std::string CNetProtocol::ConnectionStr() const { return serverConnPtr->GetFullAddress(); }
 
 std::shared_ptr<const netcode::RawPacket> CNetProtocol::Peek(unsigned ahead) const
 {
@@ -115,7 +110,6 @@ void CNetProtocol::DeleteBufferPacketAt(unsigned index)
 	return serverConnPtr->DeleteBufferPacketAt(index);
 }
 
-
 float CNetProtocol::GetPacketTime(int frameNum) const
 {
 	// startTime is not yet defined pre-simframe
@@ -124,7 +118,6 @@ float CNetProtocol::GetPacketTime(int frameNum) const
 
 	return (gu->startTime + frameNum * INV_GAME_SPEED);
 }
-
 
 std::shared_ptr<const netcode::RawPacket> CNetProtocol::GetData(int frameNum)
 {
@@ -142,14 +135,13 @@ std::shared_ptr<const netcode::RawPacket> CNetProtocol::GetData(int frameNum)
 	return ret;
 }
 
-
 void CNetProtocol::Send(const netcode::RawPacket* pkt) { Send(std::shared_ptr<const netcode::RawPacket>(pkt)); }
+
 void CNetProtocol::Send(std::shared_ptr<const netcode::RawPacket> pkt)
 {
 	std::lock_guard<spring::spinlock> lock(serverConnMutex);
 	serverConnPtr->SendData(pkt);
 }
-
 
 __FORCE_ALIGN_STACK__
 void CNetProtocol::UpdateLoop()
@@ -177,11 +169,11 @@ void CNetProtocol::Close(bool flush)
 	serverConnPtr->Close(flush);
 }
 
-
 // NOTE: has to use swap rather than assign because of Reset
 void CNetProtocol::SetDemoRecorder(CDemoRecorder&& r) { std::swap(*demoRecordPtr, r); }
+
 void CNetProtocol::ResetDemoRecorder() { SetDemoRecorder({}); }
 
 unsigned int CNetProtocol::GetNumWaitingServerPackets() const { return (serverConnPtr->GetPacketQueueSize()); }
-unsigned int CNetProtocol::GetNumWaitingPingPackets() const { return (serverConnPtr->GetNumQueuedPings()); }
 
+unsigned int CNetProtocol::GetNumWaitingPingPackets() const { return (serverConnPtr->GetNumQueuedPings()); }

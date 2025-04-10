@@ -6,9 +6,9 @@
 
 #include <string>
 
-//static const int springai::EventAIException::DEFAULT_ERROR_NUMBER = 10;
+// static const int springai::EventAIException::DEFAULT_ERROR_NUMBER = 10;
 
 springai::EventAIException::EventAIException(const std::string& message, int errorNumber)
-	: AIException(errorNumber, message)
+    : AIException(errorNumber, message)
 {
 }

@@ -1,8 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "TAPalette.h"
-#include "System/FileSystem/FileHandler.h"
 
+#include "System/FileSystem/FileHandler.h"
 #include "System/Misc/TracyDefs.h"
 
 void CTAPalette::Init(CFileHandler& paletteFile)
@@ -17,4 +17,3 @@ void CTAPalette::Init(CFileHandler& paletteFile)
 		color.a = 255;
 	}
 }
-

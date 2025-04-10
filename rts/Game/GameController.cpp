@@ -11,4 +11,3 @@ CGameController::~CGameController()
 
 	activeController = nullptr;
 }
-

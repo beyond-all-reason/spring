@@ -29,32 +29,33 @@
 #ifndef RMLGUI_SVG_SVG_PLUGIN_H
 #define RMLGUI_SVG_SVG_PLUGIN_H
 
-#include <RmlUi/Core.h>
 #include "./ElementSVG.h"
+
+#include <RmlUi/Core.h>
 
 namespace RmlGui {
 namespace SVG {
-	class DynamicSVGPlugin : public Rml::Plugin {
-	public:
-		void OnInitialise() override
-		{
-			instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementSVG>>();
+class DynamicSVGPlugin : public Rml::Plugin {
+public:
+	void OnInitialise() override
+	{
+		instancer = Rml::MakeUnique<Rml::ElementInstancerGeneric<ElementSVG>>();
 
-			Rml::Factory::RegisterElementInstancer("svg", instancer.get());
+		Rml::Factory::RegisterElementInstancer("svg", instancer.get());
 
-			Rml::Log::Message(Rml::Log::LT_INFO, "SVG plugin initialised.");
-		}
+		Rml::Log::Message(Rml::Log::LT_INFO, "SVG plugin initialised.");
+	}
 
-		void OnShutdown() override { delete this; }
+	void OnShutdown() override { delete this; }
 
-		int GetEventClasses() override { return Plugin::EVT_BASIC; }
+	int GetEventClasses() override { return Plugin::EVT_BASIC; }
 
-	private:
-		Rml::UniquePtr<Rml::ElementInstancerGeneric<ElementSVG>> instancer;
-	};
+private:
+	Rml::UniquePtr<Rml::ElementInstancerGeneric<ElementSVG>> instancer;
+};
 
-	DynamicSVGPlugin* Initialise();
-}
-}
+DynamicSVGPlugin* Initialise();
+} // namespace SVG
+} // namespace RmlGui
 
 #endif

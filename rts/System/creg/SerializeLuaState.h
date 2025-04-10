@@ -3,16 +3,17 @@
 #ifndef CR_LUA_TYPES_H
 #define CR_LUA_TYPES_H
 
-#include "creg_cond.h"
 #include "LuaInclude.h"
 
-namespace creg {
-	void SerializeLuaState(creg::ISerializer* s, lua_State** L);
-	void SerializeLuaThread(creg::ISerializer* s, lua_State** L);
-	void RegisterCFunction(const char* name, lua_CFunction f);
-	void AutoRegisterCFunctions(const std::string& handle, lua_State* L);
-	void UnregisterAllCFunctions();
-	void CopyLuaContext(lua_State* L);
-}
+#include "creg_cond.h"
 
-#endif //CR_BASIC_TYPES_H
+namespace creg {
+void SerializeLuaState(creg::ISerializer* s, lua_State** L);
+void SerializeLuaThread(creg::ISerializer* s, lua_State** L);
+void RegisterCFunction(const char* name, lua_CFunction f);
+void AutoRegisterCFunctions(const std::string& handle, lua_State* L);
+void UnregisterAllCFunctions();
+void CopyLuaContext(lua_State* L);
+} // namespace creg
+
+#endif // CR_BASIC_TYPES_H

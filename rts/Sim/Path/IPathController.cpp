@@ -1,19 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "IPathController.h"
+
 #include "Sim/Units/Unit.h"
 #include "System/SpringMath.h"
 
-float GMTDefaultPathController::GetDeltaSpeed(
-	unsigned int pathID,
-	float targetSpeed, // unsigned
-	float currentSpeed, // unsigned
-	float maxAccRate, // unsigned
-	float maxDecRate, // unsigned
-	bool wantReverse,
-	bool isReversing
-) const {
+float GMTDefaultPathController::GetDeltaSpeed(unsigned int pathID,
+    float targetSpeed,  // unsigned
+    float currentSpeed, // unsigned
+    float maxAccRate,   // unsigned
+    float maxDecRate,   // unsigned
+    bool wantReverse,
+    bool isReversing) const
+{
 	// Sign(0) is negative which we do not want
-	const int  targetSpeedSign = Sign(int(!wantReverse) * 2 - 1);
+	const int targetSpeedSign = Sign(int(!wantReverse) * 2 - 1);
 	const int currentSpeedSign = Sign(int(!isReversing) * 2 - 1);
 
 	// if reversing, target and current are swapped
@@ -44,18 +44,17 @@ float GMTDefaultPathController::GetDeltaSpeed(
 	return ((deltaSpeed * currentSpeedSign) * (1 - owner->IsInAir()));
 }
 
-
-short GMTDefaultPathController::GetDeltaHeading(
-	unsigned int pathID,
-	short newHeading,
-	short oldHeading,
-	float maxTurnRate
-) const {
+short GMTDefaultPathController::GetDeltaHeading(unsigned int pathID,
+    short newHeading,
+    short oldHeading,
+    float maxTurnRate) const
+{
 	short deltaHeading = newHeading - oldHeading;
 
 	if (deltaHeading > 0) {
-		deltaHeading = std::min(deltaHeading, short( maxTurnRate));
-	} else {
+		deltaHeading = std::min(deltaHeading, short(maxTurnRate));
+	}
+	else {
 		deltaHeading = std::max(deltaHeading, short(-maxTurnRate));
 	}
 
@@ -63,15 +62,14 @@ short GMTDefaultPathController::GetDeltaHeading(
 	return (deltaHeading * (1 - owner->IsInAir()));
 }
 
-short GMTDefaultPathController::GetDeltaHeading(
-	unsigned int pathID,
-	short newHeading,
-	short oldHeading,
-	float maxTurnSpeed,
-	float maxTurnAccel,
-	float turnBrakeDist,
-	float* curTurnSpeedPtr
-) const {
+short GMTDefaultPathController::GetDeltaHeading(unsigned int pathID,
+    short newHeading,
+    short oldHeading,
+    float maxTurnSpeed,
+    float maxTurnAccel,
+    float turnBrakeDist,
+    float* curTurnSpeedPtr) const
+{
 	float curTurnSpeed = *curTurnSpeedPtr;
 	float absTurnSpeed = math::fabs(curTurnSpeed);
 
@@ -83,8 +81,9 @@ short GMTDefaultPathController::GetDeltaHeading(
 	const short curDeltaHeading = newHeading - stopTurnHeading;
 
 	if (brakeDistFactor == 0) {
-		curTurnSpeed  = (Sign(curDeltaHeading) * std::min(math::fabs(curDeltaHeading * 1.0f), maxTurnAccel));
-	} else {
+		curTurnSpeed = (Sign(curDeltaHeading) * std::min(math::fabs(curDeltaHeading * 1.0f), maxTurnAccel));
+	}
+	else {
 		curTurnSpeed += (Sign(curDeltaHeading) * std::min(math::fabs(curDeltaHeading * 1.0f), maxTurnAccel));
 	}
 
@@ -93,7 +92,4 @@ short GMTDefaultPathController::GetDeltaHeading(
 	return (*curTurnSpeedPtr = std::clamp(curTurnSpeed * (1 - owner->IsInAir()), -maxTurnSpeed, maxTurnSpeed));
 }
 
-bool GMTDefaultPathController::IgnoreTerrain(const MoveDef& md, const float3& pos) const {
-	return (owner->IsInAir());
-}
-
+bool GMTDefaultPathController::IgnoreTerrain(const MoveDef& md, const float3& pos) const { return (owner->IsInAir()); }

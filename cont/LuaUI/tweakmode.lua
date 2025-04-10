@@ -77,9 +77,9 @@ end
 
 
 local function SendUpdate()
-  
+
   if true then return end -- ???
-  
+
   if (UpdateHook == nil) then
     print('ERROR')
     error('UpdateHook == nil, '..widget.whInfo.basename)
@@ -138,7 +138,7 @@ function widget:TweakMouseMove(x, y, dx, dy, button)
   if (not widgetHandler:IsMouseOwner()) then
     return false
   end
-  
+
   local vsx,vsy = widgetHandler:GetViewSizes()
   if (button == 1) then
     if ((xmin + dx) < 0) then dx = - xmin end
@@ -225,18 +225,18 @@ function widget:TweakDrawScreen()
   if (not widgetHandler:IsMouseOwner() and not IsAbove(x, y)) then
     return
   end
-  
+
   -- ??? add an indicator for xside/yside
-  
+
   gl.Blending(GL.SRC_ALPHA, GL.ONE)
   gl.Color(0.8, 0.8, 1.0, 0.25)
   gl.Shape(GL.QUADS, {
-    { v = { xmin, ymin } }, { v = { xmax, ymin } }, 
+    { v = { xmin, ymin } }, { v = { xmax, ymin } },
     { v = { xmax, ymax } }, { v = { xmin, ymax } }
   })
   gl.Color(0.0, 0.0, 1.0, 0.5)
   gl.Shape(GL.QUADS, {
-    { v = { xmin + 3, ymin + 3} }, { v = { xmax - 3, ymin + 3 } }, 
+    { v = { xmin + 3, ymin + 3} }, { v = { xmax - 3, ymin + 3 } },
     { v = { xmax - 3, ymax - 3} }, { v = { xmin + 3, ymax - 3 } }
   })
   gl.Color(1.0, 1.0, 1.0)

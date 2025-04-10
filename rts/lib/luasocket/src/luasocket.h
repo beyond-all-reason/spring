@@ -13,9 +13,9 @@
 /*-------------------------------------------------------------------------*\
 * Current socket library version
 \*-------------------------------------------------------------------------*/
-#define LUASOCKET_VERSION    "LuaSocket 2.0.2"
-#define LUASOCKET_COPYRIGHT  "Copyright (C) 2004-2007 Diego Nehab"
-#define LUASOCKET_AUTHORS    "Diego Nehab"
+#define LUASOCKET_VERSION "LuaSocket 2.0.2"
+#define LUASOCKET_COPYRIGHT "Copyright (C) 2004-2007 Diego Nehab"
+#define LUASOCKET_AUTHORS "Diego Nehab"
 
 /*-------------------------------------------------------------------------*\
 * This macro prefixes all exported API functions
@@ -27,6 +27,6 @@
 /*-------------------------------------------------------------------------*\
 * Initializes the library.
 \*-------------------------------------------------------------------------*/
-LUASOCKET_API int luaopen_socket_core(lua_State *L);
+LUASOCKET_API int luaopen_socket_core(lua_State* L);
 
 #endif /* LUASOCKET_H */

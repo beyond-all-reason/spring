@@ -6,8 +6,8 @@
 struct lua_State;
 
 class LuaConstGL {
-	public:
-		static bool PushEntries(lua_State* L);
+public:
+	static bool PushEntries(lua_State* L);
 };
 
 

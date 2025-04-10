@@ -1,31 +1,31 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "FeatureHandler.h"
+
 #include "Feature.h"
 #include "FeatureDef.h"
 #include "FeatureDefHandler.h"
 #include "FeatureMemPool.h"
+
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Ecs/Registry.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Units/CommandAI/BuilderCaches.h"
-#include "System/creg/STL_Set.h"
 #include "System/EventHandler.h"
-#include "System/TimeProfiler.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/TimeProfiler.h"
+#include "System/creg/STL_Set.h"
 
 /******************************************************************************/
 
 CR_BIND(CFeatureHandler, )
-CR_REG_METADATA(CFeatureHandler, (
-	CR_MEMBER(idPool),
-	CR_MEMBER(deletedFeatureIDs),
-	CR_MEMBER(activeFeatureIDs),
-	CR_MEMBER(features),
-	CR_MEMBER(updateFeatures)
-))
+CR_REG_METADATA(CFeatureHandler,
+    (CR_MEMBER(idPool),
+        CR_MEMBER(deletedFeatureIDs),
+        CR_MEMBER(activeFeatureIDs),
+        CR_MEMBER(features),
+        CR_MEMBER(updateFeatures)))
 
 /******************************************************************************/
 
@@ -33,8 +33,8 @@ FeatureMemPool featureMemPool;
 
 CFeatureHandler featureHandler;
 
-
-void CFeatureHandler::Init() {
+void CFeatureHandler::Init()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	features.resize(MAX_FEATURES, nullptr);
 	activeFeatureIDs.reserve(MAX_FEATURES); // internal table size must be constant
@@ -44,7 +44,8 @@ void CFeatureHandler::Init() {
 	idPool.Expand(0, MAX_FEATURES);
 }
 
-void CFeatureHandler::Kill() {
+void CFeatureHandler::Kill()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (const int featureID: activeFeatureIDs) {
 		Sim::registry.destroy(features[featureID]->entityReference);
@@ -59,7 +60,6 @@ void CFeatureHandler::Kill() {
 	features.clear();
 	updateFeatures.clear();
 }
-
 
 void CFeatureHandler::LoadFeaturesFromMap()
 {
@@ -81,30 +81,26 @@ void CFeatureHandler::LoadFeaturesFromMap()
 			continue;
 
 		FeatureLoadParams params = {
-			nullptr,
-			nullptr,
-			def,
+		    nullptr, nullptr, def,
 
-			float3(mfi[a].pos.x, CGround::GetHeightReal(mfi[a].pos.x, mfi[a].pos.z), mfi[a].pos.z),
-			ZeroVector,
+		    float3(mfi[a].pos.x, CGround::GetHeightReal(mfi[a].pos.x, mfi[a].pos.z), mfi[a].pos.z), ZeroVector,
 
-			-1, // featureID
-			-1, // teamID
-			-1, // allyTeamID
+		    -1, // featureID
+		    -1, // teamID
+		    -1, // allyTeamID
 
-			static_cast<short int>(mfi[a].rotation),
-			FACING_SOUTH,
+		    static_cast<short int>(mfi[a].rotation), FACING_SOUTH,
 
-			0, // wreckLevels
-			0, // smokeTime
+		    0, // wreckLevels
+		    0, // smokeTime
 		};
 
 		LoadFeature(params);
 	}
 }
 
-
-CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
+CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// need to check this BEFORE creating the instance
 	if (!CanAddFeature(params.featureID))
@@ -118,7 +114,6 @@ CFeature* CFeatureHandler::LoadFeature(const FeatureLoadParams& params) {
 	return feature;
 }
 
-
 void CFeatureHandler::InsertActiveFeature(CFeature* feature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -131,8 +126,6 @@ void CFeatureHandler::InsertActiveFeature(CFeature* feature)
 	features[feature->id] = feature;
 }
 
-
-
 bool CFeatureHandler::AddFeature(CFeature* feature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -144,14 +137,12 @@ bool CFeatureHandler::AddFeature(CFeature* feature)
 	return true;
 }
 
-
 void CFeatureHandler::DeleteFeature(CFeature* feature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	SetFeatureUpdateable(feature);
 	feature->deleteMe = true;
 }
-
 
 CFeature* CFeatureHandler::CreateWreckage(const FeatureLoadParams& cparams)
 {
@@ -176,7 +167,8 @@ CFeature* CFeatureHandler::CreateWreckage(const FeatureLoadParams& cparams)
 	FeatureLoadParams params = cparams;
 
 	params.parentObj = cparams.parentObj;
-	params.unitDef = ((fd->resurrectable == 0) || (cparams.wreckLevels > 0 && fd->resurrectable < 0))? nullptr: cparams.unitDef;
+	params.unitDef =
+	    ((fd->resurrectable == 0) || (cparams.wreckLevels > 0 && fd->resurrectable < 0)) ? nullptr : cparams.unitDef;
 	params.featureDef = fd;
 
 	// for the CreateWreckage call, params.smokeTime acts as a multiplier
@@ -184,8 +176,6 @@ CFeature* CFeatureHandler::CreateWreckage(const FeatureLoadParams& cparams)
 
 	return (LoadFeature(params));
 }
-
-
 
 void CFeatureHandler::Update()
 {
@@ -205,7 +195,6 @@ void CFeatureHandler::Update()
 	}
 }
 
-
 bool CFeatureHandler::TryFreeFeatureID(int id)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -221,7 +210,6 @@ bool CFeatureHandler::TryFreeFeatureID(int id)
 
 	return true;
 }
-
 
 bool CFeatureHandler::UpdateFeature(CFeature* feature)
 {
@@ -256,7 +244,6 @@ bool CFeatureHandler::UpdateFeature(CFeature* feature)
 	return false;
 }
 
-
 void CFeatureHandler::SetFeatureUpdateable(CFeature* feature)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -268,7 +255,6 @@ void CFeatureHandler::SetFeatureUpdateable(CFeature* feature)
 	// always true
 	feature->inUpdateQue = spring::VectorInsertUnique(updateFeatures, feature);
 }
-
 
 void CFeatureHandler::TerrainChanged(int x1, int y1, int x2, int y2)
 {
@@ -286,4 +272,3 @@ void CFeatureHandler::TerrainChanged(int x1, int y1, int x2, int y2)
 		}
 	}
 }
-

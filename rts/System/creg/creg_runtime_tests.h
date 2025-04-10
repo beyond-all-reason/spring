@@ -4,8 +4,7 @@
 #define _CREG_RUNTIME_TESTS_H
 
 namespace creg {
-	bool RuntimeTest();
+bool RuntimeTest();
 }
 
 #endif // _CREG_RUNTIME_TESTS_H
-

@@ -1,20 +1,25 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #ifndef _AI_WEAPON_FIRED_EVENT_H
-#define	_AI_WEAPON_FIRED_EVENT_H
+#define _AI_WEAPON_FIRED_EVENT_H
 
 #include "AIEvent.h"
-#include "../IAICallback.h"
 
+#include "../IAICallback.h"
 
 namespace springLegacyAI {
 
 class CAIWeaponFiredEvent : public CAIEvent {
 public:
-	CAIWeaponFiredEvent(const SWeaponFiredEvent& event) : event(event) {}
+	CAIWeaponFiredEvent(const SWeaponFiredEvent& event)
+	    : event(event)
+	{
+	}
+
 	~CAIWeaponFiredEvent() {}
 
-	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = nullptr) {
+	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = nullptr)
+	{
 		int evtId = AI_EVENT_WEAPON_FIRED;
 
 		WeaponDef* weaponDef = nullptr;

@@ -11,10 +11,13 @@
  * Pixelbuffer Object class (EXT_pixel_buffer_object).
  * WARNING: CANNOT BE USED IN COMBINATION WITH gluBuild2DMipmaps/RecoilBuildMipmaps!!!
  */
-class PBO : public VBO
-{
+class PBO : public VBO {
 public:
-	PBO() : VBO(GL_PIXEL_UNPACK_BUFFER) {}
+	PBO()
+	    : VBO(GL_PIXEL_UNPACK_BUFFER)
+	{
+	}
+
 	virtual ~PBO() {}
 };
 

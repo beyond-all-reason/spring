@@ -45,43 +45,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct aiNode;
 
 #if (!defined AI_CONFIG_GLOBAL_SCALE_FACTOR_DEFAULT)
-#   define AI_CONFIG_GLOBAL_SCALE_FACTOR_DEFAULT  1.0f
+#define AI_CONFIG_GLOBAL_SCALE_FACTOR_DEFAULT 1.0f
 #endif // !! AI_DEBONE_THRESHOLD
 
 namespace Assimp {
 
 // ---------------------------------------------------------------------------
 /** ScaleProcess: Class to rescale the whole model.
-*/
+ */
 class ASSIMP_API ScaleProcess : public BaseProcess {
 public:
-    /// The default class constructor.
-    ScaleProcess();
+	/// The default class constructor.
+	ScaleProcess();
 
-    /// The class destructor.
-    virtual ~ScaleProcess();
+	/// The class destructor.
+	virtual ~ScaleProcess();
 
-    /// Will set the scale manually.
-    void setScale( ai_real scale );
+	/// Will set the scale manually.
+	void setScale(ai_real scale);
 
-    /// Returns the current scaling value.
-    ai_real getScale() const;
+	/// Returns the current scaling value.
+	ai_real getScale() const;
 
-    /// Overwritten, @see BaseProcess
-    virtual bool IsActive( unsigned int pFlags ) const;
+	/// Overwritten, @see BaseProcess
+	virtual bool IsActive(unsigned int pFlags) const;
 
-    /// Overwritten, @see BaseProcess
-    virtual void SetupProperties( const Importer* pImp );
+	/// Overwritten, @see BaseProcess
+	virtual void SetupProperties(const Importer* pImp);
 
-    /// Overwritten, @see BaseProcess
-    virtual void Execute( aiScene* pScene );
-
-private:
-    void traverseNodes( aiNode *currentNode );
-    void applyScaling( aiNode *currentNode );
+	/// Overwritten, @see BaseProcess
+	virtual void Execute(aiScene* pScene);
 
 private:
-    ai_real mScale;
+	void traverseNodes(aiNode* currentNode);
+	void applyScaling(aiNode* currentNode);
+
+private:
+	ai_real mScale;
 };
 
 } // Namespace Assimp

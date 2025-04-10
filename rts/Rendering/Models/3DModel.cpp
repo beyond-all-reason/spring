@@ -3,54 +3,52 @@
 #include "3DModel.h"
 
 #include "3DModelVAO.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GL/myGL.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "System/Exceptions.h"
-#include "System/SafeUtil.h"
-
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstring>
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND(LocalModelPiece, (nullptr))
-CR_REG_METADATA(LocalModelPiece, (
-	CR_MEMBER(pos),
-	CR_MEMBER(rot),
-	CR_MEMBER(dir),
-	CR_MEMBER(colvol),
-	CR_MEMBER(scriptSetVisible),
-	CR_MEMBER(blockScriptAnims),
-	CR_MEMBER(lmodelPieceIndex),
-	CR_MEMBER(scriptPieceIndex),
-	CR_MEMBER(parent),
-	CR_MEMBER(localModel),
-	CR_MEMBER(children),
+CR_REG_METADATA(LocalModelPiece,
+    (CR_MEMBER(pos),
+        CR_MEMBER(rot),
+        CR_MEMBER(dir),
+        CR_MEMBER(colvol),
+        CR_MEMBER(scriptSetVisible),
+        CR_MEMBER(blockScriptAnims),
+        CR_MEMBER(lmodelPieceIndex),
+        CR_MEMBER(scriptPieceIndex),
+        CR_MEMBER(parent),
+        CR_MEMBER(localModel),
+        CR_MEMBER(children),
 
-	// reload
-	CR_IGNORED(original),
+        // reload
+        CR_IGNORED(original),
 
-	CR_IGNORED(dirty),
-	CR_IGNORED(customDirty),
-	CR_IGNORED(modelSpaceMat),
-	CR_IGNORED(pieceSpaceMat),
+        CR_IGNORED(dirty),
+        CR_IGNORED(customDirty),
+        CR_IGNORED(modelSpaceMat),
+        CR_IGNORED(pieceSpaceMat),
 
-	CR_IGNORED(lodDispLists) //FIXME GL idx!
-))
+        CR_IGNORED(lodDispLists) // FIXME GL idx!
+        ))
 
 CR_BIND(LocalModel, )
-CR_REG_METADATA(LocalModel, (
-	CR_MEMBER(pieces),
+CR_REG_METADATA(LocalModel,
+    (CR_MEMBER(pieces),
 
-	CR_MEMBER(boundingVolume),
-	CR_IGNORED(luaMaterialData),
-	CR_MEMBER(needsBoundariesRecalc)
-))
+        CR_MEMBER(boundingVolume),
+        CR_IGNORED(luaMaterialData),
+        CR_MEMBER(needsBoundariesRecalc)))
 
 static_assert(sizeof(SVertexData) == (3 + 3 + 3 + 3 + 4 + 2 + 1) * 4);
 
@@ -59,6 +57,7 @@ void S3DModelHelpers::BindLegacyAttrVBOs()
 	RECOIL_DETAILED_TRACY_ZONE;
 	S3DModelVAO::GetInstance().BindLegacyVertexAttribsAndVBOs();
 }
+
 void S3DModelHelpers::UnbindLegacyAttrVBOs()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -75,7 +74,8 @@ void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 	if (!HasGeometryData())
 		return;
 
-	if (bind) S3DModelHelpers::BindLegacyAttrVBOs();
+	if (bind)
+		S3DModelHelpers::BindLegacyAttrVBOs();
 
 	if (bindPosMat) {
 		glPushMatrix();
@@ -87,7 +87,8 @@ void S3DModelPiece::DrawStaticLegacy(bool bind, bool bindPosMat) const
 		DrawElements();
 	}
 
-	if (bind) S3DModelHelpers::UnbindLegacyAttrVBOs();
+	if (bind)
+		S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
 // only used by projectiles with the PF_Recursive flag
@@ -98,21 +99,24 @@ void S3DModelPiece::DrawStaticLegacyRec() const
 
 	DrawStaticLegacy(false, false);
 
-	for (const S3DModelPiece* childPiece : children) {
+	for (const S3DModelPiece* childPiece: children) {
 		childPiece->DrawStaticLegacy(false, false);
 	}
 
 	S3DModelHelpers::UnbindLegacyAttrVBOs();
 }
 
-
 float3 S3DModelPiece::GetEmitPos() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (vertices.size()) {
-		case 0:
-		case 1: { return ZeroVector; } break;
-		default: { return GetVertexPos(0); } break;
+	case 0:
+	case 1: {
+		return ZeroVector;
+	} break;
+	default: {
+		return GetVertexPos(0);
+	} break;
 	}
 }
 
@@ -120,12 +124,17 @@ float3 S3DModelPiece::GetEmitDir() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (vertices.size()) {
-		case 0: { return FwdVector; } break;
-		case 1: { return GetVertexPos(0); } break;
-		default: { return (GetVertexPos(1) - GetVertexPos(0)); } break;
+	case 0: {
+		return FwdVector;
+	} break;
+	case 1: {
+		return GetVertexPos(0);
+	} break;
+	default: {
+		return (GetVertexPos(1) - GetVertexPos(0));
+	} break;
 	}
 }
-
 
 void S3DModelPiece::CreateShatterPieces()
 {
@@ -140,22 +149,20 @@ void S3DModelPiece::CreateShatterPieces()
 	}
 }
 
-
 void S3DModelPiece::CreateShatterPiecesVariation(int num)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	using ShatterPartDataPair = std::pair<S3DModelPiecePart::RenderData, std::vector<uint32_t>>;
-	using ShatterPartsBuffer  = std::array<ShatterPartDataPair, S3DModelPiecePart::SHATTER_MAX_PARTS>;
+	using ShatterPartsBuffer = std::array<ShatterPartDataPair, S3DModelPiecePart::SHATTER_MAX_PARTS>;
 
 	ShatterPartsBuffer shatterPartsBuf;
 
-	for (auto& [rd, idcs] : shatterPartsBuf) {
+	for (auto& [rd, idcs]: shatterPartsBuf) {
 		rd.dir = (guRNG.NextVector()).ANormalize();
 	}
 
 	// helper
-	const auto GetPolygonDir = [&](size_t idx)
-	{
+	const auto GetPolygonDir = [&](size_t idx) {
 		float3 midPos;
 		midPos += GetVertexPos(indices[idx + 0]);
 		midPos += GetVertexPos(indices[idx + 1]);
@@ -197,7 +204,7 @@ void S3DModelPiece::CreateShatterPiecesVariation(int num)
 
 		uint32_t indxPos = 0;
 
-		for (auto& [rd, idcs] : shatterPartsBuf) {
+		for (auto& [rd, idcs]: shatterPartsBuf) {
 			rd.indexCount = static_cast<uint32_t>(idcs.size());
 			rd.indexStart = static_cast<uint32_t>(num * mapSize) + indxPos;
 
@@ -212,7 +219,7 @@ void S3DModelPiece::CreateShatterPiecesVariation(int num)
 		// delete empty splitter parts
 		size_t backIdx = shatterPartsBuf.size() - 1;
 
-		for (size_t j = 0; j < shatterPartsBuf.size() && j < backIdx; ) {
+		for (size_t j = 0; j < shatterPartsBuf.size() && j < backIdx;) {
 			const auto& [rd, idcs] = shatterPartsBuf[j];
 
 			if (rd.indexCount == 0) {
@@ -233,16 +240,20 @@ void S3DModelPiece::CreateShatterPiecesVariation(int num)
 	}
 }
 
-
-void S3DModelPiece::Shatter(float pieceChance, int modelType, int texType, int team, const float3 pos, const float3 speed, const CMatrix44f& m) const
+void S3DModelPiece::Shatter(float pieceChance,
+    int modelType,
+    int texType,
+    int team,
+    const float3 pos,
+    const float3 speed,
+    const CMatrix44f& m) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float2  pieceParams = {float3::max(float3::fabs(maxs), float3::fabs(mins)).Length(), pieceChance};
-	const   int2 renderParams = {texType, team};
+	const float2 pieceParams = {float3::max(float3::fabs(maxs), float3::fabs(mins)).Length(), pieceChance};
+	const int2 renderParams = {texType, team};
 
 	projectileHandler.AddFlyingPiece(modelType, this, m, pos, speed, pieceParams, renderParams);
 }
-
 
 void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 {
@@ -251,9 +262,9 @@ void S3DModelPiece::PostProcessGeometry(uint32_t pieceIndex)
 		return;
 
 
-	for (auto& v : vertices) {
+	for (auto& v: vertices) {
 		if (v.boneIDsLow == SVertexData::DEFAULT_BONEIDS_LOW && v.boneIDsHigh == SVertexData::DEFAULT_BONEIDS_HIGH) {
-			v.boneIDsLow [0] = static_cast<uint8_t>((pieceIndex     ) & 0xFF);
+			v.boneIDsLow[0] = static_cast<uint8_t>((pieceIndex) & 0xFF);
 			v.boneIDsHigh[0] = static_cast<uint8_t>((pieceIndex >> 8) & 0xFF);
 		}
 	}
@@ -291,7 +302,7 @@ void S3DModelPiece::ReleaseShatterIndices()
 void LocalModel::DrawPieces() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (const auto& p : pieces) {
+	for (const auto& p: pieces) {
 		p.Draw();
 	}
 }
@@ -315,7 +326,6 @@ void LocalModel::SetLODCount(uint32_t lodCount)
 	luaMaterialData.SetLODCount(lodCount);
 	pieces[0].SetLODCount(lodCount);
 }
-
 
 void LocalModel::SetModel(const S3DModel* model, bool initialize)
 {
@@ -381,7 +391,6 @@ LocalModelPiece* LocalModel::CreateLocalModelPieces(const S3DModelPiece* mpParen
 	return lmpParent;
 }
 
-
 void LocalModel::UpdateBoundingVolume()
 {
 	ZoneScoped;
@@ -402,16 +411,16 @@ void LocalModel::UpdateBoundingVolume()
 		const float3 pMins = piece->mins;
 		const float3 pMaxs = piece->maxs;
 		const float3 verts[8] = {
-			// bottom
-			float3(pMins.x,  pMins.y,  pMins.z),
-			float3(pMaxs.x,  pMins.y,  pMins.z),
-			float3(pMaxs.x,  pMins.y,  pMaxs.z),
-			float3(pMins.x,  pMins.y,  pMaxs.z),
-			// top
-			float3(pMins.x,  pMaxs.y,  pMins.z),
-			float3(pMaxs.x,  pMaxs.y,  pMins.z),
-			float3(pMaxs.x,  pMaxs.y,  pMaxs.z),
-			float3(pMins.x,  pMaxs.y,  pMaxs.z),
+		    // bottom
+		    float3(pMins.x, pMins.y, pMins.z),
+		    float3(pMaxs.x, pMins.y, pMins.z),
+		    float3(pMaxs.x, pMins.y, pMaxs.z),
+		    float3(pMins.x, pMins.y, pMaxs.z),
+		    // top
+		    float3(pMins.x, pMaxs.y, pMins.z),
+		    float3(pMaxs.x, pMaxs.y, pMins.z),
+		    float3(pMaxs.x, pMaxs.y, pMaxs.z),
+		    float3(pMins.x, pMaxs.y, pMaxs.z),
 		};
 
 		for (const float3& v: verts) {
@@ -433,18 +442,18 @@ void LocalModel::UpdateBoundingVolume()
  */
 
 LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
-	: colvol(piece->GetCollisionVolume())
-	, dirty(true)
-	, customDirty(true)
+    : colvol(piece->GetCollisionVolume())
+    , dirty(true)
+    , customDirty(true)
 
-	, scriptSetVisible(true)
-	, blockScriptAnims(false)
+    , scriptSetVisible(true)
+    , blockScriptAnims(false)
 
-	, lmodelPieceIndex(-1)
-	, scriptPieceIndex(-1)
+    , lmodelPieceIndex(-1)
+    , scriptPieceIndex(-1)
 
-	, original(piece)
-	, parent(nullptr) // set later
+    , original(piece)
+    , parent(nullptr) // set later
 {
 	assert(piece != nullptr);
 
@@ -456,7 +465,8 @@ LocalModelPiece::LocalModelPiece(const S3DModelPiece* piece)
 	children.reserve(piece->children.size());
 }
 
-void LocalModelPiece::SetDirty() {
+void LocalModelPiece::SetDirty()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	dirty = true;
 	SetGetCustomDirty(true);
@@ -475,7 +485,8 @@ bool LocalModelPiece::SetGetCustomDirty(bool cd) const
 	return cd;
 }
 
-void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
+void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (blockScriptAnims)
 		return;
@@ -487,7 +498,6 @@ void LocalModelPiece::SetPosOrRot(const float3& src, float3& dst) {
 
 	dst = src;
 }
-
 
 void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 {
@@ -507,7 +517,7 @@ void LocalModelPiece::UpdateChildMatricesRec(bool updateChildMatrices) const
 		}
 	}
 
-	for (auto& child : children) {
+	for (auto& child: children) {
 		child->UpdateChildMatricesRec(updateChildMatrices);
 	}
 }
@@ -526,7 +536,6 @@ void LocalModelPiece::UpdateParentMatricesRec() const
 	if (parent != nullptr)
 		modelSpaceMat >>= parent->modelSpaceMat;
 }
-
 
 void LocalModelPiece::Draw() const
 {
@@ -562,13 +571,12 @@ void LocalModelPiece::DrawLOD(uint32_t lod) const
 		S3DModelHelpers::BindLegacyAttrVBOs();
 		original->DrawElements();
 		S3DModelHelpers::UnbindLegacyAttrVBOs();
-	} else {
+	}
+	else {
 		glCallList(ldl);
 	}
 	glPopMatrix();
 }
-
-
 
 void LocalModelPiece::SetLODCount(uint32_t count)
 {
@@ -581,7 +589,6 @@ void LocalModelPiece::SetLODCount(uint32_t count)
 	}
 }
 
-
 bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -589,7 +596,7 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 		return false;
 
 	// note: actually OBJECT_TO_WORLD but transform is the same
-	emitPos = GetModelSpaceMatrix() *        original->GetEmitPos()        * WORLD_TO_OBJECT_SPACE;
+	emitPos = GetModelSpaceMatrix() * original->GetEmitPos() * WORLD_TO_OBJECT_SPACE;
 	emitDir = GetModelSpaceMatrix() * float4(original->GetEmitDir(), 0.0f) * WORLD_TO_OBJECT_SPACE;
 	return true;
 }
@@ -600,9 +607,8 @@ bool LocalModelPiece::GetEmitDirPos(float3& emitPos, float3& emitDir) const
 S3DModelPiece* S3DModel::FindPiece(const std::string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
-		return piece->name == name;
-	});
+	const auto it = std::find_if(
+	    pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) { return piece->name == name; });
 	if (it == pieceObjects.end())
 		return nullptr;
 
@@ -612,9 +618,8 @@ S3DModelPiece* S3DModel::FindPiece(const std::string& name)
 const S3DModelPiece* S3DModel::FindPiece(const std::string& name) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
-		return piece->name == name;
-		});
+	const auto it = std::find_if(
+	    pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) { return piece->name == name; });
 	if (it == pieceObjects.end())
 		return nullptr;
 
@@ -624,9 +629,8 @@ const S3DModelPiece* S3DModel::FindPiece(const std::string& name) const
 size_t S3DModel::FindPieceOffset(const std::string& name) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto it = std::find_if(pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) {
-		return piece->name == name;
-	});
+	const auto it = std::find_if(
+	    pieceObjects.begin(), pieceObjects.end(), [&name](const S3DModelPiece* piece) { return piece->name == name; });
 
 	if (it == pieceObjects.end())
 		return size_t(-1);

@@ -7,4 +7,3 @@ bool ParseSpringUri(const std::string& uri, std::string& username, std::string& 
 
 // url (syntax: rapid://ba:stable)
 bool ParseRapidUri(const std::string& uri, std::string& tag);
-

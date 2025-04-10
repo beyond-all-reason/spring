@@ -12,4 +12,3 @@ LuaRules
 * share_delayed.lua
 * share_levels.lua
 * share_no_builders.lua
-

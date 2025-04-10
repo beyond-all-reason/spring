@@ -3,15 +3,14 @@
 #ifndef _CATEGORY_HANDLER_H
 #define _CATEGORY_HANDLER_H
 
+#include "System/Misc/NonCopyable.h"
+#include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
+
 #include <string>
 #include <vector>
 
-#include "System/UnorderedMap.hpp"
-#include "System/Misc/NonCopyable.h"
-#include "System/creg/creg_cond.h"
-
-class CCategoryHandler : public spring::noncopyable
-{
+class CCategoryHandler : public spring::noncopyable {
 	CR_DECLARE_STRUCT(CCategoryHandler)
 
 public:
@@ -24,8 +23,12 @@ public:
 	static void CreateInstance();
 	static void RemoveInstance();
 
+	void Init()
+	{
+		categories.reserve(GetMaxCategories());
+		firstUnused = 0;
+	}
 
-	void Init() { categories.reserve(GetMaxCategories()); firstUnused = 0; }
 	void Kill() { categories.clear(); }
 
 	/**

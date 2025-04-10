@@ -5,23 +5,22 @@
  * ARB_vertex_buffer_object class implementation
  */
 
-#include <cassert>
-#include <vector>
-#include <stdint.h>
-
 #include "VBO.h"
 
 #include "Rendering/GlobalRendering.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cassert>
+#include <vector>
 
-//CONFIG(bool, UseVBO).defaultValue(true).safemodeValue(false);
+#include <stdint.h>
+
+// CONFIG(bool, UseVBO).defaultValue(true).safemodeValue(false);
 CONFIG(bool, UseVBO).deprecated(true);
 CONFIG(bool, UsePBO).deprecated(true);
-
 
 /**
  * Returns if the current gpu drivers support object's buffer type
@@ -35,38 +34,33 @@ bool VBO::IsSupported() const
 /**
  * Returns if the current gpu drivers support certain buffer type
  */
-bool VBO::IsSupported(GLenum target) {
+bool VBO::IsSupported(GLenum target)
+{
 	static bool isRangeMappingSupported = GLAD_GL_ARB_map_buffer_range;
-	if (!isRangeMappingSupported) //TODO glBufferSubData() fallback ?
+	if (!isRangeMappingSupported) // TODO glBufferSubData() fallback ?
 		return false;
 
-	static bool isPBOSupported  = (GLAD_GL_EXT_pixel_buffer_object);
-	static bool isVBOSupported  = (GLAD_GL_ARB_vertex_buffer_object);
-	static bool isUBOSupported  = (GLAD_GL_ARB_uniform_buffer_object);
+	static bool isPBOSupported = (GLAD_GL_EXT_pixel_buffer_object);
+	static bool isVBOSupported = (GLAD_GL_ARB_vertex_buffer_object);
+	static bool isUBOSupported = (GLAD_GL_ARB_uniform_buffer_object);
 	static bool isSSBOSupported = (GLAD_GL_ARB_shader_storage_buffer_object);
 	static bool isCopyBuffSupported = (GLAD_GL_ARB_copy_buffer);
 
 	switch (target) {
 	case GL_PIXEL_PACK_BUFFER:
-	case GL_PIXEL_UNPACK_BUFFER:
-		return isPBOSupported;
+	case GL_PIXEL_UNPACK_BUFFER: return isPBOSupported;
 	case GL_ARRAY_BUFFER:
-	case GL_ELEMENT_ARRAY_BUFFER:
-		return isVBOSupported;
-	case GL_UNIFORM_BUFFER:
-		return isUBOSupported;
-	case GL_SHADER_STORAGE_BUFFER:
-		return isSSBOSupported;
+	case GL_ELEMENT_ARRAY_BUFFER: return isVBOSupported;
+	case GL_UNIFORM_BUFFER: return isUBOSupported;
+	case GL_SHADER_STORAGE_BUFFER: return isSSBOSupported;
 	case GL_COPY_WRITE_BUFFER:
-	case GL_COPY_READ_BUFFER:
-		return isCopyBuffSupported;
+	case GL_COPY_READ_BUFFER: return isCopyBuffSupported;
 	default: {
 		LOG_L(L_ERROR, "[VBO:%s]: wrong target [%u] is specified", __func__, target);
 		return false;
 	}
 	}
 }
-
 
 VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 {
@@ -78,21 +72,19 @@ VBO::VBO(GLenum _defTarget, const bool storage, bool readable)
 	readableStorage = readable;
 
 	if (immutableStorage && !GLAD_GL_ARB_buffer_storage) {
-		//note: We can't fallback to traditional BufferObjects, cause then we would have to map/unmap on each change.
-		//      Only sysram/cpu VAs give an equivalent behaviour.
+		// note: We can't fallback to traditional BufferObjects, cause then we would have to map/unmap on each change.
+		//       Only sysram/cpu VAs give an equivalent behaviour.
 		isSupported = false;
 		immutableStorage = false;
 		LOG_L(L_ERROR, "VBO: cannot create immutable storage, gpu drivers missing support for it!");
 	}
 }
 
-
 VBO::~VBO()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	Release();
 }
-
 
 VBO& VBO::operator=(VBO&& other) noexcept
 {
@@ -118,11 +110,12 @@ VBO& VBO::operator=(VBO&& other) noexcept
 	return *this;
 }
 
-
 void VBO::Generate() const { glGenBuffers(1, &vboId); }
-void VBO::Delete() {
+
+void VBO::Delete()
+{
 	// clear bound BBRs
-	for (const auto& kv : bbrItems) {
+	for (const auto& kv: bbrItems) {
 		glBindBufferRange(kv.first.target, kv.first.index, 0u, kv.second.offset, kv.second.size);
 	}
 	bbrItems.clear();
@@ -147,7 +140,6 @@ void VBO::Bind(GLenum target) const
 	bound = true;
 }
 
-
 void VBO::Unbind() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -167,7 +159,7 @@ bool VBO::BindBufferRangeImpl(GLenum target, GLuint index, GLuint _vboId, GLuint
 	if (!isSupported)
 		return false;
 
-	if (target != GL_UNIFORM_BUFFER && target != GL_SHADER_STORAGE_BUFFER) { //assert(?)
+	if (target != GL_UNIFORM_BUFFER && target != GL_SHADER_STORAGE_BUFFER) { // assert(?)
 		LOG_L(L_ERROR, "[VBO::%s]: attempt to bind wrong target [%u]", __func__, target);
 		return false;
 	}
@@ -183,19 +175,22 @@ bool VBO::BindBufferRangeImpl(GLenum target, GLuint index, GLuint _vboId, GLuint
 	}
 
 	const size_t neededAlignment = GetOffsetAlignment(target);
-	if (offset % neededAlignment != 0 || size % neededAlignment != 0) { //assert(?)
-		LOG_L(L_ERROR, "[VBO::%s]: attempt to bind with wrong offset [%u] or size [%d]. Needed alignment [%u]", __func__, static_cast<uint32_t>(offset), static_cast<int32_t>(size), static_cast<uint32_t>(neededAlignment));
+	if (offset % neededAlignment != 0 || size % neededAlignment != 0) { // assert(?)
+		LOG_L(L_ERROR, "[VBO::%s]: attempt to bind with wrong offset [%u] or size [%d]. Needed alignment [%u]",
+		    __func__, static_cast<uint32_t>(offset), static_cast<int32_t>(size),
+		    static_cast<uint32_t>(neededAlignment));
 		return false;
 	}
 
 	glBindBufferRange(target, index, _vboId, offset, size);
 
 	BoundBufferRangeIndex bbri = {target, index};
-	BoundBufferRangeData  bbrd = {offset, size };
+	BoundBufferRangeData bbrd = {offset, size};
 	if (_vboId != 0) {
 		bbrItems[bbri] = bbrd;
-	} else {
-		if (bbrItems[bbri] == bbrd) { //exact match of unbind call
+	}
+	else {
+		if (bbrItems[bbri] == bbrd) { // exact match of unbind call
 			bbrItems.erase(bbri);
 		}
 	}
@@ -247,7 +242,8 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 			Unbind();
 			*this = std::move(vbo);
 			Bind(oldBoundTarget);
-		} else {
+		}
+		else {
 			void* memsrc = MapBuffer(GL_READ_ONLY);
 			Unbind();
 
@@ -261,8 +257,11 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 
 			// cpu download & copy (slow)
 			memcpy(memdst, memsrc, oldSize);
-			vbo.UnmapBuffer(); vbo.Unbind();
-			Bind(); UnmapBuffer(); Unbind();
+			vbo.UnmapBuffer();
+			vbo.Unbind();
+			Bind();
+			UnmapBuffer();
+			Unbind();
 
 			*this = std::move(vbo);
 			Bind(oldBoundTarget);
@@ -271,16 +270,8 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 		const GLenum err = glGetError();
 		if (err != GL_NO_ERROR) {
 			LOG_L(L_ERROR, "[VBO::%s(rbsize=%u,wbsize=%u,rbglsize=%u,wbglsize=%u,usage=%u)] id=%u tgt=0x%x err=0x%x",
-				__func__,
-				static_cast<uint32_t>(oldSize),
-				static_cast<uint32_t>(bufSize),
-				static_cast<uint32_t>(rbglsize),
-				static_cast<uint32_t>(wbglsize),
-				usage,
-				vboId,
-				curBoundTarget,
-				err
-			);
+			    __func__, static_cast<uint32_t>(oldSize), static_cast<uint32_t>(bufSize),
+			    static_cast<uint32_t>(rbglsize), static_cast<uint32_t>(wbglsize), usage, vboId, curBoundTarget, err);
 			Unbind();
 
 			// disable VBO and fallback to VA/sysmem
@@ -310,7 +301,6 @@ void VBO::Resize(GLsizeiptr newSize, GLenum newUsage)
 	}
 }
 
-
 void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -327,7 +317,10 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 		return;
 
 	if (immutableStorage && bufSize != 0) {
-		LOG_L(L_ERROR, "[VBO::%s({cur,new}size={" _STPF_ "," _STPF_ "},{cur,new}usage={0x%x,0x%x},data=%p)] cannot recreate persistent storage buffer", __func__, bufSize, newSize, usage, newUsage, data);
+		LOG_L(L_ERROR,
+		    "[VBO::%s({cur,new}size={" _STPF_ "," _STPF_
+		    "},{cur,new}usage={0x%x,0x%x},data=%p)] cannot recreate persistent storage buffer",
+		    __func__, bufSize, newSize, usage, newUsage, data);
 		return;
 	}
 
@@ -335,14 +328,18 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 		glClearErrors("VBO", __func__, globalRendering->glDebugErrors);
 
 		if (immutableStorage) {
-			glBufferStorage(curBoundTarget, newSize, newData, /*newUsage =*/(GL_MAP_READ_BIT * readableStorage) | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT | GL_DYNAMIC_STORAGE_BIT);
-		} else {
+			glBufferStorage(curBoundTarget, newSize, newData, /*newUsage =*/(GL_MAP_READ_BIT * readableStorage) |
+			                                                      GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
+			                                                      GL_MAP_COHERENT_BIT | GL_DYNAMIC_STORAGE_BIT);
+		}
+		else {
 			glBufferData(curBoundTarget, newSize, newData, newUsage);
 		}
 
 		const GLenum err = glGetError();
 		if (err != GL_NO_ERROR) {
-			LOG_L(L_ERROR, "[VBO::%s(size=%lu,usage=0x%x,data=%p)] id=%u tgt=0x%x err=0x%x", __func__, (unsigned long) bufSize, usage, data, vboId, curBoundTarget, err);
+			LOG_L(L_ERROR, "[VBO::%s(size=%lu,usage=0x%x,data=%p)] id=%u tgt=0x%x err=0x%x", __func__,
+			    (unsigned long)bufSize, usage, data, vboId, curBoundTarget, err);
 			Unbind();
 
 			// disable VBO and fallback to VA/sysmem
@@ -374,7 +371,8 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 
 		assert(data != nullptr);
 		memcpy(data, newData, newSize);
-	} else {
+	}
+	else {
 		// keep the larger buffer; reduces fragmentation from repeated New's
 		memset(data, 0, memSize);
 
@@ -384,7 +382,6 @@ void VBO::New(GLsizeiptr newSize, GLenum newUsage, const void* newData)
 		memcpy(data, newData, newSize);
 	}
 }
-
 
 GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 {
@@ -397,20 +394,16 @@ GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 	// for easier handling convert the glMapBuffer ones here
 	switch (access) {
 	case GL_WRITE_ONLY: {
-			// https://computergraphics.stackexchange.com/questions/7586/what-are-the-performance-implications-of-the-optional-flags-used-when-mapping-a/7587
-			// Also, you can map a buffer and only overwrite part of it. Invalidation is negatively useful for that too.
-			const GLbitfield irBit = GL_MAP_INVALIDATE_RANGE_BIT * (offset == 0 && size == bufSize);
-			access = GL_MAP_WRITE_BIT | irBit | mapUnsyncedBit;
-			if (immutableStorage)
-				access = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-			} break;
-		case GL_READ_WRITE:
-			access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT;
-			break;
-		case GL_READ_ONLY:
-			access = GL_MAP_READ_BIT;
-			break;
-		default: break;
+		// https://computergraphics.stackexchange.com/questions/7586/what-are-the-performance-implications-of-the-optional-flags-used-when-mapping-a/7587
+		// Also, you can map a buffer and only overwrite part of it. Invalidation is negatively useful for that too.
+		const GLbitfield irBit = GL_MAP_INVALIDATE_RANGE_BIT * (offset == 0 && size == bufSize);
+		access = GL_MAP_WRITE_BIT | irBit | mapUnsyncedBit;
+		if (immutableStorage)
+			access = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+	} break;
+	case GL_READ_WRITE: access = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT; break;
+	case GL_READ_ONLY: access = GL_MAP_READ_BIT; break;
+	default: break;
 	}
 
 	if (size == 0) {
@@ -428,7 +421,6 @@ GLubyte* VBO::MapBuffer(GLintptr offset, GLsizeiptr size, GLbitfield access)
 	assert(data);
 	return data + offset;
 }
-
 
 void VBO::UnmapBuffer()
 {
@@ -451,7 +443,6 @@ void VBO::SetBufferSubData(GLintptr offset, GLsizeiptr size, const void* data)
 	glBufferSubData(curBoundTarget, offset, size, data);
 }
 
-
 void VBO::Invalidate() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -468,7 +459,6 @@ void VBO::Invalidate() const
 	// note: allocating memory doesn't actually block the memory it just makes room in _virtual_ memory space
 	glBufferData(curBoundTarget, GetAlignedSize(bufSize), nullptr, usage);
 }
-
 
 const GLvoid* VBO::GetPtr(GLintptr offset) const
 {
@@ -494,7 +484,8 @@ size_t VBO::GetAlignedSize(GLenum target, size_t sz)
 	return sz;
 }
 
-size_t VBO::GetOffsetAlignment(GLenum target) {
+size_t VBO::GetOffsetAlignment(GLenum target)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	const auto getOffsetAlignmentUBO = []() -> size_t {
@@ -509,20 +500,16 @@ size_t VBO::GetOffsetAlignment(GLenum target) {
 		return static_cast<size_t>(buffAlignment);
 	};
 
-	static size_t offsetAlignmentUBO  = getOffsetAlignmentUBO();
+	static size_t offsetAlignmentUBO = getOffsetAlignmentUBO();
 	static size_t offsetAlignmentSSBO = getOffsetAlignmentSSBO();
 
 	switch (target) {
-	case GL_UNIFORM_BUFFER:
-		return offsetAlignmentUBO;
-	case GL_SHADER_STORAGE_BUFFER:
-		return offsetAlignmentSSBO;
+	case GL_UNIFORM_BUFFER: return offsetAlignmentUBO;
+	case GL_SHADER_STORAGE_BUFFER: return offsetAlignmentSSBO;
 	case GL_PIXEL_PACK_BUFFER:
 	case GL_PIXEL_UNPACK_BUFFER:
 	case GL_ARRAY_BUFFER:
 	case GL_ELEMENT_ARRAY_BUFFER:
-	default:
-		return 1;
+	default: return 1;
 	}
 }
-

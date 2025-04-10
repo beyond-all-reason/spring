@@ -86,7 +86,7 @@ for _, filename in ipairs(luaFiles) do
         weaponDefs[wdName] = wd
       end
     end
-  end  
+  end
 end
 
 

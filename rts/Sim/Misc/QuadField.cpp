@@ -1,51 +1,51 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm>
-
 #include "QuadField.h"
+
 #include "Map/ReadMap.h"
 #include "Sim/Misc/CollisionVolume.h"
-#include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/Threading/ThreadPool.h"
 
+#include <algorithm>
+
 #ifndef UNIT_TEST
-	#include "Sim/Features/Feature.h"
-	#include "Sim/Projectiles/Projectile.h"
-	#include "Sim/Units/Unit.h"
-	#include "Sim/Weapons/PlasmaRepulser.h"
+#include "Sim/Features/Feature.h"
+#include "Sim/Projectiles/Projectile.h"
+#include "Sim/Units/Unit.h"
+#include "Sim/Weapons/PlasmaRepulser.h"
 #endif
 
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND(CQuadField, )
-CR_REG_METADATA(CQuadField, (
-	CR_MEMBER(baseQuads),
-	CR_MEMBER(numQuadsX),
-	CR_MEMBER(numQuadsZ),
-	CR_MEMBER(quadSizeX),
-	CR_MEMBER(quadSizeZ),
-	CR_MEMBER(invQuadSize),
+CR_REG_METADATA(CQuadField,
+    (CR_MEMBER(baseQuads),
+        CR_MEMBER(numQuadsX),
+        CR_MEMBER(numQuadsZ),
+        CR_MEMBER(quadSizeX),
+        CR_MEMBER(quadSizeZ),
+        CR_MEMBER(invQuadSize),
 
-	CR_IGNORED(tempUnits),
-	CR_IGNORED(tempFeatures),
-	CR_IGNORED(tempProjectiles),
-	CR_IGNORED(tempSolids),
-	CR_IGNORED(tempQuads)
-))
+        CR_IGNORED(tempUnits),
+        CR_IGNORED(tempFeatures),
+        CR_IGNORED(tempProjectiles),
+        CR_IGNORED(tempSolids),
+        CR_IGNORED(tempQuads)))
 
 CR_BIND(CQuadField::Quad, )
-CR_REG_METADATA_SUB(CQuadField, Quad, (
-	CR_MEMBER(units),
-	CR_IGNORED(teamUnits),
-	CR_MEMBER(features),
-	CR_MEMBER(projectiles),
-	CR_MEMBER(repulsers),
+CR_REG_METADATA_SUB(CQuadField,
+    Quad,
+    (CR_MEMBER(units),
+        CR_IGNORED(teamUnits),
+        CR_MEMBER(features),
+        CR_MEMBER(projectiles),
+        CR_MEMBER(repulsers),
 
-	CR_POSTLOAD(PostLoad)
-))
+        CR_POSTLOAD(PostLoad)))
 
 
 CQuadField quadField;
@@ -55,44 +55,44 @@ CQuadField quadField;
 /*
 void CQuadField::Resize(int quad_size)
 {
-	CQuadField* oldQuadField = &quadField;
-	CQuadField newQuadField;
+    CQuadField* oldQuadField = &quadField;
+    CQuadField newQuadField;
 
-	newQuadField.Init(int2(mapDims.mapx, mapDims.mapy), quad_size);
+    newQuadField.Init(int2(mapDims.mapx, mapDims.mapy), quad_size);
 
-	for (int zq = 0; zq < oldQuadField->GetNumQuadsZ(); zq++) {
-		for (int xq = 0; xq < oldQuadField->GetNumQuadsX(); xq++) {
-			const CQuadField::Quad& quad = oldQuadField->GetQuadAt(xq, zq);
+    for (int zq = 0; zq < oldQuadField->GetNumQuadsZ(); zq++) {
+        for (int xq = 0; xq < oldQuadField->GetNumQuadsX(); xq++) {
+            const CQuadField::Quad& quad = oldQuadField->GetQuadAt(xq, zq);
 
-			// COPY the object lists because the Remove* functions modify them
-			// NOTE:
-			//   teamUnits is updated internally by RemoveUnit and MovedUnit
-			//
-			//   if a unit exists in multiple quads in the old field, it will
-			//   be removed from all of them and there is no danger of double
-			//   re-insertion (important if new grid has higher resolution)
-			const std::vector<CUnit*      > units       = quad.units;
-			const std::vector<CFeature*   > features    = quad.features;
-			const std::vector<CProjectile*> projectiles = quad.projectiles;
+            // COPY the object lists because the Remove* functions modify them
+            // NOTE:
+            //   teamUnits is updated internally by RemoveUnit and MovedUnit
+            //
+            //   if a unit exists in multiple quads in the old field, it will
+            //   be removed from all of them and there is no danger of double
+            //   re-insertion (important if new grid has higher resolution)
+            const std::vector<CUnit*      > units       = quad.units;
+            const std::vector<CFeature*   > features    = quad.features;
+            const std::vector<CProjectile*> projectiles = quad.projectiles;
 
-			for (auto it = units.cbegin(); it != units.cend(); ++it) {
-				oldQuadField->RemoveUnit(*it);
-				newQuadField->MovedUnit(*it); // handles addition
-			}
+            for (auto it = units.cbegin(); it != units.cend(); ++it) {
+                oldQuadField->RemoveUnit(*it);
+                newQuadField->MovedUnit(*it); // handles addition
+            }
 
-			for (auto it = features.cbegin(); it != features.cend(); ++it) {
-				oldQuadField->RemoveFeature(*it);
-				newQuadField->AddFeature(*it);
-			}
+            for (auto it = features.cbegin(); it != features.cend(); ++it) {
+                oldQuadField->RemoveFeature(*it);
+                newQuadField->AddFeature(*it);
+            }
 
-			for (auto it = projectiles.cbegin(); it != projectiles.cend(); ++it) {
-				oldQuadField->RemoveProjectile(*it);
-				newQuadField->AddProjectile(*it);
-			}
-		}
-	}
+            for (auto it = projectiles.cbegin(); it != projectiles.cend(); ++it) {
+                oldQuadField->RemoveProjectile(*it);
+                newQuadField->AddProjectile(*it);
+            }
+        }
+    }
 
-	quadField = std::move(newQuadField);
+    quadField = std::move(newQuadField);
 }
 */
 #endif
@@ -151,35 +151,27 @@ void CQuadField::Kill()
 		quad.Clear();
 	}
 
-	for (auto cache : tempUnits)
-		cache.ReleaseAll();
+	for (auto cache: tempUnits) cache.ReleaseAll();
 
-	for (auto cache : tempFeatures)
-		cache.ReleaseAll();
+	for (auto cache: tempFeatures) cache.ReleaseAll();
 
 	tempProjectiles.ReleaseAll();
 
-	for (auto cache : tempSolids)
-		cache.ReleaseAll();
+	for (auto cache: tempSolids) cache.ReleaseAll();
 
-	for (auto cache : tempQuads)
-		cache.ReleaseAll();
+	for (auto cache: tempQuads) cache.ReleaseAll();
 }
-
 
 int2 CQuadField::WorldPosToQuadField(const float3 p) const
 {
-	return int2(
-		std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1),
-		std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1)
-	);
+	return int2(std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1), std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1));
 }
-
 
 int CQuadField::WorldPosToQuadFieldIdx(const float3 p) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1) * numQuadsX + std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1);
+	return std::clamp(int(p.z / quadSizeZ), 0, numQuadsZ - 1) * numQuadsX +
+	       std::clamp(int(p.x / quadSizeX), 0, numQuadsX - 1);
 }
 
 
@@ -213,7 +205,6 @@ void CQuadField::GetQuads(QuadFieldQuery& qfq, float3 pos, float radius)
 
 	return;
 }
-
 
 void CQuadField::GetQuadsRectangle(QuadFieldQuery& qfq, const float3& mins, const float3& maxs)
 {
@@ -265,15 +256,15 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 
 	// prevent div0
 	if (noZdir) {
-		int startX = std::clamp <int> (start.x * invQuadSize.x, 0, numQuadsX - 1);
-		int finalX = std::clamp <int> (   to.x * invQuadSize.x, 0, numQuadsX - 1);
+		int startX = std::clamp<int>(start.x * invQuadSize.x, 0, numQuadsX - 1);
+		int finalX = std::clamp<int>(to.x * invQuadSize.x, 0, numQuadsX - 1);
 
 		if (finalX < startX)
 			std::swap(startX, finalX);
 
 		assert(finalX < numQuadsX);
 
-		const int row = std::clamp <int> (start.z * invQuadSize.y, 0, numQuadsZ - 1) * numQuadsX;
+		const int row = std::clamp<int>(start.z * invQuadSize.y, 0, numQuadsZ - 1) * numQuadsX;
 
 		for (unsigned x = startX; x <= finalX; x++) {
 			queryQuads.push_back(row + x);
@@ -286,24 +277,24 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 
 	// iterate z-range; compute which columns (x) are touched for each row (z)
 	float startZuc = start.z * invQuadSize.y;
-	float finalZuc =    to.z * invQuadSize.y;
+	float finalZuc = to.z * invQuadSize.y;
 
 	if (finalZuc < startZuc)
 		std::swap(startZuc, finalZuc);
 
-	const int startZ = std::clamp <int> (startZuc, 0, numQuadsZ - 1);
-	const int finalZ = std::clamp <int> (finalZuc, 0, numQuadsZ - 1);
+	const int startZ = std::clamp<int>(startZuc, 0, numQuadsZ - 1);
+	const int finalZ = std::clamp<int>(finalZuc, 0, numQuadsZ - 1);
 
 	assert(finalZ < quadSizeZ);
 
 	const float invDirZ = 1.0f / dir.z;
 
 	for (int z = startZ; z <= finalZ; z++) {
-		float t0 = ((z    ) * quadSizeZ - start.z) * invDirZ;
+		float t0 = ((z)*quadSizeZ - start.z) * invDirZ;
 		float t1 = ((z + 1) * quadSizeZ - start.z) * invDirZ;
 
 		if ((startZuc < 0 && z == 0) || (startZuc >= numQuadsZ && z == finalZ))
-			t0 = ((startZuc    ) * quadSizeZ - start.z) * invDirZ;
+			t0 = ((startZuc)*quadSizeZ - start.z) * invDirZ;
 
 		if ((finalZuc < 0 && z == 0) || (finalZuc >= numQuadsZ && z == finalZ))
 			t1 = ((finalZuc + 1) * quadSizeZ - start.z) * invDirZ;
@@ -311,8 +302,8 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 		t0 = std::clamp(t0, 0.0f, length);
 		t1 = std::clamp(t1, 0.0f, length);
 
-		unsigned startX = std::clamp <int> ((dir.x * t0 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
-		unsigned finalX = std::clamp <int> ((dir.x * t1 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+		unsigned startX = std::clamp<int>((dir.x * t0 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
+		unsigned finalX = std::clamp<int>((dir.x * t1 + start.x) * invQuadSize.x, 0, numQuadsX - 1);
 
 		if (finalX < startX)
 			std::swap(startX, finalX);
@@ -330,7 +321,11 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 
 #ifndef UNIT_TEST // needs GetQuadsRectangle()
 // Test with wide ray that also extends width at the extremes.
-void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, const float3& dir, float length, float width)
+void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq,
+    const float3& start,
+    const float3& dir,
+    float length,
+    float width)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	dir.AssertNaNs();
@@ -362,7 +357,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
 
 	// iterate z-range; compute which columns (x) are touched for each row (z)
-	const float3 normDirPlanar = float3(dir.x, 0.0, dir.z).UnsafeNormalize();  // we already checked for unsafe cases before
+	const float3 normDirPlanar =
+	    float3(dir.x, 0.0, dir.z).UnsafeNormalize(); // we already checked for unsafe cases before
 	const float widthFactor = std::abs(normDirPlanar.z / dir.z) * width;
 
 	// Start and stop a bit further to account for width
@@ -376,24 +372,24 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 	// startX and finalX with mapMarginX before converting to quad indexes and pushing each row.
 
 	float startZuc = start.z * invQuadSize.y;
-	float finalZuc =    to.z * invQuadSize.y;
+	float finalZuc = to.z * invQuadSize.y;
 
 	if (finalZuc < startZuc)
 		std::swap(startZuc, finalZuc);
 
-	const int startZ = std::clamp <int> (startZuc, 0, numQuadsZ - 1);
-	const int finalZ = std::clamp <int> (finalZuc, 0, numQuadsZ - 1);
+	const int startZ = std::clamp<int>(startZuc, 0, numQuadsZ - 1);
+	const int finalZ = std::clamp<int>(finalZuc, 0, numQuadsZ - 1);
 
 	assert(finalZ < quadSizeZ);
 
 	const float invDirZ = 1.0f / dir.z;
 
 	for (int z = startZ; z <= finalZ; z++) {
-		float t0 = ((z    ) * quadSizeZ - start.z) * invDirZ;
+		float t0 = ((z)*quadSizeZ - start.z) * invDirZ;
 		float t1 = ((z + 1) * quadSizeZ - start.z) * invDirZ;
 
 		if ((startZuc < 0 && z == 0) || (startZuc >= numQuadsZ && z == finalZ))
-			t0 = ((startZuc    ) * quadSizeZ - start.z) * invDirZ;
+			t0 = ((startZuc)*quadSizeZ - start.z) * invDirZ;
 
 		if ((finalZuc < 0 && z == 0) || (finalZuc >= numQuadsZ && z == finalZ))
 			t1 = ((finalZuc + 1) * quadSizeZ - start.z) * invDirZ;
@@ -407,8 +403,8 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 		if (mapFinalX < mapStartX)
 			std::swap(mapStartX, mapFinalX);
 
-		const unsigned startX = std::clamp <int> ((mapStartX - mapMarginX) * invQuadSize.x, 0, numQuadsX - 1);
-		const unsigned finalX = std::clamp <int> ((mapFinalX + mapMarginX) * invQuadSize.x, 0, numQuadsX - 1);
+		const unsigned startX = std::clamp<int>((mapStartX - mapMarginX) * invQuadSize.x, 0, numQuadsX - 1);
+		const unsigned finalX = std::clamp<int>((mapFinalX + mapMarginX) * invQuadSize.x, 0, numQuadsX - 1);
 
 		const int row = std::clamp(z, 0, numQuadsZ - 1) * numQuadsX;
 
@@ -476,7 +472,6 @@ bool CQuadField::RemoveUnitIf(CUnit* unit, const float3& wpos)
 #endif
 
 
-
 #ifndef UNIT_TEST
 void CQuadField::MovedUnit(CUnit* unit)
 {
@@ -513,7 +508,7 @@ void CQuadField::RemoveUnit(CUnit* unit)
 
 	unit->quads.clear();
 
-	#ifdef DEBUG_QUADFIELD
+#ifdef DEBUG_QUADFIELD
 	for (const Quad& q: baseQuads) {
 		for (auto& teamUnits: q.teamUnits) {
 			for (CUnit* u: teamUnits) {
@@ -521,9 +516,8 @@ void CQuadField::RemoveUnit(CUnit* unit)
 			}
 		}
 	}
-	#endif
+#endif
 }
-
 
 void CQuadField::MovedRepulser(CPlasmaRepulser* repulser)
 {
@@ -559,15 +553,14 @@ void CQuadField::RemoveRepulser(CPlasmaRepulser* repulser)
 
 	repulser->ClearQuads();
 
-	#ifdef DEBUG_QUADFIELD
+#ifdef DEBUG_QUADFIELD
 	for (const Quad& q: baseQuads) {
 		for (CPlasmaRepulser* r: q.repulsers) {
 			assert(r != repulser);
 		}
 	}
-	#endif
+#endif
 }
-
 
 void CQuadField::AddFeature(CFeature* feature)
 {
@@ -590,16 +583,14 @@ void CQuadField::RemoveFeature(CFeature* feature)
 		spring::VectorErase(baseQuads[qi].features, feature);
 	}
 
-	#ifdef DEBUG_QUADFIELD
+#ifdef DEBUG_QUADFIELD
 	for (const Quad& q: baseQuads) {
 		for (CFeature* f: q.features) {
 			assert(f != feature);
 		}
 	}
-	#endif
+#endif
 }
-
-
 
 void CQuadField::MovedProjectile(CProjectile* p)
 {
@@ -631,7 +622,8 @@ void CQuadField::AddProjectile(CProjectile* p)
 		}
 
 		p->quads = std::move(*qfQuery.quads);
-	} else {
+	}
+	else {
 		int newQuad = WorldPosToQuadFieldIdx(p->pos);
 		spring::VectorInsertUnique(baseQuads[newQuad].projectiles, p, false);
 		p->quads.clear();
@@ -650,10 +642,6 @@ void CQuadField::RemoveProjectile(CProjectile* p)
 
 	p->quads.clear();
 }
-
-
-
-
 
 void CQuadField::GetUnits(QuadFieldQuery& qfq, const float3& pos, float radius)
 {
@@ -695,11 +683,9 @@ void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& pos, float rad
 
 			u->mtTempNum[curThread] = tempNum;
 
-			const float totRad       = radius + u->radius;
-			const float totRadSq     = totRad * totRad;
-			const float posUnitDstSq = spherical?
-				pos.SqDistance(u->pos):
-				pos.SqDistance2D(u->pos);
+			const float totRad = radius + u->radius;
+			const float totRadSq = totRad * totRad;
+			const float posUnitDstSq = spherical ? pos.SqDistance(u->pos) : pos.SqDistance2D(u->pos);
 
 			if (posUnitDstSq >= totRadSq)
 				continue;
@@ -723,7 +709,6 @@ void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& mins, const fl
 
 	for (const int qi: *qfQuery.quads) {
 		for (CUnit* unit: baseQuads[qi].units) {
-
 			if (unit->mtTempNum[curThread] == tempNum)
 				continue;
 
@@ -742,7 +727,6 @@ void CQuadField::GetUnitsExact(QuadFieldQuery& qfq, const float3& mins, const fl
 	return;
 }
 
-
 void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& pos, float radius, bool spherical)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -760,11 +744,9 @@ void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& pos, float 
 
 			f->mtTempNum[curThread] = tempNum;
 
-			const float totRad       = radius + f->radius;
-			const float totRadSq     = totRad * totRad;
-			const float posDstSq = spherical?
-				pos.SqDistance(f->pos):
-				pos.SqDistance2D(f->pos);
+			const float totRad = radius + f->radius;
+			const float totRadSq = totRad * totRad;
+			const float posDstSq = spherical ? pos.SqDistance(f->pos) : pos.SqDistance2D(f->pos);
 
 			if (posDstSq >= totRadSq)
 				continue;
@@ -805,8 +787,6 @@ void CQuadField::GetFeaturesExact(QuadFieldQuery& qfq, const float3& mins, const
 
 	return;
 }
-
-
 
 void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& pos, float radius)
 {
@@ -861,15 +841,12 @@ void CQuadField::GetProjectilesExact(QuadFieldQuery& qfq, const float3& mins, co
 	return;
 }
 
-
-
-void CQuadField::GetSolidsExact(
-	QuadFieldQuery& qfq,
-	const float3& pos,
-	const float radius,
-	const unsigned int physicalStateBits,
-	const unsigned int collisionStateBits
-) {
+void CQuadField::GetSolidsExact(QuadFieldQuery& qfq,
+    const float3& pos,
+    const float radius,
+    const unsigned int physicalStateBits,
+    const unsigned int collisionStateBits)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto curThread = qfq.threadOwner;
 	QuadFieldQuery qfQuery;
@@ -877,7 +854,7 @@ void CQuadField::GetSolidsExact(
 	GetQuads(qfQuery, pos, radius);
 	const int tempNum = gs->GetMtTempNum(curThread);
 	qfq.solids = tempSolids[curThread].ReserveVector();
-	
+
 
 	for (const int qi: *qfQuery.quads) {
 		for (CUnit* u: baseQuads[qi].units) {
@@ -916,13 +893,11 @@ void CQuadField::GetSolidsExact(
 	return;
 }
 
-
-bool CQuadField::NoSolidsExact(
-	const float3& pos,
-	const float radius,
-	const unsigned int physicalStateBits,
-	const unsigned int collisionStateBits
-) {
+bool CQuadField::NoSolidsExact(const float3& pos,
+    const float radius,
+    const unsigned int physicalStateBits,
+    const unsigned int collisionStateBits)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	GetQuads(qfQuery, pos, radius);
@@ -965,15 +940,13 @@ bool CQuadField::NoSolidsExact(
 	return true;
 }
 
-
 // optimization specifically for projectile collisions
-void CQuadField::GetUnitsAndFeaturesColVol(
-	const float3& pos,
-	const float radius,
-	std::vector<CUnit*>& units,
-	std::vector<CFeature*>& features,
-	std::vector<CPlasmaRepulser*>* repulsers
-) {
+void CQuadField::GetUnitsAndFeaturesColVol(const float3& pos,
+    const float radius,
+    std::vector<CUnit*>& units,
+    std::vector<CFeature*>& features,
+    std::vector<CPlasmaRepulser*>* repulsers)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int tempNum = gs->GetTempNum();
 

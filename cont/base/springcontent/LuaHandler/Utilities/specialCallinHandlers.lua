@@ -391,4 +391,3 @@ function hHookFuncs.AllowDraw()
 
 	return true
 end
-

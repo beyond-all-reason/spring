@@ -1,35 +1,32 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "BombDropper.h"
+
 #include "WeaponDef.h"
+
 #include "Game/GameHelper.h"
+#include "Map/MapInfo.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/Team.h"
-#include "Map/MapInfo.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "System/SpringMath.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 
 CR_BIND_DERIVED(CBombDropper, CWeapon, )
 
-CR_REG_METADATA(CBombDropper,(
-	CR_MEMBER(dropTorpedoes),
-	CR_MEMBER(torpMoveRange),
-	CR_MEMBER(tracking)
-))
+CR_REG_METADATA(CBombDropper, (CR_MEMBER(dropTorpedoes), CR_MEMBER(torpMoveRange), CR_MEMBER(tracking)))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 CBombDropper::CBombDropper(CUnit* owner, const WeaponDef* def, bool useTorps)
-	: CWeapon(owner, def)
-	, dropTorpedoes(useTorps)
+    : CWeapon(owner, def)
+    , dropTorpedoes(useTorps)
 {
 	// null happens when loading
 	if (def != nullptr) {
@@ -42,7 +39,6 @@ CBombDropper::CBombDropper(CUnit* owner, const WeaponDef* def, bool useTorps)
 	noAutoTarget = true;
 	maxForwardAngleDif = -1.0f;
 }
-
 
 float CBombDropper::GetPredictedImpactTime(float3 impactPos) const
 {
@@ -69,13 +65,12 @@ float CBombDropper::GetPredictedImpactTime(float3 impactPos) const
 
 	const float d = impactPos.y - weaponMuzzlePos.y;
 	const float v = owner->speed.y;
-	const float g = (weaponDef->myGravity == 0) ? mapInfo->map.gravity: -weaponDef->myGravity;
+	const float g = (weaponDef->myGravity == 0) ? mapInfo->map.gravity : -weaponDef->myGravity;
 
-	const float tt = v*v + 2.f * d * g;
+	const float tt = v * v + 2.f * d * g;
 
-	return ((tt >= 0.0f)? ((-v - math::sqrt(tt)) / g) : 0.0f);
+	return ((tt >= 0.0f) ? ((-v - math::sqrt(tt)) / g) : 0.0f);
 }
-
 
 bool CBombDropper::TestTarget(const float3 pos, const SWeaponTarget& trg) const
 {
@@ -107,13 +102,11 @@ bool CBombDropper::TestRange(const float3 pos, const SWeaponTarget& trg) const
 	return (pos.SqDistance2D(aimFromPos + owner->speed * fallTime) < Square(dropDist + torpDist));
 }
 
-
 bool CBombDropper::CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return CWeapon::CanFire(true, ignoreTargetType, true);
 }
-
 
 void CBombDropper::FireImpl(const bool scriptCall)
 {
@@ -137,7 +130,8 @@ void CBombDropper::FireImpl(const bool scriptCall)
 
 		assert(weaponDef->projectileType == WEAPON_TORPEDO_PROJECTILE);
 		WeaponProjectileFactory::LoadProjectile(params);
-	} else {
+	}
+	else {
 		// fudge a bit better lateral aim to compensate for imprecise aircraft steering
 		float3 dif = (currentTargetPos - weaponMuzzlePos) * XZVector;
 		float3 dir = owner->speed;
@@ -160,10 +154,9 @@ void CBombDropper::FireImpl(const bool scriptCall)
 		params.end = currentTargetPos;
 		params.speed = owner->speed + dif;
 		params.ttl = 1000;
-		params.gravity = (weaponDef->myGravity == 0)? mapInfo->map.gravity: -weaponDef->myGravity;
+		params.gravity = (weaponDef->myGravity == 0) ? mapInfo->map.gravity : -weaponDef->myGravity;
 
 		assert(weaponDef->projectileType == WEAPON_EXPLOSIVE_PROJECTILE);
 		WeaponProjectileFactory::LoadProjectile(params);
 	}
 }
-

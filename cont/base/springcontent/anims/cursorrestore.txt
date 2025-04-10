@@ -4,4 +4,3 @@ frame  anims/cursorrestore_3.png  0.200
 frame  anims/cursorrestore_2.png  0.200
 frame  anims/cursorrestore_1.png  0.200
 frame  anims/cursorrestore_0.png  0.400
-

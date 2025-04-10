@@ -5,9 +5,7 @@
 
 #include <string>
 
-
-class ClientSetup
-{
+class ClientSetup {
 public:
 	ClientSetup();
 

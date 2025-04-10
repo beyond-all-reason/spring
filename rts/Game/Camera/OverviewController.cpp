@@ -3,44 +3,45 @@
 
 #include "OverviewController.h"
 
-#include "Map/Ground.h"
+#include "Game/Camera.h"
 #include "Game/UI/MiniMap.h"
 #include "Game/UI/MouseHandler.h"
-#include "System/Log/ILog.h"
-#include "Game/Camera.h"
+#include "Map/Ground.h"
 #include "System/Config/ConfigHandler.h"
-
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
 
-CONFIG(bool, CamOverviewDynamicRotation).defaultValue(false).description("Transition from different camera preserves rotation");
+CONFIG(bool, CamOverviewDynamicRotation)
+    .defaultValue(false)
+    .description("Transition from different camera preserves rotation");
 
-static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool cameraSideways) {
+static float GetCamHeightToFitMapInView(float mapx, float mapy, float fov, bool cameraSideways)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr float marginForUI = 1.037f; // leave some space for UI outside of map edges
 	static constexpr float maxHeight = 25000.0f;
-	const float fovCoefficient = 1.0f/math::tan(fov * math::DEG_TO_RAD) * marginForUI;
-	const float aspectRatio = cameraSideways ?
-		std::max(mapy / globalRendering->aspectRatio, mapx) :
-		std::max(mapx / globalRendering->aspectRatio, mapy);
-    return std::min(CGround::GetHeightAboveWater(mapx, mapy, false) +
-			fovCoefficient * aspectRatio,
-			maxHeight);
+	const float fovCoefficient = 1.0f / math::tan(fov * math::DEG_TO_RAD) * marginForUI;
+	const float aspectRatio = cameraSideways ? std::max(mapy / globalRendering->aspectRatio, mapx) :
+	                                           std::max(mapx / globalRendering->aspectRatio, mapy);
+	return std::min(CGround::GetHeightAboveWater(mapx, mapy, false) + fovCoefficient * aspectRatio, maxHeight);
 }
 
-static float GetClosestRightAngle(float angle) {
+static float GetClosestRightAngle(float angle)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::round(angle/math::HALFPI) * math::HALFPI;
+	return std::round(angle / math::HALFPI) * math::HALFPI;
 }
 
-static bool CameraPointingSideways(float angle) {
+static bool CameraPointingSideways(float angle)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::lround(angle/math::HALFPI) % 2;
+	return std::lround(angle / math::HALFPI) % 2;
 }
 
-COverviewController::COverviewController() :
-	minimizeMinimap(false),
-	dynamicRotation(false),
-	camRotY(CCameraController::GetRot().y)
+COverviewController::COverviewController()
+    : minimizeMinimap(false)
+    , dynamicRotation(false)
+    , camRotY(CCameraController::GetRot().y)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = false;
@@ -48,7 +49,7 @@ COverviewController::COverviewController() :
 	dir = float3(0.0f, -1.0f, -0.001f).ANormalize();
 
 	bool cameraSideways = CameraPointingSideways(GetRot().y);
-	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0, cameraSideways);
+	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov / 2.0, cameraSideways);
 
 	configHandler->NotifyOnChange(this, {"CamOverviewDynamicRotation"});
 	ConfigUpdate();
@@ -72,11 +73,11 @@ float3 COverviewController::SwitchFrom() const
 	return rpos;
 }
 
-float3 COverviewController::GetRot() const {
+float3 COverviewController::GetRot() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 defaultRot = CCameraController::GetRot();
-	if (!this->dynamicRotation)
-	{
+	if (!this->dynamicRotation) {
 		return defaultRot;
 	}
 
@@ -97,7 +98,7 @@ void COverviewController::SwitchTo(const CCameraController* oldCam, const bool s
 	camRotY = oldCam->GetRot().y;
 
 	bool cameraSideways = CameraPointingSideways(oldCam->GetRot().y);
-	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov/2.0, cameraSideways);
+	pos.y = GetCamHeightToFitMapInView(pos.x, pos.z, fov / 2.0, cameraSideways);
 }
 
 void COverviewController::GetState(StateMap& sm) const
@@ -121,7 +122,7 @@ void COverviewController::ConfigUpdate()
 	dynamicRotation = configHandler->GetBool("CamOverviewDynamicRotation");
 }
 
-void COverviewController::ConfigNotify(const std::string & key, const std::string & value)
+void COverviewController::ConfigNotify(const std::string& key, const std::string& value)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();

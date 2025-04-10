@@ -5,20 +5,18 @@
 
 #include "AIEvent.h"
 
-
 namespace springLegacyAI {
 
 class CAIReleaseEvent : public CAIEvent {
 public:
 	CAIReleaseEvent(const SReleaseEvent& event) /* :event(event)*/ {}
+
 	~CAIReleaseEvent() {}
 
-	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) {
-		ai.ReleaseAI();
-	}
+	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) { ai.ReleaseAI(); }
 
-//private:
-//	SReleaseEvent event;
+	// private:
+	//	SReleaseEvent event;
 };
 
 } // namespace springLegacyAI

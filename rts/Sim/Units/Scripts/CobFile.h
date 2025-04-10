@@ -3,23 +3,25 @@
 #ifndef COB_FILE_H
 #define COB_FILE_H
 
-#include <array>
-#include <vector>
-#include <string>
+#include "CobScriptNames.h"
 
 #include "Lua/LuaHashString.h"
-#include "CobScriptNames.h"
 #include "System/UnorderedMap.hpp"
+
+#include <array>
+#include <string>
+#include <vector>
 
 class CFileHandler;
 
-class CCobFile
-{
+class CCobFile {
 public:
 	CCobFile(CFileHandler& in, const std::string& scriptName);
+
 	CCobFile(CCobFile&& f) { *this = std::move(f); }
 
-	CCobFile& operator = (CCobFile&& f) {
+	CCobFile& operator=(CCobFile&& f)
+	{
 		numStaticVars = f.numStaticVars;
 
 		code = std::move(f.code);
@@ -57,4 +59,3 @@ public:
 };
 
 #endif // COB_FILE_H
-

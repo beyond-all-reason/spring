@@ -7,11 +7,11 @@ namespace QTPFS {
 
 class RemoveDeadPathsSystem {
 public:
-    static void Init();
-    static void Update();
-    static void Shutdown();
+	static void Init();
+	static void Update();
+	static void Shutdown();
 };
 
-}
+} // namespace QTPFS
 
 #endif

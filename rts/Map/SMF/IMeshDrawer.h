@@ -11,11 +11,12 @@ class CSMFGroundDrawer;
 /**
  * Map mesh drawer implementation
  */
-class IMeshDrawer
-{
+class IMeshDrawer {
 public:
 	IMeshDrawer() {}
+
 	IMeshDrawer(CSMFReadMap* rm, CSMFGroundDrawer* gd) {}
+
 	virtual ~IMeshDrawer() {}
 
 	virtual void Update() = 0;

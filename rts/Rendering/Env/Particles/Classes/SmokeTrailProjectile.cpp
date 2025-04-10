@@ -5,69 +5,65 @@
 
 #include "Game/Camera.h"
 #include "Map/Ground.h"
-#include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Misc/GlobalSynced.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND_DERIVED(CSmokeTrailProjectile, CProjectile, )
 
-CR_REG_METADATA(CSmokeTrailProjectile,(
-	CR_MEMBER(pos1),
-	CR_MEMBER(pos2),
-	CR_MEMBER(origSize),
-	CR_MEMBER(creationTime),
-	CR_MEMBER(lifeTime),
-	CR_MEMBER(lifePeriod),
-	CR_MEMBER(color),
-	CR_MEMBER(dir1),
-	CR_MEMBER(dir2),
-	CR_MEMBER(dirpos1),
-	CR_MEMBER(dirpos2),
-	CR_MEMBER(midpos),
-	CR_MEMBER(middir),
-	CR_MEMBER(drawSegmented),
-	CR_MEMBER(firstSegment),
-	CR_MEMBER(lastSegment),
-	CR_IGNORED(texture),
-	CR_SERIALIZER(Serialize)
-))
+CR_REG_METADATA(CSmokeTrailProjectile,
+    (CR_MEMBER(pos1),
+        CR_MEMBER(pos2),
+        CR_MEMBER(origSize),
+        CR_MEMBER(creationTime),
+        CR_MEMBER(lifeTime),
+        CR_MEMBER(lifePeriod),
+        CR_MEMBER(color),
+        CR_MEMBER(dir1),
+        CR_MEMBER(dir2),
+        CR_MEMBER(dirpos1),
+        CR_MEMBER(dirpos2),
+        CR_MEMBER(midpos),
+        CR_MEMBER(middir),
+        CR_MEMBER(drawSegmented),
+        CR_MEMBER(firstSegment),
+        CR_MEMBER(lastSegment),
+        CR_IGNORED(texture),
+        CR_SERIALIZER(Serialize)))
 
+CSmokeTrailProjectile::CSmokeTrailProjectile(const CUnit* owner,
+    const float3& pos1,
+    const float3& pos2,
+    const float3& dir1,
+    const float3& dir2,
+    bool firstSegment,
+    bool lastSegment,
+    float size,
+    int time,
+    int period,
+    float color,
+    AtlasedTexture* texture,
+    bool castShadowIn)
+    : CProjectile((pos1 + pos2) * 0.5f, ZeroVector, owner, false, false, false)
+    ,
 
-CSmokeTrailProjectile::CSmokeTrailProjectile(
-	const CUnit* owner,
-	const float3& pos1,
-	const float3& pos2,
-	const float3& dir1,
-	const float3& dir2,
-	bool firstSegment,
-	bool lastSegment,
-	float size,
-	int time,
-	int period,
-	float color,
-	AtlasedTexture* texture,
-	bool castShadowIn
-):
-	CProjectile((pos1 + pos2) * 0.5f, ZeroVector, owner, false, false, false),
-
-	pos1(pos1),
-	pos2(pos2),
-	origSize(size),
-	creationTime(gs->frameNum),
-	lifeTime(time),
-	lifePeriod(period),
-	color(color),
-	dir1(dir1),
-	dir2(dir2),
-	drawSegmented(false),
-	firstSegment(firstSegment),
-	lastSegment(lastSegment),
-	texture((texture == nullptr) ? projectileDrawer->smoketrailtex : texture)
+    pos1(pos1)
+    , pos2(pos2)
+    , origSize(size)
+    , creationTime(gs->frameNum)
+    , lifeTime(time)
+    , lifePeriod(period)
+    , color(color)
+    , dir1(dir1)
+    , dir2(dir2)
+    , drawSegmented(false)
+    , firstSegment(firstSegment)
+    , lastSegment(lastSegment)
+    , texture((texture == nullptr) ? projectileDrawer->smoketrailtex : texture)
 {
 	checkCol = false;
 	castShadow = castShadowIn;
@@ -107,7 +103,6 @@ void CSmokeTrailProjectile::UpdateEndPos(const float3 pos, const float3 dir)
 	}
 }
 
-
 void CSmokeTrailProjectile::Draw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -122,23 +117,22 @@ void CSmokeTrailProjectile::Draw()
 	const float3 odir1 = (dif1.cross(dir1)).ANormalize();
 	const float3 odir2 = (dif2.cross(dir2)).ANormalize();
 
-	const float t1 = (age                    ) * invLifeTime;
+	const float t1 = (age)*invLifeTime;
 	const float tm = (age + 0.5f * lifePeriod) * invLifeTime;
-	const float t2 = (age +        lifePeriod) * invLifeTime;
+	const float t2 = (age + lifePeriod) * invLifeTime;
 
-	const float lerp1 = ((1.0f - t1) * (0.7f + std::fabs(dif1.dot(dir1)))) * (1 - lastSegment );
+	const float lerp1 = ((1.0f - t1) * (0.7f + std::fabs(dif1.dot(dir1)))) * (1 - lastSegment);
 	const float lerp2 = ((1.0f - t2) * (0.7f + std::fabs(dif2.dot(dir2)))) * (1 - firstSegment);
 
 	const float size1 = 1.0f + t1 * origSize;
 	const float size2 = 1.0f + t2 * origSize;
 
 
-	const SColor colBase = { color, color, color, 1.0f };
+	const SColor colBase = {color, color, color, 1.0f};
 	const SColor col1 = colBase * std::clamp(lerp1, 0.0f, 1.0f);
 	const SColor col2 = colBase * std::clamp(lerp2, 0.0f, 1.0f);
 
 	if (drawSegmented) {
-
 		const float3 difm = shadowPass ? camera->GetForward() : (midpos - camera->GetPos()).ANormalize();
 		const float3 odirm = (difm.cross(middir)).ANormalize();
 
@@ -148,26 +142,21 @@ void CSmokeTrailProjectile::Draw()
 
 		const SColor colm = colBase * std::clamp(lerpm, 0.0f, 1.0f);
 
-		AddEffectsQuad(
-			{ pos1   - (odir1 * size1), texture->xstart, texture->ystart, col1  },
-			{ midpos - (odirm * sizem), midtexx        , texture->ystart, colm },
-			{ midpos + (odirm * sizem), midtexx        , texture->yend  , colm },
-			{ pos1   + (odir1 * size1), texture->xstart, texture->yend  , col1  }
-		);
+		AddEffectsQuad({pos1 - (odir1 * size1), texture->xstart, texture->ystart, col1},
+		    {midpos - (odirm * sizem), midtexx, texture->ystart, colm},
+		    {midpos + (odirm * sizem), midtexx, texture->yend, colm},
+		    {pos1 + (odir1 * size1), texture->xstart, texture->yend, col1});
 
-		AddEffectsQuad(
-			{ midpos - (odirm * sizem), midtexx      ,   texture->ystart, colm },
-			{ pos2   - (odir2 * size2), texture->xend,   texture->ystart, col2 },
-			{ pos2   + (odir2 * size2), texture->xend,   texture->yend  , col2 },
-			{ midpos + (odirm * sizem), midtexx      ,   texture->yend  , colm }
-		);
-	} else {
-		AddEffectsQuad(
-			{ pos1 - (odir1 * size1), texture->xstart, texture->ystart, col1 },
-			{ pos2 - (odir2 * size2), texture->xend  , texture->ystart, col2 },
-			{ pos2 + (odir2 * size2), texture->xend  , texture->yend  , col2 },
-			{ pos1 + (odir1 * size1), texture->xstart, texture->yend  , col1 }
-		);
+		AddEffectsQuad({midpos - (odirm * sizem), midtexx, texture->ystart, colm},
+		    {pos2 - (odir2 * size2), texture->xend, texture->ystart, col2},
+		    {pos2 + (odir2 * size2), texture->xend, texture->yend, col2},
+		    {midpos + (odirm * sizem), midtexx, texture->yend, colm});
+	}
+	else {
+		AddEffectsQuad({pos1 - (odir1 * size1), texture->xstart, texture->ystart, col1},
+		    {pos2 - (odir2 * size2), texture->xend, texture->ystart, col2},
+		    {pos2 + (odir2 * size2), texture->xend, texture->yend, col2},
+		    {pos1 + (odir1 * size1), texture->xstart, texture->yend, col1});
 	}
 }
 
@@ -177,7 +166,4 @@ void CSmokeTrailProjectile::Update()
 	deleteMe |= (gs->frameNum >= (creationTime + lifeTime));
 }
 
-int CSmokeTrailProjectile::GetProjectilesCount() const
-{
-	return 2;
-}
+int CSmokeTrailProjectile::GetProjectilesCount() const { return 2; }

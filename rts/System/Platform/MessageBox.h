@@ -6,13 +6,13 @@
 #include "System/Platform/errorhandler.h" // MBF_OK, etc.
 
 namespace Platform {
-	/**
-	 * Will pop up an message window
-	 * @param  message the main text, describing the error
-	 * @param  caption will appear in the title bar of the error window
-	 * @param  flags   @see errorhandler.h
-	 */
-	void MsgBox(const char* message, const char* caption, unsigned int flags);
-}
+/**
+ * Will pop up an message window
+ * @param  message the main text, describing the error
+ * @param  caption will appear in the title bar of the error window
+ * @param  flags   @see errorhandler.h
+ */
+void MsgBox(const char* message, const char* caption, unsigned int flags);
+} // namespace Platform
 
 #endif // _MESSAGEBOX_H_

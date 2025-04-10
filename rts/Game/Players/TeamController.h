@@ -3,11 +3,10 @@
 #ifndef TEAM_CONTROLLER_H
 #define TEAM_CONTROLLER_H
 
-#include "System/creg/creg_cond.h"
 #include "System/Platform/byteorder.h" // for swabDWord
+#include "System/creg/creg_cond.h"
 
 #include <string>
-
 
 /**
  * Acts as a base class for everything that can control a team,
@@ -16,17 +15,19 @@
  * Note: This class should be seen as abstract,
  * even though it is not, C++ technically speaking.
  */
-class TeamController
-{
+class TeamController {
 public:
 	CR_DECLARE(TeamController)
 
 	/**
 	 * @brief Constructor assigning default values.
 	 */
-	TeamController() :
-		team(-1),
-		name("no name") {}
+	TeamController()
+	    : team(-1)
+	    , name("no name")
+	{
+	}
+
 	virtual ~TeamController() {}
 
 	/**
@@ -54,8 +55,10 @@ public:
 struct TeamControllerStatistics {
 public:
 	TeamControllerStatistics()
-		: numCommands(0)
-		, unitCommands(0) {}
+	    : numCommands(0)
+	    , unitCommands(0)
+	{
+	}
 
 	int numCommands;
 	/**
@@ -66,7 +69,8 @@ public:
 
 protected:
 	/// Change structure from host endian to little endian or vice versa.
-	void swab() {
+	void swab()
+	{
 		swabDWordInPlace(numCommands);
 		swabDWordInPlace(unitCommands);
 	}

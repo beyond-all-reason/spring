@@ -8,12 +8,10 @@
 
 class CFileHandler;
 
-
 /**
  * Allows one to tokenize a string or a text-files content based on white-space.
  */
-class CSimpleParser
-{
+class CSimpleParser {
 public:
 	/** Splits a string based on white-space. */
 	static std::vector<std::string> Tokenize(const std::string& line, int minWords = 0);
@@ -30,16 +28,13 @@ public:
 	/** Returns the next non-blank line (without newlines or comments). */
 	std::string GetCleanLine();
 
-	bool Eof() const {
-		return (curPos >= file.size());
-	}
+	bool Eof() const { return (curPos >= file.size()); }
 
 private:
 	std::string file;
 	std::string::size_type curPos;
 	int lineNumber;
-//	bool inComment;
+	//	bool inComment;
 };
 
 #endif // _SIMPLE_PARSER_H_
-

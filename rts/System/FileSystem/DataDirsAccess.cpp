@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "DataDirsAccess.h"
+
 #include "DataDirLocater.h"
 #include "FileHandler.h"
 #include "FileQueryFlags.h"
@@ -12,7 +13,6 @@
 
 
 DataDirsAccess dataDirsAccess;
-
 
 std::vector<std::string> DataDirsAccess::FindFiles(std::string dir, const std::string& pattern, int flags) const
 {
@@ -30,7 +30,8 @@ std::vector<std::string> DataDirsAccess::FindFiles(std::string dir, const std::s
 	return FindFilesInternal(dir, pattern, flags);
 }
 
-std::vector<std::string> DataDirsAccess::FindFilesInternal(const std::string& dir, const std::string& pattern, int flags) const
+std::vector<std::string>
+DataDirsAccess::FindFilesInternal(const std::string& dir, const std::string& pattern, int flags) const
 {
 	std::vector<std::string> matches;
 
@@ -70,8 +71,11 @@ std::string DataDirsAccess::LocateFileInternal(const std::string& file) const
 	return file;
 }
 
-
-void DataDirsAccess::FindFilesSingleDir(std::vector<std::string>& matches, const std::string& datadir, const std::string& dir, const std::string& pattern, int flags) const
+void DataDirsAccess::FindFilesSingleDir(std::vector<std::string>& matches,
+    const std::string& datadir,
+    const std::string& dir,
+    const std::string& pattern,
+    int flags) const
 {
 	assert(datadir.empty() || datadir[datadir.length() - 1] == FileSystem::GetNativePathSeparator());
 
@@ -79,8 +83,6 @@ void DataDirsAccess::FindFilesSingleDir(std::vector<std::string>& matches, const
 
 	FileSystem::FindFiles(matches, datadir, dir, regexPattern, flags);
 }
-
-
 
 std::string DataDirsAccess::LocateFile(std::string file, int flags) const
 {
@@ -126,7 +128,8 @@ std::string DataDirsAccess::LocateDir(std::string dir, int flags) const
 			FileSystem::CreateDirectory(writeableDir);
 		}
 		return writeableDir;
-	} else {
+	}
+	else {
 		const std::vector<std::string>& datadirs = dataDirLocater.GetDataDirPaths();
 		for (const std::string& dd: datadirs) {
 			std::string dirPath(dd + dir);
@@ -137,6 +140,7 @@ std::string DataDirsAccess::LocateDir(std::string dir, int flags) const
 		return dir;
 	}
 }
+
 std::vector<std::string> DataDirsAccess::LocateDirs(std::string dir) const
 {
 	std::vector<std::string> found;
@@ -158,9 +162,8 @@ std::vector<std::string> DataDirsAccess::LocateDirs(std::string dir) const
 	return found;
 }
 
-std::vector<std::string> DataDirsAccess::FindDirsInDirectSubDirs(
-		const std::string& relPath) const {
-
+std::vector<std::string> DataDirsAccess::FindDirsInDirectSubDirs(const std::string& relPath) const
+{
 	std::vector<std::string> found;
 
 	static const std::string pattern = "*";
@@ -176,7 +179,7 @@ std::vector<std::string> DataDirsAccess::FindDirsInDirectSubDirs(
 		const std::vector<std::string>& localMainDirs = CFileHandler::SubDirs(dir, pattern, SPRING_VFS_RAW, false);
 		mainDirs.insert(mainDirs.end(), localMainDirs.begin(), localMainDirs.end());
 	}
-	//found.insert(found.end(), mainDirs.begin(), mainDirs.end());
+	// found.insert(found.end(), mainDirs.begin(), mainDirs.end());
 
 	// and add all subdriectories of these
 	for (const std::string& dir: mainDirs) {
@@ -187,13 +190,11 @@ std::vector<std::string> DataDirsAccess::FindDirsInDirectSubDirs(
 	return found;
 }
 
-
 bool DataDirsAccess::InReadDir(const std::string& path)
 {
 	std::string locatedFile = LocateFile(path);
 	return (!locatedFile.empty() && locatedFile != path);
 }
-
 
 bool DataDirsAccess::InWriteDir(const std::string& path)
 {

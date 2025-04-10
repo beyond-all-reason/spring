@@ -3,15 +3,13 @@
 #ifndef _CAMERA_CONTROLLER_H
 #define _CAMERA_CONTROLLER_H
 
+#include "System/float3.h"
+
 #include <algorithm>
 #include <array>
 #include <string>
 
-#include "System/float3.h"
-
-
-class CCameraController
-{
+class CCameraController {
 public:
 	struct StateMap {
 	public:
@@ -22,12 +20,15 @@ public:
 		typedef ArrayMap::const_iterator const_iterator;
 
 		iterator begin() { return (pairsMap.begin()); }
+
 		iterator end() { return (pairsMap.begin() + numPairs); }
 
 		const_iterator cbegin() const { return (pairsMap.cbegin()); }
+
 		const_iterator cend() const { return (pairsMap.cbegin() + numPairs); }
 
-		const_iterator find(const std::string& s) const {
+		const_iterator find(const std::string& s) const
+		{
 			const auto pair = std::make_pair(s, 0.0f);
 			const auto pred = [](const MapPair& a, const MapPair& b) { return (a.first < b.first); };
 			const auto iter = std::lower_bound(cbegin(), cend(), pair, pred);
@@ -36,14 +37,16 @@ public:
 			return iter;
 		}
 
-		float operator [](const std::string& s) const {
+		float operator[](const std::string& s) const
+		{
 			const auto iter = find(s);
 			if (iter == cend())
 				return 0.0f;
 			return iter->second;
 		}
 
-		float& operator [](const std::string& s) {
+		float& operator[](const std::string& s)
+		{
 			const auto iter = find(s);
 
 			if (iter == cend()) {
@@ -67,12 +70,12 @@ public:
 			return pairsMap[iter - cbegin()].second;
 		}
 
-		bool operator == (const StateMap& sm) const {
-			return (numPairs == sm.numPairs && pairsMap == sm.pairsMap);
-		}
+		bool operator==(const StateMap& sm) const { return (numPairs == sm.numPairs && pairsMap == sm.pairsMap); }
 
 		bool empty() const { return (numPairs == 0); }
-		void clear() {
+
+		void clear()
+		{
 			numPairs = 0;
 
 			for (auto& pair: pairsMap) {
@@ -89,6 +92,7 @@ public:
 
 public:
 	CCameraController();
+
 	virtual ~CCameraController() {}
 
 	virtual const std::string GetName() const = 0;
@@ -104,12 +108,17 @@ public:
 	float GetFOV() const { return fov; } //< In degrees!
 
 	virtual float3 GetPos() const { return pos; }
+
 	virtual float3 GetDir() const { return dir; }
+
 	virtual float3 GetRot() const;
 
 	virtual void SetPos(const float3& newPos) { pos = newPos; }
+
 	virtual void SetRot(const float3& newRot);
+
 	virtual void SetDir(const float3& newDir) { dir = newDir; }
+
 	virtual bool DisableTrackingByKey() { return true; }
 
 	// return the position to send to new controllers SetPos
@@ -118,6 +127,7 @@ public:
 
 	virtual void GetState(StateMap& sm) const;
 	virtual bool SetState(const StateMap& sm);
+
 	virtual void SetTrackingInfo(const float3& pos, float radius) { SetPos(pos); }
 
 	static float DistanceToGround(float3 from, float3 dir, float fallbackPlaneHeight);
@@ -143,10 +153,10 @@ protected:
 	float3 dir;
 
 	/**
-	* @brief scrollSpeed
-	* scales the scroll speed in general
-	* (includes middleclick, arrowkey, screenedge scrolling)
-	*/
+	 * @brief scrollSpeed
+	 * scales the scroll speed in general
+	 * (includes middleclick, arrowkey, screenedge scrolling)
+	 */
 	float scrollSpeed;
 
 	/**

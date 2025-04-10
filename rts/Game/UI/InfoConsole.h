@@ -4,23 +4,28 @@
 #define INFO_CONSOLE_H
 
 #include "InputReceiver.h"
-#include "System/float3.h"
+
 #include "System/EventClient.h"
 #include "System/Log/LogSinkHandler.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Threading/SpringThreading.h"
+#include "System/float3.h"
 
 #include <array>
 #include <deque>
 #include <string>
 
-class CInfoConsole: public CInputReceiver, public CEventClient, public ILogSink
-{
+class CInfoConsole : public CInputReceiver, public CEventClient, public ILogSink {
 public:
 	static void InitStatic();
 	static void KillStatic();
 
-	CInfoConsole(): CEventClient("InfoConsole", 999, false) { Init(); }
+	CInfoConsole()
+	    : CEventClient("InfoConsole", 999, false)
+	{
+		Init();
+	}
+
 	~CInfoConsole() { Kill(); }
 
 	void Init();
@@ -32,22 +37,23 @@ public:
 
 	void RecordLogMessage(int level, const std::string& section, const std::string& message) override;
 
-	bool WantsEvent(const std::string& eventName) override {
-		return (eventName == "LastMessagePosition");
-	}
+	bool WantsEvent(const std::string& eventName) override { return (eventName == "LastMessagePosition"); }
+
 	void LastMessagePosition(const float3& pos) override;
 	const float3& GetMsgPos(const float3& defaultPos = ZeroVector);
+
 	unsigned int GetMsgPosCount() const { return lastMsgPositions.size(); }
 
 public:
 	struct RawLine {
-		RawLine(const std::string& text, const std::string& section, int level,
-				int id)
-			: text(text)
-			, section(section)
-			, level(level)
-			, id(id)
-			{}
+		RawLine(const std::string& text, const std::string& section, int level, int id)
+		    : text(text)
+		    , section(section)
+		    , level(level)
+		    , id(id)
+		{
+		}
+
 		std::string text;
 		std::string section;
 		int level;
@@ -62,9 +68,10 @@ private:
 
 	struct InfoLine {
 		InfoLine(std::string text_, spring_time timeout_)
-			: text(std::move(text_))
-			, timeout(timeout_)
-		{}
+		    : text(std::move(text_))
+		    , timeout(timeout_)
+		{
+		}
 
 		std::string text;
 		spring_time timeout;

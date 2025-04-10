@@ -3,26 +3,29 @@
 #ifndef _DAMAGE_ARRAY_HANDLER_H
 #define _DAMAGE_ARRAY_HANDLER_H
 
+#include "System/Misc/NonCopyable.h"
+#include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
+
 #include <string>
 #include <vector>
 
-#include "System/Misc/NonCopyable.h"
-#include "System/creg/creg_cond.h"
-#include "System/UnorderedMap.hpp"
-
 class LuaParser;
-class CDamageArrayHandler : public spring::noncopyable
-{
+
+class CDamageArrayHandler : public spring::noncopyable {
 	CR_DECLARE_STRUCT(CDamageArrayHandler)
 
 public:
 	void Init(LuaParser* defsParser);
-	void Kill() {
+
+	void Kill()
+	{
 		armorDefNameIdxMap.clear(); // never iterated
 		armorDefKeys.clear();
 	}
 
 	int GetTypeFromName(const std::string& name) const;
+
 	int GetNumTypes() const { return armorDefKeys.size(); }
 
 	const std::vector<std::string>& GetTypeList() const { return armorDefKeys; }

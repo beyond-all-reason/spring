@@ -98,7 +98,7 @@ function gadget:Initialize()
 		gadgetHandler:RemoveGadget()
 		return
 	end
-	
+
 	local gaiaTeamID = Spring.GetGaiaTeamID()
 	local teamCount = 0
 	for _,teamID in ipairs(GetTeamList()) do
@@ -113,7 +113,7 @@ function gadget:Initialize()
 	elseif teamCount == 2 then
 		playerQuitIsDead = false -- let player quit & rejoin in 1v1
 	end
-	
+
 	-- at start, fill in the table of all alive allyteams
 	for _,allyTeamID in ipairs(GetAllyTeamList()) do
 		local allyTeamInfo = {}
@@ -144,7 +144,7 @@ function gadget:Initialize()
 				teamInfo.isControlled = true
 			end
 			teamInfo.unitCount = GetTeamUnitCount(teamID)
-			allyTeamInfo.unitCount = allyTeamInfo.unitCount + teamInfo.unitCount 
+			allyTeamInfo.unitCount = allyTeamInfo.unitCount + teamInfo.unitCount
 			allyTeamInfo.teams[teamID] = teamInfo
 		end
 		allyTeamInfos[allyTeamID] = allyTeamInfo
@@ -180,7 +180,7 @@ local function AreAllyTeamsDoubleAllied(firstAllyTeamID,  secondAllyTeamID)
 		for teamB in pairs(allyTeamInfos[secondAllyTeamID].teams) do
 			if not AreTeamsAllied(teamA, teamB) or not AreTeamsAllied(teamB, teamA) then
 				return false
-			end 
+			end
 		end
 	end
 	return true
@@ -208,7 +208,7 @@ local function CheckSharedAllyVictoryEnd()
 	if aliveCount*aliveCount ~= winnerCountSquared then
 		return false
 	end
-	
+
 	-- all the allyteams alive are bidirectionally allied against eachother, they are all winners
 	local winnersCorrectFormat = {}
 	for winner in pairs(candidateWinners) do
@@ -250,14 +250,14 @@ end
 
 
 function gadget:PlayerChanged(playerID)
-	local _,active,spectator,teamID = GetPlayerInfo(playerID) 
-	local allyTeamID = teamToAllyTeam[teamID] 
+	local _,active,spectator,teamID = GetPlayerInfo(playerID)
+	local allyTeamID = teamToAllyTeam[teamID]
 	local teamInfo = allyTeamInfos[allyTeamID].teams[teamID]
 	teamInfo.players[playerID] = active and not spectator
 	teamInfo.hasLeader = select(2,GetTeamInfo(teamID)) >= 0
 	if not teamInfo.hasLeader and not teamInfo.dead then
 		KillTeam(teamID)
-	end	
+	end
 	if not teamInfo.isAI then
 		--if team isn't ai controlled, then we need to check if we have attached players
 		teamInfo.isControlled = false

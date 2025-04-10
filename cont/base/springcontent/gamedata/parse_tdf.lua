@@ -35,7 +35,7 @@ local _ -- junk value
 
 local function GetLineNumber(x)
   x = x and x or pos
-  local t = text  
+  local t = text
   local p = 1
   local n = 1
   local l = ''

@@ -9,38 +9,45 @@
 #include "System/type2.h"
 
 enum {
-	S3O_PRIMTYPE_TRIANGLES      = 0,
+	S3O_PRIMTYPE_TRIANGLES = 0,
 	S3O_PRIMTYPE_TRIANGLE_STRIP = 1,
-	S3O_PRIMTYPE_QUADS          = 2,
+	S3O_PRIMTYPE_QUADS = 2,
 };
 
-
-struct SS3OPiece: public S3DModelPiece {
+struct SS3OPiece : public S3DModelPiece {
 public:
 	SS3OPiece() = default;
 	SS3OPiece(const SS3OPiece&) = delete;
+
 	SS3OPiece(SS3OPiece&& p) { *this = std::move(p); }
 
-	SS3OPiece& operator = (const SS3OPiece& p) = delete;
-	SS3OPiece& operator = (SS3OPiece&& p) {
-		#if 0
+	SS3OPiece& operator=(const SS3OPiece& p) = delete;
+
+	SS3OPiece& operator=(SS3OPiece&& p)
+	{
+#if 0
 		// piece is never actually moved, just need the operator for pool
 		vertices = std::move(p.vertices);
 		indices = std::move(p.indices);
 
 		primType = p.primType;
-		#endif
+#endif
 		return *this;
 	}
 
-	void Clear() override {
+	void Clear() override
+	{
 		S3DModelPiece::Clear();
 		primType = S3O_PRIMTYPE_TRIANGLES;
 	}
+
 public:
 	void SetVertexCount(unsigned int n) { vertices.resize(n); }
+
 	void SetIndexCount(unsigned int n) { indices.resize(n); }
+
 	void SetVertex(int idx, const SVertexData& v) { vertices[idx] = v; }
+
 	void SetIndex(int idx, const unsigned int drawIdx) { indices[idx] = drawIdx; }
 
 	void Trianglize();
@@ -51,10 +58,7 @@ public:
 	int primType = S3O_PRIMTYPE_TRIANGLES;
 };
 
-
-
-class CS3OParser: public IModelParser
-{
+class CS3OParser : public IModelParser {
 public:
 	void Init() override;
 	void Kill() override;

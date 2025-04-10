@@ -68,5 +68,3 @@ Contact Information
 At the time of this writing, the most up-to-date information about
 SoftFloat and the latest release can be found at the Web page `http://
 www.cs.berkeley.edu/~jhauser/arithmetic/SoftFloat.html'.
-
-

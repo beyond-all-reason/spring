@@ -50,7 +50,7 @@ function doWrapp(funcIndex_dw) {
 	fullName_dw = funcFullName[funcIndex_dw];
 	if (doWrapp_dw) {
 		metaInf_dw  = funcMetaInf[funcIndex_dw];
-		
+
 		if (match(metaInf_dw, /ARRAY:/)) {
 			#doWrapp_dw = 0;
 		}

@@ -8,17 +8,16 @@
 
 #include <string>
 
-
 /**
  * Possible live-cycle statuses of a Skirmish AI instance.
  */
 enum ESkirmishAIStatus {
-	SKIRMAISTATE_CONSTRUCTED  = 10,
+	SKIRMAISTATE_CONSTRUCTED = 10,
 	SKIRMAISTATE_INITIALIZING = 20,
-	SKIRMAISTATE_RELOADING    = 30,
-	SKIRMAISTATE_ALIVE        = 40,
-	SKIRMAISTATE_DIEING       = 50,
-	SKIRMAISTATE_DEAD         = 60
+	SKIRMAISTATE_RELOADING = 30,
+	SKIRMAISTATE_ALIVE = 40,
+	SKIRMAISTATE_DIEING = 50,
+	SKIRMAISTATE_DEAD = 60
 };
 
 /**
@@ -40,8 +39,7 @@ public:
 /**
  * @brief Contains statistical data about a player concerning a single game.
  */
-class SkirmishAIStatistics : public TeamControllerStatistics
-{
+class SkirmishAIStatistics : public TeamControllerStatistics {
 	CR_DECLARE_STRUCT(SkirmishAIStatistics)
 
 public:

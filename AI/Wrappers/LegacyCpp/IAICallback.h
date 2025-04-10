@@ -8,9 +8,9 @@
 #include "Sim/Units/CommandAI/Command.h"
 #include "System/float3.h"
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 
 struct SCommandDescription;
@@ -23,8 +23,7 @@ struct FeatureDef;
 struct WeaponDef;
 
 /// Generalized callback interface, used by Global AIs
-class IAICallback
-{
+class IAICallback {
 public:
 	virtual void SendTextMsg(const char* text, int zone) = 0;
 	virtual void SetLastMsgPos(float3 pos) = 0;
@@ -170,7 +169,7 @@ public:
 	virtual float GetUnitExperience(int unitId) = 0;
 	/// the furthest any weapon of the unit can fire
 	virtual float GetUnitMaxRange(int unitId) = 0;
-	virtual bool IsUnitActivated (int unitId) = 0;
+	virtual bool IsUnitActivated(int unitId) = 0;
 	/// true if the unit is currently being built
 	virtual bool UnitBeingBuilt(int unitId) = 0;
 	/**
@@ -370,7 +369,14 @@ public:
 	 * Creates a cubic Bezier spline figure from pos1 to pos4 with control
 	 * points pos2 and pos3).
 	 */
-	virtual int CreateSplineFigure(float3 pos1, float3 pos2, float3 pos3, float3 pos4, float width, int arrow, int lifeTime, int figureGroupId) = 0;
+	virtual int CreateSplineFigure(float3 pos1,
+	    float3 pos2,
+	    float3 pos3,
+	    float3 pos4,
+	    float width,
+	    int arrow,
+	    int lifeTime,
+	    int figureGroupId) = 0;
 	virtual int CreateLineFigure(float3 pos1, float3 pos2, float width, int arrow, int lifeTime, int figureGroupId) = 0;
 	virtual void SetFigureColor(int figureGroupId, float red, float green, float blue, float alpha) = 0;
 	virtual void DeleteFigureGroup(int figureGroupId) = 0;
@@ -382,7 +388,14 @@ public:
 	 *   (as if before any COB scripts are run)
 	 * - the rotation is in radians, team affects the color of the unit
 	 */
-	virtual void DrawUnit(const char* unitName, float3 pos, float rotation, int lifeTime, int teamId, bool transparent, bool drawBorder, int facing = 0) = 0;
+	virtual void DrawUnit(const char* unitName,
+	    float3 pos,
+	    float rotation,
+	    int lifeTime,
+	    int teamId,
+	    bool transparent,
+	    bool drawBorder,
+	    int facing = 0) = 0;
 
 	/*
 	 * The following functions allow AI's to plot real-time
@@ -439,7 +452,8 @@ public:
 	 *                through a base
 	 * @param facing facing of the building (0-3)
 	 */
-	virtual float3 ClosestBuildSite(const UnitDef* unitdef, float3 pos, float searchRadius, int minDist, int facing = 0) = 0;
+	virtual float3
+	ClosestBuildSite(const UnitDef* unitdef, float3 pos, float searchRadius, int minDist, int facing = 0) = 0;
 
 	/// For certain future callback extensions
 	virtual bool GetProperty(int unitId, int propertyId, void* dst) = 0;
@@ -466,18 +480,18 @@ public:
 	 */
 	virtual int GetMapLines(LineMarker* lm, int lm_sizeMax, bool includeAllies) = 0;
 
-	virtual float GetMetal() = 0;         ///< current metal level for team
-	virtual float GetMetalIncome() = 0;   ///< current metal income for team
-	virtual float GetMetalUsage() = 0;    ///< current metal usage for team
-	virtual float GetMetalStorage() = 0;  ///< current metal storage capacity for team
+	virtual float GetMetal() = 0;        ///< current metal level for team
+	virtual float GetMetalIncome() = 0;  ///< current metal income for team
+	virtual float GetMetalUsage() = 0;   ///< current metal usage for team
+	virtual float GetMetalStorage() = 0; ///< current metal storage capacity for team
 
 	virtual float GetEnergy() = 0;        ///< current energy level for team
 	virtual float GetEnergyIncome() = 0;  ///< current energy income for team
 	virtual float GetEnergyUsage() = 0;   ///< current energy usage for team
 	virtual float GetEnergyStorage() = 0; ///< current energy storage capacity for team
 
-	virtual int GetFeatures(int *featureIds, int max) = 0;
-	virtual int GetFeatures(int *featureIds, int max, const float3& pos, float radius) = 0;
+	virtual int GetFeatures(int* featureIds, int max) = 0;
+	virtual int GetFeatures(int* featureIds, int max, const float3& pos, float radius) = 0;
 	virtual const FeatureDef* GetFeatureDef(int featureId) = 0;
 	virtual float GetFeatureHealth(int featureId) = 0;
 	virtual float GetFeatureReclaimLeft(int featureId) = 0;

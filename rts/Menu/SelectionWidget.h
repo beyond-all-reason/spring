@@ -3,30 +3,29 @@
 #ifndef SELECTIONWIDGET_H
 #define SELECTIONWIDGET_H
 
+#include "aGui/Button.h"
+#include "aGui/Gui.h"
+#include "aGui/GuiElement.h"
+#include "aGui/HorizontalLayout.h"
+#include "aGui/LineEdit.h"
+#include "aGui/List.h"
+#include "aGui/TextElement.h"
+#include "aGui/VerticalLayout.h"
+#include "aGui/Window.h"
+
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
-#include "aGui/GuiElement.h"
-#include "aGui/Window.h"
-#include "aGui/List.h"
-#include "aGui/Gui.h"
-#include "aGui/VerticalLayout.h"
-#include "aGui/HorizontalLayout.h"
-#include "aGui/Button.h"
-#include "aGui/LineEdit.h"
-#include "aGui/TextElement.h"
-
-namespace agui
-{
+namespace agui {
 class Button;
 class TextElement;
-}
+} // namespace agui
 
-class ListSelectWnd : public agui::Window
-{
+class ListSelectWnd : public agui::Window {
 public:
-	ListSelectWnd(const std::string& title) : agui::Window(title)
+	ListSelectWnd(const std::string& title)
+	    : agui::Window(title)
 	{
 		agui::gui->AddElement(this);
 		SetPos(0.5, 0.2);
@@ -53,14 +52,11 @@ private:
 		list->SetFocus(false);
 		Selected(list->GetCurrentItem());
 	}
-	void CancelButton()
-	{
-		WantClose();
-	}
+
+	void CancelButton() { WantClose(); }
 };
 
-class SelectionWidget : public agui::GuiElement
-{
+class SelectionWidget : public agui::GuiElement {
 public:
 	static const std::string NoDemoSelect;
 	static const std::string NoSaveSelect;

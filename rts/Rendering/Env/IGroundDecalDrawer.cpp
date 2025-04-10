@@ -1,32 +1,33 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IGroundDecalDrawer.h"
+
 #include "Rendering/Env/Decals/GroundDecalHandler.h"
+#include "Sim/Units/Unit.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/Exceptions.h"
-#include "System/SafeUtil.h"
 #include "System/Log/ILog.h"
-#include "Sim/Units/Unit.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
 
 
-CONFIG(bool, GroundDecals).defaultValue(true).headlessValue(false).description("Controls whether ground decals underneath buildings, unit tracks & footprints as well as ground scars from explosions will be rendered.");
+CONFIG(bool, GroundDecals)
+    .defaultValue(true)
+    .headlessValue(false)
+    .description("Controls whether ground decals underneath buildings, unit tracks & footprints as well as ground "
+                 "scars from explosions will be rendered.");
 
 CR_BIND_INTERFACE(IGroundDecalDrawer)
-CR_REG_METADATA(IGroundDecalDrawer, (
-	CR_MEMBER(decals)
-))
+CR_REG_METADATA(IGroundDecalDrawer, (CR_MEMBER(decals)))
 
 CR_BIND_DERIVED(NullGroundDecalDrawer, IGroundDecalDrawer, )
-CR_REG_METADATA(NullGroundDecalDrawer,  )
+CR_REG_METADATA(NullGroundDecalDrawer, )
 
 void IGroundDecalDrawer::Init()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	SetDrawDecals(configHandler->GetBool("GroundDecals"));
 }
-
 
 void IGroundDecalDrawer::FreeInstance()
 {
@@ -58,7 +59,4 @@ void IGroundDecalDrawer::SetDrawDecals(bool v)
 	configHandler->Set("GroundDecals", hasDecals);
 }
 
-void NullGroundDecalDrawer::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks)
-{
-	unit->leaveTracks = leaveTracks;
-}
+void NullGroundDecalDrawer::SetUnitLeaveTracks(CUnit* unit, bool leaveTracks) { unit->leaveTracks = leaveTracks; }

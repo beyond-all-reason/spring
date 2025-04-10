@@ -1,15 +1,14 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <assert.h>
-#include <algorithm>
 #include "Builder.h"
+
 #include "Building.h"
+
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapDamage.h"
 #include "Map/ReadMap.h"
-#include "System/SpringMath.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureHandler.h"
@@ -19,85 +18,88 @@
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
-#include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/CommandAI/BuilderCAI.h"
 #include "Sim/Units/CommandAI/BuilderCaches.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitLoader.h"
 #include "System/EventHandler.h"
 #include "System/Log/ILog.h"
-#include "System/Sound/ISoundChannels.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISoundChannels.h"
+#include "System/SpringMath.h"
 
-using std::min;
+#include <algorithm>
+
+#include <assert.h>
+
 using std::max;
+using std::min;
 
 CR_BIND_DERIVED(CBuilder, CUnit, )
-CR_REG_METADATA(CBuilder, (
-	CR_MEMBER(range3D),
-	CR_MEMBER(buildDistance),
-	CR_MEMBER(buildSpeed),
-	CR_MEMBER(repairSpeed),
-	CR_MEMBER(reclaimSpeed),
-	CR_MEMBER(resurrectSpeed),
-	CR_MEMBER(captureSpeed),
-	CR_MEMBER(terraformSpeed),
-	CR_MEMBER(curResurrect),
-	CR_MEMBER(lastResurrected),
-	CR_MEMBER(curBuild),
-	CR_MEMBER(curCapture),
-	CR_MEMBER(curReclaim),
-	CR_MEMBER(reclaimingUnit),
-	CR_MEMBER(helpTerraform),
-	CR_MEMBER(terraforming),
-	CR_MEMBER(myTerraformLeft),
-	CR_MEMBER(terraformHelp),
-	CR_MEMBER(tx1), CR_MEMBER(tx2), CR_MEMBER(tz1), CR_MEMBER(tz2),
-	CR_MEMBER(terraformCenter),
-	CR_MEMBER(terraformRadius),
-	CR_MEMBER(terraformType),
-	CR_MEMBER(nanoPieceCache)
-))
-
+CR_REG_METADATA(CBuilder,
+    (CR_MEMBER(range3D),
+        CR_MEMBER(buildDistance),
+        CR_MEMBER(buildSpeed),
+        CR_MEMBER(repairSpeed),
+        CR_MEMBER(reclaimSpeed),
+        CR_MEMBER(resurrectSpeed),
+        CR_MEMBER(captureSpeed),
+        CR_MEMBER(terraformSpeed),
+        CR_MEMBER(curResurrect),
+        CR_MEMBER(lastResurrected),
+        CR_MEMBER(curBuild),
+        CR_MEMBER(curCapture),
+        CR_MEMBER(curReclaim),
+        CR_MEMBER(reclaimingUnit),
+        CR_MEMBER(helpTerraform),
+        CR_MEMBER(terraforming),
+        CR_MEMBER(myTerraformLeft),
+        CR_MEMBER(terraformHelp),
+        CR_MEMBER(tx1),
+        CR_MEMBER(tx2),
+        CR_MEMBER(tz1),
+        CR_MEMBER(tz2),
+        CR_MEMBER(terraformCenter),
+        CR_MEMBER(terraformRadius),
+        CR_MEMBER(terraformType),
+        CR_MEMBER(nanoPieceCache)))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CBuilder::CBuilder():
-	CUnit(),
-	range3D(true),
-	buildDistance(16),
-	buildSpeed(100),
-	repairSpeed(100),
-	reclaimSpeed(100),
-	resurrectSpeed(100),
-	captureSpeed(100),
-	terraformSpeed(100),
-	curResurrect(0),
-	lastResurrected(0),
-	curBuild(0),
-	curCapture(0),
-	curReclaim(0),
-	reclaimingUnit(false),
-	helpTerraform(0),
-	terraforming(false),
-	terraformHelp(0),
-	myTerraformLeft(0),
-	terraformType(Terraform_Building),
-	tx1(0),
-	tx2(0),
-	tz1(0),
-	tz2(0),
-	terraformCenter(ZeroVector),
-	terraformRadius(0)
+CBuilder::CBuilder()
+    : CUnit()
+    , range3D(true)
+    , buildDistance(16)
+    , buildSpeed(100)
+    , repairSpeed(100)
+    , reclaimSpeed(100)
+    , resurrectSpeed(100)
+    , captureSpeed(100)
+    , terraformSpeed(100)
+    , curResurrect(0)
+    , lastResurrected(0)
+    , curBuild(0)
+    , curCapture(0)
+    , curReclaim(0)
+    , reclaimingUnit(false)
+    , helpTerraform(0)
+    , terraforming(false)
+    , terraformHelp(0)
+    , myTerraformLeft(0)
+    , terraformType(Terraform_Building)
+    , tx1(0)
+    , tx2(0)
+    , tz1(0)
+    , tz2(0)
+    , terraformCenter(ZeroVector)
+    , terraformRadius(0)
 {
 }
-
-
 
 void CBuilder::PreInit(const UnitLoadParams& params)
 {
@@ -106,16 +108,15 @@ void CBuilder::PreInit(const UnitLoadParams& params)
 	range3D = unitDef->buildRange3D;
 	buildDistance = (params.unitDef)->buildDistance;
 
-	buildSpeed     = INV_GAME_SPEED * unitDef->buildSpeed;
-	repairSpeed    = INV_GAME_SPEED * unitDef->repairSpeed;
-	reclaimSpeed   = INV_GAME_SPEED * unitDef->reclaimSpeed;
+	buildSpeed = INV_GAME_SPEED * unitDef->buildSpeed;
+	repairSpeed = INV_GAME_SPEED * unitDef->repairSpeed;
+	reclaimSpeed = INV_GAME_SPEED * unitDef->reclaimSpeed;
 	resurrectSpeed = INV_GAME_SPEED * unitDef->resurrectSpeed;
-	captureSpeed   = INV_GAME_SPEED * unitDef->captureSpeed;
+	captureSpeed = INV_GAME_SPEED * unitDef->captureSpeed;
 	terraformSpeed = INV_GAME_SPEED * unitDef->terraformSpeed;
 
 	CUnit::PreInit(params);
 }
-
 
 bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 {
@@ -123,9 +124,9 @@ bool CBuilder::CanAssistUnit(const CUnit* u, const UnitDef* def) const
 	if (!unitDef->canAssist)
 		return false;
 
-	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (u->buildProgress < 1.0f) && (u->soloBuilder == nullptr || u->soloBuilder == this));
+	return ((def == nullptr || u->unitDef == def) && u->beingBuilt && (u->buildProgress < 1.0f) &&
+	        (u->soloBuilder == nullptr || u->soloBuilder == this));
 }
-
 
 bool CBuilder::CanRepairUnit(const CUnit* u) const
 {
@@ -139,8 +140,6 @@ bool CBuilder::CanRepairUnit(const CUnit* u) const
 
 	return (u->unitDef->repairable);
 }
-
-
 
 bool CBuilder::UpdateTerraform(const Command&)
 {
@@ -163,7 +162,8 @@ bool CBuilder::UpdateTerraform(const Command&)
 					const float ch3 = heightmap[z * mapDims.mapxp1 + tx1];
 					const float ch = heightmap[z * mapDims.mapxp1 + tx1 - x];
 					const float ch2 = heightmap[z * mapDims.mapxp1 + tx1 - TERRA_SMOOTHING_RADIUS];
-					const float amount = ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
+					const float amount =
+					    ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight(z * mapDims.mapxp1 + tx1 - x, amount);
 				}
@@ -171,7 +171,8 @@ bool CBuilder::UpdateTerraform(const Command&)
 					const float ch3 = heightmap[z * mapDims.mapxp1 + tx2];
 					const float ch = heightmap[z * mapDims.mapxp1 + tx2 + x];
 					const float ch2 = heightmap[z * mapDims.mapxp1 + tx2 + TERRA_SMOOTHING_RADIUS];
-					const float amount = ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
+					const float amount =
+					    ((ch3 * (TERRA_SMOOTHING_RADIUS - x) + ch2 * x) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight(z * mapDims.mapxp1 + tx2 + x, amount);
 				}
@@ -185,7 +186,8 @@ bool CBuilder::UpdateTerraform(const Command&)
 					const float ch3 = heightmap[(tz1)*mapDims.mapxp1 + x];
 					const float ch = heightmap[(tz1 - z) * mapDims.mapxp1 + x];
 					const float ch2 = heightmap[(tz1 - TERRA_SMOOTHING_RADIUS) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
+					const float adjust =
+					    ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight((tz1 - z) * mapDims.mapxp1 + x, adjust);
 				}
@@ -193,7 +195,8 @@ bool CBuilder::UpdateTerraform(const Command&)
 					const float ch3 = heightmap[(tz2)*mapDims.mapxp1 + x];
 					const float ch = heightmap[(tz2 + z) * mapDims.mapxp1 + x];
 					const float ch2 = heightmap[(tz2 + TERRA_SMOOTHING_RADIUS) * mapDims.mapxp1 + x];
-					const float adjust = ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
+					const float adjust =
+					    ((ch3 * (TERRA_SMOOTHING_RADIUS - z) + ch2 * z) / TERRA_SMOOTHING_RADIUS - ch) * terraformScale;
 
 					readMap->AddHeight((tz2 + z) * mapDims.mapxp1 + x, adjust);
 				}
@@ -269,7 +272,6 @@ bool CBuilder::UpdateTerraform(const Command&)
 	CreateNanoParticle(terraformCenter, terraformRadius * 0.5f, false);
 
 
-
 	return true;
 }
 
@@ -307,7 +309,8 @@ bool CBuilder::UpdateBuild(const Command& fCommand)
 		if (curBuildee->buildProgress < 1.0f) {
 			// prevent buildee from decaying (we cannot call StopBuild here)
 			curBuildee->AddBuildPower(this, 0.0f);
-		} else {
+		}
+		else {
 			// stop repairing (FIXME: should be much cleaner to let BuilderCAI
 			// call this instead when a wait command is given?)
 			StopBuild();
@@ -369,7 +372,8 @@ bool CBuilder::UpdateReclaim(const Command& fCommand)
 	// and reset curReclaim to null (which would crash CreateNanoParticle)
 	CSolidObject* curReclaimee = curReclaim;
 
-	if (curReclaimee == nullptr || f3SqDist(curReclaimee->pos, pos) >= Square(buildDistance + curReclaimee->buildeeRadius) || !inBuildStance)
+	if (curReclaimee == nullptr ||
+	    f3SqDist(curReclaimee->pos, pos) >= Square(buildDistance + curReclaimee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -382,7 +386,8 @@ bool CBuilder::UpdateReclaim(const Command& fCommand)
 	if (!curReclaimee->AddBuildPower(this, -reclaimSpeed))
 		return true;
 
-	CreateNanoParticle(curReclaimee->midPos, curReclaimee->radius * 0.7f, true, (reclaimingUnit && curReclaimee->team != team));
+	CreateNanoParticle(
+	    curReclaimee->midPos, curReclaimee->radius * 0.7f, true, (reclaimingUnit && curReclaimee->team != team));
 	return true;
 }
 
@@ -391,7 +396,8 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CFeature* curResurrectee = curResurrect;
 
-	if (curResurrectee == nullptr || f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->buildeeRadius) || !inBuildStance)
+	if (curResurrectee == nullptr ||
+	    f3SqDist(curResurrectee->pos, pos) >= Square(buildDistance + curResurrectee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -417,7 +423,8 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 	const float step = resurrectSpeed / resurrecteeDef->buildTime;
 
 	const bool resurrectAllowed = eventHandler.AllowFeatureBuildStep(this, curResurrectee, step);
-	const bool canExecResurrect = (resurrectAllowed && UseEnergy(resurrecteeDef->cost.energy * step * modInfo.resurrectEnergyCostFactor));
+	const bool canExecResurrect =
+	    (resurrectAllowed && UseEnergy(resurrecteeDef->cost.energy * step * modInfo.resurrectEnergyCostFactor));
 
 	if (canExecResurrect) {
 		curResurrectee->resurrectProgress += step;
@@ -433,12 +440,14 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 		// resurrect finished and we are the first
 		curResurrectee->UnBlock();
 
-		UnitLoadParams resurrecteeParams = {resurrecteeDef, this, curResurrectee->pos, ZeroVector, -1, team, curResurrectee->buildFacing, false, false};
+		UnitLoadParams resurrecteeParams = {
+		    resurrecteeDef, this, curResurrectee->pos, ZeroVector, -1, team, curResurrectee->buildFacing, false, false};
 		CUnit* resurrectee = unitLoader->LoadUnit(resurrecteeParams);
 
 		assert(resurrecteeDef == resurrectee->unitDef);
 		resurrectee->SetSoloBuilder(this, resurrecteeDef);
-		resurrectee->SetHeading(curResurrectee->heading, !resurrectee->upright && resurrectee->IsOnGround(), false, 0.0f);
+		resurrectee->SetHeading(
+		    curResurrectee->heading, !resurrectee->upright && resurrectee->IsOnGround(), false, 0.0f);
 
 		for (const int resurrecterID: CBuilderCaches::resurrecters) {
 			CBuilder* resurrecter = static_cast<CBuilder*>(unitHandler.GetUnit(resurrecterID));
@@ -480,7 +489,8 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CUnit* curCapturee = curCapture;
 
-	if (curCapturee == nullptr || f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->buildeeRadius) || !inBuildStance)
+	if (curCapturee == nullptr ||
+	    f3SqDist(curCapturee->pos, pos) >= Square(buildDistance + curCapturee->buildeeRadius) || !inBuildStance)
 		return false;
 
 	if (fCommand.GetID() == CMD_WAIT) {
@@ -493,7 +503,9 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 		return true;
 	}
 
-	const float captureMagicNumber = (150.0f + (curCapturee->buildTime / captureSpeed) * (curCapturee->health + curCapturee->maxHealth) / curCapturee->maxHealth * 0.4f);
+	const float captureMagicNumber =
+	    (150.0f + (curCapturee->buildTime / captureSpeed) * (curCapturee->health + curCapturee->maxHealth) /
+	                  curCapturee->maxHealth * 0.4f);
 	const float captureProgressStep = 1.0f / captureMagicNumber;
 	const float captureProgressTemp = std::min(curCapturee->captureProgress + captureProgressStep, 1.0f);
 
@@ -528,15 +540,13 @@ bool CBuilder::UpdateCapture(const Command& fCommand)
 	return true;
 }
 
-
-
 void CBuilder::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const CBuilderCAI* cai = static_cast<CBuilderCAI*>(commandAI);
 
 	const CCommandQueue& cQueue = cai->commandQue;
-	const Command& fCommand = (!cQueue.empty())? cQueue.front(): Command(CMD_STOP);
+	const Command& fCommand = (!cQueue.empty()) ? cQueue.front() : Command(CMD_STOP);
 
 	bool updated = false;
 
@@ -554,10 +564,9 @@ void CBuilder::Update()
 	CUnit::Update();
 }
 
-
 void CBuilder::SlowUpdate()
 {
-  RECOIL_DETAILED_TRACY_ZONE;
+	RECOIL_DETAILED_TRACY_ZONE;
 	if (terraforming) {
 		constexpr int tsr = TERRA_SMOOTHING_RADIUS;
 		mapDamage->RecalcArea(tx1 - tsr, tx2 + tsr, tz1 - tsr, tz2 + tsr);
@@ -565,7 +574,6 @@ void CBuilder::SlowUpdate()
 
 	CUnit::SlowUpdate();
 }
-
 
 void CBuilder::SetRepairTarget(CUnit* target)
 {
@@ -595,7 +603,6 @@ void CBuilder::SetRepairTarget(CUnit* target)
 	ScriptStartBuilding(target->pos, false);
 }
 
-
 void CBuilder::SetReclaimTarget(CSolidObject* target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -620,7 +627,6 @@ void CBuilder::SetReclaimTarget(CSolidObject* target)
 	ScriptStartBuilding(target->pos, false);
 }
 
-
 void CBuilder::SetResurrectTarget(CFeature* target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -635,7 +641,6 @@ void CBuilder::SetResurrectTarget(CFeature* target)
 	AddDeathDependence(curResurrect, DEPENDENCE_RESURRECT);
 	ScriptStartBuilding(target->pos, false);
 }
-
 
 void CBuilder::SetCaptureTarget(CUnit* target)
 {
@@ -652,7 +657,6 @@ void CBuilder::SetCaptureTarget(CUnit* target)
 	ScriptStartBuilding(target->pos, false);
 }
 
-
 void CBuilder::StartRestore(float3 centerPos, float radius)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -664,10 +668,10 @@ void CBuilder::StartRestore(float3 centerPos, float radius)
 	terraformCenter = centerPos;
 	terraformRadius = radius;
 
-	tx1 = (int)max((float)0,(centerPos.x-radius)/SQUARE_SIZE);
-	tx2 = (int)min((float)mapDims.mapx,(centerPos.x+radius)/SQUARE_SIZE);
-	tz1 = (int)max((float)0,(centerPos.z-radius)/SQUARE_SIZE);
-	tz2 = (int)min((float)mapDims.mapy,(centerPos.z+radius)/SQUARE_SIZE);
+	tx1 = (int)max((float)0, (centerPos.x - radius) / SQUARE_SIZE);
+	tx2 = (int)min((float)mapDims.mapx, (centerPos.x + radius) / SQUARE_SIZE);
+	tz1 = (int)max((float)0, (centerPos.z - radius) / SQUARE_SIZE);
+	tz2 = (int)min((float)mapDims.mapy, (centerPos.z + radius) / SQUARE_SIZE);
 
 	float tcost = 0.0f;
 	const float* curHeightMap = readMap->GetCornerHeightMapSynced();
@@ -683,7 +687,6 @@ void CBuilder::StartRestore(float3 centerPos, float radius)
 
 	ScriptStartBuilding(centerPos, false);
 }
-
 
 void CBuilder::StopBuild(bool callScript)
 {
@@ -718,7 +721,6 @@ void CBuilder::StopBuild(bool callScript)
 	SetHoldFire(false);
 }
 
-
 bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWaitStance, bool& limitReached)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -733,7 +735,8 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 		if (buildInfo.def->RequireMoveDef()) {
 			MoveDef* md = moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType);
 			return (md->FloatOnWater());
-		} else {
+		}
+		else {
 			return (buildInfo.def->floatOnWater);
 		}
 	};
@@ -748,66 +751,63 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	const CGameHelper::BuildSquareStatus tbs = CGameHelper::TestUnitBuildSquare(buildInfo, feature, -1, true);
 
 	switch (tbs) {
-		case CGameHelper::BUILDSQUARE_OPEN:
-			break;
+	case CGameHelper::BUILDSQUARE_OPEN: break;
 
-		case CGameHelper::BUILDSQUARE_BLOCKED:
-		case CGameHelper::BUILDSQUARE_OCCUPIED: {
-			const CUnit* u = nullptr;
+	case CGameHelper::BUILDSQUARE_BLOCKED:
+	case CGameHelper::BUILDSQUARE_OCCUPIED: {
+		const CUnit* u = nullptr;
 
-			const int2 mins = CSolidObject::GetMapPosStatic(buildInfo.pos, buildInfo.GetXSize(), buildInfo.GetZSize());
-			const int2 maxs = mins + int2(buildInfo.GetXSize(), buildInfo.GetZSize());
+		const int2 mins = CSolidObject::GetMapPosStatic(buildInfo.pos, buildInfo.GetXSize(), buildInfo.GetZSize());
+		const int2 maxs = mins + int2(buildInfo.GetXSize(), buildInfo.GetZSize());
 
-			for (int z = mins.y; z < maxs.y; ++z) {
-				for (int x = mins.x; x < maxs.x; ++x) {
-					const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(float3{
-						static_cast<float>(x * SQUARE_SIZE),
-						0.0f,
-						static_cast<float>(z * SQUARE_SIZE) }
-					);
+		for (int z = mins.y; z < maxs.y; ++z) {
+			for (int x = mins.x; x < maxs.x; ++x) {
+				const CGroundBlockingObjectMap::BlockingMapCell& cell = groundBlockingObjectMap.GetCellUnsafeConst(
+				    float3{static_cast<float>(x * SQUARE_SIZE), 0.0f, static_cast<float>(z * SQUARE_SIZE)});
 
-					// look for any blocking assistable buildee at build.pos
-					for (size_t i = 0, n = cell.size(); i < n; i++) {
-						const CUnit* cu = dynamic_cast<const CUnit*>(cell[i]);
+				// look for any blocking assistable buildee at build.pos
+				for (size_t i = 0, n = cell.size(); i < n; i++) {
+					const CUnit* cu = dynamic_cast<const CUnit*>(cell[i]);
 
-						if (cu == nullptr)
-							continue;
-						if (allyteam != cu->allyteam)
-							return false; // Enemy units that block always block the cell
-						if (!CanAssistUnit(cu, buildInfo.def))
-							continue;
+					if (cu == nullptr)
+						continue;
+					if (allyteam != cu->allyteam)
+						return false; // Enemy units that block always block the cell
+					if (!CanAssistUnit(cu, buildInfo.def))
+						continue;
 
-						u = cu;
-						goto out; //lol
-					}
+					u = cu;
+					goto out; // lol
 				}
 			}
+		}
 
-			out:
-			// <pos> might map to a non-blocking portion
-			// of the buildee's yardmap, fallback check
-			if (u == nullptr)
-				u = CGameHelper::GetClosestFriendlyUnit(nullptr, buildInfo.pos, buildDistance, allyteam);
+	out:
+		// <pos> might map to a non-blocking portion
+		// of the buildee's yardmap, fallback check
+		if (u == nullptr)
+			u = CGameHelper::GetClosestFriendlyUnit(nullptr, buildInfo.pos, buildDistance, allyteam);
 
-			if (u != nullptr) {
-				if (CanAssistUnit(u, buildInfo.def)) {
-					// StopBuild sets this to false, fix it here if picking up the same buildee again
-					terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
+		if (u != nullptr) {
+			if (CanAssistUnit(u, buildInfo.def)) {
+				// StopBuild sets this to false, fix it here if picking up the same buildee again
+				terraforming = (u == prvBuild && u->terraformLeft > 0.0f);
 
-					AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
-					ScriptStartBuilding(u->pos, false);
-					return true;
-				}
-
-				// let BuggerOff handle this case (TODO: non-landed aircraft should not count)
-				if (buildInfo.FootPrintOverlap(u->pos, u->GetFootPrint(SQUARE_SIZE * 0.5f)))
-					return false;
+				AddDeathDependence(curBuild = const_cast<CUnit*>(u), DEPENDENCE_BUILD);
+				ScriptStartBuilding(u->pos, false);
+				return true;
 			}
-		} return false;
 
-		case CGameHelper::BUILDSQUARE_RECLAIMABLE:
-			// caller should handle this
-			return false;
+			// let BuggerOff handle this case (TODO: non-landed aircraft should not count)
+			if (buildInfo.FootPrintOverlap(u->pos, u->GetFootPrint(SQUARE_SIZE * 0.5f)))
+				return false;
+		}
+	}
+		return false;
+
+	case CGameHelper::BUILDSQUARE_RECLAIMABLE:
+		// caller should handle this
+		return false;
 	}
 
 	// at this point we know the builder is going to create a new unit, bail if at the limit
@@ -818,20 +818,22 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 		return false;
 
 	const UnitDef* buildeeDef = buildInfo.def;
-	const UnitLoadParams buildeeParams = {buildeeDef, this, buildInfo.pos, ZeroVector, -1, team, buildInfo.buildFacing, true, false};
+	const UnitLoadParams buildeeParams = {
+	    buildeeDef, this, buildInfo.pos, ZeroVector, -1, team, buildInfo.buildFacing, true, false};
 
 	CUnit* buildee = unitLoader->LoadUnit(buildeeParams);
 
 	// floating structures don't terraform the seabed
 	const bool buildeeOnWater = (buildee->FloatOnWater() && buildee->IsInWater());
 	const bool allowTerraform = (!mapDamage->Disabled() && buildeeDef->levelGround);
-	const bool  skipTerraform = (buildeeOnWater || buildeeDef->IsAirUnit() || !buildeeDef->IsImmobileUnit());
+	const bool skipTerraform = (buildeeOnWater || buildeeDef->IsAirUnit() || !buildeeDef->IsImmobileUnit());
 
 	if (!allowTerraform || skipTerraform) {
 		// skip the terraforming job
 		buildee->terraformLeft = 0.0f;
 		buildee->groundLevelled = true;
-	} else {
+	}
+	else {
 		tx1 = (int)std::max(0.0f, (buildee->pos.x - (buildee->xsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
 		tz1 = (int)std::max(0.0f, (buildee->pos.z - (buildee->zsize * 0.5f * SQUARE_SIZE)) / SQUARE_SIZE);
 		tx2 = std::min(mapDims.mapx, tx1 + buildee->xsize);
@@ -840,8 +842,8 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 		buildee->terraformLeft = CalculateBuildTerraformCost(buildInfo);
 		buildee->groundLevelled = false;
 
-		terraforming    = true;
-		terraformType   = Terraform_Building;
+		terraforming = true;
+		terraformType = Terraform_Building;
 		terraformRadius = (tx2 - tx1) * SQUARE_SIZE;
 		terraformCenter = buildee->pos;
 	}
@@ -859,7 +861,6 @@ bool CBuilder::StartBuild(BuildInfo& buildInfo, CFeature*& feature, bool& inWait
 	return true;
 }
 
-
 float CBuilder::CalculateBuildTerraformCost(BuildInfo& buildInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -876,7 +877,8 @@ float CBuilder::CalculateBuildTerraformCost(BuildInfo& buildInfo)
 			float cost;
 			if (delta > 0) {
 				cost = max(3.0f, curHeightMap[idx] - orgHeightMap[idx] + delta * 0.5f);
-			} else {
+			}
+			else {
 				cost = max(3.0f, orgHeightMap[idx] - curHeightMap[idx] - delta * 0.5f);
 			}
 			tcost += math::fabs(delta) * cost;
@@ -885,7 +887,6 @@ float CBuilder::CalculateBuildTerraformCost(BuildInfo& buildInfo)
 
 	return tcost;
 }
-
 
 void CBuilder::DependentDied(CObject* o)
 {
@@ -913,7 +914,6 @@ void CBuilder::DependentDied(CObject* o)
 	CUnit::DependentDied(o);
 }
 
-
 bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -935,7 +935,6 @@ bool CBuilder::ScriptStartBuilding(float3 pos, bool silent)
 	return inBuildStance;
 }
 
-
 void CBuilder::HelpTerraform(CBuilder* unit)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -949,7 +948,6 @@ void CBuilder::HelpTerraform(CBuilder* unit)
 	AddDeathDependence(helpTerraform, DEPENDENCE_TERRAFORM);
 	ScriptStartBuilding(unit->terraformCenter, false);
 }
-
 
 void CBuilder::CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority)
 {

@@ -1,47 +1,49 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cstring>
-
 #include "Camera.h"
+
 #include "CameraHandler.h"
-#include "UI/MouseHandler.h"
+
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GlobalRendering.h"
+#include "System/Config/ConfigHandler.h"
+#include "System/Matrix44f.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/float3.h"
-#include "System/Matrix44f.h"
-#include "System/Config/ConfigHandler.h"
+#include "UI/MouseHandler.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cstring>
 
 
 CONFIG(float, EdgeMoveWidth)
-	.defaultValue(0.02f)
-	.minimumValue(0.0f)
-	.description("The width (in percent of screen size) of the EdgeMove scrolling area.");
+    .defaultValue(0.02f)
+    .minimumValue(0.0f)
+    .description("The width (in percent of screen size) of the EdgeMove scrolling area.");
 CONFIG(bool, EdgeMoveDynamic)
-	.defaultValue(true)
-	.description("If EdgeMove scrolling speed should fade with edge distance.");
+    .defaultValue(true)
+    .description("If EdgeMove scrolling speed should fade with edge distance.");
 CONFIG(float, CameraMoveFastMult)
-	.defaultValue(10.0f)
-	.minimumValue(1.0f)
-	.description("The multiplier applied to speed when camera is in movefast state.");
+    .defaultValue(10.0f)
+    .minimumValue(1.0f)
+    .description("The multiplier applied to speed when camera is in movefast state.");
 CONFIG(float, CameraMoveSlowMult)
-	.defaultValue(0.1f)
-	.maximumValue(1.0f)
-	.description("The multiplier applied to speed when camera is in moveslow state.");
+    .defaultValue(0.1f)
+    .maximumValue(1.0f)
+    .description("The multiplier applied to speed when camera is in moveslow state.");
 CONFIG(int, CamFrameTimeCorrection)
     .defaultValue(0)
-	.minimumValue(0)
-	.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
-
+    .minimumValue(0)
+    .description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 "
+                 "= lastdrawframetime, 1 = fpsinv)");
 
 CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)
-	: camType(cameraType)
-	, projType(projectionType)
-	, inViewPlanesMask((camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
+    : camType(cameraType)
+    , projType(projectionType)
+    , inViewPlanesMask(
+          (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F) // 0x3F - all planes, 0xF - all planes but NEAR/FAR
 {
 	assert(cameraType < CAMTYPE_COUNT);
 
@@ -64,17 +66,19 @@ void CCamera::SetCamType(uint32_t ct)
 	inViewPlanesMask = (camType == CCamera::CAMTYPE_SHADOW) ? 0xF : 0x3F;
 }
 
-void CCamera::InitConfigNotify(){
+void CCamera::InitConfigNotify()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	configHandler->NotifyOnChange(this, {"CameraMoveFastMult", "CameraMoveSlowMult", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
+	configHandler->NotifyOnChange(this,
+	    {"CameraMoveFastMult", "CameraMoveSlowMult", "CamFrameTimeCorrection", "EdgeMoveDynamic", "EdgeMoveWidth"});
 	ConfigUpdate();
 }
 
-void CCamera::RemoveConfigNotify(){
+void CCamera::RemoveConfigNotify()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->RemoveObserver(this);
 }
-
 
 void CCamera::ConfigUpdate()
 {
@@ -86,12 +90,11 @@ void CCamera::ConfigUpdate()
 	edgeMoveWidth = configHandler->GetFloat("EdgeMoveWidth");
 }
 
-void CCamera::ConfigNotify(const std::string & key, const std::string & value)
+void CCamera::ConfigNotify(const std::string& key, const std::string& value)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ConfigUpdate();
 }
-
 
 CCamera* CCamera::GetActive()
 {
@@ -99,25 +102,24 @@ CCamera* CCamera::GetActive()
 	return (CCameraHandler::GetActiveCamera());
 }
 
-
 void CCamera::CopyState(const CCamera* cam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// note: xy-scales are only relevant for CAMTYPE_SHADOW
-	frustum     = cam->frustum;
+	frustum = cam->frustum;
 
-	forward     = cam->GetForward();
-	right       = cam->GetRight();
-	up          = cam->GetUp();
+	forward = cam->GetForward();
+	right = cam->GetRight();
+	up = cam->GetUp();
 
-	pos         = cam->GetPos();
-	rot         = cam->GetRot();
+	pos = cam->GetPos();
+	rot = cam->GetRot();
 
-	fov         = cam->GetVFOV();
-	halfFov     = cam->GetHalfFov();
-	tanHalfFov  = cam->GetTanHalfFov();
+	fov = cam->GetVFOV();
+	halfFov = cam->GetHalfFov();
+	tanHalfFov = cam->GetTanHalfFov();
 
-	lppScale    = cam->GetLPPScale();
+	lppScale = cam->GetLPPScale();
 	aspectRatio = cam->GetAspectRatio();
 
 	// do not copy this, each camera knows its own type
@@ -128,7 +130,7 @@ void CCamera::CopyStateReflect(const CCamera* cam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(cam->GetCamType() != CAMTYPE_UWREFL);
-	assert(     GetCamType() == CAMTYPE_UWREFL);
+	assert(GetCamType() == CAMTYPE_UWREFL);
 
 	SetDir(cam->GetDir() * float3(1.0f, -1.0f, 1.0f));
 	SetPos(cam->GetPos() * float3(1.0f, -1.0f, 1.0f));
@@ -152,7 +154,8 @@ void CCamera::Update(const UpdateParams& p)
 	if (p.updateMats)
 		UpdateMatrices(globalRendering->viewSizeX, globalRendering->viewSizeY, aspectRatio);
 	if (p.updateViewPort)
-		UpdateViewPort(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX, globalRendering->viewSizeY);
+		UpdateViewPort(globalRendering->viewPosX, globalRendering->viewPosY, globalRendering->viewSizeX,
+		    globalRendering->viewSizeY);
 	if (p.updateFrustum)
 		UpdateFrustum();
 
@@ -171,21 +174,30 @@ void CCamera::UpdateFrustum()
 	assert(projType <= PROJTYPE_ORTHO);
 	if (projType == PROJTYPE_PERSP) {
 		const float2 tanHalfFOVs = {math::tan(GetHFOV() * 0.5f * math::DEG_TO_RAD), tanHalfFov}; // horz, vert
-		nAxisScales = {frustum.scales.z * tanHalfFOVs.x, frustum.scales.z * tanHalfFOVs.y}; // x, y
-		fAxisScales = {frustum.scales.w * tanHalfFOVs.x, frustum.scales.w * tanHalfFOVs.y}; // x, y
-	} else { //PROJTYPE_ORTHO
+		nAxisScales = {frustum.scales.z * tanHalfFOVs.x, frustum.scales.z * tanHalfFOVs.y};      // x, y
+		fAxisScales = {frustum.scales.w * tanHalfFOVs.x, frustum.scales.w * tanHalfFOVs.y};      // x, y
+	}
+	else { // PROJTYPE_ORTHO
 		nAxisScales = {frustum.scales.x, frustum.scales.y};
 		fAxisScales = {frustum.scales.x, frustum.scales.y};
 	}
 
-	frustum.verts[FRUSTUM_POINT_NBL] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * -nAxisScales.y); // nbl
-	frustum.verts[FRUSTUM_POINT_NBR] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up * -nAxisScales.y); // nbr
-	frustum.verts[FRUSTUM_POINT_NTR] = pos + (forward * frustum.scales.z) + (right *  nAxisScales.x) + (up *  nAxisScales.y); // ntr
-	frustum.verts[FRUSTUM_POINT_NTL] = pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up *  nAxisScales.y); // ntl
-	frustum.verts[FRUSTUM_POINT_FBL] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * -fAxisScales.y); // fbl
-	frustum.verts[FRUSTUM_POINT_FBR] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up * -fAxisScales.y); // fbr
-	frustum.verts[FRUSTUM_POINT_FTR] = pos + (forward * frustum.scales.w) + (right *  fAxisScales.x) + (up *  fAxisScales.y); // ftr
-	frustum.verts[FRUSTUM_POINT_FTL] = pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up *  fAxisScales.y); // ftl
+	frustum.verts[FRUSTUM_POINT_NBL] =
+	    pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * -nAxisScales.y); // nbl
+	frustum.verts[FRUSTUM_POINT_NBR] =
+	    pos + (forward * frustum.scales.z) + (right * nAxisScales.x) + (up * -nAxisScales.y); // nbr
+	frustum.verts[FRUSTUM_POINT_NTR] =
+	    pos + (forward * frustum.scales.z) + (right * nAxisScales.x) + (up * nAxisScales.y); // ntr
+	frustum.verts[FRUSTUM_POINT_NTL] =
+	    pos + (forward * frustum.scales.z) + (right * -nAxisScales.x) + (up * nAxisScales.y); // ntl
+	frustum.verts[FRUSTUM_POINT_FBL] =
+	    pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * -fAxisScales.y); // fbl
+	frustum.verts[FRUSTUM_POINT_FBR] =
+	    pos + (forward * frustum.scales.w) + (right * fAxisScales.x) + (up * -fAxisScales.y); // fbr
+	frustum.verts[FRUSTUM_POINT_FTR] =
+	    pos + (forward * frustum.scales.w) + (right * fAxisScales.x) + (up * fAxisScales.y); // ftr
+	frustum.verts[FRUSTUM_POINT_FTL] =
+	    pos + (forward * frustum.scales.w) + (right * -fAxisScales.x) + (up * fAxisScales.y); // ftl
 
 	const auto SetFrustumPlane = [this](uint32_t i, uint32_t v1i, uint32_t v2i, uint32_t v3i) {
 		const auto& v1 = frustum.verts[v1i];
@@ -196,7 +208,7 @@ void CCamera::UpdateFrustum()
 		const float3 v = v3 - v2;
 
 		const float3 n = v.cross(u).UnsafeANormalize();
-		const float  d = -n.dot(v2);
+		const float d = -n.dot(v2);
 		frustum.planes[i] = float4(n, d);
 	};
 
@@ -207,12 +219,18 @@ void CCamera::UpdateFrustum()
 	SetFrustumPlane(FRUSTUM_PLANE_NEA, FRUSTUM_POINT_NTL, FRUSTUM_POINT_NTR, FRUSTUM_POINT_NBR);
 	SetFrustumPlane(FRUSTUM_PLANE_FAR, FRUSTUM_POINT_FTR, FRUSTUM_POINT_FTL, FRUSTUM_POINT_FBL);
 
-	frustum.edges[FRUSTUM_EDGE_NTR_NTL] = (frustum.verts[FRUSTUM_POINT_NTR] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ntr - ntl (same as ftr - ftl)
-	frustum.edges[FRUSTUM_EDGE_NTL_NBL] = (frustum.verts[FRUSTUM_POINT_NTL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // ntl - nbl (same as ftl - fbl)
-	frustum.edges[FRUSTUM_EDGE_FTL_NTL] = (frustum.verts[FRUSTUM_POINT_FTL] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ftl - ntl
-	frustum.edges[FRUSTUM_EDGE_FTR_NTR] = (frustum.verts[FRUSTUM_POINT_FTR] - frustum.verts[FRUSTUM_POINT_NTR]).UnsafeANormalize(); // ftr - ntr
-	frustum.edges[FRUSTUM_EDGE_FBR_NBR] = (frustum.verts[FRUSTUM_POINT_FBR] - frustum.verts[FRUSTUM_POINT_NBR]).UnsafeANormalize(); // fbr - nbr
-	frustum.edges[FRUSTUM_EDGE_FBL_NBL] = (frustum.verts[FRUSTUM_POINT_FBL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // fbl - nbl
+	frustum.edges[FRUSTUM_EDGE_NTR_NTL] = (frustum.verts[FRUSTUM_POINT_NTR] - frustum.verts[FRUSTUM_POINT_NTL])
+	                                          .UnsafeANormalize(); // ntr - ntl (same as ftr - ftl)
+	frustum.edges[FRUSTUM_EDGE_NTL_NBL] = (frustum.verts[FRUSTUM_POINT_NTL] - frustum.verts[FRUSTUM_POINT_NBL])
+	                                          .UnsafeANormalize(); // ntl - nbl (same as ftl - fbl)
+	frustum.edges[FRUSTUM_EDGE_FTL_NTL] =
+	    (frustum.verts[FRUSTUM_POINT_FTL] - frustum.verts[FRUSTUM_POINT_NTL]).UnsafeANormalize(); // ftl - ntl
+	frustum.edges[FRUSTUM_EDGE_FTR_NTR] =
+	    (frustum.verts[FRUSTUM_POINT_FTR] - frustum.verts[FRUSTUM_POINT_NTR]).UnsafeANormalize(); // ftr - ntr
+	frustum.edges[FRUSTUM_EDGE_FBR_NBR] =
+	    (frustum.verts[FRUSTUM_POINT_FBR] - frustum.verts[FRUSTUM_POINT_NBR]).UnsafeANormalize(); // fbr - nbr
+	frustum.edges[FRUSTUM_EDGE_FBL_NBL] =
+	    (frustum.verts[FRUSTUM_POINT_FBL] - frustum.verts[FRUSTUM_POINT_NBL]).UnsafeANormalize(); // fbl - nbl
 
 	if (camType == CAMTYPE_VISCUL)
 		return;
@@ -235,22 +253,23 @@ void CCamera::UpdateMatrices(uint32_t vsx, uint32_t vsy, float var)
 	RECOIL_DETAILED_TRACY_ZONE;
 	// recalculate the projection transform
 	switch (projType) {
-		case PROJTYPE_PERSP: {
-			gluPerspectiveSpring(var, frustum.scales.z, frustum.scales.w);
-		} break;
-		case PROJTYPE_ORTHO: {
-			glOrthoScaledSpring(vsx, vsy, frustum.scales.z, frustum.scales.w);
-		} break;
-		default: {
-			assert(false);
-		} break;
+	case PROJTYPE_PERSP: {
+		gluPerspectiveSpring(var, frustum.scales.z, frustum.scales.w);
+	} break;
+	case PROJTYPE_ORTHO: {
+		glOrthoScaledSpring(vsx, vsy, frustum.scales.z, frustum.scales.w);
+	} break;
+	default: {
+		assert(false);
+	} break;
 	}
 
 
 	// FIXME:
 	//   should be applying the offsets to pos/up/right/forward/etc,
 	//   but without affecting the real positions (need an intermediary)
-	const float3 fShake = ((forward * (1.0f + tiltOffset.z)) + (right * tiltOffset.x) + (up * tiltOffset.y)).ANormalize();
+	const float3 fShake =
+	    ((forward * (1.0f + tiltOffset.z)) + (right * tiltOffset.x) + (up * tiltOffset.y)).ANormalize();
 	const float3 camPos = pos + posOffset;
 	const float3 center = camPos + fShake;
 
@@ -285,7 +304,6 @@ void CCamera::UpdateLoadViewport(int px, int py, int sx, int sy)
 	LoadViewport();
 }
 
-
 void CCamera::LoadMatrices() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -302,11 +320,10 @@ void CCamera::LoadViewport() const
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
-
 void CCamera::UpdateViewRange()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
+#if 0
 	// horizon-probe direction
 	const float3 hpPixelDir = (forward * XZVector + UpVector * -0.01f).Normalize();
 
@@ -314,25 +331,25 @@ void CCamera::UpdateViewRange()
 	const float3 trPixelDir = CalcPixelDir(globalRendering->viewSizeX,                          0);
 	const float3 brPixelDir = CalcPixelDir(globalRendering->viewSizeX, globalRendering->viewSizeY);
 	const float3 blPixelDir = CalcPixelDir(                         0, globalRendering->viewSizeY);
-	#endif
+#endif
 
-	#if 0
+#if 0
 	constexpr float SQ_MAX_VIEW_RANGE = Square(CGlobalRendering::MAX_VIEW_RANGE);
-	#endif
+#endif
 	constexpr float ZFAR_ZNEAR_FACTOR = 0.001f;
 
 	const float maxEdgeDistX = std::max(pos.x, float3::maxxpos - pos.x);
 	const float maxEdgeDistZ = std::max(pos.z, float3::maxzpos - pos.z);
-	const float maxEdgeDist  = math::sqrt(Square(maxEdgeDistX) + Square(maxEdgeDistZ));
+	const float maxEdgeDist = math::sqrt(Square(maxEdgeDistX) + Square(maxEdgeDistZ));
 	const float mapMinHeight = readMap->GetCurrMinHeight();
 
 	float wantedViewRange = 0.0f;
 
-	#if 0
+#if 0
 	// only pick horizon probe-dir if between bottom and top planes
 	if (hpPixelDir.y >= (blPixelDir.y + brPixelDir.y) * 0.5f && hpPixelDir.y <= (tlPixelDir.y + trPixelDir.y) * 0.5f)
 		wantedViewRange = CGround::LinePlaneCol(pos, hpPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight);
-	#endif
+#endif
 
 	// camera-height dependence (i.e. TAB-view)
 	wantedViewRange = std::max(wantedViewRange, (pos.y - std::max(0.0f, mapMinHeight)) * 2.0f);
@@ -341,16 +358,16 @@ void CCamera::UpdateViewRange()
 	// will be >= 1 and increase the effective maxEdgeDist
 	wantedViewRange = std::max(wantedViewRange, (1.0f - std::min(0.0f, forward.dot(UpVector))) * maxEdgeDist);
 
-	#if 0
+#if 0
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, tlPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, trPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, brPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
 	wantedViewRange = std::max(wantedViewRange, CGround::LinePlaneCol(pos, blPixelDir, SQ_MAX_VIEW_RANGE, mapMinHeight));
 	wantedViewRange = std::clamp(wantedViewRange, CGlobalRendering::MIN_ZNEAR_DIST, CGlobalRendering::MAX_VIEW_RANGE);
-	#endif
+#endif
 
 	frustum.scales.z = std::max(wantedViewRange * ZFAR_ZNEAR_FACTOR, globalRendering->minViewRange);
-	frustum.scales.w = std::min(wantedViewRange                    , globalRendering->maxViewRange);
+	frustum.scales.w = std::min(wantedViewRange, globalRendering->maxViewRange);
 }
 
 bool CCamera::InView(const float3& point, float radius) const
@@ -476,7 +493,6 @@ bool CCamera::InView(const AABB& aabb) const
 #endif
 
 
-
 void CCamera::SetVFOV(const float angle)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -485,7 +501,8 @@ void CCamera::SetVFOV(const float angle)
 	tanHalfFov = math::tan(halfFov);
 }
 
-float CCamera::GetHFOV() const {
+float CCamera::GetHFOV() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (2.0f * math::atan(tanHalfFov * aspectRatio) * math::RAD_TO_DEG);
 }
@@ -497,7 +514,6 @@ float CCamera::CalcTanHalfHFOV() const {
 	return (math::tan(half_h_fov_rad));
 }
 #endif
-
 
 
 float3 CCamera::GetRotFromDir(float3 fwd)
@@ -521,7 +537,7 @@ float3 CCamera::GetFwdFromRot(const float3& r)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 fwd;
-	fwd.x = std::sin(r.x) *   std::sin(r.y);
+	fwd.x = std::sin(r.x) * std::sin(r.y);
 	fwd.z = std::sin(r.x) * (-std::cos(r.y));
 	fwd.y = std::cos(r.x);
 	return fwd;
@@ -539,19 +555,18 @@ float3 CCamera::GetRgtFromRot(const float3& r)
 	//   fwd=(0,-1,0) -> rot=GetRotFromDir(fwd)=( PI, PI, 0.0) -> GetRgtFromRot(rot)=(+1.0, 0.0, 0.0)
 	//
 	float3 rgt;
-	rgt.x = std::sin(math::HALFPI - r.z) *   std::sin(r.y + math::HALFPI);
+	rgt.x = std::sin(math::HALFPI - r.z) * std::sin(r.y + math::HALFPI);
 	rgt.z = std::sin(math::HALFPI - r.z) * (-std::cos(r.y + math::HALFPI));
 	rgt.y = std::cos(math::HALFPI - r.z);
 	return rgt;
 }
 
-
 void CCamera::UpdateDirsFromRot(const float3& r)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	forward  = GetFwdFromRot(r);
-	right    = GetRgtFromRot(r);
-	up       = (right.cross(forward)).Normalize();
+	forward = GetFwdFromRot(r);
+	right = GetRgtFromRot(r);
+	up = (right.cross(forward)).Normalize();
 }
 
 void CCamera::SetDir(const float3& dir)
@@ -563,8 +578,6 @@ void CCamera::SetDir(const float3& dir)
 	assert(dir.dot(forward) > 0.9f);
 }
 
-
-
 float3 CCamera::CalcPixelDir(int x, int y) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -572,11 +585,10 @@ float3 CCamera::CalcPixelDir(int x, int y) const
 	const int vsy = std::max(1, globalRendering->viewSizeY);
 
 	const float dx = float(x - globalRendering->viewPosX - (vsx >> 1)) / vsy * (tanHalfFov * 2.0f);
-	const float dy = float(y -                             (vsy >> 1)) / vsy * (tanHalfFov * 2.0f);
+	const float dy = float(y - (vsy >> 1)) / vsy * (tanHalfFov * 2.0f);
 
 	return ((forward - up * dy + right * dx).Normalize());
 }
-
 
 float3 CCamera::CalcViewPortCoordinates(const float3& objPos) const
 {
@@ -588,38 +600,33 @@ float3 CCamera::CalcViewPortCoordinates(const float3& objPos) const
 	float3 vpPos;
 	vpPos.x = viewport[2] * (clipPos.x + 1.0f) * 0.5f;
 	vpPos.y = viewport[3] * (clipPos.y + 1.0f) * 0.5f;
-	vpPos.z =               (clipPos.z + 1.0f) * 0.5f;
+	vpPos.z = (clipPos.z + 1.0f) * 0.5f;
 	return vpPos;
 }
 
-
-
-
-inline void CCamera::gluPerspectiveSpring(float aspect, float zn, float zf) {
+inline void CCamera::gluPerspectiveSpring(float aspect, float zn, float zf)
+{
 	const float t = zn * tanHalfFov;
 	const float b = -t;
 	const float l = b * aspect;
 	const float r = t * aspect;
 
-	projectionMatrix = clipControlMatrix * CMatrix44f::PerspProj(l, r,  b, t,  zn, zf);
+	projectionMatrix = clipControlMatrix * CMatrix44f::PerspProj(l, r, b, t, zn, zf);
 }
 
 // same as glOrtho(-1, 1, -1, 1, zn, zf) plus glScalef(sx, sy, 1)
-inline void CCamera::glOrthoScaledSpring(
-	const float sx,
-	const float sy,
-	const float zn,
-	const float zf
-) {
+inline void CCamera::glOrthoScaledSpring(const float sx, const float sy, const float zn, const float zf)
+{
 	const float l = -1.0f * sx;
-	const float r =  1.0f * sx;
+	const float r = 1.0f * sx;
 	const float b = -1.0f * sy;
-	const float t =  1.0f * sy;
+	const float t = 1.0f * sy;
 
-	projectionMatrix = clipControlMatrix * CMatrix44f::OrthoProj(l, r,  b, t,  zn, zf);
+	projectionMatrix = clipControlMatrix * CMatrix44f::OrthoProj(l, r, b, t, zn, zf);
 }
 
-void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
+void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg)
+{
 	const float3 isectParams = {miny, maxy, 1.0f / scale};
 
 	// reset counts per side
@@ -634,14 +641,10 @@ void CCamera::CalcFrustumLines(float miny, float maxy, float scale, bool neg) {
 	assert(!neg || frustumLines[FRUSTUM_SIDE_NEG][4].sign == 4);
 }
 
-void CCamera::CalcFrustumLine(
-	const float4& face,
-	const float3& params,
-	uint32_t side
-) {
-
+void CCamera::CalcFrustumLine(const float4& face, const float3& params, uint32_t side)
+{
 	std::pair<float3, float3> iLine;
-	const float4 xzPlane = { 0, 1, 0, -params[face.y > 0.0f] };
+	const float4 xzPlane = {0, 1, 0, -params[face.y > 0.0f]};
 
 	if (!IntersectPlanes(xzPlane, face, iLine))
 		return;
@@ -663,13 +666,13 @@ void CCamera::CalcFrustumLine(
 	FrustumLine line;
 
 	line.sign = Sign(int(xdir.z <= 0.0f));
-	line.dir  = (xdir.x / xdir.z);
+	line.dir = (xdir.x / xdir.z);
 	line.base = (pInt.x - pInt.z * line.dir) * params.z;
 
-	line.minz = (                      0.0f) - (mapDims.mapy);
+	line.minz = (0.0f) - (mapDims.mapy);
 	line.maxz = (mapDims.mapy * SQUARE_SIZE) + (mapDims.mapy);
 
-	int  index = (line.sign == 1 || side == FRUSTUM_SIDE_NEG);
+	int index = (line.sign == 1 || side == FRUSTUM_SIDE_NEG);
 	int& count = frustumLines[index][4].sign;
 
 	// store all lines in [NEG] (regardless of actual sign) if wanted by caller
@@ -700,14 +703,14 @@ void CCamera::ClipFrustumLines(const float zmin, const float zmax, bool neg)
 			if ((flj.sign * ddir) > 0.0f) {
 				if ((colz > fli.minz) && (colz < zmax))
 					fli.minz = colz;
-			} else {
+			}
+			else {
 				if ((colz < fli.maxz) && (colz > zmin))
 					fli.maxz = colz;
 			}
 		}
 	}
 }
-
 
 float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 {
@@ -716,7 +719,7 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 
 	if (useInterpolate > 0)
 		camDeltaTime = 1000.0f / std::fmax(globalRendering->FPS, 1.0f);
-	
+
 	float camMoveSpeed = 1.0f;
 
 	camMoveSpeed *= movState[MOVE_STATE_SLW] ? moveSlowMult : 1.0f;
@@ -737,11 +740,13 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	int mouseY = mouse->lasty;
 	int viewH;
 
-	if (globalRendering->dualScreenMode && (mouse->lastx >= globalRendering->dualViewPosX) && (mouse->lastx <= globalRendering->dualViewPosX + globalRendering->dualViewSizeX)) {
+	if (globalRendering->dualScreenMode && (mouse->lastx >= globalRendering->dualViewPosX) &&
+	    (mouse->lastx <= globalRendering->dualViewPosX + globalRendering->dualViewSizeX)) {
 		viewH = globalRendering->dualViewSizeY;
 		// Translate mouseY so it maps mousecoords to bottom of dual view to 0 and top of dualview to dualViewSize
 		mouseY -= globalRendering->dualWindowOffsetY - globalRendering->viewWindowOffsetY;
-	} else {
+	}
+	else {
 		viewH = globalRendering->viewSizeY;
 	}
 
@@ -753,19 +758,22 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	// must be float, ints don't save the sign in case of 0 and we need it for copysign()
 	float2 distToEdge = {std::clamp(mouse->lastx, 0, windowW) * 1.0f, std::clamp(mouseY, 0, viewH) * 1.0f};
 
-	if (((windowW - 1) - distToEdge.x) < distToEdge.x) distToEdge.x = -((windowW - 1) - distToEdge.x);
-	if (((viewH - 1) - distToEdge.y) < distToEdge.y) distToEdge.y = -((viewH - 1) - distToEdge.y);
+	if (((windowW - 1) - distToEdge.x) < distToEdge.x)
+		distToEdge.x = -((windowW - 1) - distToEdge.x);
+	if (((viewH - 1) - distToEdge.y) < distToEdge.y)
+		distToEdge.y = -((viewH - 1) - distToEdge.y);
 
 	if (edgeMoveDynamic) {
 		move.x = std::clamp(float(border.x - std::abs(distToEdge.x)) / border.x, 0.0f, 1.0f);
 		move.y = std::clamp(float(border.y - std::abs(distToEdge.y)) / border.y, 0.0f, 1.0f);
-	} else {
+	}
+	else {
 		move.x = int(std::abs(distToEdge.x) < border.x);
 		move.y = int(std::abs(distToEdge.y) < border.y);
 	}
 
 	move.x = std::copysign(move.x, -distToEdge.x);
-	move.y = std::copysign(move.y,  distToEdge.y);
+	move.y = std::copysign(move.y, distToEdge.y);
 
 	v.x = (camDeltaTime * 0.001f * move.x);
 	v.y = (camDeltaTime * 0.001f * move.y);
@@ -785,10 +793,10 @@ bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask)
 		const float dist = plane.dot(p) + plane.w;
 		if (dist < -radius)
 			return false; // outside
-		/*
-		else if (dist < radius)
-			return true;  // intersect
-		*/
+		                  /*
+		                  else if (dist < radius)
+		                      return true;  // intersect
+		                  */
 	}
 
 	return true; // inside or intersect
@@ -797,57 +805,57 @@ bool CCamera::Frustum::IntersectSphere(float3 p, float radius, uint8_t testMask)
 /*
 bool CCamera::Frustum::IntersectAABB(const AABB& b) const
 {
-	return true;
+    return true;
 
-	// edge axes and normals are identical for AABBs
-	constexpr float3 aabbPlanes[3] = {
-		RgtVector,
-		UpVector,
-		FwdVector
-	};
+    // edge axes and normals are identical for AABBs
+    constexpr float3 aabbPlanes[3] = {
+        RgtVector,
+        UpVector,
+        FwdVector
+    };
 
-	float3 aabbVerts[8];
-	float3 crossAxes[3 * 6];
+    float3 aabbVerts[8];
+    float3 crossAxes[3 * 6];
 
-	b.CalcCorners(aabbVerts);
+    b.CalcCorners(aabbVerts);
 
-	const auto IsSepAxis = [](const float3& axis, const float3* frustVerts, const float3* aabbVerts) {
-		float2 frustProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
-		float2  aabbProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+    const auto IsSepAxis = [](const float3& axis, const float3* frustVerts, const float3* aabbVerts) {
+        float2 frustProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+        float2  aabbProjRange = {std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
 
-		float frustProjDists[8];
-		float  aabbProjDists[8];
+        float frustProjDists[8];
+        float  aabbProjDists[8];
 
-		for (int i = 0; i < 8; i++) {
-			frustProjDists[i] = axis.dot(frustVerts[i]);
+        for (int i = 0; i < 8; i++) {
+            frustProjDists[i] = axis.dot(frustVerts[i]);
 
-			frustProjRange.x = std::min(frustProjRange.x, frustProjDists[i]);
-			frustProjRange.y = std::max(frustProjRange.y, frustProjDists[i]);
+            frustProjRange.x = std::min(frustProjRange.x, frustProjDists[i]);
+            frustProjRange.y = std::max(frustProjRange.y, frustProjDists[i]);
 
-			aabbProjDists[i] = axis.dot(aabbVerts[i]);
+            aabbProjDists[i] = axis.dot(aabbVerts[i]);
 
-			aabbProjRange.x = std::min(aabbProjRange.x, aabbProjDists[i]);
-			aabbProjRange.y = std::max(aabbProjRange.y, aabbProjDists[i]);
-		}
+            aabbProjRange.x = std::min(aabbProjRange.x, aabbProjDists[i]);
+            aabbProjRange.y = std::max(aabbProjRange.y, aabbProjDists[i]);
+        }
 
-		return (!AABB::RangeOverlap(frustProjRange, aabbProjRange));
-	};
-	const auto AxisTestPred = [&](const float3& testAxis) {
-		return (IsSepAxis(testAxis, &verts[0], aabbVerts));
-	};
+        return (!AABB::RangeOverlap(frustProjRange, aabbProjRange));
+    };
+    const auto AxisTestPred = [&](const float3& testAxis) {
+        return (IsSepAxis(testAxis, &verts[0], aabbVerts));
+    };
 
-	if (std::find_if(&aabbPlanes[0], &aabbPlanes[0] + 3, AxisTestPred) != (&aabbPlanes[0] + 3))
-		return false;
-	if (std::find_if(&planes[0], &planes[0] + 6, AxisTestPred) != (&planes[0] + 6))
-		return false;
+    if (std::find_if(&aabbPlanes[0], &aabbPlanes[0] + 3, AxisTestPred) != (&aabbPlanes[0] + 3))
+        return false;
+    if (std::find_if(&planes[0], &planes[0] + 6, AxisTestPred) != (&planes[0] + 6))
+        return false;
 
-	for (uint32_t i = 0; i < 3; i++) {
-		for (uint32_t j = 0; j < 6; j++) {
-			crossAxes[i * 6 + j] = (aabbPlanes[i].cross(edges[j])).SafeNormalize();
-		}
-	}
+    for (uint32_t i = 0; i < 3; i++) {
+        for (uint32_t j = 0; j < 6; j++) {
+            crossAxes[i * 6 + j] = (aabbPlanes[i].cross(edges[j])).SafeNormalize();
+        }
+    }
 
-	return (std::find_if(&crossAxes[0], &crossAxes[0] + 3 * 6, AxisTestPred) == (&crossAxes[0] + 3 * 6));
+    return (std::find_if(&crossAxes[0], &crossAxes[0] + 3 * 6, AxisTestPred) == (&crossAxes[0] + 3 * 6));
 }
 */
 
@@ -862,10 +870,10 @@ bool CCamera::Frustum::IntersectAABB(const AABB& b, uint8_t testMask) const
 		const auto& plane = planes[i];
 		if (plane.dot(b.GetVertexP(plane)) + plane.w < 0)
 			return false; // outside
-		/*
-		else if (plane.dot(b.GetVertexN(plane)) + plane.w < 0)
-			return true;  // intersects
-		*/
+		                  /*
+		                  else if (plane.dot(b.GetVertexN(plane)) + plane.w < 0)
+		                      return true;  // intersects
+		                  */
 	}
 	return true; // inside or intersect
 }

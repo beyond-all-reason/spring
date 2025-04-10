@@ -1,50 +1,50 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cstring> // mem{set,cpy}
-
-#include "xsimd/xsimd.hpp"
 #include "SMFReadMap.h"
-#include "SMFGroundTextures.h"
-#include "SMFGroundDrawer.h"
+
 #include "SMFFormat.h"
-#include "Map/MapInfo.h"
-#include "Map/Ground.h"
+#include "SMFGroundDrawer.h"
+#include "SMFGroundTextures.h"
+
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/LoadScreen.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/Env/WaterRendering.h"
-#include "Rendering/Env/SunLighting.h"
+#include "Map/Ground.h"
+#include "Map/MapInfo.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/SkyLight.h"
-#include "Rendering/GL/myGL.h"
+#include "Rendering/Env/SunLighting.h"
+#include "Rendering/Env/WaterRendering.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/PBO.h"
 #include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/SubState.h"
-#include "Rendering/Shaders/ShaderHandler.h"
-#include "Rendering/Shaders/Shader.h"
+#include "Rendering/GL/myGL.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
+#include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Threading/ThreadPool.h"
-#include "System/SpringMath.h"
-#include "System/SafeUtil.h"
-#include "System/StringHash.h"
 #include "System/LoadLock.h"
-#include "System/XSimdOps.hpp"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
+#include "System/SpringMath.h"
+#include "System/StringHash.h"
+#include "System/Threading/ThreadPool.h"
+#include "System/XSimdOps.hpp"
+#include "xsimd/xsimd.hpp"
+
+#include <cstring> // mem{set,cpy}
 
 using std::max;
 
 CONFIG(bool, GroundNormalTextureHighPrecision).deprecated(true);
 CONFIG(float, SMFTexAniso).defaultValue(4.0f).minimumValue(0.0f);
 CONFIG(float, SSMFTexAniso).defaultValue(4.0f).minimumValue(0.0f);
-
 
 
 CSMFMapFile CSMFReadMap::mapFile;
@@ -54,19 +54,21 @@ std::vector<float> CSMFReadMap::cornerHeightMapUnsynced;
 
 static std::vector<float> normalPixels;
 
-CSMFReadMap::CSMFReadMap(const std::string& mapName): CEventClient("[CSMFReadMap]", 271950, false)
+CSMFReadMap::CSMFReadMap(const std::string& mapName)
+    : CEventClient("[CSMFReadMap]", 271950, false)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	loadscreen->SetLoadMessage("Loading SMF");
 	eventHandler.AddClient(this);
 
-	//auto lock = CLoadLock::GetUniqueLock();
+	// auto lock = CLoadLock::GetUniqueLock();
 
 	mapFile.Close();
 	mapFile.Open(mapName);
 
 	haveSpecularTexture = !(mapInfo->smf.specularTexName.empty());
-	haveSplatDetailDistribTexture = (!mapInfo->smf.splatDetailTexName.empty() && !mapInfo->smf.splatDistrTexName.empty());
+	haveSplatDetailDistribTexture =
+	    (!mapInfo->smf.splatDetailTexName.empty() && !mapInfo->smf.splatDistrTexName.empty());
 	haveSplatNormalDistribTexture = false;
 
 	for (const MapTexture& mapTex: splatNormalTextures) {
@@ -111,8 +113,6 @@ CSMFReadMap::~CSMFReadMap()
 	mapFile.Close();
 }
 
-
-
 void CSMFReadMap::ParseHeader()
 {
 	const SMFHeader& header = mapFile.GetHeader();
@@ -120,18 +120,17 @@ void CSMFReadMap::ParseHeader()
 	mapDims.mapx = header.mapx;
 	mapDims.mapy = header.mapy;
 
-	numBigTexX      = (header.mapx / bigSquareSize);
-	numBigTexY      = (header.mapy / bigSquareSize);
-	bigTexSize      = (SQUARE_SIZE * bigSquareSize);
-	tileMapSizeX    = (header.mapx / tileScale);
-	tileMapSizeY    = (header.mapy / tileScale);
-	tileCount       = (header.mapx * header.mapy) / (tileScale * tileScale);
-	mapSizeX        = (header.mapx * SQUARE_SIZE);
-	mapSizeZ        = (header.mapy * SQUARE_SIZE);
+	numBigTexX = (header.mapx / bigSquareSize);
+	numBigTexY = (header.mapy / bigSquareSize);
+	bigTexSize = (SQUARE_SIZE * bigSquareSize);
+	tileMapSizeX = (header.mapx / tileScale);
+	tileMapSizeY = (header.mapy / tileScale);
+	tileCount = (header.mapx * header.mapy) / (tileScale * tileScale);
+	mapSizeX = (header.mapx * SQUARE_SIZE);
+	mapSizeZ = (header.mapy * SQUARE_SIZE);
 	maxHeightMapIdx = ((header.mapx + 1) * (header.mapy + 1)) - 1;
-	heightMapSizeX  =  (header.mapx + 1);
+	heightMapSizeX = (header.mapx + 1);
 }
-
 
 void CSMFReadMap::LoadHeightMap()
 {
@@ -139,11 +138,12 @@ void CSMFReadMap::LoadHeightMap()
 	const SMFHeader& header = mapFile.GetHeader();
 
 	cornerHeightMapSynced.clear();
-	cornerHeightMapSynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1)); //mapDims.mapxp1, mapDims.mapyp1 are not available here
+	cornerHeightMapSynced.resize(
+	    (mapDims.mapx + 1) * (mapDims.mapy + 1)); // mapDims.mapxp1, mapDims.mapyp1 are not available here
 	cornerHeightMapUnsynced.clear();
 	cornerHeightMapUnsynced.resize((mapDims.mapx + 1) * (mapDims.mapy + 1));
 
-	heightMapSyncedPtr   = &cornerHeightMapSynced;
+	heightMapSyncedPtr = &cornerHeightMapSynced;
 	heightMapUnsyncedPtr = &cornerHeightMapUnsynced;
 
 	const float minHgt = mapInfo->smf.minHeightOverride ? mapInfo->smf.minHeight : header.minHeight;
@@ -159,7 +159,6 @@ void CSMFReadMap::LoadHeightMap()
 	//     merge them some way so UHM & shadingtex is available from the time readMap got created
 	mapFile.ReadHeightmap(cornerHeightMapSyncedData, cornerHeightMapUnsyncedData, minHgt, (maxHgt - minHgt) / 65536.0f);
 }
-
 
 void CSMFReadMap::LoadMinimap()
 {
@@ -187,7 +186,8 @@ void CSMFReadMap::LoadMinimap()
 	for (uint32_t i = 0; i < MINIMAP_NUM_MIPMAP; i++) {
 		const int mipsize = 1024 >> i;
 		const int size = ((mipsize + 3) / 4) * ((mipsize + 3) / 4) * 8;
-		glCompressedTexImage2DARB(GL_TEXTURE_2D, i, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, mipsize, mipsize, 0, size, &minimapTexBuf[0] + offset);
+		glCompressedTexImage2DARB(
+		    GL_TEXTURE_2D, i, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, mipsize, mipsize, 0, size, &minimapTexBuf[0] + offset);
 		offset += size;
 	}
 }
@@ -203,7 +203,8 @@ void CSMFReadMap::CreateSpecularTex()
 
 		// maps wants specular lighting, but no moderation
 		if (!specularTexBM.Load(mapInfo->smf.specularTexName)) {
-			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF specularTex %s. Creating fallback texture", __func__, mapInfo->smf.specularTexName.c_str());
+			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF specularTex %s. Creating fallback texture", __func__,
+			    mapInfo->smf.specularTexName.c_str());
 			specularTexBM.AllocDummy(SColor(255, 255, 255, 255));
 		}
 
@@ -262,7 +263,8 @@ void CSMFReadMap::CreateSplatDetailTextures()
 		// detail-splat blending, the regular detail-texture is not used
 		// default detail-texture should be all-grey
 		if (!splatDetailTexBM.Load(mapInfo->smf.splatDetailTexName)) {
-			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF splatDetailTex %s. Creating fallback texture", __func__, mapInfo->smf.splatDetailTexName.c_str());
+			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF splatDetailTex %s. Creating fallback texture", __func__,
+			    mapInfo->smf.splatDetailTexName.c_str());
 			splatDetailTexBM.AllocDummy(SColor(127, 127, 127, 127));
 		}
 
@@ -274,7 +276,8 @@ void CSMFReadMap::CreateSplatDetailTextures()
 		CBitmap splatDistrTexBM;
 
 		if (!splatDistrTexBM.Load(mapInfo->smf.splatDistrTexName)) {
-			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF splatDistrTex %s. Creating fallback texture", __func__, mapInfo->smf.splatDistrTexName.c_str());
+			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF splatDistrTex %s. Creating fallback texture", __func__,
+			    mapInfo->smf.splatDistrTexName.c_str());
 			splatDistrTexBM.AllocDummy(SColor(255, 0, 0, 0));
 		}
 
@@ -300,12 +303,11 @@ void CSMFReadMap::CreateSplatDetailTextures()
 			splatDetailNormalTextureBM.GetRawMem()[3] = 127; // Alpha is diffuse as in old-style detail textures
 		}
 
-		splatNormalTextures[i].SetRawTexID(splatDetailNormalTextureBM.CreateMipMapTexture(texAnisotropyLevels[true], 0.0f, 0));
+		splatNormalTextures[i].SetRawTexID(
+		    splatDetailNormalTextureBM.CreateMipMapTexture(texAnisotropyLevels[true], 0.0f, 0));
 		splatNormalTextures[i].SetRawSize(int2(splatDetailNormalTextureBM.xsize, splatDetailNormalTextureBM.ysize));
 	}
-
 }
-
 
 void CSMFReadMap::CreateGrassTex()
 {
@@ -323,21 +325,20 @@ void CSMFReadMap::CreateGrassTex()
 	grassShadingTex.SetRawSize(int2(grassShadingTexBM.xsize, grassShadingTexBM.ysize));
 }
 
-
 void CSMFReadMap::CreateDetailTex()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CBitmap detailTexBM;
 
 	if (!detailTexBM.Load(mapInfo->smf.detailTexName)) {
-		LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF detailTex %s. Creating fallback texture", __func__, mapInfo->smf.detailTexName.c_str());
+		LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF detailTex %s. Creating fallback texture", __func__,
+		    mapInfo->smf.detailTexName.c_str());
 		detailTexBM.AllocDummy({127, 127, 127, 0});
 	}
 
 	detailTex.SetRawTexID(detailTexBM.CreateMipMapTexture(texAnisotropyLevels[false], 0.0f, 0));
 	detailTex.SetRawSize(int2(detailTexBM.xsize, detailTexBM.ysize));
 }
-
 
 void CSMFReadMap::CreateShadingTex()
 {
@@ -360,9 +361,9 @@ void CSMFReadMap::CreateShadingTex()
 	if (texAnisotropyLevels[false] != 0.0f)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, texAnisotropyLevels[false]);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, shadingTex.GetSize().x, shadingTex.GetSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, shadingTex.GetSize().x, shadingTex.GetSize().y, 0, GL_RGBA,
+	    GL_UNSIGNED_BYTE, nullptr);
 }
-
 
 void CSMFReadMap::CreateNormalTex()
 {
@@ -376,10 +377,11 @@ void CSMFReadMap::CreateNormalTex()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	constexpr GLint swizzleMask[] = { GL_RED, GL_GREEN, GL_GREEN, GL_GREEN };
+	constexpr GLint swizzleMask[] = {GL_RED, GL_GREEN, GL_GREEN, GL_GREEN};
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_RG, GL_FLOAT, nullptr);
+	glTexImage2D(
+	    GL_TEXTURE_2D, 0, GL_RG16F, (normalsTex.GetSize()).x, (normalsTex.GetSize()).y, 0, GL_RG, GL_FLOAT, nullptr);
 }
 
 void CSMFReadMap::CreateHeightMapTex()
@@ -396,13 +398,10 @@ void CSMFReadMap::CreateHeightMapTex()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
-	constexpr GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+	constexpr GLint swizzleMask[] = {GL_RED, GL_RED, GL_RED, GL_RED};
 	glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F,
-		mapDims.mapxp1, mapDims.mapyp1, 0,
-		GL_RED, GL_FLOAT, nullptr
-	);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, mapDims.mapxp1, mapDims.mapyp1, 0, GL_RED, GL_FLOAT, nullptr);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -414,24 +413,24 @@ void CSMFReadMap::CreateShadingGL()
 	shadingFBO->Bind();
 	shadingFBO->AttachTexture(shadingTex.GetID(), GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0, 0);
 	shadingFBO->AttachTexture(normalsTex.GetID(), GL_TEXTURE_2D, GL_COLOR_ATTACHMENT1, 0);
-	constexpr GLenum DRAW_BUFFERS[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	constexpr GLenum DRAW_BUFFERS[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 	glDrawBuffers(2, DRAW_BUFFERS);
 	shadingFBO->CheckStatus("SMF-SHADING");
 	shadingFBO->Unbind();
 
 	shadingShader = shaderHandler->CreateProgramObject("[CSMFReadMap]", "ShadingShader");
-	shadingShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureVertProg.glsl", "", GL_VERTEX_SHADER));
-	shadingShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureFragProg.glsl", "", GL_FRAGMENT_SHADER));
+	shadingShader->AttachShaderObject(
+	    shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureVertProg.glsl", "", GL_VERTEX_SHADER));
+	shadingShader->AttachShaderObject(
+	    shaderHandler->CreateShaderObject("GLSL/SMFShadingTextureFragProg.glsl", "", GL_FRAGMENT_SHADER));
 	shadingShader->BindAttribLocations<VA_TYPE_2D0>();
 	shadingShader->BindOutputLocation("shadingVal", 0);
 	shadingShader->BindOutputLocation("normalXZ", 1);
 	shadingShader->Link();
 
 	shadingShader->Enable();
-	shadingShader->SetUniform("mapSizeP1",
-		static_cast<float>(mapDims.mapxp1), static_cast<float>(mapDims.mapyp1),
-		           1.0f / (mapDims.mapxp1),            1.0f / (mapDims.mapyp1)
-	);
+	shadingShader->SetUniform("mapSizeP1", static_cast<float>(mapDims.mapxp1), static_cast<float>(mapDims.mapyp1),
+	    1.0f / (mapDims.mapxp1), 1.0f / (mapDims.mapyp1));
 
 	shadingShader->SetUniform("heightMapTex", 0);
 	shadingShader->SetUniform4v("groundAmbientColor", &sunLighting->groundAmbientColor.x);
@@ -470,12 +469,9 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 				const size_t idx0 = (pz * bigSquareSize + vz) * mapDims.mapxp1 + px * bigSquareSize;
 				const size_t idx1 = idx0 + bigSquareSize + 1;
 
-				unsyncedHeightInfo[pz * numBigTexX + px].arr = xsimd::reduce(
-					cornerHeightMapUnsynced.data() + idx0,
-					cornerHeightMapUnsynced.data() + idx1,
-					unsyncedHeightInfo[pz * numBigTexX + px].arr,
-					MinOp{}, MaxOp{}, PlusOp{}
-				);
+				unsyncedHeightInfo[pz * numBigTexX + px].arr =
+				    xsimd::reduce(cornerHeightMapUnsynced.data() + idx0, cornerHeightMapUnsynced.data() + idx1,
+				        unsyncedHeightInfo[pz * numBigTexX + px].arr, MinOp{}, MaxOp{}, PlusOp{});
 			}
 			unsyncedHeightInfo[pz * numBigTexX + px].z /= Square(bigSquareSize + 1);
 		}
@@ -485,16 +481,13 @@ void CSMFReadMap::UpdateHeightMapUnsyncedPost()
 void CSMFReadMap::UpdateCornerHeightMapUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//corner space, inclusive
+	// corner space, inclusive
 	for (int z = update.z1; z <= update.z2; z++) {
 		{
 			const int idx0 = (z * mapDims.mapxp1 + (update.x1));
 			const int idx1 = (z * mapDims.mapxp1 + (update.x2 + 1));
-			std::copy(
-				cornerHeightMapSynced.begin() + idx0,
-				cornerHeightMapSynced.begin() + idx1,
-				cornerHeightMapUnsynced.begin() + idx0
-			);
+			std::copy(cornerHeightMapSynced.begin() + idx0, cornerHeightMapSynced.begin() + idx1,
+			    cornerHeightMapUnsynced.begin() + idx0);
 		}
 	}
 }
@@ -505,7 +498,8 @@ void CSMFReadMap::UpdateHeightMapTexture(const SRectangle& update)
 	const auto refFullUpdateThreshold = (mapDims.mapx * mapDims.mapy) >> 1;
 	if (update.GetArea() >= refFullUpdateThreshold) {
 		glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mapDims.mapxp1, mapDims.mapyp1, GL_RED, GL_FLOAT, GetCornerHeightMapUnsynced());
+		glTexSubImage2D(
+		    GL_TEXTURE_2D, 0, 0, 0, mapDims.mapxp1, mapDims.mapyp1, GL_RED, GL_FLOAT, GetCornerHeightMapUnsynced());
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		return;
@@ -520,12 +514,13 @@ void CSMFReadMap::UpdateHeightMapTexture(const SRectangle& update)
 	pbo.New(sizeX * sizeZ * sizeof(float));
 
 	const float* heightMap = readMap->GetCornerHeightMapUnsynced();
-	float* heightBuf = reinterpret_cast<float*>(pbo.MapBuffer(0, pbo.GetSize(), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | pbo.mapUnsyncedBit));
+	float* heightBuf = reinterpret_cast<float*>(
+	    pbo.MapBuffer(0, pbo.GetSize(), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | pbo.mapUnsyncedBit));
 
 	if (heightBuf != nullptr) {
 		for (int z = 0; z < sizeZ; z++) {
 			const auto* src = heightMap + update.x1 + (z + update.z1) * mapDims.mapxp1;
-			      auto* dst = heightBuf +             (z            ) * sizeX;
+			auto* dst = heightBuf + (z)*sizeX;
 
 			std::copy(src, src + sizeX, dst);
 		}
@@ -542,65 +537,52 @@ void CSMFReadMap::UpdateHeightMapTexture(const SRectangle& update)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
 void CSMFReadMap::UpdateHeightBoundsUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint32_t minPatchX = std::max(update.x1 / bigSquareSize, (0             ));
-	const uint32_t minPatchZ = std::max(update.z1 / bigSquareSize, (0             ));
+	const uint32_t minPatchX = std::max(update.x1 / bigSquareSize, (0));
+	const uint32_t minPatchZ = std::max(update.z1 / bigSquareSize, (0));
 	const uint32_t maxPatchX = std::min(update.x2 / bigSquareSize, (numBigTexX - 1));
 	const uint32_t maxPatchZ = std::min(update.z2 / bigSquareSize, (numBigTexY - 1));
 
 	for (uint32_t pz = minPatchZ; pz <= maxPatchZ; ++pz) {
 		for (uint32_t px = minPatchX; px <= maxPatchX; ++px) {
 			unsyncedHeightInfo[pz * numBigTexX + px] = {
-				std::numeric_limits<float>::max(),
-				std::numeric_limits<float>::lowest(),
-				0.0f
-			};
+			    std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest(), 0.0f};
 		}
 	}
 }
-
 
 void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	const auto& sfn = faceNormalsSynced;
-	      auto& ufn = faceNormalsUnsynced;
+	auto& ufn = faceNormalsUnsynced;
 	const auto& scn = centerNormalsSynced;
-	      auto& ucn = centerNormalsUnsynced;
+	auto& ucn = centerNormalsUnsynced;
 
 	const float* heightmapUnsynced = GetCornerHeightMapUnsynced();
 
 	// update is in corner space. Thus update x2/z2 - 1
 	for (int z = update.z1; z < update.z2; z++) {
 		{
-			const int idx0 = (z * mapDims.mapx + update.x1    ) * 2;
+			const int idx0 = (z * mapDims.mapx + update.x1) * 2;
 			const int idx1 = (z * mapDims.mapx + update.x2 + 0) * 2;
-			std::copy(
-				sfn.begin() + idx0,
-				sfn.begin() + idx1,
-				ufn.begin() + idx0
-			);
+			std::copy(sfn.begin() + idx0, sfn.begin() + idx1, ufn.begin() + idx0);
 		}
 		{
-			const int idx0 = (z * mapDims.mapx + update.x1    );
+			const int idx0 = (z * mapDims.mapx + update.x1);
 			const int idx1 = (z * mapDims.mapx + update.x2 + 0);
-			std::copy(
-				scn.begin() + idx0,
-				scn.begin() + idx1,
-				ucn.begin() + idx0
-			);
+			std::copy(scn.begin() + idx0, scn.begin() + idx1, ucn.begin() + idx0);
 		}
 	}
 
 	// a heightmap update over (x1, y1) - (x2, y2) implies the
 	// normals change over (x1 - 1, y1 - 1) - (x2 + 1, y2 + 1)
 
-	const int minx = std::max(update.x1 - 1,              0);
-	const int minz = std::max(update.z1 - 1,              0);
+	const int minx = std::max(update.x1 - 1, 0);
+	const int minz = std::max(update.z1 - 1, 0);
 	const int maxx = std::min(update.x2 + 1, mapDims.mapxm1);
 	const int maxz = std::min(update.z2 + 1, mapDims.mapym1);
 
@@ -620,14 +602,10 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 		//  |
 		//  v
 		//  e2
-		//const float3 e1( SQUARE_SIZE, hTR - hTL,           0);
-		//const float3 e2(           0, hBL - hTL, SQUARE_SIZE);
-		//const float3 fnTL = (e2.cross(e1)).Normalize();
-		const float3 fnTL = float3{
-			-(hTR - hTL),
-			SQUARE_SIZE,
-			-(hBL - hTL)
-		}.Normalize();
+		// const float3 e1( SQUARE_SIZE, hTR - hTL,           0);
+		// const float3 e2(           0, hBL - hTL, SQUARE_SIZE);
+		// const float3 fnTL = (e2.cross(e1)).Normalize();
+		const float3 fnTL = float3{-(hTR - hTL), SQUARE_SIZE, -(hBL - hTL)}.Normalize();
 
 		// normal of bottom-right triangle (face) in square
 		//
@@ -636,14 +614,10 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 		//         |
 		//         |
 		//  e4 <---*
-		//const float3 e3(-SQUARE_SIZE, hBL - hBR,           0);
-		//const float3 e4(           0, hTR - hBR,-SQUARE_SIZE);
-		//const float3 fnBR = (e4.cross(e3)).Normalize();
-		const float3 fnBR = float3{
-			+(hBL - hBR),
-			SQUARE_SIZE,
-			+(hTR - hBR)
-		}.Normalize();
+		// const float3 e3(-SQUARE_SIZE, hBL - hBR,           0);
+		// const float3 e4(           0, hTR - hBR,-SQUARE_SIZE);
+		// const float3 fnBR = (e4.cross(e3)).Normalize();
+		const float3 fnBR = float3{+(hBL - hBR), SQUARE_SIZE, +(hTR - hBR)}.Normalize();
 
 
 		ufn[(z * mapDims.mapx + x) * 2 + 0] = fnTL;
@@ -651,8 +625,8 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 		ucn[(z * mapDims.mapx + x)] = (fnTL + fnBR).Normalize();
 	};
 
-	//edges of the update rectangle need normals recalculation
-	// zmin
+	// edges of the update rectangle need normals recalculation
+	//  zmin
 	if (minz < update.z1) {
 		for (int x = minx; x < maxx; ++x) {
 			EdgeNormalsUpdateBody(x, minz);
@@ -680,7 +654,7 @@ void CSMFReadMap::UpdateFaceNormalsUnsynced(const SRectangle& update)
 
 void CSMFReadMap::UpdateShadingTexture()
 {
-	SRectangle update { 0, 0, mapDims.mapx, mapDims.mapy };
+	SRectangle update{0, 0, mapDims.mapx, mapDims.mapy};
 	UpdateVisNormalsAndShadingTexture(update);
 }
 
@@ -693,14 +667,11 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 #endif // !HEADLESS
 
 	using namespace GL::State;
-	auto state = GL::SubState(
-		DepthTest(GL_FALSE),
-		Blending(GL_FALSE)
-	);
+	auto state = GL::SubState(DepthTest(GL_FALSE), Blending(GL_FALSE));
 
 	// enlarge rect by 1pixel in all directions (cause we use center normals and not corner ones)
-	const int x1 = std::max(update.x1 - 1,              0);
-	const int y1 = std::max(update.y1 - 1,              0);
+	const int x1 = std::max(update.x1 - 1, 0);
+	const int y1 = std::max(update.y1 - 1, 0);
 	const int x2 = std::min(update.x2 + 1, mapDims.mapxp1);
 	const int y2 = std::min(update.y2 + 1, mapDims.mapyp1);
 
@@ -708,17 +679,15 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 	auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2D0>();
 	rb.AssertSubmission();
 
-	rb.AddQuadTriangles(
-		{ static_cast<float>(x1), static_cast<float>(y1) },
-		{ static_cast<float>(x2), static_cast<float>(y1) },
-		{ static_cast<float>(x2), static_cast<float>(y2) },
-		{ static_cast<float>(x1), static_cast<float>(y2) }
-	);
+	rb.AddQuadTriangles({static_cast<float>(x1), static_cast<float>(y1)},
+	    {static_cast<float>(x2), static_cast<float>(y1)}, {static_cast<float>(x2), static_cast<float>(y2)},
+	    {static_cast<float>(x1), static_cast<float>(y2)});
 
 	shadingFBO->Bind();
 	glViewport(0, 0, mapDims.mapxp1, mapDims.mapyp1);
 
-	glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, heightMapTexture.GetID());
 
 	shadingShader->Enable();
 
@@ -740,16 +709,13 @@ void CSMFReadMap::UpdateVisNormalsAndShadingTexture(const SRectangle& update)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void CSMFReadMap::SunChanged()
-{
-	groundDrawer->SunChanged();
-}
-
+void CSMFReadMap::SunChanged() { groundDrawer->SunChanged(); }
 
 void CSMFReadMap::ReloadTextures()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto ReloadTextureFunc = [](const std::string& texName, MapTexture& mt, float aniso = 0.0f, float lodBias = 0.0f, bool mipmaps = false) {
+	const auto ReloadTextureFunc = [](const std::string& texName, MapTexture& mt, float aniso = 0.0f,
+	                                   float lodBias = 0.0f, bool mipmaps = false) {
 		/// perhaps *mt.GetIDPtr() == 0 should not be reloaded
 
 		CBitmap bm;
@@ -767,32 +733,30 @@ void CSMFReadMap::ReloadTextures()
 		}
 	};
 
-	ReloadTextureFunc(mapInfo->smf.grassShadingTexName  , grassShadingTex, 0.0f                      , 0.0f, true);
-	ReloadTextureFunc(mapInfo->smf.detailTexName        , detailTex      , texAnisotropyLevels[false], 0.0f, true);
-	ReloadTextureFunc(mapInfo->smf.minimapTexName       , minimapTex                                             );
-	ReloadTextureFunc(mapInfo->smf.specularTexName      , specularTex                                            );
-	ReloadTextureFunc(mapInfo->smf.blendNormalsTexName  , blendNormalsTex                                        );
-	ReloadTextureFunc(mapInfo->smf.splatDistrTexName    , splatDistrTex  , texAnisotropyLevels[true] , 0.0f, true);
-	ReloadTextureFunc(mapInfo->smf.splatDetailTexName   , splatDetailTex , texAnisotropyLevels[true] , 0.0f, true);
-	ReloadTextureFunc(mapInfo->smf.skyReflectModTexName , skyReflectModTex                                       );
-	ReloadTextureFunc(mapInfo->smf.lightEmissionTexName , lightEmissionTex                                       );
-	ReloadTextureFunc(mapInfo->smf.parallaxHeightTexName, parallaxHeightTex                                      );
+	ReloadTextureFunc(mapInfo->smf.grassShadingTexName, grassShadingTex, 0.0f, 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.detailTexName, detailTex, texAnisotropyLevels[false], 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.minimapTexName, minimapTex);
+	ReloadTextureFunc(mapInfo->smf.specularTexName, specularTex);
+	ReloadTextureFunc(mapInfo->smf.blendNormalsTexName, blendNormalsTex);
+	ReloadTextureFunc(mapInfo->smf.splatDistrTexName, splatDistrTex, texAnisotropyLevels[true], 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.splatDetailTexName, splatDetailTex, texAnisotropyLevels[true], 0.0f, true);
+	ReloadTextureFunc(mapInfo->smf.skyReflectModTexName, skyReflectModTex);
+	ReloadTextureFunc(mapInfo->smf.lightEmissionTexName, lightEmissionTex);
+	ReloadTextureFunc(mapInfo->smf.parallaxHeightTexName, parallaxHeightTex);
 
 	for (size_t i = 0; i < mapInfo->smf.splatDetailNormalTexNames.size(); i++) {
 		if (i == NUM_SPLAT_DETAIL_NORMALS)
 			break;
 
-		ReloadTextureFunc(mapInfo->smf.splatDetailNormalTexNames[i], splatNormalTextures[i], texAnisotropyLevels[true], 0.0f, true);
+		ReloadTextureFunc(
+		    mapInfo->smf.splatDetailNormalTexNames[i], splatNormalTextures[i], texAnisotropyLevels[true], 0.0f, true);
 	}
 }
 
 int2 CSMFReadMap::GetPatch(int hmx, int hmz) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return int2 {
-		std::clamp(hmx, 0, numBigTexX - 1),
-		std::clamp(hmz, 0, numBigTexY - 1)
-	};
+	return int2{std::clamp(hmx, 0, numBigTexX - 1), std::clamp(hmz, 0, numBigTexY - 1)};
 }
 
 void CSMFReadMap::BindMiniMapTextures() const
@@ -818,7 +782,6 @@ void CSMFReadMap::BindMiniMapTextures() const
 	glBindTexture(GL_TEXTURE_2D, shadingTex.GetID());
 }
 
-
 void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, int quadSize, int extraSize)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -842,8 +805,8 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 	const int drawQuadsY = mapDims.mapy / quadSize;
 
 	// clamp the area of quads around the camera to valid range
-	const int sy  = std::clamp(cy - drawSquare, 0, drawQuadsY - 1);
-	const int ey  = std::clamp(cy + drawSquare, 0, drawQuadsY - 1);
+	const int sy = std::clamp(cy - drawSquare, 0, drawQuadsY - 1);
+	const int ey = std::clamp(cy + drawSquare, 0, drawQuadsY - 1);
 	const int sxi = std::clamp(cx - drawSquare, 0, drawQuadsX - 1);
 	const int exi = std::clamp(cx + drawSquare, 0, drawQuadsX - 1);
 
@@ -862,7 +825,7 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 		for (int idx = 0, cnt = negLines[4].sign; idx < cnt; idx++) {
 			const CCamera::FrustumLine& fl = negLines[idx];
 
-			xtest  = ((fl.base + fl.dir * ( y * quadSize)            ));
+			xtest = ((fl.base + fl.dir * (y * quadSize)));
 			xtest2 = ((fl.base + fl.dir * ((y * quadSize) + quadSize)));
 
 			xtest = std::min(xtest, xtest2);
@@ -870,14 +833,14 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 
 			// increase lower bound
 			if ((xtest - extraSize) > sx)
-				sx = ((int) xtest) - extraSize;
+				sx = ((int)xtest) - extraSize;
 		}
 
 		// find the ending x-coordinate
 		for (int idx = 0, cnt = posLines[4].sign; idx < cnt; idx++) {
 			const CCamera::FrustumLine& fl = posLines[idx];
 
-			xtest  = ((fl.base + fl.dir *  (y * quadSize)            ));
+			xtest = ((fl.base + fl.dir * (y * quadSize)));
 			xtest2 = ((fl.base + fl.dir * ((y * quadSize) + quadSize)));
 
 			xtest = std::max(xtest, xtest2);
@@ -885,7 +848,7 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 
 			// decrease upper bound
 			if ((xtest + extraSize) < ex)
-				ex = ((int) xtest) + extraSize;
+				ex = ((int)xtest) + extraSize;
 		}
 
 		for (int x = sx; x <= ex; x++) {
@@ -894,14 +857,13 @@ void CSMFReadMap::GridVisibility(CCamera* cam, IQuadDrawer* qd, float maxDist, i
 	}
 }
 
-
 int CSMFReadMap::GetNumFeatures() { return mapFile.GetNumFeatures(); }
+
 int CSMFReadMap::GetNumFeatureTypes() { return mapFile.GetNumFeatureTypes(); }
 
 void CSMFReadMap::GetFeatureInfo(MapFeatureInfo* f) { mapFile.ReadFeatureInfo(f); }
 
 const char* CSMFReadMap::GetFeatureTypeName(int typeID) { return mapFile.GetFeatureTypeName(typeID); }
-
 
 unsigned char* CSMFReadMap::GetInfoMap(const char* name, MapBitmapInfo* bmInfo)
 {
@@ -918,12 +880,18 @@ unsigned char* CSMFReadMap::GetInfoMap(const char* name, MapBitmapInfo* bmInfo)
 	CBitmap infomapBM;
 
 	switch (hashString(name)) {
-		case hashString("metal"): { texName = mapInfo->smf.metalmapTexName.c_str(); } break;
-		case hashString("type" ): { texName = mapInfo->smf.typemapTexName.c_str() ; } break;
-		case hashString("grass"): { texName = mapInfo->smf.grassmapTexName.c_str(); } break;
-		default: {
-			LOG_L(L_WARNING, "[SMFReadMap::%s] unknown texture-name \"%s\"", __func__, name);
-		} break;
+	case hashString("metal"): {
+		texName = mapInfo->smf.metalmapTexName.c_str();
+	} break;
+	case hashString("type"): {
+		texName = mapInfo->smf.typemapTexName.c_str();
+	} break;
+	case hashString("grass"): {
+		texName = mapInfo->smf.grassmapTexName.c_str();
+	} break;
+	default: {
+		LOG_L(L_WARNING, "[SMFReadMap::%s] unknown texture-name \"%s\"", __func__, name);
+	} break;
 	}
 
 	// get data from mapinfo-override texture
@@ -936,11 +904,8 @@ unsigned char* CSMFReadMap::GetInfoMap(const char* name, MapBitmapInfo* bmInfo)
 			return data;
 		}
 
-		LOG_L(L_WARNING, "[SMFReadMap::%s] invalid dimensions for override-texture \"%s\": %ix%i != %ix%i",
-			__func__, texName,
-			infomapBM.xsize, infomapBM.ysize,
-			bmInfo->width, bmInfo->height
-		);
+		LOG_L(L_WARNING, "[SMFReadMap::%s] invalid dimensions for override-texture \"%s\": %ix%i != %ix%i", __func__,
+		    texName, infomapBM.xsize, infomapBM.ysize, bmInfo->width, bmInfo->height);
 	}
 
 	// get data from map itself
@@ -951,20 +916,18 @@ unsigned char* CSMFReadMap::GetInfoMap(const char* name, MapBitmapInfo* bmInfo)
 	return nullptr;
 }
 
-
 void CSMFReadMap::FreeInfoMap(const char* name, unsigned char* data)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	delete[] data;
 }
 
-
 void CSMFReadMap::ConfigureTexAnisotropyLevels()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!GLAD_GL_EXT_texture_filter_anisotropic) {
 		texAnisotropyLevels[false] = 0.0f;
-		texAnisotropyLevels[ true] = 0.0f;
+		texAnisotropyLevels[true] = 0.0f;
 		return;
 	}
 
@@ -976,32 +939,58 @@ void CSMFReadMap::ConfigureTexAnisotropyLevels()
 	}
 }
 
-
-bool CSMFReadMap::SetLuaTexture(const MapTextureData& td) {
+bool CSMFReadMap::SetLuaTexture(const MapTextureData& td)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const uint32_t num = std::clamp(int(td.num), 0, NUM_SPLAT_DETAIL_NORMALS - 1);
 
 	switch (td.type) {
-		case MAP_BASE_GRASS_TEX: { grassShadingTex.SetLuaTexture(td); } break;
-		case MAP_BASE_DETAIL_TEX: { detailTex.SetLuaTexture(td); } break;
-		case MAP_BASE_MINIMAP_TEX: { minimapTex.SetLuaTexture(td); } break;
-		case MAP_BASE_SHADING_TEX: { shadingTex.SetLuaTexture(td); } break;
-		case MAP_BASE_NORMALS_TEX: { normalsTex.SetLuaTexture(td); } break;
+	case MAP_BASE_GRASS_TEX: {
+		grassShadingTex.SetLuaTexture(td);
+	} break;
+	case MAP_BASE_DETAIL_TEX: {
+		detailTex.SetLuaTexture(td);
+	} break;
+	case MAP_BASE_MINIMAP_TEX: {
+		minimapTex.SetLuaTexture(td);
+	} break;
+	case MAP_BASE_SHADING_TEX: {
+		shadingTex.SetLuaTexture(td);
+	} break;
+	case MAP_BASE_NORMALS_TEX: {
+		normalsTex.SetLuaTexture(td);
+	} break;
 
-		case MAP_SSMF_SPECULAR_TEX: { specularTex.SetLuaTexture(td); } break;
-		case MAP_SSMF_NORMALS_TEX: { blendNormalsTex.SetLuaTexture(td); } break;
+	case MAP_SSMF_SPECULAR_TEX: {
+		specularTex.SetLuaTexture(td);
+	} break;
+	case MAP_SSMF_NORMALS_TEX: {
+		blendNormalsTex.SetLuaTexture(td);
+	} break;
 
-		case MAP_SSMF_SPLAT_DISTRIB_TEX: { splatDistrTex.SetLuaTexture(td); } break;
-		case MAP_SSMF_SPLAT_DETAIL_TEX: { splatDetailTex.SetLuaTexture(td); } break;
-		case MAP_SSMF_SPLAT_NORMAL_TEX: { splatNormalTextures[num].SetLuaTexture(td); } break;
+	case MAP_SSMF_SPLAT_DISTRIB_TEX: {
+		splatDistrTex.SetLuaTexture(td);
+	} break;
+	case MAP_SSMF_SPLAT_DETAIL_TEX: {
+		splatDetailTex.SetLuaTexture(td);
+	} break;
+	case MAP_SSMF_SPLAT_NORMAL_TEX: {
+		splatNormalTextures[num].SetLuaTexture(td);
+	} break;
 
-		case MAP_SSMF_SKY_REFLECTION_TEX: { skyReflectModTex.SetLuaTexture(td); } break;
-		case MAP_SSMF_LIGHT_EMISSION_TEX: { lightEmissionTex.SetLuaTexture(td); } break;
-		case MAP_SSMF_PARALLAX_HEIGHT_TEX: { parallaxHeightTex.SetLuaTexture(td); } break;
+	case MAP_SSMF_SKY_REFLECTION_TEX: {
+		skyReflectModTex.SetLuaTexture(td);
+	} break;
+	case MAP_SSMF_LIGHT_EMISSION_TEX: {
+		lightEmissionTex.SetLuaTexture(td);
+	} break;
+	case MAP_SSMF_PARALLAX_HEIGHT_TEX: {
+		parallaxHeightTex.SetLuaTexture(td);
+	} break;
 
-		default: {
-			return false;
-		} break;
+	default: {
+		return false;
+	} break;
 	}
 
 	groundDrawer->UpdateRenderState();
@@ -1009,8 +998,8 @@ bool CSMFReadMap::SetLuaTexture(const MapTextureData& td) {
 }
 
 void CSMFReadMap::InitGroundDrawer() { groundDrawer = new CSMFGroundDrawer(this); }
+
 void CSMFReadMap::KillGroundDrawer() { spring::SafeDelete(groundDrawer); }
 
 // not placed in header since type CSMFGroundDrawer is only forward-declared there
 inline CBaseGroundDrawer* CSMFReadMap::GetGroundDrawer() { return groundDrawer; }
-

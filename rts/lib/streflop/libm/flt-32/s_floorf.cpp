@@ -9,7 +9,7 @@
  *
  * Developed at SunPro, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
@@ -28,6 +28,7 @@ static char rcsid[] = "$NetBSD: s_floorf.c,v 1.4f 1995/05/10 20:47:22 jtc Exp $"
  */
 
 #include "SMath.h"
+
 #include "math_private.h"
 
 namespace streflop_libm {
@@ -38,37 +39,45 @@ static Simple huge = 1.0e30f;
 #endif
 
 #ifdef __STDC__
-	Simple __floorf(Simple x)
+Simple __floorf(Simple x)
 #else
-	Simple __floorf(x)
-	Simple x;
+Simple __floorf(x) Simple x;
 #endif
 {
-	int32_t i0,j0;
+	int32_t i0, j0;
 	u_int32_t i;
-	GET_FLOAT_WORD(i0,x);
-	j0 = ((i0>>23)&0xff)-0x7f;
-	if(j0<23) {
-	    if(j0<0) { 	/* raise inexact if x != 0 */
-		if(huge+x>(Simple)0.0f) {/* return 0*sign(x) if |x|<1 */
-		    if(i0>=0) {i0=0;} 
-		    else if((i0&0x7fffffff)!=0)
-			{ i0=0xbf800000;}
+	GET_FLOAT_WORD(i0, x);
+	j0 = ((i0 >> 23) & 0xff) - 0x7f;
+	if (j0 < 23) {
+		if (j0 < 0) {                      /* raise inexact if x != 0 */
+			if (huge + x > (Simple)0.0f) { /* return 0*sign(x) if |x|<1 */
+				if (i0 >= 0) {
+					i0 = 0;
+				}
+				else if ((i0 & 0x7fffffff) != 0) {
+					i0 = 0xbf800000;
+				}
+			}
 		}
-	    } else {
-		i = (0x007fffff)>>j0;
-		if((i0&i)==0) return x; /* x is integral */
-		if(huge+x>(Simple)0.0f) {	/* raise inexact flag */
-		    if(i0<0) i0 += (0x00800000)>>j0;
-		    i0 &= (~i);
+		else {
+			i = (0x007fffff) >> j0;
+			if ((i0 & i) == 0)
+				return x;                  /* x is integral */
+			if (huge + x > (Simple)0.0f) { /* raise inexact flag */
+				if (i0 < 0)
+					i0 += (0x00800000) >> j0;
+				i0 &= (~i);
+			}
 		}
-	    }
-	} else {
-	    if(j0==0x80) return x+x;	/* inf or NaN */
-	    else return x;		/* x is integral */
 	}
-	SET_FLOAT_WORD(x,i0);
+	else {
+		if (j0 == 0x80)
+			return x + x; /* inf or NaN */
+		else
+			return x; /* x is integral */
+	}
+	SET_FLOAT_WORD(x, i0);
 	return x;
 }
-weak_alias (__floorf, floorf)
-}
+weak_alias(__floorf, floorf)
+} // namespace streflop_libm

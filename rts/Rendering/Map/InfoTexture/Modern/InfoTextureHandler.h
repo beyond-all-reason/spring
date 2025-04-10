@@ -3,20 +3,18 @@
 #ifndef _INFO_TEXTURE_HANDLER_H
 #define _INFO_TEXTURE_HANDLER_H
 
-#include <string>
-
 #include "Rendering/GL/myGL.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
-#include "System/type2.h"
 #include "System/UnorderedMap.hpp"
+#include "System/type2.h"
+
+#include <string>
 
 
 class CPboInfoTexture;
 class CInfoTextureCombiner;
 
-
-class CInfoTextureHandler : public IInfoTextureHandler
-{
+class CInfoTextureHandler : public IInfoTextureHandler {
 public:
 	CInfoTextureHandler();
 	virtual ~CInfoTextureHandler();
@@ -25,6 +23,7 @@ public:
 
 public:
 	bool IsEnabled() const override;
+
 	bool InMetalMode() const override { return inMetalMode; }
 
 	void DisableCurrentMode() override;
@@ -37,7 +36,7 @@ public:
 
 public:
 	const CInfoTexture* GetInfoTextureConst(const std::string& name) const override;
-	      CInfoTexture* GetInfoTexture     (const std::string& name)       override;
+	CInfoTexture* GetInfoTexture(const std::string& name) override;
 
 protected:
 	friend class CPboInfoTexture;
@@ -46,7 +45,7 @@ protected:
 protected:
 	bool returnToLOS = false;
 	bool inMetalMode = false;
-	bool firstUpdate =  true;
+	bool firstUpdate = true;
 
 	spring::unordered_map<std::string, CPboInfoTexture*> infoTextures;
 

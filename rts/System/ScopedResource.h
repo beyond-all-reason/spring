@@ -3,70 +3,84 @@
 #include <stdexcept>
 
 namespace spring {
-	template<typename D>
-	class ScopedNullResource {
-	public:
-		template<typename C>
-		ScopedNullResource(C&& c, D d_)
-			:d{ std::move(d_) }
-		{
-			c();
-		}
-		~ScopedNullResource() {
-			d();
-		}
-	private:
-		D d;
-	};
+template<typename D> class ScopedNullResource {
+public:
+	template<typename C>
+	ScopedNullResource(C&& c, D d_)
+	    : d{std::move(d_)}
+	{
+		c();
+	}
 
-	template<typename R, typename D>
-	class ScopedResource {
-	public:
-		using MyType = ScopedResource<R, D>;
-		ScopedResource(R&& r_, D&& d_)
-			: r{ std::forward<R>(r_) }
-			, d{ std::forward<D>(d_) }
-			, released{false}
-		{}
-		ScopedResource(const R& r_, D&& d_)
-			: r{ r_ }
-			, d{ std::forward<D>(d_) }
-			, released{ false }
-		{}
-		~ScopedResource() {
-			Reset();
-		}
+	~ScopedNullResource() { d(); }
 
-		R&& Release() {
-			if (released)
-				throw std::runtime_error("Scoped Object already released");
-			released = true;
-			return std::move(r);
-		}
+private:
+	D d;
+};
 
-		void Reset() {
-			if (!released) d(r);
-			released = true;
-		}
+template<typename R, typename D> class ScopedResource {
+public:
+	using MyType = ScopedResource<R, D>;
 
-		bool operator==(const MyType& rhs) { return  r == rhs.r; }
-		bool operator!=(const MyType& rhs) { return !(r == rhs); }
+	ScopedResource(R&& r_, D&& d_)
+	    : r{std::forward<R>(r_)}
+	    , d{std::forward<D>(d_)}
+	    , released{false}
+	{
+	}
 
-		const R& operator->() const { return r; };
-		      R& operator->()       { return r; };
+	ScopedResource(const R& r_, D&& d_)
+	    : r{r_}
+	    , d{std::forward<D>(d_)}
+	    , released{false}
+	{
+	}
 
-		operator const R&() const { return r; };
-		operator       R&()       { return r; };
+	~ScopedResource() { Reset(); }
 
-		const R& Get() const { return r; };
-		      R& Get()       { return r; };
+	R&& Release()
+	{
+		if (released)
+			throw std::runtime_error("Scoped Object already released");
+		released = true;
+		return std::move(r);
+	}
 
-		MyType& operator=(std::nullptr_t) noexcept { Reset(); return *this; }
-		MyType& operator=(const MyType&) = delete;
-	private:
-		R r;
-		D d;
+	void Reset()
+	{
+		if (!released)
+			d(r);
+		released = true;
+	}
 
-		bool released;
-	};
-}
+	bool operator==(const MyType& rhs) { return r == rhs.r; }
+
+	bool operator!=(const MyType& rhs) { return !(r == rhs); }
+
+	const R& operator->() const { return r; };
+
+	R& operator->() { return r; };
+
+	operator const R &() const { return r; };
+
+	operator R&() { return r; };
+
+	const R& Get() const { return r; };
+
+	R& Get() { return r; };
+
+	MyType& operator=(std::nullptr_t) noexcept
+	{
+		Reset();
+		return *this;
+	}
+
+	MyType& operator=(const MyType&) = delete;
+
+private:
+	R r;
+	D d;
+
+	bool released;
+};
+} // namespace spring

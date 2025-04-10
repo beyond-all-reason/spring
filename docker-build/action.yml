@@ -59,10 +59,10 @@ inputs:
 outputs:
   bin_name:
     description: 'Spring Binary Package Filename'
-    value: ${{ steps.docker-run.outputs.bin_name }}    
+    value: ${{ steps.docker-run.outputs.bin_name }}
   dbg_name:
     description: 'Debug Package Filename'
-    value: ${{ steps.docker-run.outputs.dbg_name }}    
+    value: ${{ steps.docker-run.outputs.dbg_name }}
 runs:
   using: "composite"
   steps:
@@ -121,7 +121,7 @@ runs:
         if [ "${{ inputs.debug-ccache }}" == "true" ]; then
           ARGS+=(-v "${{ github.workspace }}/ccache_dbg:/ccache_dbg" )
         fi
-        
+
         DOCKER_IMAGE="${{ inputs.docker-image }}"
         if [ "${DOCKER_IMAGE}" == "*" ]; then
           DOCKER_IMAGE="local"
@@ -145,7 +145,7 @@ runs:
         if [ "${{ inputs.strip-symbols }}" == "true" ]; then
           ARGS+=(-s 1)
         fi
-        
+
         echo "Running docker with arguments: 'docker ${ARGS[@]}'"
 
         echo "tmate-debug: ${{ inputs.debug-tmate }}"

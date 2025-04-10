@@ -38,4 +38,3 @@ What you do is:
 		}
 
 * Rebuild your application and hopefully it will work now.
-

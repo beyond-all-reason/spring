@@ -48,7 +48,7 @@ if (LIBUNWIND_INCLUDE_DIR AND LIBUNWIND_LIBRARY)
   set(LIBUNWIND_DEFINITIONS "LIBUNWIND")
   set(LIBUNWIND_INCLUDE_DIRS ${LIBUNWIND_INCLUDE_DIR})
   set(LIBUNWIND_LIBRARIES ${LIBUNWIND_LIBRARY})
-  
+
   if (NOT TARGET libunwind::libunwind)
     add_library(libunwind::libunwind UNKNOWN IMPORTED)
     set_target_properties(libunwind::libunwind PROPERTIES
@@ -62,7 +62,7 @@ endif()
 
 if (LIBUNWIND_PKGCONFIG_DIR AND EXISTS "${LIBUNWIND_PKGCONFIG_DIR}/libunwind.pc")
   file(STRINGS "${LIBUNWIND_PKGCONFIG_DIR}/libunwind.pc" unwind_version_str REGEX "^Version:[ \t]+.+")
-  
+
   string(REGEX REPLACE "^Version:[ \t]+(.+)" "\\1" LIBUNWIND_VERSION_STRING "${unwind_version_str}")
   unset(unwind_version_str)
 endif ()

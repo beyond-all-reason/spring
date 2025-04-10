@@ -2,30 +2,26 @@
 
 #include "DirArchive.h"
 
-#include <assert.h>
+#include "System/FileSystem/DataDirsAccess.h"
+#include "System/FileSystem/FileQueryFlags.h"
+#include "System/FileSystem/FileSystem.h"
+#include "System/StringUtil.h"
+#include "System/Threading/ThreadPool.h"
+
 #include <fstream>
 
-#include "System/FileSystem/DataDirsAccess.h"
-#include "System/FileSystem/FileSystem.h"
-#include "System/FileSystem/FileQueryFlags.h"
-#include "System/Threading/ThreadPool.h"
-#include "System/StringUtil.h"
-
+#include <assert.h>
 
 CDirArchiveFactory::CDirArchiveFactory()
-	: IArchiveFactory("sdd")
+    : IArchiveFactory("sdd")
 {
 }
 
-IArchive* CDirArchiveFactory::DoCreateArchive(const std::string& filePath) const
-{
-	return new CDirArchive(filePath);
-}
-
+IArchive* CDirArchiveFactory::DoCreateArchive(const std::string& filePath) const { return new CDirArchive(filePath); }
 
 CDirArchive::CDirArchive(const std::string& archiveName)
-	: IArchive(archiveName)
-	, dirName(archiveName + '/')
+    : IArchive(archiveName)
+    , dirName(archiveName + '/')
 {
 	{
 		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(archiveFile);
@@ -50,7 +46,6 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 	}
 }
 
-
 bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	assert(IsFileId(fid));
@@ -73,10 +68,7 @@ bool CDirArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	return true;
 }
 
-const std::string& CDirArchive::FileName(uint32_t fid) const
-{
-	return files[fid].fileName;
-}
+const std::string& CDirArchive::FileName(uint32_t fid) const { return files[fid].fileName; }
 
 int32_t CDirArchive::FileSize(uint32_t fid) const
 {
@@ -86,7 +78,7 @@ int32_t CDirArchive::FileSize(uint32_t fid) const
 	// check if not cached
 	if (file.size == -1) {
 		file.size = FileSystem::GetFileSize(files[fid].rawFileName);
-	}	
+	}
 
 	return file.size;
 }

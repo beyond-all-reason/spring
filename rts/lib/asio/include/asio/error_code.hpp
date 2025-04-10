@@ -12,13 +12,13 @@
 #define ASIO_ERROR_CODE_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include <system_error>
-
 #include "asio/detail/push_options.hpp"
+
+#include <system_error>
 
 namespace asio {
 
@@ -33,7 +33,7 @@ extern ASIO_DECL const error_category& system_category();
 #include "asio/detail/pop_options.hpp"
 
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/impl/error_code.ipp"
+#include "asio/impl/error_code.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // ASIO_ERROR_CODE_HPP

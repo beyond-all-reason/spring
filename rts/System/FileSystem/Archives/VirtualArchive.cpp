@@ -1,27 +1,26 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "VirtualArchive.h"
-#include "System/FileSystem/FileSystem.h"
-#include "System/FileSystem/DataDirsAccess.h"
-#include "System/FileSystem/FileQueryFlags.h"
-#include "System/Log/ILog.h"
 
 #include "zlib.h"
+
+#include "System/FileSystem/DataDirsAccess.h"
+#include "System/FileSystem/FileQueryFlags.h"
+#include "System/FileSystem/FileSystem.h"
+#include "System/Log/ILog.h"
 #include "minizip/zip.h"
+
 #include <cassert>
 
 CVirtualArchiveFactory* virtualArchiveFactory;
 
-CVirtualArchiveFactory::CVirtualArchiveFactory() : IArchiveFactory("sva")
+CVirtualArchiveFactory::CVirtualArchiveFactory()
+    : IArchiveFactory("sva")
 {
 	virtualArchiveFactory = this;
 }
 
-CVirtualArchiveFactory::~CVirtualArchiveFactory()
-{
-	virtualArchiveFactory = nullptr;
-}
-
+CVirtualArchiveFactory::~CVirtualArchiveFactory() { virtualArchiveFactory = nullptr; }
 
 CVirtualArchive* CVirtualArchiveFactory::AddArchive(const std::string& fileName)
 {
@@ -43,46 +42,27 @@ IArchive* CVirtualArchiveFactory::DoCreateArchive(const std::string& fileName) c
 }
 
 CVirtualArchiveOpen::CVirtualArchiveOpen(CVirtualArchive* archive, const std::string& fileName)
-	: IArchive(fileName)
-	, archive(archive)
+    : IArchive(fileName)
+    , archive(archive)
 {
 	// set subclass name index to archive's index (doesn't update while archive is open)
 	lcNameIndex = archive->GetNameIndex();
 }
 
-
-uint32_t CVirtualArchiveOpen::NumFiles() const
-{
-	return archive->NumFiles();
-}
+uint32_t CVirtualArchiveOpen::NumFiles() const { return archive->NumFiles(); }
 
 bool CVirtualArchiveOpen::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
 	return archive->GetFile(fid, buffer);
 }
 
-const std::string& CVirtualArchiveOpen::FileName(uint32_t fid) const
-{
-	return archive->FileName(fid);
-}
+const std::string& CVirtualArchiveOpen::FileName(uint32_t fid) const { return archive->FileName(fid); }
 
-int32_t CVirtualArchiveOpen::FileSize(uint32_t fid) const
-{
-	return archive->FileSize(fid);
-}
+int32_t CVirtualArchiveOpen::FileSize(uint32_t fid) const { return archive->FileSize(fid); }
 
-IArchive::SFileInfo CVirtualArchiveOpen::FileInfo(uint32_t fid) const
-{
-	return archive->FileInfo(fid);
-}
+IArchive::SFileInfo CVirtualArchiveOpen::FileInfo(uint32_t fid) const { return archive->FileInfo(fid); }
 
-
-
-CVirtualArchiveOpen* CVirtualArchive::Open()
-{
-	return new CVirtualArchiveOpen(this, fileName);
-}
-
+CVirtualArchiveOpen* CVirtualArchive::Open() { return new CVirtualArchiveOpen(this, fileName); }
 
 bool CVirtualArchive::GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer)
 {
@@ -110,11 +90,7 @@ IArchive::SFileInfo CVirtualArchive::FileInfo(uint32_t fid) const
 	assert(fid < files.size());
 	const auto& fe = files[fid];
 	return IArchive::SFileInfo{
-		.fileName = fe.name,
-		.specialFileName = "",
-		.size = static_cast<int32_t>(fe.buffer.size()),
-		.modTime = 0
-	};
+	    .fileName = fe.name, .specialFileName = "", .size = static_cast<int32_t>(fe.buffer.size()), .modTime = 0};
 }
 
 uint32_t CVirtualArchive::AddFile(const std::string& name)
@@ -152,4 +128,3 @@ void CVirtualFile::WriteZip(void* zf) const
 	zipWriteInFileInZip(zip, buffer.data(), buffer.size());
 	zipCloseFileInZip(zip);
 }
-

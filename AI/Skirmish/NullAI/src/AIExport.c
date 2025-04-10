@@ -16,16 +16,16 @@ the team in question would not yet exist.
 Therefore, the handleEvent code would look like this:
 [code]
 EXPORT(int) handleEvent(int skirmishAIId, int topic, const void* data) {
-	if (topic == EVENT_INIT) {
-		myAIs[skirmishAIId] = CAIObject();
-	}
-	if (myAIs.count(skirmishAIId) > 0) {
-		// allow the AI instance to handle the event.
-		return myAIs[skirmishAIId].handleEvent(topic, data);
-	} else {
-		// no AI with this ID, so return error.
-		return -1;
-	}
+        if (topic == EVENT_INIT) {
+                myAIs[skirmishAIId] = CAIObject();
+        }
+        if (myAIs.count(skirmishAIId) > 0) {
+                // allow the AI instance to handle the event.
+                return myAIs[skirmishAIId].handleEvent(topic, data);
+        } else {
+                // no AI with this ID, so return error.
+                return -1;
+        }
 }
 [/code]
 Advantages:
@@ -76,22 +76,23 @@ The same issues and reasonins described here for init() and EVENT_INIT applies
 to release() and EVENT_RELEASE.
 */
 
-//#include "ExternalAI/Interface/SSkirmishAICallback.h"
+// #include "ExternalAI/Interface/SSkirmishAICallback.h"
 
 #include "AIExport.h"
 
-/*EXPORT(int) init(int skirmishAIId, const struct SSkirmishAICallback* callback) {
+/*EXPORT(int) init(int skirmishAIId, const struct SSkirmishAICallback* callback)
+{
 
-	// TODO: do something
+        // TODO: do something
 
-	// signal: ok
+        // signal: ok
     return 0;
 }*/
 
-EXPORT(int) handleEvent(int skirmishAIId, int topic, const void* data) {
+EXPORT(int) handleEvent(int skirmishAIId, int topic, const void *data) {
 
-	// TODO: do something
+  // TODO: do something
 
-	// signal: ok
-	return 0;
+  // signal: ok
+  return 0;
 }

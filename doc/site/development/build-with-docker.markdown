@@ -102,7 +102,7 @@ The container can be started by passing `run` as the first parameter to run the 
 
 The following directories contain output data and can be used as a volume to access the files:
 1. `/publish` - This is the directory the build process will copy all produced artifacts into
-2. `/ccache` - The image is using `ccache` to speed up the build process. To make use of the cache you have to run different build runs using the same cache data directory. 
+2. `/ccache` - The image is using `ccache` to speed up the build process. To make use of the cache you have to run different build runs using the same cache data directory.
 2. `/ccache_dbg` - Directory where ccache debug data will be placed
 
 ```bash
@@ -130,7 +130,7 @@ When working in the development shell you can always start the step scripts manu
 As some of the steps will modify shell variables all scripts should be sourced (instead of started regularly), e.g. `. /scripts/01.clone.sh`.
 
 ### Reconfiguring
-In case you want to switch the configuration inside the development shell you you can run `00_setup.sh <arga>`. 
+In case you want to switch the configuration inside the development shell you you can run `00_setup.sh <arga>`.
 
 For example:
 

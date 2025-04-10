@@ -5,19 +5,22 @@
 #ifndef LOS_MAP_H
 #define LOS_MAP_H
 
-#include <vector>
-#include "System/type2.h"
 #include "System/SpringMath.h"
+#include "System/type2.h"
+
+#include <vector>
 
 
 struct SLosInstance;
 
-
 /// map containing counts of how many units have Line Of Sight (LOS) to each square
-class CLosMap
-{
+class CLosMap {
 public:
-	void Init(const int2 size_, const int2 mapDims, const float* ctrHeightMap_, const float* mipHeightMap_, bool sendReadmapEvents_)
+	void Init(const int2 size_,
+	    const int2 mapDims,
+	    const float* ctrHeightMap_,
+	    const float* mipHeightMap_,
+	    bool sendReadmapEvents_)
 	{
 		size = size_;
 		LOS2HEIGHT = mapDims / size;
@@ -44,7 +47,8 @@ public:
 	void PrepareRaycast(SLosInstance* instance) const;
 
 public:
-	int At(int2 p) const {
+	int At(int2 p) const
+	{
 		p.x = std::clamp(p.x, 0, size.x - 1);
 		p.y = std::clamp(p.y, 0, size.y - 1);
 		return losmap[p.y * size.x + p.x];

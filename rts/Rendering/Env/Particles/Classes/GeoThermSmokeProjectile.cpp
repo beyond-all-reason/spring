@@ -2,30 +2,23 @@
 
 
 #include "GeoThermSmokeProjectile.h"
+
 #include "Sim/Features/Feature.h"
-#include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/Wind.h"
-
+#include "Sim/Projectiles/ProjectileHandler.h"
 #include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED(CGeoThermSmokeProjectile, CSmokeProjectile, )
 
-CR_REG_METADATA(CGeoThermSmokeProjectile, (
-	CR_MEMBER(geo)
-))
+CR_REG_METADATA(CGeoThermSmokeProjectile, (CR_MEMBER(geo)))
 
-
-CGeoThermSmokeProjectile::CGeoThermSmokeProjectile(
-	const float3& pos,
-	const float3& spd,
-	int ttl,
-	const CFeature* geo
-)
-	: CSmokeProjectile(nullptr, pos, spd, ttl, 6, 0.35f, 0.8f)
-	, geo(geo)
-{ }
+CGeoThermSmokeProjectile::CGeoThermSmokeProjectile(const float3& pos, const float3& spd, int ttl, const CFeature* geo)
+    : CSmokeProjectile(nullptr, pos, spd, ttl, 6, 0.35f, 0.8f)
+    , geo(geo)
+{
+}
 
 void CGeoThermSmokeProjectile::Update()
 {
@@ -95,4 +88,3 @@ void CGeoThermSmokeProjectile::GeoThermDestroyed(const CFeature* geo)
 		geoPuff->geo = nullptr;
 	}
 }
-

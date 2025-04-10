@@ -3,16 +3,16 @@
 #ifndef FLOAT3_H
 #define FLOAT3_H
 
-#include <cassert>
-#include <array>
-#include <utility>
-#include <format>
-
 #include "System/BranchPrediction.h"
-#include "lib/streflop/streflop_cond.h"
-#include "System/creg/creg_cond.h"
 #include "System/FastMath.h"
+#include "System/creg/creg_cond.h"
 #include "System/type2.h"
+#include "lib/streflop/streflop_cond.h"
+
+#include <array>
+#include <cassert>
+#include <format>
+#include <utility>
 #ifdef _MSC_VER
 #include "System/Platform/Win/win32.h"
 #endif
@@ -25,17 +25,20 @@
  * Usually used to represent a vector in
  * space as x/y/z.
  */
-class float3
-{
+class float3 {
 public:
 	CR_DECLARE_STRUCT(float3)
-
 
 	/**
 	 * @brief default Constructor
 	 * With parameters, initializes x/y/z to 0.0f.
 	 */
-	constexpr float3() : x(0.0f), y(0.0f), z(0.0f) {}
+	constexpr float3()
+	    : x(0.0f)
+	    , y(0.0f)
+	    , z(0.0f)
+	{
+	}
 
 	/**
 	 * @brief Constructor
@@ -44,7 +47,11 @@ public:
 	 * With parameters, initializes x/y/z to the given float.
 	 */
 	constexpr float3(const float a)
-		: x(a), y(a), z(a) {}
+	    : x(a)
+	    , y(a)
+	    , z(a)
+	{
+	}
 
 	/**
 	 * @brief Constructor
@@ -55,7 +62,11 @@ public:
 	 * With parameters, initializes x/y/z to the given floats.
 	 */
 	constexpr float3(const float x, const float y, const float z)
-			: x(x), y(y), z(z) {}
+	    : x(x)
+	    , y(y)
+	    , z(z)
+	{
+	}
 
 	/**
 	 * @brief float[3] Constructor
@@ -63,7 +74,12 @@ public:
 	 *
 	 * With parameters, initializes x/y/z to the given float[3].
 	 */
-	constexpr float3(const float f[3]) : x(f[0]), y(f[1]), z(f[2]) {}
+	constexpr float3(const float f[3])
+	    : x(f[0])
+	    , y(f[1])
+	    , z(f[2])
+	{
+	}
 
 	/**
 	 * @brief operator =
@@ -71,7 +87,8 @@ public:
 	 *
 	 * Sets the float3 to the given float[3].
 	 */
-	float3& operator= (const float f[3]) {
+	float3& operator=(const float f[3])
+	{
 		x = f[0];
 		y = f[1];
 		z = f[2];
@@ -84,12 +101,12 @@ public:
 	 *
 	 * Sets the float[3] to this float3.
 	 */
-	void copyInto(float f[3]) const {
+	void copyInto(float f[3]) const
+	{
 		f[0] = x;
 		f[1] = y;
 		f[2] = z;
 	}
-
 
 	/**
 	 * @brief operator +
@@ -100,9 +117,7 @@ public:
 	 * calculate the sum of the positions in
 	 * space (adds the x/y/z components individually)
 	 */
-	float3 operator+ (const float3& f) const {
-		return float3(x + f.x, y + f.y, z + f.z);
-	}
+	float3 operator+(const float3& f) const { return float3(x + f.x, y + f.y, z + f.z); }
 
 	/**
 	 * @brief operator +
@@ -112,9 +127,7 @@ public:
 	 * When adding just a float, the point is
 	 * increased in all directions by that float.
 	 */
-	float3 operator+ (const float f) const {
-		return float3(x + f, y + f, z + f);
-	}
+	float3 operator+(const float f) const { return float3(x + f, y + f, z + f); }
 
 	/**
 	 * @brief operator +=
@@ -123,7 +136,8 @@ public:
 	 * Just like adding a float3, but updates this
 	 * float with the new sum.
 	 */
-	float3& operator+= (const float3& f) {
+	float3& operator+=(const float3& f)
+	{
 		x += f.x;
 		y += f.y;
 		z += f.z;
@@ -138,9 +152,7 @@ public:
 	 * Decreases the float3 by another float3,
 	 * subtracting each x/y/z component individually.
 	 */
-	float3 operator- (const float3& f) const {
-		return float3(x - f.x, y - f.y, z - f.z);
-	}
+	float3 operator-(const float3& f) const { return float3(x - f.x, y - f.y, z - f.z); }
 
 	/**
 	 * @brief operator -
@@ -150,9 +162,7 @@ public:
 	 * When subtracting a single fixed float,
 	 * decreases all three x/y/z components by that amount.
 	 */
-	float3 operator- (const float f) const {
-		return float3(x - f, y - f, z - f);
-	}
+	float3 operator-(const float f) const { return float3(x - f, y - f, z - f); }
 
 	/**
 	 * @brief operator -=
@@ -161,12 +171,12 @@ public:
 	 * Same as subtracting a float3, but stores
 	 * the new float3 inside this one.
 	 */
-	void operator-= (const float3& f) {
+	void operator-=(const float3& f)
+	{
 		x -= f.x;
 		y -= f.y;
 		z -= f.z;
 	}
-
 
 	/**
 	 * @brief operator -
@@ -175,10 +185,7 @@ public:
 	 * When negating the float3, inverts all three
 	 * x/y/z components.
 	 */
-	constexpr float3 operator- () const {
-		return float3(-x, -y, -z);
-	}
-
+	constexpr float3 operator-() const { return float3(-x, -y, -z); }
 
 	/**
 	 * @brief operator *
@@ -188,9 +195,7 @@ public:
 	 * When multiplying by another float3,
 	 * multiplies each x/y/z component individually.
 	 */
-	float3 operator* (const float3& f) const {
-		return float3(x * f.x, y * f.y, z * f.z);
-	}
+	float3 operator*(const float3& f) const { return float3(x * f.x, y * f.y, z * f.z); }
 
 	/**
 	 * @brief operator *
@@ -200,9 +205,7 @@ public:
 	 * When multiplying by a single float, multiplies
 	 * each x/y/z component by that float.
 	 */
-	float3 operator* (const float f) const {
-		return float3(x * f, y * f, z * f);
-	}
+	float3 operator*(const float f) const { return float3(x * f, y * f, z * f); }
 
 	/**
 	 * @brief operator *=
@@ -211,7 +214,8 @@ public:
 	 * Same as multiplying a float3, but stores
 	 * the new float3 inside this one.
 	 */
-	void operator*= (const float3& f) {
+	void operator*=(const float3& f)
+	{
 		x *= f.x;
 		y *= f.y;
 		z *= f.z;
@@ -224,7 +228,8 @@ public:
 	 * Same as multiplying a float, but stores
 	 * the new float3 inside this one.
 	 */
-	float3& operator*= (float f) {
+	float3& operator*=(float f)
+	{
 		x *= f;
 		y *= f;
 		z *= f;
@@ -239,9 +244,7 @@ public:
 	 * When dividing by a float3, divides
 	 * each x/y/z component individually.
 	 */
-	float3 operator/ (const float3& f) const {
-		return float3(x / f.x, y / f.y, z / f.z);
-	}
+	float3 operator/(const float3& f) const { return float3(x / f.x, y / f.y, z / f.z); }
 
 	/**
 	 * @brief operator /
@@ -251,9 +254,7 @@ public:
 	 * When dividing by a single float, divides
 	 * each x/y/z component by that float.
 	 */
-	float3 operator/ (const float f) const {
-		return ((*this) * (1.0f / f));
-	}
+	float3 operator/(const float f) const { return ((*this) * (1.0f / f)); }
 
 	/**
 	 * @brief operator /=
@@ -262,7 +263,8 @@ public:
 	 * Same as dividing by a float3, but stores
 	 * the new values inside this float3.
 	 */
-	void operator/= (const float3& f) {
+	void operator/=(const float3& f)
+	{
 		x /= f.x;
 		y /= f.y;
 		z /= f.z;
@@ -275,10 +277,7 @@ public:
 	 * Same as dividing by a single float, but stores
 	 * the new values inside this float3.
 	 */
-	void operator/= (const float f) {
-		(*this) *= (1.0f / f);
-	}
-
+	void operator/=(const float f) { (*this) *= (1.0f / f); }
 
 	/**
 	 * @brief operator ==
@@ -288,9 +287,7 @@ public:
 	 * Tests if this float3 is equal to another, by
 	 * checking each x/y/z component individually.
 	 */
-	bool operator== (const float3& f) const {
-		return (equals(f));
-	}
+	bool operator==(const float3& f) const { return (equals(f)); }
 
 	/**
 	 * @brief operator !=
@@ -300,10 +297,7 @@ public:
 	 * Tests if this float3 is not equal to another, by
 	 * checking each x/y/z component individually.
 	 */
-	bool operator!= (const float3& f) const {
-		return (!equals(f));
-	}
-
+	bool operator!=(const float3& f) const { return (!equals(f)); }
 
 	/**
 	 * @brief operator[]
@@ -313,9 +307,7 @@ public:
 	 * Array access for x/y/z components
 	 * (index 0 is x, index 1 is y, index 2 is z)
 	 */
-	float& operator[] (const int t) {
-		return (&x)[t];
-	}
+	float& operator[](const int t) { return (&x)[t]; }
 
 	/**
 	 * @brief operator[] const
@@ -325,15 +317,12 @@ public:
 	 * Same as plain [] operator but used in
 	 * a const context
 	 */
-	const float& operator[] (const int t) const {
-		return (&x)[t];
-	}
+	const float& operator[](const int t) const { return (&x)[t]; }
 
 	/**
 	 * @see operator==
 	 */
 	bool equals(const float3& f, const float3& eps = float3(cmp_eps(), cmp_eps(), cmp_eps())) const;
-
 
 	/**
 	 * @brief binary float3 equality
@@ -341,9 +330,7 @@ public:
 	 * @return const whether the two float3 are binary same
 	 *
 	 */
-	bool same(const float3& f) const {
-		return x == f.x && y == f.y && z == f.z;
-	}
+	bool same(const float3& f) const { return x == f.x && y == f.y && z == f.z; }
 
 	/**
 	 * @brief dot product
@@ -354,9 +341,7 @@ public:
 	 * another float3 (sums the products of each
 	 * x/y/z component).
 	 */
-	float dot(const float3& f) const {
-		return (x * f.x) + (y * f.y) + (z * f.z);
-	}
+	float dot(const float3& f) const { return (x * f.x) + (y * f.y) + (z * f.z); }
 
 	/**
 	 * @brief dot2D product
@@ -367,9 +352,7 @@ public:
 	 * another float3 (sums the products of
 	 * x/z components).
 	 */
-	float dot2D(const float3& f) const {
-		return (x * f.x) + (z * f.z);
-	}
+	float dot2D(const float3& f) const { return (x * f.x) + (z * f.z); }
 
 	/**
 	 * @brief cross product
@@ -380,15 +363,13 @@ public:
 	 * another float3:
 	 * (y1*z2 - z1*y2, z1*x2 - x1*z2, x1*y2 - y1*x2)
 	 */
-	float3 cross(const float3& f) const {
-		return float3(
-				(y * f.z) - (z * f.y),
-				(z * f.x) - (x * f.z),
-				(x * f.y) - (y * f.x));
+	float3 cross(const float3& f) const
+	{
+		return float3((y * f.z) - (z * f.y), (z * f.x) - (x * f.z), (x * f.y) - (y * f.x));
 	}
 
-	template<bool synced, typename Iterable>
-	static void rotate(float angle, const float3& axis, Iterable& iterable) {
+	template<bool synced, typename Iterable> static void rotate(float angle, const float3& axis, Iterable& iterable)
+	{
 		static_assert(std::is_same_v<std::decay_t<decltype(*std::begin(iterable))>, float3>);
 		float ca;
 		float sa;
@@ -401,33 +382,36 @@ public:
 			sa = fastmath::sin(angle);
 		}
 
-		//Rodrigues' rotation formula
-		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
-		for (auto& v : iterable) {
+		// Rodrigues' rotation formula
+		//  https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+		for (auto& v: iterable) {
 			v = v * ca + axis.cross(v) * sa + axis * axis.dot(v) * (1.0f - ca);
 		}
 	}
 
-	template<bool synced>
-	float3 rotate(float angle, const float3& axis) const {
+	template<bool synced> float3 rotate(float angle, const float3& axis) const
+	{
 		float ca;
 		float sa;
 		if constexpr (synced) {
 			ca = math::cos(angle);
 			sa = math::sin(angle);
-		} else {
+		}
+		else {
 			ca = fastmath::cos(angle);
 			sa = fastmath::sin(angle);
 		}
 
-		//Rodrigues' rotation formula
-		// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+		// Rodrigues' rotation formula
+		//  https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 		return (*this) * ca + axis.cross(*this) * sa + axis * axis.dot(*this) * (1.0f - ca);
 	}
 
-	float3 rotateByUpVector(const float3& newUpDir, const float3& rotAxis) const {
-		// Use special case of Rodrigues' formula where sin and cos are replaced with ||cross|| and dot products and new up direction is used to rotate the point. Also requires normal vector used as a rotation axis
-		// rotAxis can be all zeros in case of singlularity rotation
+	float3 rotateByUpVector(const float3& newUpDir, const float3& rotAxis) const
+	{
+		// Use special case of Rodrigues' formula where sin and cos are replaced with ||cross|| and dot products and new
+		// up direction is used to rotate the point. Also requires normal vector used as a rotation axis rotAxis can be
+		// all zeros in case of singlularity rotation
 
 		const float& px = this->x;
 		const float& py = this->y;
@@ -441,30 +425,23 @@ public:
 		const float& ny = rotAxis.y;
 		const float& nz = rotAxis.z;
 
-		const float3 cm = float3{
-			yy,
-			math::sqrt(yx * yx + yz * yz),
-			(nx * px + ny * py + nz * pz)* (1.0f - yy)
-		};
+		const float3 cm = float3{yy, math::sqrt(yx * yx + yz * yz), (nx * px + ny * py + nz * pz) * (1.0f - yy)};
 
-		return float3{
-			cm.dot(float3{px, (ny * pz - nz * py), nx}),
-			cm.dot(float3{py, (nz * px - nx * pz), ny}),
-			cm.dot(float3{pz, (nx * py - ny * px), nz})
-		};
+		return float3{cm.dot(float3{px, (ny * pz - nz * py), nx}), cm.dot(float3{py, (nz * px - nx * pz), ny}),
+		    cm.dot(float3{pz, (nx * py - ny * px), nz})};
 	}
-
 
 	/**
 	 * Rotate a vector by the angle between rotationVector and RgtVector.
 	 * The result is only normalized if the input vector and self are normalized.
 	 * @return new vector with the result
 	 */
-	float3 rotate2D(const float3& rotationVector) const {
+	float3 rotate2D(const float3& rotationVector) const
+	{
 		// https://blog.demofox.org/2014/12/27/using-imaginary-numbers-to-rotate-2d-vectors/
 		float nx = x * rotationVector.x - z * rotationVector.z;
 		float nz = x * rotationVector.z + z * rotationVector.x;
-		return float3{ nx, y, nz };
+		return float3{nx, y, nz};
 	}
 
 	/**
@@ -482,11 +459,12 @@ public:
 	 * and another float3 (sums the differences in each
 	 * x/y/z component, square root for pythagorean theorem)
 	 */
-	float distance(const float3& f) const {
+	float distance(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dy = y - f.y;
 		const float dz = z - f.z;
-		return math::sqrt(dx*dx + dy*dy + dz*dz);
+		return math::sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
 	/**
@@ -500,10 +478,11 @@ public:
 	 * differences in the x and z components, square
 	 * root for pythagorean theorem
 	 */
-	float distance2D(const float3& f) const {
+	float distance2D(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dz = z - f.z;
-		return math::sqrt(dx*dx + dz*dz);
+		return math::sqrt(dx * dx + dz * dz);
 	}
 
 	/**
@@ -517,12 +496,12 @@ public:
 	 * differences in the x and z components, square
 	 * root for pythagorean theorem
 	 */
-	float distance2D(const float2& f) const {
+	float distance2D(const float2& f) const
+	{
 		const float dx = x - f.x;
 		const float dz = z - f.y;
-		return math::sqrt(dx*dx + dz*dz);
+		return math::sqrt(dx * dx + dz * dz);
 	}
-
 
 	/**
 	 * @brief SqDistance between float3s squared
@@ -531,11 +510,12 @@ public:
 	 *
 	 * Returns the squared distance of 2 float3s
 	 */
-	float SqDistance(const float3& f) const {
+	float SqDistance(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dy = y - f.y;
 		const float dz = z - f.z;
-		return (dx*dx + dy*dy + dz*dz);
+		return (dx * dx + dy * dy + dz * dz);
 	}
 
 	/**
@@ -545,12 +525,12 @@ public:
 	 *
 	 * Returns the squared 2d-distance of 2 float3s
 	 */
-	float SqDistance2D(const float3& f) const {
+	float SqDistance2D(const float3& f) const
+	{
 		const float dx = x - f.x;
 		const float dz = z - f.z;
-		return (dx*dx + dz*dz);
+		return (dx * dx + dz * dz);
 	}
-
 
 	/**
 	 * @brief Length of this vector
@@ -560,8 +540,9 @@ public:
 	 * (squares and sums each x/y/z component,
 	 * square root for pythagorean theorem)
 	 */
-	float Length() const {
-		//assert(x!=0.f || y!=0.f || z!=0.f);
+	float Length() const
+	{
+		// assert(x!=0.f || y!=0.f || z!=0.f);
 		return math::sqrt(SqLength());
 	}
 
@@ -573,8 +554,9 @@ public:
 	 * (squares and sums only the x and z components,
 	 * square root for pythagorean theorem)
 	 */
-	float Length2D() const {
-		//assert(x!=0.f || y!=0.f || z!=0.f);
+	float Length2D() const
+	{
+		// assert(x!=0.f || y!=0.f || z!=0.f);
 		return math::sqrt(SqLength2D());
 	}
 
@@ -584,9 +566,7 @@ public:
 	 *
 	 * Returns the length of this vector squared.
 	 */
-	float SqLength() const {
-		return (x*x + y*y + z*z);
-	}
+	float SqLength() const { return (x * x + y * y + z * z); }
 
 	/**
 	 * @brief 2-dimensional length squared
@@ -595,30 +575,32 @@ public:
 	 * Returns the 2-dimensional length of this
 	 * vector squared.
 	 */
-	float SqLength2D() const {
-		return (x*x + z*z);
-	}
+	float SqLength2D() const { return (x * x + z * z); }
 
 	/**
 	 * normalize vector in-place, return its old length
 	 */
-	float LengthNormalize() {
+	float LengthNormalize()
+	{
 		const float len = Length();
 
-		if likely(len > nrm_eps())
+		if likely (len > nrm_eps())
 			(*this) *= (1.0f / len);
 
 		return len;
 	}
 
-	float LengthNormalize2D() {
-		y = 0.0f; return LengthNormalize();
+	float LengthNormalize2D()
+	{
+		y = 0.0f;
+		return LengthNormalize();
 	}
 
 	/**
 	 * Decomposes into normalized dir and length
 	 */
-	std::pair <float3, float> GetNormalized() const {
+	std::pair<float3, float> GetNormalized() const
+	{
 		float3 copy = *this;
 		const float length = copy.LengthNormalize();
 		return {std::move(copy), length};
@@ -631,7 +613,8 @@ public:
 	 * Normalizes the vector by dividing each
 	 * x/y/z component by the vector's length.
 	 */
-	float3& Normalize() {
+	float3& Normalize()
+	{
 #if defined(__SUPPORT_SNAN__)
 #ifndef BUILDING_AI
 		return SafeNormalize();
@@ -642,10 +625,11 @@ public:
 #endif
 	}
 
-	float3& Normalize2D() {
-		y = 0.0f; return Normalize();
+	float3& Normalize2D()
+	{
+		y = 0.0f;
+		return Normalize();
 	}
-
 
 	/**
 	 * @brief normalizes the vector without checking for zero vector
@@ -654,14 +638,13 @@ public:
 	 * Normalizes the vector by dividing each
 	 * x/y/z component by the vector's length.
 	 */
-	float3& UnsafeNormalize() {
-		return ((*this) *= math::isqrt(SqLength()));
-	}
+	float3& UnsafeNormalize() { return ((*this) *= math::isqrt(SqLength())); }
 
-	float3& UnsafeNormalize2D() {
-		y = 0.0f; return UnsafeNormalize();
+	float3& UnsafeNormalize2D()
+	{
+		y = 0.0f;
+		return UnsafeNormalize();
 	}
-
 
 	/**
 	 * @brief normalizes the vector safely (check for *this == ZeroVector)
@@ -670,19 +653,21 @@ public:
 	 * Normalizes the vector by dividing each
 	 * x/y/z component by the vector's length.
 	 */
-	float3& SafeNormalize() {
+	float3& SafeNormalize()
+	{
 		const float sql = SqLength();
 
-		if likely(sql > nrm_eps())
+		if likely (sql > nrm_eps())
 			(*this) *= math::isqrt(sql);
 
 		return *this;
 	}
 
-	float3& SafeNormalize2D() {
-		y = 0.0f; return SafeNormalize();
+	float3& SafeNormalize2D()
+	{
+		y = 0.0f;
+		return SafeNormalize();
 	}
-
 
 	/**
 	 * @brief normalizes the vector approximately
@@ -691,7 +676,8 @@ public:
 	 * Normalizes the vector by dividing each x/y/z component by
 	 * the vector's approx. length.
 	 */
-	float3& ANormalize() {
+	float3& ANormalize()
+	{
 #if defined(__SUPPORT_SNAN__)
 #ifndef BUILDING_AI
 		return SafeANormalize();
@@ -702,10 +688,11 @@ public:
 #endif
 	}
 
-	float3& ANormalize2D() {
-		y = 0.0f; return ANormalize();
+	float3& ANormalize2D()
+	{
+		y = 0.0f;
+		return ANormalize();
 	}
-
 
 	/**
 	 * @brief normalizes the vector approximately without checking
@@ -715,15 +702,17 @@ public:
 	 * Normalizes the vector by dividing each x/y/z component by
 	 * the vector's approx. length.
 	 */
-	float3& UnsafeANormalize() {
+	float3& UnsafeANormalize()
+	{
 		assert(SqLength() > nrm_eps());
 		return ((*this) *= math::isqrt(SqLength()));
 	}
 
-	float3& UnsafeANormalize2D() {
-		y = 0.0f; return UnsafeANormalize();
+	float3& UnsafeANormalize2D()
+	{
+		y = 0.0f;
+		return UnsafeANormalize();
 	}
-
 
 	/**
 	 * @brief normalizes the vector approximately and safely
@@ -733,39 +722,42 @@ public:
 	 * the vector's approximate length, if (this != ZeroVector),
 	 * else do nothing.
 	 */
-	float3& SafeANormalize() {
+	float3& SafeANormalize()
+	{
 		const float sql = SqLength();
 
-		if likely(sql > nrm_eps())
+		if likely (sql > nrm_eps())
 			(*this) *= math::isqrt(sql);
 
 		return *this;
 	}
 
-	float3& SafeANormalize2D() {
-		y = 0.0f; return SafeANormalize();
+	float3& SafeANormalize2D()
+	{
+		y = 0.0f;
+		return SafeANormalize();
 	}
 
 	/*
 	// Un must be Normalized()
 	float3& PickNonParallel(const float3 Un) {
-		float d2 = Un.SqLength2D();
-		float d3 = d2 + Un.y * Un.y;
+	    float d2 = Un.SqLength2D();
+	    float d3 = d2 + Un.y * Un.y;
 
-		if (d3 < cmp_eps()) {
-			// 0 vector
-			*this = float3(1.0f, 0.0f, 0.0f);
-			return *this;
-		}
+	    if (d3 < cmp_eps()) {
+	        // 0 vector
+	        *this = float3(1.0f, 0.0f, 0.0f);
+	        return *this;
+	    }
 
-		if (d2 < cmp_eps()) {
-			// Un.y == +-1, make {Un.y, 0, 0}
-			*this = float3(Un.y, 0.0f, 0.0f);
-			return *this;
-		}
+	    if (d2 < cmp_eps()) {
+	        // Un.y == +-1, make {Un.y, 0, 0}
+	        *this = float3(Un.y, 0.0f, 0.0f);
+	        return *this;
+	    }
 
-		*this = float3(Un.z, Un.y, -Un.x); //y component of Un X (*this) is x1^2 + z1^2, which is non-zero
-		return (*this);
+	    *this = float3(Un.z, Un.y, -Un.x); //y component of Un X (*this) is x1^2 + z1^2, which is non-zero
+	    return (*this);
 	}
 	*/
 
@@ -773,15 +765,17 @@ public:
 	float3 PickNonParallel() const;
 
 	bool Normalized() const { return math::fabs(1.0f - SqLength()) <= cmp_eps(); }
+
 	static bool CheckNaN(float c) { return (!math::isnan(c) && !math::isinf(c)); }
 
 	bool CheckNaNs() const { return (CheckNaN(x) && CheckNaN(y) && CheckNaN(z)); }
-	void AssertNaNs() const {
+
+	void AssertNaNs() const
+	{
 		assert(CheckNaN(x));
 		assert(CheckNaN(y));
 		assert(CheckNaN(z));
 	}
-
 
 	/**
 	 * @brief Check against FaceHeightmap bounds
@@ -818,8 +812,19 @@ public:
 	 */
 	void ClampInMap();
 
-	float3 cClampInBounds() const { float3 f = *this; f.ClampInBounds(); return f; }
-	float3 cClampInMap() const { float3 f = *this; f.ClampInMap(); return f; }
+	float3 cClampInBounds() const
+	{
+		float3 f = *this;
+		f.ClampInBounds();
+		return f;
+	}
+
+	float3 cClampInMap() const
+	{
+		float3 f = *this;
+		f.ClampInMap();
+		return f;
+	}
 
 	static float3 min(const float3 v1, const float3 v2);
 	static float3 max(const float3 v1, const float3 v2);
@@ -827,11 +832,10 @@ public:
 	static float3 sign(const float3 v);
 
 	static constexpr float cmp_eps() { return 1e-04f; }
+
 	static constexpr float nrm_eps() { return 1e-12f; }
 
-	std::string str() const {
-		return std::format("float3({:.3f}, {:.3f}, {:.3f})", x, y, z);
-	}
+	std::string str() const { return std::format("float3({:.3f}, {:.3f}, {:.3f})", x, y, z); }
 
 	/**
 	 * @brief max x pos
@@ -852,12 +856,30 @@ public:
 
 public:
 	union {
-		struct { float x,y,z; };
-		struct { float r,g,b; };
-		struct { float x1,y1,x2; };
-		struct { float s,t,p; };
-		struct { float xstart, ystart, xend; };
-		struct { float xyz[3]; };
+		struct {
+			float x, y, z;
+		};
+
+		struct {
+			float r, g, b;
+		};
+
+		struct {
+			float x1, y1, x2;
+		};
+
+		struct {
+			float s, t, p;
+		};
+
+		struct {
+			float xstart, ystart, xend;
+		};
+
+		struct {
+			float xyz[3];
+		};
+
 		std::array<float, 3> arr;
 	};
 };
@@ -865,9 +887,7 @@ public:
 static_assert(sizeof(float3) == 3 * sizeof(float));
 static_assert(alignof(float3) == alignof(float));
 
-inline float3 operator*(float f, const float3& v) {
-	return v * f;
-}
+inline float3 operator*(float f, const float3& v) { return v * f; }
 
 /**
  * @brief upwards vector
@@ -875,7 +895,7 @@ inline float3 operator*(float f, const float3& v) {
  * Defines constant upwards vector
  * (0, 1, 0)
  */
-static constexpr float3  UpVector(0.0f, 1.0f, 0.0f);
+static constexpr float3 UpVector(0.0f, 1.0f, 0.0f);
 static constexpr float3 FwdVector(0.0f, 0.0f, 1.0f);
 static constexpr float3 RgtVector(1.0f, 0.0f, 0.0f);
 
@@ -893,4 +913,3 @@ static constexpr float3 XZVector(1.0f, 0.0f, 1.0f);
 static constexpr float3 YZVector(0.0f, 1.0f, 1.0f);
 
 #endif /* FLOAT3_H */
-

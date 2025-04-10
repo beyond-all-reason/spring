@@ -2,23 +2,22 @@
 
 #include "AIInterfaceLibrary.h"
 
-#include "Interface/aidefines.h"
-#include "SkirmishAILibrary.h"
 #include "AIInterfaceLibraryInfo.h"
-#include "SkirmishAILibraryInfo.h"
+#include "AILibraryManager.h"
 #include "SAIInterfaceCallbackImpl.h"
+#include "SkirmishAILibrary.h"
+#include "SkirmishAILibraryInfo.h"
 
+#include "Interface/aidefines.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
-#include "AILibraryManager.h"
-
 
 CAIInterfaceLibrary::CAIInterfaceLibrary(const CAIInterfaceLibraryInfo& _info)
-	: interfaceId(-1)
-	, initialized(false)
-	, sAIInterfaceLibrary({ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr})
-	, info(_info)
+    : interfaceId(-1)
+    , initialized(false)
+    , sAIInterfaceLibrary({nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr})
+    , info(_info)
 {
 	libFilePath = FindLibFile();
 
@@ -34,12 +33,14 @@ CAIInterfaceLibrary::CAIInterfaceLibrary(const CAIInterfaceLibraryInfo& _info)
 	}
 }
 
-CAIInterfaceLibrary::~CAIInterfaceLibrary() {
+CAIInterfaceLibrary::~CAIInterfaceLibrary()
+{
 	ReleaseStatic();
 	spring::SafeDelete(sharedLib);
 }
 
-void CAIInterfaceLibrary::InitStatic() {
+void CAIInterfaceLibrary::InitStatic()
+{
 	if (sAIInterfaceLibrary.initStatic == nullptr)
 		return;
 
@@ -47,9 +48,8 @@ void CAIInterfaceLibrary::InitStatic() {
 		interfaceId = aiInterfaceCallback_getInstanceFor(&info, &callback);
 
 	const int ret = sAIInterfaceLibrary.initStatic(interfaceId, &callback);
-	const char* fmt =
-		"Initializing AI Interface library from file \"%s\"."
-		" The call to initStatic() returned unsuccessfuly.";
+	const char* fmt = "Initializing AI Interface library from file \"%s\"."
+	                  " The call to initStatic() returned unsuccessfuly.";
 
 	if (ret == 0) {
 		initialized = true;
@@ -65,17 +65,18 @@ void CAIInterfaceLibrary::InitStatic() {
 	initialized = false;
 }
 
-void CAIInterfaceLibrary::ReleaseStatic() {
+void CAIInterfaceLibrary::ReleaseStatic()
+{
 	if (sAIInterfaceLibrary.releaseStatic != nullptr) {
 		const int ret = sAIInterfaceLibrary.releaseStatic();
-		const char* fmt =
-			"Releasing AI Interface Library from file \"%s\"."
-			" The call to releaseStatic() returned unsuccessfuly.";
+		const char* fmt = "Releasing AI Interface Library from file \"%s\"."
+		                  " The call to releaseStatic() returned unsuccessfuly.";
 
 		if (ret != 0) {
 			// releasing the library failed!
 			LOG_L(L_ERROR, fmt, libFilePath.c_str());
-		} else {
+		}
+		else {
 			initialized = false;
 		}
 	}
@@ -86,21 +87,19 @@ void CAIInterfaceLibrary::ReleaseStatic() {
 	}
 }
 
-AIInterfaceKey CAIInterfaceLibrary::GetKey() const {
-	return info.GetKey();
-}
+AIInterfaceKey CAIInterfaceLibrary::GetKey() const { return info.GetKey(); }
 
-LevelOfSupport CAIInterfaceLibrary::GetLevelOfSupportFor(
-	const std::string& engineVersionString,
-	int engineVersionNumber
-) const {
+LevelOfSupport CAIInterfaceLibrary::GetLevelOfSupportFor(const std::string& engineVersionString,
+    int engineVersionNumber) const
+{
 	// if (sAIInterfaceLibrary.getLevelOfSupportFor != nullptr)
 	//   return sAIInterfaceLibrary.getLevelOfSupportFor(engineVersionString.c_str(), engineVersionNumber);
 
 	return LOS_Unknown;
 }
 
-int CAIInterfaceLibrary::GetSkirmishAICount() const {
+int CAIInterfaceLibrary::GetSkirmishAICount() const
+{
 	int numLookupSkirmishAIs = 0;
 
 	if (sAIInterfaceLibrary.listSkirmishAILibraries != nullptr)
@@ -109,14 +108,14 @@ int CAIInterfaceLibrary::GetSkirmishAICount() const {
 	return numLookupSkirmishAIs;
 }
 
-std::map<std::string, std::string> CAIInterfaceLibrary::GetSkirmishAIInfos(int aiIndex) const {
+std::map<std::string, std::string> CAIInterfaceLibrary::GetSkirmishAIInfos(int aiIndex) const
+{
 	std::map<std::string, std::string> lookupInfos;
 
-	const bool libSupportsLookup =
-		(sAIInterfaceLibrary.listSkirmishAILibraries != nullptr) &&
-		(sAIInterfaceLibrary.listSkirmishAILibraryInfos != nullptr) &&
-		(sAIInterfaceLibrary.listSkirmishAILibraryInfoKey != nullptr) &&
-		(sAIInterfaceLibrary.listSkirmishAILibraryInfoValue != nullptr);
+	const bool libSupportsLookup = (sAIInterfaceLibrary.listSkirmishAILibraries != nullptr) &&
+	                               (sAIInterfaceLibrary.listSkirmishAILibraryInfos != nullptr) &&
+	                               (sAIInterfaceLibrary.listSkirmishAILibraryInfoKey != nullptr) &&
+	                               (sAIInterfaceLibrary.listSkirmishAILibraryInfoValue != nullptr);
 
 	if (!libSupportsLookup)
 		return lookupInfos;
@@ -133,12 +132,12 @@ std::map<std::string, std::string> CAIInterfaceLibrary::GetSkirmishAIInfos(int a
 	return lookupInfos;
 }
 
-std::string CAIInterfaceLibrary::GetSkirmishAIOptions(int aiIndex) const {
+std::string CAIInterfaceLibrary::GetSkirmishAIOptions(int aiIndex) const
+{
 	std::string lookupOptions;
 
-	const bool libSupportsLookup =
-		(sAIInterfaceLibrary.listSkirmishAILibraries != nullptr) &&
-		(sAIInterfaceLibrary.listSkirmishAILibraryOptions != nullptr);
+	const bool libSupportsLookup = (sAIInterfaceLibrary.listSkirmishAILibraries != nullptr) &&
+	                               (sAIInterfaceLibrary.listSkirmishAILibraryOptions != nullptr);
 
 	if (!libSupportsLookup)
 		return lookupOptions;
@@ -151,21 +150,20 @@ std::string CAIInterfaceLibrary::GetSkirmishAIOptions(int aiIndex) const {
 	return lookupOptions;
 }
 
-int CAIInterfaceLibrary::GetLoadCount() const {
+int CAIInterfaceLibrary::GetLoadCount() const
+{
 	int totalSkirmishAILibraryLoadCount = 0;
 
-	for (const auto& item: skirmishAILoadCount)
-		totalSkirmishAILibraryLoadCount += item.second;
+	for (const auto& item: skirmishAILoadCount) totalSkirmishAILibraryLoadCount += item.second;
 
 	return totalSkirmishAILibraryLoadCount;
 }
 
-
 /// used as fallback, when an AI could not be found
-static int CALLING_CONV handleEvent_empty(int teamId, int receiver, const void* data) {
+static int CALLING_CONV handleEvent_empty(int teamId, int receiver, const void* data)
+{
 	return 0; // signaling: OK
 }
-
 
 SSkirmishAILibrary CAIInterfaceLibrary::EmptyInterfaceLib()
 {
@@ -185,24 +183,23 @@ const CSkirmishAILibrary* CAIInterfaceLibrary::FetchSkirmishAILibrary(const CSki
 	const SkirmishAIKey& skirmishAIKey = aiInfo.GetKey();
 
 	if (skirmishAILoadCount[skirmishAIKey] == 0) {
-		const SSkirmishAILibrary* sLib = sAIInterfaceLibrary.loadSkirmishAILibrary(aiInfo.GetShortName().c_str(), aiInfo.GetVersion().c_str());
+		const SSkirmishAILibrary* sLib =
+		    sAIInterfaceLibrary.loadSkirmishAILibrary(aiInfo.GetShortName().c_str(), aiInfo.GetVersion().c_str());
 
 		if (sLib == nullptr) {
 			LOG_L(L_ERROR,
-				"Skirmish AI %s-%s not found!\n"
-				"The game will go on without it.\n"
-				"This usually indicates a problem in the used "
-				"AI Interface library (%s-%s),\n"
-				"or the Skirmish AI library is not in the same "
-				"place as its AIInfo.lua.",
-				skirmishAIKey.GetShortName().c_str(),
-				skirmishAIKey.GetVersion().c_str(),
-				skirmishAIKey.GetInterface().GetShortName().c_str(),
-				skirmishAIKey.GetInterface().GetVersion().c_str()
-			);
+			    "Skirmish AI %s-%s not found!\n"
+			    "The game will go on without it.\n"
+			    "This usually indicates a problem in the used "
+			    "AI Interface library (%s-%s),\n"
+			    "or the Skirmish AI library is not in the same "
+			    "place as its AIInfo.lua.",
+			    skirmishAIKey.GetShortName().c_str(), skirmishAIKey.GetVersion().c_str(),
+			    skirmishAIKey.GetInterface().GetShortName().c_str(), skirmishAIKey.GetInterface().GetVersion().c_str());
 
 			loadedSkirmishAILibraries[skirmishAIKey] = CSkirmishAILibrary(EmptyInterfaceLib(), skirmishAIKey);
-		} else {
+		}
+		else {
 			loadedSkirmishAILibraries[skirmishAIKey] = CSkirmishAILibrary(*sLib, skirmishAIKey);
 		}
 	}
@@ -212,7 +209,8 @@ const CSkirmishAILibrary* CAIInterfaceLibrary::FetchSkirmishAILibrary(const CSki
 	return &loadedSkirmishAILibraries[skirmishAIKey];
 }
 
-int CAIInterfaceLibrary::ReleaseSkirmishAILibrary(const SkirmishAIKey& key) {
+int CAIInterfaceLibrary::ReleaseSkirmishAILibrary(const SkirmishAIKey& key)
+{
 	const AILibraryManager* libMan = AILibraryManager::GetInstance();
 	const CSkirmishAILibraryInfo& aiInfo = (libMan->GetSkirmishAIInfos()).find(key)->second;
 
@@ -229,13 +227,13 @@ int CAIInterfaceLibrary::ReleaseSkirmishAILibrary(const SkirmishAIKey& key) {
 	return skirmishAILoadCount[key];
 }
 
-
-
-int CAIInterfaceLibrary::GetSkirmishAILibraryLoadCount(const SkirmishAIKey& key) const {
+int CAIInterfaceLibrary::GetSkirmishAILibraryLoadCount(const SkirmishAIKey& key) const
+{
 	return *&skirmishAILoadCount.find(key)->second;
 }
 
-int CAIInterfaceLibrary::ReleaseAllSkirmishAILibraries() {
+int CAIInterfaceLibrary::ReleaseAllSkirmishAILibraries()
+{
 	const int releasedAIs = sAIInterfaceLibrary.unloadAllSkirmishAILibraries();
 
 	loadedSkirmishAILibraries.clear();
@@ -244,72 +242,64 @@ int CAIInterfaceLibrary::ReleaseAllSkirmishAILibraries() {
 	return releasedAIs;
 }
 
-
-
-void CAIInterfaceLibrary::reportInterfaceFunctionError(
-	const std::string& libFileName,
-	const std::string& functionName
-) {
+void CAIInterfaceLibrary::reportInterfaceFunctionError(const std::string& libFileName, const std::string& functionName)
+{
 	LOG_L(L_ERROR,
-		"Loading AI Interface library from file \"%s\"."
-		" No \"%s\" function exported.",
-		libFileName.c_str(), functionName.c_str());
+	    "Loading AI Interface library from file \"%s\"."
+	    " No \"%s\" function exported.",
+	    libFileName.c_str(), functionName.c_str());
 }
 
-int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
+int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath)
+{
 	// TODO: version checking
 	const char* funcName = "initStatic";
 	const void* funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.initStatic = (int (CALLING_CONV *)(
-		int interfaceId,
-		const SAIInterfaceCallback* callback
-	)) funcAddr;
+	sAIInterfaceLibrary.initStatic =
+	    (int(CALLING_CONV*)(int interfaceId, const SAIInterfaceCallback* callback))funcAddr;
 
 	if (sAIInterfaceLibrary.initStatic == nullptr) {
 		// do nothing: it is permitted that an AI does not export this function
-		//reportInterfaceFunctionError(libFilePath, funcName);
-		//return -1;
+		// reportInterfaceFunctionError(libFilePath, funcName);
+		// return -1;
 	}
 
 
 	funcName = "releaseStatic";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.releaseStatic = (int (CALLING_CONV *)(
-	)) funcAddr;
+	sAIInterfaceLibrary.releaseStatic = (int(CALLING_CONV*)())funcAddr;
 
 	if (sAIInterfaceLibrary.releaseStatic == nullptr) {
 		// do nothing: it is permitted that an AI does not export this function
-		//reportInterfaceFunctionError(libFilePath, funcName);
-		//return -2;
+		// reportInterfaceFunctionError(libFilePath, funcName);
+		// return -2;
 	}
 
 
-/*
-	funcName = "getLevelOfSupportFor";
-	funcAddr = sharedLib->FindAddress(funcName);
+	/*
+	    funcName = "getLevelOfSupportFor";
+	    funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV *)(
-		const char*,
-		int
-	)) funcAddr;
+	    sAIInterfaceLibrary.getLevelOfSupportFor = (LevelOfSupport (CALLING_CONV *)(
+	        const char*,
+	        int
+	    )) funcAddr;
 
-	if (sAIInterfaceLibrary.getLevelOfSupportFor == nullptr) {
-		// do nothing: it is permitted that an AI does not export this function
-		//reportInterfaceFunctionError(libFilePath, funcName);
-		//return -3;
-	}
-*/
+	    if (sAIInterfaceLibrary.getLevelOfSupportFor == nullptr) {
+	        // do nothing: it is permitted that an AI does not export this function
+	        //reportInterfaceFunctionError(libFilePath, funcName);
+	        //return -3;
+	    }
+	*/
 
 
 	funcName = "loadSkirmishAILibrary";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.loadSkirmishAILibrary = (const SSkirmishAILibrary* (CALLING_CONV *)(
-		const char* const shortName,
-		const char* const version
-	)) funcAddr;
+	sAIInterfaceLibrary.loadSkirmishAILibrary =
+	    (const SSkirmishAILibrary*(CALLING_CONV*)(const char* const shortName, const char* const version))funcAddr;
 
 	if (sAIInterfaceLibrary.loadSkirmishAILibrary == nullptr) {
 		reportInterfaceFunctionError(libFilePath, funcName);
@@ -320,10 +310,8 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "unloadSkirmishAILibrary";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.unloadSkirmishAILibrary = (int (CALLING_CONV *)(
-		const char* const shortName,
-		const char* const version
-	)) funcAddr;
+	sAIInterfaceLibrary.unloadSkirmishAILibrary =
+	    (int(CALLING_CONV*)(const char* const shortName, const char* const version))funcAddr;
 
 	if (sAIInterfaceLibrary.unloadSkirmishAILibrary == nullptr) {
 		reportInterfaceFunctionError(libFilePath, funcName);
@@ -334,8 +322,7 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 	funcName = "unloadAllSkirmishAILibraries";
 	funcAddr = sharedLib->FindAddress(funcName);
 
-	sAIInterfaceLibrary.unloadAllSkirmishAILibraries = (int (CALLING_CONV *)(
-	)) funcAddr;
+	sAIInterfaceLibrary.unloadAllSkirmishAILibraries = (int(CALLING_CONV*)())funcAddr;
 
 	if (sAIInterfaceLibrary.unloadAllSkirmishAILibraries == nullptr) {
 		reportInterfaceFunctionError(libFilePath, funcName);
@@ -344,47 +331,34 @@ int CAIInterfaceLibrary::InitializeFromLib(const std::string& libFilePath) {
 
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraries = (int (CALLING_CONV *)(
-		int interfaceId
-	)) funcAddr;
+	sAIInterfaceLibrary.listSkirmishAILibraries = (int(CALLING_CONV*)(int interfaceId))funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryInfos = (int (CALLING_CONV *)(
-		int interfaceId,
-		int aiIndex
-	)) funcAddr;
+	sAIInterfaceLibrary.listSkirmishAILibraryInfos = (int(CALLING_CONV*)(int interfaceId, int aiIndex))funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryInfoKey = (const char* (CALLING_CONV *)(
-		int interfaceId,
-		int aiIndex,
-		int infoIndex
-	)) funcAddr;
+	sAIInterfaceLibrary.listSkirmishAILibraryInfoKey =
+	    (const char*(CALLING_CONV*)(int interfaceId, int aiIndex, int infoIndex))funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryInfoValue = (const char* (CALLING_CONV *)(
-		int interfaceId,
-		int aiIndex,
-		int infoIndex
-	)) funcAddr;
+	sAIInterfaceLibrary.listSkirmishAILibraryInfoValue =
+	    (const char*(CALLING_CONV*)(int interfaceId, int aiIndex, int infoIndex))funcAddr;
 
 	funcAddr = nullptr;
-	sAIInterfaceLibrary.listSkirmishAILibraryOptions = (const char* (CALLING_CONV *)(
-		int interfaceId,
-		int aiIndex
-	)) funcAddr;
+	sAIInterfaceLibrary.listSkirmishAILibraryOptions =
+	    (const char*(CALLING_CONV*)(int interfaceId, int aiIndex))funcAddr;
 
 	return 0;
 }
 
-
-std::string CAIInterfaceLibrary::FindLibFile() {
+std::string CAIInterfaceLibrary::FindLibFile()
+{
 	const std::string& dataDir = info.GetDataDir();
 
 	std::string libFileName("AIInterface"); // "AIInterface"
-	#ifndef _WIN32
-		libFileName = "lib" + libFileName; // "libAIInterface"
-	#endif
+#ifndef _WIN32
+	libFileName = "lib" + libFileName; // "libAIInterface"
+#endif
 
 	// eg. libAIInterface.so
 	libFileName = libFileName + "." + SharedLib::GetLibExtension();

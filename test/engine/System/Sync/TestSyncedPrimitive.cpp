@@ -1,10 +1,9 @@
 #ifndef SYNCCHECK
-	#error "This test requires SYNCCHECK to be defined on the compiler command line."
+#error "This test requires SYNCCHECK to be defined on the compiler command line."
 #endif
 #include "System/Sync/SyncedPrimitive.h"
 
 #include <catch_amalgamated.hpp>
-
 
 TEST_CASE("ImplicitConversions")
 {
@@ -27,9 +26,9 @@ TEST_CASE("ImplicitConversions")
 	(void)(14 <= si2);
 
 	// these aren't supposed to work
-	//std::min(sf, si);
-	//std::max(si, 18);
-	//std::max(1.0f, 3);
+	// std::min(sf, si);
+	// std::max(si, 18);
+	// std::max(1.0f, 3);
 
 	// these are supposed to work
 	std::min<float>(sf, si);

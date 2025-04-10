@@ -4,14 +4,14 @@
 #define BEAM_LASER_PROJECTILE_H
 
 #include "WeaponProjectile.h"
+
 #include "System/Color.h"
 
-class CBeamLaserProjectile: public CWeaponProjectile
-{
+class CBeamLaserProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CBeamLaserProjectile)
 public:
 	// creg only
-	CBeamLaserProjectile() { }
+	CBeamLaserProjectile() {}
 
 	CBeamLaserProjectile(const ProjectileParams& params);
 

@@ -5,17 +5,19 @@
 
 #include "AdvWater.h"
 
-class CRefractWater : public CAdvWater 
-{
+class CRefractWater : public CAdvWater {
 public:
 	~CRefractWater() override { FreeResources(); }
+
 	void InitResources(bool loadShader) override;
 	void FreeResources() override;
 
 	void LoadGfx();
 
 	void Draw() override;
+
 	WATER_RENDERER GetID() const override { return WATER_RENDERER_REFL_REFR; }
+
 protected:
 	void SetupWaterDepthTex();
 

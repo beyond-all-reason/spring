@@ -8,21 +8,21 @@
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
 #include "Map/ReadMap.h"
-#include "Rendering/GlobalRendering.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/IWater.h"
+#include "Rendering/GL/RenderBuffers.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/ShadowHandler.h"
-#include "Rendering/Shaders/Shader.h"
-#include "Rendering/Common/ModelDrawerHelpers.h"
-#include "Rendering/Textures/S3OTextureHandler.h"
-#include "Rendering/Textures/3DOTextureHandler.h"
 #include "Rendering/Models/3DModelVAO.h"
 #include "Rendering/Models/ModelsMemStorage.h"
+#include "Rendering/Shaders/Shader.h"
+#include "Rendering/ShadowHandler.h"
+#include "Rendering/Textures/3DOTextureHandler.h"
+#include "Rendering/Textures/S3OTextureHandler.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Misc/GlobalSynced.h"
@@ -30,12 +30,11 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/EventHandler.h"
-#include "System/SpringMath.h"
-#include "System/SafeUtil.h"
-#include "System/TimeProfiler.h"
-#include "System/Threading/ThreadPool.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
+#include "System/SpringMath.h"
+#include "System/Threading/ThreadPool.h"
+#include "System/TimeProfiler.h"
 
 void CFeatureDrawer::InitStatic()
 {
@@ -44,7 +43,7 @@ void CFeatureDrawer::InitStatic()
 	LuaObjectDrawer::ReadLODScales(LUAOBJ_FEATURE);
 
 	CFeatureDrawer::InitInstance<CFeatureDrawerGLSL>(MODEL_DRAWER_GLSL);
-	CFeatureDrawer::InitInstance<CFeatureDrawerGL4 >(MODEL_DRAWER_GL4);
+	CFeatureDrawer::InitInstance<CFeatureDrawerGL4>(MODEL_DRAWER_GL4);
 
 	SelectImplementation();
 }
@@ -150,7 +149,11 @@ void CFeatureDrawerBase::Update() const
 	modelDrawerData->Update();
 }
 
-void CFeatureDrawerLegacy::DrawFeatureNoTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const
+void CFeatureDrawerLegacy::DrawFeatureNoTrans(const CFeature* feature,
+    unsigned int preList,
+    unsigned int postList,
+    bool lodCall,
+    bool noLuaCall) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (preList != 0) {
@@ -164,7 +167,11 @@ void CFeatureDrawerLegacy::DrawFeatureNoTrans(const CFeature* feature, unsigned 
 	}
 }
 
-void CFeatureDrawerLegacy::DrawFeatureTrans(const CFeature* feature, unsigned int preList, unsigned int postList, bool lodCall, bool noLuaCall) const
+void CFeatureDrawerLegacy::DrawFeatureTrans(const CFeature* feature,
+    unsigned int preList,
+    unsigned int postList,
+    bool lodCall,
+    bool noLuaCall) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glPushMatrix();
@@ -210,11 +217,11 @@ void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 		// only need to bind the atlas once for 3DO's, but KISS
 		assert((modelType != MODELTYPE_3DO) || (mdlRenderer.GetObjectBinKey(i) == 0));
 
-		//shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
+		// shadowTexBindFuncs[modelType](textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i)));
 		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o: mdlRenderer.GetObjectBin(i)) {
 			DrawFeatureShadow(o);
 		}
 
@@ -225,10 +232,9 @@ void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint8_t thisPassMask =
-		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
-		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
-		(drawRefraction * DrawFlags::SO_REFRAC_FLAG);
+	const uint8_t thisPassMask = (1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
+	                             (drawReflection * DrawFlags::SO_REFLEC_FLAG) +
+	                             (drawRefraction * DrawFlags::SO_REFRAC_FLAG);
 
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
@@ -238,7 +244,7 @@ void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection,
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o: mdlRenderer.GetObjectBin(i)) {
 			DrawOpaqueFeature(o, thisPassMask);
 		}
 	}
@@ -247,10 +253,9 @@ void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection,
 void CFeatureDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint8_t thisPassMask =
-		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
-		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
-		(drawRefraction * DrawFlags::SO_REFRAC_FLAG);
+	const uint8_t thisPassMask = (1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
+	                             (drawReflection * DrawFlags::SO_REFLEC_FLAG) +
+	                             (drawRefraction * DrawFlags::SO_REFRAC_FLAG);
 
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
@@ -260,7 +265,7 @@ void CFeatureDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, 
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o: mdlRenderer.GetObjectBin(i)) {
 			DrawAlphaFeature(o, thisPassMask);
 		}
 	}
@@ -320,7 +325,7 @@ void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
-		for (auto* o : bin) {
+		for (auto* o: bin) {
 			if (!ShouldDrawFeatureShadow(o))
 				continue;
 
@@ -338,10 +343,9 @@ void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint8_t thisPassMask =
-		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
-		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
-		(drawRefraction * DrawFlags::SO_REFRAC_FLAG);
+	const uint8_t thisPassMask = (1 - (drawReflection || drawRefraction)) * DrawFlags::SO_OPAQUE_FLAG +
+	                             (drawReflection * DrawFlags::SO_REFLEC_FLAG) +
+	                             (drawRefraction * DrawFlags::SO_REFRAC_FLAG);
 
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
@@ -357,7 +361,7 @@ void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o: mdlRenderer.GetObjectBin(i)) {
 			if (!ShouldDrawOpaqueFeature(o, thisPassMask))
 				continue;
 
@@ -372,20 +376,19 @@ void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 void CFeatureDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, bool drawRefraction) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const uint8_t thisPassMask =
-		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
-		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
-		(drawRefraction * DrawFlags::SO_REFRAC_FLAG);
+	const uint8_t thisPassMask = (1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
+	                             (drawReflection * DrawFlags::SO_REFLEC_FLAG) +
+	                             (drawRefraction * DrawFlags::SO_REFRAC_FLAG);
 
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	auto& smv = S3DModelVAO::GetInstance();
 	smv.Bind();
 
-	modelDrawerState->SetTeamColor(0, IModelDrawerState::alphaValues.x); //teamID doesn't matter here
+	modelDrawerState->SetTeamColor(0, IModelDrawerState::alphaValues.x); // teamID doesn't matter here
 	modelDrawerState->SetColorMultiplier();
 
-	//main cloaked alpha pass
+	// main cloaked alpha pass
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
 		if (mdlRenderer.GetObjectBin(i).empty())
 			continue;
@@ -394,7 +397,7 @@ void CFeatureDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, boo
 
 		const auto& bin = mdlRenderer.GetObjectBin(i);
 
-		for (auto* o : bin) {
+		for (auto* o: bin) {
 			if (!ShouldDrawAlphaFeature(o, thisPassMask))
 				continue;
 

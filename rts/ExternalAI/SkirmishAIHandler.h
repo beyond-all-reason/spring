@@ -3,14 +3,14 @@
 #ifndef SKIRMISH_AI_HANDLER_H
 #define SKIRMISH_AI_HANDLER_H
 
-#include <array>
-
 #include "ExternalAI/SkirmishAIData.h"
 #include "ExternalAI/SkirmishAIKey.h"
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/creg/creg_cond.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
+#include "System/creg/creg_cond.h"
+
+#include <array>
 
 
 class CGameSetup;
@@ -19,8 +19,7 @@ class CGameSetup;
  * Handles all Skirmish AI instance relevant data, which includes,
  * but is not limited to all sync relevant Skirmish AI stuff.
  */
-class CSkirmishAIHandler
-{
+class CSkirmishAIHandler {
 	CR_DECLARE_STRUCT(CSkirmishAIHandler)
 
 public:
@@ -84,7 +83,6 @@ public:
 	 */
 	const spring::unordered_map<uint8_t, const SkirmishAIData*>& GetAllSkirmishAIs() const { return skirmishAIDataMap; }
 
-
 	/**
 	 * @brief Adds a Skirmish AI
 	 * @param data contans the details for the Skirmish AI to add
@@ -100,11 +98,13 @@ public:
 	 */
 	bool RemoveSkirmishAI(const size_t skirmishAIId);
 
-	bool HasSkirmishAIsInTeam(const int teamId, const int hostPlayerId = -1) const {
+	bool HasSkirmishAIsInTeam(const int teamId, const int hostPlayerId = -1) const
+	{
 		return (GetSkirmishAIsInTeam(teamId, hostPlayerId) != std::vector<uint8_t>{});
 	}
 
 	size_t GetNumSkirmishAIs() const { return numSkirmishAIs; }
+
 	// size_t GetNumSkirmishAIsInTeam(const int teamId, const int hostPlayerId = -1) const { ... }
 
 
@@ -163,6 +163,7 @@ public:
 	 * @param skirmishAIId index of the AI in question
 	 */
 	bool HasLocalKillFlag(const size_t skirmishAIId) const { return (GetLocalKillFlag(skirmishAIId) != -1); }
+
 	bool IsLocalSkirmishAI(const size_t skirmishAIId) const;
 
 	/**
@@ -173,13 +174,18 @@ public:
 	const spring::unordered_set<std::string>& GetLuaAIImplShortNames() const { return luaAIShortNames; }
 
 	uint8_t GetCurrentAIID() { return currentAIId; }
+
 	void SetCurrentAIID(uint8_t id) { currentAIId = id; }
 
 private:
 	static bool IsLocalSkirmishAI(const SkirmishAIData& aiData);
+
 	static bool IsValidSkirmishAI(const SkirmishAIData& aiData) { return (!aiData.shortName.empty()); }
 
-	bool IsLuaAI(const SkirmishAIData& aiData) const { return (luaAIShortNames.find(aiData.shortName) != luaAIShortNames.end()); }
+	bool IsLuaAI(const SkirmishAIData& aiData) const
+	{
+		return (luaAIShortNames.find(aiData.shortName) != luaAIShortNames.end());
+	}
 
 	void CompleteWithDefaultOptionValues(const size_t skirmishAIId);
 	void CompleteSkirmishAI(const size_t skirmishAIId);
@@ -210,4 +216,3 @@ private:
 extern CSkirmishAIHandler skirmishAIHandler;
 
 #endif // SKIRMISH_AI_HANDLER_H
-

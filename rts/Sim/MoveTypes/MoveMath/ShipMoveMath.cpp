@@ -1,8 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "MoveMath.h"
-#include "Sim/MoveTypes/MoveDefHandler.h"
 
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "System/Misc/TracyDefs.h"
 
 /*
@@ -27,4 +27,3 @@ float CMoveMath::ShipSpeedMod(const MoveDef& moveDef, float height, float slope,
 
 	return 1.0f;
 }
-

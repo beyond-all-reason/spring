@@ -5,7 +5,6 @@
 
 struct lua_State;
 
-
 /**
  * This creates a userdata object, which calls a special user-defined function,
  * when the object gets destroyed (=> garbage collector).
@@ -16,17 +15,17 @@ struct lua_State;
  * </code>
  */
 class LuaScream {
-	public:
-		static bool PushEntries(lua_State* L);
+public:
+	static bool PushEntries(lua_State* L);
 
-	private: // metatable methods
-		static bool CreateMetatable(lua_State* L);
-		static int meta_gc(lua_State* L);
-		static int meta_index(lua_State* L);
-		static int meta_newindex(lua_State* L);
+private: // metatable methods
+	static bool CreateMetatable(lua_State* L);
+	static int meta_gc(lua_State* L);
+	static int meta_index(lua_State* L);
+	static int meta_newindex(lua_State* L);
 
-	private: // call-outs
-		static int CreateScream(lua_State* L);
+private: // call-outs
+	static int CreateScream(lua_State* L);
 };
 
 

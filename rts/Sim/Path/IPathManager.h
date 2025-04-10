@@ -3,12 +3,13 @@
 #ifndef I_PATH_MANAGER_H
 #define I_PATH_MANAGER_H
 
-#include <vector>
-#include <cinttypes>
-
 #include "PFSTypes.h"
-#include "System/type2.h"
+
 #include "System/float3.h"
+#include "System/type2.h"
+
+#include <cinttypes>
+#include <vector>
 
 struct MoveDef;
 class CSolidObject;
@@ -21,12 +22,15 @@ public:
 	virtual ~IPathManager() {}
 
 	virtual std::int32_t GetPathFinderType() const { return NOPFS_TYPE; }
+
 	virtual std::uint32_t GetPathCheckSum() const { return 0; }
 
 	virtual std::int64_t Finalize() { return 0; }
+
 	virtual std::int64_t PostFinalizeRefresh() { return 0; }
 
 	virtual bool AllowDirectionalPathing() { return false; }
+
 	virtual bool AllowShortestPath() { return false; }
 
 	/**
@@ -35,10 +39,13 @@ public:
 	 * (by re-requesting affected paths without changing their ID's)
 	 */
 	virtual bool PathUpdated(unsigned int pathID) { return false; }
+
 	virtual void ClearPathUpdated(unsigned int pathID) {}
 
 	virtual void RemoveCacheFiles() {}
+
 	virtual void Update() {}
+
 	virtual void UpdatePath(const CSolidObject* owner, unsigned int pathID) {}
 
 	/**
@@ -74,20 +81,19 @@ public:
 	 *     the next waypoint of the path, or (-1,-1,-1) in case no new
 	 *     waypoint could be found.
 	 */
-	virtual float3 NextWayPoint(
-		const CSolidObject* owner,
-		unsigned int pathID,
-		unsigned int numRetries,
-		float3 callerPos,
-		float radius,
-		bool synced
-	) {
+	virtual float3 NextWayPoint(const CSolidObject* owner,
+	    unsigned int pathID,
+	    unsigned int numRetries,
+	    float3 callerPos,
+	    float radius,
+	    bool synced)
+	{
 		return -OnesVector;
 	}
 
 	virtual bool CurrentWaypointIsUnreachable(unsigned int pathID) { return false; }
-	virtual bool NextWayPointIsUnreachable(unsigned int pathID) { return false; }
 
+	virtual bool NextWayPointIsUnreachable(unsigned int pathID) { return false; }
 
 	/**
 	 * Returns all waypoints of a path. Different segments of a path might
@@ -105,13 +111,7 @@ public:
 	 * @param starts
 	 *     The list of starting indices for the different resolutions
 	 */
-	virtual void GetPathWayPoints(
-		unsigned int pathID,
-		std::vector<float3>& points,
-		std::vector<int>& starts
-	) const {
-	}
-
+	virtual void GetPathWayPoints(unsigned int pathID, std::vector<float3>& points, std::vector<int>& starts) const {}
 
 	/**
 	 * Generate a path from startPos to the target defined by
@@ -141,14 +141,13 @@ public:
 	 *     Failure means, no path getting "closer" to goalPos then startPos
 	 *     could be found
 	 */
-	virtual unsigned int RequestPath(
-		CSolidObject* caller,
-		const MoveDef* moveDef,
-		float3 startPos,
-		float3 goalPos,
-		float goalRadius,
-		bool synced
-	) {
+	virtual unsigned int RequestPath(CSolidObject* caller,
+	    const MoveDef* moveDef,
+	    float3 startPos,
+	    float3 goalPos,
+	    float goalRadius,
+	    bool synced)
+	{
 		return 0;
 	}
 
@@ -172,9 +171,15 @@ public:
 	 */
 	virtual void TerrainChange(unsigned int x1, unsigned int z1, unsigned int x2, unsigned int z2, unsigned int type) {}
 
-	virtual bool SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced) { return false; }
+	virtual bool SetNodeExtraCosts(const float* costs, unsigned int sizex, unsigned int sizez, bool synced)
+	{
+		return false;
+	}
+
 	virtual bool SetNodeExtraCost(unsigned int x, unsigned int z, float cost, bool synced) { return false; }
+
 	virtual float GetNodeExtraCost(unsigned int x, unsigned int z, bool synced) const { return 0.0f; }
+
 	virtual const float* GetNodeExtraCosts(bool synced) const { return nullptr; }
 
 	virtual int2 GetNumQueuedUpdates() const { return (int2(0, 0)); }

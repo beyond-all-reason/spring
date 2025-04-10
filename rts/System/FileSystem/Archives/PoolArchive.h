@@ -3,13 +3,13 @@
 #ifndef _POOL_ARCHIVE_H
 #define _POOL_ARCHIVE_H
 
-#include <zlib.h>
-#include <cstring>
-#include <cassert>
-
-#include "IArchiveFactory.h"
 #include "BufferedArchive.h"
+#include "IArchiveFactory.h"
 
+#include <cassert>
+#include <cstring>
+
+#include <zlib.h>
 
 /**
  * Creates pool (aka rapid) archives.
@@ -18,10 +18,10 @@
 class CPoolArchiveFactory : public IArchiveFactory {
 public:
 	CPoolArchiveFactory();
+
 private:
 	IArchive* DoCreateArchive(const std::string& filePath) const;
 };
-
 
 /**
  * The pool archive format (aka rapid) is specifically developed for spring.
@@ -73,8 +73,7 @@ private:
  *
  * @author Chris Clearwater (det) <chris@detrino.org>
  */
-class CPoolArchive : public CBufferedArchive
-{
+class CPoolArchive : public CBufferedArchive {
 public:
 	CPoolArchive(const std::string& name);
 	~CPoolArchive();
@@ -84,6 +83,7 @@ public:
 	bool IsOpen() override { return isOpen; }
 
 	unsigned NumFiles() const override { return (files.size()); }
+
 	const std::string& FileName(uint32_t fid) const override;
 	int32_t FileSize(uint32_t fid) const override;
 	SFileInfo FileInfo(uint32_t fid) const override;
@@ -92,14 +92,17 @@ public:
 	static std::string GetPoolFileName(const std::array<uint8_t, 16>& md5Sum);
 	static std::string GetPoolFilePath(const std::string& poolRootDir, const std::string& poolFile);
 	static std::string GetPoolFilePath(const std::string& poolRootDir, const std::array<uint8_t, 16>& md5Sum);
+
 protected:
 	int GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
+
 private:
-	std::pair<uint64_t, uint64_t> GetSums() const {
+	std::pair<uint64_t, uint64_t> GetSums() const
+	{
 		std::pair<uint64_t, uint64_t> p;
 
 		for (size_t n = 0; n < files.size(); n++) {
-			p.first  += files[n].size;
+			p.first += files[n].size;
 			p.second += stats[n].readTime;
 		}
 
@@ -108,16 +111,17 @@ private:
 
 	struct FileData {
 		std::string name;
-		std::array<uint8_t,              16> md5sum;
+		std::array<uint8_t, 16> md5sum;
 		std::array<uint8_t, sha512::SHA_LEN> shasum;
 
 		uint32_t crc32;
 		uint32_t size;
 		mutable uint32_t modTime;
 	};
+
 	struct FileStat {
 		// inverted cmp for descending order
-		bool operator < (const FileStat& s) const { return (readTime > s.readTime); }
+		bool operator<(const FileStat& s) const { return (readTime > s.readTime); }
 
 		uint64_t fileIndx;
 		uint64_t readTime;

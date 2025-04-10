@@ -3,12 +3,12 @@
 #ifndef QTPFS_SYSTEMS_PATH_SPEED_MOD_INFO_H__
 #define QTPFS_SYSTEMS_PATH_SPEED_MOD_INFO_H__
 
+#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "System/Rectangle.h"
+#include "System/float3.h"
+
 #include <deque>
 #include <vector>
-
-#include "Sim/MoveTypes/MoveDefHandler.h"
-#include "System/float3.h"
-#include "System/Rectangle.h"
 
 namespace QTPFS {
 
@@ -49,6 +49,6 @@ struct PathSpeedModInfoSystemComponent {
 	int state = STATE_INIT;
 };
 
-}
+} // namespace QTPFS
 
 #endif

@@ -3,21 +3,21 @@
 #ifndef GUIELEMENT_H
 #define GUIELEMENT_H
 
-#include <vector>
-#include <string>
-#include <functional>
-#include <SDL_events.h>
-
 #include "System/Color.h"
 
-namespace agui
-{
+#include <functional>
+#include <string>
+#include <vector>
 
-class GuiElement
-{
+#include <SDL_events.h>
+
+namespace agui {
+
+class GuiElement {
 public:
 	using OnClickVoidType = std::function<void(void)>;
 	using OnClickStringType = std::function<void(std::string)>;
+
 public:
 	GuiElement(GuiElement* parent = nullptr);
 	virtual ~GuiElement();
@@ -37,35 +37,23 @@ public:
 
 	void SetPos(float x, float y);
 	void SetSize(float x, float y, bool fixed = false);
-	bool SizeFixed() const
-	{
-		return fixedSize;
-	};
-	float* GetSize()
-	{
-		return size;
-	};
-	float* GetPos()
-	{
-		return pos;
-	};
-	void SetWeight(unsigned newWeight)
-	{
-		weight = newWeight;
-	};
-	unsigned Weight() const
-	{
-		return weight;
-	};
+
+	bool SizeFixed() const { return fixedSize; };
+
+	float* GetSize() { return size; };
+
+	float* GetPos() { return pos; };
+
+	void SetWeight(unsigned newWeight) { weight = newWeight; };
+
+	unsigned Weight() const { return weight; };
 
 	void GeometryChange();
 
-	float GetMidY() const
-	{
-		return pos[1] + (size[1] / 2.0f);
-	};
+	float GetMidY() const { return pos[1] + (size[1] / 2.0f); };
 
 	float DefaultOpacity() const;
+
 	virtual float Opacity() const
 	{
 		if (parent)
@@ -75,6 +63,7 @@ public:
 	};
 
 	void Move(float x, float y);
+
 	GuiElement* GetRoot()
 	{
 		if (parent)
@@ -92,10 +81,9 @@ protected:
 	ChildList children;
 
 	virtual void DrawSelf() {};
-	virtual bool HandleEventSelf(const SDL_Event& ev)
-	{
-		return false;
-	};
+
+	virtual bool HandleEventSelf(const SDL_Event& ev) { return false; };
+
 	virtual void GeometryChangeSelf() {};
 
 	static int screensize[2];
@@ -107,6 +95,6 @@ protected:
 	unsigned weight;
 };
 
-}
+} // namespace agui
 
 #endif

@@ -1,23 +1,22 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#if       defined AVI_CAPTURING
+#if defined AVI_CAPTURING
 #include "AviVideoCapturing.h"
 
 #include "Rendering/AVIGenerator.h"
 #include "Rendering/GlobalRendering.h"
 #include "Sim/Misc/GlobalConstants.h"
+#include "System/FileSystem/FileHandler.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
-#include "System/FileSystem/FileHandler.h"
 #include "lib/streflop/streflop_cond.h"
-#include <SDL_mouse.h>
-#include <SDL_events.h>
 
 #include <string>
 
-#include "System/Misc/TracyDefs.h"
-
+#include <SDL_events.h>
+#include <SDL_mouse.h>
 
 void AviVideoCapturing::StopCapturing()
 {
@@ -30,7 +29,6 @@ void AviVideoCapturing::StopCapturing()
 
 	spring::SafeDelete(aviGenerator);
 }
-
 
 void AviVideoCapturing::StartCapturing()
 {
@@ -73,16 +71,16 @@ void AviVideoCapturing::StartCapturing()
 
 		LOG_L(L_ERROR, "%s", aviGenerator->GetLastErrorMessage().c_str());
 		spring::SafeDelete(aviGenerator);
-	} else {
+	}
+	else {
 		LOG("Recording avi to %s size %i x %i", fileName.c_str(), videoSizeX, videoSizeY);
 	}
 
 	SDL_ShowCursor(savedCursorMode);
-	//aviGenerator->InitEngine() (avicap32.dll)? modifies the FPU control word.
-	//Setting it back to default state.
+	// aviGenerator->InitEngine() (avicap32.dll)? modifies the FPU control word.
+	// Setting it back to default state.
 	streflop::streflop_init<streflop::Simple>();
 }
-
 
 void AviVideoCapturing::RenderFrame()
 {
@@ -97,4 +95,3 @@ void AviVideoCapturing::RenderFrame()
 }
 
 #endif // defined AVI_CAPTURING
-

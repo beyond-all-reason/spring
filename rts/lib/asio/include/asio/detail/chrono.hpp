@@ -12,32 +12,33 @@
 #define ASIO_DETAIL_CHRONO_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
 #include <chrono>
 
 namespace asio {
 namespace chrono {
 
 using std::chrono::duration;
-using std::chrono::time_point;
 using std::chrono::duration_cast;
-using std::chrono::nanoseconds;
+using std::chrono::hours;
 using std::chrono::microseconds;
 using std::chrono::milliseconds;
-using std::chrono::seconds;
 using std::chrono::minutes;
-using std::chrono::hours;
+using std::chrono::nanoseconds;
+using std::chrono::seconds;
+using std::chrono::time_point;
 using std::chrono::time_point_cast;
 #if defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
 typedef std::chrono::monotonic_clock steady_clock;
-#else // defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
+#else  // defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
 using std::chrono::steady_clock;
 #endif // defined(ASIO_HAS_STD_CHRONO_MONOTONIC_CLOCK)
-using std::chrono::system_clock;
 using std::chrono::high_resolution_clock;
+using std::chrono::system_clock;
 
 } // namespace chrono
 } // namespace asio

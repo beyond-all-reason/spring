@@ -10,11 +10,10 @@ namespace cpptestai {
 
 /**
  * This is the main C++ entry point of this AI.
- * 
+ *
  * @author	Robin Vobruba <hoijui.quaero@gmail.com>
  */
 class CCppTestAI {
-
 private:
 	springai::OOAICallback* callback;
 	int skirmishAIId;
@@ -29,4 +28,3 @@ public:
 } // namespace cpptestai
 
 #endif // _CPPTESTAI_CPPTESTAI_H
-

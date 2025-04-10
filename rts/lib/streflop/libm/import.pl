@@ -383,7 +383,7 @@ MPRIV_LOOP: while(<FILE>) {
     if ($flag==0) {next MPRIV_LOOP;}
 
 
-    
+
     # Now substitute the base types by their Simple/Double/Extended aliases or wrapper
     s/\blong double\b/Extended/g; # before double
     s/\bdouble\b/Double/g;
@@ -434,7 +434,7 @@ MPRIV_LOOP: while(<FILE>) {
             $precisionMode = "none";
         }
     }
-    
+
     push @convert,$_;
 }
 close FILE;

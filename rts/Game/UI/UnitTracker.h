@@ -3,26 +3,27 @@
 #ifndef UNIT_TRACKER_H
 #define UNIT_TRACKER_H
 
-#include <vector>
-
-#include "System/float3.h"
 #include "System/UnorderedSet.hpp"
+#include "System/float3.h"
+
+#include <vector>
 
 class CUnit;
 
-class CUnitTracker
-{
+class CUnitTracker {
 public:
 	void Track(std::vector<int>&& unitIDs = {});
 	void Disable();
+
 	bool Enabled() const { return enabled; }
 
 	void SetCam();
 
-	int  GetMode() const;
+	int GetMode() const;
 	void IncMode();
 	/// @param trackMode see enum CUnitTracker::TrackMode
 	void SetMode(int trackMode);
+
 	enum TrackMode {
 		TrackSingle = 0,
 		TrackAverage,
@@ -57,7 +58,7 @@ protected:
 
 	spring::unordered_set<int> trackedUnitIDs;
 	std::vector<int> invalidUnitIDs;
-	
+
 	static const char* modeNames[TrackModeCount];
 };
 

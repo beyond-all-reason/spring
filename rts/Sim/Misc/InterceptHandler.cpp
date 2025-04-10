@@ -1,36 +1,31 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <limits>
-#include <algorithm>
-
 #include "InterceptHandler.h"
 
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Weapons/Weapon.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/EventHandler.h"
-#include "System/float3.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/creg/STL_Deque.h"
+#include "System/float3.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <algorithm>
+#include <limits>
 
 
 CR_BIND_DERIVED(CInterceptHandler, CObject, )
-CR_REG_METADATA(CInterceptHandler, (
-	CR_MEMBER(interceptors),
-	CR_MEMBER(interceptables)
-))
+CR_REG_METADATA(CInterceptHandler, (CR_MEMBER(interceptors), CR_MEMBER(interceptables)))
 
 CInterceptHandler interceptHandler;
 
-
-
-void CInterceptHandler::Update(bool forced) {
+void CInterceptHandler::Update(bool forced)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (((gs->frameNum % UNIT_SLOWUPDATE_RATE) != 0) && !forced)
 		return;
@@ -69,7 +64,7 @@ void CInterceptHandler::Update(bool forced) {
 
 			const float3& pImpactPos = p->pos + p->dir * impactDist;
 			const float3& pTargetPos = p->GetTargetPos();
-			const float3  pWeaponVec = p->pos - w->aimFromPos;
+			const float3 pWeaponVec = p->pos - w->aimFromPos;
 
 			if (w->aimFromPos.SqDistance2D(pTargetPos) < Square(wDef->coverageRange)) {
 				w->AddDeathDependence(p, DEPENDENCE_INTERCEPT);
@@ -81,7 +76,7 @@ void CInterceptHandler::Update(bool forced) {
 				// <w> is just a static interceptor and fires only at projectiles
 				// TARGETED within its current interception area; any projectiles
 				// CROSSING its interception area aren't targeted
-				//XXX implement in lua?
+				// XXX implement in lua?
 				continue;
 			}
 
@@ -117,14 +112,11 @@ void CInterceptHandler::Update(bool forced) {
 	}
 }
 
-
-
 void CInterceptHandler::AddInterceptorWeapon(CWeapon* weapon)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	interceptors.push_back(weapon);
 }
-
 
 void CInterceptHandler::RemoveInterceptorWeapon(CWeapon* weapon)
 {
@@ -134,7 +126,6 @@ void CInterceptHandler::RemoveInterceptorWeapon(CWeapon* weapon)
 		interceptors.erase(it);
 	}
 }
-
 
 void CInterceptHandler::AddInterceptTarget(CWeaponProjectile* target, const float3& destination)
 {
@@ -150,7 +141,6 @@ void CInterceptHandler::AddInterceptTarget(CWeaponProjectile* target, const floa
 	Update(true);
 }
 
-
 void CInterceptHandler::DependentDied(CObject* o)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -159,4 +149,3 @@ void CInterceptHandler::DependentDied(CObject* o)
 		interceptables.erase(it);
 	}
 }
-

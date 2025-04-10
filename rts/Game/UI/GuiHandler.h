@@ -3,15 +3,16 @@
 #ifndef GUI_HANDLER_H
 #define GUI_HANDLER_H
 
-#include <vector>
-
-#include "KeySet.h"
 #include "InputReceiver.h"
+#include "KeySet.h"
 #include "MouseHandler.h"
+
 #include "Game/Camera.h"
 #include "Sim/Units/BuildInfo.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "System/SpringMath.h" // FACING
+
+#include <vector>
 
 #define DEFAULT_GUI_CONFIG "ctrlpanel.txt"
 
@@ -38,6 +39,7 @@ public:
 	bool KeyPressed(int keyCode, int scanCode, bool isRepeat);
 	bool KeyReleased(int keyCode, int scanCode);
 	bool MousePress(int x, int y, int button);
+
 	void MouseRelease(int x, int y, int button)
 	{
 		// We can not use default params for this,
@@ -45,12 +47,14 @@ public:
 		// where camera and mouse are still undefined.
 		MouseRelease(x, y, button, camera->GetPos(), mouse->dir);
 	}
+
 	void MouseRelease(int x, int y, int button, const float3& cameraPos, const float3& mouseDir);
 	bool IsAbove(int x, int y);
 	std::string GetTooltip(int x, int y);
 	std::string GetBuildTooltip() const;
 
 	Command GetOrderPreview();
+
 	Command GetCommand(int mouseX, int mouseY, int buttonHint, bool preview)
 	{
 		// We can not use default params for this,
@@ -58,52 +62,73 @@ public:
 		// where camera and mouse are still undefined.
 		return GetCommand(mouseX, mouseY, buttonHint, preview, camera->GetPos(), mouse->dir);
 	}
-	Command GetCommand(int mouseX, int mouseY, int buttonHint, bool preview, const float3& cameraPos, const float3& mouseDir);
+
+	Command
+	GetCommand(int mouseX, int mouseY, int buttonHint, bool preview, const float3& cameraPos, const float3& mouseDir);
 	/// startInfo.def has to be endInfo.def
-	size_t GetBuildPositions(const BuildInfo& startInfo, const BuildInfo& endInfo, const float3& cameraPos, const float3& mouseDir);
+	size_t GetBuildPositions(const BuildInfo& startInfo,
+	    const BuildInfo& endInfo,
+	    const float3& cameraPos,
+	    const float3& mouseDir);
 
 	bool EnableLuaUI(bool enableCommand);
 	bool DisableLuaUI(bool layoutIcons = true);
 
 	bool LoadConfig(const std::string& cfg);
+
 	bool LoadDefaultConfig() { return (LoadConfig(DEFAULT_GUI_CONFIG)); }
+
 	bool ReloadConfigFromFile(const std::string& fileName);
 	bool ReloadConfigFromString(const std::string& cfg);
 
 	void ForceLayoutUpdate() { forceLayoutUpdate = true; }
 
-	int GetMaxPage()    const { return maxPage; }
+	int GetMaxPage() const { return maxPage; }
+
 	int GetActivePage() const { return activePage; }
 
 	void RunLayoutCommand(const std::string& command);
 	void RunCustomCommands(const std::vector<std::string>& cmds, bool rightMouseButton);
 
 	bool GetInvertQueueKey() const { return invertQueueKey; }
+
 	void SetInvertQueueKey(bool value) { invertQueueKey = value; }
+
 	bool GetQueueKeystate() const;
 
 	bool GetGatherMode() const { return gatherMode; }
+
 	void SetGatherMode(bool value) { gatherMode = value; }
 
 	bool GetOutlineFonts() const { return outlineFonts; }
 
-	int  GetDefaultCommand(int x, int y) const
+	int GetDefaultCommand(int x, int y) const
 	{
 		// We can not use default params for this,
 		// because they get initialized at compile-time,
 		// where camera and mouse are still undefined.
 		return GetDefaultCommand(x, y, camera->GetPos(), ::mouse->dir);
 	}
-	int  GetDefaultCommand(int x, int y, const float3& cameraPos, const float3& mouseDir) const;
+
+	int GetDefaultCommand(int x, int y, const float3& cameraPos, const float3& mouseDir) const;
 
 	bool SetActiveCommand(int cmdIndex, bool rightMouseButton);
-	bool SetActiveCommand(int cmdIndex, int button, bool leftMouseButton, bool rightMouseButton, bool alt, bool ctrl, bool meta, bool shift);
+	bool SetActiveCommand(int cmdIndex,
+	    int button,
+	    bool leftMouseButton,
+	    bool rightMouseButton,
+	    bool alt,
+	    bool ctrl,
+	    bool meta,
+	    bool shift);
 	bool SetActiveCommand(const Action& action, const CKeySet& ks, int actionIndex);
 
 	void SetDrawSelectionInfo(bool dsi) { drawSelectionInfo = dsi; }
+
 	bool GetDrawSelectionInfo() const { return drawSelectionInfo; }
 
 	void SetBuildFacing(unsigned int facing) { buildFacing = facing % NUM_FACINGS; }
+
 	void SetBuildSpacing(int spacing) { buildSpacing = std::max(spacing, 0); }
 
 	void LayoutIcons(bool useSelectionPage);
@@ -116,14 +141,14 @@ private:
 	void AppendPrevAndNext(std::vector<SCommandDescription>& cmds);
 	void ConvertCommands(std::vector<SCommandDescription>& cmds);
 
-	int  FindInCommandPage();
+	int FindInCommandPage();
 	void SetActiveCommandIndex(int newIndex);
 	void RevertToCmdDesc(const SCommandDescription& cmdDesc, bool defaultCommand, bool samePage);
 
 	unsigned char CreateOptions(bool rightMouseButton);
 	unsigned char CreateOptions(int button);
 	void FinishCommand(int button);
-	void SetShowingMetal(const SCommandDescription *cmdDesc);
+	void SetShowingMetal(const SCommandDescription* cmdDesc);
 	float GetNumberInput(const SCommandDescription& cmdDesc) const;
 
 	void ProcessFrontPositions(float3& pos0, const float3& pos1);
@@ -148,7 +173,12 @@ private:
 	void DrawSelectionInfo();
 	void DrawNumberInput();
 	void DrawMiniMapMarker(const float3& cameraPos);
-	void DrawFormationFrontOrder(int button, float maxSize, float sizeDiv, bool onMiniMap, const float3& cameraPos, const float3& mouseDir);
+	void DrawFormationFrontOrder(int button,
+	    float maxSize,
+	    float sizeDiv,
+	    bool onMiniMap,
+	    const float3& cameraPos,
+	    const float3& mouseDir);
 	void DrawArea(float3 pos, float radius, const float* color);
 	void DrawSelectBox(const float3& start, const float3& end, const float3& cameraPos);
 	void DrawSelectCircle(const float3& pos, float radius, const float* color);
@@ -157,7 +187,7 @@ private:
 	void DrawStencilRange(const float3& pos, float radius);
 
 
-	int  IconAtPos(int x, int y);
+	int IconAtPos(int x, int y);
 	void SetCursorIcon() const;
 	bool TryTarget(const SCommandDescription& cmdDesc) const;
 
@@ -167,8 +197,8 @@ private:
 
 	bool ProcessLocalActions(const Action& action);
 	bool ProcessBuildActions(const Action& action);
-	int  GetIconPosCommand(int slot) const;
-	int  ParseIconSlot(const std::string& text) const;
+	int GetIconPosCommand(int slot) const;
+	int ParseIconSlot(const std::string& text) const;
 
 
 public:
@@ -243,6 +273,7 @@ private:
 		float x2;
 		float y2;
 	};
+
 	Box buttonBox;
 	CKeySet lastKeySet;
 
@@ -258,7 +289,7 @@ private:
 	std::vector<IconInfo> icons;
 
 	std::vector<std::string> layoutCommands;
-	std::vector< std::pair<Command, bool> > commandsToGive;
+	std::vector<std::pair<Command, bool>> commandsToGive;
 
 	// DrawMapStuff caches
 	std::vector<BuildInfo> buildInfos;
@@ -271,4 +302,3 @@ public:
 extern CGuiHandler* guihandler;
 
 #endif /* GUI_HANDLER_H */
-

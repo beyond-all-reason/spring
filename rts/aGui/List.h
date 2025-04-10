@@ -3,18 +3,16 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include "GuiElement.h"
+
+#include "System/Misc/SpringTime.h"
+
 #include <string>
 #include <vector>
 
-#include "GuiElement.h"
-#include "System/Misc/SpringTime.h"
+namespace agui {
 
-
-namespace agui
-{
-
-class List : public GuiElement
-{
+class List : public GuiElement {
 public:
 	List(GuiElement* parent = NULL);
 	virtual ~List();
@@ -22,14 +20,15 @@ public:
 	// CInputReceiver implementation
 	bool KeyPressed(int k, bool isRepeat);
 	bool MousePress(int x, int y, int button);
-	void MouseMove(int x, int y, int dx,int dy, int button);
+	void MouseMove(int x, int y, int dx, int dy, int button);
 	void MouseRelease(int x, int y, int button);
 	virtual void DrawSelf();
 	virtual bool HandleEventSelf(const SDL_Event& ev);
+
 	std::string GetTooltip(int x, int y) const { return tooltip; }
 
 	void RemoveAllItems();
-	void AddItem(const std::string& name,const std::string& description);
+	void AddItem(const std::string& name, const std::string& description);
 	std::vector<std::string> items;
 	std::string name;
 
@@ -83,6 +82,6 @@ private:
 	std::vector<std::string> temp2;
 };
 
-}
+} // namespace agui
 
 #endif /* GLLIST_H */

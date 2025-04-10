@@ -60,4 +60,3 @@ fi
 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=64m -ms=on ${OUTPUTPATH}spring_${VERSION}_portable.7z ${INSTPATH}
 
 rm -rf ${TEMPDIR}
-

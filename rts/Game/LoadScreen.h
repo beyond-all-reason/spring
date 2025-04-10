@@ -3,18 +3,18 @@
 #ifndef _LOAD_SCREEN_H
 #define _LOAD_SCREEN_H
 
-#include <string>
-
 #include "GameController.h"
-#include "System/LoadSave/LoadSaveHandler.h"
+
 #include "System/GameLoadThread.h"
+#include "System/LoadSave/LoadSaveHandler.h"
 #include "System/Misc/SpringTime.h"
 #include "System/Threading/SpringThreading.h"
 
+#include <string>
+
 class CglFont;
 
-class CLoadScreen : public CGameController
-{
+class CLoadScreen : public CGameController {
 public:
 	void SetLoadMessage(const std::string& text, bool replaceLast = false);
 
@@ -47,7 +47,7 @@ private:
 
 	ILoadSaveHandler* saveFile;
 
-	std::vector< std::pair<std::string, bool> > loadMessages;
+	std::vector<std::pair<std::string, bool>> loadMessages;
 
 	std::string mapFileName;
 	std::string modFileName;
@@ -60,7 +60,6 @@ private:
 
 	spring_time lastDrawTime;
 };
-
 
 #define loadscreen CLoadScreen::GetInstance()
 

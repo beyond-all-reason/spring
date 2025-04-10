@@ -5,14 +5,13 @@
 
 #define MDL_TYPE(o) (o->model->type)
 
-#include <array>
-#include <vector>
-
 #include "Rendering/Models/3DModel.h"
 #include "System/ContainerUtil.h"
 
-template<typename TObject>
-class ModelRenderContainerSelector {
+#include <array>
+#include <vector>
+
+template<typename TObject> class ModelRenderContainerSelector {
 public:
 	size_t operator()(const TObject* o) const { return size_t(o->model->textureType); }
 };
@@ -21,38 +20,43 @@ template<typename TObject, typename TObjectSelector = ModelRenderContainerSelect
 class ModelRenderContainer {
 private:
 	// note: there can be no more texture-types than S3DModel instances
-	std::array< int, MAX_MODEL_OBJECTS > keys;
-	std::vector< std::vector<TObject*> > bins;
+	std::array<int, MAX_MODEL_OBJECTS> keys;
+	std::vector<std::vector<TObject*>> bins;
 
 	size_t numObjs = 0;
 	size_t numBins = 0;
 
 	const TObjectSelector objectSelector;
+
 private:
 	int CalcObjectBinIdx(const TObject* o) const { return objectSelector(o); }
+
 public:
-	typedef  typename decltype(bins)::value_type  ObjectBin;
+	typedef typename decltype(bins)::value_type ObjectBin;
+
 public:
 	ModelRenderContainer(TObjectSelector objectSelector_)
-		: numObjs{ 0 }
-		, numBins{ 0 }
-		, objectSelector{std::move(objectSelector_)}
+	    : numObjs{0}
+	    , numBins{0}
+	    , objectSelector{std::move(objectSelector_)}
 	{
 		bins.reserve(32);
 		Clear();
 	}
 
 	ModelRenderContainer()
-		: ModelRenderContainer(TObjectSelector{})
-	{ }
+	    : ModelRenderContainer(TObjectSelector{})
+	{
+	}
 
 	~ModelRenderContainer() {}
 
-	void Clear() {
+	void Clear()
+	{
 		keys.fill(0);
 
 		// reuse inner vectors when reloading
-		for (auto& bin : bins) {
+		for (auto& bin: bins) {
 			bin.clear();
 		}
 
@@ -60,7 +64,8 @@ public:
 		numBins = 0;
 	}
 
-	void AddObject(const TObject* o) {
+	void AddObject(const TObject* o)
+	{
 		const auto kb = keys.begin();
 		const auto ke = keys.begin() + numBins;
 		const auto ki = std::find(kb, ke, CalcObjectBinIdx(o));
@@ -81,7 +86,8 @@ public:
 		numObjs += spring::VectorInsertUnique(bin, const_cast<TObject*>(o));
 	}
 
-	void DelObject(const TObject* o) {
+	void DelObject(const TObject* o)
+	{
 		const auto kb = keys.begin();
 		const auto ke = keys.begin() + numBins;
 		const auto ki = std::find(kb, ke, CalcObjectBinIdx(o));
@@ -108,12 +114,14 @@ public:
 	}
 
 	bool empty() const { return numObjs == 0; }
+
 	unsigned int GetNumObjects() const { return numObjs; }
+
 	unsigned int GetNumObjectBins() const { return numBins; }
+
 	unsigned int GetObjectBinKey(unsigned int idx) const { return keys[idx]; }
 
 	const ObjectBin& GetObjectBin(unsigned int idx) const { return bins[idx]; }
 };
 
 #endif
-

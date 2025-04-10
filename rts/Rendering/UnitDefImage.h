@@ -3,17 +3,21 @@
 #ifndef UNIT_DEF_IMAGE
 #define UNIT_DEF_IMAGE
 
-#include "System/creg/creg_cond.h"
 #include "Rendering/GL/myGL.h"
+#include "System/creg/creg_cond.h"
 
-struct UnitDefImage
-{
+struct UnitDefImage {
 	CR_DECLARE_STRUCT(UnitDefImage)
 
-	UnitDefImage(): imageSizeX(-1), imageSizeY(-1), textureID(0) {
+	UnitDefImage()
+	    : imageSizeX(-1)
+	    , imageSizeY(-1)
+	    , textureID(0)
+	{
 	}
 
-	bool Free() {
+	bool Free()
+	{
 		if (textureID != 0) {
 			glDeleteTextures(1, &textureID);
 			textureID = 0;

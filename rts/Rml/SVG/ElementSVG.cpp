@@ -27,22 +27,28 @@
  */
 
 #include "ElementSVG.h"
+
 #include "RmlUi/Config/Config.h"
 #include "RmlUi/Core/ComputedValues.h"
 #include "RmlUi/Core/ElementDocument.h"
 #include "RmlUi/Core/FileInterface.h"
 #include "RmlUi/Core/Math.h"
+#include "RmlUi/Core/MeshUtilities.h"
 #include "RmlUi/Core/PropertyIdSet.h"
 #include "RmlUi/Core/RenderManager.h"
 #include "RmlUi/Core/SystemInterface.h"
-#include "RmlUi/Core/MeshUtilities.h"
+
 #include <cmath>
+
 #include <lunasvg.h>
 #include <string.h>
 
 namespace RmlGui {
 
-ElementSVG::ElementSVG(const Rml::String& tag) : Element(tag) {}
+ElementSVG::ElementSVG(const Rml::String& tag)
+    : Element(tag)
+{
+}
 
 ElementSVG::~ElementSVG() {}
 
@@ -53,12 +59,10 @@ bool ElementSVG::GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio)
 
 	dimensions = intrinsic_dimensions;
 
-	if (HasAttribute("width"))
-	{
+	if (HasAttribute("width")) {
 		dimensions.x = GetAttribute<float>("width", -1);
 	}
-	if (HasAttribute("height"))
-	{
+	if (HasAttribute("height")) {
 		dimensions.y = GetAttribute<float>("height", -1);
 	}
 
@@ -70,8 +74,7 @@ bool ElementSVG::GetIntrinsicDimensions(Rml::Vector2f& dimensions, float& ratio)
 
 void ElementSVG::OnRender()
 {
-	if (svg_document)
-	{
+	if (svg_document) {
 		if (geometry_dirty)
 			GenerateGeometry();
 
@@ -90,14 +93,13 @@ void ElementSVG::OnAttributeChange(const Rml::ElementAttributes& changed_attribu
 {
 	Element::OnAttributeChange(changed_attributes);
 
-	if (changed_attributes.count("src"))
-	{
+	if (changed_attributes.count("src")) {
 		source_dirty = true;
 		DirtyLayout();
 	}
 
-	if (changed_attributes.find("width") != changed_attributes.end() || changed_attributes.find("height") != changed_attributes.end())
-	{
+	if (changed_attributes.find("width") != changed_attributes.end() ||
+	    changed_attributes.find("height") != changed_attributes.end()) {
 		DirtyLayout();
 	}
 }
@@ -106,8 +108,8 @@ void ElementSVG::OnPropertyChange(const Rml::PropertyIdSet& changed_properties)
 {
 	Element::OnPropertyChange(changed_properties);
 
-	if (changed_properties.Contains(Rml::PropertyId::ImageColor) || changed_properties.Contains(Rml::PropertyId::Opacity))
-	{
+	if (changed_properties.Contains(Rml::PropertyId::ImageColor) ||
+	    changed_properties.Contains(Rml::PropertyId::Opacity)) {
 		geometry_dirty = true;
 	}
 }
@@ -121,7 +123,8 @@ void ElementSVG::GenerateGeometry()
 	render_dimensions = Rml::Vector2i(render_dimensions_f);
 
 	Rml::Mesh mesh = geometry.Release(Rml::Geometry::ReleaseMode::ClearMesh);
-	Rml::MeshUtilities::GenerateQuad(mesh, Rml::Vector2f(0), render_dimensions_f, quad_colour, Rml::Vector2f(0), Rml::Vector2f(1));
+	Rml::MeshUtilities::GenerateQuad(
+	    mesh, Rml::Vector2f(0), render_dimensions_f, quad_colour, Rml::Vector2f(0), Rml::Vector2f(1));
 	geometry = GetRenderManager()->MakeGeometry(std::move(mesh));
 
 	geometry_dirty = false;
@@ -146,16 +149,15 @@ bool ElementSVG::LoadSource()
 
 	if (path.starts_with("<")) {
 		svg_data = path;
-	} else {
-		if (Rml::ElementDocument* document = GetOwnerDocument())
-		{
+	}
+	else {
+		if (Rml::ElementDocument* document = GetOwnerDocument()) {
 			const Rml::String document_source_url = Rml::StringUtilities::Replace(document->GetSourceURL(), '|', ':');
 			Rml::GetSystemInterface()->JoinPath(path, document_source_url, attribute_src);
 			Rml::GetSystemInterface()->JoinPath(directory, document_source_url, "");
 		}
 
-		if (path.empty() || !Rml::GetFileInterface()->LoadFile(path, svg_data))
-		{
+		if (path.empty() || !Rml::GetFileInterface()->LoadFile(path, svg_data)) {
 			Rml::Log::Message(Rml::Log::Type::LT_WARNING, "Could not load SVG file %s", path.c_str());
 			return false;
 		}
@@ -163,8 +165,7 @@ bool ElementSVG::LoadSource()
 	// We use a reset-release approach here in case clients use a non-std unique_ptr (lunasvg uses std::unique_ptr)
 	svg_document.reset(lunasvg::Document::loadFromData(svg_data).release());
 
-	if (!svg_document)
-	{
+	if (!svg_document) {
 		Rml::Log::Message(Rml::Log::Type::LT_WARNING, "Could not load SVG data from file %s", path.c_str());
 		return false;
 	}
@@ -192,12 +193,12 @@ void ElementSVG::UpdateTexture()
 		// Swap red and blue channels, assuming LunaSVG v2.3.2 or newer, to convert to RmlUi's expected RGBA-ordering.
 		const size_t bitmap_byte_size = bitmap.width() * bitmap.height() * 4;
 		uint8_t* bitmap_data = bitmap.data();
-		for (size_t i = 0; i < bitmap_byte_size; i += 4)
-			std::swap(bitmap_data[i], bitmap_data[i + 2]);
+		for (size_t i = 0; i < bitmap_byte_size; i += 4) std::swap(bitmap_data[i], bitmap_data[i + 2]);
 
 		if (!bitmap.valid() || !bitmap.data())
 			return false;
-		if (!texture_interface.GenerateTexture({reinterpret_cast<const Rml::byte*>(bitmap.data()), bitmap_byte_size}, render_dimensions))
+		if (!texture_interface.GenerateTexture(
+		        {reinterpret_cast<const Rml::byte*>(bitmap.data()), bitmap_byte_size}, render_dimensions))
 			return false;
 		return true;
 	};
@@ -206,4 +207,4 @@ void ElementSVG::UpdateTexture()
 	texture_dirty = false;
 }
 
-}
+} // namespace RmlGui

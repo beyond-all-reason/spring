@@ -70,7 +70,7 @@ local function ChatControl(cmd, line, words, playerID)
     PrintState()
     return true
   end
---FIXME  if (words[1] == 
+--FIXME  if (words[1] ==
   PrintState()
   return true
 end
@@ -82,7 +82,7 @@ function gadget:Initialize()
     return
   end
   local cmd, help
-  
+
   cmd  = "sharenobuilders"
   local h = ''
   h = h..     ' [ "none" | "ally" | "full"]:  basic sharing modes\n'
@@ -90,7 +90,7 @@ function gadget:Initialize()
   h = h..'  u: unit sharing\n'
   h = h..'  r: resource sharing\n'
   h = h..'  e: enemy mode\n'
-  
+
   help = h
   gadgetHandler:AddChatAction(cmd, ChatControl, help)
   Script.AddActionFallback(cmd .. ' ', help)

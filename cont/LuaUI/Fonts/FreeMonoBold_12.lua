@@ -1361,4 +1361,3 @@ glyphs[255] = { --'ÿ'--
 fontSpecs.glyphs = glyphs
 
 return fontSpecs
-

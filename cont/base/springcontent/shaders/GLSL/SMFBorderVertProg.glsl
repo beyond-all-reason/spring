@@ -47,4 +47,3 @@ void main() {
 
 	gl_Position = gl_ModelViewProjectionMatrix * vertexWorldPos;
 }
-

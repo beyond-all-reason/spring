@@ -3,8 +3,9 @@
 #ifndef QTPFS_SYSTEMS_REMOVE_DEAD_PATHS_H__
 #define QTPFS_SYSTEMS_REMOVE_DEAD_PATHS_H__
 
-#include <cstddef>
 #include "System/Ecs/Components/BaseComponents.h"
+
+#include <cstddef>
 
 namespace QTPFS {
 
@@ -17,6 +18,6 @@ struct RemoveDeadPathsComponent {
 	int refreshOffset = 1;
 };
 
-}
+} // namespace QTPFS
 
 #endif

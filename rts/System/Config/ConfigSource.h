@@ -6,13 +6,13 @@
 #include <functional>
 #include <map>
 #include <string>
+
 #include <stdio.h>
 
 /**
  * @brief Abstraction of a read-only configuration source
  */
-class ReadOnlyConfigSource
-{
+class ReadOnlyConfigSource {
 public:
 	virtual ~ReadOnlyConfigSource() {}
 
@@ -28,8 +28,7 @@ protected:
 /**
  * @brief Abstraction of a writable configuration source
  */
-class ReadWriteConfigSource : public ReadOnlyConfigSource
-{
+class ReadWriteConfigSource : public ReadOnlyConfigSource {
 public:
 	virtual void SetString(const std::string& key, const std::string& value);
 	virtual void Delete(const std::string& key);
@@ -42,15 +41,12 @@ public:
  * of the start script will be put into the overlay and Lua scripts can choose
  * to put certain values into the overlay.
  */
-class OverlayConfigSource : public ReadWriteConfigSource
-{
-};
+class OverlayConfigSource : public ReadWriteConfigSource {};
 
 /**
  * @brief File-backed configuration source
  */
-class FileConfigSource : public ReadWriteConfigSource
-{
+class FileConfigSource : public ReadWriteConfigSource {
 public:
 	FileConfigSource(const std::string& filename);
 
@@ -62,7 +58,7 @@ public:
 private:
 	void SetStringInternal(const std::string& key, const std::string& value);
 	void DeleteInternal(const std::string& key);
-	void ReadModifyWrite(std::function<void ()> modify);
+	void ReadModifyWrite(std::function<void()> modify);
 
 	std::string filename;
 	std::map<std::string, std::string> comments;
@@ -79,8 +75,7 @@ private:
  * Keys and default values for each engine configuration variable
  * are exposed by this class.
  */
-class DefaultConfigSource : public ReadOnlyConfigSource
-{
+class DefaultConfigSource : public ReadOnlyConfigSource {
 public:
 	DefaultConfigSource();
 };
@@ -90,8 +85,7 @@ public:
  *
  * Used when spring was started with "--safemode" param
  */
-class SafemodeConfigSource : public ReadOnlyConfigSource
-{
+class SafemodeConfigSource : public ReadOnlyConfigSource {
 public:
 	SafemodeConfigSource();
 };
@@ -101,8 +95,7 @@ public:
  *
  * Used when spring was started with "--safemode" param
  */
-class HeadlessConfigSource : public ReadOnlyConfigSource
-{
+class HeadlessConfigSource : public ReadOnlyConfigSource {
 public:
 	HeadlessConfigSource();
 };
@@ -112,8 +105,7 @@ public:
  *
  * Used when spring was started with "--safemode" param
  */
-class DedicatedConfigSource : public ReadOnlyConfigSource
-{
+class DedicatedConfigSource : public ReadOnlyConfigSource {
 public:
 	DedicatedConfigSource();
 };

@@ -1,32 +1,30 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <array>
-
+#include "System/Log/ILog.h"
 #include "System/MathConstants.h"
 #include "System/Matrix44f.h"
-#include "System/Log/ILog.h"
+
+#include <array>
 
 #include <catch_amalgamated.hpp>
 
 namespace std {
-	ostream& operator<<(ostream& s, float3 const& f) {
-		s << "x:" << f.x << ", y:" << f.y << " z:" << f.z;
-		return s;
-	}
+ostream& operator<<(ostream& s, float3 const & f)
+{
+	s << "x:" << f.x << ", y:" << f.y << " z:" << f.z;
+	return s;
 }
+} // namespace std
 
 TEST_CASE("GetEulerAnglesRgtHand")
 {
 	const std::array<float3, 5> testAngles = {
-		//Order is PYR, in degrees because it's easier to understand
-		float3(0, 0, 0),
-		float3(30, 30, 30),
-		float3(45, 45, 45),
-		float3(0, 83, 0), //breaks
-		float3(0, 265, 0), //breaks
-		// not wrong but order isn't ideal
-		//float3(0, 90, 50), // produces float3(-50, 90, 0)
-		//float(140, 120, 45), // produces float3(-40, 60, -135)
+	    // Order is PYR, in degrees because it's easier to understand
+	    float3(0, 0, 0), float3(30, 30, 30), float3(45, 45, 45), float3(0, 83, 0), // breaks
+	    float3(0, 265, 0),                                                         // breaks
+	    // not wrong but order isn't ideal
+	    // float3(0, 90, 50), // produces float3(-50, 90, 0)
+	    // float(140, 120, 45), // produces float3(-40, 60, -135)
 	};
 
 	CMatrix44f m;
@@ -42,4 +40,3 @@ TEST_CASE("GetEulerAnglesRgtHand")
 		CHECK(origAngles.equals(resultAngles));
 	}
 }
-

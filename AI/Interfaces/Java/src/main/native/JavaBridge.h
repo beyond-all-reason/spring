@@ -5,9 +5,9 @@
 
 #define JVM_PROPERTIES_FILE "jvm.properties"
 
-#define PKG_AI         "com/springrts/ai/"
-#define INT_AI          PKG_AI"AI"
-#define CLS_AI_CALLBACK PKG_AI"JniAICallback"
+#define PKG_AI "com/springrts/ai/"
+#define INT_AI PKG_AI "AI"
+#define CLS_AI_CALLBACK PKG_AI "JniAICallback"
 
 // define path entry delimiter, used eg for the java class-path
 #ifdef _WIN32
@@ -43,12 +43,10 @@ bool java_releaseStatic();
  *                 Multiple teams may use the same AI implementation.
  * @return  true, if the AI implementation is now loaded
  */
-bool java_initSkirmishAIClass(
-	const char* const shortName,
-	const char* const version,
-	const char* const className,
-	int teamId
-);
+bool java_initSkirmishAIClass(const char* const shortName,
+    const char* const version,
+    const char* const className,
+    int teamId);
 
 /**
  * Release the loaded AI specified through a class name.

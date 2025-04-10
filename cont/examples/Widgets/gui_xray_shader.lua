@@ -106,17 +106,17 @@ function widget:Initialize()
       void main()
       {
         vec4 P = gl_ModelViewMatrix * gl_Vertex;
-              
+
         eyeVec = P.xyz;
-              
+
         normal  = gl_NormalMatrix * gl_Normal;
-              
+
         color = gl_Color.rgb;
-              
+
         gl_Position = gl_ProjectionMatrix * P;
       }
-    ]],  
- 
+    ]],
+
     fragment = [[
       varying vec3 normal;
       varying vec3 eyeVec;
@@ -129,7 +129,7 @@ function widget:Initialize()
         float opac = dot(normalize(normal), normalize(eyeVec));
         opac = 1.0 - abs(opac);
         opac = pow(opac, edgeExponent);
-          
+
         gl_FragColor.rgb = color;
         gl_FragColor.a = opac;
       }
@@ -216,7 +216,7 @@ function widget:DrawWorld()
     glSmoothing(nil, nil, false)
   end
 end
-              
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

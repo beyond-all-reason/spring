@@ -3,14 +3,15 @@
 #ifndef _BASE_NET_PROTOCOL_H
 #define _BASE_NET_PROTOCOL_H
 
+#include "NetMessageTypes.h"
+
+#include "Game/GameVersion.h"
+
 #include <cinttypes>
 #include <cstdlib>
 #include <memory>
-#include <vector>
 #include <string>
-
-#include "Game/GameVersion.h"
-#include "NetMessageTypes.h"
+#include <vector>
 
 #if (!defined(DEDICATED) && !defined(UNITSYNC) && !defined(BUILDING_AI) && !defined(UNIT_TEST))
 #define CLIENT_NETLOG(p, l, m) clientNet->Send(CBaseNetProtocol::Get().SendLogMsg((p), (l), (m)))
@@ -18,9 +19,8 @@
 #define CLIENT_NETLOG(p, l, m)
 #endif
 
-namespace netcode
-{
-	class RawPacket;
+namespace netcode {
+class RawPacket;
 }
 struct PlayerStatistics;
 struct TeamStatistics;
@@ -28,14 +28,12 @@ struct TeamStatistics;
 
 static const uint16_t NETWORK_VERSION = atoi(SpringVersion::GetMajor().c_str());
 
-
 /**
  * @brief A factory used to make often-used network messages.
  *
  * Use this if you want to create a network message. Implemented as a singleton.
  */
-class CBaseNetProtocol
-{
+class CBaseNetProtocol {
 public:
 	typedef std::shared_ptr<const netcode::RawPacket> PacketType;
 
@@ -54,9 +52,29 @@ public:
 	PacketType SendSelect(uint8_t playerNum, const std::vector<int16_t>& selectedUnitIDs);
 	PacketType SendPause(uint8_t playerNum, uint8_t bPaused);
 
-	PacketType SendCommand(uint8_t playerNum, int32_t commandID, int32_t timeout, uint8_t options, uint32_t numParams, const float* params);
-	PacketType SendAICommand(uint8_t playerNum, uint8_t aiInstID, uint8_t aiTeamID, int16_t unitID, int32_t commandID, int32_t aiCommandID, int32_t timeout, uint8_t options, uint32_t numParams, const float* params);
-	PacketType SendAIShare(uint8_t playerNum, uint8_t aiID, uint8_t sourceTeam, uint8_t destTeam, float metal, float energy, const std::vector<int16_t>& unitIDs);
+	PacketType SendCommand(uint8_t playerNum,
+	    int32_t commandID,
+	    int32_t timeout,
+	    uint8_t options,
+	    uint32_t numParams,
+	    const float* params);
+	PacketType SendAICommand(uint8_t playerNum,
+	    uint8_t aiInstID,
+	    uint8_t aiTeamID,
+	    int16_t unitID,
+	    int32_t commandID,
+	    int32_t aiCommandID,
+	    int32_t timeout,
+	    uint8_t options,
+	    uint32_t numParams,
+	    const float* params);
+	PacketType SendAIShare(uint8_t playerNum,
+	    uint8_t aiID,
+	    uint8_t sourceTeam,
+	    uint8_t destTeam,
+	    float metal,
+	    float energy,
+	    const std::vector<int16_t>& unitIDs);
 
 	PacketType SendUserSpeed(uint8_t playerNum, float userSpeed);
 	PacketType SendInternalSpeed(float internalSpeed);
@@ -65,9 +83,15 @@ public:
 	PacketType SendLuaDrawTime(uint8_t playerNum, int32_t mSec);
 	PacketType SendDirectControl(uint8_t playerNum);
 	PacketType SendDirectControlUpdate(uint8_t playerNum, uint8_t status, int16_t heading, int16_t pitch);
-	PacketType SendAttemptConnect(const std::string& name, const std::string& passwd, const std::string& version, const std::string& platform, int32_t netloss, bool reconnect = false);
+	PacketType SendAttemptConnect(const std::string& name,
+	    const std::string& passwd,
+	    const std::string& version,
+	    const std::string& platform,
+	    int32_t netloss,
+	    bool reconnect = false);
 	PacketType SendRejectConnect(const std::string& reason);
-	PacketType SendShare(uint8_t playerNum, uint8_t shareTeam, uint8_t bShareUnits, float shareMetal, float shareEnergy);
+	PacketType
+	SendShare(uint8_t playerNum, uint8_t shareTeam, uint8_t bShareUnits, float shareMetal, float shareEnergy);
 	PacketType SendSetShare(uint8_t playerNum, uint8_t myTeam, float metalShareFraction, float energyShareFraction);
 	PacketType SendGameOver(uint8_t playerNum, const std::vector<uint8_t>& winningAllyTeams);
 	PacketType SendMapErase(uint8_t playerNum, uint32_t x, uint32_t z);
@@ -106,7 +130,7 @@ public:
 
 	PacketType SendSetAllied(uint8_t playerNum, uint8_t whichAllyTeam, uint8_t state);
 
-	PacketType SendCreateNewPlayer( uint8_t playerNum, bool spectator, uint8_t teamNum, const std::string& playerName);
+	PacketType SendCreateNewPlayer(uint8_t playerNum, bool spectator, uint8_t teamNum, const std::string& playerName);
 
 	PacketType SendClientData(uint8_t playerNum, const std::vector<uint8_t>& data);
 
@@ -122,7 +146,6 @@ public:
 
 private:
 	CBaseNetProtocol();
-
 };
 
 #endif // _BASE_NET_PROTOCOL_H

@@ -14,10 +14,13 @@ struct SCommandDescription {
 public:
 	SCommandDescription() = default;
 	SCommandDescription(const SCommandDescription& cd) = default;
+
 	SCommandDescription(SCommandDescription&& cd) { *this = std::move(cd); }
 
-	SCommandDescription& operator = (const SCommandDescription& cd) = default;
-	SCommandDescription& operator = (SCommandDescription&& cd) {
+	SCommandDescription& operator=(const SCommandDescription& cd) = default;
+
+	SCommandDescription& operator=(SCommandDescription&& cd)
+	{
 		id = cd.id;
 		type = cd.type;
 
@@ -39,7 +42,7 @@ public:
 		return *this;
 	}
 
-	bool operator != (const SCommandDescription& cd) const;
+	bool operator!=(const SCommandDescription& cd) const;
 
 public:
 	/// CMD_xxx code (custom codes can also be used)
@@ -73,16 +76,18 @@ public:
 	std::vector<std::string> params;
 };
 
-
 class CCommandDescriptionCache {
 	CR_DECLARE_STRUCT(CCommandDescriptionCache)
 
 public:
 	void Init();
+
 	void Kill() {}
+
 	void Dump(bool forced);
 
 	const SCommandDescription& GetRef(SCommandDescription&& cd) { return *GetPtr(std::move(cd)); }
+
 	const SCommandDescription* GetPtr(SCommandDescription&& cd);
 
 	void DecRef(std::vector<const SCommandDescription*>& cmdDescs);
@@ -94,7 +99,7 @@ private:
 private:
 	constexpr static int CACHE_SIZE = 2048;
 	// maps hashes to cache-indices (sorted)
-	std::array< std::pair<int, unsigned int>, CACHE_SIZE > index;
+	std::array<std::pair<int, unsigned int>, CACHE_SIZE> index;
 	// tracks free slots in cache (stack)
 	std::array<unsigned int, CACHE_SIZE> slots;
 	// includes one dummy description
@@ -108,4 +113,3 @@ private:
 extern CCommandDescriptionCache commandDescriptionCache;
 
 #endif // COMMAND_DESCRIPTION_H
-

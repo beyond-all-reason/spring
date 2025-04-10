@@ -1,13 +1,14 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Platform/WindowManagerHelper.h"
+
 #include <SDL_syswm.h>
 
 #ifndef HEADLESS
-	#include <X11/Xlib.h>
-	#undef KeyPress
-	#undef KeyRelease
-	#undef GrayScale
+#include <X11/Xlib.h>
+#undef KeyPress
+#undef KeyRelease
+#undef GrayScale
 #endif
 
 namespace WindowManagerHelper {
@@ -21,17 +22,18 @@ void BlockCompositing(SDL_Window* window)
 		return;
 
 	auto x11display = info.info.x11.display;
-	auto x11window  = info.info.x11.window;
+	auto x11window = info.info.x11.window;
 
 	bool b = true;
 	Atom blockCompositAtomKDE = XInternAtom(x11display, "_KDE_NET_WM_BLOCK_COMPOSITING", false);
-	XChangeProperty(x11display, x11window, blockCompositAtomKDE, XA_INTEGER, 8, PropModeReplace, (const unsigned char*)&b, 1);
+	XChangeProperty(
+	    x11display, x11window, blockCompositAtomKDE, XA_INTEGER, 8, PropModeReplace, (const unsigned char*)&b, 1);
 
 	Atom blockCompositAtom = XInternAtom(x11display, "_NET_WM_BYPASS_COMPOSITOR", false);
-	XChangeProperty(x11display, x11window, blockCompositAtom, XA_INTEGER, 8, PropModeReplace, (const unsigned char*)&b, 1);
+	XChangeProperty(
+	    x11display, x11window, blockCompositAtom, XA_INTEGER, 8, PropModeReplace, (const unsigned char*)&b, 1);
 #endif
 }
-
 
 int GetWindowState(SDL_Window* window)
 {
@@ -43,7 +45,7 @@ int GetWindowState(SDL_Window* window)
 		return 0;
 
 	auto x11display = info.info.x11.display;
-	auto x11window  = info.info.x11.window;
+	auto x11window = info.info.x11.window;
 
 	// XGetWindowProperty stuff
 	Atom actual_type;
@@ -57,36 +59,25 @@ int GetWindowState(SDL_Window* window)
 
 	Atom maxVAtom = XInternAtom(x11display, "_NET_WM_STATE_MAXIMIZED_VERT", false);
 	Atom maxHAtom = XInternAtom(x11display, "_NET_WM_STATE_MAXIMIZED_HORZ", false);
-	Atom  minAtom = XInternAtom(x11display, "_NET_WM_STATE_HIDDEN", false);
+	Atom minAtom = XInternAtom(x11display, "_NET_WM_STATE_HIDDEN", false);
 
-	status = XGetWindowProperty(
-		x11display,
-		x11window,
-		atom,
-		0,
-		20,
-		false,
-		AnyPropertyType,
-		&actual_type,
-		&actual_format,
-		&nitems,
-		&bytes_remaining,
-		(unsigned char**)&data);
+	status = XGetWindowProperty(x11display, x11window, atom, 0, 20, false, AnyPropertyType, &actual_type,
+	    &actual_format, &nitems, &bytes_remaining, (unsigned char**)&data);
 
 	if (status != Success)
 		return 0;
 
 	int maximized = 0;
 	bool minimized = false;
-	for (int i=0; i<nitems; i++) {
+	for (int i = 0; i < nitems; i++) {
 		Atom& a = data[i];
 		if (a == maxVAtom) {
 			maximized |= 1;
-		} else
-		if (a == maxHAtom) {
+		}
+		else if (a == maxHAtom) {
 			maximized |= 2;
-		} else
-		if (a == minAtom) {
+		}
+		else if (a == minAtom) {
 			minimized = true;
 		}
 	}

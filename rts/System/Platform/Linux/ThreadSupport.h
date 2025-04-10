@@ -4,21 +4,20 @@
 #define THREADSIGNALHANDLER_H
 
 #if defined(__APPLE__)
-	// FIXME: exclusively for ucontext.h
-	#define _XOPEN_SOURCE 700
+// FIXME: exclusively for ucontext.h
+#define _XOPEN_SOURCE 700
 #endif
-#include <ucontext.h>
 #include <functional>
 #include <memory>
 
-namespace Threading {
-	class ThreadControls;
+#include <ucontext.h>
 
-	void ThreadStart(
-		std::function<void()> taskFunc,
-		std::shared_ptr<ThreadControls>* ppCtlsReturn,
-		ThreadControls* tempCtls
-	);
-}
+namespace Threading {
+class ThreadControls;
+
+void ThreadStart(std::function<void()> taskFunc,
+    std::shared_ptr<ThreadControls>* ppCtlsReturn,
+    ThreadControls* tempCtls);
+} // namespace Threading
 
 #endif // THREADSIGNALHANDLER_H

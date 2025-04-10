@@ -3,13 +3,11 @@
 #ifndef DEBUGCOLVOLDRAWER_H_
 #define DEBUGCOLVOLDRAWER_H_
 
+namespace DebugColVolDrawer {
+extern bool enable;
 
-namespace DebugColVolDrawer
-{
-	extern bool enable;
-
-	void Draw();
-}
+void Draw();
+} // namespace DebugColVolDrawer
 
 
 #endif /* DEBUGCOLVOLDRAWER_H_ */

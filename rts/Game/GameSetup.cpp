@@ -1,81 +1,80 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "GameSetup.h"
+
 #include "Map/MapParser.h"
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/GlobalRNG.h"
-#include "System/TdfParser.h"
-#include "System/Exceptions.h"
-#include "System/SpringFormat.h"
-#include "System/StringUtil.h"
 #include "System/Cpp11Compat.hpp"
+#include "System/Exceptions.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/FileSystem/RapidHandler.h"
-#include "System/SpringHash.h"
+#include "System/GlobalRNG.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SpringFormat.h"
+#include "System/SpringHash.h"
+#include "System/StringUtil.h"
+#include "System/TdfParser.h"
 
 #include <algorithm>
-#include <numeric>
 #include <cctype>
 #include <cstring>
 #include <fstream>
+#include <numeric>
 
-#include "System/Misc/TracyDefs.h"
+CR_BIND(CGameSetup, )
+CR_REG_METADATA(CGameSetup,
+    (CR_IGNORED(initBlank),
 
-CR_BIND(CGameSetup,)
-CR_REG_METADATA(CGameSetup, (
-	CR_IGNORED(initBlank),
+        CR_IGNORED(fixedAllies),
+        CR_IGNORED(useLuaGaia),
+        CR_IGNORED(luaDevMode),
+        CR_IGNORED(noHelperAIs),
 
-	CR_IGNORED(fixedAllies),
-	CR_IGNORED(useLuaGaia),
-	CR_IGNORED(luaDevMode),
-	CR_IGNORED(noHelperAIs),
+        CR_IGNORED(ghostedBuildings),
+        CR_IGNORED(disableMapDamage),
 
-	CR_IGNORED(ghostedBuildings),
-	CR_IGNORED(disableMapDamage),
+        CR_IGNORED(onlyLocal),
+        CR_IGNORED(hostDemo),
+        CR_IGNORED(recordDemo),
 
-	CR_IGNORED(onlyLocal),
-	CR_IGNORED(hostDemo),
-	CR_IGNORED(recordDemo),
+        CR_IGNORED(dsMapHash),
+        CR_IGNORED(dsModHash),
+        CR_IGNORED(fixedRNGSeed),
 
-	CR_IGNORED(dsMapHash),
-	CR_IGNORED(dsModHash),
-	CR_IGNORED(fixedRNGSeed),
+        CR_IGNORED(gameStartDelay),
 
-	CR_IGNORED(gameStartDelay),
+        CR_IGNORED(numDemoPlayers),
+        CR_IGNORED(maxUnitsPerTeam),
 
-	CR_IGNORED(numDemoPlayers),
-	CR_IGNORED(maxUnitsPerTeam),
+        CR_IGNORED(minSpeed),
+        CR_IGNORED(maxSpeed),
 
-	CR_IGNORED(minSpeed),
-	CR_IGNORED(maxSpeed),
+        CR_IGNORED(startPosType),
 
-	CR_IGNORED(startPosType),
+        CR_IGNORED(mapName),
+        CR_IGNORED(modName),
+        CR_IGNORED(gameID),
 
-	CR_IGNORED(mapName),
-	CR_IGNORED(modName),
-	CR_IGNORED(gameID),
+        // this is stored separately from creg
+        CR_IGNORED(setupText),
+        CR_IGNORED(reloadScript),
+        CR_IGNORED(demoName),
 
-	// this is stored separately from creg
-	CR_IGNORED(setupText),
-	CR_IGNORED(reloadScript),
-	CR_IGNORED(demoName),
+        CR_IGNORED(playerRemap),
+        CR_IGNORED(teamRemap),
+        CR_IGNORED(allyteamRemap),
 
-	CR_IGNORED(playerRemap),
-	CR_IGNORED(teamRemap),
-	CR_IGNORED(allyteamRemap),
+        CR_IGNORED(playerStartingData),
+        CR_IGNORED(teamStartingData),
+        CR_IGNORED(allyStartingData),
+        CR_IGNORED(skirmishAIStartingData),
+        CR_IGNORED(mutatorsList),
 
-	CR_IGNORED(playerStartingData),
-	CR_IGNORED(teamStartingData),
-	CR_IGNORED(allyStartingData),
-	CR_IGNORED(skirmishAIStartingData),
-	CR_IGNORED(mutatorsList),
+        CR_IGNORED(restrictedUnits),
 
-	CR_IGNORED(restrictedUnits),
-
-	CR_IGNORED(mapOptions),
-	CR_IGNORED(modOptions)
-))
+        CR_IGNORED(mapOptions),
+        CR_IGNORED(modOptions)))
 
 
 static CGameSetup gLocalGameSetup;
@@ -85,7 +84,6 @@ static CGameSetup gDummyGameSetup;
 // indicates a bigger problem and currently always causes an
 // exception to be thrown
 CGameSetup* gameSetup = &gLocalGameSetup;
-
 
 bool CGameSetup::LoadReceivedScript(const std::string& script, bool isHost)
 {
@@ -135,11 +133,11 @@ bool CGameSetup::LoadSavedScript(const std::string& file, const std::string& scr
 	return true;
 }
 
-bool CGameSetup::ScriptLoaded() {
+bool CGameSetup::ScriptLoaded()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (gameSetup != &gDummyGameSetup && !gameSetup->setupText.empty());
 }
-
 
 const spring::unordered_map<std::string, std::string>& CGameSetup::GetMapOptions()
 {
@@ -153,7 +151,6 @@ const spring::unordered_map<std::string, std::string>& CGameSetup::GetModOptions
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (gameSetup->GetModOptionsCont());
 }
-
 
 const std::vector<PlayerBase>& CGameSetup::GetPlayerStartingData()
 {
@@ -172,8 +169,6 @@ const std::vector<AllyTeam>& CGameSetup::GetAllyStartingData()
 	RECOIL_DETAILED_TRACY_ZONE;
 	return gameSetup->GetAllyStartingDataCont();
 }
-
-
 
 void CGameSetup::ResetState()
 {
@@ -213,8 +208,8 @@ void CGameSetup::ResetState()
 	reloadScript.clear();
 	demoName.clear();
 
-	playerRemap.clear(); // never iterated
-	teamRemap.clear(); // never iterated
+	playerRemap.clear();   // never iterated
+	teamRemap.clear();     // never iterated
 	allyteamRemap.clear(); // never iterated
 
 	playerStartingData.clear();
@@ -229,7 +224,6 @@ void CGameSetup::ResetState()
 	spring::clear_unordered_map(modOptions);
 }
 
-
 void CGameSetup::LoadUnitRestrictions(const TdfParser& file)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -243,11 +237,12 @@ void CGameSetup::LoadUnitRestrictions(const TdfParser& file)
 		int unitLimit;
 		file.GetDef(unitLimit, "0", resUnitLimit);
 
-		restrictedUnits[ file.SGetValueDef("", resUnitName) ] = unitLimit;
+		restrictedUnits[file.SGetValueDef("", resUnitName)] = unitLimit;
 	}
 }
 
-void CGameSetup::LoadStartPositionsFromMap(int numTeams, const std::function<bool(MapParser& mapParser, int teamNum)>& startPosPred)
+void CGameSetup::LoadStartPositionsFromMap(int numTeams,
+    const std::function<bool(MapParser& mapParser, int teamNum)>& startPosPred)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	MapParser mapParser(MapFileName());
@@ -255,8 +250,7 @@ void CGameSetup::LoadStartPositionsFromMap(int numTeams, const std::function<boo
 	if (!mapParser.IsValid())
 		throw content_error("MapInfo: " + mapParser.GetErrorLog());
 
-	for (int a = 0; a < numTeams && startPosPred(mapParser, a); ++a) {
-	}
+	for (int a = 0; a < numTeams && startPosPred(mapParser, a); ++a) {}
 }
 
 void CGameSetup::LoadStartPositions(bool withoutMap)
@@ -276,8 +270,7 @@ void CGameSetup::LoadStartPositions(bool withoutMap)
 		spring::random_shuffle(teamStartNums.begin(), teamStartNums.begin() + teamStartingData.size(), rng);
 	}
 
-	for (size_t i = 0; i < teamStartingData.size(); ++i)
-		teamStartingData[i].teamStartNum = teamStartNums[i];
+	for (size_t i = 0; i < teamStartingData.size(); ++i) teamStartingData[i].teamStartNum = teamStartNums[i];
 
 	if (startPosType != StartPos_Fixed && startPosType != StartPos_Random)
 		return;
@@ -327,14 +320,14 @@ void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::s
 
 		// expects lines of form team=x rather than team=TEAMx
 		// team field is relocated in RemapTeams
-		for (const auto& it: file.GetAllValues(section))
-			playerBase.SetValue(it.first, it.second);
+		for (const auto& it: file.GetAllValues(section)) playerBase.SetValue(it.first, it.second);
 
 		// do checks for sanity
 		if (playerBase.name.empty())
 			throw content_error(spring::format("GameSetup: No name given for Player %i", a));
 		if (nameList.find(playerBase.name) != nameList.end())
-			throw content_error(spring::format("GameSetup: Player %i has name %s which is already taken", a, playerBase.name.c_str()));
+			throw content_error(
+			    spring::format("GameSetup: Player %i has name %s which is already taken", a, playerBase.name.c_str()));
 
 		numDemoPlayers += playerBase.isFromDemo;
 
@@ -351,7 +344,8 @@ void CGameSetup::LoadPlayers(const TdfParser& file, spring::unordered_set<std::s
 	if (playerStartingData.size() == playerCount)
 		return;
 
-	LOG_L(L_WARNING, _STPF_ " players in GameSetup script (NumPlayers says %i)", playerStartingData.size(), playerCount);
+	LOG_L(
+	    L_WARNING, _STPF_ " players in GameSetup script (NumPlayers says %i)", playerStartingData.size(), playerCount);
 }
 
 void CGameSetup::LoadSkirmishAIs(const TdfParser& file, spring::unordered_set<std::string>& nameList)
@@ -419,8 +413,7 @@ void CGameSetup::LoadTeams(const TdfParser& file)
 		TeamBase teamBase;
 		teamBase.SetDefaultColor(a);
 
-		for (const auto& it: file.GetAllValues(section))
-			teamBase.SetValue(it.first, it.second);
+		for (const auto& it: file.GetAllValues(section)) teamBase.SetValue(it.first, it.second);
 
 		teamStartingData.push_back(teamBase);
 
@@ -449,8 +442,7 @@ void CGameSetup::LoadAllyTeams(const TdfParser& file)
 
 		AllyTeam allyTeam;
 
-		for (auto it: file.GetAllValues(section))
-			allyTeam.SetValue(it.first, it.second);
+		for (auto it: file.GetAllValues(section)) allyTeam.SetValue(it.first, it.second);
 
 		allyStartingData.push_back(allyTeam);
 
@@ -473,7 +465,7 @@ void CGameSetup::LoadAllyTeams(const TdfParser& file)
 
 				const int other = atoi(val.c_str());
 
-				allyStartingData[a].allies[ allyteamRemap[other] ] = true;
+				allyStartingData[a].allies[allyteamRemap[other]] = true;
 			}
 		}
 	}
@@ -518,9 +510,11 @@ void CGameSetup::RemapTeams()
 		if (playerStartingData[a].spectator) {
 			// start spectating the first team (0)
 			playerStartingData[a].team = 0;
-		} else {
+		}
+		else {
 			if (teamRemap.find(playerStartingData[a].team) == teamRemap.end())
-				throw content_error(spring::format("GameSetup: Player %i belong to wrong team: %i", a, playerStartingData[a].team));
+				throw content_error(
+				    spring::format("GameSetup: Player %i belong to wrong team: %i", a, playerStartingData[a].team));
 
 			playerStartingData[a].team = teamRemap[playerStartingData[a].team];
 		}
@@ -565,13 +559,14 @@ bool CGameSetup::Init(const std::string& buf)
 	if (!file.SectionExist("GAME"))
 		return false;
 
-	#ifdef DEDICATED
+#ifdef DEDICATED
 	{
 		// read script-provided hashes for dedicated server
-		const std::string mapHashHexStr = file.SGetValueDef("",  "GAME\\MapHash");
-		const std::string modHashHexStr = file.SGetValueDef("",  "GAME\\ModHash");
+		const std::string mapHashHexStr = file.SGetValueDef("", "GAME\\MapHash");
+		const std::string modHashHexStr = file.SGetValueDef("", "GAME\\ModHash");
 
-		LOG_L(L_INFO, "[GameSetup::%s]\n\tmapHashHexStr=\"%s\"\n\tmodHashHexStr=\"%s\"", __func__, mapHashHexStr.c_str(), modHashHexStr.c_str());
+		LOG_L(L_INFO, "[GameSetup::%s]\n\tmapHashHexStr=\"%s\"\n\tmodHashHexStr=\"%s\"", __func__,
+		    mapHashHexStr.c_str(), modHashHexStr.c_str());
 
 		sha512::hex_digest mapHashHex;
 		sha512::hex_digest modHashHex;
@@ -585,19 +580,23 @@ bool CGameSetup::Init(const std::string& buf)
 		modHashRaw.fill(0);
 
 		// assume that single-character strings represent old-style dummy CRC's
-		mapHashHex[0] = (mapHashHexStr.size() == 1)? mapHashHexStr[0]: 0;
-		modHashHex[0] = (modHashHexStr.size() == 1)? modHashHexStr[0]: 0;
+		mapHashHex[0] = (mapHashHexStr.size() == 1) ? mapHashHexStr[0] : 0;
+		modHashHex[0] = (modHashHexStr.size() == 1) ? modHashHexStr[0] : 0;
 
 		if (mapHashHexStr.size() == (sha512::SHA_LEN * 2)) {
 			std::copy(mapHashHexStr.begin(), mapHashHexStr.end(), mapHashHex.data());
-		} else {
-			LOG_L(L_WARNING, "[GameSetup::%s] DS map-hash string \"%s\" should contain %u characters", __func__, mapHashHexStr.c_str(), sha512::SHA_LEN * 2);
+		}
+		else {
+			LOG_L(L_WARNING, "[GameSetup::%s] DS map-hash string \"%s\" should contain %u characters", __func__,
+			    mapHashHexStr.c_str(), sha512::SHA_LEN * 2);
 		}
 
 		if (modHashHexStr.size() == (sha512::SHA_LEN * 2)) {
 			std::copy(modHashHexStr.begin(), modHashHexStr.end(), modHashHex.data());
-		} else {
-			LOG_L(L_WARNING, "[GameSetup::%s] DS mod-hash string \"%s\" should contain %u characters", __func__, modHashHexStr.c_str(), sha512::SHA_LEN * 2);
+		}
+		else {
+			LOG_L(L_WARNING, "[GameSetup::%s] DS mod-hash string \"%s\" should contain %u characters", __func__,
+			    modHashHexStr.c_str(), sha512::SHA_LEN * 2);
 		}
 
 		sha512::read_digest(mapHashHex, mapHashRaw);
@@ -605,7 +604,7 @@ bool CGameSetup::Init(const std::string& buf)
 		std::memcpy(dsMapHash, mapHashRaw.data(), sizeof(dsMapHash));
 		std::memcpy(dsModHash, modHashRaw.data(), sizeof(dsModHash));
 	}
-	#endif
+#endif
 
 	/* Don't be afraid to reuse MapSeed for something sensible if you're
 	 * implementing a proper random map generator. It's just used here
@@ -613,24 +612,24 @@ bool CGameSetup::Init(const std::string& buf)
 	int legacyMapSeed;
 	file.GetTDef(legacyMapSeed, 0, "GAME\\MapSeed");
 
-	file.GetTDef(initBlank, bool (legacyMapSeed != 0), "GAME\\InitBlank");
+	file.GetTDef(initBlank, bool(legacyMapSeed != 0), "GAME\\InitBlank");
 
 	file.GetTDef(fixedRNGSeed, unsigned(0), "GAME\\FixedRNGSeed"); // 0 means use random seed
-	gameID      = file.SGetValueDef("",  "GAME\\GameID");
-	modName     = file.SGetValueDef("",  "GAME\\Gametype");
-	mapName     = file.SGetValueDef("",  "GAME\\MapName");
-	demoName    = file.SGetValueDef("",  "GAME\\Demofile");
-	hostDemo    = !demoName.empty();
+	gameID = file.SGetValueDef("", "GAME\\GameID");
+	modName = file.SGetValueDef("", "GAME\\Gametype");
+	mapName = file.SGetValueDef("", "GAME\\MapName");
+	demoName = file.SGetValueDef("", "GAME\\Demofile");
+	hostDemo = !demoName.empty();
 
 	file.GetTDef(gameStartDelay, 4u, "GAME\\GameStartDelay");
 
-	file.GetDef(recordDemo,          "1", "GAME\\RecordDemo");
-	file.GetDef(useLuaGaia,          "1", "GAME\\ModOptions\\LuaGaia");
-	file.GetDef(luaDevMode,          "0", "GAME\\ModOptions\\LuaDevMode");
-	file.GetDef(noHelperAIs,         "0", "GAME\\ModOptions\\NoHelperAIs");
+	file.GetDef(recordDemo, "1", "GAME\\RecordDemo");
+	file.GetDef(useLuaGaia, "1", "GAME\\ModOptions\\LuaGaia");
+	file.GetDef(luaDevMode, "0", "GAME\\ModOptions\\LuaDevMode");
+	file.GetDef(noHelperAIs, "0", "GAME\\ModOptions\\NoHelperAIs");
 	file.GetDef(maxUnitsPerTeam, "32000", "GAME\\ModOptions\\MaxUnits");
-	file.GetDef(disableMapDamage,    "0", "GAME\\ModOptions\\DisableMapDamage");
-	file.GetDef(ghostedBuildings,    "1", "GAME\\ModOptions\\GhostedBuildings");
+	file.GetDef(disableMapDamage, "0", "GAME\\ModOptions\\DisableMapDamage");
+	file.GetDef(ghostedBuildings, "1", "GAME\\ModOptions\\GhostedBuildings");
 
 	file.GetDef(maxSpeed, "20.", "GAME\\ModOptions\\MaxSpeed");
 	file.GetDef(minSpeed, "0.1", "GAME\\ModOptions\\MinSpeed");
@@ -638,11 +637,16 @@ bool CGameSetup::Init(const std::string& buf)
 	file.GetDef(fixedAllies, "1", "GAME\\ModOptions\\FixedAllies");
 
 	// Read the map & mod options
-	if (file.SectionExist("GAME\\MapOptions")) { mapOptions = file.GetAllValues("GAME\\MapOptions"); }
-	if (file.SectionExist("GAME\\ModOptions")) { modOptions = file.GetAllValues("GAME\\ModOptions"); }
+	if (file.SectionExist("GAME\\MapOptions")) {
+		mapOptions = file.GetAllValues("GAME\\MapOptions");
+	}
+	if (file.SectionExist("GAME\\ModOptions")) {
+		modOptions = file.GetAllValues("GAME\\ModOptions");
+	}
 
 	// Read startPosType (with clamping)
-	file.GetDef((std::underlying_type<StartPosType>::type&) startPosType, IntToString(StartPos_Fixed), "GAME\\StartPosType");
+	file.GetDef(
+	    (std::underlying_type<StartPosType>::type&)startPosType, IntToString(StartPos_Fixed), "GAME\\StartPosType");
 
 	startPosType = std::max(startPosType, StartPos_Fixed);
 	startPosType = std::min(startPosType, StartPos_Last);
@@ -673,8 +677,4 @@ bool CGameSetup::Init(const std::string& buf)
 	return true;
 }
 
-std::string CGameSetup::MapFileName() const
-{
-	return (archiveScanner->MapNameToMapFile(mapName));
-}
-
+std::string CGameSetup::MapFileName() const { return (archiveScanner->MapNameToMapFile(mapName)); }

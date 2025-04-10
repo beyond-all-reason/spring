@@ -5,32 +5,36 @@
 #include <windows.h>
 #else
 #include <sched.h>
-#include <unistd.h>
 #include <syscall.h>
+#include <unistd.h>
 #endif
 
 // Constructor: Saves the current thread's affinity
-ThreadAffinityGuard::ThreadAffinityGuard() : affinitySaved(false) {
+ThreadAffinityGuard::ThreadAffinityGuard()
+    : affinitySaved(false)
+{
 #ifdef _WIN32
-	threadHandle = GetCurrentThread();  // Get the current thread handle
+	threadHandle = GetCurrentThread(); // Get the current thread handle
 	savedAffinity = SetThreadAffinityMask(threadHandle, ~0);
-	affinitySaved = ( savedAffinity != 0 );
+	affinitySaved = (savedAffinity != 0);
 	if (!affinitySaved) {
 		LOG_L(L_WARNING, "GetThreadAffinityMask failed with error code: %lu", GetLastError());
 	}
 #else
-	tid = syscall(SYS_gettid);  // Get thread ID
+	tid = syscall(SYS_gettid); // Get thread ID
 	CPU_ZERO(&savedAffinity);
 	if (sched_getaffinity(tid, sizeof(cpu_set_t), &savedAffinity) == 0) {
 		affinitySaved = true;
-	} else {
+	}
+	else {
 		LOG_L(L_WARNING, "Failed to save thread affinity.");
 	}
 #endif
 }
 
 // Destructor: Restores the saved affinity if it was successfully stored
-ThreadAffinityGuard::~ThreadAffinityGuard() {
+ThreadAffinityGuard::~ThreadAffinityGuard()
+{
 	if (affinitySaved) {
 #ifdef _WIN32
 		if (!SetThreadAffinityMask(threadHandle, savedAffinity)) {

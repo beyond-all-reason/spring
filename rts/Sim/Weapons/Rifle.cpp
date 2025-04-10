@@ -1,16 +1,17 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Rifle.h"
+
 #include "WeaponDef.h"
-#include "Game/TraceRay.h"
+
 #include "Game/GameHelper.h"
+#include "Game/TraceRay.h"
 #include "Map/Ground.h"
+#include "Sim/Features/Feature.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Units/Unit.h"
-#include "Sim/Features/Feature.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND_DERIVED(CRifle, CWeapon, )
 CR_REG_METADATA(CRifle, )
@@ -24,8 +25,7 @@ void CRifle::FireImpl(const bool scriptCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 dir = (currentTargetPos - weaponMuzzlePos).SafeNormalize();
-	dir +=
-		(gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience());
+	dir += (gsRNG.NextVector() * SprayAngleExperience() + SalvoErrorExperience());
 	dir.Normalize();
 
 	CUnit* hitUnit;

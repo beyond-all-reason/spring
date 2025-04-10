@@ -7,9 +7,8 @@
 extern "C" {
 #endif
 
-#include <stdbool.h> // bool, true, false
-
 #include <jni.h>
+#include <stdbool.h> // bool, true, false
 
 /**
  * Takes a JNI function return value, and returns a short description for it.

@@ -2,26 +2,26 @@
 
 #include "SelectedUnitsAI.h"
 
-#include "SelectedUnitsHandler.h"
 #include "GlobalUnsynced.h"
+#include "SelectedUnitsHandler.h"
 #include "WaitCommandsAI.h"
+
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
 #include "Map/Ground.h"
+#include "Net/Protocol/NetProtocol.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "Net/Protocol/NetProtocol.h"
+#include "Sim/Units/UnitHandler.h"
+#include "System/Misc/TracyDefs.h"
 
 #include <algorithm>
-
-#include "System/Misc/TracyDefs.h"
 
 static constexpr int CMDPARAM_MOVE_X = 0;
 static constexpr int CMDPARAM_MOVE_Y = 1;
@@ -31,11 +31,12 @@ typedef std::vector<int> TGroupVect;
 typedef std::pair<float, TGroupVect> TGroupPair;
 
 static const auto ugPairComp = [](const TGroupPair& a, const TGroupPair& b) { return (a.first < b.first); };
-static const auto idPairComp = [](const std::pair<float, int>& a, const std::pair<float, int>& b) { return (a.first < b.first); };
+static const auto idPairComp = [](const std::pair<float, int>& a, const std::pair<float, int>& b) {
+	return (a.first < b.first);
+};
 
 
 CSelectedUnitsHandlerAI selectedUnitsAI;
-
 
 inline void CSelectedUnitsHandlerAI::SetUnitWantedMaxSpeedNet(CUnit* unit)
 {
@@ -66,21 +67,20 @@ inline void CSelectedUnitsHandlerAI::SetUnitGroupWantedMaxSpeedNet(CUnit* unit)
 	mt->SetWantedMaxSpeed(groupMinMaxSpeed);
 }
 
-
 static inline bool MayRequireSetMaxSpeedCommand(const Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (c.GetID()) {
-		// this is not a complete list
-		case CMD_STOP:
-		case CMD_WAIT:
-		case CMD_SELFD:
-		case CMD_FIRE_STATE:
-		case CMD_MOVE_STATE:
-		case CMD_ONOFF:
-		case CMD_REPEAT: {
-			return false;
-		}
+	// this is not a complete list
+	case CMD_STOP:
+	case CMD_WAIT:
+	case CMD_SELFD:
+	case CMD_FIRE_STATE:
+	case CMD_MOVE_STATE:
+	case CMD_ONOFF:
+	case CMD_REPEAT: {
+		return false;
+	}
 	}
 	return true;
 }
@@ -143,8 +143,8 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 	//   ALT+CTRL:  Group Locked       command  (maintain relative positions)
 	//
 	if (((cmdID == CMD_MOVE) || (cmdID == CMD_FIGHT)) && (c.GetNumParams() == 6)) {
-		const bool  groupSpeed = !!(c.GetOpts() & CONTROL_KEY);
-		const bool queuedOrder = !!(c.GetOpts() &   SHIFT_KEY);
+		const bool groupSpeed = !!(c.GetOpts() & CONTROL_KEY);
+		const bool queuedOrder = !!(c.GetOpts() & SHIFT_KEY);
 
 		CalculateGroupData(playerNum, queuedOrder);
 
@@ -158,7 +158,8 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 
 			if (groupSpeed) {
 				SetUnitGroupWantedMaxSpeedNet(unit);
-			} else {
+			}
+			else {
 				SetUnitWantedMaxSpeedNet(unit);
 			}
 
@@ -170,8 +171,8 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 	}
 
 	if ((cmdID == CMD_MOVE) && (c.GetOpts() & ALT_KEY)) {
-		const bool  groupSpeed = !!(c.GetOpts() & CONTROL_KEY);
-		const bool queuedOrder = !!(c.GetOpts() &   SHIFT_KEY);
+		const bool groupSpeed = !!(c.GetOpts() & CONTROL_KEY);
+		const bool queuedOrder = !!(c.GetOpts() & SHIFT_KEY);
 
 		CalculateGroupData(playerNum, queuedOrder);
 
@@ -185,7 +186,8 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 
 			if (groupSpeed) {
 				SetUnitGroupWantedMaxSpeedNet(unit);
-			} else {
+			}
+			else {
 				SetUnitWantedMaxSpeedNet(unit);
 			}
 
@@ -194,9 +196,9 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 
 
 		// use the vector from the middle of group to new pos as forward dir
-		const float3      pos = c.GetPos(0);
+		const float3 pos = c.GetPos(0);
 		const float3 frontDir = ((pos - groupCenterCoor) * XZVector).ANormalize();
-		const float3  sideDir = frontDir.cross(UpVector);
+		const float3 sideDir = frontDir.cross(UpVector);
 
 		// calculate so that the units form in an approximate square
 		const float length = 100.0f + (math::sqrt((float)numSelectedUnits) * 32.0f);
@@ -209,7 +211,7 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 	}
 
 	if ((c.GetOpts() & CONTROL_KEY) && ((cmdID == CMD_MOVE) || (cmdID == CMD_PATROL) || (cmdID == CMD_FIGHT))) {
-		const bool  groupSpeed =  !(c.GetOpts() &   ALT_KEY); // one '!'
+		const bool groupSpeed = !(c.GetOpts() & ALT_KEY); // one '!'
 		const bool queuedOrder = !!(c.GetOpts() & SHIFT_KEY);
 
 		CalculateGroupData(playerNum, queuedOrder);
@@ -225,7 +227,7 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 			// modify the destination relative to the center of the group
 			Command uc = c;
 
-			const float3 midPos = (queuedOrder? LastQueuePosition(unit): float3(unit->midPos));
+			const float3 midPos = (queuedOrder ? LastQueuePosition(unit) : float3(unit->midPos));
 			const float3 difPos = midPos - groupCenterCoor;
 
 			uc.SetParam(CMDPARAM_MOVE_X, uc.GetParam(CMDPARAM_MOVE_X) + difPos.x);
@@ -234,7 +236,8 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 
 			if (groupSpeed) {
 				SetUnitGroupWantedMaxSpeedNet(unit);
-			} else {
+			}
+			else {
 				SetUnitWantedMaxSpeedNet(unit);
 			}
 
@@ -270,14 +273,14 @@ bool CSelectedUnitsHandlerAI::GiveCommandNet(Command& c, int playerNum)
 	return ret;
 }
 
-
 //
 // Calculate the outer limits and the center of the group coordinates.
 //
-void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
+void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 sumCoor;
-	float3 minCoor =  OnesVector * 100000.0f;
+	float3 minCoor = OnesVector * 100000.0f;
 	float3 maxCoor = -OnesVector * 100000.0f;
 	float3 mobileSumCoor;
 
@@ -297,10 +300,10 @@ void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
 
 		groupSumLength += ((unit->unitDef->xsize + unit->unitDef->zsize) * 0.5f);
 
-		const float3 unitPos = (queueing? LastQueuePosition(unit): float3(unit->midPos));
+		const float3 unitPos = (queueing ? LastQueuePosition(unit) : float3(unit->midPos));
 
-		minCoor  = float3::min(minCoor, unitPos);
-		maxCoor  = float3::max(maxCoor, unitPos);
+		minCoor = float3::min(minCoor, unitPos);
+		maxCoor = float3::max(maxCoor, unitPos);
 		sumCoor += unitPos;
 
 		if (!unit->moveType->UseWantedSpeed(false))
@@ -320,7 +323,6 @@ void CSelectedUnitsHandlerAI::CalculateGroupData(int playerNum, bool queueing) {
 	else
 		groupCenterCoor = sumCoor / playerUnitIDs.size();
 }
-
 
 void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 {
@@ -354,11 +356,12 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 	if (groupFrontLength > (groupSumLength * 2.0f * SQUARE_SIZE))
 		groupAddedSpace = (groupFrontLength - (groupSumLength * 2.0f * SQUARE_SIZE)) / (playerUnitIDs.size() - 1);
 
-	#if 0
+#if 0
 	formationNumColumns = std::max(1, int(groupFrontLength / groupColumnDist));
-	#endif
+#endif
 
-	const float3 formationSideDir = (formationCenterPos - formationRightPos) * XZVector + (UpVector * groupFrontLength * 0.5f);
+	const float3 formationSideDir =
+	    (formationCenterPos - formationRightPos) * XZVector + (UpVector * groupFrontLength * 0.5f);
 
 	sortedUnitGroups.clear();
 	frontMoveCommands.clear();
@@ -374,7 +377,7 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 	unassignedUnits.clear();
 	unassignedUnits.reserve(sortedUnitPairs.size());
 
-	for (size_t k = 0; k < sortedUnitPairs.size(); ) {
+	for (size_t k = 0; k < sortedUnitPairs.size();) {
 		bool newFormationLine = false;
 
 		// convert flat vector of <priority, unitID> pairs
@@ -382,7 +385,8 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 		const auto& suPair = sortedUnitPairs[k];
 
 		const auto suGroupPair = TGroupPair{suPair.first, {}};
-		const auto suGroupIter = std::lower_bound(sortedUnitGroups.begin(), sortedUnitGroups.end(), suGroupPair, ugPairComp);
+		const auto suGroupIter =
+		    std::lower_bound(sortedUnitGroups.begin(), sortedUnitGroups.end(), suGroupPair, ugPairComp);
 
 		if (suGroupIter == sortedUnitGroups.end() || suGroupIter->first != suPair.first) {
 			sortedUnitGroups.emplace_back(suPair.first, TGroupVect{suPair.second});
@@ -394,12 +398,14 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 
 				std::swap(sortedUnitGroups[i - 1], sortedUnitGroups[i]);
 			}
-		} else {
+		}
+		else {
 			suGroupIter->second.push_back(suPair.second);
 		}
 
 
-		nextPos = MoveToPos(nextPos, formationSideDir, unitHandler.GetUnit(suPair.second), c, &frontMoveCommands, &newFormationLine);
+		nextPos = MoveToPos(
+		    nextPos, formationSideDir, unitHandler.GetUnit(suPair.second), c, &frontMoveCommands, &newFormationLine);
 		if ((++k) < sortedUnitPairs.size()) {
 			MoveToPos(nextPos, formationSideDir, unitHandler.GetUnit(suPair.second), c, nullptr, &newFormationLine);
 
@@ -441,10 +447,11 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 			const auto unit = unitHandler.GetUnit(groupUnitIDs[unitIndex]);
 			const auto unitDef = unit->GetDef();
 			unassignedUnits.emplace_back(groupUnitIDs[unitIndex], unitDef->id, unit->pos);
-			mixedUnitTypes.push_back( unitDef ? unitDef->id : -1 );
+			mixedUnitTypes.push_back(unitDef ? unitDef->id : -1);
 		}
 
-		allFrontMoveCommands.insert(std::end(allFrontMoveCommands), std::begin(frontMoveCommands), std::end(frontMoveCommands));
+		allFrontMoveCommands.insert(
+		    std::end(allFrontMoveCommands), std::begin(frontMoveCommands), std::end(frontMoveCommands));
 
 		frontMoveCommands.clear();
 		sortedUnitGroups.clear();
@@ -459,7 +466,7 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 		// find closest unit of the unit type selected for this move command
 		for (size_t j = 0; j < unassignedUnits.size(); j++) {
 			const auto& unit = unassignedUnits[j];
-			if (unit.unitDefId == mixedUnitTypes[i]){
+			if (unit.unitDefId == mixedUnitTypes[i]) {
 				float curDistSq = unit.pos.SqDistance(cmdPos);
 				if (curDistSq < closestDistSq) {
 					closestUnit = j;
@@ -483,8 +490,7 @@ void CSelectedUnitsHandlerAI::MakeFormationFrontOrder(Command* c, int playerNum)
 	}
 }
 
-
-void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int> >& out, int playerNum)
+void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector<std::pair<float, int>>& out, int playerNum)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const std::vector<int>& playerUnitIDs = selectedUnitsHandler.netSelected[playerNum];
@@ -501,7 +507,7 @@ void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int>
 		const UnitDef* ud = unit->unitDef;
 
 		// give weaponless units a long range to make them go to the back
-		const float range = (unit->maxRange < 1.0f)? 2000: unit->maxRange;
+		const float range = (unit->maxRange < 1.0f) ? 2000 : unit->maxRange;
 		const float value = ud->power / ud->health * range;
 
 		out.emplace_back(value, unitID);
@@ -510,24 +516,22 @@ void CSelectedUnitsHandlerAI::CreateUnitOrder(std::vector< std::pair<float, int>
 	std::stable_sort(out.begin(), out.end(), idPairComp);
 }
 
-
-float3 CSelectedUnitsHandlerAI::MoveToPos(
-	float3 nextCornerPos,
-	float3 formationDir,
-	const CUnit* unit,
-	Command* command,
-	std::vector<std::pair<int, Command> >* frontcmds,
-	bool* newline
-) {
+float3 CSelectedUnitsHandlerAI::MoveToPos(float3 nextCornerPos,
+    float3 formationDir,
+    const CUnit* unit,
+    Command* command,
+    std::vector<std::pair<int, Command>>* frontcmds,
+    bool* newline)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
+#if 0
 	const int rowNum = posNum / formationNumColumns;
 	const int colNum = posNum - rowNum * formationNumColumns;
 	const float side = (0.25f + colNum * 0.5f) * groupColumnDist * ((colNum & 1)? -1: 1);
-	#endif
+#endif
 
 	if ((*newline = ((nextCornerPos.x - groupAddedSpace) > groupFrontLength))) {
-		nextCornerPos.x  = 0.0f;
+		nextCornerPos.x = 0.0f;
 		nextCornerPos.z -= (groupAvgLength * 2.0f * SQUARE_SIZE);
 	}
 
@@ -539,8 +543,9 @@ float3 CSelectedUnitsHandlerAI::MoveToPos(
 
 	const int unitSize = (unit->unitDef->xsize + unit->unitDef->zsize) / 2;
 
-	float3  retPos(nextCornerPos.x + unitSize * SQUARE_SIZE * 2 + groupAddedSpace, 0, nextCornerPos.z);
-	float3 movePos(nextCornerPos.x + unitSize * SQUARE_SIZE     + groupAddedSpace, 0, nextCornerPos.z); // posit in coordinates of "front"
+	float3 retPos(nextCornerPos.x + unitSize * SQUARE_SIZE * 2 + groupAddedSpace, 0, nextCornerPos.z);
+	float3 movePos(nextCornerPos.x + unitSize * SQUARE_SIZE + groupAddedSpace, 0,
+	    nextCornerPos.z); // posit in coordinates of "front"
 
 	if (nextCornerPos.x == 0.0f) {
 		movePos.x = unitSize * SQUARE_SIZE;
@@ -548,14 +553,15 @@ float3 CSelectedUnitsHandlerAI::MoveToPos(
 	}
 
 	float3 pos;
-	pos.x = formationRightPos.x + (movePos.x * (formationDir.x / formationDir.y)) - (movePos.z * (formationDir.z / formationDir.y));
-	pos.z = formationRightPos.z + (movePos.x * (formationDir.z / formationDir.y)) + (movePos.z * (formationDir.x / formationDir.y));
+	pos.x = formationRightPos.x + (movePos.x * (formationDir.x / formationDir.y)) -
+	        (movePos.z * (formationDir.z / formationDir.y));
+	pos.z = formationRightPos.z + (movePos.x * (formationDir.z / formationDir.y)) +
+	        (movePos.z * (formationDir.x / formationDir.y));
 	pos.y = CGround::GetHeightAboveWater(pos.x, pos.z);
 
 	frontcmds->emplace_back(unit->id, Command(command->GetID(), command->GetOpts(), pos));
 	return retPos;
 }
-
 
 bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 {
@@ -568,7 +574,8 @@ bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 
 	if (cmd.GetNumParams() == 4) {
 		SelectCircleUnits(cmd.GetPos(0), cmd.GetParam(3), playerNum, targetUnitIDs);
-	} else {
+	}
+	else {
 		SelectRectangleUnits(cmd.GetPos(0), cmd.GetPos(3), playerNum, targetUnitIDs);
 	}
 
@@ -576,16 +583,15 @@ bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 		return ret;
 
 	const bool overrideCmd = ((cmd.GetOpts() & CONTROL_KEY) != 0);
-	const bool queueingCmd = ((cmd.GetOpts() &   SHIFT_KEY) != 0);
+	const bool queueingCmd = ((cmd.GetOpts() & SHIFT_KEY) != 0);
 
 	const CPlayer* netPlayer = playerHandler.Player(playerNum);
 
 	const std::vector<int>& netSelectedUnitIDs = selectedUnitsHandler.netSelected[playerNum];
 
 	const unsigned int targetsCount = targetUnitIDs.size();
-	const unsigned int realCount = std::count_if(netSelectedUnitIDs.begin(), netSelectedUnitIDs.end(), [](int id) {
-		return unitHandler.GetUnit(id) != nullptr;
-	});
+	const unsigned int realCount = std::count_if(netSelectedUnitIDs.begin(), netSelectedUnitIDs.end(),
+	    [](int id) { return unitHandler.GetUnit(id) != nullptr; });
 	if (realCount == 0)
 		return ret;
 
@@ -628,7 +634,7 @@ bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 		if (unit == nullptr)
 			continue;
 
-		midPos += (queueingCmd? LastQueuePosition(unit): float3(unit->midPos));
+		midPos += (queueingCmd ? LastQueuePosition(unit) : float3(unit->midPos));
 	}
 
 	midPos /= realCount;
@@ -676,13 +682,8 @@ bool CSelectedUnitsHandlerAI::SelectAttackNet(const Command& cmd, int playerNum)
 	return ret;
 }
 
-
-void CSelectedUnitsHandlerAI::SelectCircleUnits(
-	const float3& pos,
-	float radius,
-	int playerNum,
-	std::vector<int>& units
-) {
+void CSelectedUnitsHandlerAI::SelectCircleUnits(const float3& pos, float radius, int playerNum, std::vector<int>& units)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	units.clear();
 
@@ -694,7 +695,7 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 	const float allyTeamError = losHandler->GetAllyTeamRadarErrorSize(allyTeam);
 
 	QuadFieldQuery qfQuery;
-	quadField.GetUnitsExact(qfQuery, pos, radius+allyTeamError, false);
+	quadField.GetUnitsExact(qfQuery, pos, radius + allyTeamError, false);
 
 	const float radiusSqr = radius * radius;
 	const unsigned int count = qfQuery.units->size();
@@ -721,13 +722,11 @@ void CSelectedUnitsHandlerAI::SelectCircleUnits(
 	}
 }
 
-
-void CSelectedUnitsHandlerAI::SelectRectangleUnits(
-	const float3& pos0,
-	const float3& pos1,
-	int playerNum,
-	std::vector<int>& units
-) {
+void CSelectedUnitsHandlerAI::SelectRectangleUnits(const float3& pos0,
+    const float3& pos1,
+    int playerNum,
+    std::vector<int>& units)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	units.clear();
 
@@ -743,7 +742,7 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 
 	QuadFieldQuery qfQuery;
 	quadField.GetUnitsExact(qfQuery, {mins.x - allyTeamError, 0, mins.z - allyTeamError},
-			                 {maxs.x + allyTeamError, 0, maxs.z + allyTeamError});
+	    {maxs.x + allyTeamError, 0, maxs.z + allyTeamError});
 
 	const unsigned int count = qfQuery.units->size();
 
@@ -768,7 +767,6 @@ void CSelectedUnitsHandlerAI::SelectRectangleUnits(
 		units.push_back(unit->id);
 	}
 }
-
 
 float3 CSelectedUnitsHandlerAI::LastQueuePosition(const CUnit* unit)
 {

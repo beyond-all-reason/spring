@@ -1,9 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <SDL_keycode.h>
-#include <tracy/Tracy.hpp>
-
 #include "DollyController.h"
+
 #include "Game/Camera.h"
 #include "Game/Camera/CameraController.h"
 #include "Game/CameraHandler.h"
@@ -21,12 +19,15 @@
 #include "System/SpringMath.h"
 #include "System/float3.h"
 
+#include <SDL_keycode.h>
+#include <tracy/Tracy.hpp>
+
 CONFIG(float, CamDollyFOV).defaultValue(45.0f);
 
 CDollyController::CDollyController()
-	: rot(2.677f, 0.0f, 0.0f)
-	, lookTarget(0.f, 0.f, 0.f)
-	, position(400.f, 400.f, 400.f)
+    : rot(2.677f, 0.0f, 0.0f)
+    , lookTarget(0.f, 0.f, 0.f)
+    , position(400.f, 400.f, 400.f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	configHandler->NotifyOnChange(this, {"CamDollyFOV"});
@@ -62,7 +63,8 @@ void CDollyController::Pause(float percent)
 {
 	if (percent >= 0.f && percent <= 1.f) {
 		pauseTime = percent * (endTime - startTime) + startTime;
-	} else {
+	}
+	else {
 		pauseTime = spring_gettime().toMilliSecsf();
 	}
 }
@@ -92,7 +94,8 @@ void CDollyController::Update()
 		float maxU = NURBS::maxU(curveDegree, curveControlPoints, nurbsKnots);
 		float u = minU + percent * (maxU - minU);
 		pos = NURBS::SolveNURBS(curveDegree, curveControlPoints, nurbsKnots, u);
-	} else if (mode == DOLLY_MODE_POSITION) {
+	}
+	else if (mode == DOLLY_MODE_POSITION) {
 		pos = position;
 	}
 
@@ -101,14 +104,16 @@ void CDollyController::Update()
 	if (lookMode == DOLLY_LOOKMODE_POSITION) {
 		pos += lookTarget * relative;
 		dir = (lookTarget - pos).Normalize();
-	} else if (lookMode == DOLLY_LOOKMODE_CURVE) {
+	}
+	else if (lookMode == DOLLY_LOOKMODE_CURVE) {
 		float minU = NURBS::minU(lookCurveDegree, lookControlPoints, lookKnots);
 		float maxU = NURBS::maxU(lookCurveDegree, lookControlPoints, lookKnots);
 		float u = minU + percent * (maxU - minU);
 		float3 lookT = NURBS::SolveNURBS(lookCurveDegree, lookControlPoints, lookKnots, u);
 		pos += lookT * relative;
 		dir = (lookT - pos).Normalize();
-	} else if (lookMode == DOLLY_LOOKMODE_UNIT) {
+	}
+	else if (lookMode == DOLLY_LOOKMODE_UNIT) {
 		CUnit* unit = unitHandler.GetUnit(lookUnit);
 		if (unit != nullptr && unit->IsInLosForAllyTeam(gu->myAllyTeam)) {
 			pos += unit->drawPos * relative;
@@ -138,26 +143,18 @@ void CDollyController::SwitchTo(const CCameraController* oldCam, const bool show
 	rot = oldCam->GetRot();
 }
 
-void CDollyController::SetNURBS(int degree, const std::vector<float4>& cpoints,
-                                const std::vector<float>& knots)
+void CDollyController::SetNURBS(int degree, const std::vector<float4>& cpoints, const std::vector<float>& knots)
 {
 	curveDegree = degree;
 	curveControlPoints = cpoints;
 	nurbsKnots = knots;
 }
 
-void CDollyController::SetLookPosition(const float3& pos)
-{
-	lookTarget = pos;
-}
+void CDollyController::SetLookPosition(const float3& pos) { lookTarget = pos; }
 
-void CDollyController::SetLookUnit(int unitid)
-{
-	lookUnit = unitid;
-}
+void CDollyController::SetLookUnit(int unitid) { lookUnit = unitid; }
 
-void CDollyController::SetLookCurve(int degree, const std::vector<float4>& cpoints,
-                                    const std::vector<float>& knots)
+void CDollyController::SetLookCurve(int degree, const std::vector<float4>& cpoints, const std::vector<float>& knots)
 {
 	lookCurveDegree = degree;
 	lookControlPoints = cpoints;
@@ -168,9 +165,9 @@ void CDollyController::GetState(StateMap& sm) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCameraController::GetState(sm);
-	sm["rx"]   = rot.x;
-	sm["ry"]   = rot.y;
-	sm["rz"]   = rot.z;
+	sm["rx"] = rot.x;
+	sm["ry"] = rot.y;
+	sm["rz"] = rot.z;
 }
 
 bool CDollyController::SetState(const StateMap& sm)

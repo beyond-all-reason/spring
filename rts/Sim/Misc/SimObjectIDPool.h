@@ -2,16 +2,19 @@
 
 #pragma once
 
-#include "System/creg/creg_cond.h"
 #include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
 
 class CSolidObject;
+
 class SimObjectIDPool {
 	CR_DECLARE_STRUCT(SimObjectIDPool)
 
 public:
 	SimObjectIDPool() {} // FIXME: creg, needs PostLoad
-	SimObjectIDPool(uint32_t maxObjects) {
+
+	SimObjectIDPool(uint32_t maxObjects)
+	{
 		// pools are reused as part of object handlers, internal table sizes must be
 		// constant at runtime to prevent desyncs between fresh and reloaded clients
 		// (both must execute Expand since it touches the RNG)
@@ -21,7 +24,9 @@ public:
 	}
 
 	void Expand(uint32_t baseID, uint32_t numIDs);
-	void Clear() {
+
+	void Clear()
+	{
 		freeIDs.clear();
 		poolIDs.clear();
 		tempIDs.clear();
@@ -32,9 +37,11 @@ public:
 
 	bool RecycleID(uint32_t uid);
 	bool HasID(uint32_t uid) const;
+
 	bool IsEmpty() const { return (freeIDs.empty()); }
 
 	uint32_t GetSize() const { return (freeIDs.size()); } // number of ID's still unused
+
 	uint32_t MaxSize() const { return (poolIDs.size()); } // number of ID's this pool owns
 
 private:

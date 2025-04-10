@@ -2,35 +2,35 @@
 
 #include "LuaIntro.h"
 
-#include "LuaInclude.h"
 #include "LuaArchive.h"
-#include "LuaUnsyncedCtrl.h"
 #include "LuaCallInCheck.h"
-#include "LuaConstGL.h"
 #include "LuaConstCMD.h"
 #include "LuaConstCMDTYPE.h"
 #include "LuaConstEngine.h"
+#include "LuaConstGL.h"
 #include "LuaConstGame.h"
 #include "LuaConstPlatform.h"
+#include "LuaIO.h"
+#include "LuaInclude.h"
 #include "LuaInterCall.h"
-#include "LuaUnsyncedRead.h"
+#include "LuaOpenGL.h"
 #include "LuaScream.h"
 #include "LuaSyncedRead.h"
-#include "LuaOpenGL.h"
+#include "LuaUnsyncedCtrl.h"
+#include "LuaUnsyncedRead.h"
 #include "LuaUtils.h"
 #include "LuaVFS.h"
-#include "LuaIO.h"
 #include "LuaZip.h"
+
 #include "Rendering/IconHandler.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
-#include "System/Log/ILog.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
-#include "System/Threading/SpringThreading.h"
-#include "System/StringUtil.h"
-
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
+#include "System/Threading/SpringThreading.h"
 
 
 CLuaIntro* luaIntro = nullptr;
@@ -43,7 +43,6 @@ static spring::mutex m_singleton;
 DECL_LOAD_HANDLER(CLuaIntro, luaIntro)
 DECL_FREE_HANDLER(CLuaIntro, luaIntro)
 
-
 /******************************************************************************/
 
 /***
@@ -51,7 +50,7 @@ DECL_FREE_HANDLER(CLuaIntro, luaIntro)
  * @see Callins
  */
 CLuaIntro::CLuaIntro()
-: CLuaHandle("LuaIntro", LUA_HANDLE_ORDER_INTRO, true, false)
+    : CLuaHandle("LuaIntro", LUA_HANDLE_ORDER_INTRO, true, false)
 {
 	luaIntro = this;
 
@@ -84,16 +83,27 @@ CLuaIntro::CLuaIntro()
 
 	// remove a few dangerous calls
 	lua_getglobal(L, "io");
-		lua_pushstring(L, "popen"); lua_pushnil(L); lua_rawset(L, -3);
+	lua_pushstring(L, "popen");
+	lua_pushnil(L);
+	lua_rawset(L, -3);
 	lua_pop(L, 1);
-	lua_getglobal(L, "os"); {
-		lua_pushliteral(L, "exit");      lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "execute");   lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "remove");    lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "rename");    lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "tmpname");   lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "getenv");    lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "setlocale"); lua_pushnil(L); lua_rawset(L, -3);
+	lua_getglobal(L, "os");
+	{
+		lua_pushliteral(L, "exit");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		lua_pushliteral(L, "execute");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		// lua_pushliteral(L, "remove");    lua_pushnil(L); lua_rawset(L, -3);
+		// lua_pushliteral(L, "rename");    lua_pushnil(L); lua_rawset(L, -3);
+		lua_pushliteral(L, "tmpname");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		lua_pushliteral(L, "getenv");
+		lua_pushnil(L);
+		lua_rawset(L, -3);
+		// lua_pushliteral(L, "setlocale"); lua_pushnil(L); lua_rawset(L, -3);
 	}
 	lua_pop(L, 1); // os
 
@@ -102,26 +112,23 @@ CLuaIntro::CLuaIntro()
 	AddBasicCalls(L); // into Global
 
 	// load the spring libraries
-	if (
-	    !AddEntriesToTable(L, "Spring",    LoadUnsyncedCtrlFunctions)           ||
-	    !AddEntriesToTable(L, "Spring",    LoadUnsyncedReadFunctions)           ||
-	    !AddEntriesToTable(L, "Spring",    LoadSyncedReadFunctions  )           ||
+	if (!AddEntriesToTable(L, "Spring", LoadUnsyncedCtrlFunctions) ||
+	    !AddEntriesToTable(L, "Spring", LoadUnsyncedReadFunctions) ||
+	    !AddEntriesToTable(L, "Spring", LoadSyncedReadFunctions) ||
 
-	    !AddEntriesToTable(L, "VFS",       LuaVFS::PushUnsynced)                ||
-	    !AddEntriesToTable(L, "VFS",       LuaZipFileReader::PushUnsynced)      ||
-	    !AddEntriesToTable(L, "VFS",       LuaZipFileWriter::PushUnsynced)      ||
-	    !AddEntriesToTable(L, "VFS",         LuaArchive::PushEntries)           ||
-	    !AddEntriesToTable(L, "Script",      LuaScream::PushEntries)            ||
+	    !AddEntriesToTable(L, "VFS", LuaVFS::PushUnsynced) ||
+	    !AddEntriesToTable(L, "VFS", LuaZipFileReader::PushUnsynced) ||
+	    !AddEntriesToTable(L, "VFS", LuaZipFileWriter::PushUnsynced) ||
+	    !AddEntriesToTable(L, "VFS", LuaArchive::PushEntries) ||
+	    !AddEntriesToTable(L, "Script", LuaScream::PushEntries) ||
 	    // !AddEntriesToTable(L, "Script",      LuaInterCall::PushEntriesUnsynced) ||
-	    !AddEntriesToTable(L, "gl",          LuaOpenGL::PushEntries)            ||
-	    !AddEntriesToTable(L, "GL",          LuaConstGL::PushEntries)           ||
-	    !AddEntriesToTable(L, "Engine",      LuaConstEngine::PushEntries)       ||
-	    !AddEntriesToTable(L, "Platform",    LuaConstPlatform::PushEntries)       ||
-	    !AddEntriesToTable(L, "Game",        LuaConstGame::PushEntries)         ||
-	    !AddEntriesToTable(L, "CMD",         LuaConstCMD::PushEntries)          ||
-	    !AddEntriesToTable(L, "CMDTYPE",     LuaConstCMDTYPE::PushEntries)      ||
-	    !AddEntriesToTable(L, "LOG",         LuaUtils::PushLogEntries)
-	) {
+	    !AddEntriesToTable(L, "gl", LuaOpenGL::PushEntries) || !AddEntriesToTable(L, "GL", LuaConstGL::PushEntries) ||
+	    !AddEntriesToTable(L, "Engine", LuaConstEngine::PushEntries) ||
+	    !AddEntriesToTable(L, "Platform", LuaConstPlatform::PushEntries) ||
+	    !AddEntriesToTable(L, "Game", LuaConstGame::PushEntries) ||
+	    !AddEntriesToTable(L, "CMD", LuaConstCMD::PushEntries) ||
+	    !AddEntriesToTable(L, "CMDTYPE", LuaConstCMDTYPE::PushEntries) ||
+	    !AddEntriesToTable(L, "LOG", LuaUtils::PushLogEntries)) {
 		KillLua();
 		return;
 	}
@@ -140,25 +147,27 @@ CLuaIntro::CLuaIntro()
 	eventHandler.AddClient(this);
 }
 
-
 CLuaIntro::~CLuaIntro()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	luaIntro = nullptr;
 }
 
-
 bool CLuaIntro::RemoveSomeOpenGLFunctions(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// remove some spring opengl functions that don't work preloading
-	lua_getglobal(L, "gl"); {
-		#define PUSHNIL(x) lua_pushliteral(L, #x); lua_pushnil(L); lua_rawset(L, -3)
+	lua_getglobal(L, "gl");
+	{
+#define PUSHNIL(x)          \
+	lua_pushliteral(L, #x); \
+	lua_pushnil(L);         \
+	lua_rawset(L, -3)
 		PUSHNIL(DrawMiniMap);
 		PUSHNIL(SlaveMiniMap);
 		PUSHNIL(ConfigMiniMap);
 
-		//FIXME create a way to render model files
+		// FIXME create a way to render model files
 		PUSHNIL(Unit);
 		PUSHNIL(UnitRaw);
 		PUSHNIL(UnitShape);
@@ -181,7 +190,6 @@ bool CLuaIntro::RemoveSomeOpenGLFunctions(lua_State* L)
 	return true;
 }
 
-
 bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -196,10 +204,10 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetSoundStreamVolume);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetSoundEffectParams);
 
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetTeamColor);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetTeamColor);
 
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, AssignMouseCursor);
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, ReplaceMouseCursor);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, AssignMouseCursor);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, ReplaceMouseCursor);
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, ExtractModArchiveFile);
 
@@ -209,10 +217,10 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, CreateDir);
 
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetMouseCursor);
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, WarpMouse);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetMouseCursor);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, WarpMouse);
 
-	//REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Restart);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Restart);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWMIcon);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWMCaption);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetWindowGeometry);
@@ -223,7 +231,6 @@ bool CLuaIntro::LoadUnsyncedCtrlFunctions(lua_State* L)
 
 	return true;
 }
-
 
 bool CLuaIntro::LoadUnsyncedReadFunctions(lua_State* L)
 {
@@ -273,7 +280,6 @@ bool CLuaIntro::LoadUnsyncedReadFunctions(lua_State* L)
 	return true;
 }
 
-
 bool CLuaIntro::LoadSyncedReadFunctions(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -304,14 +310,13 @@ bool CLuaIntro::LoadSyncedReadFunctions(lua_State* L)
 	REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, AreTeamsAllied);
 	REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, ArePlayersAllied);
 
-	//REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundHeight);
-	//REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundOrigHeight);
-	//REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundNormal);
-	//REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundInfo);
-	//REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundExtremes);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundHeight);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundOrigHeight);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundNormal);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundInfo);
+	// REGISTER_SCOPED_LUA_CFUNC(LuaSyncedRead, GetGroundExtremes);
 	return true;
 }
-
 
 string CLuaIntro::LoadFile(const string& filename) const
 {
@@ -324,7 +329,6 @@ string CLuaIntro::LoadFile(const string& filename) const
 
 	return code;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -341,7 +345,7 @@ void CLuaIntro::DrawLoadScreen()
 	luaL_checkstack(L, 2, __func__);
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L)) {
-		//LuaOpenGL::DisableCommon(LuaOpenGL::DRAW_SCREEN);
+		// LuaOpenGL::DisableCommon(LuaOpenGL::DRAW_SCREEN);
 		return; // the call is not defined
 	}
 
@@ -355,11 +359,10 @@ void CLuaIntro::DrawLoadScreen()
 	LuaOpenGL::SetDrawingEnabled(L, false);
 }
 
-
 /***
  * @function Intro:LoadProgress
  * @param message string
- * @param replaceLastLine boolean 
+ * @param replaceLastLine boolean
  */
 void CLuaIntro::LoadProgress(const std::string& msg, const bool replace_lastline)
 {
@@ -377,11 +380,9 @@ void CLuaIntro::LoadProgress(const std::string& msg, const bool replace_lastline
 	RunCallIn(L, cmdStr, 2, 0);
 }
 
-
 // Don't call GamePreload since it may be called concurrent
 // with other callins during loading.
-void CLuaIntro::GamePreload()
-{ }
+void CLuaIntro::GamePreload() {}
 
 /******************************************************************************/
 /******************************************************************************/

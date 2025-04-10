@@ -3,38 +3,37 @@
 
 #include "LuaSyncedMoveCtrl.h"
 
-#include "LuaInclude.h"
-
 #include "LuaHandle.h"
 #include "LuaHashString.h"
+#include "LuaInclude.h"
 #include "LuaUtils.h"
+
+#include "Sim/MoveTypes/AAirMoveType.h"
+#include "Sim/MoveTypes/GroundMoveType.h"
+#include "Sim/MoveTypes/HoverAirMoveType.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
-#include "Sim/MoveTypes/GroundMoveType.h"
-#include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/MoveTypes/StrafeAirMoveType.h"
-#include "Sim/MoveTypes/HoverAirMoveType.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
-#include "System/SpringMath.h"
 #include "System/Log/ILog.h"
 #include "System/SpringHash.h"
+#include "System/SpringMath.h"
 
 #include <cctype>
-
 
 /******************************************************************************
  * MoveCtrl
  *
  * @see rts/Lua/LuaSyncedMoveCtrl.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 
 bool LuaSyncedMoveCtrl::PushMoveCtrl(lua_State* L)
 {
 	/***
 	 * Accessed via `Spring.MoveCtrl`.
-	 * 
+	 *
 	 * @see Spring.MoveCtrl
 	 * @class MoveCtrl
 	 */
@@ -91,9 +90,6 @@ bool LuaSyncedMoveCtrl::PushMoveCtrl(lua_State* L)
 	return true;
 }
 
-
-
-
 static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 {
 	CUnit* unit = unitHandler.GetUnit(luaL_checkint(L, index));
@@ -105,7 +101,6 @@ static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 
 	return unit;
 }
-
 
 static inline CScriptMoveType* ParseScriptMoveType(lua_State* L, const char* caller, int index)
 {
@@ -132,8 +127,6 @@ static inline DerivedMoveType* ParseDerivedMoveType(lua_State* L, const char* ca
 	return (dynamic_cast<DerivedMoveType*>(unit->moveType));
 }
 
-
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -153,7 +146,6 @@ int LuaSyncedMoveCtrl::IsEnabled(lua_State* L)
 	return 1;
 }
 
-
 /***
  * @function MoveCtrl.Enable
  * @param unitID integer
@@ -169,7 +161,6 @@ int LuaSyncedMoveCtrl::Enable(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.Disable
  * @param unitID integer
@@ -184,7 +175,6 @@ int LuaSyncedMoveCtrl::Disable(lua_State* L)
 	unit->DisableScriptMoveType();
 	return 0;
 }
-
 
 /******************************************************************************/
 
@@ -204,7 +194,6 @@ int LuaSyncedMoveCtrl::SetTag(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.GetTag
  * @param tag integer?
@@ -219,7 +208,6 @@ int LuaSyncedMoveCtrl::GetTag(lua_State* L)
 	lua_pushnumber(L, moveType->tag);
 	return 1;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -252,17 +240,20 @@ int LuaSyncedMoveCtrl::SetProgressState(lua_State* L)
 		if ((state < AMoveType::Done) || (state > AMoveType::Failed)) {
 			luaL_error(L, "SetProgressState(): bad state value (%d)", state);
 		}
-		moveType->progressState = (AMoveType::ProgressState) state;
+		moveType->progressState = (AMoveType::ProgressState)state;
 	}
 	else if (lua_isstring(L, 2)) {
 		const string state = lua_tostring(L, 2);
 		if (state == "done") {
 			moveType->progressState = AMoveType::Done;
-		} else if (state == "active") {
+		}
+		else if (state == "active") {
 			moveType->progressState = AMoveType::Active;
-		} else if (state == "failed") {
+		}
+		else if (state == "failed") {
 			moveType->progressState = AMoveType::Failed;
-		} else {
+		}
+		else {
 			luaL_error(L, "SetProgressState(): bad state value (%s)", state.c_str());
 		}
 	}
@@ -271,7 +262,6 @@ int LuaSyncedMoveCtrl::SetProgressState(lua_State* L)
 	}
 	return 0;
 }
-
 
 /******************************************************************************/
 
@@ -290,7 +280,6 @@ int LuaSyncedMoveCtrl::SetExtrapolate(lua_State* L)
 	moveType->extrapolate = luaL_checkboolean(L, 2);
 	return 0;
 }
-
 
 /******************************************************************************/
 
@@ -314,8 +303,8 @@ int LuaSyncedMoveCtrl::SetPhysics(lua_State* L)
 	if (moveType == nullptr)
 		return 0;
 
-	const float3 pos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L,  4));
-	const float3 vel(luaL_checkfloat(L, 5), luaL_checkfloat(L, 6), luaL_checkfloat(L,  7));
+	const float3 pos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
+	const float3 vel(luaL_checkfloat(L, 5), luaL_checkfloat(L, 6), luaL_checkfloat(L, 7));
 	const float3 rot(luaL_checkfloat(L, 8), luaL_checkfloat(L, 9), luaL_checkfloat(L, 10));
 	ASSERT_SYNCED(pos);
 	ASSERT_SYNCED(vel);
@@ -323,7 +312,6 @@ int LuaSyncedMoveCtrl::SetPhysics(lua_State* L)
 	moveType->SetPhysics(pos, vel, rot);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetPosition
@@ -339,14 +327,11 @@ int LuaSyncedMoveCtrl::SetPosition(lua_State* L)
 	if (moveType == nullptr)
 		return 0;
 
-	const float3 pos(luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3),
-	                 luaL_checkfloat(L, 4));
+	const float3 pos(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
 	ASSERT_SYNCED(pos);
 	moveType->SetPosition(pos);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetVelocity
@@ -362,14 +347,11 @@ int LuaSyncedMoveCtrl::SetVelocity(lua_State* L)
 	if (moveType == nullptr)
 		return 0;
 
-	const float3 vel(luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3),
-	                 luaL_checkfloat(L, 4));
+	const float3 vel(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
 	ASSERT_SYNCED(vel);
 	moveType->SetVelocity(vel);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetRelativeVelocity
@@ -385,14 +367,11 @@ int LuaSyncedMoveCtrl::SetRelativeVelocity(lua_State* L)
 	if (moveType == nullptr)
 		return 0;
 
-	const float3 relVel(luaL_checkfloat(L, 2),
-	                    luaL_checkfloat(L, 3),
-	                    luaL_checkfloat(L, 4));
+	const float3 relVel(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
 	ASSERT_SYNCED(relVel);
 	moveType->SetRelativeVelocity(relVel);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetRotation
@@ -408,14 +387,11 @@ int LuaSyncedMoveCtrl::SetRotation(lua_State* L)
 	if (moveType == nullptr)
 		return 0;
 
-	const float3 rot(luaL_checkfloat(L, 2),
-	                 luaL_checkfloat(L, 3),
-	                 luaL_checkfloat(L, 4));
+	const float3 rot(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
 	ASSERT_SYNCED(rot);
 	moveType->SetRotation(rot);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetRotationOffset
@@ -426,7 +402,6 @@ int LuaSyncedMoveCtrl::SetRotationOffset(lua_State* L)
 	// DEPRECATED
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetRotationVelocity
@@ -442,9 +417,7 @@ int LuaSyncedMoveCtrl::SetRotationVelocity(lua_State* L)
 	if (moveType == nullptr)
 		return 0;
 
-	const float3 rotVel(luaL_checkfloat(L, 2),
-	                    luaL_checkfloat(L, 3),
-	                    luaL_checkfloat(L, 4));
+	const float3 rotVel(luaL_checkfloat(L, 2), luaL_checkfloat(L, 3), luaL_checkfloat(L, 4));
 	ASSERT_SYNCED(rotVel);
 	moveType->SetRotationVelocity(rotVel);
 	return 0;
@@ -468,7 +441,6 @@ int LuaSyncedMoveCtrl::SetHeading(lua_State* L)
 	return 0;
 }
 
-
 /******************************************************************************/
 
 /***
@@ -487,7 +459,6 @@ int LuaSyncedMoveCtrl::SetTrackSlope(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.SetTrackGround
  * @param unitID integer
@@ -503,7 +474,6 @@ int LuaSyncedMoveCtrl::SetTrackGround(lua_State* L)
 	moveType->trackGround = luaL_checkboolean(L, 2);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetTrackLimits
@@ -521,7 +491,6 @@ int LuaSyncedMoveCtrl::SetTrackLimits(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.SetGroundOffset
  * @param unitID integer
@@ -537,7 +506,6 @@ int LuaSyncedMoveCtrl::SetGroundOffset(lua_State* L)
 	moveType->groundOffset = luaL_checkfloat(L, 2);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetGravity
@@ -555,7 +523,6 @@ int LuaSyncedMoveCtrl::SetGravity(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.SetDrag
  * @param unitID integer
@@ -572,7 +539,6 @@ int LuaSyncedMoveCtrl::SetDrag(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.SetWindFactor
  * @param unitID integer
@@ -588,7 +554,6 @@ int LuaSyncedMoveCtrl::SetWindFactor(lua_State* L)
 	moveType->windFactor = luaL_checkfloat(L, 2);
 	return 0;
 }
-
 
 /***
  * @function MoveCtrl.SetLimits
@@ -612,7 +577,6 @@ int LuaSyncedMoveCtrl::SetLimits(lua_State* L)
 	return 0;
 }
 
-
 /******************************************************************************/
 
 /***
@@ -633,10 +597,9 @@ int LuaSyncedMoveCtrl::SetNoBlocking(lua_State* L)
 	return 0;
 }
 
-
 int LuaSyncedMoveCtrl::SetShotStop(lua_State* L) { return 0; }
-int LuaSyncedMoveCtrl::SetSlopeStop(lua_State* L) { return 0; }
 
+int LuaSyncedMoveCtrl::SetSlopeStop(lua_State* L) { return 0; }
 
 /***
  * @function MoveCtrl.SetCollideStop
@@ -654,7 +617,6 @@ int LuaSyncedMoveCtrl::SetCollideStop(lua_State* L)
 	return 0;
 }
 
-
 /***
  * @function MoveCtrl.SetLimitsStop
  * @param unitID integer
@@ -671,13 +633,10 @@ int LuaSyncedMoveCtrl::SetLimitsStop(lua_State* L)
 	return 0;
 }
 
-
-
 /******************************************************************************/
 /* MoveType member-value handling */
 
-template<typename ValueType>
-static bool SetMoveTypeValue(AMoveType* mt, const char* key, ValueType val)
+template<typename ValueType> static bool SetMoveTypeValue(AMoveType* mt, const char* key, ValueType val)
 {
 	// NOTE: only supports floats and bools, callee MUST reinterpret &val as float* or bool*
 	return (mt->SetMemberValue(spring::LiteHash(key, strlen(key), 0), &val));
@@ -719,11 +678,11 @@ static inline bool SetMoveTypeValue(lua_State* L, AMoveType* moveType, int keyId
  */
 
 /** - Not exported.
- * 
+ *
  * Parses a MoveType object.
- * 
+ *
  * Parses params, starting at param 2:
- * 
+ *
  * Overload 1:
  * @param <MoveTypeTable> boolean
  * @return number numAssignedValues
@@ -746,29 +705,31 @@ static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller
 	}
 
 	switch (lua_gettop(L)) {
-		case 2: {
-			// two args (unitID, {"key1" = (number | bool) value1, ...})
-			constexpr int tableIdx = 2;
+	case 2: {
+		// two args (unitID, {"key1" = (number | bool) value1, ...})
+		constexpr int tableIdx = 2;
 
-			if (lua_istable(L, tableIdx)) {
-				for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-					if (lua_israwstring(L, -2) && SetMoveTypeValue(L, moveType, -2, -1)) {
-						numAssignedValues++;
-					} else {
-						LOG_L(L_WARNING, "[%s] incompatible movetype key for %s", __func__, caller);
-					}
+		if (lua_istable(L, tableIdx)) {
+			for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
+				if (lua_israwstring(L, -2) && SetMoveTypeValue(L, moveType, -2, -1)) {
+					numAssignedValues++;
+				}
+				else {
+					LOG_L(L_WARNING, "[%s] incompatible movetype key for %s", __func__, caller);
 				}
 			}
-		} break;
+		}
+	} break;
 
-		case 3: {
-			// three args (unitID, "key", (number | bool) value)
-			if (lua_isstring(L, 2) && SetMoveTypeValue(L, moveType, 2, 3)) {
-				numAssignedValues++;
-			} else {
-				LOG_L(L_WARNING, "[%s] incompatible movetype key for %s", __func__, caller);
-			}
-		} break;
+	case 3: {
+		// three args (unitID, "key", (number | bool) value)
+		if (lua_isstring(L, 2) && SetMoveTypeValue(L, moveType, 2, 3)) {
+			numAssignedValues++;
+		}
+		else {
+			LOG_L(L_WARNING, "[%s] incompatible movetype key for %s", __func__, caller);
+		}
+	} break;
 	}
 
 	lua_pushnumber(L, numAssignedValues);
@@ -867,7 +828,7 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
  * | "collide"
  * | "useSmoothMesh"
  * | "loopbackAttack"
-  * @param value boolean
+ * @param value boolean
  * @return number numAssignedValues
  */
 /***
@@ -875,19 +836,19 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
  * @param unitID integer
  * @param key
  * | GenericMoveTypeNumberKey
- * | "wantedHeight" 
- * | "turnRadius" 
- * | "accRate" 
- * | "decRate" 
+ * | "wantedHeight"
+ * | "turnRadius"
+ * | "accRate"
+ * | "decRate"
  * | "maxAcc" # Synonym for `accRate`.
  * | "maxDec" # Synonym for `decRate`.
- * | "maxBank" 
- * | "maxPitch" 
- * | "maxAileron" 
- * | "maxElevator" 
- * | "maxRudder" 
- * | "attackSafetyDistance" 
- * | "myGravity" 
+ * | "maxBank"
+ * | "maxPitch"
+ * | "maxAileron"
+ * | "maxElevator"
+ * | "maxRudder"
+ * | "attackSafetyDistance"
+ * | "myGravity"
  * @param value number
  * @return number numAssignedValues
  */
@@ -968,8 +929,6 @@ int LuaSyncedMoveCtrl::SetGroundMoveTypeData(lua_State* L)
 	return (SetMoveTypeData(L, ParseDerivedMoveType<CGroundMoveType>(L, __func__, 1), __func__));
 }
 
-
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -977,7 +936,8 @@ int LuaSyncedMoveCtrl::SetGroundMoveTypeData(lua_State* L)
  * @function MoveCtrl.SetMoveDef
  * @param unitID integer
  * @param moveDef integer|string Name or path type of the MoveDef.
- * @return boolean success `true` if the `MoveDef` was set, `false` if `unitID` or `moveDef` were invalid, or if the unit does not support a `MoveDef`.
+ * @return boolean success `true` if the `MoveDef` was set, `false` if `unitID` or `moveDef` were invalid, or if the
+ * unit does not support a `MoveDef`.
  */
 int LuaSyncedMoveCtrl::SetMoveDef(lua_State* L)
 {
@@ -999,7 +959,8 @@ int LuaSyncedMoveCtrl::SetMoveDef(lua_State* L)
 
 	// parse a MoveDef by number *or* by string (mutually exclusive)
 	if (lua_israwnumber(L, 2))
-		moveDef = moveDefHandler.GetMoveDefByPathType(std::clamp(luaL_checkint(L, 2), 0, int(moveDefHandler.GetNumMoveDefs()) - 1));
+		moveDef = moveDefHandler.GetMoveDefByPathType(
+		    std::clamp(luaL_checkint(L, 2), 0, int(moveDefHandler.GetNumMoveDefs()) - 1));
 	if (lua_israwstring(L, 2))
 		moveDef = moveDefHandler.GetMoveDefByName(lua_tostring(L, 2));
 
@@ -1011,7 +972,8 @@ int LuaSyncedMoveCtrl::SetMoveDef(lua_State* L)
 	// PFS might have cached data by path-type which must be cleared
 	if (unit->UsingScriptMoveType()) {
 		unit->prevMoveType->StopMoving();
-	} else {
+	}
+	else {
 		unit->moveType->StopMoving();
 	}
 

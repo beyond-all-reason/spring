@@ -20,4 +20,3 @@ for line in fileinput.input():
 		#print("paused: " + str(paused))
 	elif not paused:
 		count = count + 1
-

@@ -17,7 +17,7 @@ struct UnitDefWeapon;
 
 struct UnitLoadParams {
 	const UnitDef* unitDef; /// must be non-NULL
-	const CUnit* builder; /// may be NULL
+	const CUnit* builder;   /// may be NULL
 
 	float3 pos;
 	float3 speed;
@@ -30,8 +30,7 @@ struct UnitLoadParams {
 	bool flattenGround;
 };
 
-class CUnitLoader
-{
+class CUnitLoader {
 public:
 	static CUnitLoader* GetInstance();
 	static CCommandAI* NewCommandAI(CUnit* u, const UnitDef* ud);

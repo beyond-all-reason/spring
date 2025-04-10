@@ -5,15 +5,11 @@
 #include <string>
 
 springai::AIException::AIException(int errorNumber, const std::string& message)
-	: errorNumber(errorNumber)
-	, message(message)
+    : errorNumber(errorNumber)
+    , message(message)
 {
 }
 
-int springai::AIException::GetErrorNumber() const {
-	return errorNumber;
-}
+int springai::AIException::GetErrorNumber() const { return errorNumber; }
 
-const char* springai::AIException::what() const throw() {
-	return message.c_str();
-}
+const char* springai::AIException::what() const throw() { return message.c_str(); }

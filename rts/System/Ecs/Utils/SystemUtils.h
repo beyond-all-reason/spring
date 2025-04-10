@@ -9,36 +9,24 @@ namespace SystemUtils {
 
 class SystemUtils {
 public:
-    void NotifyUpdate() {
-        update.publish();
-    }
+	void NotifyUpdate() { update.publish(); }
 
-    void NotifyPreLoad() {
-        preLoad.publish();
-    }
+	void NotifyPreLoad() { preLoad.publish(); }
 
-    void NotifyPostLoad() {
-        postLoad.publish();
-    }
+	void NotifyPostLoad() { postLoad.publish(); }
 
-    [[nodiscard]] auto OnUpdate() ENTT_NOEXCEPT {
-        return entt::sink{update};
-    }
+	[[nodiscard]] auto OnUpdate() ENTT_NOEXCEPT { return entt::sink{update}; }
 
-    [[nodiscard]] auto OnPreLoad() ENTT_NOEXCEPT {
-        return entt::sink{preLoad};
-    }
+	[[nodiscard]] auto OnPreLoad() ENTT_NOEXCEPT { return entt::sink{preLoad}; }
 
-    [[nodiscard]] auto OnPostLoad() ENTT_NOEXCEPT {
-        return entt::sink{postLoad};
-    }
+	[[nodiscard]] auto OnPostLoad() ENTT_NOEXCEPT { return entt::sink{postLoad}; }
 
 protected:
-    entt::sigh<void()> update{};
-    entt::sigh<void()> preLoad{};
-    entt::sigh<void()> postLoad{};
+	entt::sigh<void()> update{};
+	entt::sigh<void()> preLoad{};
+	entt::sigh<void()> postLoad{};
 };
 
-}
+} // namespace SystemUtils
 
 #endif

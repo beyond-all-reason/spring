@@ -3,12 +3,12 @@
 #ifndef GROUP_H
 #define GROUP_H
 
-#include <vector>
-
 #include "Sim/Units/CommandAI/Command.h"
+#include "System/UnorderedSet.hpp"
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
-#include "System/UnorderedSet.hpp"
+
+#include <vector>
 
 class CUnit;
 class CFeature;
@@ -17,21 +17,25 @@ class CFeature;
  * Logic group of units denoted by a number.
  * A group-ID/-number is unique per team (-> per groupHandler).
  */
-class CGroup
-{
+class CGroup {
 	CR_DECLARE_STRUCT(CGroup)
 
 public:
 	CGroup() = default;
-	CGroup(int _id, int _ghIndex): id(_id), ghIndex(_ghIndex) {}
 
-	CGroup(const CGroup& ) = delete;
-	CGroup(      CGroup&&) = default;
+	CGroup(int _id, int _ghIndex)
+	    : id(_id)
+	    , ghIndex(_ghIndex)
+	{
+	}
+
+	CGroup(const CGroup&) = delete;
+	CGroup(CGroup&&) = default;
 
 	~CGroup() = default;
 
-	CGroup& operator = (const CGroup& ) = delete;
-	CGroup& operator = (      CGroup&&) = default;
+	CGroup& operator=(const CGroup&) = delete;
+	CGroup& operator=(CGroup&&) = default;
 
 	void PostLoad();
 

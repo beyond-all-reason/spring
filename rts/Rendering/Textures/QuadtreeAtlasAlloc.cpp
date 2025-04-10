@@ -1,27 +1,29 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cstring> // memset
-#include <algorithm>
-#include <vector>
-#include <set>
-#include <bit>
-
 #include "QuadtreeAtlasAlloc.h"
+
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
+
+#include <algorithm>
+#include <bit>
+#include <cstring> // memset
+#include <set>
+#include <vector>
 
 static int NODE_MIN_SIZE = 8;
 
-
 struct QuadTreeNode {
-	QuadTreeNode() {
+	QuadTreeNode()
+	{
 		used = false;
 		posx = posy = size = 0;
 		memset(children, 0, 4 * sizeof(QuadTreeNode*));
 	}
-	~QuadTreeNode() {
+
+	~QuadTreeNode()
+	{
 		for (auto& child: children) {
 			if (child != nullptr) {
 				delete child;
@@ -30,18 +32,20 @@ struct QuadTreeNode {
 		}
 	}
 
-	QuadTreeNode(QuadTreeNode* node, int i) {
+	QuadTreeNode(QuadTreeNode* node, int i)
+	{
 		// i ... 0:=topleft, 1:=topright, 2:=btmleft, 3:=btmright
 		used = false;
 		size = node->size >> 1;
-		posx = node->posx + ((i & 1)     ) * size;
+		posx = node->posx + ((i & 1)) * size;
 		posy = node->posy + ((i & 2) >> 1) * size;
 		memset(children, 0, 4 * sizeof(QuadTreeNode*));
 	}
 
 	QuadTreeNode* FindPosInQuadTree(int xsize, int ysize);
 
-	int GetMinSize() {
+	int GetMinSize()
+	{
 		int minsize = size;
 		for (const auto& child: children) {
 			if (child != nullptr) {
@@ -57,7 +61,6 @@ struct QuadTreeNode {
 	bool used;
 	QuadTreeNode* children[4];
 };
-
 
 QuadTreeNode* QuadTreeNode::FindPosInQuadTree(int xsize, int ysize)
 {
@@ -93,20 +96,22 @@ QuadTreeNode* QuadTreeNode::FindPosInQuadTree(int xsize, int ysize)
 
 			used = true;
 			return this;
-		} else {
-			return nullptr; //FIXME dynamic x/y quadnode size?
+		}
+		else {
+			return nullptr; // FIXME dynamic x/y quadnode size?
 		}
 	}
 
 	for (int i = 0; i < 4; ++i) {
-		if (!children[i]) children[i] = new QuadTreeNode(this, i);
+		if (!children[i])
+			children[i] = new QuadTreeNode(this, i);
 		QuadTreeNode* subnode = children[i]->FindPosInQuadTree(xsize, ysize);
-		if (subnode) return subnode;
+		if (subnode)
+			return subnode;
 	}
 
 	return nullptr;
 }
-
 
 CQuadtreeAtlasAlloc::CQuadtreeAtlasAlloc()
 {
@@ -114,13 +119,11 @@ CQuadtreeAtlasAlloc::CQuadtreeAtlasAlloc()
 	root = nullptr;
 }
 
-
 CQuadtreeAtlasAlloc::~CQuadtreeAtlasAlloc()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	delete root;
 }
-
 
 QuadTreeNode* CQuadtreeAtlasAlloc::FindPosInQuadTree(int xsize, int ysize)
 {
@@ -147,23 +150,25 @@ QuadTreeNode* CQuadtreeAtlasAlloc::FindPosInQuadTree(int xsize, int ysize)
 	return node;
 }
 
-
 bool CQuadtreeAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const size_t area1 = std::max(tex1->size.x, tex1->size.y);
 	const size_t area2 = std::max(tex2->size.x, tex2->size.y);
 
-	if (area1 > area2) return true;
-	if (area2 > area1) return false;
+	if (area1 > area2)
+		return true;
+	if (area2 > area1)
+		return false;
 
 	// silly but will help stabilizing the placement on reload
-	if (tex1->name > tex2->name) return true;
-	if (tex2->name > tex1->name) return false;
+	if (tex1->name > tex2->name)
+		return true;
+	if (tex2->name > tex1->name)
+		return false;
 
 	return false;
 }
-
 
 bool CQuadtreeAtlasAlloc::Allocate()
 {
@@ -178,14 +183,14 @@ bool CQuadtreeAtlasAlloc::Allocate()
 	bool failure = false;
 
 	std::set<std::string> sortedNames;
-	for (auto& entry : entries) {
+	for (auto& entry: entries) {
 		sortedNames.insert(entry.first);
 	}
 
 	std::vector<SAtlasEntry*> sortedEntries;
 	sortedEntries.reserve(entries.size());
 
-	for (auto& name : sortedNames) {
+	for (auto& name: sortedNames) {
 		sortedEntries.push_back(&entries[name]);
 	}
 
@@ -208,7 +213,7 @@ bool CQuadtreeAtlasAlloc::Allocate()
 
 		entry.texCoords.x1 = node->posx;
 		entry.texCoords.y1 = node->posy;
-		entry.texCoords.x2 = node->posx + entry.size.x - 1; //FIXME stretch if image is smaller than node!
+		entry.texCoords.x2 = node->posx + entry.size.x - 1; // FIXME stretch if image is smaller than node!
 		entry.texCoords.y2 = node->posy + entry.size.y - 1;
 	}
 
@@ -221,13 +226,10 @@ bool CQuadtreeAtlasAlloc::Allocate()
 	return !failure;
 }
 
-
 int CQuadtreeAtlasAlloc::GetNumTexLevels() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!root) return 0;
-	return std::min(
-		std::bit_width(static_cast<uint32_t>(root->GetMinSize())),
-		numLevels
-	);
+	if (!root)
+		return 0;
+	return std::min(std::bit_width(static_cast<uint32_t>(root->GetMinSize())), numLevels);
 }

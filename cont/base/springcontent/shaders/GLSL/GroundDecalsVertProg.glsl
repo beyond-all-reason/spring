@@ -315,7 +315,7 @@ void main() {
 
 	// emulate explosion fade in for the first 6 frames, asjusted by the initial alpha (less fadein for already weak scars)
 	vAlpha *= mix(1.0, smoothstep(0.0, 6.0 * alpha, curAdjustedFrame - thisVertexCreateFrame), float(vDecalType == DECAL_EXPLOSION));
-	
+
 	// vDotElimExp
 	vDotElimExp = dotElimExp;
 

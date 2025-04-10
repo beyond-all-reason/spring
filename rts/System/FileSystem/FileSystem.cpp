@@ -5,14 +5,13 @@
  */
 #include "FileSystem.h"
 
-#include <filesystem>
-
 #include "Game/GameVersion.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/Win/win32.h"
+#include "System/SpringRegex.h"
 #include "System/StringUtil.h"
 
-#include "System/SpringRegex.h"
+#include <filesystem>
 
 #include <unistd.h>
 #ifdef _WIN32
@@ -32,11 +31,11 @@
  * an extra '\\' to quote the character if necessary.
  * The do-while is used for legalizing the ';' in "QUOTE(c, regex);".
  */
-#define QUOTE(c,str)			\
-	do {					\
-		if (!(isalnum(c) || (c) == '_'))	\
-			str += '\\';		\
-		str += c;				\
+#define QUOTE(c, str)                    \
+	do {                                 \
+		if (!(isalnum(c) || (c) == '_')) \
+			str += '\\';                 \
+		str += c;                        \
 	} while (0)
 
 std::string FileSystem::ConvertGlobToRegex(const std::string& glob)
@@ -52,51 +51,47 @@ std::string FileSystem::ConvertGlobToRegex(const std::string& glob)
 		}
 #endif
 		switch (c) {
-			case '*':
-				regex += ".*";
-				break;
-			case '?':
-				regex += '.';
-				break;
-			case '{':
-				braces++;
-				regex += '(';
-				break;
-			case '}':
+		case '*': regex += ".*"; break;
+		case '?': regex += '.'; break;
+		case '{':
+			braces++;
+			regex += '(';
+			break;
+		case '}':
 #ifdef DEBUG
-				if (braces == 0) {
-					LOG_L(L_WARNING, "%s: closing brace without an equivalent opening brace\n%s", __FUNCTION__, glob.c_str());
-				}
+			if (braces == 0) {
+				LOG_L(
+				    L_WARNING, "%s: closing brace without an equivalent opening brace\n%s", __FUNCTION__, glob.c_str());
+			}
 #endif
-				regex += ')';
-				braces--;
-				break;
-			case ',':
-				if (braces > 0) {
-					regex += '|';
-				} else {
-					QUOTE(c, regex);
-				}
-				break;
-			case '\\':
-				++i;
-#ifdef DEBUG
-				if (i == glob.end()) {
-					LOG_L(L_WARNING, "%s: pattern ends with backslash\n%s", __FUNCTION__, glob.c_str());
-				}
-#endif
-				QUOTE(*i, regex);
-				break;
-			default:
+			regex += ')';
+			braces--;
+			break;
+		case ',':
+			if (braces > 0) {
+				regex += '|';
+			}
+			else {
 				QUOTE(c, regex);
-				break;
+			}
+			break;
+		case '\\': ++i;
+#ifdef DEBUG
+			if (i == glob.end()) {
+				LOG_L(L_WARNING, "%s: pattern ends with backslash\n%s", __FUNCTION__, glob.c_str());
+			}
+#endif
+			QUOTE(*i, regex);
+			break;
+		default: QUOTE(c, regex); break;
 		}
 	}
 
 #ifdef DEBUG
 	if (braces > 0) {
 		LOG_L(L_WARNING, "%s: unterminated brace expression\n%s", __FUNCTION__, glob.c_str());
-	} else if (braces < 0) {
+	}
+	else if (braces < 0) {
 		LOG_L(L_WARNING, "%s: too many closing braces\n%s", __FUNCTION__, glob.c_str());
 	}
 #endif
@@ -104,14 +99,12 @@ std::string FileSystem::ConvertGlobToRegex(const std::string& glob)
 	return regex;
 }
 
-
 bool FileSystem::ComparePaths(std::string path1, std::string path2)
 {
 	path1 = FileSystem::EnsureNoPathSepAtEnd(FileSystem::GetNormalizedPath(path1));
 	path2 = FileSystem::EnsureNoPathSepAtEnd(FileSystem::GetNormalizedPath(path2));
 	return FileSystemAbstraction::ComparePaths(path1, path2);
 }
-
 
 bool FileSystem::FileExists(std::string file)
 {
@@ -143,7 +136,6 @@ bool FileSystem::CreateDirectory(std::string dir)
 	return FileSystemAbstraction::MkDir(dir);
 }
 
-
 bool FileSystem::TouchFile(std::string filePath)
 {
 	if (!CheckFile(filePath))
@@ -160,9 +152,6 @@ bool FileSystem::TouchFile(std::string filePath)
 	return (access(filePath.c_str(), R_OK) == 0); // check for read access
 }
 
-
-
-
 std::string FileSystem::GetDirectory(const std::string& path)
 {
 	const size_t s = path.find_last_of("\\/");
@@ -170,7 +159,8 @@ std::string FileSystem::GetDirectory(const std::string& path)
 	if (s != std::string::npos)
 		return path.substr(0, s + 1);
 
-	return ""; // XXX return "./"? (a short test caused a crash because CFileHandler used in Lua couldn't find a file in the base-dir)
+	return ""; // XXX return "./"? (a short test caused a crash because CFileHandler used in Lua couldn't find a file in
+	           // the base-dir)
 }
 
 std::string FileSystem::GetFilename(const std::string& path)
@@ -198,17 +188,18 @@ std::string FileSystem::GetExtension(const std::string& path)
 {
 	const std::string fileName = GetFilename(path);
 	size_t l = fileName.length();
-//#ifdef _WIN32
+	// #ifdef _WIN32
 	//! windows eats dots and spaces at the end of filenames
 	while (l > 0) {
-		const char prevChar = fileName[l-1];
+		const char prevChar = fileName[l - 1];
 		if ((prevChar == '.') || (prevChar == ' ')) {
 			l--;
-		} else {
+		}
+		else {
 			break;
 		}
 	}
-//#endif
+	// #endif
 	const size_t dot = fileName.rfind('.', l);
 
 	if (dot != std::string::npos)
@@ -217,7 +208,8 @@ std::string FileSystem::GetExtension(const std::string& path)
 	return "";
 }
 
-std::string FileSystem::GetNormalizedPath(const std::string& path) {
+std::string FileSystem::GetNormalizedPath(const std::string& path)
+{
 	return std::filesystem::path(path).lexically_normal().generic_string();
 }
 
@@ -237,7 +229,6 @@ std::string& FileSystem::ForwardSlashes(std::string& path)
 
 	return path;
 }
-
 
 bool FileSystem::CheckFile(const std::string& file)
 {

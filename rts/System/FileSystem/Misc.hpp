@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace FileSystemMisc {
-	std::vector<std::string> GetSplashScreenFiles();
+std::vector<std::string> GetSplashScreenFiles();
 }

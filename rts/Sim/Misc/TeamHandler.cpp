@@ -2,28 +2,22 @@
 
 #include "TeamHandler.h"
 
-#include <cstring>
-
 #include "Game/GameSetup.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
-
 #include "System/Misc/TracyDefs.h"
+
+#include <cstring>
 
 
 CR_BIND(CTeamHandler, )
 
-CR_REG_METADATA(CTeamHandler, (
-	CR_MEMBER(gaiaTeamID),
-	CR_MEMBER(gaiaAllyTeamID),
-	CR_MEMBER(teams),
-	CR_MEMBER(allyTeams)
-))
+CR_REG_METADATA(CTeamHandler,
+    (CR_MEMBER(gaiaTeamID), CR_MEMBER(gaiaAllyTeamID), CR_MEMBER(teams), CR_MEMBER(allyTeams)))
 
 
 // needs to be available as early as PreGame
 CTeamHandler teamHandler;
-
 
 void CTeamHandler::LoadFromSetup(const CGameSetup* setup)
 {
@@ -52,8 +46,8 @@ void CTeamHandler::LoadFromSetup(const CGameSetup* setup)
 		// (because of this it would be better treated as a pool owned by class AllyTeam)
 		teams[i].SetMaxUnits(maxUnitsPerTeam);
 
-		assert(teams[i].teamAllyteam >=                0);
-		assert(teams[i].teamAllyteam <  allyTeams.size());
+		assert(teams[i].teamAllyteam >= 0);
+		assert(teams[i].teamAllyteam < allyTeams.size());
 	}
 
 	if (gs->useLuaGaia) {
@@ -87,7 +81,7 @@ void CTeamHandler::LoadFromSetup(const CGameSetup* setup)
 		::AllyTeam& allyteam = allyTeams.back();
 
 		allyteam.allies.resize(allyTeams.size() + 1, false); // make Gaia every AT's enemy
-		allyteam.allies[gaiaAllyTeamID] = true; // set Gaia to be at peace with itself
+		allyteam.allies[gaiaAllyTeamID] = true;              // set Gaia to be at peace with itself
 	}
 }
 
@@ -126,8 +120,6 @@ void CTeamHandler::GameFrame(int frameNum)
 		teams[a].SlowUpdate();
 	}
 }
-
-
 
 unsigned int CTeamHandler::GetNumTeamsInAllyTeam(unsigned int allyTeamNum, bool countDeadTeams) const
 {
@@ -234,4 +226,3 @@ void CTeamHandler::UpdateTeamUnitLimitsPreDeath(int deadTeamNum)
 	assert(tempTeam != nullptr);
 	deadTeam->SetMaxUnits(0);
 }
-

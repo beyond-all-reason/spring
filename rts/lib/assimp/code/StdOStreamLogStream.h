@@ -41,16 +41,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /** @file  StdOStreamLogStream.h
-*  @brief Implementation of StdOStreamLogStream
-*/
+ *  @brief Implementation of StdOStreamLogStream
+ */
 
 #ifndef AI_STROSTREAMLOGSTREAM_H_INC
 #define AI_STROSTREAMLOGSTREAM_H_INC
 
-#include <assimp/LogStream.hpp>
 #include <ostream>
 
-namespace Assimp    {
+#include <assimp/LogStream.hpp>
+
+namespace Assimp {
 
 // ---------------------------------------------------------------------------
 /** @class  StdOStreamLogStream
@@ -58,43 +59,46 @@ namespace Assimp    {
  */
 class StdOStreamLogStream : public LogStream {
 public:
-    /** @brief  Construction from an existing std::ostream
-     *  @param _ostream Output stream to be used
-    */
-    explicit StdOStreamLogStream(std::ostream& _ostream);
+	/** @brief  Construction from an existing std::ostream
+	 *  @param _ostream Output stream to be used
+	 */
+	explicit StdOStreamLogStream(std::ostream& _ostream);
 
-    /** @brief  Destructor  */
-    ~StdOStreamLogStream();
+	/** @brief  Destructor  */
+	~StdOStreamLogStream();
 
-    /** @brief  Writer  */
-    void write(const char* message);
+	/** @brief  Writer  */
+	void write(const char* message);
 
 private:
-    std::ostream& mOstream;
+	std::ostream& mOstream;
 };
 
 // ---------------------------------------------------------------------------
 //  Default constructor
 inline StdOStreamLogStream::StdOStreamLogStream(std::ostream& _ostream)
-: mOstream   (_ostream){
-    // empty
+    : mOstream(_ostream)
+{
+	// empty
 }
 
 // ---------------------------------------------------------------------------
 //  Default constructor
-inline StdOStreamLogStream::~StdOStreamLogStream() {
-    // empty
+inline StdOStreamLogStream::~StdOStreamLogStream()
+{
+	// empty
 }
 
 // ---------------------------------------------------------------------------
 //  Write method
-inline void StdOStreamLogStream::write(const char* message) {
-    mOstream << message;
-    mOstream.flush();
+inline void StdOStreamLogStream::write(const char* message)
+{
+	mOstream << message;
+	mOstream.flush();
 }
 
 // ---------------------------------------------------------------------------
 
-}   // Namespace Assimp
+} // Namespace Assimp
 
 #endif // guard

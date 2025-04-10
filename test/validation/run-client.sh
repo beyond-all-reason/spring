@@ -38,4 +38,3 @@ done
 
 echo "cache file didn't show up within MAXWAIT=$MAXWAIT seconds"
 exit 1
-

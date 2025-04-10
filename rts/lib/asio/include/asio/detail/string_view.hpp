@@ -12,7 +12,7 @@
 #define ASIO_DETAIL_STRING_VIEW_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
@@ -20,11 +20,11 @@
 #if defined(ASIO_HAS_STRING_VIEW)
 
 #if defined(ASIO_HAS_STD_STRING_VIEW)
-# include <string_view>
+#include <string_view>
 #elif defined(ASIO_HAS_STD_EXPERIMENTAL_STRING_VIEW)
-# include <experimental/string_view>
+#include <experimental/string_view>
 #else // defined(ASIO_HAS_STD_EXPERIMENTAL_STRING_VIEW)
-# error ASIO_HAS_STRING_VIEW is set but no string_view is available
+#error ASIO_HAS_STRING_VIEW is set but no string_view is available
 #endif // defined(ASIO_HAS_STD_EXPERIMENTAL_STRING_VIEW)
 
 namespace asio {
@@ -39,9 +39,9 @@ using std::experimental::string_view;
 
 } // namespace asio
 
-# define ASIO_STRING_VIEW_PARAM asio::string_view
+#define ASIO_STRING_VIEW_PARAM asio::string_view
 #else // defined(ASIO_HAS_STRING_VIEW)
-# define ASIO_STRING_VIEW_PARAM const std::string&
+#define ASIO_STRING_VIEW_PARAM const std::string&
 #endif // defined(ASIO_HAS_STRING_VIEW)
 
 #endif // ASIO_DETAIL_STRING_VIEW_HPP

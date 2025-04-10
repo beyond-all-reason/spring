@@ -83,7 +83,7 @@ Some practical remarks:
  * for regular weapons, this is the "default" damage. Beware if you treat it as the "features" armor class (since they can't have a real armor class)!
  * for CEG trails, damage is the remaining TTL of the projectile. So you can for example make missile trails burn out.
  * makes sure adjustments of damage (both ingame such as buffs or upgrades, or metagame changes such as balance changes after a patch) are subtly reflected in the visuals.
- * also lets you reuse the same CEG for multiple weapons of a similar type, for great visual consistency. 
+ * also lets you reuse the same CEG for multiple weapons of a similar type, for great visual consistency.
  * existing games prefer to have a separate effect for each similar weapon, so this is quite an uncommon operator as far as examples to look at.
 
 ## Advanced

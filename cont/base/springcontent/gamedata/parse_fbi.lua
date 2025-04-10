@@ -214,7 +214,7 @@ local function ParseFBI(filename)
     end
     tdf.init_cloaked = nil
   end
-  
+
   SetupWeapons(tdf)
 
   SetupSounds(tdf, soundTypes)
