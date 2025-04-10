@@ -3592,6 +3592,25 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 }
 
 
+/***
+ *
+ * @function Spring.GetMouseButtonState
+ * @return boolean pressed
+ */
+int LuaUnsyncedRead::GetMouseButtonState(lua_State* L)
+{
+	assert(mouse != nullptr);
+
+	const int button = luaL_checkint(L, 1);
+
+	if ((button <= 0) || (button > NUM_BUTTONS))
+		return 0;
+
+	lua_pushboolean(L, mouse->buttons[button].pressed);
+	return 1;
+}
+
+
 /******************************************************************************
  * Text
  * @section text
