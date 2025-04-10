@@ -838,6 +838,38 @@ static int SetWorldObjectUseAirLos(lua_State* L, CWorldObject* o, const char* ca
 	return 0;
 }
 
+static SResourcePack ResourcePackFromTypeValue(const char *resourceType, float value)
+{
+	assert(type);
+
+	SResourcePack resources {0.0f};
+	switch (resourceType[0]) {
+		case 'm': { resources.metal  = value; } break;
+		case 'e': { resources.energy = value; } break;
+		default : {                           } break;
+	}
+
+	return resources;
+}
+
+static SResourcePack ResourcePackFromLuaTypeValueArgs(lua_State *L, int typeIndex, int valueIndex)
+{
+	const auto resourceType = luaL_checkstring(L, typeIndex);
+	const auto value = max(0.0f, luaL_checkfloat(L, valueIndex));
+
+	return ResourcePackFromTypeValue(resourceType, value);
+}
+
+static SResourcePack ResourcePackFromLuaTableArg(lua_State *L, int tableIndex)
+{
+	SResourcePack resources {0.0f};
+
+	for (lua_pushnil(L); lua_next(L, tableIndex) != 0; lua_pop(L, 1))
+		if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
+			resources += ResourcePackFromLuaTypeValueArgs(L, LUA_TABLE_KEY_INDEX, LUA_TABLE_VALUE_INDEX);
+
+	return resources;
+}
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1073,6 +1105,7 @@ int LuaSyncedCtrl::SetWind(lua_State* L)
 int LuaSyncedCtrl::AddTeamResource(lua_State* L)
 {
 	const int teamID = luaL_checkint(L, 1);
+	const auto resources = ResourcePackFromLuaTypeValueArgs(L, 2, 3);
 
 	if (!teamHandler.IsValidTeam(teamID))
 		return 0;
@@ -1085,15 +1118,7 @@ int LuaSyncedCtrl::AddTeamResource(lua_State* L)
 	if (team == nullptr)
 		return 0;
 
-	const char* type = luaL_checkstring(L, 2);
-
-	const float value = max(0.0f, luaL_checkfloat(L, 3));
-
-	switch (type[0]) {
-		case 'm': { team->AddMetal (value); } break;
-		case 'e': { team->AddEnergy(value); } break;
-		default : {                         } break;
-	}
+	team->AddResources(resources, false);
 
 	return 0;
 }
@@ -1132,65 +1157,19 @@ int LuaSyncedCtrl::UseTeamResource(lua_State* L)
 	if (team == nullptr)
 		return 0;
 
+	SResourcePack resources;
 	if (lua_isstring(L, 2)) {
-		const char* type = lua_tostring(L, 2);
-
-		const float value = std::max(0.0f, luaL_checkfloat(L, 3));
-
-		switch (type[0]) {
-			case 'm': {
-				team->resPull.metal += value;
-				lua_pushboolean(L, team->UseMetal(value));
-				return 1;
-			} break;
-			case 'e': {
-				team->resPull.energy += value;
-				lua_pushboolean(L, team->UseEnergy(value));
-				return 1;
-			} break;
-			default: {
-			} break;
-		}
-
+		resources = ResourcePackFromLuaTypeValueArgs(L, 2, 3);
+	} else if (lua_istable(L, 2)) {
+		resources = ResourcePackFromLuaTableArg(L, 2);
+	} else {
+		luaL_error(L, "bad arguments");
 		return 0;
 	}
 
-	if (lua_istable(L, 2)) {
-		float metal  = 0.0f;
-		float energy = 0.0f;
-
-		constexpr int tableIdx = 2;
-
-		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (!lua_israwstring(L, LUA_TABLE_KEY_INDEX) || !lua_isnumber(L, LUA_TABLE_VALUE_INDEX))
-				continue;
-
-			const char* key = lua_tostring(L, LUA_TABLE_KEY_INDEX);
-			const float value = lua_tofloat(L, LUA_TABLE_VALUE_INDEX);
-
-			switch (key[0]) {
-				case 'm': { metal  = std::max(0.0f, value); } break;
-				case 'e': { energy = std::max(0.0f, value); } break;
-				default : {                                 } break;
-			}
-		}
-
-		team->resPull.metal  += metal;
-		team->resPull.energy += energy;
-
-		if ((team->res.metal >= metal) && (team->res.energy >= energy)) {
-			team->UseMetal(metal);
-			team->UseEnergy(energy);
-			lua_pushboolean(L, true);
-		} else {
-			lua_pushboolean(L, false);
-		}
-
-		return 1;
-	}
-
-	luaL_error(L, "bad arguments");
-	return 0;
+	team->resPull += resources;
+	lua_pushboolean(L, team->UseResources(resources));
+	return 1;
 }
 
 
@@ -4202,25 +4181,15 @@ int LuaSyncedCtrl::AddUnitSeismicPing(lua_State* L)
 int LuaSyncedCtrl::AddUnitResource(lua_State* L)
 {
 	CUnit* unit = ParseUnit(L, __func__, 1);
+	const auto resources = ResourcePackFromLuaTypeValueArgs(L, 2, 3);
 
 	if (unit == nullptr)
 		return 0;
 
-	const string& type = luaL_checkstring(L, 2);
-
-	if (type.empty())
-		return 0;
-
-	switch (type[0]) {
-		case 'm': { unit->AddMetal (std::max(0.0f, luaL_checkfloat(L, 3))); } break;
-		case 'e': { unit->AddEnergy(std::max(0.0f, luaL_checkfloat(L, 3))); } break;
-		default: {} break;
-	}
+	unit->AddResources(resources, false);
 
 	return 0;
 }
-
-/*
 
 /***
  * @function Spring.UseUnitResource
@@ -4243,54 +4212,18 @@ int LuaSyncedCtrl::UseUnitResource(lua_State* L)
 	if (unit == nullptr)
 		return 0;
 
+	SResourcePack resources;
 	if (lua_isstring(L, 2)) {
-		const char* type = lua_tostring(L, 2);
-
-		switch (type[0]) {
-			case 'm': { lua_pushboolean(L, unit->UseMetal (std::max(0.0f, lua_tofloat(L, 3)))); return 1; } break;
-			case 'e': { lua_pushboolean(L, unit->UseEnergy(std::max(0.0f, lua_tofloat(L, 3)))); return 1; } break;
-			default : {                                                                                   } break;
-		}
-
+		resources = ResourcePackFromLuaTypeValueArgs(L, 2, 3);
+	} else if (lua_istable(L, 2)) {
+		resources = ResourcePackFromLuaTableArg(L, 2);
+	} else {
+		luaL_error(L, "bad arguments");
 		return 0;
 	}
 
-	if (lua_istable(L, 2)) {
-		float metal  = 0.0f;
-		float energy = 0.0f;
-
-		constexpr int tableIdx = 2;
-
-		for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
-			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX) && lua_isnumber(L, LUA_TABLE_VALUE_INDEX)) {
-				const char* key = lua_tostring(L, LUA_TABLE_KEY_INDEX);
-				const float val = std::max(0.0f, lua_tofloat(L, -1));
-
-				switch (key[0]) {
-					case 'm': {  metal = val; } break;
-					case 'e': { energy = val; } break;
-					default : {               } break;
-				}
-			}
-		}
-
-		CTeam* team = teamHandler.Team(unit->team);
-
-		if ((team->res.metal >= metal) && (team->res.energy >= energy)) {
-			unit->UseMetal(metal);
-			unit->UseEnergy(energy);
-			lua_pushboolean(L, true);
-		} else {
-			team->resPull.metal  += metal;
-			team->resPull.energy += energy;
-			lua_pushboolean(L, false);
-		}
-
-		return 1;
-	}
-
-	luaL_error(L, "Incorrect arguments to UseUnitResource()");
-	return 0;
+	lua_pushboolean(L, unit->UseResources(resources));
+	return 1;
 }
 
 
