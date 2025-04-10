@@ -2,6 +2,7 @@
 
 
 #include "EmgProjectile.h"
+
 #include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -9,19 +10,14 @@
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CEmgProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CEmgProjectile,(
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(intensity),
-	CR_MEMBER(color)
-))
+CR_REG_METADATA(CEmgProjectile, (CR_SETFLAG(CF_Synced), CR_MEMBER(intensity), CR_MEMBER(color)))
 
-
-CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectile(params)
+CEmgProjectile::CEmgProjectile(const ProjectileParams& params)
+    : CWeaponProjectile(params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EMG_PROJECTILE;
@@ -34,7 +30,8 @@ CEmgProjectile::CEmgProjectile(const ProjectileParams& params): CWeaponProjectil
 		color = weaponDef->visuals.color;
 
 		castShadow = weaponDef->visuals.castShadow;
-	} else {
+	}
+	else {
 		intensity = 0.0f;
 	}
 }
@@ -54,7 +51,8 @@ void CEmgProjectile::Update()
 		// fade out over the next 10 frames at most
 		intensity -= 0.1f;
 		intensity = std::max(intensity, 0.0f);
-	} else {
+	}
+	else {
 		explGenHandler.GenExplosion(cegID, pos, speed, ttl, intensity, 0.0f, owner(), nullptr);
 	}
 
@@ -72,21 +70,16 @@ void CEmgProjectile::Draw()
 
 	UpdateWeaponAnimParams();
 
-	const uint8_t col[4] {
-		(uint8_t)(color.x * intensity * 255),
-		(uint8_t)(color.y * intensity * 255),
-		(uint8_t)(color.z * intensity * 255),
-		(uint8_t)(          intensity * 255)
-	};
+	const uint8_t col[4]{(uint8_t)(color.x * intensity * 255), (uint8_t)(color.y * intensity * 255),
+	    (uint8_t)(color.z * intensity * 255), (uint8_t)(intensity * 255)};
 
 	const auto* tex = weaponDef->visuals.texture1;
 
 	AddWeaponEffectsQuad<1>(
-		{ drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xstart, tex->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xend,   tex->ystart, col },
-		{ drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xend,   tex->yend,   col },
-		{ drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xstart, tex->yend,   col }
-	);
+	    {drawPos - camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xstart, tex->ystart, col},
+	    {drawPos + camera->GetRight() * drawRadius - camera->GetUp() * drawRadius, tex->xend, tex->ystart, col},
+	    {drawPos + camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xend, tex->yend, col},
+	    {drawPos - camera->GetRight() * drawRadius + camera->GetUp() * drawRadius, tex->xstart, tex->yend, col});
 }
 
 int CEmgProjectile::ShieldRepulse(const float3& shieldPos, float shieldForce, float shieldMaxSpeed)

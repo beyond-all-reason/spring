@@ -5,8 +5,7 @@
 
 #include "CameraController.h"
 
-class COverviewController : public CCameraController
-{
+class COverviewController : public CCameraController {
 public:
 	COverviewController();
 	~COverviewController();
@@ -14,16 +13,22 @@ public:
 	const std::string GetName() const { return "ov"; }
 
 	void KeyMove(float3 move) override {}
+
 	void MouseMove(float3 move) override {}
+
 	void ScreenEdgeMove(float3 move) override {}
+
 	void MouseWheelMove(float move) override {}
-	void MouseWheelMove(float move, const float3& newDir) override { }
+
+	void MouseWheelMove(float move, const float3& newDir) override {}
 
 	float3 GetRot() const override;
 
 	void SetPos(const float3& newPos) override {}
+
 	void SetDir(const float3& newDir) override {}
-	void SetRot(const float3& newDir) override {camRotY = newDir.y;}
+
+	void SetRot(const float3& newDir) override { camRotY = newDir.y; }
 
 	float3 SwitchFrom() const;
 	void SwitchTo(const CCameraController* oldCam, const bool showText);

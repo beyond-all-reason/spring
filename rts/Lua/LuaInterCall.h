@@ -5,12 +5,11 @@
 
 struct lua_State;
 
-
 class LuaInterCall {
-	public:
-		static bool PushEntriesSynced(lua_State* L);
-		static bool PushEntriesUnsynced(lua_State* L);
-		static bool PushEntriesLuaUI(lua_State* L);
+public:
+	static bool PushEntriesSynced(lua_State* L);
+	static bool PushEntriesUnsynced(lua_State* L);
+	static bool PushEntriesLuaUI(lua_State* L);
 };
 
 #endif /* LUA_INTER_CALL_H */

@@ -1,10 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IKeys.h"
-#include "System/StringUtil.h"
 
 #include "System/Misc/TracyDefs.h"
-
+#include "System/StringUtil.h"
 
 int IKeys::GetCode(const std::string& name) const
 {
@@ -16,7 +15,6 @@ int IKeys::GetCode(const std::string& name) const
 
 	return iter->second;
 }
-
 
 bool IKeys::AddKeySymbol(const std::string& name, int code)
 {
@@ -53,7 +51,6 @@ bool IKeys::AddKeySymbol(const std::string& name, int code)
 	return true;
 }
 
-
 bool IKeys::IsPrintable(int code) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -68,7 +65,8 @@ void IKeys::SaveUserKeySymbols(FILE* file) const
 	bool output = false;
 
 	for (const auto& p: nameToCode) {
-		const auto defSymIter = std::lower_bound(defaultNameToCode.begin(), defaultNameToCode.end(), NameCodePair{p.first, 0}, namePred);
+		const auto defSymIter =
+		    std::lower_bound(defaultNameToCode.begin(), defaultNameToCode.end(), NameCodePair{p.first, 0}, namePred);
 
 		if (defSymIter != defaultNameToCode.end() && defSymIter->first == p.first)
 			continue;
@@ -96,9 +94,9 @@ bool IKeys::IsValidLabel(const std::string& label)
 		return false;
 
 	// if any character is not alpha-numeric *and* not space, reject label as invalid
-	return (std::find_if(label.begin(), label.end(), [](char c) { return (!isalnum(c) && (c != '_')); }) == label.end());
+	return (
+	    std::find_if(label.begin(), label.end(), [](char c) { return (!isalnum(c) && (c != '_')); }) == label.end());
 }
-
 
 void IKeys::AddPair(const std::string& name, const int code, const bool printable)
 {

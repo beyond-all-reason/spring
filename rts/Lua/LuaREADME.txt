@@ -73,4 +73,3 @@ Utilities
   LuaUtils.h           -- misc crap
   LuaDefs.h            -- utilities for LuaUnitdefs and LuaWeaponDefs
   LuaHashString.h      -- wrapper for pre-hashed lua strings
-

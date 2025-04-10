@@ -3,29 +3,31 @@
 #ifndef _GAME_JOB_DISPATCHER_H
 #define _GAME_JOB_DISPATCHER_H
 
+#include "System/Misc/SpringTime.h"
+
 #include <functional>
 #include <queue>
-
-#include "System/Misc/SpringTime.h"
 
 class JobDispatcher {
 public:
 	struct Job {
 	public:
 		Job(const spring_time t = spring_notime)
-		: time(t.toMilliSecsf())
-		, freq(0.0f)
+		    : time(t.toMilliSecsf())
+		    , freq(0.0f)
 
-		, startDirect(true)
-		, catchUp(false)
+		    , startDirect(true)
+		    , catchUp(false)
 
-		, name("")
-		{}
+		    , name("")
+		{
+		}
 
-		void UpdateTime(float msecs) { time = (catchUp? time: msecs) + (1000.0f / freq); }
+		void UpdateTime(float msecs) { time = (catchUp ? time : msecs) + (1000.0f / freq); }
 
-		bool operator < (const Job& j) const { return (time < j.time); }
-		bool operator > (const Job& j) const { return (time > j.time); }
+		bool operator<(const Job& j) const { return (time < j.time); }
+
+		bool operator>(const Job& j) const { return (time > j.time); }
 
 	public:
 		std::function<bool()> f; // allows us to use lambdas
@@ -41,7 +43,9 @@ public:
 
 public:
 	void AddTimedJob(const Job& j) { jobs.push(j); }
-	void Update() {
+
+	void Update()
+	{
 		const spring_time now = spring_gettime();
 
 		while (!jobs.empty()) {
@@ -66,4 +70,3 @@ private:
 };
 
 #endif
-

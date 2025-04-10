@@ -3,15 +3,15 @@
 #ifndef SPRING_SHADERHANDLER_HDR
 #define SPRING_SHADERHANDLER_HDR
 
-#include <string>
-
 #include "Rendering/GL/myGL.h" //GLuint
 #include "System/UnorderedMap.hpp"
 
+#include <string>
+
 namespace Shader {
-	struct IProgramObject;
-	struct IShaderObject;
-};
+struct IProgramObject;
+struct IShaderObject;
+}; // namespace Shader
 
 class CShaderHandler {
 public:
@@ -25,6 +25,7 @@ public:
 	static void FreeInstance();
 
 	void SetCurrentlyBoundProgram(Shader::IProgramObject* p) { currentlyBoundProgram = p; }
+
 	Shader::IProgramObject* GetCurrentlyBoundProgram() const { return currentlyBoundProgram; }
 
 	void ReloadAll();
@@ -42,12 +43,12 @@ public:
 	 */
 	Shader::IShaderObject* CreateShaderObject(const std::string& soName, const std::string& soDefs, int soType);
 
-
 	struct ShaderCache {
 	public:
 		void Clear() { cache.clear(); }
 
-		unsigned int Find(unsigned int hash) {
+		unsigned int Find(unsigned int hash)
+		{
 			const auto it = cache.find(hash);
 
 			GLuint id = 0;
@@ -60,7 +61,8 @@ public:
 			return id;
 		}
 
-		bool Push(unsigned int hash, unsigned int objID) {
+		bool Push(unsigned int hash, unsigned int objID)
+		{
 			const auto it = cache.find(hash);
 
 			if (it == cache.end()) {
@@ -76,7 +78,8 @@ public:
 	};
 
 	const ShaderCache& GetShaderCache() const { return shaderCache; }
-	      ShaderCache& GetShaderCache()       { return shaderCache; }
+
+	ShaderCache& GetShaderCache() { return shaderCache; }
 
 private:
 	// all created programs, by name

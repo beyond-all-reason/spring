@@ -3,11 +3,12 @@
 #ifndef LUA_RULES_H
 #define LUA_RULES_H
 
+#include "LuaHandleSynced.h"
+
+#include "System/UnorderedMap.hpp"
+
 #include <string>
 #include <vector>
-
-#include "LuaHandleSynced.h"
-#include "System/UnorderedMap.hpp"
 
 #define MAX_LUA_COB_ARGS 10
 
@@ -22,22 +23,22 @@ struct Command;
 struct BuildInfo;
 struct lua_State;
 
-
-class CLuaRules : public CSplitLuaHandle
-{
+class CLuaRules : public CSplitLuaHandle {
 public:
 	static bool CanLoadHandler() { return true; }
+
 	static bool ReloadHandler() { return (FreeHandler(), LoadFreeHandler()); } // NOTE the ','
+
 	static bool LoadFreeHandler(bool dryRun = false) { return (LoadHandler(dryRun) || FreeHandler()); }
 
 	static bool LoadHandler(bool dryRun);
 	static bool FreeHandler();
 
 public: // call-ins
-	void Cob2Lua(const LuaHashString& funcName, const CUnit* unit,
-	             int& argsCount, int args[MAX_LUA_COB_ARGS]);
+	void Cob2Lua(const LuaHashString& funcName, const CUnit* unit, int& argsCount, int args[MAX_LUA_COB_ARGS]);
 
-	const char* RecvSkirmishAIMessage(int aiID, const char* data, int inSize, size_t* outSize) {
+	const char* RecvSkirmishAIMessage(int aiID, const char* data, int inSize, size_t* outSize)
+	{
 		return syncedLuaHandle.RecvSkirmishAIMessage(aiID, data, inSize, outSize);
 	}
 
@@ -63,7 +64,6 @@ protected: // call-outs
 private:
 	static const int* currentCobArgs;
 };
-
 
 extern CLuaRules* luaRules;
 

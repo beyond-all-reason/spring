@@ -3,28 +3,27 @@
 #ifndef TEAMSTATISTICS_H
 #define TEAMSTATISTICS_H
 
-#include "System/creg/creg_cond.h"
 #include "System/Platform/byteorder.h"
+#include "System/creg/creg_cond.h"
 
 #include <cstring>
 
 #pragma pack(push, 1)
 
-struct TeamStatistics
-{
+struct TeamStatistics {
 	CR_DECLARE_STRUCT(TeamStatistics)
 
 	TeamStatistics();
 
 	int frame; /* frame is the start address and must be the first element */
 
-	float metalUsed,     energyUsed;
+	float metalUsed, energyUsed;
 	float metalProduced, energyProduced;
-	float metalExcess,   energyExcess;
+	float metalExcess, energyExcess;
 	float metalReceived, energyReceived; /* received from allies */
-	float metalSent,     energySent;     /* sent to allies */
+	float metalSent, energySent;         /* sent to allies */
 
-	float damageDealt,   damageReceived; /* Damage taken and dealt to enemy units */
+	float damageDealt, damageReceived; /* Damage taken and dealt to enemy units */
 
 	int unitsProduced;
 	int unitsDied;

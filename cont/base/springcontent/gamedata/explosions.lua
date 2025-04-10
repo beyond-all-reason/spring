@@ -117,7 +117,7 @@ local function LoadLuas(dir)
 		end
       end
     end
-  end  
+  end
 end
 
 --  Load the TDF format explosiondef files

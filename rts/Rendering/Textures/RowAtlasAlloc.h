@@ -3,15 +3,14 @@
 #ifndef ROW_ATLAS_ALLOC_H
 #define ROW_ATLAS_ALLOC_H
 
-#include <vector>
-
 #include "IAtlasAllocator.h"
 
+#include <vector>
 
-class CRowAtlasAlloc : public IAtlasAllocator
-{
+class CRowAtlasAlloc : public IAtlasAllocator {
 public:
-	CRowAtlasAlloc() {
+	CRowAtlasAlloc()
+	{
 		atlasSize = {256, 256};
 		numLevels = 1;
 	}
@@ -21,11 +20,10 @@ public:
 
 private:
 	struct Row {
-		Row(int _ypos,int _height):
-			position(_ypos),
-			height(_height),
-			width(0) {
-		};
+		Row(int _ypos, int _height)
+		    : position(_ypos)
+		    , height(_height)
+		    , width(0) {};
 
 		int position;
 		int height;

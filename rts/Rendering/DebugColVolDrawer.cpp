@@ -5,12 +5,12 @@
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/ReadMap.h"
-#include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/GlobalRendering.h"
+#include "Rendering/GL/SubState.h"
 #include "Rendering/GL/glExtra.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/GL/SubState.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Models/3DModel.h"
+#include "Rendering/Units/UnitDrawer.h"
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/QuadField.h"
@@ -35,46 +35,46 @@ static inline void DrawCollisionVolume(const CollisionVolume* vol, const CMatrix
 {
 	CMatrix44f m = mSrc;
 	switch (vol->GetVolumeType()) {
-		case CollisionVolume::COLVOL_TYPE_ELLIPSOID:
-		case CollisionVolume::COLVOL_TYPE_SPHERE: {
-			// scaled sphere is special case of ellipsoid: radius, slices, stacks
+	case CollisionVolume::COLVOL_TYPE_ELLIPSOID:
+	case CollisionVolume::COLVOL_TYPE_SPHERE: {
+		// scaled sphere is special case of ellipsoid: radius, slices, stacks
+		m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+		m.Scale(vol->GetHScale(0), vol->GetHScale(1), vol->GetHScale(2));
+		GL::shapes.DrawWireSphere(20, 20, m, color);
+	} break;
+	case CollisionVolume::COLVOL_TYPE_CYLINDER: {
+		// scaled cylinder: base-radius, top-radius, height, slices, stacks
+		//
+		// (cylinder base is drawn at unit center by default so add offset
+		// by half major axis to visually match the mathematical situation,
+		// height of the cylinder equals the unit's full major axis)
+		switch (vol->GetPrimaryAxis()) {
+		case CollisionVolume::COLVOL_AXIS_X: {
+			m.Translate(-(vol->GetHScale(0)), 0.0f, 0.0f);
 			m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-			m.Scale(vol->GetHScale(0), vol->GetHScale(1), vol->GetHScale(2));
-			GL::shapes.DrawWireSphere(20, 20, m, color);
+			m.Scale(vol->GetScale(0), vol->GetHScale(1), vol->GetHScale(2));
+			m.RotateY(-90.0f * math::DEG_TO_RAD);
 		} break;
-		case CollisionVolume::COLVOL_TYPE_CYLINDER: {
-			// scaled cylinder: base-radius, top-radius, height, slices, stacks
-			//
-			// (cylinder base is drawn at unit center by default so add offset
-			// by half major axis to visually match the mathematical situation,
-			// height of the cylinder equals the unit's full major axis)
-			switch (vol->GetPrimaryAxis()) {
-				case CollisionVolume::COLVOL_AXIS_X: {
-					m.Translate(-(vol->GetHScale(0)), 0.0f, 0.0f);
-					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-					m.Scale(vol->GetScale(0), vol->GetHScale(1), vol->GetHScale(2));
-					m.RotateY(-90.0f * math::DEG_TO_RAD);
-				} break;
-				case CollisionVolume::COLVOL_AXIS_Y: {
-					m.Translate(0.0f, -(vol->GetHScale(1)), 0.0f);
-					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-					m.Scale(vol->GetHScale(0), vol->GetScale(1), vol->GetHScale(2));
-					m.RotateX( 90.0f * math::DEG_TO_RAD);
-				} break;
-				case CollisionVolume::COLVOL_AXIS_Z: {
-					m.Translate(0.0f, 0.0f, -(vol->GetHScale(2)));
-					m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-					m.Scale(vol->GetHScale(0), vol->GetHScale(1), vol->GetScale(2));
-				} break;
-			}
-			GL::shapes.DrawWireCylinder(20, m, color);
-		} break;
-		case CollisionVolume::COLVOL_TYPE_BOX: {
-			// scaled cube: length, width, height
+		case CollisionVolume::COLVOL_AXIS_Y: {
+			m.Translate(0.0f, -(vol->GetHScale(1)), 0.0f);
 			m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
-			m.Scale(vol->GetScale(0), vol->GetScale(1), vol->GetScale(2));
-			GL::shapes.DrawWireBox(m, color);
+			m.Scale(vol->GetHScale(0), vol->GetScale(1), vol->GetHScale(2));
+			m.RotateX(90.0f * math::DEG_TO_RAD);
 		} break;
+		case CollisionVolume::COLVOL_AXIS_Z: {
+			m.Translate(0.0f, 0.0f, -(vol->GetHScale(2)));
+			m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+			m.Scale(vol->GetHScale(0), vol->GetHScale(1), vol->GetScale(2));
+		} break;
+		}
+		GL::shapes.DrawWireCylinder(20, m, color);
+	} break;
+	case CollisionVolume::COLVOL_TYPE_BOX: {
+		// scaled cube: length, width, height
+		m.Translate(vol->GetOffset(0), vol->GetOffset(1), vol->GetOffset(2));
+		m.Scale(vol->GetScale(0), vol->GetScale(1), vol->GetScale(2));
+		GL::shapes.DrawWireBox(m, color);
+	} break;
 	}
 }
 
@@ -93,8 +93,8 @@ static void DrawObjectDebugPieces(const CSolidObject* o, const float4& defColor)
 			continue;
 
 		float4 curColor = (setFadeColor && lmp == o->hitModelPieces[true]) ?
-			float4{ (1.0f - (hitDeltaTime / 150.0f)), 0.0f, 0.0f, 1.0f } :
-			defColor;
+		                      float4{(1.0f - (hitDeltaTime / 150.0f)), 0.0f, 0.0f, 1.0f} :
+		                      defColor;
 
 		const CMatrix44f mp = mo * lmp->GetModelSpaceMatrix();
 		// factors in the volume offsets
@@ -102,14 +102,10 @@ static void DrawObjectDebugPieces(const CSolidObject* o, const float4& defColor)
 	}
 }
 
-
-
 static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
 {
 	using namespace GL::State;
-	auto state = GL::SubState(
-		DepthTest(GL_FALSE)
-	);
+	auto state = GL::SubState(DepthTest(GL_FALSE));
 
 	auto* shader = GL::shapes.GetShader();
 	auto shToken = shader->EnableScoped();
@@ -128,7 +124,7 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
 
 		GL::shapes.DrawSolidSphere(5, 5);
 
-		//undo
+		// undo
 		m.Scale(0.5f);
 		m.Translate(-o->relAimPos);
 	}
@@ -141,8 +137,6 @@ static inline void DrawObjectMidAndAimPos(const CSolidObject* o)
 		// last thing, no need to undo
 	}
 }
-
-
 
 static inline void DrawFeatureColVol(const CFeature* f)
 {
@@ -163,7 +157,8 @@ static inline void DrawFeatureColVol(const CFeature* f)
 
 	if (v->DefaultToPieceTree()) {
 		DrawObjectDebugPieces(f, DEFAULT_COLVOL_COLOR);
-	} else {
+	}
+	else {
 		if (!v->IgnoreHits()) {
 			DrawCollisionVolume(v, fm, DEFAULT_COLVOL_COLOR);
 		}
@@ -192,23 +187,21 @@ static inline void DrawUnitColVol(const CUnit* u)
 	auto* shader = GL::shapes.GetShader();
 	{
 		using namespace GL::State;
-		auto state = GL::SubState(
-			DepthTest(GL_FALSE)
-		);
+		auto state = GL::SubState(DepthTest(GL_FALSE));
 
 		auto token = shader->EnableScoped();
 		shader->SetUniformMatrix4x4("viewProjMat", false, camera->GetViewProjectionMatrix().m);
 
 
-		for (const CWeapon* w : u->weapons) {
+		for (const CWeapon* w: u->weapons) {
 			{
-				CMatrix44f m{ w->aimFromPos };
+				CMatrix44f m{w->aimFromPos};
 				shader->SetUniform4v("meshColor", &DEFAULT_AIMFRM_COLOR.x);
 				shader->SetUniformMatrix4x4("worldMat", false, m.m);
 				GL::shapes.DrawSolidSphere(5, 5);
 			}
 			{
-				CMatrix44f m{ w->weaponMuzzlePos };
+				CMatrix44f m{w->weaponMuzzlePos};
 				if (w->HaveTarget()) {
 					shader->SetUniform4v("meshColor", &DEFAULT_TARGET_COLOR.x);
 				}
@@ -220,7 +213,7 @@ static inline void DrawUnitColVol(const CUnit* u)
 			}
 
 			if (w->HaveTarget()) {
-				CMatrix44f m{ w->GetCurrentTargetPos() };
+				CMatrix44f m{w->GetCurrentTargetPos()};
 
 				shader->SetUniform4v("meshColor", &DEFAULT_TARGET_COLOR.x);
 				shader->SetUniformMatrix4x4("worldMat", false, m.m);
@@ -231,9 +224,7 @@ static inline void DrawUnitColVol(const CUnit* u)
 
 	{
 		using namespace GL::State;
-		auto state = GL::SubState(
-			DepthTest(GL_TRUE)
-		);
+		auto state = GL::SubState(DepthTest(GL_TRUE));
 
 		DrawObjectMidAndAimPos(u);
 
@@ -243,15 +234,15 @@ static inline void DrawUnitColVol(const CUnit* u)
 
 		if (v->DefaultToPieceTree()) {
 			DrawObjectDebugPieces(u, DEFAULT_COLVOL_COLOR);
-		} else {
+		}
+		else {
 			if (!v->IgnoreHits()) {
 				const int hitDeltaTime = gs->frameNum - u->lastAttackFrame;
 				const int setFadeColor = (u->lastAttackFrame > 0 && hitDeltaTime < 150);
 
 				// make it fade red under attack
-				const float4 curColor = setFadeColor ?
-					float4{ 1.0f - (hitDeltaTime / 150.0f), 0.0f, 0.0f, 1.0f } :
-					DEFAULT_COLVOL_COLOR;
+				const float4 curColor =
+				    setFadeColor ? float4{1.0f - (hitDeltaTime / 150.0f), 0.0f, 0.0f, 1.0f} : DEFAULT_COLVOL_COLOR;
 
 				DrawCollisionVolume(v, um, curColor);
 			}
@@ -260,7 +251,7 @@ static inline void DrawUnitColVol(const CUnit* u)
 			const CPlasmaRepulser* shieldWeapon = static_cast<const CPlasmaRepulser*>(u->shieldWeapon);
 			const CollisionVolume* shieldColVol = &shieldWeapon->collisionVolume;
 
-			const CMatrix44f m{ shieldWeapon->weaponMuzzlePos };
+			const CMatrix44f m{shieldWeapon->weaponMuzzlePos};
 			DrawCollisionVolume(shieldColVol, m, DEFAULT_SHIELD_COLOR);
 		}
 
@@ -273,7 +264,8 @@ static inline void DrawUnitColVol(const CUnit* u)
 
 		if (const CFactory* f = dynamic_cast<const CFactory*>(u)) {
 			if (f->boPerform) {
-				float3 boRelDir = (f->boRelHeading == 0) ? FwdVector : GetVectorFromHeading(f->boRelHeading % SPRING_MAX_HEADING);
+				float3 boRelDir =
+				    (f->boRelHeading == 0) ? FwdVector : GetVectorFromHeading(f->boRelHeading % SPRING_MAX_HEADING);
 				float3 boPos = f->pos + boRelDir * f->boOffset;
 
 				CMatrix44f boMat(boPos);
@@ -292,10 +284,10 @@ static inline void DrawUnitColVol(const CUnit* u)
 	}
 }
 
-
 class CDebugColVolQuadDrawer : public CReadMap::IQuadDrawer {
 public:
 	void ResetState() { alreadyDrawnIds.clear(); }
+
 	void DrawQuad(int x, int y)
 	{
 		const CQuadField::Quad& q = quadField.GetQuadAt(x, y);
@@ -318,31 +310,22 @@ public:
 	spring::unordered_set<int> alreadyDrawnIds;
 };
 
+namespace DebugColVolDrawer {
+bool enable = false;
 
-
-namespace DebugColVolDrawer
+void Draw()
 {
-	bool enable = false;
+	if (!enable)
+		return;
 
-	void Draw()
-	{
-		if (!enable)
-			return;
+	using namespace GL::State;
+	auto state = GL::SubState(Culling(GL_FALSE), AlphaTest(GL_FALSE),
+	    ClipDistance<0>(GL_FALSE), // ClipDistance<0> is same as ClipPlane<0> could have been
+	    ClipDistance<1>(GL_FALSE), Blending(GL_TRUE), BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA),
+	    DepthMask(GL_TRUE), LineWidth(2.0f));
 
-		using namespace GL::State;
-		auto state = GL::SubState(
-			Culling(GL_FALSE),
-			AlphaTest(GL_FALSE),
-			ClipDistance<0>(GL_FALSE), // ClipDistance<0> is same as ClipPlane<0> could have been
-			ClipDistance<1>(GL_FALSE),
-			Blending(GL_TRUE),
-			BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA),
-			DepthMask(GL_TRUE),
-			LineWidth(2.0f)
-		);
-
-		static CDebugColVolQuadDrawer drawer;
-		drawer.ResetState();
-		readMap->GridVisibility(nullptr, &drawer, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
-	}
+	static CDebugColVolQuadDrawer drawer;
+	drawer.ResetState();
+	readMap->GridVisibility(nullptr, &drawer, 1e9, CQuadField::BASE_QUAD_SIZE / SQUARE_SIZE);
 }
+} // namespace DebugColVolDrawer

@@ -3,10 +3,10 @@
 #ifndef _GLOBAL_UNSYNCED_H
 #define _GLOBAL_UNSYNCED_H
 
-#include <atomic>
-
-#include "System/creg/creg_cond.h"
 #include "System/GlobalRNG.h"
+#include "System/creg/creg_cond.h"
+
+#include <atomic>
 
 class CPlayer;
 class CGameSetup;
@@ -21,6 +21,7 @@ public:
 	CR_DECLARE_STRUCT(CGlobalUnsynced)
 
 	void Init() { ResetState(); }
+
 	void Kill() { ResetState(); }
 
 	void ResetState();
@@ -43,7 +44,7 @@ public:
 	 *
 	 * Defines how much percent of the time for simulation is minimum spend for
 	 * drawing. This is important when reconnecting,
-	 * 
+	 *
 	 * For example: if set to 0.15 then 15% of the total cpu time is exclusively
 	 * reserved for drawing and the remaining 85% for reconnecting/simulation.
 	 */
@@ -161,15 +162,14 @@ public:
 	bool fpsMode = false;
 
 	/**
-	* @brief global quit
-	*
-	* Global boolean indicating whether the user
-	* wants to quit
-	*/
+	 * @brief global quit
+	 *
+	 * Global boolean indicating whether the user
+	 * wants to quit
+	 */
 	std::atomic<bool> globalQuit = {false};
 	std::atomic<bool> globalReload = {false};
 };
-
 
 extern CGlobalUnsynced* gu;
 extern CGlobalUnsyncedRNG guRNG;

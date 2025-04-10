@@ -3,26 +3,28 @@
 #ifndef ENV_RESOURCE_HANDLER_H
 #define ENV_RESOURCE_HANDLER_H
 
-#include <vector>
-
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/float3.h"
+
+#include <vector>
 
 class CUnit;
 
 // updates time-varying global environment (wind, tidal) energy resources
-class EnvResourceHandler
-{
+class EnvResourceHandler {
 	CR_DECLARE_STRUCT(EnvResourceHandler)
 
 public:
 	EnvResourceHandler() { ResetState(); }
+
 	EnvResourceHandler(const EnvResourceHandler&) = delete;
 
-	EnvResourceHandler& operator = (const EnvResourceHandler&) = delete;
+	EnvResourceHandler& operator=(const EnvResourceHandler&) = delete;
 
 	void ResetState();
+
 	void LoadTidal(float curStrength) { curTidalStrength = curStrength; }
+
 	void LoadWind(float minStrength, float maxStrength);
 	void Update();
 
@@ -30,12 +32,17 @@ public:
 	bool DelGenerator(CUnit* u);
 
 	float GetMaxWindStrength() const { return maxWindStrength; }
+
 	float GetMinWindStrength() const { return minWindStrength; }
+
 	float GetAverageWindStrength() const { return ((minWindStrength + maxWindStrength) * 0.5f); }
+
 	float GetCurrentWindStrength() const { return curWindStrength; }
+
 	float GetCurrentTidalStrength() const { return curTidalStrength; }
 
 	const float3& GetCurrentWindVec() const { return curWindVec; }
+
 	const float3& GetCurrentWindDir() const { return curWindDir; }
 
 private:
@@ -62,4 +69,3 @@ private:
 extern EnvResourceHandler envResHandler;
 
 #endif
-

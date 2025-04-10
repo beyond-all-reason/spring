@@ -1,24 +1,30 @@
 #pragma once
 
+#include "IAtlasAllocator.h"
+#include "TextureAtlas.h"
+
+#include "System/Color.h"
+#include "System/UnorderedMap.hpp"
+#include "System/type2.h"
+
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>
 
-#include "TextureAtlas.h"
-#include "IAtlasAllocator.h"
-#include "System/type2.h"
-#include "System/Color.h"
-#include "System/UnorderedMap.hpp"
-
 class CBitmap;
+
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 class CTextureRenderAtlas {
 public:
-	CTextureRenderAtlas(CTextureAtlas::AllocatorType allocType, int atlasSizeX, int atlasSizeY, uint32_t glInternalType = /*GL_RGBA8*/0x8058, const std::string& atlasName = "");
+	CTextureRenderAtlas(CTextureAtlas::AllocatorType allocType,
+	    int atlasSizeX,
+	    int atlasSizeY,
+	    uint32_t glInternalType = /*GL_RGBA8*/ 0x8058,
+	    const std::string& atlasName = "");
 	~CTextureRenderAtlas();
 	CTextureRenderAtlas(const CTextureRenderAtlas&) = delete;
 	CTextureRenderAtlas(CTextureRenderAtlas&&) noexcept = default;
@@ -37,18 +43,23 @@ public:
 	AtlasedTexture GetTexture(const std::string& texName, const std::string& texBackupName);
 
 	uint32_t GetTexTarget() const;
+
 	uint32_t GetTexID() const { return texID; }
+
 	int GetMinDim() const;
 	int GetNumTexLevels() const;
 	void SetMaxTexLevel(int maxLevels);
 
 	const IAtlasAllocator* GetAllocator() const { return atlasAllocator.get(); }
+
 	const std::string& GetAtlasName() const { return atlasName; }
 
 	bool Finalize();
+
 	bool IsValid() const { return finalized && texID != 0; }
 
 	bool DumpTexture() const;
+
 private:
 	bool AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm);
 
@@ -63,6 +74,7 @@ private:
 	static inline size_t shaderRef = 0;
 	static inline Shader::IProgramObject* shader = nullptr;
 	bool finalized;
+
 public:
 	static inline AtlasedTexture dummy = AtlasedTexture{};
 };

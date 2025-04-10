@@ -3,13 +3,16 @@
 #ifndef TA_PALETTE_H
 #define TA_PALETTE_H
 
-#include <cstdint>
 #include "System/Color.h"
 
+#include <cstdint>
+
 class CFileHandler;
+
 class CTAPalette {
 public:
-	CTAPalette() {
+	CTAPalette()
+	{
 		for (SColor& color: colors) {
 			color.r = 0;
 			color.g = 0;
@@ -19,7 +22,7 @@ public:
 
 	void Init(CFileHandler&);
 
-	const uint8_t* operator[] (unsigned int a) const { return colors[a]; }
+	const uint8_t* operator[](unsigned int a) const { return colors[a]; }
 
 public:
 	static constexpr unsigned int NUM_PALETTE_ENTRIES = 256;

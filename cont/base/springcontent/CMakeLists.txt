@@ -147,4 +147,3 @@ list(APPEND FILES
 )
 
 create_base_content_archive("base" "springcontent.sdz" "${FILES}")
-

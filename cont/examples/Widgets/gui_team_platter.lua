@@ -158,7 +158,7 @@ local function GetTeamColorSet(teamID)
     return colors
   end
   local r,g,b = spGetTeamColor(teamID)
-  
+
   colors = {{ r, g, b, 0.4 },
             { r, g, b, 0.7 }}
   teamColors[teamID] = colors
@@ -173,7 +173,7 @@ function widget:DrawWorldPreUnit()
   glLineWidth(3.0)
 
   glDepthTest(true)
-  
+
   glPolygonOffset(-50, -2)
 
   local lastColorSet = nil
@@ -242,7 +242,7 @@ function widget:DrawWorldPreUnit()
 
   glLineWidth(1.0)
 end
-              
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

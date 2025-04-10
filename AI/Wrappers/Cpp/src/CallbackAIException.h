@@ -15,7 +15,6 @@ namespace springai {
  * An exception of this type may be thrown from an AI callback method.
  */
 class CallbackAIException : public AIException {
-
 	const std::string methodName;
 
 public:
@@ -28,6 +27,6 @@ public:
 	virtual const std::string& GetMethodName() const;
 }; // class CallbackAIException
 
-}  // namespace springai
+} // namespace springai
 
 #endif // _CPPWRAPPER_CALLBACK_AI_EXCEPTION_H

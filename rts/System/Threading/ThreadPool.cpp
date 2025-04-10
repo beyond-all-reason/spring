@@ -3,28 +3,29 @@
 #ifdef THREADPOOL
 
 #include "ThreadPool.h"
+
 #include "System/Exceptions.h"
 #include "System/SpringMath.h"
 #if (!defined(UNITSYNC) && !defined(UNIT_TEST))
-	#include "System/GameLoadThread.h"
+#include "System/GameLoadThread.h"
 #endif
-#include "System/TimeProfiler.h"
 #include "System/StringUtil.h"
+#include "System/TimeProfiler.h"
 #ifndef UNIT_TEST
-	#include "System/Config/ConfigHandler.h"
+#include "System/Config/ConfigHandler.h"
 #endif
 #include "System/Log/ILog.h"
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
-#ifdef   likely
-#undef   likely
+#ifdef likely
+#undef likely
 #undef unlikely
 #endif
 
-#include <utility>
-#include <functional>
 #include <cinttypes>
+#include <functional>
+#include <utility>
 
 #define USE_TASK_STATS_TRACKING
 
@@ -38,11 +39,13 @@
 #endif
 
 
-
 #ifndef UNIT_TEST
-CONFIG(int, WorkerThreadCount).defaultValue(-1).safemodeValue(0).minimumValue(-1).description("Number of workers (including the main thread!) used by ThreadPool.");
+CONFIG(int, WorkerThreadCount)
+    .defaultValue(-1)
+    .safemodeValue(0)
+    .minimumValue(-1)
+    .description("Number of workers (including the main thread!) used by ThreadPool.");
 #endif
-
 
 
 struct ThreadStats {
@@ -55,11 +58,9 @@ struct ThreadStats {
 	uint64_t maxWaitTime;
 };
 
-
-
 // external background threads which are only joined on exit
-static std::vector< spring::thread > extThreads;
-static std::vector< std::future<void> > extFutures;
+static std::vector<spring::thread> extThreads;
+static std::vector<std::future<void>> extFutures;
 
 bool ThreadPool::inMultiThreadedSection;
 
@@ -88,25 +89,25 @@ static bool glThreadSupport = false;
 #endif
 
 
-
 std::atomic_uint ITaskGroup::lastId(0);
-
-
 
 namespace ThreadPool {
 
 int GetThreadNum() { return threadnum; }
+
 static void SetThreadNum(const int idx) { threadnum = idx; }
 
-static int GetConfigNumWorkers() {
-	#ifndef UNIT_TEST
+static int GetConfigNumWorkers()
+{
+#ifndef UNIT_TEST
 	return configHandler->GetInt("WorkerThreadCount");
-	#else
+#else
 	return -1;
-	#endif
+#endif
 }
 
-static int GetDefaultNumWorkers() {
+static int GetDefaultNumWorkers()
+{
 	const int maxNumThreads = GetMaxThreads(); // min(MAX_THREADS, logicalCpus)
 	const int cfgNumWorkers = GetConfigNumWorkers();
 
@@ -115,28 +116,27 @@ static int GetDefaultNumWorkers() {
 	}
 
 	if (cfgNumWorkers > maxNumThreads) {
-		LOG_L(L_WARNING, "[ThreadPool::%s] workers set to %i, but there are just %i hardware threads!", __func__, cfgNumWorkers, maxNumThreads);
+		LOG_L(L_WARNING, "[ThreadPool::%s] workers set to %i, but there are just %i hardware threads!", __func__,
+		    cfgNumWorkers, maxNumThreads);
 		return maxNumThreads;
 	}
 
 	return cfgNumWorkers;
 }
 
-
 // FIXME: mutex/atomic?
 // NOTE: +1 because we also count the main thread, workers start at 1
 int GetNumThreads() { return (workerThreads[false].size() + 1); }
+
 int GetMaxThreads() { return std::min(MAX_THREADS, Threading::GetLogicalCpuCores()); }
 
 bool HasThreads() { return !workerThreads[false].empty(); }
 
-
-
 static bool DoTask(int tid, bool async)
 {
-	#ifndef UNIT_TEST
+#ifndef UNIT_TEST
 	SCOPED_MT_TIMER("ThreadPool::RunTask");
-	#endif
+#endif
 
 	ITaskGroup* tg = nullptr;
 
@@ -145,11 +145,11 @@ static bool DoTask(int tid, bool async)
 	for (int idx = 0; idx <= tid; idx += std::max(tid, 1)) {
 		auto& queue = taskQueues[async][idx];
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
+#ifdef USE_BOOST_LOCKFREE_QUEUE
 		if (queue.pop(tg)) {
-		#else
+#else
 		if (queue.try_dequeue(tg)) {
-		#endif
+#endif
 			// inform other workers when there is global work to do
 			// waking is an expensive kernel-syscall, so better shift this
 			// cost to the workers too (the main thread only wakes when ALL
@@ -159,43 +159,43 @@ static bool DoTask(int tid, bool async)
 
 			assert(!async || tg->IsAsyncTask());
 
-			#ifdef USE_TASK_STATS_TRACKING
+#ifdef USE_TASK_STATS_TRACKING
 			const uint64_t wdt = tg->GetDeltaTime(spring_now());
 			const uint64_t edt = tg->ExecuteLoop(tid, false);
 
 			threadStats[async][tid].numTasksRun += 1;
 			threadStats[async][tid].sumExecTime += edt;
 			threadStats[async][tid].sumWaitTime += wdt;
-			threadStats[async][tid].minExecTime  = std::min(threadStats[async][tid].minExecTime, edt);
-			threadStats[async][tid].maxExecTime  = std::max(threadStats[async][tid].maxExecTime, edt);
-			threadStats[async][tid].minWaitTime  = std::min(threadStats[async][tid].minWaitTime, wdt);
-			threadStats[async][tid].maxWaitTime  = std::max(threadStats[async][tid].maxWaitTime, wdt);
-			#else
+			threadStats[async][tid].minExecTime = std::min(threadStats[async][tid].minExecTime, edt);
+			threadStats[async][tid].maxExecTime = std::max(threadStats[async][tid].maxExecTime, edt);
+			threadStats[async][tid].minWaitTime = std::min(threadStats[async][tid].minWaitTime, wdt);
+			threadStats[async][tid].maxWaitTime = std::max(threadStats[async][tid].maxWaitTime, wdt);
+#else
 			tg->ExecuteLoop(tid, false);
-			#endif
+#endif
 		}
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
+#ifdef USE_BOOST_LOCKFREE_QUEUE
 		while (queue.pop(tg)) {
-		#else
+#else
 		while (queue.try_dequeue(tg)) {
-		#endif
+#endif
 			assert(!async || tg->IsAsyncTask());
 
-			#ifdef USE_TASK_STATS_TRACKING
+#ifdef USE_TASK_STATS_TRACKING
 			const uint64_t wdt = tg->GetDeltaTime(spring_now());
 			const uint64_t edt = tg->ExecuteLoop(tid, false);
 
 			threadStats[async][tid].numTasksRun += 1;
 			threadStats[async][tid].sumExecTime += edt;
 			threadStats[async][tid].sumWaitTime += wdt;
-			threadStats[async][tid].minExecTime  = std::min(threadStats[async][tid].minExecTime, edt);
-			threadStats[async][tid].maxExecTime  = std::max(threadStats[async][tid].maxExecTime, edt);
-			threadStats[async][tid].minWaitTime  = std::min(threadStats[async][tid].minWaitTime, wdt);
-			threadStats[async][tid].maxWaitTime  = std::max(threadStats[async][tid].maxWaitTime, wdt);
-			#else
+			threadStats[async][tid].minExecTime = std::min(threadStats[async][tid].minExecTime, edt);
+			threadStats[async][tid].maxExecTime = std::max(threadStats[async][tid].maxExecTime, edt);
+			threadStats[async][tid].minWaitTime = std::min(threadStats[async][tid].minWaitTime, wdt);
+			threadStats[async][tid].maxWaitTime = std::max(threadStats[async][tid].maxWaitTime, wdt);
+#else
 			tg->ExecuteLoop(tid, false);
-			#endif
+#endif
 		}
 	}
 
@@ -203,15 +203,14 @@ static bool DoTask(int tid, bool async)
 	return (tg != nullptr);
 }
 
-
 __FORCE_ALIGN_STACK__
 static void WorkerLoop(int tid, bool async)
 {
 	assert(tid != 0);
 	SetThreadNum(tid);
-	#ifndef UNIT_TEST
+#ifndef UNIT_TEST
 	Threading::SetThreadName(IntToString(tid, "worker%i"));
-	#endif
+#endif
 
 	// make first worker spin a while before sleeping/waiting on the thread signal
 	// this increases the chance that at least one worker is awake when a new task
@@ -223,7 +222,7 @@ static void WorkerLoop(int tid, bool async)
 
 	while (!exitFlags[tid]) {
 		const auto spinlockEnd = spring_now() + ourSpinTime;
-		      auto sleepTime   = spring_time::fromMicroSecs(1);
+		auto sleepTime = spring_time::fromMicroSecs(1);
 
 		while (!DoTask(tid, async) && !exitFlags[tid]) {
 			if (spring_now() < spinlockEnd)
@@ -234,19 +233,15 @@ static void WorkerLoop(int tid, bool async)
 	}
 }
 
-
-
-
-
 void WaitForFinished(std::shared_ptr<ITaskGroup>&& taskGroup)
 {
 	// can be any worker-thread (for_mt inside another for_mt, etc)
 	const int tid = GetThreadNum();
 
 	{
-		#ifndef UNIT_TEST
+#ifndef UNIT_TEST
 		SCOPED_MT_TIMER("ThreadPool::WaitFor");
-		#endif
+#endif
 
 		assert(!taskGroup->IsAsyncTask());
 		assert(!taskGroup->SelfDelete());
@@ -292,40 +287,40 @@ void WaitForFinished(std::shared_ptr<ITaskGroup>&& taskGroup)
 	taskGroup->ResetState(false, taskGroup->IsInTaskPool(), false);
 }
 
-
 // WARNING:
 //   leaking the raw pointer *forces* caller to WaitForFinished
 //   otherwise task might get deleted while its pointer is still
 //   in the queue
 void PushTaskGroup(std::shared_ptr<ITaskGroup>&& taskGroup) { PushTaskGroup(taskGroup.get()); }
+
 void PushTaskGroup(ITaskGroup* taskGroup)
 {
-	auto& queue = taskQueues[ taskGroup->IsAsyncTask() ][ taskGroup->WantedThread() ];
+	auto& queue = taskQueues[taskGroup->IsAsyncTask()][taskGroup->WantedThread()];
 
-	#if 0
+#if 0
 	// fake single-task group, handled by WaitForFinished to
 	// avoid a (delete) race-condition between it and DoTask
 	if (taskGroup->RemainingTasks() == 1 && !taskGroup->IsAsyncTask())
 		return;
-	#endif
+#endif
 
 	taskGroup->SetTimeStamp(spring_now());
 
-	#ifdef USE_BOOST_LOCKFREE_QUEUE
+#ifdef USE_BOOST_LOCKFREE_QUEUE
 	while (!queue.push(taskGroup));
-	#else
+#else
 	while (!queue.enqueue(taskGroup));
-	#endif
+#endif
 
-	#if 1
+#if 1
 	// AsyncTask's do not care about wakeup-latency as much
 	if (taskGroup->IsAsyncTask())
 		return;
 
 	NotifyWorkerThreads(false, false);
-	#else
+#else
 	NotifyWorkerThreads(false, taskGroup->IsAsyncTask());
-	#endif
+#endif
 }
 
 void NotifyWorkerThreads(bool force, bool async)
@@ -339,9 +334,6 @@ void NotifyWorkerThreads(bool force, bool async)
 	newTasksSignal[async].notify_all((GetNumThreads() - 1) * (1 - force));
 }
 
-
-
-
 static void SpawnThreads(int wantedNumThreads, int curNumThreads)
 {
 #ifndef UNITSYNC
@@ -351,23 +343,25 @@ static void SpawnThreads(int wantedNumThreads, int curNumThreads)
 				exitFlags[i] = false;
 
 				workerThreads[false].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i, false)));
-				workerThreads[ true].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i,  true)));
+				workerThreads[true].push_back(new CGameLoadThread(std::bind(&WorkerLoop, i, true)));
 			}
-		} catch (const opengl_error&) {
+		}
+		catch (const opengl_error&) {
 			// shared gl context creation failed
 			ThreadPool::SetThreadCount(0);
 
 			glThreadSupport = false;
 			curNumThreads = ThreadPool::GetNumThreads();
 		}
-	} else
+	}
+	else
 #endif
 	{
 		for (int i = curNumThreads; i < wantedNumThreads; ++i) {
 			exitFlags[i] = false;
 
 			workerThreads[false].push_back(new spring::thread(std::bind(&WorkerLoop, i, false)));
-			workerThreads[ true].push_back(new spring::thread(std::bind(&WorkerLoop, i,  true)));
+			workerThreads[true].push_back(new spring::thread(std::bind(&WorkerLoop, i, true)));
 		}
 	}
 }
@@ -382,39 +376,55 @@ static void KillThreads(int wantedNumThreads, int curNumThreads)
 
 	for (int i = curNumThreads - 1; i >= wantedNumThreads && i > 0; --i) {
 		assert(!workerThreads[false].empty());
-		assert(!workerThreads[ true].empty());
+		assert(!workerThreads[true].empty());
 
-	#ifndef UNITSYNC
+#ifndef UNITSYNC
 		if (glThreadSupport) {
-			{ auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[false].back()); th->join(); delete th; }
-			{ auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[ true].back()); th->join(); delete th; }
-		} else
-	#endif
+			{
+				auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[false].back());
+				th->join();
+				delete th;
+			}
+			{
+				auto th = reinterpret_cast<CGameLoadThread*>(workerThreads[true].back());
+				th->join();
+				delete th;
+			}
+		}
+		else
+#endif
 		{
-			{ auto th = reinterpret_cast<spring::thread*>(workerThreads[false].back()); th->join(); delete th; }
-			{ auto th = reinterpret_cast<spring::thread*>(workerThreads[ true].back()); th->join(); delete th; }
+			{
+				auto th = reinterpret_cast<spring::thread*>(workerThreads[false].back());
+				th->join();
+				delete th;
+			}
+			{
+				auto th = reinterpret_cast<spring::thread*>(workerThreads[true].back());
+				th->join();
+				delete th;
+			}
 		}
 
 		workerThreads[false].pop_back();
-		workerThreads[ true].pop_back();
+		workerThreads[true].pop_back();
 	}
 
 	// play it safe
 	for (int i = curNumThreads - 1; i >= wantedNumThreads && i > 0; --i) {
 		ITaskGroup* tg = nullptr;
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
+#ifdef USE_BOOST_LOCKFREE_QUEUE
 		while (taskQueues[false][i].pop(tg));
-		while (taskQueues[ true][i].pop(tg));
-		#else
+		while (taskQueues[true][i].pop(tg));
+#else
 		while (taskQueues[false][i].try_dequeue(tg));
-		while (taskQueues[ true][i].try_dequeue(tg));
-		#endif
+		while (taskQueues[true][i].try_dequeue(tg));
+#endif
 	}
 
 	assert((wantedNumThreads != 0) || workerThreads[false].empty());
 }
-
 
 static std::uint32_t FindWorkerThreadCore(std::int32_t index, std::uint32_t availCores, std::uint32_t avoidCores)
 {
@@ -423,15 +433,15 @@ static std::uint32_t FindWorkerThreadCore(std::int32_t index, std::uint32_t avai
 		std::uint32_t workerCore = 1;
 		std::int32_t n = index;
 
-		while ((workerCore != 0) && !(workerCore & targetCores))
-			workerCore <<= 1;
+		while ((workerCore != 0) && !(workerCore & targetCores)) workerCore <<= 1;
 
 		// select n'th bit in targetCores
 		// counts down because hyper-thread cores are appended to the end
 		// and we prefer those for our worker threads (physical cores are
 		// preferred for task specific threads)
-		while (n--)
-			do workerCore <<= 1; while ((workerCore != 0) && !(workerCore & targetCores));
+		while (n--) do
+				workerCore <<= 1;
+			while ((workerCore != 0) && !(workerCore & targetCores));
 
 		return workerCore;
 	};
@@ -449,23 +459,21 @@ static std::uint32_t FindWorkerThreadCore(std::int32_t index, std::uint32_t avai
 	return (~0u);
 }
 
-
-
-
 void SetThreadCount(int wantedNumThreads)
 {
 	const int curNumThreads = GetNumThreads(); // includes main
 	const int wtdNumThreads = std::clamp(wantedNumThreads, 1, GetMaxThreads());
 
 	constexpr const char* fmts[] = {
-		"[ThreadPool::%s][1] wanted=%d current=%d maximum=%d (init=%d)",
-		"[ThreadPool::%s][2] workers=%u",
-		"\t[async=%d] threads=%d tasks=%" PRIu64 " {sum,avg}{exec,wait}time={{%.3f, %.3f}, {%.3f, %.3f}}ms",
-		"\t\tthread=%d tasks=%" PRIu64 " {sum,min,max,avg}{exec,wait}time={{%.3f, %.3f, %.3f, %.3f}, {%.3f, %.3f, %.3f, %.3f}}ms",
+	    "[ThreadPool::%s][1] wanted=%d current=%d maximum=%d (init=%d)",
+	    "[ThreadPool::%s][2] workers=%u",
+	    "\t[async=%d] threads=%d tasks=%" PRIu64 " {sum,avg}{exec,wait}time={{%.3f, %.3f}, {%.3f, %.3f}}ms",
+	    "\t\tthread=%d tasks=%" PRIu64
+	    " {sum,min,max,avg}{exec,wait}time={{%.3f, %.3f, %.3f, %.3f}, {%.3f, %.3f, %.3f, %.3f}}ms",
 	};
 
 	// total number of tasks executed by pool; total time spent in DoTask
-	uint64_t pNumTasksRun [2] = {0lu, 0lu};
+	uint64_t pNumTasksRun[2] = {0lu, 0lu};
 	uint64_t pSumExecTimes[2] = {0lu, 0lu};
 	uint64_t pSumWaitTimes[2] = {0lu, 0lu};
 
@@ -474,12 +482,12 @@ void SetThreadCount(int wantedNumThreads)
 	if (workerThreads[false].empty()) {
 		assert(workerThreads[true].empty());
 
-		#ifdef USE_BOOST_LOCKFREE_QUEUE
+#ifdef USE_BOOST_LOCKFREE_QUEUE
 		taskQueues[false][0].reserve(1024);
-		taskQueues[ true][0].reserve(1024);
-		#endif
+		taskQueues[true][0].reserve(1024);
+#endif
 
-		#ifdef USE_TASK_STATS_TRACKING
+#ifdef USE_TASK_STATS_TRACKING
 		for (bool async: {false, true}) {
 			for (int i = 0; i < MAX_THREADS; i++) {
 				threadStats[async][i].numTasksRun = std::numeric_limits<uint64_t>::min();
@@ -491,52 +499,54 @@ void SetThreadCount(int wantedNumThreads)
 				threadStats[async][i].maxWaitTime = std::numeric_limits<uint64_t>::min();
 			}
 		}
-		#endif
+#endif
 	}
 
 
-	#if (!defined(UNITSYNC) && !defined(UNIT_TEST))
+#if (!defined(UNITSYNC) && !defined(UNIT_TEST))
 	if (wantedNumThreads != 0) {
 		CTimeProfiler::RegisterTimer("ThreadPool::AddTask");
 		CTimeProfiler::RegisterTimer("ThreadPool::RunTask");
 		CTimeProfiler::RegisterTimer("ThreadPool::WaitFor");
 	}
-	#endif
+#endif
 
 	if (curNumThreads < wtdNumThreads) {
 		SpawnThreads(wtdNumThreads, curNumThreads);
-	} else {
+	}
+	else {
 		KillThreads(wtdNumThreads, curNumThreads);
 	}
 
-	#if (!defined(UNITSYNC) && !defined(UNIT_TEST))
+#if (!defined(UNITSYNC) && !defined(UNIT_TEST))
 	if (wantedNumThreads == 0) {
 		CTimeProfiler::UnRegisterTimer("ThreadPool::AddTask");
 		CTimeProfiler::UnRegisterTimer("ThreadPool::RunTask");
 		CTimeProfiler::UnRegisterTimer("ThreadPool::WaitFor");
 	}
-	#endif
+#endif
 
 
-	#ifdef USE_TASK_STATS_TRACKING
+#ifdef USE_TASK_STATS_TRACKING
 	if (workerThreads[false].empty()) {
 		assert(workerThreads[true].empty());
 
 		for (bool async: {false, true}) {
 			for (int i = 0; i < curNumThreads; i++) {
-				pNumTasksRun [async] += threadStats[async][i].numTasksRun;
+				pNumTasksRun[async] += threadStats[async][i].numTasksRun;
 				pSumExecTimes[async] += threadStats[async][i].sumExecTime;
 				pSumWaitTimes[async] += threadStats[async][i].sumWaitTime;
 			}
 		}
 
 		for (bool async: {false, true}) {
-			const float pSumExecTime =  pSumExecTimes[async] * 1e-6f;
-			const float pSumWaitTime =  pSumWaitTimes[async] * 1e-6f;
+			const float pSumExecTime = pSumExecTimes[async] * 1e-6f;
+			const float pSumWaitTime = pSumWaitTimes[async] * 1e-6f;
 			const float pAvgExecTime = (pSumExecTimes[async] * 1e-6f) / std::max(pNumTasksRun[async], uint64_t(1));
 			const float pAvgWaitTime = (pSumWaitTimes[async] * 1e-6f) / std::max(pNumTasksRun[async], uint64_t(1));
 
-			LOG(fmts[2], async, curNumThreads, pNumTasksRun[async],  pSumExecTime, pAvgExecTime,  pSumWaitTime, pAvgWaitTime);
+			LOG(fmts[2], async, curNumThreads, pNumTasksRun[async], pSumExecTime, pAvgExecTime, pSumWaitTime,
+			    pAvgWaitTime);
 
 			for (int i = 0; i < curNumThreads; i++) {
 				const ThreadStats& ts = threadStats[async][i];
@@ -553,28 +563,29 @@ void SetThreadCount(int wantedNumThreads)
 				const float tAvgExecTime = tSumExecTime / std::max(ts.numTasksRun, uint64_t(1));
 				const float tAvgWaitTime = tSumWaitTime / std::max(ts.numTasksRun, uint64_t(1));
 
-				LOG(fmts[3], i, ts.numTasksRun,  tSumExecTime, tMinExecTime, tMaxExecTime, tAvgExecTime,  tSumWaitTime, tMinWaitTime, tMaxWaitTime, tAvgWaitTime);
+				LOG(fmts[3], i, ts.numTasksRun, tSumExecTime, tMinExecTime, tMaxExecTime, tAvgExecTime, tSumWaitTime,
+				    tMinWaitTime, tMaxWaitTime, tAvgWaitTime);
 			}
 		}
 	}
-	#endif
+#endif
 
-	LOG(fmts[1], __func__, static_cast <uint32_t> (workerThreads[false].size()));
+	LOG(fmts[1], __func__, static_cast<uint32_t>(workerThreads[false].size()));
 }
 
 void SetMaximumThreadCount()
 {
 	if (workerThreads[false].empty()) {
 		workerThreads[false].reserve(MAX_THREADS);
-		workerThreads[ true].reserve(MAX_THREADS);
+		workerThreads[true].reserve(MAX_THREADS);
 
-		// NOTE:
-		//   do *not* remove, this makes sure the profiler instance
-		//   exists before any thread creates a timer that accesses
-		//   it on destruction
-		#ifndef UNIT_TEST
+// NOTE:
+//   do *not* remove, this makes sure the profiler instance
+//   exists before any thread creates a timer that accesses
+//   it on destruction
+#ifndef UNIT_TEST
 		CTimeProfiler::GetInstance().ResetState();
-		#endif
+#endif
 	}
 
 	if (GetConfigNumWorkers() <= 0)
@@ -585,17 +596,17 @@ void SetMaximumThreadCount()
 
 void SetDefaultThreadCount()
 {
-	#if !defined(THREADPOOL)
+#if !defined(THREADPOOL)
 	return;
-	#endif
+#endif
 	std::uint32_t systemCores = Threading::GetSystemAffinityMask();
 	std::uint32_t mainAffinity = systemCores;
 
-	#ifndef UNIT_TEST
+#ifndef UNIT_TEST
 	std::uint32_t configAffinity = configHandler->GetUnsigned("SetCoreAffinity");
 	mainAffinity &= (configAffinity != 0) ? configAffinity : Threading::GetPreferredMainThreadMask();
 	LOG("[ThreadPool] Main thread affinity requested as 0x%08x", mainAffinity);
-	#endif
+#endif
 
 	std::uint32_t workerAvailCores = systemCores & ~mainAffinity;
 
@@ -603,8 +614,11 @@ void SetDefaultThreadCount()
 
 	{
 		// parallel_reduce now folds over shared_ptrs to futures
-		// const auto ReduceFunc = [](std::uint32_t a, std::future<std::uint32_t>& b) -> std::uint32_t { return (a | b.get()); };
-		const auto ReduceFunc = [](std::uint32_t a, std::shared_future<std::uint32_t> b) -> std::uint32_t { return (a | (b.get())); };
+		// const auto ReduceFunc = [](std::uint32_t a, std::future<std::uint32_t>& b) -> std::uint32_t { return (a |
+		// b.get()); };
+		const auto ReduceFunc = [](std::uint32_t a, std::shared_future<std::uint32_t> b) -> std::uint32_t {
+			return (a | (b.get()));
+		};
 		const auto AffinityFunc = [&]() -> std::uint32_t {
 			const int i = ThreadPool::GetThreadNum();
 
@@ -632,9 +646,8 @@ void SetDefaultThreadCount()
 	}
 }
 
-
-
-void AddExtJob(spring::thread&& t) {
+void AddExtJob(spring::thread&& t)
+{
 	for (auto& et: extThreads) {
 		if (et.joinable())
 			continue;
@@ -646,8 +659,9 @@ void AddExtJob(spring::thread&& t) {
 	extThreads.emplace_back(std::move(t));
 }
 
-void AddExtJob(std::future<void>&& f) {
-	#ifndef _WIN32
+void AddExtJob(std::future<void>&& f)
+{
+#ifndef _WIN32
 	for (auto& ef: extFutures) {
 		// find a future whose (void) result is already available, without blocking
 		// FIXME: does not currently (august 2017) compile on Windows mingw buildbots
@@ -657,12 +671,13 @@ void AddExtJob(std::future<void>&& f) {
 		ef = std::move(f);
 		return;
 	}
-	#endif
+#endif
 
 	extFutures.emplace_back(std::move(f));
 }
 
-static void JoinExtThreads() {
+static void JoinExtThreads()
+{
 	for (auto& t: extThreads) {
 		t.join();
 	}
@@ -670,7 +685,8 @@ static void JoinExtThreads() {
 	extThreads.clear();
 }
 
-static void GetExtFutures() {
+static void GetExtFutures()
+{
 	for (auto& f: extFutures) {
 		f.get();
 	}
@@ -678,12 +694,12 @@ static void GetExtFutures() {
 	extFutures.clear();
 }
 
-void ClearExtJobs() {
+void ClearExtJobs()
+{
 	JoinExtThreads();
 	GetExtFutures();
 }
 
-}
+} // namespace ThreadPool
 
 #endif
-

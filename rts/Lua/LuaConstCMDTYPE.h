@@ -6,8 +6,8 @@
 struct lua_State;
 
 class LuaConstCMDTYPE {
-	public:
-		static bool PushEntries(lua_State* L);
+public:
+	static bool PushEntries(lua_State* L);
 };
 
 #endif /* LUA_CONST_CMDTYPE_H */

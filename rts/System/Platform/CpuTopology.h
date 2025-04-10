@@ -29,4 +29,4 @@ ProcessorMasks GetProcessorMasks();
 // OS-specific implementation to get the logical processor masks and the L3 cache they have access to.
 ProcessorCaches GetProcessorCache();
 
-}
+} // namespace cpu_topology

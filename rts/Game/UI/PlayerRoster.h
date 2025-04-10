@@ -9,13 +9,14 @@
 class PlayerRoster {
 public:
 	enum SortType {
-		Disabled   = 0,
-		Allies     = 1,
-		TeamID     = 2,
+		Disabled = 0,
+		Allies = 1,
+		TeamID = 2,
 		PlayerName = 3,
-		PlayerCPU  = 4,
+		PlayerCPU = 4,
 		PlayerPing = 5
 	};
+
 	typedef int (*SortFunc)(const int a, const int b);
 
 	PlayerRoster();
@@ -26,6 +27,7 @@ public:
 	bool SetSortTypeByCode(SortType type);
 
 	SortType GetSortType() const { return compareType; }
+
 	const char* GetSortName() const;
 
 private:
@@ -37,7 +39,6 @@ private:
 
 	std::vector<int> playerIndices;
 };
-
 
 extern PlayerRoster playerRoster;
 

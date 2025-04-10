@@ -106,9 +106,9 @@ local function ChatControl(cmd, line, words, playerID)
     PrintState()
     return true
   end
-  
+
   local w1, w2 = words[1], words[2]
-  
+
   if ((w1 == 'list') or (w1 == 'l')) then
     return PrintState()
   elseif ((w1 == 'toggle') or (w1 == 't')) then

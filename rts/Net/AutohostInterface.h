@@ -3,16 +3,16 @@
 #ifndef AUTOHOST_INTERFACE_H
 #define AUTOHOST_INTERFACE_H
 
-#include <string>
 #include <cinttypes>
+#include <string>
+
 #include <asio/ip/udp.hpp>
 
 /**
  * API for engine <-> autohost (or similar) communication, using UDP over
  * loopback.
  */
-class AutohostInterface
-{
+class AutohostInterface {
 public:
 	typedef unsigned char uchar;
 
@@ -26,8 +26,8 @@ public:
 	 * @param localPort the local port to use in the connection,
 	 *   use 0 for OS-select
 	 */
-	AutohostInterface(const std::string& remoteIP, int remotePort,
-			const std::string& localIP = "", int localPort = 0);
+	AutohostInterface(const std::string& remoteIP, int remotePort, const std::string& localIP = "", int localPort = 0);
+
 	virtual ~AutohostInterface() {}
 
 	bool IsInitialized() const { return initialized; }
@@ -72,8 +72,10 @@ private:
 	 * @return "" if everything went OK, and error description otherwise
 	 */
 	static std::string TryBindSocket(asio::ip::udp::socket& socket,
-			const std::string& remoteIP, int remotePort,
-			const std::string& localIP = "", int localPort = 0);
+	    const std::string& remoteIP,
+	    int remotePort,
+	    const std::string& localIP = "",
+	    int localPort = 0);
 
 	asio::ip::udp::socket autohost;
 	bool initialized;

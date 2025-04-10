@@ -3,13 +3,10 @@
 #ifndef _PBO_INFO_TEXTURE_H
 #define _PBO_INFO_TEXTURE_H
 
-#include "Rendering/Map/InfoTexture/InfoTexture.h"
 #include "Rendering/GL/PBO.h"
+#include "Rendering/Map/InfoTexture/InfoTexture.h"
 
-
-
-class CPboInfoTexture : public CInfoTexture
-{
+class CPboInfoTexture : public CInfoTexture {
 public:
 	CPboInfoTexture(const std::string& name);
 	virtual ~CPboInfoTexture();

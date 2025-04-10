@@ -3,56 +3,56 @@
 #ifndef LUA_RBOS_H
 #define LUA_RBOS_H
 
-#include <vector>
-
 #include "Rendering/GL/myGL.h"
+
+#include <vector>
 
 
 struct lua_State;
 
-
 class LuaRBOs {
-	public:
-		LuaRBOs() { rbos.reserve(8); }
-		~LuaRBOs();
+public:
+	LuaRBOs() { rbos.reserve(8); }
 
-		void Clear() { rbos.clear(); }
+	~LuaRBOs();
 
-		static bool PushEntries(lua_State* L);
+	void Clear() { rbos.clear(); }
 
-		struct RBO;
-		static const RBO* GetLuaRBO(lua_State* L, int index);
+	static bool PushEntries(lua_State* L);
 
-	public:
-		struct RBO {
-			void Init();
-			void Free(lua_State* L);
+	struct RBO;
+	static const RBO* GetLuaRBO(lua_State* L, int index);
 
-			GLuint index = -1u; // into LuaRBOs::rbos
-			GLuint id    = 0;
+public:
+	struct RBO {
+		void Init();
+		void Free(lua_State* L);
 
-			GLenum target = 0;
-			GLenum format = 0;
+		GLuint index = -1u; // into LuaRBOs::rbos
+		GLuint id = 0;
 
-			GLsizei xsize   = 0;
-			GLsizei ysize   = 0;
-			GLsizei samples = 0;
-		};
+		GLenum target = 0;
+		GLenum format = 0;
 
-	private:
-		std::vector<RBO*> rbos;
+		GLsizei xsize = 0;
+		GLsizei ysize = 0;
+		GLsizei samples = 0;
+	};
 
-	private: // helpers
-		static bool CreateMetatable(lua_State* L);
+private:
+	std::vector<RBO*> rbos;
 
-	private: // metatable methods
-		static int meta_gc(lua_State* L);
-		static int meta_index(lua_State* L);
-		static int meta_newindex(lua_State* L);
+private: // helpers
+	static bool CreateMetatable(lua_State* L);
 
-	private:
-		static int CreateRBO(lua_State* L);
-		static int DeleteRBO(lua_State* L);
+private: // metatable methods
+	static int meta_gc(lua_State* L);
+	static int meta_index(lua_State* L);
+	static int meta_newindex(lua_State* L);
+
+private:
+	static int CreateRBO(lua_State* L);
+	static int DeleteRBO(lua_State* L);
 };
 
 

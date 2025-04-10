@@ -1,65 +1,62 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
+#include "CobInstance.h"
+
 #include "CobEngine.h"
 #include "CobFile.h"
 #include "CobFileHandler.h"
-#include "CobInstance.h"
 #include "CobThread.h"
 
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
-#include "Sim/Misc/GroundBlockingObjectMap.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Sim/Projectiles/ExplosionGenerator.h"
-#include "Sim/Projectiles/PieceProjectile.h"
-#include "Sim/Projectiles/ProjectileHandler.h"
 #include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
 #include "Rendering/Env/Particles/Classes/HeatCloudProjectile.h"
 #include "Rendering/Env/Particles/Classes/MuzzleFlame.h"
 #include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
 #include "Rendering/Env/Particles/Classes/WakeProjectile.h"
 #include "Rendering/Env/Particles/Classes/WreckProjectile.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Misc/GroundBlockingObjectMap.h"
+#include "Sim/Misc/TeamHandler.h"
+#include "Sim/Projectiles/ExplosionGenerator.h"
+#include "Sim/Projectiles/PieceProjectile.h"
+#include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/Command.h"
-#include "Sim/Units/UnitDef.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Weapons/BeamLaser.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
-#include "Sim/Weapons/WeaponDefHandler.h"
 #include "Sim/Weapons/Weapon.h"
-#include "System/StringUtil.h"
-#include "System/SpringMath.h"
-#include "System/Sound/ISoundChannels.h"
-
+#include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISoundChannels.h"
+#include "System/SpringMath.h"
+#include "System/StringUtil.h"
 
 /******************************************************************************/
 /******************************************************************************/
 
 CR_BIND_DERIVED(CCobInstance, CUnitScript, )
 
-CR_REG_METADATA(CCobInstance, (
-	// loaded from cobFileHandler
-	CR_IGNORED(cobFile),
+CR_REG_METADATA(CCobInstance,
+    (
+        // loaded from cobFileHandler
+        CR_IGNORED(cobFile),
 
-	CR_MEMBER(staticVars),
-	CR_MEMBER(threadIDs),
+        CR_MEMBER(staticVars),
+        CR_MEMBER(threadIDs),
 
-	CR_POSTLOAD(PostLoad),
-	CR_PREALLOC(GetUnit)
-))
-
+        CR_POSTLOAD(PostLoad),
+        CR_PREALLOC(GetUnit)))
 
 inline bool CCobInstance::HasFunction(int id) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (cobFile->scriptIndex.size() > id && cobFile->scriptIndex[id] >= 0);
 }
-
-
 
 void CCobInstance::Init()
 {
@@ -88,7 +85,6 @@ void CCobInstance::PostLoad()
 	InitCommon();
 }
 
-
 CCobInstance::~CCobInstance()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -108,7 +104,6 @@ CCobInstance::~CCobInstance()
 	cobEngine->SanityCheckThreads(this);
 }
 
-
 void CCobInstance::InitCommon()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -116,11 +111,10 @@ void CCobInstance::InitCommon()
 
 	MapScriptToModelPieces(&unit->localModel);
 
-	hasSetSFXOccupy  = HasFunction(COBFN_SetSFXOccupy);
-	hasRockUnit      = HasFunction(COBFN_RockUnit);
+	hasSetSFXOccupy = HasFunction(COBFN_SetSFXOccupy);
+	hasRockUnit = HasFunction(COBFN_RockUnit);
 	hasStartBuilding = HasFunction(COBFN_StartBuilding);
 }
-
 
 void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 {
@@ -148,7 +142,8 @@ void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 		// Not found? Try lowercase
 		if (lmodelPieceNum == lmodelPieces.size()) {
 			for (lmodelPieceNum = 0; lmodelPieceNum < lmodelPieces.size(); lmodelPieceNum++) {
-				if (StringToLower(lmodelPieces[lmodelPieceNum].original->name).compare(pieceNames[scriptPieceNum]) == 0) {
+				if (StringToLower(lmodelPieces[lmodelPieceNum].original->name).compare(pieceNames[scriptPieceNum]) ==
+				    0) {
 					break;
 				}
 			}
@@ -158,12 +153,14 @@ void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 		if (lmodelPieceNum < lmodelPieces.size()) {
 			lmodelPieces[lmodelPieceNum].SetScriptPieceIndex(scriptPieceNum);
 			pieces.push_back(&lmodelPieces[lmodelPieceNum]);
-		} else {
+		}
+		else {
 			pieces.push_back(nullptr);
 
 			/* Note, scripts can be reused across multiple unit types,
 			 * so the COB script name alone is not sufficient */
-			const char* fmtString = "[%s] could not find piece named \"%s\" (referenced by COB script \"%s\" used by unit \"%s\")";
+			const char* fmtString =
+			    "[%s] could not find piece named \"%s\" (referenced by COB script \"%s\" used by unit \"%s\")";
 			const char* pieceName = pieceNames[scriptPieceNum].c_str();
 			const char* scriptName = cobFile->name.c_str();
 
@@ -172,13 +169,11 @@ void CCobInstance::MapScriptToModelPieces(LocalModel* lmodel)
 	}
 }
 
-
 int CCobInstance::GetFunctionId(const std::string& fname) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return cobFile->GetFunctionId(fname);
 }
-
 
 bool CCobInstance::HasBlockShot(int weaponNum) const
 {
@@ -186,13 +181,11 @@ bool CCobInstance::HasBlockShot(int weaponNum) const
 	return HasFunction(COBFN_BlockShot + COBFN_Weapon_Funcs * weaponNum);
 }
 
-
 bool CCobInstance::HasTargetWeight(int weaponNum) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return HasFunction(COBFN_TargetWeight + COBFN_Weapon_Funcs * weaponNum);
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -203,16 +196,13 @@ void CCobInstance::Create()
 	ZoneScoped;
 
 	int maxReloadFrames = 0;
-	for (const auto* w: unit->weapons)
-		maxReloadFrames = std::max(maxReloadFrames, w->reloadTime);
+	for (const auto* w: unit->weapons) maxReloadFrames = std::max(maxReloadFrames, w->reloadTime);
 
 	const int maxReloadMs = 1000 * maxReloadFrames / GAME_SPEED;
 
 	Call(COBFN_Create);
 	Call(COBFN_SetMaxReloadTime, maxReloadMs);
 }
-
-
 
 void CCobInstance::Killed()
 {
@@ -226,14 +216,12 @@ void CCobInstance::Killed()
 	Call(COBFN_Killed, callinArgs, CBKilled, 0, nullptr);
 }
 
-
 void CCobInstance::WindChanged(float heading, float speed)
 {
 	ZoneScoped;
 	Call(COBFN_SetSpeed, int(speed * 3000.0f));
 	Call(COBFN_SetDirection, short(heading * RAD2TAANG));
 }
-
 
 void CCobInstance::ExtractionRateChanged(float speed)
 {
@@ -246,7 +234,7 @@ void CCobInstance::ExtractionRateChanged(float speed)
 	Call(COBFN_Go);
 }
 
-void CCobInstance::WorldRockUnit(const float3& rockDir) 
+void CCobInstance::WorldRockUnit(const float3& rockDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	RockUnit(unit->GetObjectSpaceVec(rockDir) * 500.0f);
@@ -283,7 +271,7 @@ void CCobInstance::HitByWeapon(const float3& hitDir, int weaponDefId, float& ino
 		const WeaponDef* wd = weaponDefHandler->GetWeaponDefByID(weaponDefId);
 
 		callinArgs[0] = 4;
-		callinArgs[3] = ((wd != nullptr)? wd->id : -1);
+		callinArgs[3] = ((wd != nullptr) ? wd->id : -1);
 		callinArgs[4] = int(100 * inoutDamage);
 		// weaponHitMod, not an actual arg
 		callinArgs[MAX_COB_ARGS] = 1;
@@ -291,18 +279,17 @@ void CCobInstance::HitByWeapon(const float3& hitDir, int weaponDefId, float& ino
 		Call(COBFN_HitByWeaponId, callinArgs, CBNone, 0, &callinArgs[MAX_COB_ARGS]);
 
 		inoutDamage *= (callinArgs[MAX_COB_ARGS] * 0.01f);
-	} else {
+	}
+	else {
 		Call(COBFN_HitByWeapon, callinArgs);
 	}
 }
-
 
 void CCobInstance::SetSFXOccupy(int curTerrainType)
 {
 	ZoneScoped;
 	Call(COBFN_SetSFXOccupy, curTerrainType);
 }
-
 
 void CCobInstance::QueryLandingPads(std::vector<int>& outPieces)
 {
@@ -331,14 +318,12 @@ void CCobInstance::QueryLandingPads(std::vector<int>& outPieces)
 	outPieces.assign(callinArgs.begin(), callinArgs.begin() + maxPadCount);
 }
 
-
 void CCobInstance::BeginTransport(const CUnit* unit)
 {
 	ZoneScoped;
 	// COB uses model height to identify units
 	Call(COBFN_BeginTransport, int(unit->model->height * 65536));
 }
-
 
 int CCobInstance::QueryTransport(const CUnit* unit)
 {
@@ -353,14 +338,12 @@ int CCobInstance::QueryTransport(const CUnit* unit)
 	return callinArgs[0];
 }
 
-
 void CCobInstance::TransportPickup(const CUnit* unit)
 {
 	ZoneScoped;
 	// here COB uses unitIDs instead of model height
 	Call(COBFN_TransportPickup, unit->id);
 }
-
 
 void CCobInstance::TransportDrop(const CUnit* unit, const float3& pos)
 {
@@ -374,7 +357,6 @@ void CCobInstance::TransportDrop(const CUnit* unit, const float3& pos)
 	Call(COBFN_TransportDrop, callinArgs);
 }
 
-
 void CCobInstance::StartBuilding(float heading, float pitch)
 {
 	ZoneScoped;
@@ -382,50 +364,46 @@ void CCobInstance::StartBuilding(float heading, float pitch)
 
 	callinArgs[0] = 2;
 	callinArgs[1] = short(heading * RAD2TAANG);
-	callinArgs[2] = short(  pitch * RAD2TAANG);
+	callinArgs[2] = short(pitch * RAD2TAANG);
 
 	Call(COBFN_StartBuilding, callinArgs);
 }
-
 
 int CCobInstance::QueryNanoPiece()
 {
 	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
-	callinArgs[0] =  1;
+	callinArgs[0] = 1;
 	callinArgs[1] = -1;
 
 	Call(COBFN_QueryNanoPiece, callinArgs);
 	return callinArgs[0];
 }
 
-
 int CCobInstance::QueryBuildInfo()
 {
 	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
-	callinArgs[0] =  1;
+	callinArgs[0] = 1;
 	callinArgs[1] = -1;
 
 	Call(COBFN_QueryBuildInfo, callinArgs);
 	return callinArgs[0];
 }
 
-
 int CCobInstance::QueryWeapon(int weaponNum)
 {
 	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
-	callinArgs[0] =  1;
+	callinArgs[0] = 1;
 	callinArgs[1] = -1;
 
 	Call(COBFN_QueryPrimary + COBFN_Weapon_Funcs * weaponNum, callinArgs);
 	return callinArgs[0];
 }
-
 
 void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch)
 {
@@ -434,11 +412,10 @@ void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch)
 
 	callinArgs[0] = 2;
 	callinArgs[1] = short(heading * RAD2TAANG);
-	callinArgs[2] = short(  pitch * RAD2TAANG);
+	callinArgs[2] = short(pitch * RAD2TAANG);
 
 	Call(COBFN_AimPrimary + COBFN_Weapon_Funcs * weaponNum, callinArgs, CBAimWeapon, weaponNum, nullptr);
 }
-
 
 void CCobInstance::AimShieldWeapon(CPlasmaRepulser* weapon)
 {
@@ -448,22 +425,21 @@ void CCobInstance::AimShieldWeapon(CPlasmaRepulser* weapon)
 	callinArgs[0] = 2;
 	callinArgs[1] = 0; // compat with AimWeapon (same script is called)
 
-	Call(COBFN_AimPrimary + COBFN_Weapon_Funcs * weapon->weaponNum, callinArgs, CBAimShield, weapon->weaponNum, nullptr);
+	Call(
+	    COBFN_AimPrimary + COBFN_Weapon_Funcs * weapon->weaponNum, callinArgs, CBAimShield, weapon->weaponNum, nullptr);
 }
-
 
 int CCobInstance::AimFromWeapon(int weaponNum)
 {
 	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
-	callinArgs[0] =  1;
+	callinArgs[0] = 1;
 	callinArgs[1] = -1;
 
 	Call(COBFN_AimFromPrimary + COBFN_Weapon_Funcs * weaponNum, callinArgs);
 	return callinArgs[0];
 }
-
 
 void CCobInstance::Shot(int weaponNum)
 {
@@ -471,14 +447,13 @@ void CCobInstance::Shot(int weaponNum)
 	Call(COBFN_Shot + COBFN_Weapon_Funcs * weaponNum, 0); // why the 0 argument?
 }
 
-
 bool CCobInstance::BlockShot(int weaponNum, const CUnit* targetUnit, bool userTarget)
 {
 	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 3;
-	callinArgs[1] = (targetUnit != nullptr)? targetUnit->id : 0;
+	callinArgs[1] = (targetUnit != nullptr) ? targetUnit->id : 0;
 	callinArgs[2] = 0; // return value; default is to not block the shot
 	callinArgs[3] = userTarget;
 
@@ -487,14 +462,13 @@ bool CCobInstance::BlockShot(int weaponNum, const CUnit* targetUnit, bool userTa
 	return (callinArgs[1] != 0);
 }
 
-
 float CCobInstance::TargetWeight(int weaponNum, const CUnit* targetUnit)
 {
 	ZoneScoped;
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
-	callinArgs[1] = (targetUnit != nullptr)? targetUnit->id : 0;
+	callinArgs[1] = (targetUnit != nullptr) ? targetUnit->id : 0;
 	callinArgs[2] = COBSCALE; // return value; default is 1.0
 
 	Call(COBFN_TargetWeight + COBFN_Weapon_Funcs * weaponNum, callinArgs);
@@ -511,22 +485,89 @@ void CCobInstance::AnimFinished(AnimType type, int piece, int axis)
 	}
 }
 
+void CCobInstance::Destroy()
+{
+	ZoneScoped;
+	Call(COBFN_Destroy);
+}
 
-void CCobInstance::Destroy() { ZoneScoped; Call(COBFN_Destroy); }
-void CCobInstance::StartMoving(bool reversing) { ZoneScoped; Call(COBFN_StartMoving, reversing); }
-void CCobInstance::StopMoving() { ZoneScoped; Call(COBFN_StopMoving); }
-void CCobInstance::StartUnload() { ZoneScoped; Call(COBFN_StartUnload); }
-void CCobInstance::EndTransport() { ZoneScoped; Call(COBFN_EndTransport); }
-void CCobInstance::StartBuilding() { ZoneScoped; Call(COBFN_StartBuilding); }
-void CCobInstance::StopBuilding() { ZoneScoped; Call(COBFN_StopBuilding); }
-void CCobInstance::Falling() { ZoneScoped; Call(COBFN_Falling); }
-void CCobInstance::Landed() { ZoneScoped; Call(COBFN_Landed); }
-void CCobInstance::Activate() { ZoneScoped; Call(COBFN_Activate); }
-void CCobInstance::Deactivate() { ZoneScoped; Call(COBFN_Deactivate); }
-void CCobInstance::MoveRate(int curRate) { ZoneScoped; Call(COBFN_MoveRate0 + curRate); }
-void CCobInstance::FireWeapon(int weaponNum) { ZoneScoped; Call(COBFN_FirePrimary + COBFN_Weapon_Funcs * weaponNum); }
-void CCobInstance::EndBurst(int weaponNum) { ZoneScoped; Call(COBFN_EndBurst + COBFN_Weapon_Funcs * weaponNum); }
+void CCobInstance::StartMoving(bool reversing)
+{
+	ZoneScoped;
+	Call(COBFN_StartMoving, reversing);
+}
 
+void CCobInstance::StopMoving()
+{
+	ZoneScoped;
+	Call(COBFN_StopMoving);
+}
+
+void CCobInstance::StartUnload()
+{
+	ZoneScoped;
+	Call(COBFN_StartUnload);
+}
+
+void CCobInstance::EndTransport()
+{
+	ZoneScoped;
+	Call(COBFN_EndTransport);
+}
+
+void CCobInstance::StartBuilding()
+{
+	ZoneScoped;
+	Call(COBFN_StartBuilding);
+}
+
+void CCobInstance::StopBuilding()
+{
+	ZoneScoped;
+	Call(COBFN_StopBuilding);
+}
+
+void CCobInstance::Falling()
+{
+	ZoneScoped;
+	Call(COBFN_Falling);
+}
+
+void CCobInstance::Landed()
+{
+	ZoneScoped;
+	Call(COBFN_Landed);
+}
+
+void CCobInstance::Activate()
+{
+	ZoneScoped;
+	Call(COBFN_Activate);
+}
+
+void CCobInstance::Deactivate()
+{
+	ZoneScoped;
+	Call(COBFN_Deactivate);
+}
+
+void CCobInstance::MoveRate(int curRate)
+{
+	ZoneScoped;
+	Call(COBFN_MoveRate0 + curRate);
+}
+
+void CCobInstance::FireWeapon(int weaponNum)
+{
+	ZoneScoped;
+	Call(COBFN_FirePrimary + COBFN_Weapon_Funcs * weaponNum);
+}
+
+void CCobInstance::EndBurst(int weaponNum)
+{
+	ZoneScoped;
+	Call(COBFN_EndBurst + COBFN_Weapon_Funcs * weaponNum);
+}
 
 /******************************************************************************/
 
@@ -540,7 +581,11 @@ void CCobInstance::EndBurst(int weaponNum) { ZoneScoped; Call(COBFN_EndBurst + C
  * @return 0 if the call terminated. If the caller provides a callback and the thread does not terminate,
  *  it will continue to run. Otherwise it will be killed. Returns 1 in this case.
  */
-int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& args, ThreadCallbackType cb, int cbParam, int* retCode)
+int CCobInstance::RealCall(int functionId,
+    std::array<int, 1 + MAX_COB_ARGS>& args,
+    ThreadCallbackType cb,
+    int cbParam,
+    int* retCode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	int ret = -1;
@@ -583,20 +628,20 @@ int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& ar
 		//
 		//   args[0] holds the number of input args
 		const unsigned int numArgs = args[0];
-		const unsigned int retArgs = newThread.CheckStack(numArgs, functionId != cobFile->scriptIndex[COBFN_StartMoving]);
+		const unsigned int retArgs =
+		    newThread.CheckStack(numArgs, functionId != cobFile->scriptIndex[COBFN_StartMoving]);
 
 		// retrieve output parameter values from stack
-		for (unsigned int i = 0, n = std::min(retArgs, MAX_COB_ARGS); i < n; ++i)
-			args[i] = newThread.GetStackVal(i);
+		for (unsigned int i = 0, n = std::min(retArgs, MAX_COB_ARGS); i < n; ++i) args[i] = newThread.GetStackVal(i);
 
 		// set erroneous parameters to 0
-		for (unsigned int i = std::min(retArgs, MAX_COB_ARGS); i < numArgs; ++i)
-			args[i] = 0;
+		for (unsigned int i = std::min(retArgs, MAX_COB_ARGS); i < numArgs; ++i) args[i] = 0;
 
 		// dtor runs the callback
 		if (retCode != nullptr)
 			*retCode = newThread.GetRetCode();
-	} else {
+	}
+	else {
 		cobEngine->AddThread(std::move(newThread));
 	}
 
@@ -604,7 +649,6 @@ int CCobInstance::RealCall(int functionId, std::array<int, 1 + MAX_COB_ARGS>& ar
 	cobEngine->ProcessQueuedThreads();
 	return ret;
 }
-
 
 /******************************************************************************/
 
@@ -634,18 +678,18 @@ int CCobInstance::Call(const std::string& fname, int arg1)
 	return Call(fname, callinArgs, CBNone, 0, nullptr);
 }
 
-
-
-int CCobInstance::Call(const std::string& fname, std::array<int, 1 + MAX_COB_ARGS>& args, ThreadCallbackType cb, int cbParam, int* retCode)
+int CCobInstance::Call(const std::string& fname,
+    std::array<int, 1 + MAX_COB_ARGS>& args,
+    ThreadCallbackType cb,
+    int cbParam,
+    int* retCode)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//TODO: Check that new behaviour of actually calling cb when the function is not defined is right?
-	//      (the callback has always been called [when the function is not defined]
-	//       in the id-based Call()s, but never in the string based calls.)
+	// TODO: Check that new behaviour of actually calling cb when the function is not defined is right?
+	//       (the callback has always been called [when the function is not defined]
+	//        in the id-based Call()s, but never in the string based calls.)
 	return RealCall(GetFunctionId(fname), args, cb, cbParam, retCode);
 }
-
-
 
 int CCobInstance::Call(int id)
 {
@@ -672,11 +716,14 @@ int CCobInstance::Call(int id, std::array<int, 1 + MAX_COB_ARGS>& args)
 	return Call(id, args, CBNone, 0, nullptr);
 }
 
-int CCobInstance::Call(int id, std::array<int, 1 + MAX_COB_ARGS>& args, ThreadCallbackType cb, int cbParam, int* retCode)
+int CCobInstance::Call(int id,
+    std::array<int, 1 + MAX_COB_ARGS>& args,
+    ThreadCallbackType cb,
+    int cbParam,
+    int* retCode)
 {
 	return RealCall(cobFile->scriptIndex[id], args, cb, cbParam, retCode);
 }
-
 
 void CCobInstance::RawCall(int fn)
 {
@@ -692,27 +739,26 @@ int CCobInstance::RawCall(int fn, std::array<int, 1 + MAX_COB_ARGS>& args)
 	return RealCall(fn, args, CBNone, 0, nullptr);
 }
 
-
 void CCobInstance::ThreadCallback(ThreadCallbackType type, int retCode, int cbParam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (type) {
-		// note: this callback is always called, even if Killed does not exist
-		// however, retCode is only set if the function has a return statement
-		// (otherwise its value is -1 regardless of Killed being present which
-		// means *no* wreck will be spawned)
-		case CBKilled: {
-			unit->KilledScriptFinished(retCode);
-		} break;
-		case CBAimWeapon: {
-			unit->weapons[cbParam]->AimScriptFinished(retCode == 1);
-		} break;
-		case CBAimShield: {
-			static_cast<CPlasmaRepulser*>(unit->weapons[cbParam])->SetEnabled(retCode != 0);
-		} break;
-		default: {
-			assert(false);
-		} break;
+	// note: this callback is always called, even if Killed does not exist
+	// however, retCode is only set if the function has a return statement
+	// (otherwise its value is -1 regardless of Killed being present which
+	// means *no* wreck will be spawned)
+	case CBKilled: {
+		unit->KilledScriptFinished(retCode);
+	} break;
+	case CBAimWeapon: {
+		unit->weapons[cbParam]->AimScriptFinished(retCode == 1);
+	} break;
+	case CBAimShield: {
+		static_cast<CPlasmaRepulser*>(unit->weapons[cbParam])->SetEnabled(retCode != 0);
+	} break;
+	default: {
+		assert(false);
+	} break;
 	}
 }
 
@@ -734,13 +780,11 @@ void CCobInstance::Signal(int signal)
 	}
 }
 
-
 void CCobInstance::PlayUnitSound(int snr, int attr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	Channels::UnitReply->PlaySample(cobFile->sounds[snr], unit->pos, unit->speed, attr);
 }
-
 
 void CCobInstance::ShowScriptError(const std::string& msg)
 {

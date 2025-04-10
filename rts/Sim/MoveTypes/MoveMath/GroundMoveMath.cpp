@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "MoveMath.h"
+
 #include "Sim/Misc/ModInfo.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
-
 #include "System/Misc/TracyDefs.h"
 
 /*
@@ -22,7 +22,7 @@ float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slop
 
 	// slope-mod
 	speedMod = 1.0f / (1.0f + slope * moveDef.slopeMod);
-	speedMod *= ((height < 0.0f)? waterDamageCost: 1.0f);
+	speedMod *= ((height < 0.0f) ? waterDamageCost : 1.0f);
 	speedMod *= moveDef.GetDepthMod(height);
 
 	return speedMod;
@@ -46,9 +46,8 @@ float CMoveMath::GroundSpeedMod(const MoveDef& moveDef, float height, float slop
 
 	// slope-mod (speedMod is not increased or decreased by downhill slopes)
 	speedMod = 1.0f / (1.0f + std::max(0.0f, slope * dirSlopeMod) * moveDef.slopeMod);
-	speedMod *= ((height < 0.0f)? waterDamageCost: 1.0f);
+	speedMod *= ((height < 0.0f) ? waterDamageCost : 1.0f);
 	speedMod *= moveDef.GetDepthMod(height);
 
 	return speedMod;
 }
-

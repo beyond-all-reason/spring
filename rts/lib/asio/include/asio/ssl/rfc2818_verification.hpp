@@ -12,18 +12,18 @@
 #define ASIO_SSL_RFC2818_VERIFICATION_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 
 #if !defined(ASIO_NO_DEPRECATED)
 
-#include <string>
+#include "asio/detail/push_options.hpp"
 #include "asio/ssl/detail/openssl_types.hpp"
 #include "asio/ssl/verify_context.hpp"
 
-#include "asio/detail/push_options.hpp"
+#include <string>
 
 namespace asio {
 namespace ssl {
@@ -59,29 +59,27 @@ namespace ssl {
  * // ... read and write as normal ...
  * @endcode
  */
-class rfc2818_verification
-{
+class rfc2818_verification {
 public:
-  /// The type of the function object's result.
-  typedef bool result_type;
+	/// The type of the function object's result.
+	typedef bool result_type;
 
-  /// Constructor.
-  explicit rfc2818_verification(const std::string& host)
-    : host_(host)
-  {
-  }
+	/// Constructor.
+	explicit rfc2818_verification(const std::string& host)
+	    : host_(host)
+	{
+	}
 
-  /// Perform certificate verification.
-  ASIO_DECL bool operator()(bool preverified, verify_context& ctx) const;
+	/// Perform certificate verification.
+	ASIO_DECL bool operator()(bool preverified, verify_context& ctx) const;
 
 private:
-  // Helper function to check a host name against a pattern.
-  ASIO_DECL static bool match_pattern(const char* pattern,
-      std::size_t pattern_length, const char* host);
+	// Helper function to check a host name against a pattern.
+	ASIO_DECL static bool match_pattern(const char* pattern, std::size_t pattern_length, const char* host);
 
-  // Helper function to check a host name against an IPv4 address
-  // The host name to be checked.
-  std::string host_;
+	// Helper function to check a host name against an IPv4 address
+	// The host name to be checked.
+	std::string host_;
 };
 
 } // namespace ssl
@@ -90,7 +88,7 @@ private:
 #include "asio/detail/pop_options.hpp"
 
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/ssl/impl/rfc2818_verification.ipp"
+#include "asio/ssl/impl/rfc2818_verification.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // !defined(ASIO_NO_DEPRECATED)

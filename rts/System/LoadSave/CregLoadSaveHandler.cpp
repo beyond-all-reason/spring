@@ -1,66 +1,65 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <sstream>
-#include <zlib.h>
-
-#include "ExternalAI/SkirmishAIHandler.h"
-#include "ExternalAI/EngineOutHandler.h"
 #include "CregLoadSaveHandler.h"
-#include "Map/ReadMap.h"
+
+#include "ExternalAI/EngineOutHandler.h"
+#include "ExternalAI/SkirmishAIHandler.h"
 #include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GameVersion.h"
 #include "Game/GlobalUnsynced.h"
-#include "Game/WaitCommandsAI.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/UI/Groups/GroupHandler.h"
+#include "Game/WaitCommandsAI.h"
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaRules.h"
+#include "Map/ReadMap.h"
 #include "Net/GameServer.h"
+#include "Rendering/Env/Decals/GroundDecalHandler.h"
 #include "Rendering/Textures/ColorMap.h"
 #include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/Env/Decals/GroundDecalHandler.h"
 #include "Sim/Ecs/Helper.h"
 #include "Sim/Features/FeatureHandler.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Misc/BuildingMaskMap.h"
+#include "Sim/Misc/CategoryHandler.h"
 #include "Sim/Misc/GroundBlockingObjectMap.h"
 #include "Sim/Misc/InterceptHandler.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/QuadField.h"
-#include "Sim/Misc/CategoryHandler.h"
-#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
 #include "Sim/Misc/YardmapStatusEffectsMap.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/CommandAI/CommandDescription.h"
 #include "Sim/Units/Scripts/CobEngine.h"
-#include "Sim/Units/Scripts/UnitScriptEngine.h"
 #include "Sim/Units/Scripts/NullUnitScript.h"
+#include "Sim/Units/Scripts/UnitScriptEngine.h"
+#include "Sim/Units/UnitHandler.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
-#include "System/SafeUtil.h"
-#include "System/Platform/errorhandler.h"
+#include "System/Exceptions.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileQueryFlags.h"
 #include "System/FileSystem/GZFileHandler.h"
+#include "System/Log/ILog.h"
+#include "System/Platform/errorhandler.h"
+#include "System/SafeUtil.h"
 #include "System/Threading/ThreadPool.h"
 #include "System/creg/SerializeLuaState.h"
 #include "System/creg/Serializer.h"
-#include "System/Exceptions.h"
-#include "System/Log/ILog.h"
+
+#include <sstream>
+
+#include <zlib.h>
 
 #define MAX_STRING_SIZE (1 << 19) // 512kB excluding null-term
 
-
-CCregLoadSaveHandler::CCregLoadSaveHandler()
-{}
+CCregLoadSaveHandler::CCregLoadSaveHandler() {}
 
 CCregLoadSaveHandler::~CCregLoadSaveHandler() = default;
 
 #ifdef USING_CREG
-class CGameStateCollector
-{
+class CGameStateCollector {
 	CR_DECLARE_STRUCT(CGameStateCollector)
 
 public:
@@ -70,10 +69,7 @@ public:
 };
 
 CR_BIND(CGameStateCollector, )
-CR_REG_METADATA(CGameStateCollector, (
-	CR_SERIALIZER(Serialize)
-))
-
+CR_REG_METADATA(CGameStateCollector, (CR_SERIALIZER(Serialize)))
 
 void CGameStateCollector::Serialize(creg::ISerializer* s)
 {
@@ -111,13 +107,12 @@ void CGameStateCollector::Serialize(creg::ISerializer* s)
 	std::unique_ptr<creg::IType> mapType = creg::DeduceType<decltype(CSplitLuaHandle::gameParams)>::Get();
 	mapType->Serialize(s, &CSplitLuaHandle::gameParams);
 
-	s->SerializeObjectInstance(CUnitDrawer::modelDrawerData->GetSavedData(), CUnitDrawer::modelDrawerData->GetSavedData()->GetClass());
-	//s->SerializeObjectInstance(groundDecals, groundDecals->GetClass());
+	s->SerializeObjectInstance(
+	    CUnitDrawer::modelDrawerData->GetSavedData(), CUnitDrawer::modelDrawerData->GetSavedData()->GetClass());
+	// s->SerializeObjectInstance(groundDecals, groundDecals->GetClass());
 }
 
-
-class CLuaStateCollector
-{
+class CLuaStateCollector {
 	CR_DECLARE_STRUCT(CLuaStateCollector)
 
 public:
@@ -139,20 +134,20 @@ public:
 };
 
 CR_BIND(CLuaStateCollector, )
-CR_REG_METADATA(CLuaStateCollector, (
-	CR_MEMBER(valid),
-	CR_IGNORED(L),
-	CR_IGNORED(L_GC),
-	CR_MEMBER(watchUnitDefs),
-	CR_MEMBER(watchFeatureDefs),
-	CR_MEMBER(watchProjectileDefs),
-	CR_MEMBER(watchExplosionDefs),
-	CR_MEMBER(watchAllowTargetDefs),
-	CR_MEMBER(delayedCallsByFrame),
-	CR_SERIALIZER(Serialize)
-))
+CR_REG_METADATA(CLuaStateCollector,
+    (CR_MEMBER(valid),
+        CR_IGNORED(L),
+        CR_IGNORED(L_GC),
+        CR_MEMBER(watchUnitDefs),
+        CR_MEMBER(watchFeatureDefs),
+        CR_MEMBER(watchProjectileDefs),
+        CR_MEMBER(watchExplosionDefs),
+        CR_MEMBER(watchAllowTargetDefs),
+        CR_MEMBER(delayedCallsByFrame),
+        CR_SERIALIZER(Serialize)))
 
-void CLuaStateCollector::Read(const CSplitLuaHandle* handle) {
+void CLuaStateCollector::Read(const CSplitLuaHandle* handle)
+{
 	valid = (handle != nullptr) && handle->syncedLuaHandle.IsValid();
 	if (!valid)
 		return;
@@ -173,7 +168,8 @@ void CLuaStateCollector::Read(const CSplitLuaHandle* handle) {
 	lua_gc(L_GC, LUA_GCCOLLECT, 0);
 }
 
-void CLuaStateCollector::Write(CSplitLuaHandle* handle) {
+void CLuaStateCollector::Write(CSplitLuaHandle* handle)
+{
 	if ((handle == nullptr) || !handle->syncedLuaHandle.IsValid() || !valid)
 		return;
 
@@ -186,7 +182,8 @@ void CLuaStateCollector::Write(CSplitLuaHandle* handle) {
 	handle->syncedLuaHandle.delayedCallsByFrame = delayedCallsByFrame;
 }
 
-void CLuaStateCollector::Serialize(creg::ISerializer* s) {
+void CLuaStateCollector::Serialize(creg::ISerializer* s)
+{
 	if (!valid)
 		return;
 
@@ -206,15 +203,18 @@ static void PrintSize(const char* txt, int size)
 {
 	if (size > (1024 * 1024 * 1024)) {
 		LOG("%s %.1f GB", txt, size / (1024.0f * 1024 * 1024));
-	} else if (size >  (1024 * 1024)) {
+	}
+	else if (size > (1024 * 1024)) {
 		LOG("%s %.1f MB", txt, size / (1024.0f * 1024));
-	} else if (size > 1024) {
+	}
+	else if (size > 1024) {
 		LOG("%s %.1f KB", txt, size / (1024.0f));
-	} else {
-		LOG("%s %u B",    txt, size);
+	}
+	else {
+		LOG("%s %u B", txt, size);
 	}
 }
-#endif //USING_CREG
+#endif // USING_CREG
 
 static void ReadString(std::istream& s, std::string& str)
 {
@@ -224,14 +224,12 @@ static void ReadString(std::istream& s, std::string& str)
 	str.append(cstr);
 }
 
-
 static void SaveLuaState(CSplitLuaHandle* handle, creg::COutputStreamSerializer& os, std::stringstream& oss)
 {
 	CLuaStateCollector lsc;
 	lsc.Read(handle);
 	os.SavePackage(&oss, &lsc, lsc.GetClass());
 }
-
 
 static void LoadLuaState(CSplitLuaHandle* handle, creg::CInputStreamSerializer& is, std::stringstream& iss)
 {
@@ -249,7 +247,6 @@ static void LoadLuaState(CSplitLuaHandle* handle, creg::CInputStreamSerializer& 
 
 	spring::SafeDelete(lsc);
 }
-
 
 void CCregLoadSaveHandler::SaveGame(const std::string& path)
 {
@@ -323,21 +320,26 @@ void CCregLoadSaveHandler::SaveGame(const std::string& path)
 			ThreadPool::AddExtJob(std::move(std::async(std::launch::async, std::move(func), file, std::move(data))));
 		}
 
-		//FIXME add lua state
-	} catch (const content_error& ex) {
+		// FIXME add lua state
+	}
+	catch (const content_error& ex) {
 		LOG_L(L_ERROR, "[LSH::%s] content error \"%s\"", __func__, ex.what());
-	} catch (const std::exception& ex) {
+	}
+	catch (const std::exception& ex) {
 		LOG_L(L_ERROR, "[LSH::%s] exception \"%s\"", __func__, ex.what());
-	} catch (const char*& exStr) {
+	}
+	catch (const char*& exStr) {
 		LOG_L(L_ERROR, "[LSH::%s] cstr error \"%s\"", __func__, exStr);
-	} catch (const std::string& str) {
+	}
+	catch (const std::string& str) {
 		LOG_L(L_ERROR, "[LSH::%s] str error \"%s\"", __func__, str.c_str());
-	} catch (...) {
+	}
+	catch (...) {
 		LOG_L(L_ERROR, "[LSH::%s] unknown error", __func__);
 	}
-#else //USING_CREG
+#else  // USING_CREG
 	LOG_L(L_ERROR, "[LSH::%s] creg is disabled", __func__);
-#endif //USING_CREG
+#endif // USING_CREG
 }
 
 /// loads the data (map&mod-name,setup-script) needed by PreGame
@@ -351,8 +353,7 @@ bool CCregLoadSaveHandler::LoadGameStartInfo(const std::string& path)
 
 	char buf[4096];
 	int len;
-	while ((len = saveFile.Read(buf, sizeof(buf))) > 0)
-		sbuf->sputn(buf, len);
+	while ((len = saveFile.Read(buf, sizeof(buf))) > 0) sbuf->sputn(buf, len);
 
 	ReadString(iss, saveVersion);
 
@@ -360,7 +361,8 @@ bool CCregLoadSaveHandler::LoadGameStartInfo(const std::string& path)
 	// in general these will *not* be binary-compatible
 	// (so prefer to terminate loading from PreGame)
 	if (saveVersion != syncVersion)
-		LOG_L(L_WARNING, "[LSH::%s][release=%d] file \"%s\" saved by engine version \"%s\" incompatible with \"%s\"", __func__, SpringVersion::IsRelease(), path.c_str(), saveVersion.c_str(), syncVersion.c_str());
+		LOG_L(L_WARNING, "[LSH::%s][release=%d] file \"%s\" saved by engine version \"%s\" incompatible with \"%s\"",
+		    __func__, SpringVersion::IsRelease(), path.c_str(), saveVersion.c_str(), syncVersion.c_str());
 
 	// read our own header
 	ReadString(iss, scriptText);
@@ -398,9 +400,9 @@ void CCregLoadSaveHandler::LoadGame()
 	}
 
 	LEAVE_SYNCED_CODE();
-#else //USING_CREG
+#else  // USING_CREG
 	LOG_L(L_ERROR, "Load failed: creg is disabled");
-#endif //USING_CREG
+#endif // USING_CREG
 }
 
 /// this should be called on frame 0 when the game has started
@@ -432,7 +434,7 @@ void CCregLoadSaveHandler::LoadAIData()
 	}
 
 	LEAVE_SYNCED_CODE();
-#else //USING_CREG
+#else  // USING_CREG
 	LOG_L(L_ERROR, "Load failed: creg is disabled");
-#endif //USING_CREG
+#endif // USING_CREG
 }

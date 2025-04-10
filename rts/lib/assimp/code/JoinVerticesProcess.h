@@ -45,12 +45,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AI_JOINVERTICESPROCESS_H_INC
 
 #include "BaseProcess.h"
+
 #include <assimp/types.h>
 
 struct aiMesh;
 
-namespace Assimp
-{
+namespace Assimp {
 
 // ---------------------------------------------------------------------------
 /** The JoinVerticesProcess unites identical vertices in all imported meshes.
@@ -60,35 +60,34 @@ namespace Assimp
  * erases all but one of the copies. This usually reduces the number of vertices
  * in a mesh by a serious amount and is the standard form to render a mesh.
  */
-class ASSIMP_API JoinVerticesProcess : public BaseProcess
-{
+class ASSIMP_API JoinVerticesProcess : public BaseProcess {
 public:
-    JoinVerticesProcess();
-    ~JoinVerticesProcess();
+	JoinVerticesProcess();
+	~JoinVerticesProcess();
 
 public:
-    // -------------------------------------------------------------------
-    /** Returns whether the processing step is present in the given flag field.
-     * @param pFlags The processing flags the importer was called with. A bitwise
-     *   combination of #aiPostProcessSteps.
-     * @return true if the process is present in this flag fields, false if not.
-    */
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	/** Returns whether the processing step is present in the given flag field.
+	 * @param pFlags The processing flags the importer was called with. A bitwise
+	 *   combination of #aiPostProcessSteps.
+	 * @return true if the process is present in this flag fields, false if not.
+	 */
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    /** Executes the post processing step on the given imported data.
-    * At the moment a process is not supposed to fail.
-    * @param pScene The imported data to work at.
-    */
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	/** Executes the post processing step on the given imported data.
+	 * At the moment a process is not supposed to fail.
+	 * @param pScene The imported data to work at.
+	 */
+	void Execute(aiScene* pScene);
 
 public:
-    // -------------------------------------------------------------------
-    /** Unites identical vertices in the given mesh.
-     * @param pMesh The mesh to process.
-     * @param meshIndex Index of the mesh to process
-     */
-    int ProcessMesh( aiMesh* pMesh, unsigned int meshIndex);
+	// -------------------------------------------------------------------
+	/** Unites identical vertices in the given mesh.
+	 * @param pMesh The mesh to process.
+	 * @param meshIndex Index of the mesh to process
+	 */
+	int ProcessMesh(aiMesh* pMesh, unsigned int meshIndex);
 
 private:
 };

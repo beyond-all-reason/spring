@@ -3,8 +3,10 @@
 #ifndef TOOL_TIP_CONSOLE_H
 #define TOOL_TIP_CONSOLE_H
 
-#include "Sim/Misc/Resource.h"
 #include "InputReceiver.h"
+
+#include "Sim/Misc/Resource.h"
+
 #include <string>
 
 class CUnit;
@@ -29,26 +31,25 @@ public:
 	int count;
 };
 
-
 class CTooltipConsole : public CInputReceiver {
-	public:
-		CTooltipConsole();
-		~CTooltipConsole();
+public:
+	CTooltipConsole();
+	~CTooltipConsole();
 
-		void Draw();
-		bool IsAbove(int x, int y);
+	void Draw();
+	bool IsAbove(int x, int y);
 
-		// helpers
-		static std::string MakeUnitString(const CUnit* unit);
-		static std::string MakeFeatureString(const CFeature* feature);
-		static std::string MakeGroundString(const float3& pos);
-		static std::string MakeUnitStatsString(const SUnitStats& stats);
+	// helpers
+	static std::string MakeUnitString(const CUnit* unit);
+	static std::string MakeFeatureString(const CFeature* feature);
+	static std::string MakeGroundString(const float3& pos);
+	static std::string MakeUnitStatsString(const SUnitStats& stats);
 
-		bool enabled;
+	bool enabled;
 
-	protected:
-		float x, y, w, h;
-		bool outFont;
+protected:
+	float x, y, w, h;
+	bool outFont;
 };
 
 extern CTooltipConsole* tooltip;

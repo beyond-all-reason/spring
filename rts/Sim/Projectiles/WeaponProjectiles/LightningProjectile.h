@@ -7,12 +7,11 @@
 
 class CWeapon;
 
-class CLightningProjectile : public CWeaponProjectile
-{
+class CLightningProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CLightningProjectile)
 public:
 	// creg only
-	CLightningProjectile() { }
+	CLightningProjectile() {}
 
 	CLightningProjectile(const ProjectileParams& params);
 

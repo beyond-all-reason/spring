@@ -11,4 +11,3 @@ set(FILES
 )
 
 create_base_content_archive("base" "maphelper.sdz" "${FILES}")
-

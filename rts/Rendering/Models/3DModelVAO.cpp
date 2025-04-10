@@ -2,18 +2,16 @@
 
 #include "3DModelVAO.h"
 
-#include <algorithm>
-#include <iterator>
-
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Rendering/ModelsDataUploader.h"
+#include "Sim/Features/Feature.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-#include "Sim/Features/Feature.h"
-
 #include "System/Misc/TracyDefs.h"
 
+#include <algorithm>
+#include <iterator>
 
 void S3DModelVAO::EnableAttribs(bool inst) const
 {
@@ -24,12 +22,14 @@ void S3DModelVAO::EnableAttribs(bool inst) const
 			glVertexAttribDivisor(i, 0);
 		}
 
-		glVertexAttribPointer (0, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, pos         ));
-		glVertexAttribPointer (1, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, normal      ));
-		glVertexAttribPointer (2, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent    ));
-		glVertexAttribPointer (3, 3, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent    ));
-		glVertexAttribPointer (4, 4, GL_FLOAT       , false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
-		glVertexAttribIPointer(5, 3, GL_UNSIGNED_INT,        sizeof(SVertexData), (const void*)offsetof(SVertexData, boneIDsLow  ));
+		glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, pos));
+		glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, sTangent));
+		glVertexAttribPointer(3, 3, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, tTangent));
+		glVertexAttribPointer(
+		    4, 4, GL_FLOAT, false, sizeof(SVertexData), (const void*)offsetof(SVertexData, texCoords[0]));
+		glVertexAttribIPointer(
+		    5, 3, GL_UNSIGNED_INT, sizeof(SVertexData), (const void*)offsetof(SVertexData, boneIDsLow));
 	}
 	else {
 		for (int i = 6; i <= 6; ++i) {
@@ -38,7 +38,8 @@ void S3DModelVAO::EnableAttribs(bool inst) const
 		}
 
 		// covers all 4 uints of SInstanceData
-		glVertexAttribIPointer(6, 4, GL_UNSIGNED_INT, sizeof(SInstanceData), (const void*)offsetof(SInstanceData, matOffset));
+		glVertexAttribIPointer(
+		    6, 4, GL_UNSIGNED_INT, sizeof(SInstanceData), (const void*)offsetof(SInstanceData, matOffset));
 	}
 }
 
@@ -57,11 +58,11 @@ S3DModelVAO::S3DModelVAO()
 	vertData.reserve(VERT_SIZE0);
 	indxData.reserve(INDX_SIZE0);
 
-	vertVBO = VBO{ GL_ARRAY_BUFFER        , false };
-	indxVBO = VBO{ GL_ELEMENT_ARRAY_BUFFER, false };
-	instVBO = VBO{ GL_ARRAY_BUFFER        , false };
+	vertVBO = VBO{GL_ARRAY_BUFFER, false};
+	indxVBO = VBO{GL_ELEMENT_ARRAY_BUFFER, false};
+	instVBO = VBO{GL_ARRAY_BUFFER, false};
 
-	//no better place to init it
+	// no better place to init it
 	instVBO.Bind();
 	instVBO.New(S3DModelVAO::INSTANCE_BUFFER_NUM_ELEMS * sizeof(SInstanceData), GL_STREAM_DRAW);
 	instVBO.Unbind();
@@ -77,11 +78,11 @@ void S3DModelVAO::ProcessVertices(const S3DModel* model)
 		return;
 
 	uint32_t vertIndex = static_cast<uint32_t>(vertData.size());
-	for (auto* modelPiece : model->pieceObjects) {
+	for (auto* modelPiece: model->pieceObjects) {
 		modelPiece->vertIndex = vertIndex;
 		const auto& modelPieceVerts = modelPiece->GetVerticesVec();
 		vertIndex += modelPieceVerts.size();
-		vertData.insert(vertData.end(), modelPieceVerts.begin(), modelPieceVerts.end()); //append
+		vertData.insert(vertData.end(), modelPieceVerts.begin(), modelPieceVerts.end()); // append
 	}
 }
 
@@ -92,10 +93,10 @@ void S3DModelVAO::ProcessIndicies(S3DModel* model)
 	if (model->indxStart != ~0u)
 		return;
 
-	//models should know their index offset
+	// models should know their index offset
 	model->indxStart = static_cast<uint32_t>(std::distance(indxData.cbegin(), indxData.cend()));
 
-	for (auto* modelPiece : model->pieceObjects) {
+	for (auto* modelPiece: model->pieceObjects) {
 		if (!modelPiece->HasGeometryData()) {
 			modelPiece->indxStart = static_cast<uint32_t>(indxData.size());
 			modelPiece->indxCount = 0;
@@ -103,35 +104,39 @@ void S3DModelVAO::ProcessIndicies(S3DModel* model)
 		}
 
 		const auto& modelPieceIndcs = modelPiece->GetIndicesVec();
-		indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); //append
+		indxData.insert(indxData.end(), modelPieceIndcs.begin(), modelPieceIndcs.end()); // append
 
 		const auto endIdx = indxData.end();
 		const auto begIdx = endIdx - modelPieceIndcs.size();
 
-		std::for_each(begIdx, endIdx, [offset = modelPiece->vertIndex](uint32_t& indx) { indx += offset; }); // add per piece vertex offset to indices
+		std::for_each(begIdx, endIdx, [offset = modelPiece->vertIndex](uint32_t& indx) {
+			indx += offset;
+		}); // add per piece vertex offset to indices
 
-		//model pieces should know their index offset
+		// model pieces should know their index offset
 		modelPiece->indxStart = static_cast<uint32_t>(std::distance(indxData.begin(), begIdx));
 
-		//model pieces should know their index count
+		// model pieces should know their index count
 		modelPiece->indxCount = static_cast<uint32_t>(modelPieceIndcs.size());
 	}
-	//models should know their index count
+	// models should know their index count
 	model->indxCount = static_cast<uint32_t>(indxData.size() - model->indxStart);
 
-	//add shatter indices to the end of indxData
-	for (const auto* modelPiece : model->pieceObjects) {
+	// add shatter indices to the end of indxData
+	for (const auto* modelPiece: model->pieceObjects) {
 		if (!modelPiece->HasGeometryData())
 			continue;
 
 		const auto& mdlPcsShatIndcs = modelPiece->GetShatterIndicesVec();
 
-		indxData.insert(indxData.end(), mdlPcsShatIndcs.begin(), mdlPcsShatIndcs.end()); //append
+		indxData.insert(indxData.end(), mdlPcsShatIndcs.begin(), mdlPcsShatIndcs.end()); // append
 
 		const auto endIdx = indxData.end();
 		const auto begIdx = endIdx - mdlPcsShatIndcs.size();
 
-		std::for_each(begIdx, endIdx, [offset = modelPiece->vertIndex](uint32_t& indx) { indx += offset; }); // add per piece vertex offset to indices
+		std::for_each(begIdx, endIdx, [offset = modelPiece->vertIndex](uint32_t& indx) {
+			indx += offset;
+		}); // add per piece vertex offset to indices
 	}
 }
 
@@ -165,10 +170,12 @@ void S3DModelVAO::UploadVBOs()
 	if (vertData.size() > vertUploadIndex) {
 		assert(!safeToDeleteVectors);
 		vertVBO.Bind();
-		const size_t reqSize = AlignUp(std::max(vertData.size(), S3DModelVAO::VERT_SIZE0) * sizeof(SVertexData), MEM_STEP);
+		const size_t reqSize =
+		    AlignUp(std::max(vertData.size(), S3DModelVAO::VERT_SIZE0) * sizeof(SVertexData), MEM_STEP);
 		reinitVAO |= (reqSize > vertVBO.GetSize());
-		vertVBO.Resize(reqSize, GL_STATIC_DRAW); //noop if size hasn't changed, will copy data if changed
-		vertVBO.SetBufferSubData(vertUploadIndex * sizeof(SVertexData), (vertData.size() - vertUploadIndex) * sizeof(SVertexData), vertData.data() + vertUploadIndex);
+		vertVBO.Resize(reqSize, GL_STATIC_DRAW); // noop if size hasn't changed, will copy data if changed
+		vertVBO.SetBufferSubData(vertUploadIndex * sizeof(SVertexData),
+		    (vertData.size() - vertUploadIndex) * sizeof(SVertexData), vertData.data() + vertUploadIndex);
 		vertVBO.Unbind();
 		vertUploadIndex = vertData.size();
 		vertUploadSize = vertUploadIndex;
@@ -177,10 +184,11 @@ void S3DModelVAO::UploadVBOs()
 	if (indxData.size() > indxUploadIndex) {
 		assert(!safeToDeleteVectors);
 		indxVBO.Bind();
-		const size_t reqSize = AlignUp(std::max(indxData.size(), S3DModelVAO::INDX_SIZE0) * sizeof(   uint32_t), MEM_STEP);
+		const size_t reqSize = AlignUp(std::max(indxData.size(), S3DModelVAO::INDX_SIZE0) * sizeof(uint32_t), MEM_STEP);
 		reinitVAO |= (reqSize > indxVBO.GetSize());
-		indxVBO.Resize(reqSize, GL_STATIC_DRAW); //noop if size hasn't changed, will copy data if changed
-		indxVBO.SetBufferSubData(indxUploadIndex * sizeof(   uint32_t), (indxData.size() - indxUploadIndex) * sizeof(   uint32_t), indxData.data() + indxUploadIndex);
+		indxVBO.Resize(reqSize, GL_STATIC_DRAW); // noop if size hasn't changed, will copy data if changed
+		indxVBO.SetBufferSubData(indxUploadIndex * sizeof(uint32_t),
+		    (indxData.size() - indxUploadIndex) * sizeof(uint32_t), indxData.data() + indxUploadIndex);
 		indxVBO.Unbind();
 		indxUploadIndex = indxData.size();
 		indxUploadSize = indxUploadIndex;
@@ -284,14 +292,19 @@ void S3DModelVAO::DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboI
 }
 
 template<typename TObj>
-bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags)
+bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj,
+    uint32_t indexStart,
+    uint32_t indexCount,
+    uint8_t teamID,
+    uint8_t drawFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const auto matIndex = matrixUploader.GetElemOffset(obj);
 	if (matIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
-	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs and models. Don't check for validity
+	const auto uniIndex =
+	    modelsUniformsStorage.GetObjOffset(obj); // doesn't need to exist for defs and models. Don't check for validity
 
 	uint16_t numPieces = 0;
 	size_t bposeIndex = 0;
@@ -307,15 +320,9 @@ bool S3DModelVAO::AddToSubmissionImpl(const TObj* obj, uint32_t indexStart, uint
 	if (bposeIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
-	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{ indexStart, indexCount }];
-	modelInstanceData.emplace_back(SInstanceData(
-		static_cast<uint32_t>(matIndex),
-		teamID,
-		drawFlags,
-		numPieces,
-		static_cast<uint32_t>(uniIndex),
-		static_cast<uint32_t>(bposeIndex)
-	));
+	auto& modelInstanceData = modelDataToInstance[SIndexAndCount{indexStart, indexCount}];
+	modelInstanceData.emplace_back(SInstanceData(static_cast<uint32_t>(matIndex), teamID, drawFlags, numPieces,
+	    static_cast<uint32_t>(uniIndex), static_cast<uint32_t>(bposeIndex)));
 
 	return true;
 }
@@ -361,7 +368,6 @@ bool S3DModelVAO::AddToSubmission(const UnitDef* unitDef, uint8_t teamID)
 	return AddToSubmissionImpl(unitDef, model->indxStart, model->indxCount, teamID, 0);
 }
 
-
 void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -374,17 +380,12 @@ void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 	allRenderModelData.reserve(INSTANCE_BUFFER_NUM_BATCHED);
 	allRenderModelData.clear();
 
-	for (const auto& [indxCount, renderModelData] : modelDataToInstance) {
+	for (const auto& [indxCount, renderModelData]: modelDataToInstance) {
 		if (allRenderModelData.size() + renderModelData.size() >= INSTANCE_BUFFER_NUM_BATCHED)
 			continue;
 
 		SDrawElementsIndirectCommand scmd{
-			indxCount.count,
-			static_cast<uint32_t>(renderModelData.size()),
-			indxCount.index,
-			0u,
-			batchedBaseInstance
-		};
+		    indxCount.count, static_cast<uint32_t>(renderModelData.size()), indxCount.index, 0u, batchedBaseInstance};
 
 		submitCmds.emplace_back(scmd);
 
@@ -402,7 +403,8 @@ void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 	if (bindUnbind)
 		Bind();
 
-	glMultiDrawElementsIndirect(mode, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
+	glMultiDrawElementsIndirect(
+	    mode, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
 
 	if (bindUnbind)
 		Unbind();
@@ -411,14 +413,21 @@ void S3DModelVAO::Submit(GLenum mode, bool bindUnbind)
 }
 
 template<typename TObj>
-bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, uint32_t indexCount, uint8_t teamID, uint8_t drawFlags, GLenum mode, bool bindUnbind)
+bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj,
+    uint32_t indexStart,
+    uint32_t indexCount,
+    uint8_t teamID,
+    uint8_t drawFlags,
+    GLenum mode,
+    bool bindUnbind)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::size_t matIndex = matrixUploader.GetElemOffset(obj);
 	if (matIndex == MatricesMemStorage::INVALID_INDEX)
 		return false;
 
-	const auto uniIndex = modelsUniformsStorage.GetObjOffset(obj); //doesn't need to exist for defs. Don't check for validity
+	const auto uniIndex =
+	    modelsUniformsStorage.GetObjOffset(obj); // doesn't need to exist for defs. Don't check for validity
 
 	uint16_t numPieces = 0;
 	size_t bposeIndex = 0;
@@ -435,13 +444,7 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 	const uint32_t immediateBaseInstanceAbs = INSTANCE_BUFFER_NUM_BATCHED + immediateBaseInstance;
 
 	static SDrawElementsIndirectCommand scmd;
-	scmd = {
-		indexCount,
-		1,
-		indexStart,
-		0u,
-		immediateBaseInstanceAbs
-	};
+	scmd = {indexCount, 1, indexStart, 0u, immediateBaseInstanceAbs};
 
 	instVBO.Bind();
 	instVBO.SetBufferSubData(immediateBaseInstanceAbs * sizeof(SInstanceData), sizeof(SInstanceData), &instanceData);
@@ -466,7 +469,11 @@ bool S3DModelVAO::SubmitImmediatelyImpl(const TObj* obj, uint32_t indexStart, ui
 	return true;
 }
 
-bool S3DModelVAO::SubmitImmediately(const S3DModel* model, uint8_t teamID, uint8_t drawFlags, GLenum mode, bool bindUnbind)
+bool S3DModelVAO::SubmitImmediately(const S3DModel* model,
+    uint8_t teamID,
+    uint8_t drawFlags,
+    GLenum mode,
+    bool bindUnbind)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(model);
@@ -481,7 +488,8 @@ bool S3DModelVAO::SubmitImmediately(const CUnit* unit, const GLenum mode, bool b
 	const S3DModel* model = unit->model;
 	assert(model);
 
-	return SubmitImmediatelyImpl(unit, model->indxStart, model->indxCount, unit->team, unit->drawFlag, mode, bindUnbind);
+	return SubmitImmediatelyImpl(
+	    unit, model->indxStart, model->indxCount, unit->team, unit->drawFlag, mode, bindUnbind);
 }
 
 bool S3DModelVAO::SubmitImmediately(const CFeature* feature, GLenum mode, bool bindUnbind)
@@ -492,7 +500,8 @@ bool S3DModelVAO::SubmitImmediately(const CFeature* feature, GLenum mode, bool b
 	const S3DModel* model = feature->model;
 	assert(model);
 
-	return SubmitImmediatelyImpl(feature, model->indxStart, model->indxCount, feature->team, feature->drawFlag, mode, bindUnbind);
+	return SubmitImmediatelyImpl(
+	    feature, model->indxStart, model->indxCount, feature->team, feature->drawFlag, mode, bindUnbind);
 }
 
 bool S3DModelVAO::SubmitImmediately(const UnitDef* unitDef, int teamID, GLenum mode, bool bindUnbind)

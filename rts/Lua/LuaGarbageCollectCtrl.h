@@ -10,12 +10,12 @@ struct SLuaGarbageCollectCtrl {
 	int itersPerBatch = std::numeric_limits<int>::max();
 
 	// number of steps executed by a single lua_gc call
-	int numStepsPerIter =    10;
-	int minStepsPerIter =     1;
+	int numStepsPerIter = 10;
+	int minStepsPerIter = 1;
 	int maxStepsPerIter = 10000;
 
 	// CollectGarbage loop runtime bounds, in milliseconds
-	float minLoopRunTime =   0.0f;
+	float minLoopRunTime = 0.0f;
 	float maxLoopRunTime = 100.0f;
 
 	float baseRunTimeMult = 0.0f;
@@ -23,4 +23,3 @@ struct SLuaGarbageCollectCtrl {
 };
 
 #endif
-

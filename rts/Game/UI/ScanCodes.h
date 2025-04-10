@@ -7,7 +7,6 @@
 
 class CScanCodes : public IKeys {
 public:
-
 	void Reset() override;
 
 	bool IsModifier(int code) const override;

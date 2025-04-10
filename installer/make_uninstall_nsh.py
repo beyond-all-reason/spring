@@ -86,4 +86,3 @@ if len(sys.argv)<2:
 else:
 	files, paths = getContents(sys.argv[1:])
 	writeNsh(files, sortPaths(paths), sys.argv[1:])
-

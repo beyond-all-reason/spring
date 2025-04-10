@@ -4,12 +4,18 @@
 #define HUD_DRAWER_HDR
 
 class CUnit;
+
 struct HUDDrawer {
 public:
-	HUDDrawer(): draw(true) {}
+	HUDDrawer()
+	    : draw(true)
+	{
+	}
+
 	void Draw(const CUnit*);
 
 	void SetDraw(bool b) { draw = b; }
+
 	bool GetDraw() const { return draw; }
 
 	static HUDDrawer* GetInstance();

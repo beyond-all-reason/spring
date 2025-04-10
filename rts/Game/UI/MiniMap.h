@@ -3,24 +3,27 @@
 #ifndef MINIMAP_H
 #define MINIMAP_H
 
-#include <string>
-#include <deque>
 #include "InputReceiver.h"
+
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/RenderBuffersFwd.h"
-#include "System/Matrix44f.h"
 #include "System/Color.h"
+#include "System/Matrix44f.h"
 #include "System/float3.h"
 #include "System/type2.h"
 
+#include <deque>
+#include <string>
+
 
 class CUnit;
+
 namespace icon {
-	class CIconData;
+class CIconData;
 }
 
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
 class CMiniMap : public CInputReceiver {
@@ -32,7 +35,9 @@ public:
 	void MouseMove(int x, int y, int dx, int dy, int button);
 	void MouseRelease(int x, int y, int button);
 	void MouseWheel(bool up, float delta);
+
 	void MoveView(int x, int y) { MoveView(GetMapPosition(x, y)); }
+
 	bool IsAbove(int x, int y);
 	bool IsInside(int x, int y);
 	std::string GetTooltip(int x, int y);
@@ -51,52 +56,80 @@ public:
 
 	void AddNotification(float3 pos, float3 color, float alpha);
 
-	bool  FullProxy()   const { return fullProxy; }
-	bool  ProxyMode()   const { return proxyMode; }
+	bool FullProxy() const { return fullProxy; }
+
+	bool ProxyMode() const { return proxyMode; }
+
 	float CursorScale() const { return cursorScale; }
 
 	void SetMinimized(bool state) { minimized = state; }
+
 	bool GetMinimized() const { return minimized; }
+
 	bool GetMaximized() const { return maximized; }
 
-	int GetPosX()  const { return curPos.x; }
-	int GetPosY()  const { return curPos.y; }
+	int GetPosX() const { return curPos.x; }
+
+	int GetPosY() const { return curPos.y; }
+
 	int GetSizeX() const { return curDim.x; }
+
 	int GetSizeY() const { return curDim.y; }
+
 	float GetUnitSizeX() const { return unitSizeX; }
+
 	float GetUnitSizeY() const { return unitSizeY; }
 
-	enum RotationOptions { ROTATION_0, ROTATION_90, ROTATION_180, ROTATION_270 };
+	enum RotationOptions {
+		ROTATION_0,
+		ROTATION_90,
+		ROTATION_180,
+		ROTATION_270
+	};
 
 	void SetRotation(RotationOptions state);
+
 	float GetRotation() const { return static_cast<int>(rotation) * math::HALFPI; }
+
 	int minimapCanFlip = 0;
+
 	RotationOptions GetRotationOption() const { return rotation; }
 
 	void SetSlaveMode(bool value);
+
 	bool GetSlaveMode() const { return slaveDrawMode; }
 
 	bool UseUnitIcons() const { return useIcons; }
+
 	bool UseSimpleColors() const { return simpleColors; }
 
 	const uint8_t* GetMyTeamIconColor() const { return &myColor[0]; }
+
 	const uint8_t* GetAllyTeamIconColor() const { return &allyColor[0]; }
+
 	const uint8_t* GetEnemyTeamIconColor() const { return &enemyColor[0]; }
 
 	const CMatrix44f& GetViewMat(unsigned int idx) const { return viewMats[idx]; }
+
 	const CMatrix44f& GetProjMat(unsigned int idx) const { return projMats[idx]; }
 
 	void ApplyConstraintsMatrix() const;
 
 protected:
-	enum MINIMAP_POSITION { MINIMAP_POSITION_LEFT, MINIMAP_POSITION_RIGHT, MINIMAP_POSITION_CENTER };
+	enum MINIMAP_POSITION {
+		MINIMAP_POSITION_LEFT,
+		MINIMAP_POSITION_RIGHT,
+		MINIMAP_POSITION_CENTER
+	};
 
 	void ParseGeometry(const std::string& geostr);
 	void ToggleMaximized(bool maxspect);
 	void SetMaximizedGeometry();
-	void SetAspectRatioGeometry(const float& viewSizeX, const float& viewSizeY,
-                              const float& viewPosX = 0, const float& viewPosY = 0,
-                              const MINIMAP_POSITION position = MINIMAP_POSITION_CENTER);
+	void SetAspectRatioGeometry(const float& viewSizeX,
+	    const float& viewSizeY,
+	    const float& viewPosX = 0,
+	    const float& viewPosY = 0,
+	    const MINIMAP_POSITION position = MINIMAP_POSITION_CENTER);
 	void LoadDualViewport() const;
 
 	void ConfigUpdate();
@@ -168,13 +201,12 @@ protected:
 	bool multisampledFBO = false;
 
 	struct IntBox {
-		bool Inside(int x, int y) const {
-			return ((x >= xmin) && (x <= xmax) && (y >= ymin) && (y <= ymax));
-		}
+		bool Inside(int x, int y) const { return ((x >= xmin) && (x <= xmax) && (y >= ymin) && (y <= ymax)); }
+
 		void GetBoxRenderData(TypedRenderBuffer<VA_TYPE_2DC>& rb, SColor col) const;
 		void GetTextureBoxRenderData(TypedRenderBuffer<VA_TYPE_2DT>& rb) const;
 		int xmin, xmax, ymin, ymax;
-		float xminTx, xmaxTx, yminTx, ymaxTx;  // texture coordinates
+		float xminTx, xmaxTx, yminTx, ymaxTx; // texture coordinates
 	};
 
 	int buttonSize = 0;
@@ -209,13 +241,13 @@ protected:
 		float3 pos;
 		float color[4];
 	};
+
 	std::deque<Notification> notes;
 
 	Shader::IProgramObject* bgShader = nullptr;
 
 	CUnit* lastClicked = nullptr;
 };
-
 
 extern CMiniMap* minimap;
 

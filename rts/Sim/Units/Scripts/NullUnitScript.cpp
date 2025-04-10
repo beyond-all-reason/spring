@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "NullUnitScript.h"
+
 #include "Sim/Units/Unit.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
 
 
@@ -13,13 +13,12 @@ CNullUnitScript CNullUnitScript::value(nullptr);
 
 CR_BIND_DERIVED(CNullUnitScript, CUnitScript, (nullptr))
 
-CR_REG_METADATA(CNullUnitScript, (
-	CR_POSTLOAD(PostLoad)
-))
+CR_REG_METADATA(CNullUnitScript, (CR_POSTLOAD(PostLoad)))
 
-CNullUnitScript::CNullUnitScript(CUnit *u)
-	: CUnitScript(u)
-{ }
+CNullUnitScript::CNullUnitScript(CUnit* u)
+    : CUnitScript(u)
+{
+}
 
 void CNullUnitScript::PostLoad()
 {
@@ -38,4 +37,3 @@ void CNullUnitScript::ShowScriptError(const std::string& msg)
 	LOG_L(L_ERROR, "%s", msg.c_str());
 	LOG_L(L_ERROR, "why are you using CNullUnitScript anyway?");
 }
-

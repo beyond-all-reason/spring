@@ -10,7 +10,7 @@ function widget:GetInfo()
       enabled   = true,
    }
 end
-   
+
 function widget:MousePress(mx, my, button)
    local alt,ctrl,meta,shift = Spring.GetModKeyState()
    -- Spring.Echo("Button pressed: " .. button)

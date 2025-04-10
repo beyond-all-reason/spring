@@ -2,6 +2,7 @@
 
 
 #include "ExplosiveProjectile.h"
+
 #include "Game/Camera.h"
 #include "Map/Ground.h"
 #include "Rendering/GL/RenderBuffers.h"
@@ -10,21 +11,16 @@
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Weapons/WeaponDef.h"
-
 #include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED(CExplosiveProjectile, CWeaponProjectile, )
 
-CR_REG_METADATA(CExplosiveProjectile, (
-	CR_SETFLAG(CF_Synced),
-	CR_MEMBER(invttl),
-	CR_MEMBER(curTime)
-))
+CR_REG_METADATA(CExplosiveProjectile, (CR_SETFLAG(CF_Synced), CR_MEMBER(invttl), CR_MEMBER(curTime)))
 
-
-CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWeaponProjectile(params)
-	, invttl(0.0f)
-	, curTime(0.0f)
+CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params)
+    : CWeaponProjectile(params)
+    , invttl(0.0f)
+    , curTime(0.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	projectileType = WEAPON_EXPLOSIVE_PROJECTILE;
@@ -40,7 +36,8 @@ CExplosiveProjectile::CExplosiveProjectile(const ProjectileParams& params): CWea
 
 	if (ttl <= 0) {
 		invttl = 1.0f;
-	} else {
+	}
+	else {
 		invttl = 1.0f / ttl;
 	}
 }
@@ -52,7 +49,8 @@ void CExplosiveProjectile::Update()
 
 	if (--ttl == 0) {
 		Collision();
-	} else {
+	}
+	else {
 		if (ttl > 0)
 			explGenHandler.GenExplosion(cegID, pos, speed, ttl, damages->damageAreaOfEffect, 0.0f, owner(), nullptr);
 	}
@@ -88,29 +86,30 @@ void CExplosiveProjectile::Draw()
 
 	if (wdVisuals.colorMap != nullptr) {
 		wdVisuals.colorMap->GetColor(col, curTime);
-	} else {
-		col[0] = wdVisuals.color.x    * 255;
-		col[1] = wdVisuals.color.y    * 255;
-		col[2] = wdVisuals.color.z    * 255;
+	}
+	else {
+		col[0] = wdVisuals.color.x * 255;
+		col[1] = wdVisuals.color.y * 255;
+		col[2] = wdVisuals.color.z * 255;
 		col[3] = weaponDef->intensity * 255;
 	}
 
-	const float  alphaDecay = wdVisuals.alphaDecay;
-	const float  sizeDecay  = wdVisuals.sizeDecay;
-	const float  separation = wdVisuals.separation;
-	const bool   noGap      = wdVisuals.noGap;
-	const int    stages     = wdVisuals.stages;
-	const float  invStages  = 1.0f / std::max(1, stages);
+	const float alphaDecay = wdVisuals.alphaDecay;
+	const float sizeDecay = wdVisuals.sizeDecay;
+	const float separation = wdVisuals.separation;
+	const bool noGap = wdVisuals.noGap;
+	const int stages = wdVisuals.stages;
+	const float invStages = 1.0f / std::max(1, stages);
 
 	const float3 ndir = dir * separation * 0.6f;
 
 	for (int stage = 0; stage < stages; ++stage) {
 		const float stageDecay = (stages - (stage * alphaDecay)) * invStages;
-		const float stageSize  = drawRadius * (1.0f - (stage * sizeDecay));
+		const float stageSize = drawRadius * (1.0f - (stage * sizeDecay));
 
-		const float3 ydirCam  = camera->GetUp()    * stageSize;
-		const float3 xdirCam  = camera->GetRight() * stageSize;
-		const float3 stageGap = (noGap)? (ndir * stageSize * stage): (ndir * drawRadius * stage);
+		const float3 ydirCam = camera->GetUp() * stageSize;
+		const float3 xdirCam = camera->GetRight() * stageSize;
+		const float3 stageGap = (noGap) ? (ndir * stageSize * stage) : (ndir * drawRadius * stage);
 		const float3 stagePos = drawPos - stageGap;
 
 		col[0] = stageDecay * col[0];
@@ -118,12 +117,10 @@ void CExplosiveProjectile::Draw()
 		col[2] = stageDecay * col[2];
 		col[3] = stageDecay * col[3];
 
-		AddWeaponEffectsQuad<1>(
-			{ stagePos - xdirCam - ydirCam, tex->xstart, tex->ystart, col },
-			{ stagePos + xdirCam - ydirCam, tex->xend,   tex->ystart, col },
-			{ stagePos + xdirCam + ydirCam, tex->xend,   tex->yend,   col },
-			{ stagePos - xdirCam + ydirCam, tex->xstart, tex->yend,   col }
-		);
+		AddWeaponEffectsQuad<1>({stagePos - xdirCam - ydirCam, tex->xstart, tex->ystart, col},
+		    {stagePos + xdirCam - ydirCam, tex->xend, tex->ystart, col},
+		    {stagePos + xdirCam + ydirCam, tex->xend, tex->yend, col},
+		    {stagePos - xdirCam + ydirCam, tex->xstart, tex->yend, col});
 	}
 }
 

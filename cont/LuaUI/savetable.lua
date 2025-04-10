@@ -47,7 +47,7 @@ local function encloseKey(s)
   if (not wrap) then
     if (keyWordSet[s]) then wrap = true end
   end
-    
+
   if (wrap) then
     return string.format('[%q]', s)
   else
@@ -108,9 +108,9 @@ end
 local function SaveTable(t, file, indent)
   file:write('{\n')
   local indent = indent .. indentString
-  
+
   local st = MakeSortedTable(t)
-  
+
   for _,kv in ipairs(st) do
     local k, v = kv[1], kv[2]
     local ktype = type(k)

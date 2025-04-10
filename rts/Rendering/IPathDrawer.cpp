@@ -1,21 +1,23 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "IPathDrawer.h"
-#include "QTPFSPathDrawer.h"
+
 #include "HAPFSPathDrawer.h"
+#include "QTPFSPathDrawer.h"
+
 #include "Game/SelectedUnitsHandler.h"
 #include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/Path/HAPFS/PathManager.h"
 #include "Sim/Path/IPathManager.h"
-#include "Sim/Path/HAPFS/PathManager.h"
 #include "Sim/Path/QTPFS/PathManager.h"
-#include "Sim/Path/HAPFS/PathManager.h"
 #include "Sim/Units/Unit.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitHandler.h"
 #include "System/EventHandler.h"
 
 IPathDrawer* pathDrawer = nullptr;
 
-IPathDrawer* IPathDrawer::GetInstance() {
+IPathDrawer* IPathDrawer::GetInstance()
+{
 	if (pathDrawer == nullptr) {
 		if (dynamic_cast<QTPFS::PathManager*>(pathManager) != nullptr)
 			return (pathDrawer = new QTPFSPathDrawer());
@@ -29,22 +31,24 @@ IPathDrawer* IPathDrawer::GetInstance() {
 	return pathDrawer;
 }
 
-void IPathDrawer::FreeInstance(IPathDrawer* pd) {
+void IPathDrawer::FreeInstance(IPathDrawer* pd)
+{
 	assert(pd == pathDrawer);
 	delete pd;
 	pathDrawer = nullptr;
 }
 
-
-
-IPathDrawer::IPathDrawer(): CEventClient("[IPathDrawer]", 271991, false), enabled(false) {
+IPathDrawer::IPathDrawer()
+    : CEventClient("[IPathDrawer]", 271991, false)
+    , enabled(false)
+{
 	eventHandler.AddClient(this);
 }
-IPathDrawer::~IPathDrawer() {
-	eventHandler.RemoveClient(this);
-}
 
-const MoveDef* IPathDrawer::GetSelectedMoveDef() {
+IPathDrawer::~IPathDrawer() { eventHandler.RemoveClient(this); }
+
+const MoveDef* IPathDrawer::GetSelectedMoveDef()
+{
 	const MoveDef* md = nullptr;
 	const auto& unitSet = selectedUnitsHandler.selectedUnits;
 
@@ -56,13 +60,14 @@ const MoveDef* IPathDrawer::GetSelectedMoveDef() {
 	return md;
 }
 
-SColor IPathDrawer::GetSpeedModColor(const float sm) {
+SColor IPathDrawer::GetSpeedModColor(const float sm)
+{
 	SColor col(120, 0, 80);
 
 	if (sm > 0.0f) {
 		col.r = 255 - std::min(sm * 255.0f, 255.0f);
 		col.g = 255 - col.r;
-		col.b =   0;
+		col.b = 0;
 	}
 
 	return col;
@@ -91,4 +96,3 @@ float IPathDrawer::GetSpeedModNoObstacles(const MoveDef* md, int sqx, int sqz) {
 	return m;
 }
 #endif
-

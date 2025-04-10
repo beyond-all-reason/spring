@@ -1,15 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/creg/creg_cond.h"
 #include "System/creg/Serializer.h"
+#include "System/creg/creg_cond.h"
+
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <stdio.h>
 
 #include <catch_amalgamated.hpp>
-
+#include <stdio.h>
 
 struct EmbeddedObj {
 	CR_DECLARE_STRUCT(EmbeddedObj);
@@ -29,17 +29,21 @@ enum EnumClass {
 struct TestObj {
 	CR_DECLARE(TestObj);
 
-	TestObj() {
+	TestObj()
+	{
 		bvar = false;
 		intvar = 0;
 		fvar = 0.f;
 		enumVar = A;
-		for(int a=0;a<5;a++) sarray[a] = 0;
+		for (int a = 0; a < 5; a++) sarray[a] = 0;
 		children[0] = children[1] = 0;
 		embeddedPtr = &embedded;
 	}
-	virtual ~TestObj() {
-		if (children[0]) delete children[0];
+
+	virtual ~TestObj()
+	{
+		if (children[0])
+			delete children[0];
 	}
 
 	bool bvar;
@@ -54,27 +58,26 @@ struct TestObj {
 	TestObj* children[2];
 	EmbeddedObj embedded;
 
-	//this test fails atm
-	//std::vector<EmbeddedObj>  embeddeds;
-	//std::vector<EmbeddedObj*> embeddedPtrs;
+	// this test fails atm
+	// std::vector<EmbeddedObj>  embeddeds;
+	// std::vector<EmbeddedObj*> embeddedPtrs;
 };
 
 CR_BIND(TestObj, );
-CR_REG_METADATA(TestObj, (
-	CR_MEMBER(bvar),
-	CR_MEMBER(intvar),
-	CR_MEMBER(fvar),
-	CR_MEMBER(enumVar),
-	CR_MEMBER(str),
-	CR_MEMBER(sarray),
-	CR_MEMBER(darray),
-	CR_MEMBER(children),
-	CR_MEMBER(embedded),
-	CR_MEMBER(embeddedPtr)//,
-	//CR_MEMBER(embeddeds),
-	//CR_MEMBER(embeddedPtrs)
-));
-
+CR_REG_METADATA(TestObj,
+    (CR_MEMBER(bvar),
+        CR_MEMBER(intvar),
+        CR_MEMBER(fvar),
+        CR_MEMBER(enumVar),
+        CR_MEMBER(str),
+        CR_MEMBER(sarray),
+        CR_MEMBER(darray),
+        CR_MEMBER(children),
+        CR_MEMBER(embedded),
+        CR_MEMBER(embeddedPtr) //,
+                               // CR_MEMBER(embeddeds),
+        // CR_MEMBER(embeddedPtrs)
+        ));
 
 static void savetest(std::ostream* os)
 {
@@ -86,27 +89,26 @@ static void savetest(std::ostream* os)
 	o->fvar = 666.666f;
 	o->enumVar = EnumClass::C;
 	o->str = "Hi!";
-	for (int a=0;a<5;a++) o->sarray[a]=a+10;
-	//o->embeddeds.resize(10);
+	for (int a = 0; a < 5; a++) o->sarray[a] = a + 10;
+	// o->embeddeds.resize(10);
 
 	// secondary obj
 	TestObj* c = new TestObj;
 	c->intvar = 144;
-	//c->embeddeds.resize(5);
+	// c->embeddeds.resize(5);
 
 	// link o & c
 	o->children[0] = c;
 	o->children[1] = c;
-	//for (int a=0;a<o->embeddeds.size();a++) c->embeddedPtrs.push_back(&o->embeddeds[a]);
-	//for (int a=0;a<c->embeddeds.size();a++) o->embeddedPtrs.push_back(&c->embeddeds[a]);
+	// for (int a=0;a<o->embeddeds.size();a++) c->embeddedPtrs.push_back(&o->embeddeds[a]);
+	// for (int a=0;a<c->embeddeds.size();a++) o->embeddedPtrs.push_back(&c->embeddeds[a]);
 
 	// save
 	creg::COutputStreamSerializer ss;
 	ss.SavePackage(os, o, o->GetClass());
 
-	delete(o);
+	delete (o);
 }
-
 
 static void* loadtest(std::istream* is)
 {
@@ -120,26 +122,35 @@ static void* loadtest(std::istream* is)
 	return root;
 }
 
-
 static bool test_creg_members(TestObj* obj)
 {
-	if (obj->darray.size() != 1 || obj->darray[0] != 3) return false;
-	if (!obj->bvar) return false;
-	if (obj->intvar != 1) return false;
-	if (obj->fvar != 666.666f) return false;
-	if (obj->enumVar != EnumClass::C) return false;
-	if (obj->str != "Hi!") return false;
+	if (obj->darray.size() != 1 || obj->darray[0] != 3)
+		return false;
+	if (!obj->bvar)
+		return false;
+	if (obj->intvar != 1)
+		return false;
+	if (obj->fvar != 666.666f)
+		return false;
+	if (obj->enumVar != EnumClass::C)
+		return false;
+	if (obj->str != "Hi!")
+		return false;
 
-	for (int a=0; a<5; a++) if (obj->sarray[a] != a+10) return false;
+	for (int a = 0; a < 5; a++)
+		if (obj->sarray[a] != a + 10)
+			return false;
 	return true;
 }
 
-
 static bool test_creg_pointers(TestObj* obj)
 {
-	if (obj->children[0] != obj->children[1]) return false;
-	if (obj->children[0]->intvar != 144) return false;
-	if (obj->embeddedPtr != &obj->embedded) return false;
+	if (obj->children[0] != obj->children[1])
+		return false;
+	if (obj->children[0]->intvar != 144)
+		return false;
+	if (obj->embeddedPtr != &obj->embedded)
+		return false;
 
 	/*TestObj* c = obj->children[0];
 	if (obj->embeddeds.size() != 10) return false;
@@ -149,8 +160,6 @@ static bool test_creg_pointers(TestObj* obj)
 
 	return true;
 }
-
-
 
 TEST_CASE("CregLoadSave")
 {

@@ -4,139 +4,137 @@
 #define _THREADPOOL_H
 
 #ifndef THREADPOOL
-#include <functional>
-#include <future>
 #include "System/Threading/SpringThreading.h"
 
+#include <functional>
+#include <future>
+
 namespace ThreadPool {
-	template<class F, class... Args>
-	static auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_future<std::invoke_result_t<F, Args...>>
-	{
-		return std::shared_future(std::async(std::launch::deferred, std::forward<F>(f), std::forward<Args>(args)...));
-	}
-
-	static inline void AddExtJob(spring::thread&& t) { t.join(); }
-	static inline void AddExtJob(std::future<void>&& f) { f.get(); }
-	static inline void ClearExtJobs() {}
-
-	static inline void SetMaximumThreadCount() {}
-	static inline void SetDefaultThreadCount() {}
-	static inline void SetThreadCount(int num) {}
-	static inline int GetThreadNum() { return 0; }
-	static inline int GetMaxThreads() { return 1; }
-	static inline int GetNumThreads() { return 1; }
-	static inline void NotifyWorkerThreads(bool force, bool async) {}
-	static inline bool HasThreads() { return false; }
-
-	static constexpr int MAX_THREADS = 1;
+template<class F, class... Args>
+static auto Enqueue(F&& f, Args&&... args) -> std::shared_future<std::invoke_result_t<F, Args...>>
+{
+	return std::shared_future(std::async(std::launch::deferred, std::forward<F>(f), std::forward<Args>(args)...));
 }
 
-template <typename F>
-static inline void for_mt(int start, int end, int step, F&& f)
+static inline void AddExtJob(spring::thread&& t) { t.join(); }
+
+static inline void AddExtJob(std::future<void>&& f) { f.get(); }
+
+static inline void ClearExtJobs() {}
+
+static inline void SetMaximumThreadCount() {}
+
+static inline void SetDefaultThreadCount() {}
+
+static inline void SetThreadCount(int num) {}
+
+static inline int GetThreadNum() { return 0; }
+
+static inline int GetMaxThreads() { return 1; }
+
+static inline int GetNumThreads() { return 1; }
+
+static inline void NotifyWorkerThreads(bool force, bool async) {}
+
+static inline bool HasThreads() { return false; }
+
+static constexpr int MAX_THREADS = 1;
+} // namespace ThreadPool
+
+template<typename F> static inline void for_mt(int start, int end, int step, F&& f)
 {
 	for (int i = start; i < end; i += step) {
 		f(i);
 	}
 }
 
-template <typename F>
-static inline void for_mt(int start, int end, F&& f)
-{
-	for_mt(start, end, 1, std::move(f));
-}
+template<typename F> static inline void for_mt(int start, int end, F&& f) { for_mt(start, end, 1, std::move(f)); }
 
-template <typename F>
-static inline void for_mt_chunk(int b, int e, F&& f, int chunkSize = 0)
-{
-	for_mt(b, e, f);
-}
+template<typename F> static inline void for_mt_chunk(int b, int e, F&& f, int chunkSize = 0) { for_mt(b, e, f); }
 
+static inline void parallel(const std::function<void()>&& f) { f(); }
 
-static inline void parallel(const std::function<void()>&& f)
-{
-	f();
-}
-
-template<class F, class G>
-static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
-{
-	return f();
-}
+template<class F, class G> static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F> { return f(); }
 
 #else
 
 #include "System/Platform/Threading.h"
 #include "System/Threading/SpringThreading.h"
 
-#include  <array>
-#include <vector>
-#include <numeric>
+#include <array>
 #include <atomic>
+#include <numeric>
+#include <vector>
 
 #undef gt
 #include <memory>
 
 #ifdef UNITSYNC
-	#undef SCOPED_MT_TIMER
-	#define SCOPED_MT_TIMER(x)
+#undef SCOPED_MT_TIMER
+#define SCOPED_MT_TIMER(x)
 #else
-	#include "System/TimeProfiler.h"
+#include "System/TimeProfiler.h"
 #endif
 
 class ITaskGroup;
+
 namespace ThreadPool {
-	template<class F, class... Args>
-	static auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_future<std::invoke_result_t<F, Args...>>;
+template<class F, class... Args>
+static auto Enqueue(F&& f, Args&&... args) -> std::shared_future<std::invoke_result_t<F, Args...>>;
 
-	void AddExtJob(spring::thread&& t);
-	void AddExtJob(std::future<void>&& f);
-	void ClearExtJobs();
+void AddExtJob(spring::thread&& t);
+void AddExtJob(std::future<void>&& f);
+void ClearExtJobs();
 
-	void PushTaskGroup(ITaskGroup* taskGroup);
-	void PushTaskGroup(std::shared_ptr<ITaskGroup>&& taskGroup);
-	void WaitForFinished(std::shared_ptr<ITaskGroup>&& taskGroup);
+void PushTaskGroup(ITaskGroup* taskGroup);
+void PushTaskGroup(std::shared_ptr<ITaskGroup>&& taskGroup);
+void WaitForFinished(std::shared_ptr<ITaskGroup>&& taskGroup);
 
-	template<typename T>
-	inline void PushTaskGroup(std::shared_ptr<T>& taskGroup) { PushTaskGroup(std::move(std::static_pointer_cast<ITaskGroup>(taskGroup))); } //FIXME std::move? doesn't it delete the original arg?
-	template<typename T>
-	inline void WaitForFinished(std::shared_ptr<T>& taskGroup) { WaitForFinished(std::move(std::static_pointer_cast<ITaskGroup>(taskGroup))); }
+template<typename T> inline void PushTaskGroup(std::shared_ptr<T>& taskGroup)
+{
+	PushTaskGroup(std::move(std::static_pointer_cast<ITaskGroup>(taskGroup)));
+} // FIXME std::move? doesn't it delete the original arg?
 
-	void SetMaximumThreadCount();
-	void SetDefaultThreadCount();
-	void SetThreadCount(int num);
-	int GetThreadNum();
-	bool HasThreads();
-	int GetMaxThreads();
-	int GetNumThreads();
-	void NotifyWorkerThreads(bool force, bool async);
-
-	extern bool inMultiThreadedSection;
-
-	static constexpr int MAX_THREADS = 32;
+template<typename T> inline void WaitForFinished(std::shared_ptr<T>& taskGroup)
+{
+	WaitForFinished(std::move(std::static_pointer_cast<ITaskGroup>(taskGroup)));
 }
 
+void SetMaximumThreadCount();
+void SetDefaultThreadCount();
+void SetThreadCount(int num);
+int GetThreadNum();
+bool HasThreads();
+int GetMaxThreads();
+int GetNumThreads();
+void NotifyWorkerThreads(bool force, bool async);
 
+extern bool inMultiThreadedSection;
 
+static constexpr int MAX_THREADS = 32;
+} // namespace ThreadPool
 
-class ITaskGroup
-{
+class ITaskGroup {
 public:
-	ITaskGroup(const bool getid = true, const bool pooled = false): id(getid ? lastId.fetch_add(1) : -1u), ts(0) {
+	ITaskGroup(const bool getid = true, const bool pooled = false)
+	    : id(getid ? lastId.fetch_add(1) : -1u)
+	    , ts(0)
+	{
 		ResetState(!pooled, pooled, false);
 	}
 
-	virtual ~ITaskGroup() {
-		assert(AllowDelete());
-	}
+	virtual ~ITaskGroup() { assert(AllowDelete()); }
 
 	virtual bool IsAsyncTask() const { return false; }
+
 	virtual bool IsSliceTask() const { return false; }
+
 	virtual bool ExecuteStep() = 0;
+
 	virtual bool SelfDelete() const { return false; }
 
-	uint64_t ExecuteLoop(int tid, bool wffCall) {
+	uint64_t ExecuteLoop(int tid, bool wffCall)
+	{
 		const spring_time t0 = spring_now();
 
 		while (ExecuteStep());
@@ -152,7 +150,8 @@ public:
 				return (dt.toNanoSecsi());
 
 			inTaskQueue.store(false);
-		} else {
+		}
+		else {
 			// do not set this to false from WFF, defeats the purpose
 			if (!wffCall) {
 				assert(inTaskQueue.load());
@@ -165,38 +164,52 @@ public:
 			// async-tasks can never have a parent waiting for them
 			execLoopDone.store(true);
 			delete this;
-		} else {
+		}
+		else {
 			execLoopDone.store(ExecLoopDone() || !wffCall);
 		}
 
 		return (dt.toNanoSecsi());
 	}
 
-	bool IsFinished() const { assert(remainingTasks.load() >= 0); return (remainingTasks.load(std::memory_order_relaxed) == 0); }
+	bool IsFinished() const
+	{
+		assert(remainingTasks.load() >= 0);
+		return (remainingTasks.load(std::memory_order_relaxed) == 0);
+	}
+
 	bool IsInJobQueue() const { return (inTaskQueue.load(std::memory_order_relaxed)); }
+
 	bool IsInTaskPool() const { return ((taskPoolMask.load(std::memory_order_relaxed) & (1 << 0)) != 0); }
+
 	bool IsInPoolUse() const { return ((taskPoolMask.load(std::memory_order_relaxed) & (1 << 1)) != 0); }
 
 	bool ExecLoopDone() const { return (execLoopDone.load(std::memory_order_relaxed)); }
+
 	// pooled tasks are deleted only when their pool dies (on exit) which is always allowed
 	bool AllowDelete() const { return (IsFinished() && ((!IsInJobQueue() && ExecLoopDone()) || IsInTaskPool())); }
 
 	int RemainingTasks() const { return remainingTasks; }
+
 	int WantedThread() const { return wantedThread; }
 
-	bool WaitFor(const spring_time& rel_time) const {
+	bool WaitFor(const spring_time& rel_time) const
+	{
 		const auto end = spring_now() + rel_time;
 		while (!IsFinished() && (spring_now() < end));
 		return IsFinished();
 	}
 
 	uint32_t GetId() const { return id; }
+
 	uint64_t GetDeltaTime(const spring_time t) const { return (std::max(ts.load(), uint64_t(t.toNanoSecsi())) - ts); }
 
 	void UpdateId() { id = lastId.fetch_add(1); }
+
 	void SetTimeStamp(const spring_time t) { ts = t.toNanoSecsi(); }
 
-	void ResetState(bool queued, bool pooled, bool inuse) {
+	void ResetState(bool queued, bool pooled, bool inuse)
+	{
 		remainingTasks.store(0);
 		wantedThread.store(0);
 		taskPoolMask.store(((1 * pooled) << 0) + ((1 * inuse) << 1));
@@ -210,7 +223,7 @@ public:
 	std::atomic_int wantedThread; // if 0 (default), task will be executed by an arbitrary thread
 	std::atomic_int taskPoolMask; // whether this task is managed (owned) and in use by a TaskPool
 
-	std::atomic_bool inTaskQueue; // whether this task is still in a thread's queue
+	std::atomic_bool inTaskQueue;  // whether this task is still in a thread's queue
 	std::atomic_bool execLoopDone; // whether the thread running this task is about to exit ExecLoop
 
 private:
@@ -220,14 +233,13 @@ private:
 	std::atomic<uint64_t> ts; // timestamp (ns)
 };
 
-
-template<class F, class... Args>
-class AsyncTask: public ITaskGroup
-{
+template<class F, class... Args> class AsyncTask : public ITaskGroup {
 public:
 	using return_type = std::invoke_result_t<F, Args...>;
 
-	AsyncTask(F f, Args... args) : selfDelete(true) {
+	AsyncTask(F f, Args... args)
+	    : selfDelete(true)
+	{
 		task = std::make_shared<std::packaged_task<return_type()>>(std::bind(f, std::forward<Args>(args)...));
 		result = std::move(task->get_future());
 
@@ -235,8 +247,11 @@ public:
 	}
 
 	bool IsAsyncTask() const override { return true; }
+
 	bool SelfDelete() const override { return (selfDelete.load()); }
-	bool ExecuteStep() override {
+
+	bool ExecuteStep() override
+	{
 		// note: *never* called from WaitForFinished
 		(*task)();
 		remainingTasks -= 1;
@@ -244,7 +259,11 @@ public:
 	}
 
 	// FIXME: rethrow exceptions some time
-	std::shared_future<return_type> GetFuture() { assert(result.valid()); return std::move(result); }
+	std::shared_future<return_type> GetFuture()
+	{
+		assert(result.valid());
+		return std::move(result);
+	}
 
 public:
 	// if true, we are not managed by a shared_ptr
@@ -254,13 +273,11 @@ public:
 	std::shared_future<return_type> result;
 };
 
-
-
-template<class F, typename R = int, class... Args>
-class TTaskGroup: public ITaskGroup
-{
+template<class F, typename R = int, class... Args> class TTaskGroup : public ITaskGroup {
 public:
-	TTaskGroup(const int num = 0) : curtask(0) {
+	TTaskGroup(const int num = 0)
+	    : curtask(0)
+	{
 		results.reserve(num);
 		tasks.reserve(num);
 	}
@@ -275,7 +292,6 @@ public:
 		remainingTasks.fetch_add(1, std::memory_order_release);
 	}
 
-
 	bool ExecuteStep() override
 	{
 		const int pos = curtask.fetch_add(1, std::memory_order_relaxed);
@@ -289,8 +305,8 @@ public:
 		return false;
 	}
 
-	template<typename G>
-	return_type GetResult(const G&& g) {
+	template<typename G> return_type GetResult(const G&& g)
+	{
 		return std::accumulate(results.begin(), results.end(), 0, g);
 	}
 
@@ -300,14 +316,11 @@ public:
 	std::vector<std::future<return_type>> results;
 };
 
-
-
-
-template<class F, typename ...Args>
-class TTaskGroup<F, void, Args...>: public ITaskGroup
-{
+template<class F, typename... Args> class TTaskGroup<F, void, Args...> : public ITaskGroup {
 public:
-	TTaskGroup(const int num = 0) : curtask(0) {
+	TTaskGroup(const int num = 0)
+	    : curtask(0)
+	{
 		tasks.reserve(num);
 	}
 
@@ -335,12 +348,11 @@ public:
 	std::vector<std::function<void()>> tasks;
 };
 
-
-template<class F>
-class TTaskGroup<F, void>: public ITaskGroup
-{
+template<class F> class TTaskGroup<F, void> : public ITaskGroup {
 public:
-	TTaskGroup(const int num = 0) : curtask(0) {
+	TTaskGroup(const int num = 0)
+	    : curtask(0)
+	{
 		tasks.reserve(num);
 	}
 
@@ -368,16 +380,16 @@ public:
 	std::vector<std::function<void()>> tasks;
 };
 
-
-template<typename F, typename ...Args>
-class TaskGroup: public TTaskGroup<F, decltype(std::declval<F>()((std::declval<Args>())...)), Args...> {
+template<typename F, typename... Args>
+class TaskGroup : public TTaskGroup<F, decltype(std::declval<F>()((std::declval<Args>())...)), Args...> {
 public:
 	typedef decltype(std::declval<F>()((std::declval<Args>())...)) R;
 
-	TaskGroup(const int num = 0) : TTaskGroup<F, R, Args...>(num) {}
+	TaskGroup(const int num = 0)
+	    : TTaskGroup<F, R, Args...>(num)
+	{
+	}
 };
-
-
 
 
 #if 0
@@ -442,8 +454,6 @@ public:
 #endif
 
 
-
-
 #if 0
 template<typename F>
 class Parallel2TaskGroup: public ITaskGroup
@@ -491,13 +501,14 @@ public:
 
 #else
 
-template<typename F>
-class Parallel2TaskGroup: public ITaskGroup
-{
+template<typename F> class Parallel2TaskGroup : public ITaskGroup {
 public:
-	typedef  TTaskGroup<F, void>  ChildTaskType;
+	typedef TTaskGroup<F, void> ChildTaskType;
 
-	Parallel2TaskGroup(bool pooled) : ITaskGroup(false, pooled) {}
+	Parallel2TaskGroup(bool pooled)
+	    : ITaskGroup(false, pooled)
+	{
+	}
 
 	void Enqueue(F& func)
 	{
@@ -539,10 +550,9 @@ public:
 	}
 
 private:
-	std::vector< std::shared_ptr<ITaskGroup> > childTasks;
+	std::vector<std::shared_ptr<ITaskGroup>> childTasks;
 };
 #endif
-
 
 
 #if 0
@@ -597,13 +607,14 @@ private:
 
 #else
 
-template<typename F>
-class ForTaskGroup: public ITaskGroup
-{
+template<typename F> class ForTaskGroup : public ITaskGroup {
 public:
-	typedef  TTaskGroup<F, void, int>  ChildTaskType;
+	typedef TTaskGroup<F, void, int> ChildTaskType;
 
-	ForTaskGroup(bool pooled) : ITaskGroup(false, pooled) {}
+	ForTaskGroup(bool pooled)
+	    : ITaskGroup(false, pooled)
+	{
+	}
 
 	void Enqueue(const int from, const int to, const int step, F& func)
 	{
@@ -613,12 +624,13 @@ public:
 		ctr.store(0);
 
 		this->from = from;
-		this->to   = to;
+		this->to = to;
 		this->step = step;
 		this->func = func;
 	}
 
 	bool IsSliceTask() const override { return true; }
+
 	bool ExecuteStep() override
 	{
 		const int i = from + (step * ctr.fetch_add(1, std::memory_order_relaxed));
@@ -643,8 +655,7 @@ private:
 #endif
 
 
-template <template<typename> class TG, typename F>
-struct TaskPool {
+template<template<typename> class TG, typename F> struct TaskPool {
 	typedef TG<F> FuncTaskGroup;
 	typedef std::shared_ptr<FuncTaskGroup> FuncTaskGroupPtr;
 
@@ -652,14 +663,15 @@ struct TaskPool {
 	std::array<FuncTaskGroupPtr, 256> tgPool;
 	std::atomic_int pos = {0};
 
-	TaskPool() {
+	TaskPool()
+	{
 		for (size_t i = 0; i < tgPool.size(); ++i) {
 			tgPool[i] = FuncTaskGroupPtr(new FuncTaskGroup(true));
 		}
 	}
 
-
-	FuncTaskGroupPtr GetTaskGroup() {
+	FuncTaskGroupPtr GetTaskGroup()
+	{
 		auto tg = tgPool[pos.fetch_add(1) % tgPool.size()];
 
 		assert(tg->IsFinished());
@@ -672,9 +684,7 @@ struct TaskPool {
 	}
 };
 
-
-template <typename F>
-static inline void for_mt(int start, int end, int step, F&& f)
+template<typename F> static inline void for_mt(int start, int end, int step, F&& f)
 {
 	ThreadPool::inMultiThreadedSection = true;
 
@@ -695,15 +705,15 @@ static inline void for_mt(int start, int end, int step, F&& f)
 
 		assert(taskGroup->IsInJobQueue());
 
-		#if 0
+#if 0
 		ThreadPool::PushTaskGroup(taskGroup);
-		#else
+#else
 		// store the group in all worker queues s.t. each executes a slice
 		for (size_t i = 1; i < ThreadPool::GetNumThreads(); ++i) {
 			taskGroup->wantedThread.store(i);
 			ThreadPool::PushTaskGroup(taskGroup);
 		}
-		#endif
+#endif
 
 		// make calling thread also run ExecuteLoop
 		ThreadPool::WaitForFinished(taskGroup);
@@ -712,14 +722,11 @@ static inline void for_mt(int start, int end, int step, F&& f)
 	ThreadPool::inMultiThreadedSection = false;
 }
 
-template <typename F>
-static inline void for_mt(int start, int end, F&& f)
-{
-	for_mt(start, end, 1, f);
-}
+template<typename F> static inline void for_mt(int start, int end, F&& f) { for_mt(start, end, 1, f); }
 
-template <typename F>
-static inline void for_mt_chunk(int b, int e, F&& f, int minChunkSize = 1, int maxChunkSize = std::numeric_limits<int>::max())
+template<typename F>
+static inline void
+for_mt_chunk(int b, int e, F&& f, int minChunkSize = 1, int maxChunkSize = std::numeric_limits<int>::max())
 {
 	const int numElems = e - b;
 	if (numElems <= 0)
@@ -731,8 +738,7 @@ static inline void for_mt_chunk(int b, int e, F&& f, int minChunkSize = 1, int m
 	const int numThreads = numElems / chunkSize + (numElems % chunkSize != 0);
 
 	if (numThreads == 1) {
-		for (int i = b; i < e; ++i)
-			f(i);
+		for (int i = b; i < e; ++i) f(i);
 
 		return;
 	}
@@ -741,14 +747,11 @@ static inline void for_mt_chunk(int b, int e, F&& f, int minChunkSize = 1, int m
 		const int bb = b + jobId * chunkSize;
 		const int ee = std::min(bb + chunkSize, e);
 
-		for (int i = bb; i < ee; ++i)
-			std::forward<F>(f)(i);
+		for (int i = bb; i < ee; ++i) std::forward<F>(f)(i);
 	});
 }
 
-
-template <typename F>
-static inline void parallel(F&& f)
+template<typename F> static inline void parallel(F&& f)
 {
 	if (!ThreadPool::HasThreads())
 		return f();
@@ -769,9 +772,7 @@ static inline void parallel(F&& f)
 	ThreadPool::WaitForFinished(taskGroup);
 }
 
-
-template<class F, class G>
-static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
+template<class F, class G> static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 {
 	if (!ThreadPool::HasThreads())
 		return f();
@@ -813,39 +814,34 @@ static inline auto parallel_reduce(F&& f, G&& g) -> std::invoke_result_t<F>
 	return (std::accumulate(results.begin(), results.begin() + ThreadPool::GetNumThreads(), 0, g));
 }
 
-
-
-
 namespace ThreadPool {
-	template<class F, class... Args>
-	static inline auto Enqueue(F&& f, Args&&... args)
-	-> std::shared_future<std::invoke_result_t<F, Args...>>
-	{
-		using return_type = std::invoke_result_t<F, Args...>;
+template<class F, class... Args>
+static inline auto Enqueue(F&& f, Args&&... args) -> std::shared_future<std::invoke_result_t<F, Args...>>
+{
+	using return_type = std::invoke_result_t<F, Args...>;
 
-		if (!ThreadPool::HasThreads()) {
-			// directly process when there are no worker threads
-			auto task = std::make_shared< std::packaged_task<return_type()> >(std::bind(f, args ...));
-			std::shared_future<return_type> fut = std::move(task->get_future());
-			(*task)();
-			return fut;
-		}
-
-		// can not use shared_ptr here, make async tasks delete themselves instead
-		// auto task = std::make_shared<AsyncTask<F, Args...>>(std::forward<F>(f), std::forward<Args>(args)...);
-		auto task = new AsyncTask<F, Args...>(std::forward<F>(f), std::forward<Args>(args)...);
-		auto fut = task->GetFuture();
-
-		// minor hack: assume AsyncTask's will cause (heavy) disk IO
-		// although these can never block the main thread, the async
-		// workers might still be handed an uneven work distribution
-		task->wantedThread.store(1 + task->GetId() % (ThreadPool::GetNumThreads() - 1));
-
-		ThreadPool::PushTaskGroup(task);
+	if (!ThreadPool::HasThreads()) {
+		// directly process when there are no worker threads
+		auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(f, args...));
+		std::shared_future<return_type> fut = std::move(task->get_future());
+		(*task)();
 		return fut;
 	}
+
+	// can not use shared_ptr here, make async tasks delete themselves instead
+	// auto task = std::make_shared<AsyncTask<F, Args...>>(std::forward<F>(f), std::forward<Args>(args)...);
+	auto task = new AsyncTask<F, Args...>(std::forward<F>(f), std::forward<Args>(args)...);
+	auto fut = task->GetFuture();
+
+	// minor hack: assume AsyncTask's will cause (heavy) disk IO
+	// although these can never block the main thread, the async
+	// workers might still be handed an uneven work distribution
+	task->wantedThread.store(1 + task->GetId() % (ThreadPool::GetNumThreads() - 1));
+
+	ThreadPool::PushTaskGroup(task);
+	return fut;
 }
+} // namespace ThreadPool
 
 #endif
 #endif
-

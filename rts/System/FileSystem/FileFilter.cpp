@@ -2,20 +2,17 @@
 
 #include "FileFilter.h"
 
-
 #include "System/SpringRegex.h"
 
-#include <climits>
 #include <cctype>
+#include <climits>
 #include <sstream>
 #include <vector>
 
 using std::string;
 using std::vector;
 
-
-class CFileFilter : public IFileFilter
-{
+class CFileFilter : public IFileFilter {
 public:
 	void AddRuleRegex(const string& rule) override;
 	void AddRule(const string& rule) override;
@@ -34,12 +31,7 @@ private:
 	vector<Rule> rules;
 };
 
-
-IFileFilter* IFileFilter::Create()
-{
-	return new CFileFilter();
-}
-
+IFileFilter* IFileFilter::Create() { return new CFileFilter(); }
 
 void CFileFilter::AddRuleRegex(const string& rule)
 {
@@ -80,7 +72,7 @@ void CFileFilter::AddRule(const string& rule)
 	if (rule.find('\n') != string::npos) {
 		size_t beg = 0, end = 0;
 		while ((end = rule.find('\n', beg)) != string::npos) {
-			//printf("line: %s\n", rule.substr(beg, end - beg).c_str());
+			// printf("line: %s\n", rule.substr(beg, end - beg).c_str());
 			AddRule(rule.substr(beg, end - beg));
 			beg = end + 1;
 		}
@@ -115,12 +107,10 @@ void CFileFilter::AddRule(const string& rule)
 		}
 	}
 	r.glob = rule.substr(p, 1 + q - p);
-	r.regex = spring::regex(glob_to_regex(r.glob)
-		, spring::regex::icase);
+	r.regex = spring::regex(glob_to_regex(r.glob), spring::regex::icase);
 	rules.push_back(r);
-	//printf("added %s%s: %s\n", r.negate ? "!" : "", r.glob.c_str(), r.regex.expression());
+	// printf("added %s%s: %s\n", r.negate ? "!" : "", r.glob.c_str(), r.regex.expression());
 }
-
 
 /** @brief Checks whether filename matches this filter. */
 bool CFileFilter::Match(const string& filename) const
@@ -132,7 +122,6 @@ bool CFileFilter::Match(const string& filename) const
 	}
 	return match;
 }
-
 
 string CFileFilter::glob_to_regex(const string& glob) // FIXME remove; duplicate in FileSystem::ConvertGlobToRegex
 {
@@ -158,25 +147,23 @@ string CFileFilter::glob_to_regex(const string& glob) // FIXME remove; duplicate
 	for (; i != glob.end(); ++i) {
 		char c = *i;
 		switch (c) {
-			case '*':
-				// In (shell) globbing the wildcards match anything except path separators.
-				regex << "[^" PATH_SEPARATORS "]*";
-				break;
-			case '?':
-				regex << "[^" PATH_SEPARATORS "]";
-				break;
-			case '/':
-			case '\\':
-			case ':':
-				// Any path separator matches any other path separator.
-				// (So we don't have to manually convert slashes before search.)
-				regex << "[" PATH_SEPARATORS "]";
-				break;
-			default:
-				if (!(isalnum(c) || c == '_'))
-					regex << '\\';
-				regex << c;
-				break;
+		case '*':
+			// In (shell) globbing the wildcards match anything except path separators.
+			regex << "[^" PATH_SEPARATORS "]*";
+			break;
+		case '?': regex << "[^" PATH_SEPARATORS "]"; break;
+		case '/':
+		case '\\':
+		case ':':
+			// Any path separator matches any other path separator.
+			// (So we don't have to manually convert slashes before search.)
+			regex << "[" PATH_SEPARATORS "]";
+			break;
+		default:
+			if (!(isalnum(c) || c == '_'))
+				regex << '\\';
+			regex << c;
+			break;
 		}
 	}
 

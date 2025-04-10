@@ -20,6 +20,6 @@ public:
 	~EventAIException() throw() {};
 }; // class EventAIException
 
-}  // namespace springai
+} // namespace springai
 
 #endif // _CPPWRAPPER_EVENT_AI_EXCEPTION_H

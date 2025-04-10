@@ -1,66 +1,67 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <string>
 #include <cstdio>
+#include <string>
 
+using std::fclose;
 using std::fopen;
 using std::fread;
 using std::fwrite;
-using std::fclose;
 
 #include "ResourceMapAnalyzer.h"
 
-#include "Sim/Misc/ResourceHandler.h"
-#include "Sim/Misc/Resource.h"
-#include "Sim/Units/Unit.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Game/GameHelper.h"
 #include "Game/GameSetup.h"
 #include "Map/MapInfo.h"
 #include "Map/MetalMap.h"
+#include "Sim/Misc/Resource.h"
+#include "Sim/Misc/ResourceHandler.h"
+#include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitHandler.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileQueryFlags.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 
 #include <stdexcept>
-
-#include "System/Misc/TracyDefs.h"
 
 static constexpr float3 ERRORVECTOR(-1, 0, 0);
 static std::string CACHE_BASE("");
 
 CResourceMapAnalyzer::CResourceMapAnalyzer(int resourceId)
-	: resourceId(resourceId)
-	, numSpotsFound(-1)
+    : resourceId(resourceId)
+    , numSpotsFound(-1)
 
-	, extractorRadius(-1.0f)
-	, averageIncome(0.0f)
+    , extractorRadius(-1.0f)
+    , averageIncome(0.0f)
 
-	, stopMe(false)
+    , stopMe(false)
 
-	, maxSpots(10000)
-	, mapHeight(0)
-	, mapWidth(0)
-	, totalCells(0)
-	, squareRadius(0)
-	, doubleSquareRadius(0)
-	, totalResources(0)
-	, maxResource(0)
-	, tempResources(0)
-	, coordX(0)
-	, coordZ(0)
-	, minIncomeForSpot(50)
-	, xtractorRadius(0)
-	, doubleRadius(0)
+    , maxSpots(10000)
+    , mapHeight(0)
+    , mapWidth(0)
+    , totalCells(0)
+    , squareRadius(0)
+    , doubleSquareRadius(0)
+    , totalResources(0)
+    , maxResource(0)
+    , tempResources(0)
+    , coordX(0)
+    , coordZ(0)
+    , minIncomeForSpot(50)
+    , xtractorRadius(0)
+    , doubleRadius(0)
 {
 	if (CACHE_BASE.empty())
-		CACHE_BASE = dataDirsAccess.LocateDir(FileSystem::GetCacheDir() + FileSystemAbstraction::GetNativePathSeparator() + "analyzedResourceMaps" + FileSystemAbstraction::GetNativePathSeparator(), FileQueryFlags::WRITE | FileQueryFlags::CREATE_DIRS);
+		CACHE_BASE =
+		    dataDirsAccess.LocateDir(FileSystem::GetCacheDir() + FileSystemAbstraction::GetNativePathSeparator() +
+		                                 "analyzedResourceMaps" + FileSystemAbstraction::GetNativePathSeparator(),
+		        FileQueryFlags::WRITE | FileQueryFlags::CREATE_DIRS);
 }
 
-
-
-float3 CResourceMapAnalyzer::GetNearestSpot(int builderUnitId, const UnitDef* extractor) const {
+float3 CResourceMapAnalyzer::GetNearestSpot(int builderUnitId, const UnitDef* extractor) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	const CUnit* builder = unitHandler.GetUnit(builderUnitId);
@@ -73,7 +74,8 @@ float3 CResourceMapAnalyzer::GetNearestSpot(int builderUnitId, const UnitDef* ex
 	return GetNearestSpot(builder->midPos, builder->team, extractor);
 }
 
-float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const UnitDef* extractor) const {
+float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const UnitDef* extractor) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	float tempScore = 0.0f;
@@ -84,24 +86,25 @@ float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const Unit
 	for (size_t i = 0; i < vectoredSpots.size(); ++i) {
 		if (extractor != nullptr) {
 			spotCoords = CGameHelper::ClosestBuildPos(team, extractor, vectoredSpots[i], maxDivergence, 2);
-		} else {
+		}
+		else {
 			spotCoords = vectoredSpots[i];
 		}
 
 		if (spotCoords.x >= 0.0f) {
 			float distance = spotCoords.distance2D(fromPos) + 150;
-			//float myThreat = ai->tm->ThreatAtThisPoint(vectoredSpots[i]);
-			float spotScore = vectoredSpots[i].y / distance/* / (myThreat + 10)*/;
-			//int numEnemies = ai->cheat->GetEnemyUnits(&ai->unitIDs[0], vectoredSpots[i], xtractorRadius * 2);
+			// float myThreat = ai->tm->ThreatAtThisPoint(vectoredSpots[i]);
+			float spotScore = vectoredSpots[i].y / distance /* / (myThreat + 10)*/;
+			// int numEnemies = ai->cheat->GetEnemyUnits(&ai->unitIDs[0], vectoredSpots[i], xtractorRadius * 2);
 
 			// NOTE: threat at vectoredSpots[i] is determined
 			// by presence of ARMED enemy units or buildings
 			bool b1 = (tempScore < spotScore);
-// 			bool b2 = (numEnemies == 0);
-// 			bool b3 = (myThreat <= (ai->tm->GetAverageThreat() * 1.5));
-// 			bool b4 = (ai->unitHandler.TaskPlanExist(spotCoords, extractor));
+			// 			bool b2 = (numEnemies == 0);
+			// 			bool b3 = (myThreat <= (ai->tm->GetAverageThreat() * 1.5));
+			// 			bool b4 = (ai->unitHandler.TaskPlanExist(spotCoords, extractor));
 
-			if (b1/* && b2 && b3 && !b4*/) {
+			if (b1 /* && b2 && b3 && !b4*/) {
 				tempScore = spotScore;
 				bestSpot = spotCoords;
 				bestSpot.y = vectoredSpots[i].y;
@@ -113,8 +116,8 @@ float3 CResourceMapAnalyzer::GetNearestSpot(float3 fromPos, int team, const Unit
 	return bestSpot;
 }
 
-
-void CResourceMapAnalyzer::Init() {
+void CResourceMapAnalyzer::Init()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const CResourceDescription* resource = resourceHandler->GetResource(resourceId);
 
@@ -142,13 +145,14 @@ void CResourceMapAnalyzer::Init() {
 	}
 }
 
-float CResourceMapAnalyzer::GetAverageIncome() const {
+float CResourceMapAnalyzer::GetAverageIncome() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return averageIncome;
 }
 
-
-void CResourceMapAnalyzer::GetResourcePoints() {
+void CResourceMapAnalyzer::GetResourcePoints()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::vector<int> xend(doubleRadius + 1);
 
@@ -160,12 +164,12 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 
 	// load up the resource values in each pixel
 	const unsigned char* resourceMapArray = resourceHandler->GetResourceMap(resourceId);
-	double totalResourcesDouble  = 0;
+	double totalResourcesDouble = 0;
 
 	for (int i = 0; i < totalCells; i++) {
 		// count the total resources so you can work out
 		// an average of the whole map
-		totalResourcesDouble +=  rexArrayA[i] = resourceMapArray[i];
+		totalResourcesDouble += rexArrayA[i] = resourceMapArray[i];
 	}
 
 	// do the average
@@ -184,8 +188,8 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 
 			// first spot needs full calculation
 			if (x == 0 && y == 0)
-				for (int sy = y - xtractorRadius, a = 0;  sy <= y + xtractorRadius;  sy++, a++) {
-					if (sy >= 0 && sy < mapHeight){
+				for (int sy = y - xtractorRadius, a = 0; sy <= y + xtractorRadius; sy++, a++) {
+					if (sy >= 0 && sy < mapHeight) {
 						for (int sx = x - xend[a]; sx <= x + xend[a]; sx++) {
 							if (sx >= 0 && sx < mapWidth) {
 								// get the resources from all pixels around the extractor radius
@@ -198,7 +202,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 			// quick calc test
 			if (x > 0) {
 				totalResources = tempAverage[y * mapWidth + x - 1];
-				for (int sy = y - xtractorRadius, a = 0;  sy <= y + xtractorRadius;  sy++, a++) {
+				for (int sy = y - xtractorRadius, a = 0; sy <= y + xtractorRadius; sy++, a++) {
 					if (sy >= 0 && sy < mapHeight) {
 						const int addX = x + xend[a];
 						const int remX = x - xend[a] - 1;
@@ -211,13 +215,14 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 						}
 					}
 				}
-			} else if (y > 0) {
+			}
+			else if (y > 0) {
 				// x == 0 here
 				totalResources = tempAverage[(y - 1) * mapWidth];
 				// remove the top half
 				int a = xtractorRadius;
 
-				for (int sx = 0; sx <= xtractorRadius;  sx++, a++) {
+				for (int sx = 0; sx <= xtractorRadius; sx++, a++) {
 					if (sx < mapWidth) {
 						const int remY = y - xend[a] - 1;
 
@@ -230,7 +235,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 				// add the bottom half
 				a = xtractorRadius;
 
-				for (int sx = 0; sx <= xtractorRadius;  sx++, a++) {
+				for (int sx = 0; sx <= xtractorRadius; sx++, a++) {
 					if (sx < mapWidth) {
 						const int addY = y + xend[a];
 
@@ -404,7 +409,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 			numSpotsFound += 1;
 
 			// small speedup of "wipes the resources around the spot so it is not counted twice"
-			for (int sy = coordZ - xtractorRadius, a = 0;  sy <= coordZ + xtractorRadius;  sy++, a++) {
+			for (int sy = coordZ - xtractorRadius, a = 0; sy <= coordZ + xtractorRadius; sy++, a++) {
 				if (sy >= 0 && sy < mapHeight) {
 					int clearXStart = coordX - xend[a];
 					int clearXEnd = coordX + xend[a];
@@ -427,14 +432,14 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 
 			// redo the whole averaging process around the picked spot so other spots can be found around it
 			for (int y = coordZ - doubleRadius; y <= coordZ + doubleRadius; y++) {
-				if (y >=0 && y < mapHeight) {
+				if (y >= 0 && y < mapHeight) {
 					for (int x = coordX - doubleRadius; x <= coordX + doubleRadius; x++) {
-						if (x >=0 && x < mapWidth) {
+						if (x >= 0 && x < mapWidth) {
 							totalResources = 0;
 
 							// comment out for debug
 							if (x == 0 && y == 0) {
-								for (int sy = y - xtractorRadius, a = 0;  sy <= y + xtractorRadius;  sy++, a++) {
+								for (int sy = y - xtractorRadius, a = 0; sy <= y + xtractorRadius; sy++, a++) {
 									if (sy >= 0 && sy < mapHeight) {
 										for (int sx = x - xend[a]; sx <= x + xend[a]; sx++) {
 											if (sx >= 0 && sx < mapWidth) {
@@ -450,7 +455,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 							if (x > 0) {
 								totalResources = tempAverage[y * mapWidth + x - 1];
 
-								for (int sy = y - xtractorRadius, a = 0;  sy <= y + xtractorRadius;  sy++, a++) {
+								for (int sy = y - xtractorRadius, a = 0; sy <= y + xtractorRadius; sy++, a++) {
 									if (sy >= 0 && sy < mapHeight) {
 										int addX = x + xend[a];
 										int remX = x - xend[a] - 1;
@@ -463,13 +468,14 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 										}
 									}
 								}
-							} else if (y > 0) {
+							}
+							else if (y > 0) {
 								// x == 0 here
 								totalResources = tempAverage[(y - 1) * mapWidth];
 								// remove the top half
 								int a = xtractorRadius;
 
-								for (int sx = 0; sx <= xtractorRadius;  sx++, a++) {
+								for (int sx = 0; sx <= xtractorRadius; sx++, a++) {
 									if (sx < mapWidth) {
 										int remY = y - xend[a] - 1;
 
@@ -482,7 +488,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 								// add the bottom half
 								a = xtractorRadius;
 
-								for (int sx = 0; sx <= xtractorRadius;  sx++, a++) {
+								for (int sx = 0; sx <= xtractorRadius; sx++, a++) {
 									if (sx < mapWidth) {
 										int addY = y + xend[a];
 
@@ -504,9 +510,8 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 	}
 }
 
-
-template<typename T>
-static inline void writeToFile(const T& value, FILE* file) {
+template<typename T> static inline void writeToFile(const T& value, FILE* file)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (fwrite(&value, sizeof(T), 1, file) != 1) {
@@ -514,7 +519,8 @@ static inline void writeToFile(const T& value, FILE* file) {
 	}
 }
 
-void CResourceMapAnalyzer::SaveResourceMap() {
+void CResourceMapAnalyzer::SaveResourceMap()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	const std::string cacheFileName = GetCacheFileName();
@@ -530,14 +536,17 @@ void CResourceMapAnalyzer::SaveResourceMap() {
 		for (int i = 0; i < numSpotsFound; i++) {
 			writeToFile(vectoredSpots[i], saveFile);
 		}
-	} catch (const std::runtime_error& err) {
-		LOG_L(L_WARNING, "Failed to save the analyzed resource-map to file %s, reason: %s", cacheFileName.c_str(), err.what());
+	}
+	catch (const std::runtime_error& err) {
+		LOG_L(L_WARNING, "Failed to save the analyzed resource-map to file %s, reason: %s", cacheFileName.c_str(),
+		    err.what());
 	}
 
 	fclose(saveFile);
 }
 
-static void fileReadChecked(void* buf, size_t size, size_t count, FILE* fstream) {
+static void fileReadChecked(void* buf, size_t size, size_t count, FILE* fstream)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (fread(buf, size, count, fstream) != count) {
@@ -545,7 +554,8 @@ static void fileReadChecked(void* buf, size_t size, size_t count, FILE* fstream)
 	}
 }
 
-bool CResourceMapAnalyzer::LoadResourceMap() {
+bool CResourceMapAnalyzer::LoadResourceMap()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	bool loaded = false;
@@ -563,8 +573,10 @@ bool CResourceMapAnalyzer::LoadResourceMap() {
 				fileReadChecked(&vectoredSpots[i], sizeof(float3), 1, cacheFile);
 			}
 			loaded = true;
-		} catch (const std::runtime_error& err) {
-			LOG_L(L_WARNING, "Failed to load the resource map cache from file %s: %s", cacheFileName.c_str(), err.what());
+		}
+		catch (const std::runtime_error& err) {
+			LOG_L(
+			    L_WARNING, "Failed to load the resource map cache from file %s: %s", cacheFileName.c_str(), err.what());
 		}
 		fclose(cacheFile);
 	}
@@ -572,8 +584,8 @@ bool CResourceMapAnalyzer::LoadResourceMap() {
 	return loaded;
 }
 
-
-std::string CResourceMapAnalyzer::GetCacheFileName() const {
+std::string CResourceMapAnalyzer::GetCacheFileName() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	const CResourceDescription* resource = resourceHandler->GetResource(resourceId);

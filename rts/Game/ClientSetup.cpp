@@ -2,12 +2,12 @@
 
 #include "ClientSetup.h"
 
-#include "System/TdfParser.h"
-#include "System/Exceptions.h"
-#include "System/MsgStrings.h"
-#include "System/Log/ILog.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Exceptions.h"
+#include "System/Log/ILog.h"
+#include "System/MsgStrings.h"
 #include "System/StringUtil.h"
+#include "System/TdfParser.h"
 #ifdef DEDICATED
 #include "System/Platform/errorhandler.h"
 #endif
@@ -15,16 +15,22 @@
 #include "System/Misc/TracyDefs.h"
 
 
-CONFIG(std::string, HostIPDefault).defaultValue("localhost").dedicatedValue("").description("Default IP to use for hosting if not specified in script.txt");
-CONFIG(int, HostPortDefault).defaultValue(8452).minimumValue(0).maximumValue(65535).description("Default Port to use for hosting if not specified in script.txt");
+CONFIG(std::string, HostIPDefault)
+    .defaultValue("localhost")
+    .dedicatedValue("")
+    .description("Default IP to use for hosting if not specified in script.txt");
+CONFIG(int, HostPortDefault)
+    .defaultValue(8452)
+    .minimumValue(0)
+    .maximumValue(65535)
+    .description("Default Port to use for hosting if not specified in script.txt");
 
 ClientSetup::ClientSetup()
-	: hostIP(configHandler->GetString("HostIPDefault"))
-	, hostPort(configHandler->GetInt("HostPortDefault"))
-	, isHost(false)
+    : hostIP(configHandler->GetString("HostIPDefault"))
+    , hostPort(configHandler->GetInt("HostPortDefault"))
+    , isHost(false)
 {
 }
-
 
 void ClientSetup::SanityCheck()
 {
@@ -34,7 +40,6 @@ void ClientSetup::SanityCheck()
 
 	StringReplaceInPlace(myPlayerName, ' ', '_');
 }
-
 
 void ClientSetup::LoadFromStartScript(const std::string& setup)
 {
@@ -47,18 +52,20 @@ void ClientSetup::LoadFromStartScript(const std::string& setup)
 	}
 
 	// Technical parameters
-	file.GetDef(hostIP,         hostIP, "GAME\\HostIP");
-	file.GetDef(hostPort,       IntToString(hostPort), "GAME\\HostPort");
+	file.GetDef(hostIP, hostIP, "GAME\\HostIP");
+	file.GetDef(hostPort, IntToString(hostPort), "GAME\\HostPort");
 	file.GetDef(showServerName, "", "GAME\\ShowServerName");
-	file.GetDef(myPlayerName,   "", "GAME\\MyPlayerName");
-	file.GetDef(myPasswd,       "", "GAME\\MyPasswd");
+	file.GetDef(myPlayerName, "", "GAME\\MyPlayerName");
+	file.GetDef(myPasswd, "", "GAME\\MyPasswd");
 
 	if (!file.GetValue(isHost, "GAME\\IsHost"))
-		LOG_L(L_WARNING, "[ClientSetup::%s] IsHost-entry missing from setup-script; assuming this is a client", __func__);
+		LOG_L(
+		    L_WARNING, "[ClientSetup::%s] IsHost-entry missing from setup-script; assuming this is a client", __func__);
 
 #ifdef DEDICATED
 	if (!isHost)
-		handleerror(nullptr, "setup-script error", "dedicated server needs \"IsHost=1\" in GAME-section", MBF_OK | MBF_EXCL);
+		handleerror(
+		    nullptr, "setup-script error", "dedicated server needs \"IsHost=1\" in GAME-section", MBF_OK | MBF_EXCL);
 #endif
 
 	// FIXME WTF

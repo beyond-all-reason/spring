@@ -2,8 +2,8 @@
 
 #include "AIScriptHandler.h"
 
-#include "ExternalAI/Interface/aidefines.h"
 #include "ExternalAI/AILibraryManager.h"
+#include "ExternalAI/Interface/aidefines.h"
 #include "ExternalAI/SkirmishAIKey.h"
 
 #include <algorithm>
@@ -15,7 +15,6 @@ CAIScriptHandler& CAIScriptHandler::Instance()
 	return instance;
 }
 
-
 bool CAIScriptHandler::IsSkirmishAITestScript(const std::string& scriptName) const
 {
 	using P = decltype(scriptMap)::value_type;
@@ -25,7 +24,6 @@ bool CAIScriptHandler::IsSkirmishAITestScript(const std::string& scriptName) con
 
 	return (iter != scriptMap.end() && iter->first == scriptName);
 }
-
 
 const SkirmishAIData& CAIScriptHandler::GetSkirmishAIData(const std::string& scriptName) const
 {
@@ -39,7 +37,6 @@ const SkirmishAIData& CAIScriptHandler::GetSkirmishAIData(const std::string& scr
 
 	return (iter->second);
 }
-
 
 CAIScriptHandler::CAIScriptHandler()
 {
@@ -55,12 +52,15 @@ CAIScriptHandler::CAIScriptHandler()
 		SkirmishAIData aiData;
 
 		aiData.shortName = aiKey.GetShortName();
-		aiData.version   = aiKey.GetVersion();
-		aiData.isLuaAI   = false;
+		aiData.version = aiKey.GetVersion();
+		aiData.isLuaAI = false;
 
-		scriptMap.emplace_back(std::move("Player vs. AI: " + aiData.shortName + " " + aiData.version), std::move(aiData));
+		scriptMap.emplace_back(
+		    std::move("Player vs. AI: " + aiData.shortName + " " + aiData.version), std::move(aiData));
 	}
 
-	std::sort(scriptMap.begin(), scriptMap.end(), [](const decltype(scriptMap)::value_type& a, const decltype(scriptMap)::value_type& b) { return (a.first < b.first); });
+	std::sort(scriptMap.begin(), scriptMap.end(),
+	    [](const decltype(scriptMap)::value_type& a, const decltype(scriptMap)::value_type& b) {
+		return (a.first < b.first);
+	});
 }
-

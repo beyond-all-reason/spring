@@ -4,6 +4,7 @@
 #define FEATURE_MEMPOOL_H
 
 #include "Feature.h"
+
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/MemPoolTypes.h"
 
@@ -16,4 +17,3 @@ typedef FixedDynMemPoolT<MAX_FEATURES / 1000, MAX_FEATURES / 32, CFeature> Featu
 extern FeatureMemPool featureMemPool;
 
 #endif
-

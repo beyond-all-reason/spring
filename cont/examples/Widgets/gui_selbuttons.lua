@@ -121,7 +121,7 @@ function widget:DrawScreen()
     currentDef  = nil
     return
   end
-  
+
   SetupDimensions(unitTypes)
 
   -- unit model rendering uses the depth-buffer
@@ -131,7 +131,7 @@ function widget:DrawScreen()
   local mouseIcon = MouseOverIcon(x, y)
 
   -- draw the buildpics
-  unitCounts.n = nil  
+  unitCounts.n = nil
   local icon = 0
   for udid,count in pairs(unitCounts) do
     if (useModels) then
@@ -139,7 +139,7 @@ function widget:DrawScreen()
     else
       DrawUnitDefTexture(udid, icon, count)
     end
-      
+
     if (icon == mouseIcon) then
       currentDef = UnitDefs[udid]
     end
@@ -168,7 +168,7 @@ end
 
 
 function CenterUnitDef(unitDefID)
-  local ud = UnitDefs[unitDefID] 
+  local ud = UnitDefs[unitDefID]
   if (not ud) then
     return
   end
@@ -178,7 +178,7 @@ function CenterUnitDef(unitDefID)
   if (not ud.dimensions) then
     return
   end
-    
+
   local d = ud.dimensions
   local xSize = (d.maxx - d.minx)
   local ySize = (d.maxy - d.miny)
@@ -210,7 +210,7 @@ end
 
 
 local function SetupModelDrawing()
-  glDepthTest(true) 
+  glDepthTest(true)
   glDepthMask(true)
   glLighting(true)
   glBlending(false)
@@ -250,13 +250,13 @@ function DrawUnitDefModel(unitDefID, iconPos, count)
   local xmin = math.floor(rectMinX + (iconSizeX * iconPos))
   local xmax = xmin + iconSizeX
   if ((xmax < 0) or (xmin > vsx)) then return end  -- bail
-  
+
   local ymin = rectMinY
   local ymax = rectMaxY
   local xmid = (xmin + xmax) * 0.5
   local ymid = (ymin + ymax) * 0.5
 
-  local ud = UnitDefs[unitDefID] 
+  local ud = UnitDefs[unitDefID]
 
   -- draw background quad
 --  glColor(0.3, 0.3, 0.3, 1.0)
@@ -277,7 +277,7 @@ function DrawUnitDefModel(unitDefID, iconPos, count)
   glRotate(math.cos(0.5 * math.pi * timer) * 60.0, 0, 1, 0)
 
   CenterUnitDef(unitDefID)
-  
+
   local scribe = false
   if (scribe) then
     glLighting(false)
@@ -322,13 +322,13 @@ function DrawUnitDefTexture(unitDefID, iconPos, count)
   local xmin = math.floor(rectMinX + (iconSizeX * iconPos))
   local xmax = xmin + iconSizeX
   if ((xmax < 0) or (xmin > vsx)) then return end  -- bail
-  
+
   local ymin = rectMinY
   local ymax = rectMaxY
   local xmid = (xmin + xmax) * 0.5
   local ymid = (ymin + ymax) * 0.5
 
-  local ud = UnitDefs[unitDefID] 
+  local ud = UnitDefs[unitDefID]
 
   glColor(1, 1, 1)
   glTexture('#' .. unitDefID)
@@ -451,9 +451,9 @@ function widget:MouseRelease(x, y, button)
   if (unitTable == nil) then
     return -1
   end
-  
+
   local alt, ctrl, meta, shift = spGetModKeyState()
-  
+
   if (button == 1) then
     LeftMouseButton(unitDefID, unitTable)
   elseif (button == 2) then

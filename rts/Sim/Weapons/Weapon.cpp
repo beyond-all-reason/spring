@@ -1,11 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Weapon.h"
+
 #include "WeaponDefHandler.h"
 #include "WeaponMemPool.h"
+
 #include "Game/GameHelper.h"
-#include "Game/TraceRay.h"
 #include "Game/Players/Player.h"
+#include "Game/TraceRay.h"
 #include "Lua/LuaConfig.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/CollisionHandler.h"
@@ -13,191 +15,200 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/InterceptHandler.h"
 #include "Sim/Misc/ModInfo.h"
-#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/QuadField.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/AAirMoveType.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/Scripts/NullUnitScript.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Weapons/Cannon.h"
 #include "Sim/Weapons/NoWeapon.h"
 #include "System/EventHandler.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/Sound/ISoundChannels.h"
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
-#include "System/Sound/ISoundChannels.h"
-#include "System/Log/ILog.h"
-
-#include "System/Misc/TracyDefs.h"
 
 CR_BIND_DERIVED_POOL(CWeapon, CObject, , weaponMemPool.allocMem, weaponMemPool.freeMem)
-CR_REG_METADATA(CWeapon, (
-	CR_MEMBER(owner),
-	CR_MEMBER(slavedTo),
-	CR_MEMBER(weaponDef),
-	CR_MEMBER(damages),
+CR_REG_METADATA(CWeapon,
+    (CR_MEMBER(owner),
+        CR_MEMBER(slavedTo),
+        CR_MEMBER(weaponDef),
+        CR_MEMBER(damages),
 
-	CR_MEMBER(aimFromPiece),
-	CR_MEMBER(muzzlePiece),
+        CR_MEMBER(aimFromPiece),
+        CR_MEMBER(muzzlePiece),
 
-	CR_MEMBER(reaimTime),
-	CR_MEMBER(reloadTime),
-	CR_MEMBER(reloadStatus),
+        CR_MEMBER(reaimTime),
+        CR_MEMBER(reloadTime),
+        CR_MEMBER(reloadStatus),
 
-	CR_MEMBER(salvoDelay),
-	CR_MEMBER(salvoSize),
-	CR_MEMBER(projectilesPerShot),
-	CR_MEMBER(nextSalvo),
-	CR_MEMBER(salvoLeft),
-	CR_MEMBER(salvoWindup),
-	CR_MEMBER(ttl),
+        CR_MEMBER(salvoDelay),
+        CR_MEMBER(salvoSize),
+        CR_MEMBER(projectilesPerShot),
+        CR_MEMBER(nextSalvo),
+        CR_MEMBER(salvoLeft),
+        CR_MEMBER(salvoWindup),
+        CR_MEMBER(ttl),
 
-	CR_MEMBER(range),
-	CR_MEMBER(projectileSpeed),
-	CR_MEMBER(accuracyError),
-	CR_MEMBER(sprayAngle),
-	CR_MEMBER(predictSpeedMod),
+        CR_MEMBER(range),
+        CR_MEMBER(projectileSpeed),
+        CR_MEMBER(accuracyError),
+        CR_MEMBER(sprayAngle),
+        CR_MEMBER(predictSpeedMod),
 
-	CR_MEMBER(hasBlockShot),
-	CR_MEMBER(hasTargetWeight),
-	CR_MEMBER(angleGood),
-	CR_MEMBER(avoidTarget),
-	CR_MEMBER(onlyForward),
-	CR_MEMBER(muzzleFlareSize),
-	CR_MEMBER(doTargetGroundPos),
-	CR_MEMBER(noAutoTarget),
-	CR_MEMBER(alreadyWarnedAboutMissingPieces),
+        CR_MEMBER(hasBlockShot),
+        CR_MEMBER(hasTargetWeight),
+        CR_MEMBER(angleGood),
+        CR_MEMBER(avoidTarget),
+        CR_MEMBER(onlyForward),
+        CR_MEMBER(muzzleFlareSize),
+        CR_MEMBER(doTargetGroundPos),
+        CR_MEMBER(noAutoTarget),
+        CR_MEMBER(alreadyWarnedAboutMissingPieces),
 
-	CR_MEMBER(badTargetCategory),
-	CR_MEMBER(onlyTargetCategory),
+        CR_MEMBER(badTargetCategory),
+        CR_MEMBER(onlyTargetCategory),
 
-	CR_MEMBER(buildPercent),
-	CR_MEMBER(numStockpiled),
-	CR_MEMBER(numStockpileQued),
+        CR_MEMBER(buildPercent),
+        CR_MEMBER(numStockpiled),
+        CR_MEMBER(numStockpileQued),
 
-	CR_MEMBER(lastAimedFrame),
-	CR_MEMBER(lastTargetRetry),
+        CR_MEMBER(lastAimedFrame),
+        CR_MEMBER(lastTargetRetry),
 
-	CR_MEMBER(maxForwardAngleDif),
-	CR_MEMBER(maxMainDirAngleDif),
+        CR_MEMBER(maxForwardAngleDif),
+        CR_MEMBER(maxMainDirAngleDif),
 
-	CR_MEMBER(heightBoostFactor),
-	CR_MEMBER(autoTargetRangeBoost),
+        CR_MEMBER(heightBoostFactor),
+        CR_MEMBER(autoTargetRangeBoost),
 
-	CR_MEMBER(avoidFlags),
-	CR_MEMBER(collisionFlags),
-	CR_MEMBER(weaponNum),
+        CR_MEMBER(avoidFlags),
+        CR_MEMBER(collisionFlags),
+        CR_MEMBER(weaponNum),
 
-	CR_MEMBER(relAimFromPos),
-	CR_MEMBER(aimFromPos),
-	CR_MEMBER(relWeaponMuzzlePos),
-	CR_MEMBER(weaponMuzzlePos),
-	CR_MEMBER(weaponDir),
-	CR_MEMBER(mainDir),
-	CR_MEMBER(wantedDir),
-	CR_MEMBER(lastRequestedDir),
-	CR_MEMBER(salvoError),
-	CR_MEMBER(errorVector),
-	CR_MEMBER(errorVectorAdd),
+        CR_MEMBER(relAimFromPos),
+        CR_MEMBER(aimFromPos),
+        CR_MEMBER(relWeaponMuzzlePos),
+        CR_MEMBER(weaponMuzzlePos),
+        CR_MEMBER(weaponDir),
+        CR_MEMBER(mainDir),
+        CR_MEMBER(wantedDir),
+        CR_MEMBER(lastRequestedDir),
+        CR_MEMBER(salvoError),
+        CR_MEMBER(errorVector),
+        CR_MEMBER(errorVectorAdd),
 
-	CR_MEMBER(currentTarget),
-	CR_MEMBER(currentTargetPos),
+        CR_MEMBER(currentTarget),
+        CR_MEMBER(currentTargetPos),
 
-	CR_MEMBER(incomingProjectileIDs),
+        CR_MEMBER(incomingProjectileIDs),
 
-	CR_MEMBER(weaponAimAdjustPriority),
-	CR_MEMBER(fastAutoRetargeting),
-	CR_MEMBER(fastQueryPointUpdate),
-	CR_MEMBER(burstControlWhenOutOfArc)
-))
-
-
+        CR_MEMBER(weaponAimAdjustPriority),
+        CR_MEMBER(fastAutoRetargeting),
+        CR_MEMBER(fastQueryPointUpdate),
+        CR_MEMBER(burstControlWhenOutOfArc)))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
-	owner(owner),
-	slavedTo(nullptr),
-	weaponDef(def),
-	damages(nullptr),
+CWeapon::CWeapon(CUnit* owner, const WeaponDef* def)
+    : owner(owner)
+    , slavedTo(nullptr)
+    , weaponDef(def)
+    , damages(nullptr)
+    ,
 
-	weaponNum(-1),
-	aimFromPiece(-1),
-	muzzlePiece(-1),
+    weaponNum(-1)
+    , aimFromPiece(-1)
+    , muzzlePiece(-1)
+    ,
 
-	reaimTime(GAME_SPEED >> 1),
-	reloadTime(1),
-	reloadStatus(0),
+    reaimTime(GAME_SPEED >> 1)
+    , reloadTime(1)
+    , reloadStatus(0)
+    ,
 
-	salvoDelay(0),
-	salvoSize(1),
-	projectilesPerShot(1),
-	nextSalvo(0),
-	salvoLeft(0),
-	salvoWindup(0),
-	ttl(1),
+    salvoDelay(0)
+    , salvoSize(1)
+    , projectilesPerShot(1)
+    , nextSalvo(0)
+    , salvoLeft(0)
+    , salvoWindup(0)
+    , ttl(1)
+    ,
 
-	range(1.0f),
-	projectileSpeed(1.0f),
-	accuracyError(0.0f),
-	sprayAngle(0.0f),
-	predictSpeedMod(1.0f),
+    range(1.0f)
+    , projectileSpeed(1.0f)
+    , accuracyError(0.0f)
+    , sprayAngle(0.0f)
+    , predictSpeedMod(1.0f)
+    ,
 
-	hasBlockShot(false),
-	hasTargetWeight(false),
-	angleGood(false),
-	avoidTarget(false),
-	onlyForward(false),
-	doTargetGroundPos(false),
-	noAutoTarget(false),
-	alreadyWarnedAboutMissingPieces(false),
+    hasBlockShot(false)
+    , hasTargetWeight(false)
+    , angleGood(false)
+    , avoidTarget(false)
+    , onlyForward(false)
+    , doTargetGroundPos(false)
+    , noAutoTarget(false)
+    , alreadyWarnedAboutMissingPieces(false)
+    ,
 
-	badTargetCategory(0),
-	onlyTargetCategory(0xffffffff),
+    badTargetCategory(0)
+    , onlyTargetCategory(0xffffffff)
+    ,
 
-	buildPercent(0),
-	numStockpiled(0),
-	numStockpileQued(0),
+    buildPercent(0)
+    , numStockpiled(0)
+    , numStockpileQued(0)
+    ,
 
-	lastAimedFrame(0),
-	lastTargetRetry(-100),
+    lastAimedFrame(0)
+    , lastTargetRetry(-100)
+    ,
 
-	maxForwardAngleDif(0.0f),
-	maxMainDirAngleDif(-1.0f),
+    maxForwardAngleDif(0.0f)
+    , maxMainDirAngleDif(-1.0f)
+    ,
 
-	heightBoostFactor(-1.0f),
-	autoTargetRangeBoost(0.0f),
+    heightBoostFactor(-1.0f)
+    , autoTargetRangeBoost(0.0f)
+    ,
 
-	avoidFlags(0),
-	collisionFlags(0),
+    avoidFlags(0)
+    , collisionFlags(0)
+    ,
 
-	relAimFromPos(UpVector),
-	aimFromPos(ZeroVector),
-	relWeaponMuzzlePos(UpVector),
-	weaponMuzzlePos(ZeroVector),
-	weaponDir(ZeroVector),
-	mainDir(FwdVector),
-	wantedDir(UpVector),
-	lastRequestedDir(-UpVector),
-	salvoError(ZeroVector),
-	errorVector(ZeroVector),
-	errorVectorAdd(ZeroVector),
+    relAimFromPos(UpVector)
+    , aimFromPos(ZeroVector)
+    , relWeaponMuzzlePos(UpVector)
+    , weaponMuzzlePos(ZeroVector)
+    , weaponDir(ZeroVector)
+    , mainDir(FwdVector)
+    , wantedDir(UpVector)
+    , lastRequestedDir(-UpVector)
+    , salvoError(ZeroVector)
+    , errorVector(ZeroVector)
+    , errorVectorAdd(ZeroVector)
+    ,
 
-	muzzleFlareSize(1),
+    muzzleFlareSize(1)
+    ,
 
-	weaponAimAdjustPriority(1.f),
-	fastAutoRetargeting(false),
-	fastQueryPointUpdate(false),
-	burstControlWhenOutOfArc(0)
+    weaponAimAdjustPriority(1.f)
+    , fastAutoRetargeting(false)
+    , fastQueryPointUpdate(false)
+    , burstControlWhenOutOfArc(0)
 {
 	assert(weaponMemPool.alloced(this));
 }
-
 
 CWeapon::~CWeapon()
 {
@@ -209,7 +220,6 @@ CWeapon::~CWeapon()
 		interceptHandler.RemoveInterceptorWeapon(this);
 }
 
-
 inline bool CWeapon::CobBlockShot() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -219,13 +229,11 @@ inline bool CWeapon::CobBlockShot() const
 	return owner->script->BlockShot(weaponNum, currentTarget.unit, currentTarget.isUserTarget);
 }
 
-
 float CWeapon::TargetWeight(const CUnit* targetUnit) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return owner->script->TargetWeight(weaponNum, targetUnit);
 }
-
 
 void CWeapon::UpdateWeaponPieces(const bool updateAimFrom)
 {
@@ -254,8 +262,10 @@ void CWeapon::UpdateWeaponPieces(const bool updateAimFrom)
 		return;
 	}
 
-	if (!alreadyWarnedAboutMissingPieces && (owner->script != &CNullUnitScript::value) && !weaponDef->isShield && (dynamic_cast<CNoWeapon*>(this) == nullptr)) {
-		LOG_L(L_WARNING, "%s: weapon%i: Neither AimFromWeapon nor QueryWeapon defined or returned invalid pieceids", owner->unitDef->name.c_str(), weaponNum + LUA_WEAPON_BASE_INDEX);
+	if (!alreadyWarnedAboutMissingPieces && (owner->script != &CNullUnitScript::value) && !weaponDef->isShield &&
+	    (dynamic_cast<CNoWeapon*>(this) == nullptr)) {
+		LOG_L(L_WARNING, "%s: weapon%i: Neither AimFromWeapon nor QueryWeapon defined or returned invalid pieceids",
+		    owner->unitDef->name.c_str(), weaponNum + LUA_WEAPON_BASE_INDEX);
 		alreadyWarnedAboutMissingPieces = true;
 	}
 
@@ -263,12 +273,12 @@ void CWeapon::UpdateWeaponPieces(const bool updateAimFrom)
 	muzzlePiece = -1;
 }
 
-
 void CWeapon::UpdateWeaponErrorVector()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// update conditional cause last SlowUpdate maybe longer away than UNIT_SLOWUPDATE_RATE
-	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called `close` to that)
+	// i.e. when the unit got stunned (neither is SlowUpdate exactly called at UNIT_SLOWUPDATE_RATE, it's only called
+	// `close` to that)
 	float3 newErrorVector = (errorVector + errorVectorAdd);
 	if (newErrorVector.SqLength() <= 1.0f)
 		errorVector = newErrorVector;
@@ -291,22 +301,21 @@ void CWeapon::UpdateWeaponVectors()
 	}
 }
 
-
 void CWeapon::UpdateWantedDir()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!onlyForward) {
 		wantedDir = (currentTargetPos - aimFromPos).SafeNormalize();
-	} else {
+	}
+	else {
 		wantedDir = owner->frontdir;
 	}
 }
 
-
 float CWeapon::GetPredictedImpactTime(float3 p) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//TODO take target's speed into account? (not just its position)
+	// TODO take target's speed into account? (not just its position)
 	return aimFromPos.distance(p) / projectileSpeed;
 }
 
@@ -315,12 +324,13 @@ void CWeapon::Update()
 	ZoneScoped;
 
 	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
-	bool fastAutoRetargetRequired = fastAutoRetargeting && HaveTarget()
-									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
+	bool fastAutoRetargetRequired =
+	    fastAutoRetargeting && HaveTarget() && currentTarget.unit != nullptr && currentTarget.unit->isDead;
 	if (fastAutoRetargetRequired) {
 		// switch to unit's target if it has one - see next bit below
-		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->isDead)
-								|| (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
+		bool ownerTargetIsValid =
+		    (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->isDead) ||
+		    (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
 		if (ownerTargetIsValid)
 			DropCurrentTarget();
 		else
@@ -342,7 +352,6 @@ void CWeapon::Update()
 	UpdateFire();
 	UpdateSalvo();
 }
-
 
 void CWeapon::UpdateAim()
 {
@@ -367,8 +376,8 @@ bool CWeapon::CheckAimingAngle() const
 	return (CheckTargetAngleConstraint(worldTargetDir, worldMainDir));
 }
 
-
-bool CWeapon::CanCallAimingScript(bool validAngle) const {
+bool CWeapon::CanCallAimingScript(bool validAngle) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr float maxAimOffset = 0.93969262078590838405410927732473; // math::cos(20.0f * math::DEG_TO_RAD);
 
@@ -411,7 +420,6 @@ bool CWeapon::CallAimingScript(bool waitForAim)
 	owner->script->AimWeapon(weaponNum, ClampRad(heading - owner->heading * TAANG2RAD), pitch);
 	return true;
 }
-
 
 bool CWeapon::CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const
 {
@@ -458,7 +466,7 @@ void CWeapon::UpdateFire()
 	if (fastQueryPointUpdate) {
 		UpdateWeaponPieces(false);
 		UpdateWeaponVectors();
-	} 
+	}
 
 	if (!TryTarget(currentTargetPos, currentTarget, true))
 		return;
@@ -481,7 +489,8 @@ void CWeapon::UpdateFire()
 			return;
 		}
 		ownerTeam->resPull += weaponDef->cost;
-	} else {
+	}
+	else {
 		const int oldCount = numStockpiled;
 		numStockpiled--;
 		owner->commandAI->StockpileChanged(this);
@@ -492,13 +501,12 @@ void CWeapon::UpdateFire()
 
 	salvoLeft = salvoSize;
 	nextSalvo = gs->frameNum + salvoWindup;
-	salvoError = gsRNG.NextVector() * (owner->IsMoving()? weaponDef->movingAccuracy: accuracyError);
+	salvoError = gsRNG.NextVector() * (owner->IsMoving() ? weaponDef->movingAccuracy : accuracyError);
 
 	owner->lastMuzzleFlameSize = muzzleFlareSize;
 	owner->lastMuzzleFlameDir = wantedDir;
 	owner->script->FireWeapon(weaponNum);
 }
-
 
 bool CWeapon::UpdateStockpile()
 {
@@ -524,7 +532,6 @@ bool CWeapon::UpdateStockpile()
 
 	return (numStockpiled > 0) || (salvoLeft > 0);
 }
-
 
 void CWeapon::UpdateSalvo()
 {
@@ -560,11 +567,12 @@ void CWeapon::UpdateSalvo()
 					owner->commandAI->WeaponFired(this, searchForNewTarget, false);
 				}
 				return;
-			} else {
+			}
+			else {
 				// Fire indiscriminately wherever the the weapon is pointing.
-				// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking aiming
-				// when the target is back in arc. If we don't have a target, then the currentTargetPos will be pointing at
-				// the last target point and so can be left.
+				// currentTargetPos gets restored every frame in Update(), so we can change it here without breaking
+				// aiming when the target is back in arc. If we don't have a target, then the currentTargetPos will be
+				// pointing at the last target point and so can be left.
 				if (haveTarget)
 					currentTargetPos = aimFromPos + (weaponDir * range);
 			}
@@ -573,7 +581,7 @@ void CWeapon::UpdateSalvo()
 
 	// Decloak
 	if (owner->unitDef->decloakOnFire)
-		owner->ScriptDecloak(HaveUnitTarget()? currentTarget.unit: nullptr, this);
+		owner->ScriptDecloak(HaveUnitTarget() ? currentTarget.unit : nullptr, this);
 
 	for (int i = 0; i < projectilesPerShot; ++i) {
 		owner->script->Shot(weaponNum);
@@ -595,7 +603,6 @@ void CWeapon::UpdateSalvo()
 		owner->script->EndBurst(weaponNum);
 }
 
-
 bool CWeapon::Attack(const SWeaponTarget& newTarget)
 {
 	ZoneScoped;
@@ -605,24 +612,23 @@ bool CWeapon::Attack(const SWeaponTarget& newTarget)
 	UpdateWeaponVectors();
 
 	switch (newTarget.type) {
-		case Target_None: {
-			SetAttackTarget(newTarget);
-			return true;
-		} break;
-		case Target_Unit:
-		case Target_Pos:
-		case Target_Intercept: {
-			if (!TryTarget(newTarget))
-				return false;
+	case Target_None: {
+		SetAttackTarget(newTarget);
+		return true;
+	} break;
+	case Target_Unit:
+	case Target_Pos:
+	case Target_Intercept: {
+		if (!TryTarget(newTarget))
+			return false;
 
-			SetAttackTarget(newTarget);
-			avoidTarget = false;
-			return true;
-		} break;
+		SetAttackTarget(newTarget);
+		avoidTarget = false;
+		return true;
+	} break;
 	};
 	return false;
 }
-
 
 void CWeapon::SetAttackTarget(const SWeaponTarget& newTarget)
 {
@@ -640,7 +646,6 @@ void CWeapon::SetAttackTarget(const SWeaponTarget& newTarget)
 	UpdateWantedDir();
 }
 
-
 void CWeapon::DropCurrentTarget()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -650,7 +655,6 @@ void CWeapon::DropCurrentTarget()
 	currentTarget = SWeaponTarget();
 }
 
-
 bool CWeapon::AllowWeaponAutoTarget() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -658,7 +662,7 @@ bool CWeapon::AllowWeaponAutoTarget() const
 	if (checkAllowed >= 0)
 		return checkAllowed;
 
-	//FIXME these need to be merged
+	// FIXME these need to be merged
 	if (weaponDef->noAutoTarget || noAutoTarget)
 		return false;
 	if (owner->fireState < FIRESTATE_FIREATWILL)
@@ -717,7 +721,7 @@ bool CWeapon::AutoTarget()
 	const CUnit* avoidUnit = (avoidTarget && HaveUnitTarget()) ? currentTarget.unit : nullptr;
 
 	CUnit* goodTargetUnit = nullptr;
-	CUnit*  badTargetUnit = nullptr;
+	CUnit* badTargetUnit = nullptr;
 
 	auto& targetPairs = helper->targetPairs;
 
@@ -725,7 +729,8 @@ bool CWeapon::AutoTarget()
 	//   GenerateWeaponTargets sorts by INCREASING order of priority, so lower equals better
 	//   <targetPairs> is normally sorted such that all bad TargetCategory units live at the
 	//   end, but Lua can mess with the ordering arbitrarily
-	for (size_t i = 0, n = CGameHelper::GenerateWeaponTargets(this, avoidUnit, targetPairs); i < n; i++, assert(n == targetPairs.size())) {
+	for (size_t i = 0, n = CGameHelper::GenerateWeaponTargets(this, avoidUnit, targetPairs); i < n;
+	    i++, assert(n == targetPairs.size())) {
 		CUnit* unit = targetPairs[i].second;
 
 		// save the "best" bad target in case we have no other
@@ -764,7 +769,6 @@ bool CWeapon::AutoTarget()
 	return false;
 }
 
-
 void CWeapon::SlowUpdate()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -781,24 +785,23 @@ void CWeapon::SlowUpdate()
 	if (slavedTo != nullptr) {
 		// clone targets from the weapon we are slaved to
 		SetAttackTarget(slavedTo->currentTarget);
-	} else
-	if (weaponDef->interceptor) {
+	}
+	else if (weaponDef->interceptor) {
 		// keep track of the closest projectile heading our way (if any)
 		UpdateInterceptTarget();
-	} else
-	if (owner->curTarget.type != Target_None) {
+	}
+	else if (owner->curTarget.type != Target_None) {
 		// If unit got an attack target, clone the job (independent of AutoTarget!)
 		// Also do this unconditionally (owner's target always has priority over weapon one!)
 		Attack(owner->curTarget);
-	} else
-	if (!HaveTarget() && owner->lastAttacker != nullptr && owner->fireState == FIRESTATE_RETURNFIRE) {
-		//Try to return fire
+	}
+	else if (!HaveTarget() && owner->lastAttacker != nullptr && owner->fireState == FIRESTATE_RETURNFIRE) {
+		// Try to return fire
 		Attack(owner->lastAttacker);
 	}
 	// AutoTarget: Find new/better Target
 	AutoTarget();
 }
-
 
 void CWeapon::HoldIfTargetInvalid()
 {
@@ -812,12 +815,15 @@ void CWeapon::HoldIfTargetInvalid()
 	}
 }
 
-
 void CWeapon::DependentDied(CObject* o)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (o == currentTarget.unit)      { DropCurrentTarget(); }
-	if (o == currentTarget.intercept) { DropCurrentTarget(); }
+	if (o == currentTarget.unit) {
+		DropCurrentTarget();
+	}
+	if (o == currentTarget.intercept) {
+		DropCurrentTarget();
+	}
 
 	// NOTE: DependentDied is called from ~CObject-->Detach, object is just barely valid
 	if (weaponDef->interceptor || weaponDef->isShield) {
@@ -825,32 +831,29 @@ void CWeapon::DependentDied(CObject* o)
 	}
 }
 
-
 bool CWeapon::TargetUnderWater(const float3 tgtPos, const SWeaponTarget& target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (target.type) {
-		case Target_None: return false;
-		case Target_Unit: return target.unit->IsUnderWater();
-		case Target_Pos:  return (tgtPos.y < 0.0f); // consistent with CSolidObject::IsUnderWater (LT)
-		case Target_Intercept: return (target.intercept->pos.y < 0.0f);
-		default: return false;
+	case Target_None: return false;
+	case Target_Unit: return target.unit->IsUnderWater();
+	case Target_Pos: return (tgtPos.y < 0.0f); // consistent with CSolidObject::IsUnderWater (LT)
+	case Target_Intercept: return (target.intercept->pos.y < 0.0f);
+	default: return false;
 	}
 }
-
 
 bool CWeapon::TargetInWater(const float3 tgtPos, const SWeaponTarget& target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (target.type) {
-		case Target_None: return false;
-		case Target_Unit: return target.unit->IsInWater();
-		case Target_Pos:  return (tgtPos.y <= 0.0f); // consistent with CSolidObject::IsInWater (LE)
-		case Target_Intercept: return (target.intercept->pos.y <= 0.0f);
-		default: return false;
+	case Target_None: return false;
+	case Target_Unit: return target.unit->IsInWater();
+	case Target_Pos: return (tgtPos.y <= 0.0f); // consistent with CSolidObject::IsInWater (LE)
+	case Target_Intercept: return (target.intercept->pos.y <= 0.0f);
+	default: return false;
 	}
 }
-
 
 bool CWeapon::CheckTargetAngleConstraint(const float3 worldTargetDir, const float3 worldWeaponDir) const
 {
@@ -861,7 +864,8 @@ bool CWeapon::CheckTargetAngleConstraint(const float3 worldTargetDir, const floa
 			if (owner->frontdir.dot(worldTargetDir) < maxForwardAngleDif)
 				return false;
 		}
-	} else {
+	}
+	else {
 		if (maxMainDirAngleDif > -1.0f) {
 			if (worldWeaponDir.dot(worldTargetDir) < maxMainDirAngleDif)
 				return false;
@@ -871,12 +875,8 @@ bool CWeapon::CheckTargetAngleConstraint(const float3 worldTargetDir, const floa
 	return true;
 }
 
-
-float3 CWeapon::GetTargetBorderPos(
-	const CUnit* targetUnit,
-	const float3 rawTargetPos,
-	const float3 rawTargetDir
-) const {
+float3 CWeapon::GetTargetBorderPos(const CUnit* targetUnit, const float3 rawTargetPos, const float3 rawTargetDir) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 targetBorderPos = rawTargetPos;
 
@@ -889,8 +889,8 @@ float3 CWeapon::GetTargetBorderPos(
 
 	const float tbScale = math::fabsf(weaponDef->targetBorder);
 
-	CollisionVolume  tmpColVol = targetUnit->collisionVolume;
-	CollisionQuery   tmpColQry;
+	CollisionVolume tmpColVol = targetUnit->collisionVolume;
+	CollisionQuery tmpColQry;
 
 	// test for "collision" with a temporarily volume
 	// (scaled uniformly by the absolute target-border
@@ -905,7 +905,8 @@ float3 CWeapon::GetTargetBorderPos(
 	tmpColVol.SetIgnoreHits(false);
 
 	// our weapon muzzle is inside the target unit's volume (FIXME: use aimFromPos?)
-	if (CCollisionHandler::DetectHit(targetUnit, &tmpColVol, targetUnit->GetTransformMatrix(true), weaponMuzzlePos, ZeroVector, nullptr))
+	if (CCollisionHandler::DetectHit(
+	        targetUnit, &tmpColVol, targetUnit->GetTransformMatrix(true), weaponMuzzlePos, ZeroVector, nullptr))
 		return (targetBorderPos = weaponMuzzlePos);
 
 	// otherwise, perform a raytrace to find the proper length correction
@@ -928,12 +929,13 @@ float3 CWeapon::GetTargetBorderPos(
 
 	// adjust the length of <targetVec> based on the targetBorder factor
 	// the muzzle position must not be inside tmpColVol for this to work
-	if (CCollisionHandler::DetectHit(targetUnit, &tmpColVol, targetUnit->GetTransformMatrix(true), weaponMuzzlePos, targetRayPos, &tmpColQry) && tmpColQry.AllHit())
+	if (CCollisionHandler::DetectHit(
+	        targetUnit, &tmpColVol, targetUnit->GetTransformMatrix(true), weaponMuzzlePos, targetRayPos, &tmpColQry) &&
+	    tmpColQry.AllHit())
 		targetBorderPos = mix(tmpColQry.GetIngressPos(), tmpColQry.GetEgressPos(), weaponDef->targetBorder <= 0.0f);
 
 	return targetBorderPos;
 }
-
 
 bool CWeapon::TryTarget(const float3 tgtPos, const SWeaponTarget& trg, bool preFire) const
 {
@@ -956,7 +958,6 @@ bool CWeapon::TryTarget(const float3 tgtPos, const SWeaponTarget& trg, bool preF
 	return (HaveFreeLineOfFire(GetAimFromPos(preFire), tgtPos, trg));
 }
 
-
 bool CWeapon::TestTarget(const float3 tgtPos, const SWeaponTarget& trg) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -964,47 +965,47 @@ bool CWeapon::TestTarget(const float3 tgtPos, const SWeaponTarget& trg) const
 		return false;
 
 	switch (trg.type) {
-		case Target_None: {
-			return true;
-		} break;
-		case Target_Unit: {
-			if (trg.unit == owner || trg.unit == nullptr)
-				return false;
-			if ((trg.unit->category & onlyTargetCategory) == 0)
-				return false;
-			if (trg.unit->isDead && !modInfo.fireAtKilled)
-				return false;
-			if (trg.unit->IsCrashing() && !modInfo.fireAtCrashing)
-				return false;
-			if ((trg.unit->losStatus[owner->allyteam] & (LOS_INLOS | LOS_INRADAR)) == 0)
-				return false;
-			if (!trg.isUserTarget && trg.unit->IsNeutral() && owner->fireState < FIRESTATE_FIREATNEUTRAL)
-				return false;
-			// don't fire at allied targets
-			if (!trg.isUserTarget && teamHandler.Ally(owner->allyteam, trg.unit->allyteam))
-				return false;
+	case Target_None: {
+		return true;
+	} break;
+	case Target_Unit: {
+		if (trg.unit == owner || trg.unit == nullptr)
+			return false;
+		if ((trg.unit->category & onlyTargetCategory) == 0)
+			return false;
+		if (trg.unit->isDead && !modInfo.fireAtKilled)
+			return false;
+		if (trg.unit->IsCrashing() && !modInfo.fireAtCrashing)
+			return false;
+		if ((trg.unit->losStatus[owner->allyteam] & (LOS_INLOS | LOS_INRADAR)) == 0)
+			return false;
+		if (!trg.isUserTarget && trg.unit->IsNeutral() && owner->fireState < FIRESTATE_FIREATNEUTRAL)
+			return false;
+		// don't fire at allied targets
+		if (!trg.isUserTarget && teamHandler.Ally(owner->allyteam, trg.unit->allyteam))
+			return false;
 
-			if (trg.unit->GetTransporter() != nullptr) {
-				if (!modInfo.targetableTransportedUnits)
-					return false;
-				// the transportee might be "hidden" below terrain, in which case we can't target it
-				if (trg.unit->pos.y < CGround::GetHeightReal(trg.unit->pos.x, trg.unit->pos.z))
-					return false;
-			}
-		} break;
-		case Target_Pos: {
-			if (!weaponDef->canAttackGround)
+		if (trg.unit->GetTransporter() != nullptr) {
+			if (!modInfo.targetableTransportedUnits)
 				return false;
-		} break;
-		case Target_Intercept: {
-			if (weaponDef->interceptSolo && trg.intercept->IsBeingIntercepted())
+			// the transportee might be "hidden" below terrain, in which case we can't target it
+			if (trg.unit->pos.y < CGround::GetHeightReal(trg.unit->pos.x, trg.unit->pos.z))
 				return false;
-			if (!weaponDef->interceptor)
-				return false;
-			if (!trg.intercept->CanBeInterceptedBy(weaponDef))
-				return false;
-		} break;
-		default: break;
+		}
+	} break;
+	case Target_Pos: {
+		if (!weaponDef->canAttackGround)
+			return false;
+	} break;
+	case Target_Intercept: {
+		if (weaponDef->interceptSolo && trg.intercept->IsBeingIntercepted())
+			return false;
+		if (!weaponDef->interceptor)
+			return false;
+		if (!trg.intercept->CanBeInterceptedBy(weaponDef))
+			return false;
+	} break;
+	default: break;
 	}
 
 	// interceptor can only target projectiles!
@@ -1035,7 +1036,8 @@ bool CWeapon::TestRange(const float3 tgtPos, const SWeaponTarget& trg) const
 	if (trg.type == Target_Pos || weaponDef->cylinderTargeting < 0.01f) {
 		// check range in a sphere (with extra radius <heightDiff * heightMod>)
 		weaponRange = GetRange2D(0.0f, heightDiff * weaponDef->heightmod);
-	} else {
+	}
+	else {
 		// check range in a cylinder (with height <cylinderTargeting * range>)
 		if ((weaponDef->cylinderTargeting * range) > (math::fabsf(heightDiff) * weaponDef->heightmod))
 			weaponRange = GetRange2D(0.0f, 0.0f);
@@ -1047,7 +1049,6 @@ bool CWeapon::TestRange(const float3 tgtPos, const SWeaponTarget& trg) const
 	// NOTE: mainDir is in unit-space
 	return (CheckTargetAngleConstraint((tgtPos - aimFromPos).SafeNormalize(), owner->GetObjectSpaceVec(mainDir)));
 }
-
 
 bool CWeapon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const SWeaponTarget& trg) const
 {
@@ -1085,17 +1086,17 @@ bool CWeapon::HaveFreeLineOfFire(const float3 srcPos, const float3 tgtPos, const
 	// must nerf TraceRay since it scans for enemies and ground if the
 	// flags are omitted, unlike TestCone which is restricted to A/N/F
 	if (spread < 0.001f)
-		return (TraceRay::TraceRay(srcPos, tgtDir, length, avoidFlags | Collision::NOENEMIES | Collision::NOGROUND, owner, unit, feature) >= length);
+		return (TraceRay::TraceRay(srcPos, tgtDir, length, avoidFlags | Collision::NOENEMIES | Collision::NOGROUND,
+		            owner, unit, feature) >= length);
 
 	return (!TraceRay::TestCone(srcPos, tgtDir, length, spread, owner->allyteam, avoidFlags, owner));
 }
 
-
-bool CWeapon::TryTarget(const SWeaponTarget& trg) const {
+bool CWeapon::TryTarget(const SWeaponTarget& trg) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return TryTarget(GetLeadTargetPos(trg), trg);
 }
-
 
 bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire)
 {
@@ -1109,7 +1110,6 @@ bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFir
 	return TryTargetHeading(enemyHeading - weaponHeading, trg);
 }
 
-
 bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1121,7 +1121,6 @@ bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
 
 	return TryTargetHeading(enemyHeading - weaponHeading, trg);
 }
-
 
 bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg)
 {
@@ -1144,7 +1143,6 @@ bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg)
 
 	return val;
 }
-
 
 void CWeapon::Init()
 {
@@ -1170,7 +1168,6 @@ void CWeapon::Init()
 	}
 }
 
-
 void CWeapon::Fire(bool scriptCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1195,7 +1192,6 @@ void CWeapon::Fire(bool scriptCall)
 		Channels::Battle->PlayRandomSample(weaponDef->fireSound, owner);
 }
 
-
 void CWeapon::UpdateInterceptTarget()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1212,7 +1208,7 @@ void CWeapon::UpdateInterceptTarget()
 		const float curInterceptTargetDistSq = aimFromPos.SqDistance(wp->pos);
 
 		// set by CWeaponProjectile's ctor when the interceptor fires
-		if (weaponDef->interceptSolo && wp->IsBeingIntercepted()) //FIXME add bad target?
+		if (weaponDef->interceptSolo && wp->IsBeingIntercepted()) // FIXME add bad target?
 			continue;
 
 		if (curInterceptTargetDistSq >= minInterceptTargetDistSq)
@@ -1233,7 +1229,6 @@ void CWeapon::UpdateInterceptTarget()
 	}
 }
 
-
 ProjectileParams CWeapon::GetProjectileParams()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1243,16 +1238,20 @@ ProjectileParams CWeapon::GetProjectileParams()
 	params.weaponDef = weaponDef;
 
 	switch (currentTarget.type) {
-		case Target_None     : {                                          } break;
-		case Target_Unit     : { params.target = currentTarget.unit;      } break;
-		case Target_Pos      : {                                          } break;
-		case Target_Intercept: { params.target = currentTarget.intercept; } break;
+	case Target_None: {
+	} break;
+	case Target_Unit: {
+		params.target = currentTarget.unit;
+	} break;
+	case Target_Pos: {
+	} break;
+	case Target_Intercept: {
+		params.target = currentTarget.intercept;
+	} break;
 	}
 
 	return params;
 }
-
-
 
 float CWeapon::GetStaticRange2D(const CWeapon* w, const WeaponDef* wd, float modHeightDiff, float modProjGravity)
 {
@@ -1263,38 +1262,37 @@ float CWeapon::GetStaticRange2D(const CWeapon* w, const WeaponDef* wd, float mod
 	float projSpeed = wd->projectilespeed;
 
 	switch (wd->projectileType) {
-		case WEAPON_EXPLOSIVE_PROJECTILE: {
-			return (CCannon::GetStaticRange2D({baseRange, modHeightDiff}, {projSpeed, modProjGravity}, {-1.0f, wd->heightBoostFactor}));
-		} break;
-		case WEAPON_LASER_PROJECTILE: {
-			// emulate LaserCannon::UpdateRange
-			baseRange = std::max(1.0f, std::floor(baseRange / projSpeed)) * projSpeed;
-		} break;
-		case WEAPON_STARBURST_PROJECTILE: {
-			// emulate StarburstLauncher::GetRange2D
-			return (baseRange + modHeightDiff);
-		} break;
-		default: {
-		} break;
+	case WEAPON_EXPLOSIVE_PROJECTILE: {
+		return (CCannon::GetStaticRange2D(
+		    {baseRange, modHeightDiff}, {projSpeed, modProjGravity}, {-1.0f, wd->heightBoostFactor}));
+	} break;
+	case WEAPON_LASER_PROJECTILE: {
+		// emulate LaserCannon::UpdateRange
+		baseRange = std::max(1.0f, std::floor(baseRange / projSpeed)) * projSpeed;
+	} break;
+	case WEAPON_STARBURST_PROJECTILE: {
+		// emulate StarburstLauncher::GetRange2D
+		return (baseRange + modHeightDiff);
+	} break;
+	default: {
+	} break;
 	}
 
 
 	const float rangeSq = baseRange * baseRange;
 	const float ydiffSq = Square(modHeightDiff);
-	const float    root = rangeSq - ydiffSq;
+	const float root = rangeSq - ydiffSq;
 	return (math::sqrt(std::max(root, 0.0f)));
 }
-
 
 float CWeapon::GetRange2D(float boost, float ydiff) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float rangeSq = Square(range + boost); // c^2 (hyp)
-	const float ydiffSq = Square(ydiff); // b^2 (opp)
-	const float    root = rangeSq - ydiffSq; // a^2 (adj)
+	const float ydiffSq = Square(ydiff);         // b^2 (opp)
+	const float root = rangeSq - ydiffSq;        // a^2 (adj)
 	return (math::sqrt(std::max(root, 0.0f)));
 }
-
 
 bool CWeapon::StopAttackingTargetIf(const std::function<bool(const SWeaponTarget&)>& pred)
 {
@@ -1309,9 +1307,9 @@ bool CWeapon::StopAttackingTargetIf(const std::function<bool(const SWeaponTarget
 bool CWeapon::StopAttackingAllyTeam(const int ally)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return (StopAttackingTargetIf([&](const SWeaponTarget& t) { return (t.type == Target_Unit && t.unit->allyteam == ally); }));
+	return (StopAttackingTargetIf(
+	    [&](const SWeaponTarget& t) { return (t.type == Target_Unit && t.unit->allyteam == ally); }));
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1340,16 +1338,15 @@ void CWeapon::AdjustTargetPosToWater(float3& tgtPos, bool attackGround) const
 	}
 }
 
-
 float3 CWeapon::GetUnitPositionWithError(const CUnit* unit) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	float3 errorPos = unit->GetErrorPos(owner->allyteam, true);
-	if (doTargetGroundPos) errorPos -= unit->aimPos - unit->pos;
+	if (doTargetGroundPos)
+		errorPos -= unit->aimPos - unit->pos;
 	const float errorScale = (MoveErrorExperience() * GAME_SPEED * unit->speed.w);
 	return errorPos + errorVector * errorScale;
 }
-
 
 float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 {
@@ -1366,7 +1363,6 @@ float3 CWeapon::GetUnitLeadTargetPos(const CUnit* unit) const
 
 	return aimPos;
 }
-
 
 float3 CWeapon::GetLeadVec(const CUnit* unit) const
 {
@@ -1388,7 +1384,6 @@ float3 CWeapon::GetLeadVec(const CUnit* unit) const
 	return lead;
 }
 
-
 float CWeapon::ExperienceErrorScale() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1397,13 +1392,14 @@ float CWeapon::ExperienceErrorScale() const
 	// for weight=0 scale is 1 and for weight=1 scale is 1 - exp
 	// (lower is better)
 	//
-	//   for accWeight=0.00 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*0.00, 0.5*0.00, 0.75*0.00, 1.0*0.00}) = {1.0000, 1.000, 1.0000, 1.00}
-	//   for accWeight=0.25 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*0.25, 0.5*0.25, 0.75*0.25, 1.0*0.25}) = {0.9375, 0.875, 0.8125, 0.75}
-	//   for accWeight=0.50 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*0.50, 0.5*0.50, 0.75*0.50, 1.0*0.50}) = {0.8750, 0.750, 0.6250, 0.50}
-	//   for accWeight=1.00 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*1.00, 0.5*1.00, 0.75*1.00, 1.0*0.75}) = {0.7500, 0.500, 0.2500, 0.25}
+	//   for accWeight=0.00 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*0.00, 0.5*0.00, 0.75*0.00, 1.0*0.00}) =
+	//   {1.0000, 1.000, 1.0000, 1.00} for accWeight=0.25 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*0.25,
+	//   0.5*0.25, 0.75*0.25, 1.0*0.25}) = {0.9375, 0.875, 0.8125, 0.75} for accWeight=0.50 and {0.25, 0.50, 0.75, 1.0}
+	//   exp, scale=(1.0 - {0.25*0.50, 0.5*0.50, 0.75*0.50, 1.0*0.50}) = {0.8750, 0.750, 0.6250, 0.50} for
+	//   accWeight=1.00 and {0.25, 0.50, 0.75, 1.0} exp, scale=(1.0 - {0.25*1.00, 0.5*1.00, 0.75*1.00, 1.0*0.75}) =
+	//   {0.7500, 0.500, 0.2500, 0.25}
 	return (CUnit::ExperienceScale(owner->limExperience, weaponDef->ownerExpAccWeight));
 }
-
 
 float CWeapon::MoveErrorExperience() const
 {
@@ -1411,19 +1407,18 @@ float CWeapon::MoveErrorExperience() const
 	return (ExperienceErrorScale() * weaponDef->targetMoveError);
 }
 
-
 float3 CWeapon::GetLeadTargetPos(const SWeaponTarget& target) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (target.type) {
-		case Target_None:      return currentTargetPos;
-		case Target_Unit:      return GetUnitLeadTargetPos(target.unit);
-		case Target_Pos: {
-			float3 p = target.groundPos;
-			AdjustTargetPosToWater(p, true);
-			return p;
-		} break;
-		case Target_Intercept: return target.intercept->pos + target.intercept->speed;
+	case Target_None: return currentTargetPos;
+	case Target_Unit: return GetUnitLeadTargetPos(target.unit);
+	case Target_Pos: {
+		float3 p = target.groundPos;
+		AdjustTargetPosToWater(p, true);
+		return p;
+	} break;
+	case Target_Intercept: return target.intercept->pos + target.intercept->speed;
 	}
 
 	return currentTargetPos;

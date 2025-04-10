@@ -90,15 +90,15 @@ local system = {
   table = table,
   string = string,
   coroutine = coroutine,
-  
-  --  
+
+  --
   --  Standard functions and variables
   --
   assert         = assert,
   error          = error,
 
   print          = print,
-  
+
   next           = next,
   pairs          = pairs,
   ipairs         = ipairs,

@@ -8,8 +8,7 @@
 class CColorMap;
 struct AtlasedTexture;
 
-class CBitmapMuzzleFlame : public CProjectile
-{
+class CBitmapMuzzleFlame : public CProjectile {
 	CR_DECLARE_DERIVED(CBitmapMuzzleFlame)
 
 public:

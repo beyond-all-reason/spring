@@ -3,15 +3,15 @@
 #ifndef _CFONTTEXTURE_H
 #define _CFONTTEXTURE_H
 
-#include <string>
-#include <memory>
-
 #include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Textures/IAtlasAllocator.h"
 #include "Rendering/Textures/RowAtlasAlloc.h"
+#include "System/Threading/WrappedSync.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
-#include "System/Threading/WrappedSync.h"
+
+#include <memory>
+#include <string>
 
 
 struct FT_FaceRec_;
@@ -24,48 +24,43 @@ public:
 	static bool InitFontconfig(bool console);
 };
 
+struct IGlyphRect { // FIXME use SRect or float4
+	IGlyphRect()
+	    : x(0)
+	    , y(0)
+	    , w(0)
+	    , h(0) {};
 
-struct IGlyphRect { //FIXME use SRect or float4
-	IGlyphRect():
-		x(0),y(0),
-		w(0),h(0) {
-	};
+	IGlyphRect(float _x, float _y, float _w, float _h)
+	    : x(_x)
+	    , y(_y)
+	    , w(_w)
+	    , h(_h) {};
 
-	IGlyphRect(float _x,float _y,float _w,float _h):
-		x(_x),y(_y),
-		w(_w),h(_h) {
-	};
+	float x0() const { return x; };
 
-	float x0() const {
-		return x;
-	};
-	float x1() const {
-		return x+w;
-	};
-	float y0() const {
-		return y;
-	};
-	float y1() const {
-		return y+h;
-	};
+	float x1() const { return x + w; };
 
-	float x,y;
-	float w,h;
+	float y0() const { return y; };
+
+	float y1() const { return y + h; };
+
+	float x, y;
+	float w, h;
 };
 
-
-//wrapper to allow usage as shared_ptr
+// wrapper to allow usage as shared_ptr
 struct FontFileBytes {
-	FontFileBytes(size_t size) {
-		vec.resize(size);
-	}
+	FontFileBytes(size_t size) { vec.resize(size); }
+
 	using FT_Byte = unsigned char;
 	FT_Byte* data();
+
 private:
 	std::vector<FT_Byte> vec;
 };
 
-//wrapper to allow usage as shared_ptr
+// wrapper to allow usage as shared_ptr
 struct FontFace {
 	FontFace(FT_Face f, std::shared_ptr<FontFileBytes>& mem);
 	~FontFace();
@@ -77,13 +72,12 @@ struct FontFace {
 
 struct GlyphInfo {
 	GlyphInfo()
-	: advance(0)
-	, height(0)
-	, descender(0)
-	, index(0)
-	, letter(0)
-	, face(nullptr)
-	{ };
+	    : advance(0)
+	    , height(0)
+	    , descender(0)
+	    , index(0)
+	    , letter(0)
+	    , face(nullptr) {};
 
 	IGlyphRect size;
 	IGlyphRect texCord;
@@ -101,8 +95,7 @@ This class just store glyphs and load new glyphs if required
 It works with image and don't care about rendering these glyphs
 It works only and only with UTF32 chars
 **/
-class CFontTexture
-{
+class CFontTexture {
 public:
 	friend class CglFontRenderer;
 	friend class CglShaderFontRenderer;
@@ -119,25 +112,36 @@ public:
 	static void PinFont(std::shared_ptr<FontFace>& face, const std::string& filename, const int size);
 
 	inline static spring::WrappedSyncRecursiveMutex sync = {};
+
 protected:
-	CFontTexture(const std::string& fontfile, int size, int outlinesize, float  outlineweight);
+	CFontTexture(const std::string& fontfile, int size, int outlinesize, float outlineweight);
 	virtual ~CFontTexture();
+
 public:
 	int GetSize() const { return fontSize; }
+
 	int GetTextureWidth() const { return texWidth; }
+
 	int GetTextureHeight() const { return texHeight; }
-	int   GetOutlineWidth() const { return outlineSize; }
+
+	int GetOutlineWidth() const { return outlineSize; }
+
 	float GetOutlineWeight() const { return outlineWeight; }
+
 	float GetLineHeight() const { return lineHeight; }
+
 	float GetDescender() const { return fontDescender; }
+
 	int GetTexture() const { return glyphAtlasTextureID; }
 
 	const std::string& GetFamily() const { return fontFamily; }
+
 	const std::string& GetStyle() const { return fontStyle; }
 
 	const GlyphInfo& GetGlyph(char32_t ch); //< Get a glyph
 public:
 	void ReallocAtlases(bool pre);
+
 protected:
 	void LoadWantedGlyphs(char32_t begin, char32_t end);
 	void LoadWantedGlyphs(const std::vector<char32_t>& wanted);
@@ -146,14 +150,17 @@ protected:
 	void UpdateGlyphAtlasTexture();
 	void UploadGlyphAtlasTexture();
 	void UploadGlyphAtlasTextureImpl();
+
 private:
 	void ClearAtlases(const int width, const int height);
 	void CreateTexture(const int width, const int height);
 	void LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned index);
 	bool ClearGlyphs();
 	void PreloadGlyphs();
+
 protected:
 	float GetKerning(const GlyphInfo& lgl, const GlyphInfo& rgl);
+
 protected:
 	static inline std::vector<std::weak_ptr<CFontTexture>> allFonts = {};
 
@@ -181,6 +188,7 @@ protected:
 	inline static bool needThreadSafety = true;
 
 	std::unique_ptr<CglFontRenderer> fontRenderer;
+
 private:
 #ifndef HEADLESS
 	int curTextureUpdate = 0;
@@ -192,7 +200,7 @@ private:
 	std::shared_ptr<FontFace> shFace;
 
 	spring::unordered_map<char32_t, int> failedAttemptsToReplace;
-	spring::unordered_map<char32_t, GlyphInfo> glyphs; // UTF32 -> GlyphInfo
+	spring::unordered_map<char32_t, GlyphInfo> glyphs;     // UTF32 -> GlyphInfo
 	spring::unordered_map<uint64_t, float> kerningDynamic; // contains unicode kerning
 
 	std::vector<CBitmap> atlasGlyphs;
@@ -203,9 +211,11 @@ private:
 	CBitmap atlasUpdateShadow;
 
 	static std::vector<char32_t> nonPrintableRanges;
+
 public:
 	auto GetGlyphs() const -> const decltype(glyphs) { return glyphs; }
-	auto GetGlyphs()       ->       decltype(glyphs) { return glyphs; }
+
+	auto GetGlyphs() -> decltype(glyphs) { return glyphs; }
 };
 
 #endif // CFONTTEXTURE_H

@@ -3,22 +3,20 @@
 #ifndef _GAME_PARTICIPANT_H
 #define _GAME_PARTICIPANT_H
 
-#include <memory>
-
 #include "Game/Players/PlayerBase.h"
 #include "Game/Players/PlayerStatistics.h"
+#include "System/Misc/SpringTime.h"
 #include "System/Net/LoopbackConnection.h"
 #include "System/UnorderedMap.hpp"
-#include "System/Misc/SpringTime.h"
 
-namespace netcode
-{
-	class CConnection;
-	class RawPacket;
-}
+#include <memory>
 
-class GameParticipant : public PlayerBase
-{
+namespace netcode {
+class CConnection;
+class RawPacket;
+} // namespace netcode
+
+class GameParticipant : public PlayerBase {
 public:
 	GameParticipant();
 	~GameParticipant();
@@ -29,7 +27,11 @@ public:
 
 	void CheckForExpiredConnection();
 
-	GameParticipant& operator=(const PlayerBase& base) { PlayerBase::operator=(base); return *this; };
+	GameParticipant& operator=(const PlayerBase& base)
+	{
+		PlayerBase::operator=(base);
+		return *this;
+	};
 
 public:
 	int id = -1;
@@ -42,6 +44,7 @@ public:
 		DISCONNECTING,
 		DISCONNECTED
 	};
+
 	State myState = UNCONNECTED;
 
 	bool isLocal = false;
@@ -53,7 +56,8 @@ public:
 	spring_time disconnectDelay;
 
 	struct ClientLinkData {
-		ClientLinkData(bool connect = true) {
+		ClientLinkData(bool connect = true)
+		{
 			if (connect)
 				link.reset(new netcode::CLoopbackConnection());
 		}
@@ -67,9 +71,9 @@ public:
 	std::shared_ptr<netcode::CConnection> clientLink;
 	spring::unordered_map<uint8_t, ClientLinkData> aiClientLinks;
 
-	#ifdef SYNCCHECK
+#ifdef SYNCCHECK
 	spring::unordered_map<int, unsigned int> syncResponse; // syncResponse[frameNum] = checksum
-	#endif
+#endif
 
 private:
 	void CloseConnection(bool flush);

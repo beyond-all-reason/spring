@@ -12,13 +12,12 @@
 #define ASIO_USES_EXECUTOR_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include "asio/detail/type_traits.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/detail/type_traits.hpp"
 
 namespace asio {
 
@@ -31,12 +30,9 @@ namespace asio {
  * immediately followed by an argument of a type that satisfies the Executor
  * type requirements.
  */
-struct executor_arg_t
-{
-  /// Constructor.
-  constexpr executor_arg_t() noexcept
-  {
-  }
+struct executor_arg_t {
+	/// Constructor.
+	constexpr executor_arg_t() noexcept {}
 };
 
 /// A special value, similar to std::nothrow, used to disambiguate constructors
@@ -57,8 +53,7 @@ constexpr executor_arg_t executor_arg;
  * type executor_arg_t and the second argument is convertible from type
  * Executor.
  */
-template <typename T, typename Executor>
-struct uses_executor : false_type {};
+template<typename T, typename Executor> struct uses_executor : false_type {};
 
 } // namespace asio
 

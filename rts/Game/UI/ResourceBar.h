@@ -5,9 +5,7 @@
 
 #include "InputReceiver.h"
 
-class CResourceBar :
-	public CInputReceiver
-{
+class CResourceBar : public CInputReceiver {
 public:
 	CResourceBar();
 	void Draw() override;

@@ -1,11 +1,10 @@
 #include "TextureCollection.h"
 
+#include "Rendering/GL/myGL.h"
+#include "System/Misc/TracyDefs.h"
+
 #include <algorithm>
 #include <iterator>
-
-#include "Rendering/GL/myGL.h"
-
-#include "System/Misc/TracyDefs.h"
 
 CTextureCollection::~CTextureCollection()
 {
@@ -131,11 +130,14 @@ bool CTextureCollection::DeleteTex(const std::string& name)
 		return true;
 	}
 
-	textureNames[pos] = textureNames.back(); textureNames.pop_back();
-	texturePaths[pos] = texturePaths.back(); texturePaths.pop_back();
+	textureNames[pos] = textureNames.back();
+	textureNames.pop_back();
+	texturePaths[pos] = texturePaths.back();
+	texturePaths.pop_back();
 
 	glDeleteTextures(1, &textureIDs[pos]);
-	textureIDs[pos] = textureIDs.back(); textureIDs.pop_back();
+	textureIDs[pos] = textureIDs.back();
+	textureIDs.pop_back();
 	return true;
 }
 
@@ -145,15 +147,15 @@ void CTextureCollection::Reload()
 	assert(textureIDs.size() == textureNames.size() && textureNames.size() == texturePaths.size());
 	for (size_t i = 0; i < textureIDs.size(); ++i) {
 		if (texturePaths[i].empty())
-			continue; //skip fallback textures
+			continue; // skip fallback textures
 
 		CBitmap bitmap;
 		if (!bitmap.Load(texturePaths[i]))
-			continue; //skip missing texture files
+			continue; // skip missing texture files
 
 		const auto texID = bitmap.CreateMipMapTexture(0.0f, 0.0f, 0, textureIDs[i]);
 		if (texID != textureIDs[i]) {
-			assert(false); //logic error, should never reach that point
+			assert(false); // logic error, should never reach that point
 			glDeleteTextures(1, &textureIDs[i]);
 			textureIDs[i] = texID;
 		}

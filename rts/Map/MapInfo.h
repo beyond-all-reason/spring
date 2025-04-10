@@ -4,6 +4,7 @@
 #define MAP_INFO_H
 
 #include "MapParser.h"
+
 #include "System/float3.h"
 #include "System/float4.h"
 
@@ -13,12 +14,11 @@
 class LuaTable;
 class MapParser;
 #if !defined(HEADLESS) && !defined(NO_SOUND)
-	struct EAXSfxProps;
+struct EAXSfxProps;
 #endif
 
 
-class CMapInfo
-{
+class CMapInfo {
 public:
 	/** Terrain type, there can be 256 of these:
 	    "MAP\TerrainType0" up to "MAP\TerrainType255" */
@@ -50,30 +50,30 @@ public:
 
 	   This sample code triggers the problem in MSVC:
 
-		class A {
-			A::A();
-			struct { std::string s1; } a1;
-			struct { std::string s2; } a2;
-		};
-		A::A() {}
+	    class A {
+	        A::A();
+	        struct { std::string s1; } a1;
+	        struct { std::string s2; } a2;
+	    };
+	    A::A() {}
 	 */
 
 	/** Global settings, ie. from "MAP" section. */
 	struct map_t {
-		std::string name;         ///< The human name as passed to the constructor.
-		std::string description;  ///< "MAP\\Description"
+		std::string name;        ///< The human name as passed to the constructor.
+		std::string description; ///< "MAP\\Description"
 		std::string author;
 
-		float hardness;           ///< "MAP\\MapHardness"
-		float gravity;            ///< negative elmos/frame^2 (NOT positive elmos/second^2 as in mapfile)
+		float hardness; ///< "MAP\\MapHardness"
+		float gravity;  ///< negative elmos/frame^2 (NOT positive elmos/second^2 as in mapfile)
 		float tidalStrength;
-		float maxMetal;           ///< what metal value 255 in the metal map is worth
-		float extractorRadius;    ///< extraction radius for mines
+		float maxMetal;        ///< what metal value 255 in the metal map is worth
+		float extractorRadius; ///< extraction radius for mines
 		float voidAlphaMin;
 
-		bool  notDeformable;
-		bool  voidWater;
-		bool  voidGround;
+		bool notDeformable;
+		bool voidWater;
+		bool voidGround;
 	} map;
 
 	/** GUI settings (used by CGuiHandler) */
@@ -83,17 +83,17 @@ public:
 
 	/** settings read from "MAP\ATMOSPHERE" section */
 	struct atmosphere_t {
-		float  fluidDensity; ///< in kg/m^3
-		float  cloudDensity;
-		float  fogStart;
-		float  fogEnd;
+		float fluidDensity; ///< in kg/m^3
+		float cloudDensity;
+		float fogStart;
+		float fogEnd;
 		float4 skyAxisAngle;
 		float4 fogColor;
 		float3 skyColor;
 		float3 sunColor;
 		float3 cloudColor;
-		float  minWind;
-		float  maxWind;
+		float minWind;
+		float maxWind;
 		std::string skyBox;
 	} atmosphere;
 
@@ -107,65 +107,65 @@ public:
 	struct grass_t {
 		float bladeWaveScale; //! how strongly wind affects grass-blade waving (if 0, disables vertex animation)
 		float bladeWidth;
-		float bladeHeight;    //! actual blades will be (bladeHeight + randf(0, bladeHeight)) tall
+		float bladeHeight; //! actual blades will be (bladeHeight + randf(0, bladeHeight)) tall
 		float bladeAngle;
 		int maxStrawsPerTurf;
 		float3 color;
-		std::string bladeTexName;    // defaults to internally-generated texture
+		std::string bladeTexName; // defaults to internally-generated texture
 	} grass;
 
 	/** settings read from "MAP\LIGHT" section */
 	struct light_t {
-		float4 sunDir;     ///< .xyz is direction vector; .w is intensity
+		float4 sunDir; ///< .xyz is direction vector; .w is intensity
 		float3 groundAmbientColor;
 		float3 groundDiffuseColor;
 		float3 groundSpecularColor;
-		float  groundShadowDensity;
+		float groundShadowDensity;
 		float4 modelAmbientColor;
 		float4 modelDiffuseColor;
-		float  modelShadowDensity;
+		float modelShadowDensity;
 		float3 modelSpecularColor;
-		float  specularExponent;
+		float specularExponent;
 	} light;
 
 	/** settings read from "MAP\WATER" section
 	    prefix their name with "Water" to get the TDF variable */
 	struct water_t {
-		float  fluidDensity;      ///< in kg/m^3
-		float  repeatX;           ///< (calculated default is in IWater)
-		float  repeatY;           ///< (calculated default is in IWater)
-		float  damage;            ///< scaled by (UNIT_SLOWUPDATE_RATE / GAME_SPEED)
+		float fluidDensity; ///< in kg/m^3
+		float repeatX;      ///< (calculated default is in IWater)
+		float repeatY;      ///< (calculated default is in IWater)
+		float damage;       ///< scaled by (UNIT_SLOWUPDATE_RATE / GAME_SPEED)
 		float3 absorb;
 		float3 baseColor;
 		float3 minColor;
 		float3 surfaceColor;
-		float  surfaceAlpha;
+		float surfaceAlpha;
 		float4 planeColor;
 		float3 diffuseColor;
 		float3 specularColor;
-		float  ambientFactor;
-		float  diffuseFactor;
-		float  specularFactor;
-		float  specularPower;
-		float  fresnelMin;
-		float  fresnelMax;
-		float  fresnelPower;
-		float  reflDistortion;
-		float  blurBase;
-		float  blurExponent;
-		float  perlinStartFreq;
-		float  perlinLacunarity;
-		float  perlinAmplitude;
-		float  windSpeed;
-		float  waveOffsetFactor;
-		float  waveLength;
-		float  waveFoamDistortion;
-		float  waveFoamIntensity;
-		float  causticsResolution;
-		float  causticsStrength;
-		bool   shoreWaves;
-		bool   forceRendering;    ///< if false the renderers will render it only if currentMinMapHeight<0
-		bool   hasWaterPlane;     ///< true if "MAP\WATER\WaterPlaneColor" is set
+		float ambientFactor;
+		float diffuseFactor;
+		float specularFactor;
+		float specularPower;
+		float fresnelMin;
+		float fresnelMax;
+		float fresnelPower;
+		float reflDistortion;
+		float blurBase;
+		float blurExponent;
+		float perlinStartFreq;
+		float perlinLacunarity;
+		float perlinAmplitude;
+		float windSpeed;
+		float waveOffsetFactor;
+		float waveLength;
+		float waveFoamDistortion;
+		float waveFoamIntensity;
+		float causticsResolution;
+		float causticsStrength;
+		bool shoreWaves;
+		bool forceRendering; ///< if false the renderers will render it only if currentMinMapHeight<0
+		bool hasWaterPlane;  ///< true if "MAP\WATER\WaterPlaneColor" is set
 		unsigned char numTiles;
 		std::string texture;
 		std::string foamTexture;
@@ -175,11 +175,11 @@ public:
 
 	/** SMF specific settings */
 	struct smf_t {
-		std::string detailTexName;        ///< "MAP\DetailTex"
-		std::string specularTexName;      ///< "MAP\SpecularTex"
+		std::string detailTexName;   ///< "MAP\DetailTex"
+		std::string specularTexName; ///< "MAP\SpecularTex"
 		std::string splatDistrTexName;
 		std::string splatDetailTexName;
-		std::string grassShadingTexName;  // defaults to minimap texture
+		std::string grassShadingTexName; // defaults to minimap texture
 		std::string skyReflectModTexName;
 		std::string blendNormalsTexName;
 		std::string lightEmissionTexName;
@@ -198,8 +198,8 @@ public:
 
 		float minHeight;
 		float maxHeight;
-		bool  minHeightOverride;
-		bool  maxHeightOverride;
+		bool minHeightOverride;
+		bool maxHeightOverride;
 
 		// Controls whether the alpha channel of each splatted detail normal texture
 		// contains a diffuse channel, which behaves like the old splatted detail textures
@@ -217,22 +217,21 @@ public:
 			unsigned int minNodeSizeZ;
 			unsigned int maxNodeDepth;
 			unsigned int numSpeedModBins;
-			float        minSpeedModVal;
-			float        maxSpeedModVal;
+			float minSpeedModVal;
+			float maxSpeedModVal;
 			unsigned int maxNodesSearched;
-			float        maxRelativeNodesSearched;
+			float maxRelativeNodesSearched;
 		} qtpfs_constants;
 	} pfs;
 
-
-	//If this struct is changed, please fix CReadMap::CalcTypemapChecksum accordingly
+	// If this struct is changed, please fix CReadMap::CalcTypemapChecksum accordingly
 	struct TerrainType {
 		std::string name;
 		float hardness;
-		float tankSpeed;   ///< "TankMoveSpeed"
-		float kbotSpeed;   ///< "KbotMoveSpeed"
-		float hoverSpeed;  ///< "HoverMoveSpeed"
-		float shipSpeed;   ///< "ShipMoveSpeed"
+		float tankSpeed;  ///< "TankMoveSpeed"
+		float kbotSpeed;  ///< "KbotMoveSpeed"
+		float hoverSpeed; ///< "HoverMoveSpeed"
+		float shipSpeed;  ///< "ShipMoveSpeed"
 		bool receiveTracks;
 	};
 
@@ -259,7 +258,7 @@ private:
 	void ReadSound();
 
 	MapParser mapInfoParser; // map-info parser root table
-	LuaTable* resTableRoot; // resource-parser root table
+	LuaTable* resTableRoot;  // resource-parser root table
 };
 
 extern const CMapInfo* mapInfo;

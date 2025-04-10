@@ -7,7 +7,6 @@
 
 struct SSkirmishAICallback;
 
-
 namespace springLegacyAI {
 
 class CAIAICallback;
@@ -18,8 +17,7 @@ class CAIAICallback;
 class CAIAICheats : public IAICheats {
 public:
 	CAIAICheats();
-	CAIAICheats(int skirmishAIId, const SSkirmishAICallback* sAICallback,
-			CAIAICallback* aiCallback);
+	CAIAICheats(int skirmishAIId, const SSkirmishAICallback* sAICallback, CAIAICallback* aiCallback);
 
 
 	void SetMyHandicap(float handicap);
@@ -35,14 +33,12 @@ public:
 	float3 GetUnitVel(int unitid);
 
 	int GetEnemyUnits(int* unitIds, int unitIds_max);
-	int GetEnemyUnits(int* unitIds, const float3& pos, float radius,
-			int unitIds_max);
+	int GetEnemyUnits(int* unitIds, const float3& pos, float radius, int unitIds_max);
 	int GetNeutralUnits(int* unitIds, int unitIds_max);
-	int GetNeutralUnits(int* unitIds, const float3& pos, float radius,
-			int unitIds_max);
+	int GetNeutralUnits(int* unitIds, const float3& pos, float radius, int unitIds_max);
 
-	int GetFeatures(int *features, int max);
-	int GetFeatures(int *features, int max, const float3& pos, float radius);
+	int GetFeatures(int* features, int max);
+	int GetFeatures(int* features, int max, const float3& pos, float radius);
 
 	int GetUnitTeam(int unitid);
 	int GetUnitAllyTeam(int unitid);

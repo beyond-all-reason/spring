@@ -1,28 +1,27 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include <cstdio>
 #include <cerrno>
+#include <cstdio>
 
-#ifndef _MSC_VER	// this header file does not exist for the microsoft compiler
- #include <unistd.h>
+#ifndef _MSC_VER // this header file does not exist for the microsoft compiler
+#include <unistd.h>
 #endif
 
-#include <string>
-#include <array>
-
 #include "LuaIO.h"
+
+#include <array>
+#include <string>
 
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 #include "LuaHandle.h"
 #endif // !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 #include "LuaInclude.h"
+
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
-#include "System/StringUtil.h"
-
 #include "System/Misc/TracyDefs.h"
-
+#include "System/StringUtil.h"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -31,21 +30,17 @@ static bool IsSafePath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// keep searches within the Spring directory
-	if ((path[0] == '/') || (path[0] == '\\') ||
-	    ((path.size() >= 2) && (path[1] == ':'))) {
+	if ((path[0] == '/') || (path[0] == '\\') || ((path.size() >= 2) && (path[1] == ':'))) {
 		return false;
 	}
 	if ((path.find("..") != std::string::npos) ||
-		(path.find("springsettings.cfg") != std::string::npos) || //don't allow to change config file
-		(path.find(".springrc") != std::string::npos) ||
-		(path.find("springrc") != std::string::npos)
-	) {
+	    (path.find("springsettings.cfg") != std::string::npos) // don't allow to change config file
+	    || (path.find(".springrc") != std::string::npos) || (path.find("springrc") != std::string::npos)) {
 		return false;
 	}
 
 	return true;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -60,20 +55,17 @@ bool LuaIO::IsSimplePath(const std::string& path)
 	return (path.find("..") == std::string::npos);
 }
 
-
 bool LuaIO::SafeExecPath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return false; // don't allow execution of external programs, yet
 }
 
-
 bool LuaIO::SafeReadPath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return dataDirsAccess.InReadDir(path);
 }
-
 
 bool LuaIO::SafeWritePath(const std::string& path)
 {
@@ -86,7 +78,6 @@ bool LuaIO::SafeWritePath(const std::string& path)
 
 	return dataDirsAccess.InWriteDir(path);
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -101,12 +92,11 @@ FILE* LuaIO::fopen(lua_State* L, const char* path, const char* mode)
 		return nullptr;
 	}
 	if (!IsSafePath(path)) {
-		errno = EPERM; //EACCESS?
+		errno = EPERM; // EACCESS?
 		return nullptr;
 	}
 	return ::fopen(path, mode);
 }
-
 
 FILE* LuaIO::popen(lua_State* L, const char* command, const char* type)
 {
@@ -121,14 +111,12 @@ FILE* LuaIO::popen(lua_State* L, const char* command, const char* type)
 	return nullptr;
 }
 
-
 int LuaIO::pclose(lua_State* L, FILE* stream)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	errno = ECHILD;
 	return -1;
 }
-
 
 int LuaIO::system(lua_State* L, const char* command)
 {
@@ -137,30 +125,25 @@ int LuaIO::system(lua_State* L, const char* command)
 	return -1; //
 }
 
-
 int LuaIO::remove(lua_State* L, const char* pathname)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!SafeWritePath(pathname)
-		|| !IsSafePath(pathname)) {
-		errno = EPERM; //EACCESS?
+	if (!SafeWritePath(pathname) || !IsSafePath(pathname)) {
+		errno = EPERM; // EACCESS?
 		return -1;
 	}
 	return ::remove(pathname);
 }
 
-
 int LuaIO::rename(lua_State* L, const char* oldpath, const char* newpath)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!SafeWritePath(oldpath) || !SafeWritePath(newpath)
-		|| !IsSafePath(oldpath) || !IsSafePath(newpath)) {
-		errno = EPERM; //EACCESS?
+	if (!SafeWritePath(oldpath) || !SafeWritePath(newpath) || !IsSafePath(oldpath) || !IsSafePath(newpath)) {
+		errno = EPERM; // EACCESS?
 		return -1;
 	}
 	return ::rename(oldpath, newpath);
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

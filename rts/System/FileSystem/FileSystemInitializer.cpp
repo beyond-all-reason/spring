@@ -1,32 +1,35 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "FileSystemInitializer.h"
-#include "DataDirLocater.h"
+
 #include "ArchiveScanner.h"
+#include "DataDirLocater.h"
 #include "VFSHandler.h"
-#include "System/LogOutput.h"
-#include "System/SafeUtil.h"
-#include "System/StringUtil.h"
+
 #include "System/Config/ConfigHandler.h"
-#include "System/Platform/errorhandler.h"
+#include "System/LogOutput.h"
 #include "System/Platform/Misc.h"
 #include "System/Platform/Watchdog.h"
+#include "System/Platform/errorhandler.h"
+#include "System/SafeUtil.h"
+#include "System/StringUtil.h"
 
 #ifdef UNITSYNC
 void ErrorMessageBox(const char*, const char*, unsigned int) { throw; } // pass to US
 #endif
 
 #if (!defined(UNITSYNC) && !defined(DEDICATED))
-static void SetupThreadReg() {
+static void SetupThreadReg()
+{
 	Threading::SetFileSysThread();
 	Watchdog::RegisterThread(WDT_VFSI);
 	Threading::SetThreadName("vfsi");
 }
-static void ClearThreadReg() {
-	Watchdog::DeregisterThread(WDT_VFSI);
-}
+
+static void ClearThreadReg() { Watchdog::DeregisterThread(WDT_VFSI); }
 #else
 static void SetupThreadReg() {}
+
 static void ClearThreadReg() {}
 #endif
 
@@ -34,7 +37,9 @@ static void ClearThreadReg() {}
 std::atomic<bool> FileSystemInitializer::initSuccess = {false};
 std::atomic<bool> FileSystemInitializer::initFailure = {false};
 
-void FileSystemInitializer::PreInitializeConfigHandler(const std::string& configSource, const std::string& configName, const bool safemode)
+void FileSystemInitializer::PreInitializeConfigHandler(const std::string& configSource,
+    const std::string& configName,
+    const bool safemode)
 {
 	dataDirLocater.LocateDataDirs();
 	dataDirLocater.ChangeCwdToWriteDir();
@@ -47,7 +52,6 @@ void FileSystemInitializer::PreInitializeConfigHandler(const std::string& config
 	configHandler->SetString("name", StringReplace(configName, " ", "_"));
 }
 
-
 void FileSystemInitializer::InitializeLogOutput(const std::string& filename)
 {
 	if (!filename.empty() && !logOutput.IsInitialized())
@@ -55,7 +59,6 @@ void FileSystemInitializer::InitializeLogOutput(const std::string& filename)
 
 	logOutput.Initialize();
 }
-
 
 bool FileSystemInitializer::Initialize()
 {
@@ -81,7 +84,8 @@ void FileSystemInitializer::InitializeTry()
 		CVFSHandler::SetGlobalInstance(new CVFSHandler("SpringVFS"));
 
 		initSuccess = true;
-	} catch (const std::exception& ex) {
+	}
+	catch (const std::exception& ex) {
 		// abort VFS-init thread
 		initFailure = true;
 
@@ -89,7 +93,8 @@ void FileSystemInitializer::InitializeTry()
 		// since it can already have early observers registered that
 		// do not remove themselves until exit
 		ErrorMessageBox(ex.what(), "Spring: caught std::exception", MBF_OK | MBF_EXCL);
-	} catch (...) {
+	}
+	catch (...) {
 		initFailure = true;
 
 		ErrorMessageBox("", "Spring: caught generic exception", MBF_OK | MBF_EXCL);
@@ -119,4 +124,3 @@ void FileSystemInitializer::Reload()
 	vfsHandler->UnMapArchives(true);
 	archiveScanner->Reload();
 }
-

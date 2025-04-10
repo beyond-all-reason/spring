@@ -14,23 +14,32 @@
 inline short int GetHeadingFromFacing(const int facing)
 {
 	switch (facing) {
-		case FACING_SOUTH: return      0;
-		case FACING_EAST : return  16384;
-		case FACING_NORTH: return  32767;
-		case FACING_WEST : return -16384;
-		default          : return      0;
+	case FACING_SOUTH: return 0;
+	case FACING_EAST: return 16384;
+	case FACING_NORTH: return 32767;
+	case FACING_WEST: return -16384;
+	default: return 0;
 	}
 }
 
 inline int GetFacingFromHeading(const short int heading)
 {
 	if (heading >= 0) {
-		if (heading <  8192) { return FACING_SOUTH; }
-		if (heading < 24576) { return FACING_EAST ; }
+		if (heading < 8192) {
+			return FACING_SOUTH;
+		}
+		if (heading < 24576) {
+			return FACING_EAST;
+		}
 		return FACING_NORTH;
-	} else {
-		if (heading >=  -8192) { return FACING_SOUTH; }
-		if (heading >= -24576) { return FACING_WEST ; }
+	}
+	else {
+		if (heading >= -8192) {
+			return FACING_SOUTH;
+		}
+		if (heading >= -24576) {
+			return FACING_WEST;
+		}
 		return FACING_NORTH;
 	}
 }
@@ -43,18 +52,20 @@ inline float GetHeadingFromVectorF(const float dx, const float dz)
 		// ensure a minimum distance between dz and 0 such that
 		// sqr(dx/dz) never exceeds abs(num_limits<float>::max)
 		const float sz = dz * 2.0f - 1.0f;
-		const float d  = dx / (dz + 0.000001f * sz);
+		const float d = dx / (dz + 0.000001f * sz);
 		const float dd = d * d;
 
 		if (math::fabs(d) > 1.0f) {
 			h = std::copysign(1.0f, d) * math::HALFPI - d / (dd + 0.28f);
-		} else {
+		}
+		else {
 			h = d / (1.0f + 0.28f * dd);
 		}
 
 		// add PI (if dx > 0) or -PI (if dx < 0) when dz < 0
 		h += ((math::PI * ((dx > 0.0f) * 2.0f - 1.0f)) * (dz < 0.0f));
-	} else {
+	}
+	else {
 		h = math::HALFPI * ((dx > 0.0f) * 2.0f - 1.0f);
 	}
 
@@ -64,21 +75,21 @@ inline float GetHeadingFromVectorF(const float dx, const float dz)
 inline short int GetHeadingFromVector(const float dx, const float dz)
 {
 	constexpr float s = SPRING_MAX_HEADING * math::INVPI;
-	const     float h = GetHeadingFromVectorF(dx, dz) * s;
+	const float h = GetHeadingFromVectorF(dx, dz) * s;
 
 	// Prevents h from going beyond SPRING_MAX_HEADING.
 	// If h goes beyond SPRING_MAX_HEADING, the following
 	// conversion to a short int crashes.
 	// if (h > SPRING_MAX_HEADING) h = SPRING_MAX_HEADING;
 	// return (short int) h;
-	int ih = (int) h;
+	int ih = (int)h;
 
 	// if ih represents due-north the modulo operation
 	// below would cause it to wrap around from -32768
 	// to 0 (which means due-south), so add 1
 	ih += (ih == -SPRING_MAX_HEADING);
 	ih %= SPRING_MAX_HEADING;
-	return (short int) ih;
+	return (short int)ih;
 }
 
 // vec should be normalized
@@ -90,9 +101,9 @@ inline shortint2 GetHAndPFromVector(const float3 vec)
 	// If h goes beyond SPRING_MAX_HEADING, the following
 	// conversion to a short int crashes.
 	// this change destroys the whole meaning with using short ints....
-	int iy = (int) (math::asin(vec.y) * (SPRING_MAX_HEADING * math::INVPI));
+	int iy = (int)(math::asin(vec.y) * (SPRING_MAX_HEADING * math::INVPI));
 	iy %= SPRING_MAX_HEADING;
-	ret.y = (short int) iy;
+	ret.y = (short int)iy;
 	ret.x = GetHeadingFromVector(vec.x, vec.z);
 	return ret;
 }
@@ -109,7 +120,7 @@ inline float2 GetHAndPFromVectorF(const float3 vec)
 inline float3 GetVectorFromHeading(const short int heading)
 {
 	constexpr int div = (SPRING_MAX_HEADING / NUM_HEADINGS) * 2;
-	const     int idx = heading / div + NUM_HEADINGS / 2;
+	const int idx = heading / div + NUM_HEADINGS / 2;
 
 	const float2 vec = SpringMath::headingToVectorTable[idx];
 	return float3(vec.x, 0.0f, vec.y);
@@ -118,20 +129,15 @@ inline float3 GetVectorFromHeading(const short int heading)
 inline float3 CalcBeizer(const float i, const float3 p1, const float3 p2, const float3 p3, const float3 p4)
 {
 	const float ni = 1.0f - i;
-	const float  a =        ni * ni * ni;
-	const float  b = 3.0f *  i * ni * ni;
-	const float  c = 3.0f *  i *  i * ni;
-	const float  d =         i  * i *  i;
+	const float a = ni * ni * ni;
+	const float b = 3.0f * i * ni * ni;
+	const float c = 3.0f * i * i * ni;
+	const float d = i * i * i;
 
 	return float3((p1 * a) + (p2 * b) + (p3 * c) + (p4 * d));
 }
 
-
-inline int Round(const float f)
-{
-	return math::floor(f + 0.5f);
-}
-
+inline int Round(const float f) { return math::floor(f + 0.5f); }
 
 inline int2 IdxToCoord(unsigned x, unsigned array_width)
 {
@@ -140,7 +146,6 @@ inline int2 IdxToCoord(unsigned x, unsigned array_width)
 	r.y = x / array_width;
 	return r;
 }
-
 
 inline float ClampRad(float f)
 {
@@ -179,21 +184,17 @@ inline float3 ClampRadPrincipal(float3 v)
 	return v;
 }
 
-inline float GetRadAngleToward(float f1, float f2) {
-	 return (f2-f1) +
-			 (f2-f1 > math::PI ?
-				  -math::TWOPI :
-				  (f2-f1 <= -math::PI ? math::TWOPI : 0));
-}
-
-inline float3 GetRadAngleToward(float3 v1, float3 v2) {
-    return float3{GetRadAngleToward(v1.x, v2.x), GetRadAngleToward(v1.y, v2.y), GetRadAngleToward(v1.z, v2.z)};
-}
-
-inline bool RadsAreEqual(const float f1, const float f2)
+inline float GetRadAngleToward(float f1, float f2)
 {
-	return ClampRad(f1 - f2) == 0.0f;
+	return (f2 - f1) + (f2 - f1 > math::PI ? -math::TWOPI : (f2 - f1 <= -math::PI ? math::TWOPI : 0));
 }
+
+inline float3 GetRadAngleToward(float3 v1, float3 v2)
+{
+	return float3{GetRadAngleToward(v1.x, v2.x), GetRadAngleToward(v1.y, v2.y), GetRadAngleToward(v1.z, v2.z)};
+}
+
+inline bool RadsAreEqual(const float f1, const float f2) { return ClampRad(f1 - f2) == 0.0f; }
 
 inline float GetRadFromXY(const float dx, const float dy)
 {

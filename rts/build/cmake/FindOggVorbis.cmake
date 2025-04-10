@@ -40,14 +40,14 @@ mark_as_advanced(VORBIS_INCLUDE_DIR OGG_INCLUDE_DIR
 
 
 if (VORBIS_INCLUDE_DIR AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY AND VORBISENC_LIBRARY)
-   
+
    set(OGGVORBIS_LIBRARIES ${OGG_LIBRARY} ${VORBIS_LIBRARY} ${VORBISFILE_LIBRARY} ${VORBISENC_LIBRARY})
-   
+
    set(_CMAKE_REQUIRED_LIBRARIES_TMP ${CMAKE_REQUIRED_LIBRARIES})
    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OGGVORBIS_LIBRARIES})
    check_library_exists(vorbis vorbis_bitrate_addblock "" HAVE_LIBVORBISENC2)
    set(CMAKE_REQUIRED_LIBRARIES ${_CMAKE_REQUIRED_LIBRARIES_TMP})
-   
+
    if (HAVE_LIBVORBISENC2)
       set (OGGVORBIS_VERSION 2)
    else (HAVE_LIBVORBISENC2)
@@ -64,32 +64,32 @@ find_package_handle_standard_args(OggVorbis REQUIRED_VARS VORBIS_LIBRARY OGG_LIB
 if (OggVorbis_FOUND)
    if (NOT TARGET Ogg::ogg)
       add_library(Ogg::ogg UNKNOWN IMPORTED)
-      
+
       set_target_properties(Ogg::ogg PROPERTIES
                             INTERFACE_INCLUDE_DIRECTORIES "${OGG_INCLUDE_DIR}"
                             IMPORTED_LOCATION ${OGG_LIBRARY}
       )
    endif()
-   
+
    if (NOT TARGET vorbis::vorbisenc)
       add_library(vorbis::vorbisenc UNKNOWN IMPORTED)
-      
+
       set_target_properties(vorbis::vorbisenc PROPERTIES
                             IMPORTED_LOCATION ${VORBISENC_LIBRARY}
       )
    endif()
-   
+
    if (NOT TARGET vorbis::vorbisfile)
       add_library(vorbis::vorbisfile UNKNOWN IMPORTED)
-      
+
       set_target_properties(vorbis::vorbisfile PROPERTIES
                             IMPORTED_LOCATION ${VORBISFILE_LIBRARY}
       )
    endif()
-   
+
    if (NOT TARGET vorbis::vorbis)
       add_library(vorbis::vorbis UNKNOWN IMPORTED)
-      
+
       set_target_properties(vorbis::vorbis PROPERTIES
                             INTERFACE_INCLUDE_DIRECTORIES "${VORBIS_INCLUDE_DIR}"
                             IMPORTED_LOCATION ${VORBIS_LIBRARY}

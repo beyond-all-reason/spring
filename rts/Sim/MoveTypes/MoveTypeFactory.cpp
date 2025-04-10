@@ -1,26 +1,28 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "MoveTypeFactory.h"
-#include "MoveDefHandler.h"
-#include "StrafeAirMoveType.h"
-#include "HoverAirMoveType.h"
+
 #include "GroundMoveType.h"
-#include "StaticMoveType.h"
+#include "HoverAirMoveType.h"
+#include "MoveDefHandler.h"
 #include "ScriptMoveType.h"
+#include "StaticMoveType.h"
+#include "StrafeAirMoveType.h"
 
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
-
 #include "System/Misc/TracyDefs.h"
 
-void MoveTypeFactory::InitStatic() {
+void MoveTypeFactory::InitStatic()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(CGroundMoveType) >= sizeof(CStrafeAirMoveType), "");
-	static_assert(sizeof(CGroundMoveType) >= sizeof(CHoverAirMoveType ), "");
-	static_assert(sizeof(CGroundMoveType) >= sizeof(CStaticMoveType   ), "");
-	static_assert(sizeof(CGroundMoveType) >= sizeof(CScriptMoveType   ), "");
+	static_assert(sizeof(CGroundMoveType) >= sizeof(CHoverAirMoveType), "");
+	static_assert(sizeof(CGroundMoveType) >= sizeof(CStaticMoveType), "");
+	static_assert(sizeof(CGroundMoveType) >= sizeof(CScriptMoveType), "");
 }
 
-AMoveType* MoveTypeFactory::GetMoveType(CUnit* unit, const UnitDef* ud) {
+AMoveType* MoveTypeFactory::GetMoveType(CUnit* unit, const UnitDef* ud)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(CGroundMoveType) <= sizeof(unit->amtMemBuffer), "");
 	static_assert(sizeof(CScriptMoveType) <= sizeof(unit->smtMemBuffer), "");
@@ -54,8 +56,8 @@ AMoveType* MoveTypeFactory::GetMoveType(CUnit* unit, const UnitDef* ud) {
 	return (new (unit->amtMemBuffer) CStaticMoveType(unit));
 }
 
-AMoveType* MoveTypeFactory::GetScriptMoveType(CUnit* unit) {
+AMoveType* MoveTypeFactory::GetScriptMoveType(CUnit* unit)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (new (unit->smtMemBuffer) CScriptMoveType(unit));
 }
-

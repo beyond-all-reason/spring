@@ -5,88 +5,94 @@
 
 #include "MoveType.h"
 
-class CScriptMoveType : public AMoveType
-{
+class CScriptMoveType : public AMoveType {
 	CR_DECLARE_DERIVED(CScriptMoveType)
 
-	public:
-		CScriptMoveType(CUnit* owner);
-		virtual ~CScriptMoveType();
+public:
+	CScriptMoveType(CUnit* owner);
+	virtual ~CScriptMoveType();
 
-		void* GetPreallocContainer() { return owner; }  // creg
+	void* GetPreallocContainer() { return owner; } // creg
 
-	public:
-		bool Update() override;
-		void ForceUpdates();
+public:
+	bool Update() override;
+	void ForceUpdates();
 
-		void SetPhysics(const float3& pos, const float3& vel, const float3& rot);
-		void SetPosition(const float3& pos);
-		void SetVelocity(const float3& vel);
-		void SetRelativeVelocity(const float3& rvel);
-		void SetRotation(const float3& rot);
-		void SetRotationVelocity(const float3& rvel);
-		void SetHeading(short heading);
-		void SetNoBlocking(bool state);
+	void SetPhysics(const float3& pos, const float3& vel, const float3& rot);
+	void SetPosition(const float3& pos);
+	void SetVelocity(const float3& vel);
+	void SetRelativeVelocity(const float3& rvel);
+	void SetRotation(const float3& rot);
+	void SetRotationVelocity(const float3& rvel);
+	void SetHeading(short heading);
+	void SetNoBlocking(bool state);
 
-		enum ScriptNotifyState {
-			HitNothing = 0,
-			HitGround = 1,
-			HitLimit = 2,
-		};
+	enum ScriptNotifyState {
+		HitNothing = 0,
+		HitGround = 1,
+		HitLimit = 2,
+	};
 
-	public: // null'ed virtuals
-		void StartMoving(float3, float goalRadius) override {}
-		void StartMoving(float3, float goalRadius, float speed) override {}
-		void KeepPointingTo(float3, float distance, bool aggressive) override {}
-		void KeepPointingTo(CUnit* unit, float distance, bool aggressive) override {}
-		void StopMoving(bool callScript = false, bool hardStop = false, bool cancelRaw = false) override {}
+public: // null'ed virtuals
+	void StartMoving(float3, float goalRadius) override {}
 
-		void SetGoal(const float3& pos, float distance = 0.0f) override {}
-		void SetMaxSpeed(float speed) override {}
-		void SetWantedMaxSpeed(float speed) override {}
-		void LeaveTransport() override {}
+	void StartMoving(float3, float goalRadius, float speed) override {}
 
-	protected:
-		void CheckLimits();
-		void CheckNotify();
+	void KeepPointingTo(float3, float distance, bool aggressive) override {}
 
-	public:
-		/// velocity vector
-		float3 velVec;
-		/// relative velocity (to current direction)
-		float3 relVel;
+	void KeepPointingTo(CUnit* unit, float distance, bool aggressive) override {}
 
-		/// angular position
-		float3 rot;
-		/// angular velocity
-		float3 rotVel;
+	void StopMoving(bool callScript = false, bool hardStop = false, bool cancelRaw = false) override {}
 
-		float3 mins = {-1.0e9f, -1.0e9f, -1.0e9f};
-		float3 maxs = {+1.0e9f, +1.0e9f, +1.0e9f};
+	void SetGoal(const float3& pos, float distance = 0.0f) override {}
 
-		int tag = 0;
+	void SetMaxSpeed(float speed) override {}
 
-		float drag = 0.0f;
-		float groundOffset = 0.0f;
+	void SetWantedMaxSpeed(float speed) override {}
 
-		float gravityFactor = 0.0f;
-		float windFactor = 0.0f;
+	void LeaveTransport() override {}
 
-		bool extrapolate = true;
-		bool useRelVel = false;
-		bool useRotVel = false;
+protected:
+	void CheckLimits();
+	void CheckNotify();
 
-		bool trackSlope = false;
-		bool trackGround = false;
-		bool trackLimits = false;
+public:
+	/// velocity vector
+	float3 velVec;
+	/// relative velocity (to current direction)
+	float3 relVel;
 
-		bool noBlocking = false;
+	/// angular position
+	float3 rot;
+	/// angular velocity
+	float3 rotVel;
 
-		bool groundStop = false;
-		bool limitsStop = false;
+	float3 mins = {-1.0e9f, -1.0e9f, -1.0e9f};
+	float3 maxs = {+1.0e9f, +1.0e9f, +1.0e9f};
 
-	protected:
-		ScriptNotifyState scriptNotify = HitNothing;
+	int tag = 0;
+
+	float drag = 0.0f;
+	float groundOffset = 0.0f;
+
+	float gravityFactor = 0.0f;
+	float windFactor = 0.0f;
+
+	bool extrapolate = true;
+	bool useRelVel = false;
+	bool useRotVel = false;
+
+	bool trackSlope = false;
+	bool trackGround = false;
+	bool trackLimits = false;
+
+	bool noBlocking = false;
+
+	bool groundStop = false;
+	bool limitsStop = false;
+
+protected:
+	ScriptNotifyState scriptNotify = HitNothing;
 };
 
 #endif // SCRIPT_MOVE_TYPE_H

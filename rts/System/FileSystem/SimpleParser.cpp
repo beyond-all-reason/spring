@@ -2,34 +2,29 @@
 
 
 #include "SimpleParser.h"
+
 #include "FileHandler.h"
 
 #include <sstream>
 
 
 CSimpleParser::CSimpleParser(CFileHandler& fh)
-	: curPos(0)
-	, lineNumber(0)
+    : curPos(0)
+    , lineNumber(0)
 //	, inComment(false) // /* text */ comments are not implemented
 {
 	fh.LoadStringData(file);
 }
 
 CSimpleParser::CSimpleParser(const std::string& filecontent)
-	: file(filecontent)
-	, curPos(0)
-	, lineNumber(0)
+    : file(filecontent)
+    , curPos(0)
+    , lineNumber(0)
 //	, inComment(false) // /* text */ comments are not implemented
 {
 }
 
-
-
-int CSimpleParser::GetLineNumber() const
-{
-	return lineNumber;
-}
-
+int CSimpleParser::GetLineNumber() const { return lineNumber; }
 
 std::string CSimpleParser::GetLine()
 {
@@ -37,12 +32,15 @@ std::string CSimpleParser::GetLine()
 	std::stringstream s;
 	while (curPos < file.size()) {
 		char& a = file[curPos++];
-		if (a == '\n') { break; }
-		if (a != '\r') { s << a; }
+		if (a == '\n') {
+			break;
+		}
+		if (a != '\r') {
+			s << a;
+		}
 	}
 	return s.str();
 }
-
 
 std::string CSimpleParser::GetCleanLine()
 {
@@ -71,7 +69,6 @@ std::string CSimpleParser::GetCleanLine()
 	}
 }
 
-
 std::vector<std::string> CSimpleParser::Tokenize(const std::string& line, int minWords)
 {
 	std::vector<std::string> words;
@@ -96,7 +93,8 @@ std::vector<std::string> CSimpleParser::Tokenize(const std::string& line, int mi
 			end = line.find_first_of(" \t", start);
 			if (end == std::string::npos) {
 				word = line.substr(start);
-			} else {
+			}
+			else {
 				word = line.substr(start, end - start);
 			}
 		}
@@ -109,15 +107,14 @@ std::vector<std::string> CSimpleParser::Tokenize(const std::string& line, int mi
 	return words;
 }
 
-
-std::vector<std::string> CSimpleParser::Split(const std::string& str, const std::string& delimitters) {
-
+std::vector<std::string> CSimpleParser::Split(const std::string& str, const std::string& delimitters)
+{
 	std::vector<std::string> tokens;
 
 	// Skip delimiters at beginning.
 	std::string::size_type lastPos = str.find_first_not_of(delimitters, 0);
 	// Find first "non-delimiter".
-	std::string::size_type pos     = str.find_first_of(delimitters, lastPos);
+	std::string::size_type pos = str.find_first_of(delimitters, lastPos);
 
 	while (std::string::npos != pos || std::string::npos != lastPos) {
 		// Found a token, add it to the vector.

@@ -4,15 +4,14 @@
 #define _GZ_FILE_HANDLER_H
 
 #include "FileHandler.h"
+#include "VFSModes.h"
 
 #include <string>
 
-#include "VFSModes.h"
 /**
  * Uncompresses the entire file to memory, so don't use with huge files.
  */
-class CGZFileHandler : public CFileHandler
-{
+class CGZFileHandler : public CFileHandler {
 public:
 	CGZFileHandler(const char* fileName, const char* modes = SPRING_VFS_RAW_FIRST);
 	CGZFileHandler(const std::string& fileName, const std::string& modes = SPRING_VFS_RAW_FIRST);

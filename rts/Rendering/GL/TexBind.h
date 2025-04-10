@@ -2,30 +2,31 @@
 
 #pragma once
 
-#include "myGL.h"
 #include "glHelpers.h"
+#include "myGL.h"
 
-namespace GL
-{
+namespace GL {
 
 // A texture bind control object, that automatically unbinds texture and restores active tex unit upon destruction
 // When constructed without exact slot, will also restore the previously bound texture to the contemporary slot
 class TexBind {
 public:
 	inline TexBind(unsigned slot, GLenum target, GLuint textureID)
-	:	stateTexUnit(GL::FetchEffectualStateAttribValue<GLenum>(GL_ACTIVE_TEXTURE)),
-		texUnit(GL_TEXTURE0+slot),
-		target(target),
-		restoredTextureID(0)
+	    : stateTexUnit(GL::FetchEffectualStateAttribValue<GLenum>(GL_ACTIVE_TEXTURE))
+	    , texUnit(GL_TEXTURE0 + slot)
+	    , target(target)
+	    , restoredTextureID(0)
 	{
-		if (stateTexUnit != texUnit) glActiveTexture(texUnit);
+		if (stateTexUnit != texUnit)
+			glActiveTexture(texUnit);
 		glBindTexture(target, textureID);
 	}
+
 	inline TexBind(GLenum target, GLuint textureID)
-	:	stateTexUnit(GL::FetchEffectualStateAttribValue<GLenum>(GL_ACTIVE_TEXTURE)),
-		texUnit(stateTexUnit),
-		target(target),
-		restoredTextureID(GL::FetchCurrentSlotTextureID(target))
+	    : stateTexUnit(GL::FetchEffectualStateAttribValue<GLenum>(GL_ACTIVE_TEXTURE))
+	    , texUnit(stateTexUnit)
+	    , target(target)
+	    , restoredTextureID(GL::FetchCurrentSlotTextureID(target))
 	{
 		glBindTexture(target, textureID);
 	}
@@ -34,7 +35,8 @@ public:
 	{
 		glActiveTexture(texUnit);
 		glBindTexture(target, restoredTextureID);
-		if (stateTexUnit != texUnit) glActiveTexture(stateTexUnit);
+		if (stateTexUnit != texUnit)
+			glActiveTexture(stateTexUnit);
 	}
 
 private:
@@ -42,4 +44,4 @@ private:
 	const GLuint restoredTextureID;
 };
 
-}
+} // namespace GL

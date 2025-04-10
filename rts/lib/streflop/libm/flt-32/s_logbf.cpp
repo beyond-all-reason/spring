@@ -9,7 +9,7 @@
  *
  * Developed at SunPro, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this
- * software is freely granted, provided that this notice 
+ * software is freely granted, provided that this notice
  * is preserved.
  * ====================================================
  */
@@ -19,25 +19,27 @@ static char rcsid[] = "$NetBSD: s_logbf.c,v 1.4f 1995/05/10 20:47:51 jtc Exp $";
 #endif
 
 #include "SMath.h"
+
 #include "math_private.h"
 
 namespace streflop_libm {
 #ifdef __STDC__
-	Simple __logbf(Simple x)
+Simple __logbf(Simple x)
 #else
-	Simple __logbf(x)
-	Simple x;
+Simple __logbf(x) Simple x;
 #endif
 {
 	int32_t ix;
-	GET_FLOAT_WORD(ix,x);
-	ix &= 0x7fffffff;			/* high |x| */
-	if(ix==0) return (Simple)-1.0f/fabsf(x);
-	if(ix>=0x7f800000) return x*x;
-	if((ix>>=23)==0) 			/* IEEE 754 logb */
-		return -126.0f; 
+	GET_FLOAT_WORD(ix, x);
+	ix &= 0x7fffffff; /* high |x| */
+	if (ix == 0)
+		return (Simple)-1.0f / fabsf(x);
+	if (ix >= 0x7f800000)
+		return x * x;
+	if ((ix >>= 23) == 0) /* IEEE 754 logb */
+		return -126.0f;
 	else
-		return (Simple) (ix-127); 
+		return (Simple)(ix - 127);
 }
-weak_alias (__logbf, logbf)
-}
+weak_alias(__logbf, logbf)
+} // namespace streflop_libm

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <memory>
+#include "Rendering/GL/FBO.h"
+#include "System/EventClient.h"
+#include "System/UnorderedSet.hpp"
+
 #include <array>
 #include <cstdint>
-
-#include "System/UnorderedSet.hpp"
-#include "System/EventClient.h"
-#include "Rendering/GL/FBO.h"
+#include <memory>
 
 struct ScopedDepthBufferCopy;
 
@@ -19,25 +19,27 @@ public:
 	static void Init();
 	static void Kill();
 
-	bool WantsEvent(const std::string& eventName) override {
-		return
-			(eventName == "ViewResize");
-	}
+	bool WantsEvent(const std::string& eventName) override { return (eventName == "ViewResize"); }
 
 	void ViewResize() override;
 
 	bool IsValid(bool ms) const;
 
 	void MakeDepthBufferCopy() const;
+
 	uint32_t GetDepthBufferTexture(bool ms) const { return depthTextures[ms]; }
+
 private:
 	// to be accessed with ScopedDepthBufferCopy
 	void AddConsumer(bool ms);
 	void DelConsumer(bool ms);
+
 private:
 	void DestroyTextureAndFBO(bool ms);
 	void CreateTextureAndFBO(bool ms);
-	void RecreateTextureAndFBO(bool ms) {
+
+	void RecreateTextureAndFBO(bool ms)
+	{
 		DestroyTextureAndFBO(ms);
 		CreateTextureAndFBO(ms);
 	}
@@ -51,22 +53,23 @@ extern std::unique_ptr<DepthBufferCopy> depthBufferCopy;
 
 struct ScopedDepthBufferCopy {
 	ScopedDepthBufferCopy(bool ms)
-		: multisampled(ms)
+	    : multisampled(ms)
 	{
 		depthBufferCopy->AddConsumer(multisampled);
 	}
+
 	ScopedDepthBufferCopy(const ScopedDepthBufferCopy&) = delete;
-	ScopedDepthBufferCopy& operator = (const ScopedDepthBufferCopy&) = delete;
+	ScopedDepthBufferCopy& operator=(const ScopedDepthBufferCopy&) = delete;
 
 	ScopedDepthBufferCopy(ScopedDepthBufferCopy&& other) noexcept { *this = std::move(other); }
-	ScopedDepthBufferCopy& operator = (ScopedDepthBufferCopy&& other) noexcept {
+
+	ScopedDepthBufferCopy& operator=(ScopedDepthBufferCopy&& other) noexcept
+	{
 		std::swap(multisampled, other.multisampled);
 		return *this;
 	}
 
-	~ScopedDepthBufferCopy()
-	{
-		depthBufferCopy->DelConsumer(multisampled);
-	}
+	~ScopedDepthBufferCopy() { depthBufferCopy->DelConsumer(multisampled); }
+
 	bool multisampled;
 };

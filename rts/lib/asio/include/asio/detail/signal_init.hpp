@@ -12,29 +12,24 @@
 #define ASIO_DETAIL_SIGNAL_INIT_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
 
 #if !defined(ASIO_WINDOWS) && !defined(__CYGWIN__)
 
-#include <csignal>
-
 #include "asio/detail/push_options.hpp"
+
+#include <csignal>
 
 namespace asio {
 namespace detail {
 
-template <int Signal = SIGPIPE>
-class signal_init
-{
+template<int Signal = SIGPIPE> class signal_init {
 public:
-  // Constructor.
-  signal_init()
-  {
-    std::signal(Signal, SIG_IGN);
-  }
+	// Constructor.
+	signal_init() { std::signal(Signal, SIG_IGN); }
 };
 
 } // namespace detail

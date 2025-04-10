@@ -44,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AI_REMOVEVCPROCESS_H_INCLUDED
 
 #include "BaseProcess.h"
+
 #include <assimp/mesh.h>
 
 class RemoveVCProcessTest;
@@ -53,66 +54,59 @@ namespace Assimp {
 // ---------------------------------------------------------------------------
 /** RemoveVCProcess: Class to exclude specific parts of the data structure
  *  from further processing by removing them,
-*/
+ */
 class ASSIMP_API RemoveVCProcess : public BaseProcess {
 public:
-    /// The default class constructor.
-    RemoveVCProcess();
+	/// The default class constructor.
+	RemoveVCProcess();
 
-    /// The class destructor.
-    ~RemoveVCProcess();
+	/// The class destructor.
+	~RemoveVCProcess();
 
-    // -------------------------------------------------------------------
-    /** Returns whether the processing step is present in the given flag field.
-    * @param pFlags The processing flags the importer was called with. A bitwise
-    *   combination of #aiPostProcessSteps.
-    * @return true if the process is present in this flag fields, false if not.
-    */
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	/** Returns whether the processing step is present in the given flag field.
+	 * @param pFlags The processing flags the importer was called with. A bitwise
+	 *   combination of #aiPostProcessSteps.
+	 * @return true if the process is present in this flag fields, false if not.
+	 */
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    /** Executes the post processing step on the given imported data.
-    * At the moment a process is not supposed to fail.
-    * @param pScene The imported data to work at.
-    */
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	/** Executes the post processing step on the given imported data.
+	 * At the moment a process is not supposed to fail.
+	 * @param pScene The imported data to work at.
+	 */
+	void Execute(aiScene* pScene);
 
-    // -------------------------------------------------------------------
-    /** Called prior to ExecuteOnScene().
-    * The function is a request to the process to update its configuration
-    * basing on the Importer's configuration property list.
-    */
-    virtual void SetupProperties(const Importer* pImp);
+	// -------------------------------------------------------------------
+	/** Called prior to ExecuteOnScene().
+	 * The function is a request to the process to update its configuration
+	 * basing on the Importer's configuration property list.
+	 */
+	virtual void SetupProperties(const Importer* pImp);
 
-    // -------------------------------------------------------------------
-    /** Manually setup the configuration flags for the step
-     *
-     *  @param Bitwise combination of the #aiComponent enumerated values.
-    */
-    void SetDeleteFlags(unsigned int f)
-    {
-        configDeleteFlags = f;
-    }
+	// -------------------------------------------------------------------
+	/** Manually setup the configuration flags for the step
+	 *
+	 *  @param Bitwise combination of the #aiComponent enumerated values.
+	 */
+	void SetDeleteFlags(unsigned int f) { configDeleteFlags = f; }
 
-    // -------------------------------------------------------------------
-    /** Query the current configuration.
-    */
-    unsigned int GetDeleteFlags() const
-    {
-        return configDeleteFlags;
-    }
+	// -------------------------------------------------------------------
+	/** Query the current configuration.
+	 */
+	unsigned int GetDeleteFlags() const { return configDeleteFlags; }
 
 private:
+	bool ProcessMesh(aiMesh* pcMesh);
 
-    bool ProcessMesh (aiMesh* pcMesh);
+	/** Configuration flag
+	 */
+	unsigned int configDeleteFlags;
 
-    /** Configuration flag
-     */
-    unsigned int configDeleteFlags;
-
-    /** The scene we're working with
-     */
-    aiScene* mScene;
+	/** The scene we're working with
+	 */
+	aiScene* mScene;
 };
 
 // ---------------------------------------------------------------------------

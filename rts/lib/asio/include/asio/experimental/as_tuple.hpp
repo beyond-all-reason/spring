@@ -12,20 +12,19 @@
 #define ASIO_EXPERIMENTAL_AS_TUPLE_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio/detail/config.hpp"
 #include "asio/as_tuple.hpp"
-
+#include "asio/detail/config.hpp"
 #include "asio/detail/push_options.hpp"
 
 namespace asio {
 namespace experimental {
 
 #if !defined(ASIO_NO_DEPRECATED)
-using asio::as_tuple_t;
 using asio::as_tuple;
+using asio::as_tuple_t;
 #endif // !defined(ASIO_NO_DEPRECATED)
 
 } // namespace experimental

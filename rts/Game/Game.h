@@ -3,26 +3,25 @@
 #ifndef _GAME_H
 #define _GAME_H
 
+#include "GameController.h"
+#include "GameJobDispatcher.h"
+
+#include "Game/Action.h"
+#include "Game/UI/KeySet.h"
+#include "Rendering/WorldDrawer.h"
+#include "System/Misc/SpringTime.h"
+#include "System/UnorderedMap.hpp"
+#include "System/creg/creg_cond.h"
+
 #include <atomic>
 #include <string>
 #include <vector>
-
-#include "GameController.h"
-#include "GameJobDispatcher.h"
-#include "Game/UI/KeySet.h"
-#include "Game/Action.h"
-#include "Rendering/WorldDrawer.h"
-#include "System/UnorderedMap.hpp"
-#include "System/creg/creg_cond.h"
-#include "System/Misc/SpringTime.h"
 
 class LuaParser;
 class ILoadSaveHandler;
 class ChatMessage;
 
-
-class CGame : public CGameController
-{
+class CGame : public CGameController {
 private:
 	CR_DECLARE_STRUCT(CGame)
 
@@ -33,12 +32,12 @@ public:
 
 public:
 	enum GameDrawMode {
-		gameNotDrawing     = 0,
-		gameNormalDraw     = 1,
-		gameShadowDraw     = 2,
+		gameNotDrawing = 0,
+		gameNormalDraw = 1,
+		gameShadowDraw = 2,
 		gameReflectionDraw = 3,
 		gameRefractionDraw = 4,
-		gameDeferredDraw   = 5,
+		gameDeferredDraw = 5,
 	};
 
 	struct PlayerTrafficInfo {
@@ -75,14 +74,17 @@ private:
 
 public:
 	bool IsDoneLoading() const { return loadDone; }
+
 	bool IsClientPaused() const { return paused; }
+
 	bool IsSimLagging(float maxLatency = 500.0f) const;
+
 	bool IsSavedGame() const { return (saveFileHandler != nullptr); }
+
 	bool IsGameOver() const { return gameOver; }
 
-	const spring::unordered_map<int, PlayerTrafficInfo>& GetPlayerTraffic() const {
-		return playerTraffic;
-	}
+	const spring::unordered_map<int, PlayerTrafficInfo>& GetPlayerTraffic() const { return playerTraffic; }
+
 	void AddTraffic(int playerID, int packetCode, int length);
 
 	/// Send a message to other players (allows prefixed messages with e.g. "a:...")
@@ -104,6 +106,7 @@ public:
 	void ResizeEvent() override;
 
 	void SetDrawMode(GameDrawMode mode) { gameDrawMode = mode; }
+
 	GameDrawMode GetDrawMode() const { return gameDrawMode; }
 
 private:
@@ -191,7 +194,7 @@ public:
 	float consumeSpeedMult = 1.0f; ///< How fast we should eat NETMSG_NEWFRAMEs.
 
 
-	#if 0
+#if 0
 	int skipStartFrame = 0;
 	int skipEndFrame = 0;
 	int skipTotalFrames = 0;
@@ -199,7 +202,7 @@ public:
 	bool skipSoundmute = false;
 	float skipOldSpeed = 0.0f;
 	float skipOldUserSpeed = 0.0f;
-	#endif
+#endif
 
 
 	/**
@@ -228,8 +231,6 @@ private:
 	std::atomic<bool> gameOver = {false};
 };
 
-
 extern CGame* game;
 
 #endif // _GAME_H
-

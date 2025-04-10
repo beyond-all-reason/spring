@@ -1,9 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "UriParser.h"
+
 #include "StringUtil.h"
 
-static void SplitString(const std::string& text, const char* sepChar, std::string& s1, std::string& s2, std::string& all)
+static void
+SplitString(const std::string& text, const char* sepChar, std::string& s1, std::string& s2, std::string& all)
 {
 	const size_t q = text.find(sepChar);
 	if (q != std::string::npos) {
@@ -23,10 +25,10 @@ bool ParseSpringUri(const std::string& uri, std::string& username, std::string& 
 	const std::string full = uri.substr(std::string("spring://").length());
 	std::string authority, query, user_info, server, portStr;
 	bool error = false;
-	SplitString(full,      "/", authority, query, authority);
+	SplitString(full, "/", authority, query, authority);
 	SplitString(authority, "@", user_info, server, server);
 	SplitString(user_info, ":", username, password, username);
-	SplitString(server,    ":", host, portStr, host);
+	SplitString(server, ":", host, portStr, host);
 	if (portStr.empty())
 		return true;
 	port = StringToInt(portStr, &error);
@@ -34,7 +36,7 @@ bool ParseSpringUri(const std::string& uri, std::string& username, std::string& 
 		port = 0;
 		return false;
 	}
-	//FIXME pass query
+	// FIXME pass query
 	return true;
 }
 
@@ -46,4 +48,3 @@ bool ParseRapidUri(const std::string& uri, std::string& tag)
 	tag = uri.substr(std::string("rapid://").length());
 	return !tag.empty();
 }
-

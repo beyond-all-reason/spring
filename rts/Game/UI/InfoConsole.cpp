@@ -1,14 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "InfoConsole.h"
-#include "GuiHandler.h"
-#include "Rendering/Fonts/glFont.h"
-#include "System/EventHandler.h"
-#include "System/SafeUtil.h"
-#include "System/Config/ConfigHandler.h"
-#include "System/Log/LogSinkHandler.h"
 
+#include "GuiHandler.h"
+
+#include "Rendering/Fonts/glFont.h"
+#include "System/Config/ConfigHandler.h"
+#include "System/EventHandler.h"
+#include "System/Log/LogSinkHandler.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
 
 static constexpr int IC_BORDER = 7;
 
@@ -19,21 +20,19 @@ CInfoConsole* infoConsole = nullptr;
 
 alignas(CInfoConsole) static std::byte infoConsoleMem[sizeof(CInfoConsole)];
 
-
-
-
-void CInfoConsole::InitStatic() {
+void CInfoConsole::InitStatic()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(infoConsole == nullptr);
 	infoConsole = new (infoConsoleMem) CInfoConsole();
 }
 
-void CInfoConsole::KillStatic() {
+void CInfoConsole::KillStatic()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	spring::SafeDestruct(infoConsole);
 	std::fill(std::begin(infoConsoleMem), std::end(infoConsoleMem), std::byte{0});
 }
-
 
 void CInfoConsole::Init()
 {
@@ -53,11 +52,11 @@ void CInfoConsole::Init()
 	height = 0.0f;
 
 	fontScale = 1.0f;
-	fontSize = fontScale * smallFont->GetSize();;
+	fontSize = fontScale * smallFont->GetSize();
+	;
 
 	const std::string geo = configHandler->GetString("InfoConsoleGeometry");
-	const int vars = sscanf(geo.c_str(), "%f %f %f %f",
-	                        &xpos, &ypos, &width, &height);
+	const int vars = sscanf(geo.c_str(), "%f %f %f %f", &xpos, &ypos, &width, &height);
 	if (vars != 4) {
 		xpos = 0.26f;
 		ypos = 0.96f;
@@ -88,7 +87,6 @@ void CInfoConsole::Kill()
 	inited = false;
 }
 
-
 void CInfoConsole::Draw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -108,7 +106,8 @@ void CInfoConsole::Draw()
 			return;
 
 		drawInfoLines.clear();
-		drawInfoLines.insert(drawInfoLines.cend(), infoLines.cbegin(), infoLines.cbegin() + std::min(infoLines.size(), maxLines)); 
+		drawInfoLines.insert(
+		    drawInfoLines.cend(), infoLines.cbegin(), infoLines.cbegin() + std::min(infoLines.size(), maxLines));
 	}
 
 	smallFont->Begin();
@@ -127,27 +126,25 @@ void CInfoConsole::Draw()
 	smallFont->End();
 }
 
-
 void CInfoConsole::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	std::lock_guard<decltype(infoConsoleMutex)> scoped_lock(infoConsoleMutex);
 
 	// pop old messages after timeout
-	while (infoLines.size() > 0 && infoLines.front().timeout <= spring_gettime())
-		infoLines.pop_front();
+	while (infoLines.size() > 0 && infoLines.front().timeout <= spring_gettime()) infoLines.pop_front();
 
 	if (smallFont == nullptr)
 		return;
 
-	for (const auto& til : tmpInfoLines) {
+	for (const auto& til: tmpInfoLines) {
 		if (til.timeout <= spring_gettime())
 			continue;
 
-		const std::string wrappedText = smallFont->Wrap(til.text, fontSize, (width * globalRendering->viewSizeX) - (2 * IC_BORDER));
+		const std::string wrappedText =
+		    smallFont->Wrap(til.text, fontSize, (width * globalRendering->viewSizeX) - (2 * IC_BORDER));
 		const auto& newLines = smallFont->SplitIntoLines(toustring(wrappedText));
-		for (const auto& nl : newLines)
-			infoLines.emplace_back(nl, til.timeout);
+		for (const auto& nl: newLines) infoLines.emplace_back(nl, til.timeout);
 	}
 	tmpInfoLines.clear();
 
@@ -156,11 +153,11 @@ void CInfoConsole::Update()
 
 	// if we have more lines then we can show, remove the oldest one,
 	// and make sure the others are shown long enough
-	const float  maxHeight = (height * globalRendering->viewSizeY) - (IC_BORDER * 2);
+	const float maxHeight = (height * globalRendering->viewSizeY) - (IC_BORDER * 2);
 	const float fontHeight = smallFont->GetLineHeight();
 
 	// height=0 will likely be the case on HEADLESS only
-	maxLines = (fontHeight > 0.0f)? math::floor(maxHeight / (fontSize * fontHeight)): 1;
+	maxLines = (fontHeight > 0.0f) ? math::floor(maxHeight / (fontSize * fontHeight)) : 1;
 
 	for (size_t i = infoLines.size(); i > maxLines; i--) {
 		infoLines.pop_front();
@@ -194,7 +191,6 @@ void CInfoConsole::PushNewLinesToEventHandler()
 	}
 }
 
-
 size_t CInfoConsole::GetRawLines(std::vector<RawLine>& lines)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -207,7 +203,6 @@ size_t CInfoConsole::GetRawLines(std::vector<RawLine>& lines)
 
 	return (newLines = 0, numNewLines);
 }
-
 
 void CInfoConsole::RecordLogMessage(int level, const std::string& section, const std::string& message)
 {
@@ -230,12 +225,11 @@ void CInfoConsole::RecordLogMessage(int level, const std::string& section, const
 	tmpInfoLines.emplace_back(message, spring_gettime() + spring_secs(lifetime));
 }
 
-
 void CInfoConsole::LastMessagePosition(const float3& pos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// reset index to head when a new msg comes in
-	msgPosIndx  = numPosMsgs % lastMsgPositions.size();
+	msgPosIndx = numPosMsgs % lastMsgPositions.size();
 	numPosMsgs += 1;
 
 	lastMsgPositions[msgPosIndx] = pos;
@@ -255,4 +249,3 @@ const float3& CInfoConsole::GetMsgPos(const float3& defaultPos)
 
 	return p;
 }
-

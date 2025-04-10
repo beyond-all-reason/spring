@@ -20,197 +20,190 @@
 #ifndef _IEEE754_H
 
 #define _IEEE754_H 1
-#include "../streflop_libm_bridge.h"
-
+#include "endian.h"
 #include "features.h"
 
-#include "endian.h"
+#include "../streflop_libm_bridge.h"
 
 //__BEGIN_DECLS
 
 #if defined(LIBM_COMPILING_FLT32)
-union ieee754_float
-  {
-int storage[sizeof(float)/sizeof(int)];
-inline Simple& f() {return SIMPLE_FROM_INT_PTR(&storage[0]);}
-inline const Simple& f() const {return CONST_SIMPLE_FROM_INT_PTR(&storage[0]);}
+union ieee754_float {
+	int storage[sizeof(float) / sizeof(int)];
 
+	inline Simple& f() { return SIMPLE_FROM_INT_PTR(&storage[0]); }
 
-    /* This is the IEEE 754 single-precision format.  */
-    struct
-      {
-#if	__BYTE_ORDER == __BIG_ENDIAN
-	unsigned int negative:1;
-	unsigned int exponent:8;
-	unsigned int mantissa:23;
-#endif				/* Big endian.  */
-#if	__BYTE_ORDER == __LITTLE_ENDIAN
-	unsigned int mantissa:23;
-	unsigned int exponent:8;
-	unsigned int negative:1;
-#endif				/* Little endian.  */
-      } ieee;
+	inline const Simple& f() const { return CONST_SIMPLE_FROM_INT_PTR(&storage[0]); }
 
-    /* This format makes it easier to see if a NaN is a signalling NaN.  */
-    struct
-      {
-#if	__BYTE_ORDER == __BIG_ENDIAN
-	unsigned int negative:1;
-	unsigned int exponent:8;
-	unsigned int quiet_nan:1;
-	unsigned int mantissa:22;
-#endif				/* Big endian.  */
-#if	__BYTE_ORDER == __LITTLE_ENDIAN
-	unsigned int mantissa:22;
-	unsigned int quiet_nan:1;
-	unsigned int exponent:8;
-	unsigned int negative:1;
-#endif				/* Little endian.  */
-      } ieee_nan;
-  };
+	/* This is the IEEE 754 single-precision format.  */
+	struct {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		unsigned int negative : 1;
+		unsigned int exponent : 8;
+		unsigned int mantissa : 23;
+#endif /* Big endian.  */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		unsigned int mantissa : 23;
+		unsigned int exponent : 8;
+		unsigned int negative : 1;
+#endif /* Little endian.  */
+	} ieee;
 
-#define IEEE754_FLOAT_BIAS	0x7f /* Added to exponent.  */
+	/* This format makes it easier to see if a NaN is a signalling NaN.  */
+	struct {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		unsigned int negative : 1;
+		unsigned int exponent : 8;
+		unsigned int quiet_nan : 1;
+		unsigned int mantissa : 22;
+#endif /* Big endian.  */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		unsigned int mantissa : 22;
+		unsigned int quiet_nan : 1;
+		unsigned int exponent : 8;
+		unsigned int negative : 1;
+#endif /* Little endian.  */
+	} ieee_nan;
+};
+
+#define IEEE754_FLOAT_BIAS 0x7f /* Added to exponent.  */
 
 #endif
 
 
 #if defined(LIBM_COMPILING_DBL64)
-union ieee754_double
-  {
-int storage[sizeof(double)/sizeof(int)];
-inline Double& d() {return DOUBLE_FROM_INT_PTR(&storage[0]);}
-inline const Double& d() const {return CONST_DOUBLE_FROM_INT_PTR(&storage[0]);}
+union ieee754_double {
+	int storage[sizeof(double) / sizeof(int)];
 
+	inline Double& d() { return DOUBLE_FROM_INT_PTR(&storage[0]); }
 
-    /* This is the IEEE 754 double-precision format.  */
-    struct
-      {
-#if	__BYTE_ORDER == __BIG_ENDIAN
-	unsigned int negative:1;
-	unsigned int exponent:11;
-	/* Together these comprise the mantissa.  */
-	unsigned int mantissa0:20;
-	unsigned int mantissa1:32;
-#endif				/* Big endian.  */
-#if	__BYTE_ORDER == __LITTLE_ENDIAN
-# if	__FLOAT_WORD_ORDER == BIG_ENDIAN
-	unsigned int mantissa0:20;
-	unsigned int exponent:11;
-	unsigned int negative:1;
-	unsigned int mantissa1:32;
-# else
-	/* Together these comprise the mantissa.  */
-	unsigned int mantissa1:32;
-	unsigned int mantissa0:20;
-	unsigned int exponent:11;
-	unsigned int negative:1;
-# endif
-#endif				/* Little endian.  */
-      } ieee;
+	inline const Double& d() const { return CONST_DOUBLE_FROM_INT_PTR(&storage[0]); }
 
-    /* This format makes it easier to see if a NaN is a signalling NaN.  */
-    struct
-      {
-#if	__BYTE_ORDER == __BIG_ENDIAN
-	unsigned int negative:1;
-	unsigned int exponent:11;
-	unsigned int quiet_nan:1;
-	/* Together these comprise the mantissa.  */
-	unsigned int mantissa0:19;
-	unsigned int mantissa1:32;
+	/* This is the IEEE 754 double-precision format.  */
+	struct {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		unsigned int negative : 1;
+		unsigned int exponent : 11;
+		/* Together these comprise the mantissa.  */
+		unsigned int mantissa0 : 20;
+		unsigned int mantissa1 : 32;
+#endif /* Big endian.  */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if __FLOAT_WORD_ORDER == BIG_ENDIAN
+		unsigned int mantissa0 : 20;
+		unsigned int exponent : 11;
+		unsigned int negative : 1;
+		unsigned int mantissa1 : 32;
 #else
-# if	__FLOAT_WORD_ORDER == BIG_ENDIAN
-	unsigned int mantissa0:19;
-	unsigned int quiet_nan:1;
-	unsigned int exponent:11;
-	unsigned int negative:1;
-	unsigned int mantissa1:32;
-# else
-	/* Together these comprise the mantissa.  */
-	unsigned int mantissa1:32;
-	unsigned int mantissa0:19;
-	unsigned int quiet_nan:1;
-	unsigned int exponent:11;
-	unsigned int negative:1;
-# endif
+		/* Together these comprise the mantissa.  */
+		unsigned int mantissa1 : 32;
+		unsigned int mantissa0 : 20;
+		unsigned int exponent : 11;
+		unsigned int negative : 1;
 #endif
-      } ieee_nan;
-  };
+#endif /* Little endian.  */
+	} ieee;
 
-#define IEEE754_DOUBLE_BIAS	0x3ff /* Added to exponent.  */
+	/* This format makes it easier to see if a NaN is a signalling NaN.  */
+	struct {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		unsigned int negative : 1;
+		unsigned int exponent : 11;
+		unsigned int quiet_nan : 1;
+		/* Together these comprise the mantissa.  */
+		unsigned int mantissa0 : 19;
+		unsigned int mantissa1 : 32;
+#else
+#if __FLOAT_WORD_ORDER == BIG_ENDIAN
+		unsigned int mantissa0 : 19;
+		unsigned int quiet_nan : 1;
+		unsigned int exponent : 11;
+		unsigned int negative : 1;
+		unsigned int mantissa1 : 32;
+#else
+		/* Together these comprise the mantissa.  */
+		unsigned int mantissa1 : 32;
+		unsigned int mantissa0 : 19;
+		unsigned int quiet_nan : 1;
+		unsigned int exponent : 11;
+		unsigned int negative : 1;
+#endif
+#endif
+	} ieee_nan;
+};
+
+#define IEEE754_DOUBLE_BIAS 0x3ff /* Added to exponent.  */
 
 #endif
 
 
 #if defined(LIBM_COMPILING_LDBL96)
 #if defined(Extended)
-union ieee854_long_double
-  {
-int storage[sizeof(long double)/sizeof(int)];
-inline Extended& d() {return EXTENDED_FROM_INT_PTR(&storage[0]);}
-inline const Extended& d() const {return CONST_EXTENDED_FROM_INT_PTR(&storage[0]);}
+union ieee854_long_double {
+	int storage[sizeof(long double) / sizeof(int)];
 
+	inline Extended& d() { return EXTENDED_FROM_INT_PTR(&storage[0]); }
 
-    /* This is the IEEE 854 double-extended-precision format.  */
-    struct
-      {
-#if	__BYTE_ORDER == __BIG_ENDIAN
-	unsigned int negative:1;
-	unsigned int exponent:15;
-	unsigned int empty:16;
-	unsigned int mantissa0:32;
-	unsigned int mantissa1:32;
-#endif
-#if	__BYTE_ORDER == __LITTLE_ENDIAN
-# if	__FLOAT_WORD_ORDER == BIG_ENDIAN
-	unsigned int exponent:15;
-	unsigned int negative:1;
-	unsigned int empty:16;
-	unsigned int mantissa0:32;
-	unsigned int mantissa1:32;
-# else
-	unsigned int mantissa1:32;
-	unsigned int mantissa0:32;
-	unsigned int exponent:15;
-	unsigned int negative:1;
-	unsigned int empty:16;
-# endif
-#endif
-      } ieee;
+	inline const Extended& d() const { return CONST_EXTENDED_FROM_INT_PTR(&storage[0]); }
 
-    /* This is for NaNs in the IEEE 854 double-extended-precision format.  */
-    struct
-      {
-#if	__BYTE_ORDER == __BIG_ENDIAN
-	unsigned int negative:1;
-	unsigned int exponent:15;
-	unsigned int empty:16;
-	unsigned int one:1;
-	unsigned int quiet_nan:1;
-	unsigned int mantissa0:30;
-	unsigned int mantissa1:32;
+	/* This is the IEEE 854 double-extended-precision format.  */
+	struct {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		unsigned int negative : 1;
+		unsigned int exponent : 15;
+		unsigned int empty : 16;
+		unsigned int mantissa0 : 32;
+		unsigned int mantissa1 : 32;
 #endif
-#if	__BYTE_ORDER == __LITTLE_ENDIAN
-# if	__FLOAT_WORD_ORDER == BIG_ENDIAN
-	unsigned int exponent:15;
-	unsigned int negative:1;
-	unsigned int empty:16;
-	unsigned int mantissa0:30;
-	unsigned int quiet_nan:1;
-	unsigned int one:1;
-	unsigned int mantissa1:32;
-# else
-	unsigned int mantissa1:32;
-	unsigned int mantissa0:30;
-	unsigned int quiet_nan:1;
-	unsigned int one:1;
-	unsigned int exponent:15;
-	unsigned int negative:1;
-	unsigned int empty:16;
-# endif
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if __FLOAT_WORD_ORDER == BIG_ENDIAN
+		unsigned int exponent : 15;
+		unsigned int negative : 1;
+		unsigned int empty : 16;
+		unsigned int mantissa0 : 32;
+		unsigned int mantissa1 : 32;
+#else
+		unsigned int mantissa1 : 32;
+		unsigned int mantissa0 : 32;
+		unsigned int exponent : 15;
+		unsigned int negative : 1;
+		unsigned int empty : 16;
 #endif
-      } ieee_nan;
-  };
+#endif
+	} ieee;
+
+	/* This is for NaNs in the IEEE 854 double-extended-precision format.  */
+	struct {
+#if __BYTE_ORDER == __BIG_ENDIAN
+		unsigned int negative : 1;
+		unsigned int exponent : 15;
+		unsigned int empty : 16;
+		unsigned int one : 1;
+		unsigned int quiet_nan : 1;
+		unsigned int mantissa0 : 30;
+		unsigned int mantissa1 : 32;
+#endif
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if __FLOAT_WORD_ORDER == BIG_ENDIAN
+		unsigned int exponent : 15;
+		unsigned int negative : 1;
+		unsigned int empty : 16;
+		unsigned int mantissa0 : 30;
+		unsigned int quiet_nan : 1;
+		unsigned int one : 1;
+		unsigned int mantissa1 : 32;
+#else
+		unsigned int mantissa1 : 32;
+		unsigned int mantissa0 : 30;
+		unsigned int quiet_nan : 1;
+		unsigned int one : 1;
+		unsigned int exponent : 15;
+		unsigned int negative : 1;
+		unsigned int empty : 16;
+#endif
+#endif
+	} ieee_nan;
+};
 
 #define IEEE854_LONG_DOUBLE_BIAS 0x3fff
 

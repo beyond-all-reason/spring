@@ -5,8 +5,7 @@
 
 #include "Weapon.h"
 
-class CStarburstLauncher: public CWeapon
-{
+class CStarburstLauncher : public CWeapon {
 	CR_DECLARE_DERIVED(CStarburstLauncher)
 public:
 	CStarburstLauncher(CUnit* owner = nullptr, const WeaponDef* def = nullptr);

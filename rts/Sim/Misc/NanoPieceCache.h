@@ -3,32 +3,35 @@
 #ifndef _NANO_PIECE_CACHE_H
 #define _NANO_PIECE_CACHE_H
 
+#include "Sim/Misc/GlobalConstants.h"
+#include "System/creg/creg_cond.h"
+
 #include <bit>
 #include <limits>
 #include <vector>
 
-#include "Sim/Misc/GlobalConstants.h"
-#include "System/creg/creg_cond.h"
-
 class CUnitScript;
 
-struct NanoPieceCache
-{
+struct NanoPieceCache {
 	CR_DECLARE_STRUCT(NanoPieceCache)
 
 public:
-	NanoPieceCache(): lastNanoPieceCnt(0), curBuildPowerMask(0) {
+	NanoPieceCache()
+	    : lastNanoPieceCnt(0)
+	    , curBuildPowerMask(0)
+	{
 	}
 
 	void Update() { curBuildPowerMask >>= 1; }
 
-	float GetBuildPower() const { return std::popcount(curBuildPowerMask) / static_cast <float> (MASK_BITS); }
+	float GetBuildPower() const { return std::popcount(curBuildPowerMask) / static_cast<float>(MASK_BITS); }
 
 	/// returns modelPiece (NOT scriptModelPiece)
 	int GetNanoPiece(CUnitScript* ownerScript);
 
 	const std::vector<int>& GetNanoPieces() const { return nanoPieces; }
-	      std::vector<int>& GetNanoPieces()       { return nanoPieces; }
+
+	std::vector<int>& GetNanoPieces() { return nanoPieces; }
 
 	void StopPolling() { lastNanoPieceCnt = MAX_QUERYNANOPIECE_CALLS * 2; }
 
@@ -48,4 +51,3 @@ private:
 };
 
 #endif
-

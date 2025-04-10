@@ -25,7 +25,7 @@ You **cannot dynamically add new types**, though you **can generate them beforeh
 The information about a unit type is usually called a **unit def** (from "definition"), and sometimes the type itself is referred to by "unit def" as well.
 This article will talk about and compare the two ways that unit defs are often dealt with that are often confused.
 
-As a general remark, the same notes apply not just to unit types, but also feature types and weapon types and can be applied there directly. 
+As a general remark, the same notes apply not just to unit types, but also feature types and weapon types and can be applied there directly.
 
 ## Unit def files
 
@@ -175,4 +175,3 @@ There's three **minor differences between `WeaponDefs` and `UnitDefs`/`FeatureDe
  * `WeaponDefs` are 0-indexed while the others are 1-indexed. Beware of `for i = 1, #WeaponDefs do`, this is incorrect!
  * **negative weaponDefIDs are valid and mean things like lava or collisions**. Check the `Game.envDamageTypes` table.
  * it is possible to iterate over all keys of a unitDef via `for key, value in unitDef:pairs() do`, but this is currently not possible for either weapon or feature defs.
-

@@ -11,4 +11,3 @@ Sound files from the GNU LGPL v2.1 licensed BZFlag game
   flag_grab.wav
   message_admin.wav
   message_team.wav
-

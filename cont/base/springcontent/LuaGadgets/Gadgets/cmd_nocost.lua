@@ -68,7 +68,7 @@ function gadget:Initialize()
     return
   end
   local cmd, help
-  
+
   cmd  = "nc"
   help = " [0|1]:  reversible nocost  (requires cheating)"
   gadgetHandler:AddChatAction(cmd, NoCost, help)

@@ -5,18 +5,12 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CTracerProjectile : public CProjectile
-{
+class CTracerProjectile : public CProjectile {
 public:
 	CR_DECLARE_DERIVED(CTracerProjectile)
 
 	CTracerProjectile();
-	CTracerProjectile(
-		CUnit* owner,
-		const float3& pos,
-		const float3& speed,
-		const float range
-	);
+	CTracerProjectile(CUnit* owner, const float3& pos, const float3& speed, const float range);
 
 	void Draw() override;
 	void Update() override;

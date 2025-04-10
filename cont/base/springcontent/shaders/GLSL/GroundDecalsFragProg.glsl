@@ -399,7 +399,7 @@ void main() {
 	vec3 lightCol = diffuseTerm * GetShadowColor(worldPos.xyz, dot(sunDir, N)) + groundAmbientColor.rgb;
 
 	fragColor.rgb = mainCol.rgb * lightCol;
-	
+
 	if (vGlowColor.a == 0.0) {
 		// overglow
 		glow += smoothstep(0.75, 1.0, glow) * 0.2 * abs(sin(0.02 * curAdjustedFrame));

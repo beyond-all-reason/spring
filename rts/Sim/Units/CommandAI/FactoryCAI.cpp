@@ -2,59 +2,59 @@
 
 
 #include "FactoryCAI.h"
+
 #include "ExternalAI/EngineOutHandler.h"
-#include "Sim/Misc/GlobalSynced.h"
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/WaitCommandsAI.h"
+#include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/BuildInfo.h"
+#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/UnitLoader.h"
-#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitTypes/Factory.h"
-#include "System/Log/ILog.h"
-#include "System/creg/STL_Map.h"
-#include "System/StringUtil.h"
 #include "System/EventHandler.h"
 #include "System/Exceptions.h"
-
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
+#include "System/creg/STL_Map.h"
 
-CR_BIND_DERIVED(CFactoryCAI ,CCommandAI , )
+CR_BIND_DERIVED(CFactoryCAI, CCommandAI, )
 
-CR_REG_METADATA(CFactoryCAI , (
-	CR_MEMBER(newUnitCommands),
-	CR_MEMBER(buildOptions),
-	CR_PREALLOC(GetPreallocContainer)
-))
+CR_REG_METADATA(CFactoryCAI, (CR_MEMBER(newUnitCommands), CR_MEMBER(buildOptions), CR_PREALLOC(GetPreallocContainer)))
 
-static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled) {
+static std::string GetUnitDefBuildOptionToolTip(const UnitDef* ud, bool disabled)
+{
 	std::string tooltip;
 
 	if (disabled) {
-		tooltip = "\xff\xff\x22\x22" "DISABLED: " "\xff\xff\xff\xff";
-	} else {
+		tooltip = "\xff\xff\x22\x22"
+		          "DISABLED: "
+		          "\xff\xff\xff\xff";
+	}
+	else {
 		tooltip = "Build: ";
 	}
 
 	tooltip += (ud->humanName + " - " + ud->tooltip);
-	tooltip += ("\nHealth "      + FloatToString(ud->health,      "%.0f"));
-	tooltip += ("\nMetal cost "  + FloatToString(ud->cost.metal,  "%.0f"));
+	tooltip += ("\nHealth " + FloatToString(ud->health, "%.0f"));
+	tooltip += ("\nMetal cost " + FloatToString(ud->cost.metal, "%.0f"));
 	tooltip += ("\nEnergy cost " + FloatToString(ud->cost.energy, "%.0f"));
-	tooltip += ("\nBuild time "  + FloatToString(ud->buildTime,   "%.0f"));
+	tooltip += ("\nBuild time " + FloatToString(ud->buildTime, "%.0f"));
 
 	return tooltip;
 }
 
+CFactoryCAI::CFactoryCAI()
+    : CCommandAI()
+{
+}
 
-
-CFactoryCAI::CFactoryCAI(): CCommandAI()
-{}
-
-
-CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
+CFactoryCAI::CFactoryCAI(CUnit* owner)
+    : CCommandAI(owner)
 {
 	commandQue.SetQueueType(CCommandQueue::BuildQueueType);
 	newUnitCommands.SetQueueType(CCommandQueue::NewUnitQueueType);
@@ -62,12 +62,12 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 	if (owner->unitDef->canmove) {
 		SCommandDescription c;
 
-		c.id        = CMD_MOVE;
-		c.type      = CMDTYPE_ICON_MAP;
+		c.id = CMD_MOVE;
+		c.type = CMDTYPE_ICON_MAP;
 
-		c.action    = "move";
-		c.name      = "Move";
-		c.tooltip   = c.name + ": Order ready built units to move to a position";
+		c.action = "move";
+		c.name = "Move";
+		c.tooltip = c.name + ": Order ready built units to move to a position";
 		c.mouseicon = c.name;
 		possibleCommands.push_back(commandDescriptionCache.GetPtr(std::move(c)));
 	}
@@ -75,12 +75,12 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 	if (owner->unitDef->canPatrol) {
 		SCommandDescription c;
 
-		c.id        = CMD_PATROL;
-		c.type      = CMDTYPE_ICON_MAP;
+		c.id = CMD_PATROL;
+		c.type = CMDTYPE_ICON_MAP;
 
-		c.action    = "patrol";
-		c.name      = "Patrol";
-		c.tooltip   = c.name + ": Order ready built units to patrol to one or more waypoints";
+		c.action = "patrol";
+		c.name = "Patrol";
+		c.tooltip = c.name + ": Order ready built units to patrol to one or more waypoints";
 		c.mouseicon = c.name;
 		possibleCommands.push_back(commandDescriptionCache.GetPtr(std::move(c)));
 	}
@@ -88,12 +88,12 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 	if (owner->unitDef->canFight) {
 		SCommandDescription c;
 
-		c.id        = CMD_FIGHT;
-		c.type      = CMDTYPE_ICON_MAP;
+		c.id = CMD_FIGHT;
+		c.type = CMDTYPE_ICON_MAP;
 
-		c.action    = "fight";
-		c.name      = "Fight";
-		c.tooltip   = c.name + ": Order ready built units to take action while moving to a position";
+		c.action = "fight";
+		c.name = "Fight";
+		c.tooltip = c.name + ": Order ready built units to take action while moving to a position";
 		c.mouseicon = c.name;
 		possibleCommands.push_back(commandDescriptionCache.GetPtr(std::move(c)));
 	}
@@ -101,12 +101,12 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 	if (owner->unitDef->canGuard) {
 		SCommandDescription c;
 
-		c.id        = CMD_GUARD;
-		c.type      = CMDTYPE_ICON_UNIT;
+		c.id = CMD_GUARD;
+		c.type = CMDTYPE_ICON_UNIT;
 
-		c.action    = "guard";
-		c.name      = "Guard";
-		c.tooltip   = c.name + ": Order ready built units to guard another unit and attack units attacking it";
+		c.action = "guard";
+		c.name = "Guard";
+		c.tooltip = c.name + ": Order ready built units to guard another unit and attack units attacking it";
 		c.mouseicon = c.name;
 		possibleCommands.push_back(commandDescriptionCache.GetPtr(std::move(c)));
 	}
@@ -128,13 +128,13 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 		{
 			SCommandDescription c;
 
-			c.id   = -ud->id; // build-options are always negative
+			c.id = -ud->id; // build-options are always negative
 			c.type = CMDTYPE_ICON;
 
-			c.action    = "buildunit_" + StringToLower(ud->name);
-			c.name      = name;
+			c.action = "buildunit_" + StringToLower(ud->name);
+			c.name = name;
 			c.mouseicon = c.name;
-			c.tooltip   = GetUnitDefBuildOptionToolTip(ud, c.disabled = (ud->maxThisUnit <= 0));
+			c.tooltip = GetUnitDefBuildOptionToolTip(ud, c.disabled = (ud->maxThisUnit <= 0));
 
 			buildOptions[c.id] = 0;
 			possibleCommands.push_back(commandDescriptionCache.GetPtr(std::move(c)));
@@ -142,13 +142,14 @@ CFactoryCAI::CFactoryCAI(CUnit* owner): CCommandAI(owner)
 	}
 }
 
-
 static constexpr int GetCountMultiplierFromOptions(int opts)
 {
 	// The choice of keys and their associated multipliers are from OTA.
 	int ret = 1;
-	if (opts &   SHIFT_KEY) ret *=  5;
-	if (opts & CONTROL_KEY) ret *= 20;
+	if (opts & SHIFT_KEY)
+		ret *= 5;
+	if (opts & CONTROL_KEY)
+		ret *= 20;
 	return ret;
 }
 
@@ -185,7 +186,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 		}
 
 		if (!(c.GetOpts() & SHIFT_KEY)) {
- 			waitCommandsAI.ClearUnitQueue(owner, newUnitCommands);
+			waitCommandsAI.ClearUnitQueue(owner, newUnitCommands);
 			CCommandAI::ClearCommandDependencies();
 			newUnitCommands.clear();
 		}
@@ -199,17 +200,21 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 						waitCommandsAI.RemoveWaitCommand(owner, c);
 					}
 					newUnitCommands.pop_back();
-				} else {
+				}
+				else {
 					newUnitCommands.push_back(c);
 				}
-			} else {
+			}
+			else {
 				bool dummy;
 				if (CancelCommands(c, newUnitCommands, dummy) > 0) {
 					return;
-				} else {
+				}
+				else {
 					if (GetOverlapQueued(c, newUnitCommands).empty()) {
 						newUnitCommands.push_back(c);
-					} else {
+					}
+					else {
 						return;
 					}
 				}
@@ -226,7 +231,8 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 					waitCommandsAI.RemoveWaitCommand(owner, c);
 				}
 				newUnitCommands.pop_front();
-			} else {
+			}
+			else {
 				break;
 			}
 		}
@@ -239,7 +245,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 
 	if (c.GetOpts() & RIGHT_MOUSE_KEY) {
 		numQueued -= numItems;
-		numQueued  = std::max(numQueued, 0);
+		numQueued = std::max(numQueued, 0);
 
 		int numToErase = numItems;
 		if (c.GetOpts() & ALT_KEY) {
@@ -249,7 +255,8 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 					numToErase--;
 				}
 			}
-		} else {
+		}
+		else {
 			for (int cmdNum = commandQue.size() - 1; cmdNum != -1 && numToErase; --cmdNum) {
 				if (commandQue[cmdNum].GetID() == cmdID) {
 					commandQue[cmdNum] = Command(CMD_STOP);
@@ -257,7 +264,8 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 				}
 			}
 		}
-	} else {
+	}
+	else {
 		if (c.GetOpts() & ALT_KEY) {
 			Command nc(c);
 			nc.SetOpts(nc.GetOpts() | INTERNAL_ORDER);
@@ -265,18 +273,20 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 				if (repeatOrders) {
 					if (commandQue.empty()) {
 						commandQue.push_front(nc);
-					} else {
+					}
+					else {
 						commandQue.insert(commandQue.begin() + 1, nc);
 					}
-				} else {
+				}
+				else {
 					commandQue.push_front(c);
 				}
 			}
 
 			if (!repeatOrders)
 				static_cast<CFactory*>(owner)->StopBuild();
-
-		} else {
+		}
+		else {
 			for (int a = 0; a < numItems; ++a) {
 				commandQue.push_back(c);
 			}
@@ -288,9 +298,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
-
-void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
-                                     const Command& newCmd)
+void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it, const Command& newCmd)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const auto boi = buildOptions.find(newCmd.GetID());
@@ -304,10 +312,8 @@ void CFactoryCAI::InsertBuildCommand(CCommandQueue::iterator& it,
 		CFactory* fac = static_cast<CFactory*>(owner);
 		fac->StopBuild();
 	}
-	while (buildCount--)
-		it = commandQue.insert(it, newCmd);
+	while (buildCount--) it = commandQue.insert(it, newCmd);
 }
-
 
 bool CFactoryCAI::RemoveBuildCommand(CCommandQueue::iterator& it)
 {
@@ -331,13 +337,12 @@ bool CFactoryCAI::RemoveBuildCommand(CCommandQueue::iterator& it)
 	return false;
 }
 
-
 void CFactoryCAI::DecreaseQueueCount(const Command& buildCommand, int& numQueued)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// copy in case we get pop'ed
 	// NOTE: the queue should not be empty at this point!
-	const Command frontCommand = commandQue.empty()? Command(CMD_STOP): commandQue.front();
+	const Command frontCommand = commandQue.empty() ? Command(CMD_STOP) : commandQue.front();
 
 	if (!repeatOrders || buildCommand.IsInternalOrder())
 		numQueued--;
@@ -360,12 +365,11 @@ void CFactoryCAI::DecreaseQueueCount(const Command& buildCommand, int& numQueued
 		commandQue.push_front(frontCommand);
 }
 
-
-
 // NOTE:
 //   only called if Factory::QueueBuild returned FACTORY_NEXT_BUILD_ORDER
 //   (meaning the order was not rejected and the callback was installed)
-void CFactoryCAI::FactoryFinishBuild(const Command& command) {
+void CFactoryCAI::FactoryFinishBuild(const Command& command)
+{
 	DecreaseQueueCount(command, buildOptions[command.GetID()]);
 }
 
@@ -388,34 +392,36 @@ void CFactoryCAI::SlowUpdate()
 		if (buildOptions.find(c.GetID()) != buildOptions.end()) {
 			// build-order
 			switch (fac->QueueBuild(unitDefHandler->GetUnitDefByID(-c.GetID()), c)) {
-				case CFactory::FACTORY_SKIP_BUILD_ORDER: {
-					// order rejected and we want to skip it permanently
-					DecreaseQueueCount(c, buildOptions[c.GetID()]);
-				} break;
+			case CFactory::FACTORY_SKIP_BUILD_ORDER: {
+				// order rejected and we want to skip it permanently
+				DecreaseQueueCount(c, buildOptions[c.GetID()]);
+			} break;
 			}
-		} else {
+		}
+		else {
 			// regular order (move/wait/etc)
 			switch (c.GetID()) {
-				case CMD_STOP: {
-					/* Targeted hack to optimize bulk STOP orders.
-					 * Build orders get replaced by STOP instead of being removed,
-					 * this is due to the buildqueue's internal implementation as `std::deque`
-					 * whose interface doesn't support removal from the middle that well.
-					 * Units often get added and removed in large quantities via CTRL/SHIFT,
-					 * such multiple STOPs commands in a row would then produce a freeze
-					 * when the engine tries to process them all in one frame.
-					 * Just execute the last in each series to ensure last build is cancelled
-					 * otherwise last unit stays being built. */
-					if (oldQueueSize == 1 || commandQue[1].GetID() != CMD_STOP) {
-						ExecuteStop(c);
-					} else {
-						commandQue.pop_front();
-					}
+			case CMD_STOP: {
+				/* Targeted hack to optimize bulk STOP orders.
+				 * Build orders get replaced by STOP instead of being removed,
+				 * this is due to the buildqueue's internal implementation as `std::deque`
+				 * whose interface doesn't support removal from the middle that well.
+				 * Units often get added and removed in large quantities via CTRL/SHIFT,
+				 * such multiple STOPs commands in a row would then produce a freeze
+				 * when the engine tries to process them all in one frame.
+				 * Just execute the last in each series to ensure last build is cancelled
+				 * otherwise last unit stays being built. */
+				if (oldQueueSize == 1 || commandQue[1].GetID() != CMD_STOP) {
+					ExecuteStop(c);
+				}
+				else {
+					commandQue.pop_front();
+				}
 
-				} break;
-				default: {
-					CCommandAI::SlowUpdate();
-				} break;
+			} break;
+			default: {
+				CCommandAI::SlowUpdate();
+			} break;
 			}
 		}
 
@@ -425,7 +431,6 @@ void CFactoryCAI::SlowUpdate()
 	}
 }
 
-
 void CFactoryCAI::ExecuteStop(Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -434,7 +439,6 @@ void CFactoryCAI::ExecuteStop(Command& c)
 
 	commandQue.pop_front();
 }
-
 
 int CFactoryCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 {
@@ -450,7 +454,6 @@ int CFactoryCAI::GetDefaultCmd(const CUnit* pointed, const CFeature* feature)
 
 	return CMD_GUARD;
 }
-
 
 void CFactoryCAI::UpdateIconName(int cmdID, const int& numQueued)
 {

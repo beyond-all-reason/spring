@@ -163,7 +163,7 @@ function gadget:Initialize()
     return
   end
   local cmd, help
-  
+
   cmd  = "sharectrl"
   local h = ''
   h = h..     ' [ "none" | "ally" | "full"]:  basic sharing modes\n'
@@ -171,7 +171,7 @@ function gadget:Initialize()
   h = h..'  u: unit sharing\n'
   h = h..'  r: resource sharing\n'
   h = h..'  e: enemy mode\n'
-  
+
 --  h = h..cmd..' [0|1]:  control unit and resource sharing\n'
 --  h = h..cmd..' res [0|1]:  control resource sharing\n'
 --  h = h..cmd..' unit [0|1]:  control unit sharing\n'
@@ -225,7 +225,7 @@ function gadget:AllowUnitTransfer(unitID, unitDefID, oldTeam, newTeam, capture)
     AddRefusal(oldTeam, "Unit sharing has been disabled")
     return false
   end
-    
+
   if (unitShareEnemy or Spring.AreTeamsAllied(oldTeam, newTeam)) then
     return true
   end

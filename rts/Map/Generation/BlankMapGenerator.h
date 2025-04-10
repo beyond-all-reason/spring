@@ -8,8 +8,7 @@
 class CVirtualFile;
 class CVirtualArchive;
 
-class CBlankMapGenerator
-{
+class CBlankMapGenerator {
 public:
 	CBlankMapGenerator(const CGameSetup* setup);
 
@@ -19,19 +18,24 @@ public:
 		uint8_t r;
 		uint8_t g;
 		uint8_t b;
-		uint8_t a; //unused
+		uint8_t a; // unused
 	};
+
 private:
 	void GenerateMap();
 	void GenerateSMF(CVirtualFile*);
 	void GenerateMapInfo(CVirtualFile*);
 	void GenerateSMT(CVirtualFile*);
 
-	template<typename T>
-	void AppendToBuffer(CVirtualFile* file, const T& data) { AppendToBuffer(file, &data, sizeof(T)); }
+	template<typename T> void AppendToBuffer(CVirtualFile* file, const T& data)
+	{
+		AppendToBuffer(file, &data, sizeof(T));
+	}
 
-	template<typename T>
-	void SetToBuffer(CVirtualFile* file, const T& data, int position) { SetToBuffer(file, &data, sizeof(T), position); }
+	template<typename T> void SetToBuffer(CVirtualFile* file, const T& data, int position)
+	{
+		SetToBuffer(file, &data, sizeof(T), position);
+	}
 
 	void AppendToBuffer(CVirtualFile* file, const void* data, int size);
 	void SetToBuffer(CVirtualFile* file, const void* data, int size, int position);

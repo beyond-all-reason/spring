@@ -49,8 +49,7 @@ struct aiMesh;
 
 class LimitBoneWeightsTest;
 
-namespace Assimp
-{
+namespace Assimp {
 
 // NOTE: If you change these limits, don't forget to change the
 // corresponding values in all Assimp ports
@@ -61,81 +60,75 @@ namespace Assimp
 // **********************************************************
 
 #if (!defined AI_LMW_MAX_WEIGHTS)
-#   define AI_LMW_MAX_WEIGHTS   0x4
+#define AI_LMW_MAX_WEIGHTS 0x4
 #endif // !! AI_LMW_MAX_WEIGHTS
 
 // ---------------------------------------------------------------------------
 /** This post processing step limits the number of bones affecting a vertex
-* to a certain maximum value. If a vertex is affected by more than that number
-* of bones, the bone weight with the least influence on this vertex are removed.
-* The other weights on this bone are then renormalized to assure the sum weight
-* to be 1.
-*/
-class ASSIMP_API LimitBoneWeightsProcess : public BaseProcess
-{
+ * to a certain maximum value. If a vertex is affected by more than that number
+ * of bones, the bone weight with the least influence on this vertex are removed.
+ * The other weights on this bone are then renormalized to assure the sum weight
+ * to be 1.
+ */
+class ASSIMP_API LimitBoneWeightsProcess : public BaseProcess {
 public:
-
-    LimitBoneWeightsProcess();
-    ~LimitBoneWeightsProcess();
+	LimitBoneWeightsProcess();
+	~LimitBoneWeightsProcess();
 
 public:
-    // -------------------------------------------------------------------
-    /** Returns whether the processing step is present in the given flag.
-    * @param pFlags The processing flags the importer was called with.
-    *   A bitwise combination of #aiPostProcessSteps.
-    * @return true if the process is present in this flag fields,
-    *   false if not.
-    */
-    bool IsActive( unsigned int pFlags) const;
+	// -------------------------------------------------------------------
+	/** Returns whether the processing step is present in the given flag.
+	 * @param pFlags The processing flags the importer was called with.
+	 *   A bitwise combination of #aiPostProcessSteps.
+	 * @return true if the process is present in this flag fields,
+	 *   false if not.
+	 */
+	bool IsActive(unsigned int pFlags) const;
 
-    // -------------------------------------------------------------------
-    /** Called prior to ExecuteOnScene().
-    * The function is a request to the process to update its configuration
-    * basing on the Importer's configuration property list.
-    */
-    void SetupProperties(const Importer* pImp);
+	// -------------------------------------------------------------------
+	/** Called prior to ExecuteOnScene().
+	 * The function is a request to the process to update its configuration
+	 * basing on the Importer's configuration property list.
+	 */
+	void SetupProperties(const Importer* pImp);
 
 public:
+	// -------------------------------------------------------------------
+	/** Limits the bone weight count for all vertices in the given mesh.
+	 * @param pMesh The mesh to process.
+	 */
+	void ProcessMesh(aiMesh* pMesh);
 
-    // -------------------------------------------------------------------
-    /** Limits the bone weight count for all vertices in the given mesh.
-    * @param pMesh The mesh to process.
-    */
-    void ProcessMesh( aiMesh* pMesh);
-
-    // -------------------------------------------------------------------
-    /** Executes the post processing step on the given imported data.
-    * At the moment a process is not supposed to fail.
-    * @param pScene The imported data to work at.
-    */
-    void Execute( aiScene* pScene);
+	// -------------------------------------------------------------------
+	/** Executes the post processing step on the given imported data.
+	 * At the moment a process is not supposed to fail.
+	 * @param pScene The imported data to work at.
+	 */
+	void Execute(aiScene* pScene);
 
 
 public:
+	// -------------------------------------------------------------------
+	/** Describes a bone weight on a vertex */
+	struct Weight {
+		unsigned int mBone; ///< Index of the bone
+		float mWeight;      ///< Weight of that bone on this vertex
 
-    // -------------------------------------------------------------------
-    /** Describes a bone weight on a vertex */
-    struct Weight
-    {
-        unsigned int mBone; ///< Index of the bone
-        float mWeight;      ///< Weight of that bone on this vertex
-        Weight() { }
-        Weight( unsigned int pBone, float pWeight)
-        {
-            mBone = pBone;
-            mWeight = pWeight;
-        }
+		Weight() {}
 
-        /** Comparison operator to sort bone weights by descending weight */
-        bool operator < (const Weight& pWeight) const
-        {
-            return mWeight > pWeight.mWeight;
-        }
-    };
+		Weight(unsigned int pBone, float pWeight)
+		{
+			mBone = pBone;
+			mWeight = pWeight;
+		}
+
+		/** Comparison operator to sort bone weights by descending weight */
+		bool operator<(const Weight& pWeight) const { return mWeight > pWeight.mWeight; }
+	};
 
 public:
-    /** Maximum number of bones influencing any single vertex. */
-    unsigned int mMaxWeights;
+	/** Maximum number of bones influencing any single vertex. */
+	unsigned int mMaxWeights;
 };
 
 } // end of namespace Assimp

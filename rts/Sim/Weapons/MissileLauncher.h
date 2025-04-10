@@ -5,11 +5,13 @@
 
 #include "Weapon.h"
 
-class CMissileLauncher: public CWeapon
-{
+class CMissileLauncher : public CWeapon {
 	CR_DECLARE_DERIVED(CMissileLauncher)
 public:
-	CMissileLauncher(CUnit* owner = nullptr, const WeaponDef* def = nullptr): CWeapon(owner, def) {}
+	CMissileLauncher(CUnit* owner = nullptr, const WeaponDef* def = nullptr)
+	    : CWeapon(owner, def)
+	{
+	}
 
 	void UpdateWantedDir() override final;
 

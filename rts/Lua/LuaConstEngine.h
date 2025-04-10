@@ -6,9 +6,8 @@
 struct lua_State;
 
 class LuaConstEngine {
-	public:
-		static bool PushEntries(lua_State* L);
+public:
+	static bool PushEntries(lua_State* L);
 };
 
 #endif
-

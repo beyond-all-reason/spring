@@ -4,6 +4,7 @@
 #define MOBILE_CAI_H
 
 #include "CommandAI.h"
+
 #include "Sim/Misc/GlobalConstants.h" // for SQUARE_SIZE
 #include "System/float3.h"
 
@@ -14,8 +15,7 @@ class CFeature;
 class CWeapon;
 struct Command;
 
-class CMobileCAI : public CCommandAI
-{
+class CMobileCAI : public CCommandAI {
 public:
 	CR_DECLARE_DERIVED(CMobileCAI)
 	CMobileCAI(CUnit* owner);
@@ -30,7 +30,9 @@ public:
 
 	void StopMove() override;
 	void StopMoveAndKeepPointing(const float3& p, const float r, bool b);
-	void StopMoveAndFinishCommand() {
+
+	void StopMoveAndFinishCommand()
+	{
 		StopMove();
 		FinishCommand();
 	}
@@ -63,7 +65,12 @@ public:
 	virtual bool CanWeaponAutoTarget(const CWeapon* weapon) const override;
 
 	void SetTransportee(CUnit* unit);
-	bool FindEmptySpot(const CUnit* unloadee, const float3& center, float radius, float spread, float3& found, bool fromSynced = true);
+	bool FindEmptySpot(const CUnit* unloadee,
+	    const float3& center,
+	    float radius,
+	    float spread,
+	    float3& found,
+	    bool fromSynced = true);
 	bool FindEmptyDropSpots(float3 startpos, float3 endpos, std::vector<float3>& dropSpots);
 	CUnit* FindUnitToTransport(float3 center, float radius);
 	bool LoadStillValid(CUnit* unit);
@@ -118,9 +125,7 @@ protected:
 		UNLOAD_LANDFLOOD = 2,
 	};
 
-	void PushOrUpdateReturnFight() {
-		CCommandAI::PushOrUpdateReturnFight(commandPos1, commandPos2);
-	}
+	void PushOrUpdateReturnFight() { CCommandAI::PushOrUpdateReturnFight(commandPos1, commandPos2); }
 
 	void CalculateCancelDistance();
 

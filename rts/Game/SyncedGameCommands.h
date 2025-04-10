@@ -7,11 +7,10 @@
 
 class ISyncedActionExecutor;
 
-
-class SyncedGameCommands : public IGameCommands<ISyncedActionExecutor>
-{
+class SyncedGameCommands : public IGameCommands<ISyncedActionExecutor> {
 public:
-	static SyncedGameCommands*& GetInstance() {
+	static SyncedGameCommands*& GetInstance()
+	{
 		static SyncedGameCommands* singleton = nullptr;
 		return singleton;
 	}

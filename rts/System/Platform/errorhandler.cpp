@@ -8,24 +8,24 @@
 
 #include "errorhandler.h"
 
-#include <string>
-#include <functional>
-
-#include "System/SpringExitCode.h"
 #include "System/Log/ILog.h"
 #include "System/Log/LogSinkHandler.h"
+#include "System/SpringExitCode.h"
 #include "System/Threading/SpringThreading.h"
 
+#include <functional>
+#include <string>
+
 #if !defined(DEDICATED)
-	#include "System/SpringApp.h"
-	#include "System/Platform/Threading.h"
+#include "System/Platform/Threading.h"
+#include "System/SpringApp.h"
 #endif
 #if !defined(DEDICATED) && !defined(HEADLESS)
-	#include "System/Platform/MessageBox.h"
+#include "System/Platform/MessageBox.h"
 #endif
 #ifdef DEDICATED
-	#include "Net/GameServer.h"
-	#include "System/SafeUtil.h"
+#include "Net/GameServer.h"
+#include "System/SafeUtil.h"
 #endif
 
 
@@ -59,22 +59,27 @@ static void ExitSpringProcess(const char* msg, const char* caption, unsigned int
 
 static void ExitSpringProcess(const char* msg, const char* caption, unsigned int flags)
 {
-	LOG_L(L_FATAL, "[%s] errorMsg=\"%s\" msgCaption=\"%s\" mainThread=%d", __func__, msg, caption, Threading::IsMainThread());
+	LOG_L(L_FATAL, "[%s] errorMsg=\"%s\" msgCaption=\"%s\" mainThread=%d", __func__, msg, caption,
+	    Threading::IsMainThread());
 
 	switch (SpringApp::PostKill(Threading::Error(caption, msg, flags))) {
-		case -1: {
-			// main thread; either gets to ESPA first and cleans up our process or exit is forced by this
-			std::function<void()> forcedExitFunc = [&]() { ExitSpringProcessAux(true, false); };
-			spring::thread forcedExitThread = spring::thread(forcedExitFunc);
+	case -1: {
+		// main thread; either gets to ESPA first and cleans up our process or exit is forced by this
+		std::function<void()> forcedExitFunc = [&]() { ExitSpringProcessAux(true, false); };
+		spring::thread forcedExitThread = spring::thread(forcedExitFunc);
 
-			// .join can (very rarely) throw a no-such-process exception if it runs in parallel with exit
-			assert(forcedExitThread.joinable());
-			forcedExitThread.detach();
+		// .join can (very rarely) throw a no-such-process exception if it runs in parallel with exit
+		assert(forcedExitThread.joinable());
+		forcedExitThread.detach();
 
-			SpringApp::Kill(false);
-		} break;
-		case 0: { assert(false); } break; // [unreachable] thread failed to post, ESPA
-		case 1: {        return; } break; // thread posted successfully
+		SpringApp::Kill(false);
+	} break;
+	case 0: {
+		assert(false);
+	} break; // [unreachable] thread failed to post, ESPA
+	case 1: {
+		return;
+	} break; // thread posted successfully
 	}
 
 	ExitSpringProcessAux(false, false);
@@ -84,7 +89,7 @@ static void ExitSpringProcess(const char* msg, const char* caption, unsigned int
 
 void ErrorMessageBox(const char* msg, const char* caption, unsigned int flags)
 {
-	#if (!defined(DEDICATED) && !defined(HEADLESS))
+#if (!defined(DEDICATED) && !defined(HEADLESS))
 	if (Threading::IsMainThread()) {
 		// the thread that throws up this message-box will be blocked
 		// until it is clicked away which can cause spurious detected
@@ -93,8 +98,7 @@ void ErrorMessageBox(const char* msg, const char* caption, unsigned int flags)
 		SpringApp::PostKill({});
 		Platform::MsgBox(msg, caption, flags);
 	}
-	#endif
+#endif
 
 	ExitSpringProcess(msg, caption, flags);
 }
-

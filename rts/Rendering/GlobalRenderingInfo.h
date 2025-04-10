@@ -3,10 +3,11 @@
 #ifndef _GLOBAL_RENDERING_INFO_H
 #define _GLOBAL_RENDERING_INFO_H
 
-#include <SDL_version.h>
 #include "System/type2.h"
 
 #include <vector>
+
+#include <SDL_version.h>
 
 struct GlobalRenderingInfo {
 	struct AvailableVideoMode {
@@ -29,8 +30,8 @@ struct GlobalRenderingInfo {
 
 	const char* sdlDriverName;
 
-	std::array<char, 256> glVersionShort = { 0 };
-	std::array<char, 256> glslVersionShort = { 0 };
+	std::array<char, 256> glVersionShort = {0};
+	std::array<char, 256> glslVersionShort = {0};
 
 	int glVersionNum = 0;
 	int glslVersionNum = 0;
@@ -48,4 +49,3 @@ struct GlobalRenderingInfo {
 extern GlobalRenderingInfo globalRenderingInfo;
 
 #endif
-

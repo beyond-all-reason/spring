@@ -113,4 +113,3 @@ void main()
 	eyeVertexZ = (gl_ModelViewMatrix * pos4).z;
 	#endif
 }
-

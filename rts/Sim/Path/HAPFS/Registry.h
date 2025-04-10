@@ -7,7 +7,7 @@
 #include "System/Ecs/Utils/SystemUtils.h"
 
 namespace HAPFS {
-    extern entt::registry registry;
+extern entt::registry registry;
 }
 
 #endif

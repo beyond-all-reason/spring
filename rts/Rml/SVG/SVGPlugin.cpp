@@ -26,16 +26,17 @@
  *
  */
 
-#include <RmlUi/Core.h>
 #include "./SVGPlugin.h"
+
+#include <RmlUi/Core.h>
 
 namespace RmlGui {
 namespace SVG {
-	DynamicSVGPlugin* Initialise()
-	{
-		DynamicSVGPlugin* svgPlugin = new DynamicSVGPlugin{};
-		Rml::RegisterPlugin(svgPlugin);
-		return svgPlugin;
-	}
+DynamicSVGPlugin* Initialise()
+{
+	DynamicSVGPlugin* svgPlugin = new DynamicSVGPlugin{};
+	Rml::RegisterPlugin(svgPlugin);
+	return svgPlugin;
+}
 } // namespace SVG
-} // namespace Rml
+} // namespace RmlGui

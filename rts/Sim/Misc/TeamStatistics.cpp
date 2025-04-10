@@ -6,56 +6,54 @@
 
 
 CR_BIND(TeamStatistics, )
-CR_REG_METADATA(TeamStatistics, (
-	CR_MEMBER(frame),
-	CR_MEMBER(metalUsed),
-	CR_MEMBER(energyUsed),
-	CR_MEMBER(metalProduced),
-	CR_MEMBER(energyProduced),
-	CR_MEMBER(metalExcess),
-	CR_MEMBER(energyExcess),
-	CR_MEMBER(metalReceived),
-	CR_MEMBER(energyReceived),
-	CR_MEMBER(metalSent),
-	CR_MEMBER(energySent),
-	CR_MEMBER(damageDealt),
-	CR_MEMBER(damageReceived),
-	CR_MEMBER(unitsProduced),
-	CR_MEMBER(unitsDied),
-	CR_MEMBER(unitsReceived),
-	CR_MEMBER(unitsSent),
-	CR_MEMBER(unitsCaptured),
-	CR_MEMBER(unitsOutCaptured),
-	CR_MEMBER(unitsKilled)
-))
+CR_REG_METADATA(TeamStatistics,
+    (CR_MEMBER(frame),
+        CR_MEMBER(metalUsed),
+        CR_MEMBER(energyUsed),
+        CR_MEMBER(metalProduced),
+        CR_MEMBER(energyProduced),
+        CR_MEMBER(metalExcess),
+        CR_MEMBER(energyExcess),
+        CR_MEMBER(metalReceived),
+        CR_MEMBER(energyReceived),
+        CR_MEMBER(metalSent),
+        CR_MEMBER(energySent),
+        CR_MEMBER(damageDealt),
+        CR_MEMBER(damageReceived),
+        CR_MEMBER(unitsProduced),
+        CR_MEMBER(unitsDied),
+        CR_MEMBER(unitsReceived),
+        CR_MEMBER(unitsSent),
+        CR_MEMBER(unitsCaptured),
+        CR_MEMBER(unitsOutCaptured),
+        CR_MEMBER(unitsKilled)))
 
 TeamStatistics::TeamStatistics()
-	: frame(0)
+    : frame(0)
 
-	, metalUsed(0.0f)
-	, energyUsed(0.0f)
-	, metalProduced(0.0f)
-	, energyProduced(0.0f)
-	, metalExcess(0.0f)
-	, energyExcess(0.0f)
-	, metalReceived(0.0f)
-	, energyReceived(0.0f)
-	, metalSent(0.0f)
-	, energySent(0.0f)
+    , metalUsed(0.0f)
+    , energyUsed(0.0f)
+    , metalProduced(0.0f)
+    , energyProduced(0.0f)
+    , metalExcess(0.0f)
+    , energyExcess(0.0f)
+    , metalReceived(0.0f)
+    , energyReceived(0.0f)
+    , metalSent(0.0f)
+    , energySent(0.0f)
 
-	, damageDealt(0.0f)
-	, damageReceived(0.0f)
+    , damageDealt(0.0f)
+    , damageReceived(0.0f)
 
-	, unitsProduced(0)
-	, unitsDied(0)
-	, unitsReceived(0)
-	, unitsSent(0)
-	, unitsCaptured(0)
-	, unitsOutCaptured(0)
-	, unitsKilled(0)
+    , unitsProduced(0)
+    , unitsDied(0)
+    , unitsReceived(0)
+    , unitsSent(0)
+    , unitsCaptured(0)
+    , unitsOutCaptured(0)
+    , unitsKilled(0)
 {
 }
-
 
 void TeamStatistics::swab()
 {
@@ -80,4 +78,3 @@ void TeamStatistics::swab()
 	swabDWordInPlace(unitsOutCaptured);
 	swabDWordInPlace(unitsKilled);
 }
-

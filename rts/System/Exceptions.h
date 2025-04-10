@@ -5,17 +5,15 @@
 
 #include <stdexcept>
 
-
 /**
  * user_error
  *   thrown when a enduser config is broken/invalid.
  */
-class user_error : public std::runtime_error
-{
+class user_error : public std::runtime_error {
 public:
-	user_error(const std::string& msg) : std::runtime_error(msg) {};
+	user_error(const std::string& msg)
+	    : std::runtime_error(msg) {};
 };
-
 
 /**
  * content_error
@@ -23,43 +21,40 @@ public:
  *   any other type of exception will cause a crashreport box appearing
  *     (if it is installed).
  */
-class content_error : public std::runtime_error
-{
+class content_error : public std::runtime_error {
 public:
-	content_error(const std::string& msg) : std::runtime_error(msg) {};
+	content_error(const std::string& msg)
+	    : std::runtime_error(msg) {};
 };
-
 
 /**
  * opengl_error
  *   thrown when an OpenGL function failed (FBO creation, Offscreen Context creation, ...).
  */
-class opengl_error : public std::runtime_error
-{
+class opengl_error : public std::runtime_error {
 public:
-	opengl_error(const std::string& msg) : std::runtime_error(msg) {};
+	opengl_error(const std::string& msg)
+	    : std::runtime_error(msg) {};
 };
-
 
 /**
  * unsupported_error
  *   thrown when code cannot be executed cause the system is unsupported (GPU is missing extensions etc.)
  */
-class unsupported_error : public std::runtime_error
-{
+class unsupported_error : public std::runtime_error {
 public:
-	unsupported_error(const std::string& msg) : std::runtime_error(msg) {};
+	unsupported_error(const std::string& msg)
+	    : std::runtime_error(msg) {};
 };
-
 
 /**
  * network_error
  *   thrown when udp socket can't be bound or hostname can't be resolved
  */
-class network_error : public std::runtime_error
-{
+class network_error : public std::runtime_error {
 public:
-	network_error(const std::string& msg) : std::runtime_error(msg) {};
+	network_error(const std::string& msg)
+	    : std::runtime_error(msg) {};
 };
 
 

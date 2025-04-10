@@ -1,79 +1,75 @@
 #include "UnitDrawerData.h"
 
-#include "System/MemPoolTypes.h"
-#include "System/ContainerUtil.h"
-#include "System/EventHandler.h"
-#include "System/FileSystem/FileHandler.h"
-#include "System/Config/ConfigHandler.h"
+#include "Game/Camera.h"
+#include "Game/CameraHandler.h"
 #include "Game/Game.h"
 #include "Game/GameSetup.h"
 #include "Game/GlobalUnsynced.h"
-#include "Game/Camera.h"
-#include "Game/CameraHandler.h"
 #include "Game/UI/MiniMap.h"
+#include "Map/Ground.h"
+#include "Map/ReadMap.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
-#include "Rendering/Units/UnitDrawer.h"
-#include "Rendering/Models/IModelParser.h"
-#include "Rendering/LuaObjectDrawer.h"
-#include "Rendering/IconHandler.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Env/IGroundDecalDrawer.h"
 #include "Rendering/Env/IWater.h"
+#include "Rendering/IconHandler.h"
+#include "Rendering/LuaObjectDrawer.h"
+#include "Rendering/Models/IModelParser.h"
+#include "Rendering/Textures/Bitmap.h"
+#include "Rendering/Units/UnitDrawer.h"
+#include "Sim/Misc/LosHandler.h"
+#include "Sim/Misc/TeamHandler.h"
+#include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
-#include "Sim/Units/Unit.h"
-#include "Sim/Misc/LosHandler.h"
-#include "Sim/Misc/TeamHandler.h"
-#include "Map/Ground.h"
-#include "Map/ReadMap.h"
-
+#include "System/Config/ConfigHandler.h"
+#include "System/ContainerUtil.h"
+#include "System/EventHandler.h"
+#include "System/FileSystem/FileHandler.h"
+#include "System/MemPoolTypes.h"
 #include "System/Misc/TracyDefs.h"
 
 static FixedDynMemPoolT<MAX_UNITS / 1000, MAX_UNITS / 32, GhostSolidObject> ghostMemPool;
 
 ///////////////////////////
 
-CR_BIND_POOL(GhostSolidObject, ,ghostMemPool.allocMem, ghostMemPool.freeMem)
-CR_REG_METADATA(GhostSolidObject, (
-	CR_MEMBER(modelName),
+CR_BIND_POOL(GhostSolidObject, , ghostMemPool.allocMem, ghostMemPool.freeMem)
+CR_REG_METADATA(GhostSolidObject,
+    (CR_MEMBER(modelName),
 
-	CR_MEMBER(pos),
-	CR_MEMBER(dir),
+        CR_MEMBER(pos),
+        CR_MEMBER(dir),
 
-	CR_MEMBER(facing),
-	CR_MEMBER(team),
-	CR_MEMBER(refCount),
+        CR_MEMBER(facing),
+        CR_MEMBER(team),
+        CR_MEMBER(refCount),
 
-	CR_IGNORED(model),
+        CR_IGNORED(model),
 
-	CR_POSTLOAD(PostLoad)
-))
+        CR_POSTLOAD(PostLoad)))
 
 CR_BIND(CUnitDrawerData::TempDrawUnit, )
-CR_REG_METADATA(CUnitDrawerData::TempDrawUnit, (
-	CR_MEMBER(unitDefId),
+CR_REG_METADATA(CUnitDrawerData::TempDrawUnit,
+    (CR_MEMBER(unitDefId),
 
-	CR_MEMBER(team),
-	CR_MEMBER(facing),
-	CR_MEMBER(timeout),
+        CR_MEMBER(team),
+        CR_MEMBER(facing),
+        CR_MEMBER(timeout),
 
-	CR_MEMBER(pos),
-	CR_MEMBER(rotation),
+        CR_MEMBER(pos),
+        CR_MEMBER(rotation),
 
-	CR_MEMBER(drawAlpha),
-	CR_MEMBER(drawBorder),
+        CR_MEMBER(drawAlpha),
+        CR_MEMBER(drawBorder),
 
-	CR_IGNORED(unitDef)
-))
+        CR_IGNORED(unitDef)))
 
 CR_BIND(CUnitDrawerData::SavedData, )
-CR_REG_METADATA(CUnitDrawerData::SavedData, (
-	CR_MEMBER(tempOpaqueUnits),
-	CR_MEMBER(tempAlphaUnits),
-	CR_MEMBER(deadGhostBuildings),
-	CR_MEMBER(liveGhostBuildings)
-))
+CR_REG_METADATA(CUnitDrawerData::SavedData,
+    (CR_MEMBER(tempOpaqueUnits),
+        CR_MEMBER(tempAlphaUnits),
+        CR_MEMBER(deadGhostBuildings),
+        CR_MEMBER(liveGhostBuildings)))
 
 ///////////////////////////
 
@@ -106,17 +102,17 @@ const UnitDef* CUnitDrawerData::TempDrawUnit::GetUnitDef() const
 ///////////////////////////
 
 CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
-	: CUnitDrawerDataBase("[CUnitDrawerData]", 271828, mtModelDrawer_)
+    : CUnitDrawerDataBase("[CUnitDrawerData]", 271828, mtModelDrawer_)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
+	// LuaObjectDrawer::ReadLODScales(LUAOBJ_UNIT);
 
-	eventHandler.AddClient(this); //cannot be done in CModelRenderDataConcept, because object is not fully constructed
+	eventHandler.AddClient(this); // cannot be done in CModelRenderDataConcept, because object is not fully constructed
 
 	SetUnitIconDist(static_cast<float>(configHandler->GetInt("UnitIconDist")));
 
-	iconScale      = configHandler->GetFloat("UnitIconScaleUI");
-	iconFadeStart  = configHandler->GetFloat("UnitIconFadeStart");
+	iconScale = configHandler->GetFloat("UnitIconScaleUI");
+	iconFadeStart = configHandler->GetFloat("UnitIconFadeStart");
 	iconFadeVanish = configHandler->GetFloat("UnitIconFadeVanish");
 	useScreenIcons = configHandler->GetBool("UnitIconsAsUI");
 	iconHideWithUI = configHandler->GetBool("UnitIconsHideWithUI");
@@ -134,11 +130,11 @@ CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
 CUnitDrawerData::~CUnitDrawerData()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	for (CUnit* u : unsortedObjects) {
+	for (CUnit* u: unsortedObjects) {
 		groundDecals->ForceRemoveSolidObject(u);
 	}
 
-	for (UnitDefImage& img : unitDefImages) {
+	for (UnitDefImage& img: unitDefImages) {
 		img.Free();
 	}
 
@@ -176,7 +172,8 @@ void CUnitDrawerData::ConfigNotify(const std::string& key, const std::string& va
 void CUnitDrawerData::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	iconSizeBase = std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
+	iconSizeBase =
+	    std::max(1.0f, std::max(globalRendering->viewSizeX, globalRendering->viewSizeY) * iconSizeMult * iconScale);
 
 	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
 		UpdateTempDrawUnits(savedData.tempOpaqueUnits[modelType]);
@@ -209,14 +206,13 @@ void CUnitDrawerData::Update()
 		}, CModelDrawerDataConcept::MT_CHUNK_OR_MIN_CHUNK_SIZE_UPDT);
 	}
 	else {
-		for (CUnit* unit : unsortedObjects)
-			updateBody(unit);
+		for (CUnit* unit: unsortedObjects) updateBody(unit);
 	}
 
 	if ((useDistToGroundForIcons = (camHandler->GetCurrentController()).GetUseDistToGroundForIcons())) {
 		const float3& camPos = camera->GetPos();
 		// use the height at the current camera position
-		//const float groundHeight = CGround::GetHeightAboveWater(camPos.x, camPos.z, false);
+		// const float groundHeight = CGround::GetHeightAboveWater(camPos.x, camPos.z, false);
 		// use the middle between the highest and lowest position on the map as average
 		const float groundHeight = readMap->GetCurrAvgHeight();
 		const float overGround = camPos.y - groundHeight;
@@ -282,7 +278,7 @@ void CUnitDrawerData::UpdateUnitDefMiniMapIcons(const UnitDef* ud)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (int teamNum = 0; teamNum < teamHandler.ActiveTeams(); teamNum++) {
-		for (const CUnit* unit : unitHandler.GetUnitsByTeamAndDef(teamNum, ud->id)) {
+		for (const CUnit* unit: unitHandler.GetUnitsByTeamAndDef(teamNum, ud->id)) {
 			UpdateUnitIcon(unit, true, false);
 		}
 	}
@@ -318,7 +314,7 @@ void CUnitDrawerData::UpdateUnitIconState(CUnit* unit)
 
 	unit->SetIsIcon((losStatus & LOS_INRADAR) != 0);
 
-	//further refinement if visible
+	// further refinement if visible
 	if ((losStatus & LOS_INLOS) != 0 || gu->spectatingFullView) {
 		bool asIcon = true;
 
@@ -341,8 +337,7 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 		return;
 	}
 
-	if (unit->health <= 0 || unit->beingBuilt || unit->noDraw || unit->IsInVoid())
-	{
+	if (unit->health <= 0 || unit->beingBuilt || unit->noDraw || unit->IsInVoid()) {
 		unit->SetIsIcon(false);
 		return;
 	}
@@ -350,7 +345,8 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	const unsigned short losStatus = unit->losStatus[gu->myAllyTeam];
 	bool useDefaultIcon = (unit->myIcon == icon::iconHandler.GetDefaultIconData());
 
-	const icon::CIconData* iconData = useDefaultIcon ? icon::iconHandler.GetDefaultIconData() : unit->unitDef->iconType.GetIconData();
+	const icon::CIconData* iconData =
+	    useDefaultIcon ? icon::iconHandler.GetDefaultIconData() : unit->unitDef->iconType.GetIconData();
 
 	float iconSizeMult = iconData->GetSize();
 	if (iconData->GetRadiusAdjust() && !useDefaultIcon)
@@ -366,7 +362,9 @@ void CUnitDrawerData::UpdateUnitIconStateScreen(CUnit* unit)
 	pos = camera->CalcViewPortCoordinates(pos);
 	radiusPos = camera->CalcViewPortCoordinates(radiusPos);
 
-	unit->iconRadius = unit->radius * ((limit * 0.9) / std::abs(pos.x - radiusPos.x)); // used for clicking on iconified units (world space!!!)
+	unit->iconRadius =
+	    unit->radius *
+	    ((limit * 0.9) / std::abs(pos.x - radiusPos.x)); // used for clicking on iconified units (world space!!!)
 
 	if (!(losStatus & LOS_INLOS) && !gu->spectatingFullView) // no LOS on unit
 	{
@@ -400,7 +398,7 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 	CUnit* u = static_cast<CUnit*>(o);
 
 	{
-		//icons flag is set before UpdateObjectDrawFlags() is called
+		// icons flag is set before UpdateObjectDrawFlags() is called
 		const bool isIcon = u->HasDrawFlag(DrawFlags::SO_DRICON_FLAG);
 		u->ResetDrawFlag();
 		u->SetIsIcon(isIcon);
@@ -410,7 +408,8 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 		if (camType == CCamera::CAMTYPE_UWREFL && !IWater::GetWater()->CanDrawReflectionPass())
 			continue;
 
-		if (camType == CCamera::CAMTYPE_SHADOW && ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_MODEL) == 0))
+		if (camType == CCamera::CAMTYPE_SHADOW &&
+		    ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_MODEL) == 0))
 			continue;
 
 		const CCamera* cam = CCameraHandler::GetCamera(camType);
@@ -431,38 +430,37 @@ void CUnitDrawerData::UpdateObjectDrawFlags(CSolidObject* o) const
 		if (!cam->InView(u->drawMidPos, u->GetDrawRadius()))
 			continue;
 
-		switch (camType)
-		{
-			case CCamera::CAMTYPE_PLAYER: {
-				const float sqrCamDist = (u->drawPos - cam->GetPos()).SqLength();
+		switch (camType) {
+		case CCamera::CAMTYPE_PLAYER: {
+			const float sqrCamDist = (u->drawPos - cam->GetPos()).SqLength();
 
-				if (!IsAlpha(u)) {
-					u->SetDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
-				}
-				else {
-					u->SetDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
-				}
+			if (!IsAlpha(u)) {
+				u->SetDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+			}
+			else {
+				u->SetDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+			}
 
-				if (u->IsInWater())
-					u->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
-			} break;
+			if (u->IsInWater())
+				u->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+		} break;
 
-			case CCamera::CAMTYPE_UWREFL: {
-				if (CModelDrawerHelper::ObjectVisibleReflection(u->drawMidPos, cam->GetPos(), u->GetDrawRadius()))
-					u->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
-			} break;
+		case CCamera::CAMTYPE_UWREFL: {
+			if (CModelDrawerHelper::ObjectVisibleReflection(u->drawMidPos, cam->GetPos(), u->GetDrawRadius()))
+				u->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
+		} break;
 
-			case CCamera::CAMTYPE_SHADOW: {
-				if unlikely(IsAlpha(u))
-					u->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
-				else
-					u->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-			} break;
+		case CCamera::CAMTYPE_SHADOW: {
+			if unlikely (IsAlpha(u))
+				u->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+			else
+				u->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
+		} break;
 
-			default: { assert(false); } break;
-
+		default: {
+			assert(false);
+		} break;
 		}
-
 	}
 }
 
@@ -508,21 +506,19 @@ void CUnitDrawerData::SetUnitDefImage(const UnitDef* unitDef, const std::string&
 	}
 	else {
 		if (!LoadBuildPic("unitpics/" + unitDef->name + ".dds", bitmap) &&
-			!LoadBuildPic("unitpics/" + unitDef->name + ".png", bitmap) &&
-			!LoadBuildPic("unitpics/" + unitDef->name + ".pcx", bitmap) &&
-			!LoadBuildPic("unitpics/" + unitDef->name + ".bmp", bitmap)) {
+		    !LoadBuildPic("unitpics/" + unitDef->name + ".png", bitmap) &&
+		    !LoadBuildPic("unitpics/" + unitDef->name + ".pcx", bitmap) &&
+		    !LoadBuildPic("unitpics/" + unitDef->name + ".bmp", bitmap)) {
 			bitmap.AllocDummy(SColor(255, 0, 0, 255));
 		}
 	}
 
-	unitImage->textureID = bitmap.CreateTexture(TextureCreationParams{
-		.aniso = 0.0f,
-		.lodBias = 0.0f,
-		.texID = 0,
-		.reqNumLevels = 1,
-		.linearMipMapFilter = false,
-		.linearTextureFilter = true
-	});
+	unitImage->textureID = bitmap.CreateTexture(TextureCreationParams{.aniso = 0.0f,
+	    .lodBias = 0.0f,
+	    .texID = 0,
+	    .reqNumLevels = 1,
+	    .linearMipMapFilter = false,
+	    .linearTextureFilter = true});
 
 	unitImage->imageSizeX = bitmap.xsize;
 	unitImage->imageSizeY = bitmap.ysize;
@@ -613,7 +609,8 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 	S3DModel* gsoModel = (decoyDef == nullptr) ? u->model : decoyDef->LoadModel();
 
 	for (int allyTeam = 0; allyTeam < savedData.deadGhostBuildings.size(); ++allyTeam) {
-		const bool canSeeGhost = !(u->losStatus[allyTeam] & (LOS_INLOS | LOS_CONTRADAR)) && (u->losStatus[allyTeam] & (LOS_PREVLOS));
+		const bool canSeeGhost =
+		    !(u->losStatus[allyTeam] & (LOS_INLOS | LOS_CONTRADAR)) && (u->losStatus[allyTeam] & (LOS_PREVLOS));
 
 		if (addNewGhost && canSeeGhost) {
 			if (gso == nullptr) {
@@ -633,7 +630,6 @@ void CUnitDrawerData::RenderUnitDestroyed(const CUnit* unit)
 				gso->iconRadius = u->iconRadius;
 
 				groundDecals->GhostCreated(u, gso);
-
 			}
 
 			// <gso> can be inserted for multiple allyteams
@@ -667,7 +663,7 @@ void CUnitDrawerData::UnitEnteredRadar(const CUnit* unit, int allyTeam)
 void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	CUnit* u = const_cast<CUnit*>(unit); //cleanup
+	CUnit* u = const_cast<CUnit*>(unit); // cleanup
 
 	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
 		spring::VectorErase(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u);
@@ -681,7 +677,7 @@ void CUnitDrawerData::UnitEnteredLos(const CUnit* unit, int allyTeam)
 void CUnitDrawerData::UnitLeftLos(const CUnit* unit, int allyTeam)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	CUnit* u = const_cast<CUnit*>(unit); //cleanup
+	CUnit* u = const_cast<CUnit*>(unit); // cleanup
 
 	if (gameSetup->ghostedBuildings && unit->unitDef->IsBuildingUnit())
 		spring::VectorInsertUnique(savedData.liveGhostBuildings[allyTeam][MDL_TYPE(unit)], u, true);
@@ -698,20 +694,19 @@ void CUnitDrawerData::PlayerChanged(int playerNum)
 	if (playerNum != gu->myPlayerNum)
 		return;
 
-	for (auto& [icon, data] : unitsByIcon) {
+	for (auto& [icon, data]: unitsByIcon) {
 		data.first.clear();
 		data.second.clear();
 	}
 
-	for (CUnit* unit : unsortedObjects) {
+	for (CUnit* unit: unsortedObjects) {
 		// force an erase (no-op) followed by an insert
 		UpdateUnitIcon(unit, true, false);
 	}
 
-	for (auto& ghosts : savedData.deadGhostBuildings[gu->myAllyTeam]) {
-		for (auto ghost : ghosts) {
+	for (auto& ghosts: savedData.deadGhostBuildings[gu->myAllyTeam]) {
+		for (auto ghost: ghosts) {
 			unitsByIcon[ghost->myIcon].second.push_back(ghost);
 		}
 	}
-
 }

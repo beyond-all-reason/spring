@@ -5,7 +5,7 @@
 
 #include "System/EventClient.h"
 
-struct SmoothHeightMeshDrawer: public CEventClient {
+struct SmoothHeightMeshDrawer : public CEventClient {
 public:
 	static SmoothHeightMeshDrawer* GetInstance();
 	static void FreeInstance();
@@ -14,13 +14,13 @@ public:
 	~SmoothHeightMeshDrawer();
 
 	// CEventClient interface
-	bool WantsEvent(const std::string& eventName) override {
-		return (eventName == "DrawInMiniMap");
-	}
+	bool WantsEvent(const std::string& eventName) override { return (eventName == "DrawInMiniMap"); }
+
 	void DrawInMiniMap() override;
 
 
 	void Draw(float yoffset);
+
 	bool& DrawEnabled() { return drawEnabled; }
 
 private:
@@ -30,4 +30,3 @@ private:
 #define smoothHeightMeshDrawer (SmoothHeightMeshDrawer::GetInstance())
 
 #endif // SMOOTH_HEIGHTMESH_DRAWER_H
-

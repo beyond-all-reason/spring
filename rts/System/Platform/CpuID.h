@@ -6,71 +6,73 @@
 #include "CpuTopology.h"
 
 #if defined(__GNUC__)
-	#define _noinline __attribute__((__noinline__))
+#define _noinline __attribute__((__noinline__))
 #else
-	#define _noinline
+#define _noinline
 #endif
 
 #include <cstdint>
 
 namespace springproc {
-	_noinline void ExecCPUID(unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d);
+_noinline void ExecCPUID(unsigned int* a, unsigned int* b, unsigned int* c, unsigned int* d);
 
-	/** Class to detect the processor topology, more specifically,
-	    for now it can detect the number of real (not hyper threaded
-	    core.
+/** Class to detect the processor topology, more specifically,
+    for now it can detect the number of real (not hyper threaded
+    core.
 
-	    It uses 'cpuid' instructions to query the information. It
-	    implements both the new (i7 and above) and legacy (from P4 on
-	    methods).
+    It uses 'cpuid' instructions to query the information. It
+    implements both the new (i7 and above) and legacy (from P4 on
+    methods).
 
-	    The implementation is done only for Intel processor for now, as at
-	    the time of the writing it was not clear how to achieve a similar
-	    result for AMD CMT multithreading.
+    The implementation is done only for Intel processor for now, as at
+    the time of the writing it was not clear how to achieve a similar
+    result for AMD CMT multithreading.
 
-	    This file is based on the following documentations from Intel:
-	    - "Intel® 64 Architecture Processor Topology Enumeration"
-	      (Kuo_CpuTopology_rc1.rh1.final.pdf)
-	    - "Intel® 64 and IA-32 Architectures Software Developer’s Manual
-	     Volume 3A: System Programming Guide, Part 1"
-	      (64-ia-32-architectures-software-developer-vol-3a-part-1-manual.pdf)
-	    - "Intel® 64 and IA-32 Architectures Software Developer’s Manual
-	     Volume 2A: Instruction Set Reference, A-M"
-	      (64-ia-32-architectures-software-developer-vol-2a-manual.pdf) */
+    This file is based on the following documentations from Intel:
+    - "Intel® 64 Architecture Processor Topology Enumeration"
+      (Kuo_CpuTopology_rc1.rh1.final.pdf)
+    - "Intel® 64 and IA-32 Architectures Software Developer’s Manual
+     Volume 3A: System Programming Guide, Part 1"
+      (64-ia-32-architectures-software-developer-vol-3a-part-1-manual.pdf)
+    - "Intel® 64 and IA-32 Architectures Software Developer’s Manual
+     Volume 2A: Instruction Set Reference, A-M"
+      (64-ia-32-architectures-software-developer-vol-2a-manual.pdf) */
 
-	class CPUID {
-	public:
-		static CPUID& GetInstance();
+class CPUID {
+public:
+	static CPUID& GetInstance();
 
-		/** Total number of cores in the system. This excludes SMT/HT
-		    cores. */
-		int GetNumPhysicalCores() const { return numPhysicalCores; }
-		int GetNumPerformanceCores() const { return numPerformanceCores; }
-		int GetNumLogicalCores() const { return numLogicalCores; }
+	/** Total number of cores in the system. This excludes SMT/HT
+	    cores. */
+	int GetNumPhysicalCores() const { return numPhysicalCores; }
 
-		bool HasHyperThreading() const { return smtDetected; };
+	int GetNumPerformanceCores() const { return numPerformanceCores; }
 
-		cpu_topology::ProcessorMasks GetAvailableProcessorAffinityMask() const { return processorMasks; };
+	int GetNumLogicalCores() const { return numLogicalCores; }
 
-		// Logical processor masks and the L3 cache they have access to. The list is sorted groups with largest cache
-		// first.
-		cpu_topology::ProcessorCaches GetProcessorCaches() const { return processorCaches; }
+	bool HasHyperThreading() const { return smtDetected; };
 
-	private:
-		CPUID();
+	cpu_topology::ProcessorMasks GetAvailableProcessorAffinityMask() const { return processorMasks; };
 
-		void EnumerateCores();
+	// Logical processor masks and the L3 cache they have access to. The list is sorted groups with largest cache
+	// first.
+	cpu_topology::ProcessorCaches GetProcessorCaches() const { return processorCaches; }
 
-		int numLogicalCores;
-		int numPhysicalCores;
-		int numPerformanceCores;
+private:
+	CPUID();
 
-		cpu_topology::ProcessorMasks processorMasks;
-		cpu_topology::ProcessorCaches processorCaches;
+	void EnumerateCores();
 
-		bool smtDetected;
-	};
+	int numLogicalCores;
+	int numPhysicalCores;
+	int numPerformanceCores;
 
-}
+	cpu_topology::ProcessorMasks processorMasks;
+	cpu_topology::ProcessorCaches processorCaches;
+
+	bool smtDetected;
+};
+
+} // namespace springproc
 
 #endif // CPUID_H

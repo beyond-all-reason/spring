@@ -5,36 +5,34 @@
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
-#include "Rendering/GlobalRendering.h"
 #include "Rendering/Common/ModelDrawerHelpers.h"
-#include "Rendering/Units/UnitDrawer.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Models/3DModel.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
-#include "System/SpringMath.h"
-
+#include "Rendering/Units/UnitDrawer.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 
 static const float EXPLOSION_SPEED = 2.f;
 
-//TODO: add to creg
+// TODO: add to creg
 
 /////////////////////////////////////////////////////////////////////
 /// NEW S3O,ASSIMP,... IMPLEMENTATION
 ///
 
-FlyingPiece::FlyingPiece(
-	const S3DModelPiece* _piece,
-	const CMatrix44f& _pieceMatrix,
-	const float3 pos,
-	const float3 speed,
-	const float2 _pieceParams, // (.x=radius, .y=chance)
-	const int2 _renderParams // (.x=texType, .y=team)
-)
-: pos0(pos)
-, bposeMatrix(_pieceMatrix)
-, age(0)
-, piece(_piece)
+FlyingPiece::FlyingPiece(const S3DModelPiece* _piece,
+    const CMatrix44f& _pieceMatrix,
+    const float3 pos,
+    const float3 speed,
+    const float2 _pieceParams, // (.x=radius, .y=chance)
+    const int2 _renderParams   // (.x=texType, .y=team)
+    )
+    : pos0(pos)
+    , bposeMatrix(_pieceMatrix)
+    , age(0)
+    , piece(_piece)
 {
 	assert(piece->GetIndicesVec().size() % 3 == 0); // only triangles
 
@@ -51,27 +49,25 @@ FlyingPiece::FlyingPiece(
 		const float3 flyDir = (cp.dir + (guRNG.NextVector() * 0.3f)).ANormalize();
 
 		splitterParts.emplace_back();
-		splitterParts.back().speed                = speed + flyDir * mix<float>(1.f, EXPLOSION_SPEED, guRNG.NextFloat());
+		splitterParts.back().speed = speed + flyDir * mix<float>(1.f, EXPLOSION_SPEED, guRNG.NextFloat());
 		splitterParts.back().rotationAxisAndSpeed = float4(guRNG.NextVector().ANormalize(), guRNG.NextFloat() * 0.1f);
 		splitterParts.back().indexCount = cp.indexCount;
-		splitterParts.back().indexStart	= cp.indexStart;
+		splitterParts.back().indexStart = cp.indexStart;
 	}
 }
-
 
 void FlyingPiece::InitCommon(const float3 _pos, const float3 _speed, const float _radius, int _team, int _texture)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	pos   = _pos;
+	pos = _pos;
 	speed = _speed;
 
 	pieceRadius = _radius;
 	drawRadius = _radius + 10.f;
 
 	texture = _texture;
-	team    = _team;
+	team = _team;
 }
-
 
 bool FlyingPiece::Update()
 {
@@ -84,7 +80,7 @@ bool FlyingPiece::Update()
 	const float3 dragFactors = GetDragFactors();
 
 	// used for camera frustum checks
-	pos        = pos0 + (speed * dragFactors.x) + UpVector * (mapInfo->map.gravity * dragFactors.y);
+	pos = pos0 + (speed * dragFactors.x) + UpVector * (mapInfo->map.gravity * dragFactors.y);
 	drawRadius = pieceRadius + EXPLOSION_SPEED * dragFactors.x + 10.f;
 
 	// check visibility (if all particles are underground -> kill)
@@ -138,11 +134,12 @@ float3 FlyingPiece::GetDragFactors() const
 	//           = g * (t * sum(i=0,t){d^i} - sum(i=0,t){i * d^i})
 	//           = g * gravityDrag
 	// The first sum is again a geometric series as above, the 2nd one is very similar.
-	// The solution can be found here: https://de.wikipedia.org/w/index.php?title=Geometrische_Reihe&oldid=149159222#Verwandte_Summenformel_1
+	// The solution can be found here:
+	// https://de.wikipedia.org/w/index.php?title=Geometrische_Reihe&oldid=149159222#Verwandte_Summenformel_1
 	//
 	// The advantage of those 2 drag factors are that they only depend on the time (which even can be interpolated),
-	// so we only have to compute them once per frame. And can then get the position of each particle with a simple multiplication,
-	// saving memory & cpu time.
+	// so we only have to compute them once per frame. And can then get the position of each particle with a simple
+	// multiplication, saving memory & cpu time.
 
 	static const float airDrag = 0.995f;
 	static const float invAirDrag = 1.f / (1.f - airDrag);
@@ -157,15 +154,15 @@ float3 FlyingPiece::GetDragFactors() const
 	dragFactors.x = (1.f - airDragPowOne) * invAirDrag;
 
 	// Gravity Drag
-	dragFactors.y  = interAge * dragFactors.x; // 1st sum
-	dragFactors.y -= (interAge * (airDragPowTwo - airDragPowOne) - airDragPowOne + airDrag) * invAirDrag * invAirDrag; // 2nd sum
+	dragFactors.y = interAge * dragFactors.x; // 1st sum
+	dragFactors.y -=
+	    (interAge * (airDragPowTwo - airDragPowOne) - airDragPowOne + airDrag) * invAirDrag * invAirDrag; // 2nd sum
 
 	// time interpolation factor
 	dragFactors.z = interAge;
 
 	return dragFactors;
 }
-
 
 CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFactors) const
 {
@@ -174,12 +171,12 @@ CMatrix44f FlyingPiece::GetMatrixOf(const SplitterData& cp, const float3 dragFac
 	const float4& rot = cp.rotationAxisAndSpeed;
 
 	CMatrix44f m = bposeMatrix;
-	m.GetPos() += interPos; //note: not the same as .Translate(pos) which does `m = m * translate(pos)`, but we want `m = translate(pos) * m`
+	m.GetPos() += interPos; // note: not the same as .Translate(pos) which does `m = m * translate(pos)`, but we want `m
+	                        // = translate(pos) * m`
 	m.Rotate(rot.w * dragFactors.z, rot.xyz);
 
 	return m;
 }
-
 
 void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 {
@@ -206,7 +203,6 @@ void FlyingPiece::CheckDrawStateChange(const FlyingPiece* prev) const
 		CModelDrawerHelper::BindModelTypeTexture(thisModelType, texture);
 }
 
-
 void FlyingPiece::BeginDraw()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -223,7 +219,6 @@ void FlyingPiece::EndDraw()
 	CModelDrawerHelper::UnbindModelTypeTexture(MODELTYPE_S3O); // all model types do the same thing
 }
 
-
 void FlyingPiece::Draw(const FlyingPiece* prev) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -235,9 +230,9 @@ void FlyingPiece::Draw(const FlyingPiece* prev) const
 		glPushMatrix();
 		glMultMatrixf(GetMatrixOf(cp, dragFactors));
 		assert(piece->indxCount != ~0u);
-		const uint32_t indxOffset = piece->indxStart + piece->indxCount; //shatter piece indices come after regular indices
+		const uint32_t indxOffset =
+		    piece->indxStart + piece->indxCount; // shatter piece indices come after regular indices
 		S3DModelPiece::DrawShatterElements(indxOffset + cp.indexStart, cp.indexCount);
 		glPopMatrix();
 	}
 }
-

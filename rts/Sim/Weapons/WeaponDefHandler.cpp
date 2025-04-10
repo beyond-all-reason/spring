@@ -1,22 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
+#include "WeaponDefHandler.h"
+
+#include "Lua/LuaParser.h"
+#include "Sim/Misc/DamageArrayHandler.h"
+#include "System/Exceptions.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
+
 #include <algorithm>
 #include <cctype>
 #include <iostream>
 #include <stdexcept>
 
-#include "WeaponDefHandler.h"
-#include "Lua/LuaParser.h"
-#include "Sim/Misc/DamageArrayHandler.h"
-#include "System/Exceptions.h"
-#include "System/StringUtil.h"
-
-#include "System/Misc/TracyDefs.h"
-
 static CWeaponDefHandler gWeaponDefHandler;
 CWeaponDefHandler* weaponDefHandler = &gWeaponDefHandler;
-
 
 void CWeaponDefHandler::Init(LuaParser* defsParser)
 {
@@ -40,8 +39,6 @@ void CWeaponDefHandler::Init(LuaParser* defsParser)
 	}
 }
 
-
-
 const WeaponDef* CWeaponDefHandler::GetWeaponDef(std::string wdName) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -54,7 +51,6 @@ const WeaponDef* CWeaponDefHandler::GetWeaponDef(std::string wdName) const
 
 	return &weaponDefsVector[it->second];
 }
-
 
 const WeaponDef* CWeaponDefHandler::GetWeaponDefByID(int id) const
 {

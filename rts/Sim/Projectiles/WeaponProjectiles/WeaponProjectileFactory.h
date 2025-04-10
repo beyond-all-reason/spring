@@ -11,4 +11,3 @@ public:
 };
 
 #endif
-

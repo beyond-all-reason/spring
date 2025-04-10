@@ -11,4 +11,3 @@ frame  anims/cursornumber_08.png  0.200
 frame  anims/cursornumber_09.png  0.400
 frame  anims/cursornumber_10.png  0.200
 frame  anims/cursornumber_11.png  0.200
-

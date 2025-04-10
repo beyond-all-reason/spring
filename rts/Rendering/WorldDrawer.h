@@ -3,8 +3,7 @@
 #ifndef _WORLD_DRAWER_H
 #define _WORLD_DRAWER_H
 
-class CWorldDrawer
-{
+class CWorldDrawer {
 public:
 	void InitPre() const;
 	void InitPost() const;

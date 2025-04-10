@@ -4,10 +4,9 @@
 #include "LuaConstCMD.h"
 
 #include "LuaInclude.h"
-
 #include "LuaUtils.h"
-#include "Sim/Units/CommandAI/Command.h"
 
+#include "Sim/Units/CommandAI/Command.h"
 
 /***
  * Command constants.
@@ -16,49 +15,51 @@
 
 bool LuaConstCMD::PushEntries(lua_State* L)
 {
+	// clang-format off
 	/*** @field CMD.OPT_ALT 128 */
-	LuaPushNamedNumber(L, "OPT_ALT",      ALT_KEY);
+	LuaPushNamedNumber(L, "OPT_ALT", ALT_KEY);
 	/*** @field CMD.OPT_CTRL 64 */
-	LuaPushNamedNumber(L, "OPT_CTRL",     CONTROL_KEY);
+	LuaPushNamedNumber(L, "OPT_CTRL", CONTROL_KEY);
 	/*** @field CMD.OPT_SHIFT 32 */
-	LuaPushNamedNumber(L, "OPT_SHIFT",    SHIFT_KEY);
+	LuaPushNamedNumber(L, "OPT_SHIFT", SHIFT_KEY);
 	/*** @field CMD.OPT_RIGHT 16 */
-	LuaPushNamedNumber(L, "OPT_RIGHT",    RIGHT_MOUSE_KEY);
+	LuaPushNamedNumber(L, "OPT_RIGHT", RIGHT_MOUSE_KEY);
 	/*** @field CMD.OPT_INTERNAL 8 */
 	LuaPushNamedNumber(L, "OPT_INTERNAL", INTERNAL_ORDER);
 	/*** @field CMD.OPT_META 4 */
-	LuaPushNamedNumber(L, "OPT_META",     META_KEY);
+	LuaPushNamedNumber(L, "OPT_META", META_KEY);
 
 	/*** @field CMD.MOVESTATE_NONE -1 */
-	LuaPushNamedNumber(L, "MOVESTATE_NONE"    , MOVESTATE_NONE    );
+	LuaPushNamedNumber(L, "MOVESTATE_NONE", MOVESTATE_NONE);
 	/*** @field CMD.MOVESTATE_HOLDPOS 0 */
-	LuaPushNamedNumber(L, "MOVESTATE_HOLDPOS" , MOVESTATE_HOLDPOS );
+	LuaPushNamedNumber(L, "MOVESTATE_HOLDPOS", MOVESTATE_HOLDPOS);
 	/*** @field CMD.MOVESTATE_MANEUVER 1 */
 	LuaPushNamedNumber(L, "MOVESTATE_MANEUVER", MOVESTATE_MANEUVER);
 	/*** @field CMD.MOVESTATE_ROAM 2 */
-	LuaPushNamedNumber(L, "MOVESTATE_ROAM"    , MOVESTATE_ROAM    );
+	LuaPushNamedNumber(L, "MOVESTATE_ROAM", MOVESTATE_ROAM);
 
 	/*** @field CMD.FIRESTATE_NONE -1 */
-	LuaPushNamedNumber(L, "FIRESTATE_NONE"         , FIRESTATE_NONE         );
+	LuaPushNamedNumber(L, "FIRESTATE_NONE", FIRESTATE_NONE);
 	/*** @field CMD.FIRESTATE_HOLDFIRE 0 */
-	LuaPushNamedNumber(L, "FIRESTATE_HOLDFIRE"     , FIRESTATE_HOLDFIRE     );
+	LuaPushNamedNumber(L, "FIRESTATE_HOLDFIRE", FIRESTATE_HOLDFIRE);
 	/*** @field CMD.FIRESTATE_RETURNFIRE 1 */
-	LuaPushNamedNumber(L, "FIRESTATE_RETURNFIRE"   , FIRESTATE_RETURNFIRE   );
+	LuaPushNamedNumber(L, "FIRESTATE_RETURNFIRE", FIRESTATE_RETURNFIRE);
 	/*** @field CMD.FIRESTATE_FIREATWILL 2 */
-	LuaPushNamedNumber(L, "FIRESTATE_FIREATWILL"   , FIRESTATE_FIREATWILL   );
+	LuaPushNamedNumber(L, "FIRESTATE_FIREATWILL", FIRESTATE_FIREATWILL);
 	/*** @field CMD.FIRESTATE_FIREATNEUTRAL 3 */
 	LuaPushNamedNumber(L, "FIRESTATE_FIREATNEUTRAL", FIRESTATE_FIREATNEUTRAL);
 
 	/*** @field CMD.WAITCODE_TIME 1 */
-	LuaPushNamedNumber(L, "WAITCODE_TIME",   CMD_WAITCODE_TIMEWAIT);
+	LuaPushNamedNumber(L, "WAITCODE_TIME", CMD_WAITCODE_TIMEWAIT);
 	/*** @field CMD.WAITCODE_DEATH 2 */
-	LuaPushNamedNumber(L, "WAITCODE_DEATH",  CMD_WAITCODE_DEATHWAIT);
+	LuaPushNamedNumber(L, "WAITCODE_DEATH", CMD_WAITCODE_DEATHWAIT);
 	/*** @field CMD.WAITCODE_SQUAD 3 */
-	LuaPushNamedNumber(L, "WAITCODE_SQUAD",  CMD_WAITCODE_SQUADWAIT);
+	LuaPushNamedNumber(L, "WAITCODE_SQUAD", CMD_WAITCODE_SQUADWAIT);
 	/*** @field CMD.WAITCODE_GATHER 4 */
 	LuaPushNamedNumber(L, "WAITCODE_GATHER", CMD_WAITCODE_GATHERWAIT);
+	// clang-format on
 
-#define PUSH_CMD(cmd) LuaInsertDualMapPair(L, #cmd, CMD_ ## cmd);
+#define PUSH_CMD(cmd) LuaInsertDualMapPair(L, #cmd, CMD_##cmd);
 
 	/*** @field CMD.STOP 0 */
 	PUSH_CMD(STOP);
@@ -125,7 +126,8 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	/*** @field CMD.MANUALFIRE 105 */
 	PUSH_CMD(MANUALFIRE);
 	/*** @field CMD.DGUN 105 */
-	LuaInsertDualMapPair(L, "DGUN", CMD_MANUALFIRE); // backward compatibility (TODO: find a way to print a warning when used!)
+	LuaInsertDualMapPair(
+	    L, "DGUN", CMD_MANUALFIRE); // backward compatibility (TODO: find a way to print a warning when used!)
 	/*** @field CMD.RESTORE 110 */
 	PUSH_CMD(RESTORE);
 	/*** @field CMD.REPEAT 115 */
@@ -139,7 +141,8 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	/*** @field CMD.AUTOREPAIRLEVEL 135 */
 	PUSH_CMD(AUTOREPAIRLEVEL);
 	/*** @field CMD.LOOPBACKATTACK 20 */
-	LuaInsertDualMapPair(L, "LOOPBACKATTACK", CMD_ATTACK); // backward compatibility (TODO: find a way to print a warning when used!)
+	LuaInsertDualMapPair(
+	    L, "LOOPBACKATTACK", CMD_ATTACK); // backward compatibility (TODO: find a way to print a warning when used!)
 	/*** @field CMD.IDLEMODE 145  */
 	PUSH_CMD(IDLEMODE);
 

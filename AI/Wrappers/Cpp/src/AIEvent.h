@@ -8,10 +8,8 @@ namespace springai {
 /**
  * An AI event is sent form the engine to C++ Skirmish AIs.
  */
-class AIEvent {
+class AIEvent {}; // class AIEvent
 
-}; // class AIEvent
-
-}  // namespace springai
+} // namespace springai
 
 #endif // _CPPWRAPPER_AI_EVENT_H

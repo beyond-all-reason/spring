@@ -42,7 +42,6 @@ these four paragraphs for those parts of this code that are retained.
 *----------------------------------------------------------------------------*/
 #include "../System.h"
 
-
 namespace streflop {
 namespace SoftFloat {
 
@@ -70,9 +69,10 @@ typedef int64_t sbits64;
 // softfloat needs boolean TRUE/FALSE
 #undef TRUE
 #undef FALSE
+
 enum {
-    FALSE = 0,
-    TRUE  = 1
+	FALSE = 0,
+	TRUE = 1
 };
 
 // Streflop Bridge: Complete the missing defined that were in the processor files
@@ -90,12 +90,12 @@ enum {
 #define BITS64
 
 // How to define a long long 64-bit constant
-#define LIT64( a ) a##LL
+#define LIT64(a) a##LL
 
 // From original comment: If a compiler does not support explicit inlining,
 // this macro should be defined to be 'static'.
 // However, with C++, this has become obsolete
 #define INLINE extern inline
 
-}
-}
+} // namespace SoftFloat
+} // namespace streflop

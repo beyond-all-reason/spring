@@ -5,21 +5,22 @@
 
 #include "Rendering/GL/myGL.h"
 #include "System/type2.h"
+
 #include <string>
 
-
-class CInfoTexture
-{
+class CInfoTexture {
 public:
 	CInfoTexture();
 	CInfoTexture(const std::string& name, GLuint texture, int2 texSize);
+
 	virtual ~CInfoTexture() {}
 
 public:
 	virtual GLuint GetTexture() { return texture; }
 
-	int2 GetTexSize()     const { return texSize; }
-	int  GetTexChannels() const { return texChannels; }
+	int2 GetTexSize() const { return texSize; }
+
+	int GetTexChannels() const { return texChannels; }
 
 	const std::string& GetName() const { return name; }
 
@@ -32,9 +33,12 @@ protected:
 	int texChannels;
 };
 
-class CDummyInfoTexture: public CInfoTexture {
+class CDummyInfoTexture : public CInfoTexture {
 public:
-	CDummyInfoTexture(): CInfoTexture("dummy", 0, int2(0, 0)) {}
+	CDummyInfoTexture()
+	    : CInfoTexture("dummy", 0, int2(0, 0))
+	{
+	}
 };
 
 #endif // _INFO_TEXTURE_H

@@ -35,15 +35,14 @@
 
 #if defined(LUA_USE_LINUX)
 #define LUA_USE_POSIX
-#define LUA_USE_DLOPEN		/* needs an extra library: -ldl */
-#define LUA_USE_READLINE	/* needs some extra libraries */
+#define LUA_USE_DLOPEN   /* needs an extra library: -ldl */
+#define LUA_USE_READLINE /* needs some extra libraries */
 #endif
 
 #if defined(LUA_USE_MACOSX)
 #define LUA_USE_POSIX
-#define LUA_DL_DYLD		/* does not need extra library */
+#define LUA_DL_DYLD /* does not need extra library */
 #endif
-
 
 
 /*
@@ -66,9 +65,9 @@
 @* checks for initialization code.
 ** CHANGE them if you want different names.
 */
-#define LUA_PATH        "LUA_PATH"
-#define LUA_CPATH       "LUA_CPATH"
-#define LUA_INIT	"LUA_INIT"
+#define LUA_PATH "LUA_PATH"
+#define LUA_CPATH "LUA_CPATH"
+#define LUA_INIT "LUA_INIT"
 
 
 /*
@@ -85,23 +84,17 @@
 ** In Windows, any exclamation mark ('!') in the path is replaced by the
 ** path of the directory of the executable file of the current process.
 */
-#define LUA_LDIR	"!\\lua\\"
-#define LUA_CDIR	"!\\"
-#define LUA_PATH_DEFAULT  \
-		".\\?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;" \
-		             LUA_CDIR"?.lua;"  LUA_CDIR"?\\init.lua"
-#define LUA_CPATH_DEFAULT \
-	".\\?.dll;"  LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll"
+#define LUA_LDIR "!\\lua\\"
+#define LUA_CDIR "!\\"
+#define LUA_PATH_DEFAULT ".\\?.lua;" LUA_LDIR "?.lua;" LUA_LDIR "?\\init.lua;" LUA_CDIR "?.lua;" LUA_CDIR "?\\init.lua"
+#define LUA_CPATH_DEFAULT ".\\?.dll;" LUA_CDIR "?.dll;" LUA_CDIR "loadall.dll"
 
 #else
-#define LUA_ROOT	"/usr/local/"
-#define LUA_LDIR	LUA_ROOT "share/lua/5.1/"
-#define LUA_CDIR	LUA_ROOT "lib/lua/5.1/"
-#define LUA_PATH_DEFAULT  \
-		"./?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?/init.lua;" \
-		            LUA_CDIR"?.lua;"  LUA_CDIR"?/init.lua"
-#define LUA_CPATH_DEFAULT \
-	"./?.so;"  LUA_CDIR"?.so;" LUA_CDIR"loadall.so"
+#define LUA_ROOT "/usr/local/"
+#define LUA_LDIR LUA_ROOT "share/lua/5.1/"
+#define LUA_CDIR LUA_ROOT "lib/lua/5.1/"
+#define LUA_PATH_DEFAULT "./?.lua;" LUA_LDIR "?.lua;" LUA_LDIR "?/init.lua;" LUA_CDIR "?.lua;" LUA_CDIR "?/init.lua"
+#define LUA_CPATH_DEFAULT "./?.so;" LUA_CDIR "?.so;" LUA_CDIR "loadall.so"
 #endif
 
 
@@ -111,9 +104,9 @@
 ** and is not Windows. (On Windows Lua automatically uses "\".)
 */
 #if defined(_WIN32)
-#define LUA_DIRSEP	"\\"
+#define LUA_DIRSEP "\\"
 #else
-#define LUA_DIRSEP	"/"
+#define LUA_DIRSEP "/"
 #endif
 
 
@@ -129,10 +122,10 @@
 ** characters. (E.g., if one of those characters is a common character
 ** in file/directory names.) Probably you do not need to change them.
 */
-#define LUA_PATHSEP	";"
-#define LUA_PATH_MARK	"?"
-#define LUA_EXECDIR	"!"
-#define LUA_IGMARK	"-"
+#define LUA_PATHSEP ";"
+#define LUA_PATH_MARK "?"
+#define LUA_EXECDIR "!"
+#define LUA_IGMARK "-"
 
 
 /*
@@ -140,8 +133,8 @@
 ** CHANGE that if ptrdiff_t is not adequate on your machine. (On most
 ** machines, ptrdiff_t gives a good choice between int or long.)
 */
-//SPRING we must use the same size for 64 and 32 bit. 32 bit int should be enough
-#define LUA_INTEGER	int
+// SPRING we must use the same size for 64 and 32 bit. 32 bit int should be enough
+#define LUA_INTEGER int
 
 
 /*
@@ -162,12 +155,12 @@
 
 #else
 
-#define LUA_API		extern
+#define LUA_API extern
 
 #endif
 
 /* more often than not the libs go together with the core */
-#define LUALIB_API	LUA_API
+#define LUALIB_API LUA_API
 
 
 /*
@@ -180,27 +173,25 @@
 ** when Lua is compiled as a shared library.
 */
 #if defined(luaall_c)
-#define LUAI_FUNC	static
-#define LUAI_DATA	/* empty */
+#define LUAI_FUNC static
+#define LUAI_DATA /* empty */
 
-#elif defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 302) && \
-      defined(__ELF__)
-#define LUAI_FUNC	__attribute__((visibility("hidden"))) extern
-#define LUAI_DATA	LUAI_FUNC
+#elif defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 302) && defined(__ELF__)
+#define LUAI_FUNC __attribute__((visibility("hidden"))) extern
+#define LUAI_DATA LUAI_FUNC
 
 #else
-#define LUAI_FUNC	extern
-#define LUAI_DATA	extern
+#define LUAI_FUNC extern
+#define LUAI_DATA extern
 #endif
-
 
 
 /*
 @@ LUA_QL describes how error messages quote program elements.
 ** CHANGE it if you want a different appearance.
 */
-#define LUA_QL(x)	"'" x "'"
-#define LUA_QS		LUA_QL("%s")
+#define LUA_QL(x) "'" x "'"
+#define LUA_QS LUA_QL("%s")
 
 
 /*
@@ -208,7 +199,7 @@
 @* of a function in debug information.
 ** CHANGE it if you want a different size.
 */
-#define LUA_IDSIZE	200
+#define LUA_IDSIZE 200
 
 
 /*
@@ -227,13 +218,13 @@
 */
 #if defined(LUA_USE_ISATTY)
 #include <unistd.h>
-#define lua_stdin_is_tty()	isatty(0)
+#define lua_stdin_is_tty() isatty(0)
 #elif defined(LUA_WIN)
 #include <io.h>
 #include <stdio.h>
-#define lua_stdin_is_tty()	_isatty(_fileno(stdin))
+#define lua_stdin_is_tty() _isatty(_fileno(stdin))
 #else
-#define lua_stdin_is_tty()	1  /* assume stdin is a tty */
+#define lua_stdin_is_tty() 1 /* assume stdin is a tty */
 #endif
 
 
@@ -243,8 +234,8 @@
 ** CHANGE them if you want different prompts. (You can also change the
 ** prompts dynamically, assigning to globals _PROMPT/_PROMPT2.)
 */
-#define LUA_PROMPT		"> "
-#define LUA_PROMPT2		">> "
+#define LUA_PROMPT "> "
+#define LUA_PROMPT2 ">> "
 
 
 /*
@@ -252,7 +243,7 @@
 ** CHANGE it if your stand-alone interpreter has a different name and
 ** your system is not able to detect that name automatically.
 */
-#define LUA_PROGNAME		"lua"
+#define LUA_PROGNAME "lua"
 
 
 /*
@@ -260,7 +251,7 @@
 @* stand-alone interpreter.
 ** CHANGE it if you need longer lines.
 */
-#define LUA_MAXINPUT	512
+#define LUA_MAXINPUT 512
 
 
 /*
@@ -272,20 +263,28 @@
 ** GNU readline and history facilities).
 */
 #if defined(LUA_USE_READLINE)
-#include <stdio.h>
-#include <readline/readline.h>
 #include <readline/history.h>
-#define lua_readline(L,b,p)	((void)L, ((b)=readline(p)) != NULL)
-#define lua_saveline(L,idx) \
-	if (lua_strlen(L,idx) > 0)  /* non-empty line? */ \
-	  add_history(lua_tostring(L, idx));  /* add it to history */
-#define lua_freeline(L,b)	((void)L, free(b))
+#include <readline/readline.h>
+#include <stdio.h>
+#define lua_readline(L, b, p) ((void)L, ((b) = readline(p)) != NULL)
+#define lua_saveline(L, idx)                                       \
+	if (lua_strlen(L, idx) > 0)            /* non-empty line? */   \
+		add_history(lua_tostring(L, idx)); /* add it to history */
+#define lua_freeline(L, b) ((void)L, free(b))
 #else
-#define lua_readline(L,b,p)	\
-	((void)L, fputs(p, stdout), fflush(stdout),  /* show prompt */ \
-	fgets(b, LUA_MAXINPUT, stdin) != NULL)  /* get line */
-#define lua_saveline(L,idx)	{ (void)L; (void)idx; }
-#define lua_freeline(L,b)	{ (void)L; (void)b; }
+#define lua_readline(L, b, p)                                     \
+	((void)L, fputs(p, stdout), fflush(stdout), /* show prompt */ \
+	    fgets(b, LUA_MAXINPUT, stdin) != NULL)  /* get line */
+#define lua_saveline(L, idx) \
+	{                        \
+		(void)L;             \
+		(void)idx;           \
+	}
+#define lua_freeline(L, b) \
+	{                      \
+		(void)L;           \
+		(void)b;           \
+	}
 #endif
 
 #endif
@@ -300,7 +299,7 @@
 ** mean larger pauses which mean slower collection.) You can also change
 ** this value dynamically.
 */
-#define LUAI_GCPAUSE	200  /* 200% (wait memory to double before next GC) */
+#define LUAI_GCPAUSE 200 /* 200% (wait memory to double before next GC) */
 
 
 /*
@@ -311,8 +310,7 @@
 ** infinity, where each step performs a full collection.) You can also
 ** change this value dynamically.
 */
-#define LUAI_GCMUL	200 /* GC runs 'twice the speed' of memory allocation */
-
+#define LUAI_GCMUL 200 /* GC runs 'twice the speed' of memory allocation */
 
 
 /*
@@ -334,7 +332,7 @@
 ** CHANGE it to undefined as soon as your programs use only '...' to
 ** access vararg parameters (instead of the old 'arg' table).
 */
-//SPRING
+// SPRING
 #undef LUA_COMPAT_VARARG
 
 /*
@@ -342,7 +340,7 @@
 ** CHANGE it to undefined as soon as your programs use 'math.fmod' or
 ** the new '%' operator instead of 'math.mod'.
 */
-//SPRING
+// SPRING
 #undef LUA_COMPAT_MOD
 
 /*
@@ -351,16 +349,16 @@
 ** CHANGE it to 2 if you want the old behaviour, or undefine it to turn
 ** off the advisory error when nesting [[...]].
 */
-//SPRING
+// SPRING
 #undef LUA_COMPAT_LSTR
-//#define LUA_COMPAT_LSTR		1
+// #define LUA_COMPAT_LSTR		1
 
 /*
 @@ LUA_COMPAT_GFIND controls compatibility with old 'string.gfind' name.
 ** CHANGE it to undefined as soon as you rename 'string.gfind' to
 ** 'string.gmatch'.
 */
-//SPRING
+// SPRING
 #undef LUA_COMPAT_GFIND
 
 /*
@@ -369,9 +367,8 @@
 ** CHANGE it to undefined as soon as you replace to 'luaL_register'
 ** your uses of 'luaL_openlib'
 */
-//SPRING
+// SPRING
 #undef LUA_COMPAT_OPENLIB
-
 
 
 /*
@@ -383,9 +380,16 @@
 */
 #if defined(LUA_USE_APICHECK)
 #include <assert.h>
-#define luai_apicheck(L,o)	{ (void)L; assert(o); }
+#define luai_apicheck(L, o) \
+	{                       \
+		(void)L;            \
+		assert(o);          \
+	}
 #else
-#define luai_apicheck(L,o)	{ (void)L; }
+#define luai_apicheck(L, o) \
+	{                       \
+		(void)L;            \
+	}
 #endif
 
 
@@ -395,11 +399,11 @@
 ** your machine. Probably you do not need to change this.
 */
 /* avoid overflows in comparison */
-#if INT_MAX-20 < 32760
-#define LUAI_BITSINT	16
+#if INT_MAX - 20 < 32760
+#define LUAI_BITSINT 16
 #elif INT_MAX > 2147483640L
 /* int has at least 32 bits */
-#define LUAI_BITSINT	32
+#define LUAI_BITSINT 32
 #else
 #error "you must define LUA_BITSINT with number of bits in an integer"
 #endif
@@ -418,18 +422,18 @@
 ** longs.) Probably you do not need to change this.
 */
 #if LUAI_BITSINT >= 32
-#define LUAI_UINT32	unsigned int
-#define LUAI_INT32	int
-#define LUAI_MAXINT32	INT_MAX
-#define LUAI_UMEM	size_t
-#define LUAI_MEM	ptrdiff_t
+#define LUAI_UINT32 unsigned int
+#define LUAI_INT32 int
+#define LUAI_MAXINT32 INT_MAX
+#define LUAI_UMEM size_t
+#define LUAI_MEM ptrdiff_t
 #else
 /* 16-bit ints */
-#define LUAI_UINT32	unsigned long
-#define LUAI_INT32	long
-#define LUAI_MAXINT32	LONG_MAX
-#define LUAI_UMEM	unsigned long
-#define LUAI_MEM	long
+#define LUAI_UINT32 unsigned long
+#define LUAI_INT32 long
+#define LUAI_MAXINT32 LONG_MAX
+#define LUAI_UMEM unsigned long
+#define LUAI_MEM long
 #endif
 
 
@@ -439,7 +443,7 @@
 ** arbitrary; its only purpose is to stop infinite recursion before
 ** exhausting memory.
 */
-#define LUAI_MAXCALLS	20000
+#define LUAI_MAXCALLS 20000
 
 
 /*
@@ -450,8 +454,7 @@
 ** functions to consume unlimited stack space. (must be smaller than
 ** -LUA_REGISTRYINDEX)
 */
-#define LUAI_MAXCSTACK	8000
-
+#define LUAI_MAXCSTACK 8000
 
 
 /*
@@ -472,31 +475,29 @@
 @@ LUAI_MAXCCALLS is the maximum depth for nested C calls (short) and
 @* syntactical nested non-terminals in a program.
 */
-#define LUAI_MAXCCALLS		200
+#define LUAI_MAXCCALLS 200
 
 
 /*
 @@ LUAI_MAXVARS is the maximum number of local variables per function
 @* (must be smaller than 250).
 */
-#define LUAI_MAXVARS		200
+#define LUAI_MAXVARS 200
 
 
 /*
 @@ LUAI_MAXUPVALUES is the maximum number of upvalues per function
 @* (must be smaller than 250).
 */
-#define LUAI_MAXUPVALUES	60
+#define LUAI_MAXUPVALUES 60
 
 
 /*
 @@ LUAL_BUFFERSIZE is the buffer size used by the lauxlib buffer system.
 */
-#define LUAL_BUFFERSIZE		BUFSIZ
+#define LUAL_BUFFERSIZE BUFSIZ
 
 /* }================================================================== */
-
-
 
 
 /*
@@ -508,16 +509,16 @@
 ** ===================================================================
 */
 
-//SPRING#define LUA_NUMBER_DOUBLE
-//SPRING#define LUA_NUMBER	double
+// SPRING#define LUA_NUMBER_DOUBLE
+// SPRING#define LUA_NUMBER	double
 #undef LUA_NUMBER_DOUBLE
-#define LUA_NUMBER	float
+#define LUA_NUMBER float
 
 /*
 @@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
 @* over a number.
 */
-#define LUAI_UACNUMBER	double
+#define LUAI_UACNUMBER double
 
 
 /*
@@ -527,37 +528,37 @@
 @@ LUAI_MAXNUMBER2STR is maximum size of previous conversion.
 @@ lua_str2number converts a string to a number.
 */
-//SPRING#define LUA_NUMBER_SCAN		"%lf"
-#define LUA_NUMBER_SCAN		"%f"
-#define LUA_NUMBER_FMT		"%.14g"
+// SPRING#define LUA_NUMBER_SCAN		"%lf"
+#define LUA_NUMBER_SCAN "%f"
+#define LUA_NUMBER_FMT "%.14g"
 #ifndef BUILDING_AI
-#define lua_number2str(s,n)	spring_lua_ftoa((n),(s))
-#define lua_number2fmt(s,fmt,n)	spring_lua_format((n), (fmt), (s))
+#define lua_number2str(s, n) spring_lua_ftoa((n), (s))
+#define lua_number2fmt(s, fmt, n) spring_lua_format((n), (fmt), (s))
 #else
-#define lua_number2str(s,n)	sprintf((s), LUA_NUMBER_FMT, (n))
-#define lua_number2fmt(s,fmt,n)	sprintf((s), fmt, (n))
+#define lua_number2str(s, n) sprintf((s), LUA_NUMBER_FMT, (n))
+#define lua_number2fmt(s, fmt, n) sprintf((s), fmt, (n))
 #endif
-#define LUAI_MAXNUMBER2STR	32 /* 16 digits, sign, point, and \0 */
-#define lua_str2number(s,p)	strtod((s), (p))
+#define LUAI_MAXNUMBER2STR 32 /* 16 digits, sign, point, and \0 */
+#define lua_str2number(s, p) strtod((s), (p))
 
 
 /*
 @@ The luai_num* macros define the primitive operations over numbers.
 */
 #if defined(LUA_CORE)
-//SPRING#include <math.h>
+// SPRING#include <math.h>
 #include "streflop_cond.h"
-#define luai_numadd(a,b)	((a) + (b))
-#define luai_numsub(a,b)	((a) - (b))
-#define luai_nummul(a,b)	((a) * (b))
-#define luai_numdiv(a,b)	((a) / (b))
-#define luai_nummod(a,b)	((a) - math::floor(luai_numdiv((a), (b))) * (b))
-#define luai_numpow(a,b)	(math::pow((a), (b)))
-#define luai_numunm(a)		(-(a))
-#define luai_numeq(a,b)		((a) == (b))
-#define luai_numlt(a,b)		((a) <  (b))
-#define luai_numle(a,b)		((a) <= (b))
-#define luai_numisnan(a)	(!luai_numeq((a), (a)))
+#define luai_numadd(a, b) ((a) + (b))
+#define luai_numsub(a, b) ((a) - (b))
+#define luai_nummul(a, b) ((a) * (b))
+#define luai_numdiv(a, b) ((a) / (b))
+#define luai_nummod(a, b) ((a) - math::floor(luai_numdiv((a), (b))) * (b))
+#define luai_numpow(a, b) (math::pow((a), (b)))
+#define luai_numunm(a) (-(a))
+#define luai_numeq(a, b) ((a) == (b))
+#define luai_numlt(a, b) ((a) < (b))
+#define luai_numle(a, b) ((a) <= (b))
+#define luai_numisnan(a) (!luai_numeq((a), (a)))
 #endif
 
 
@@ -572,31 +573,40 @@
 
 /* On a Pentium, resort to a trick */
 #if defined(LUA_NUMBER_DOUBLE) && !defined(LUA_ANSI) && !defined(__SSE2__) && \
-    (defined(__i386) || defined (_M_IX86) || defined(__i386__))
+    (defined(__i386) || defined(_M_IX86) || defined(__i386__))
 
-	/* On a Microsoft compiler, use assembler */
-	#if defined(_MSC_VER)
+/* On a Microsoft compiler, use assembler */
+#if defined(_MSC_VER)
 
-		#warning Using ASM for lua_number2int  (SPRING)
-		#define lua_number2int(i,d)   __asm fld d   __asm fistp i
-		#define lua_number2integer(i,n)		lua_number2int(i, n)
+#warning Using ASM for lua_number2int  (SPRING)
+#define lua_number2int(i, d) __asm fld d __asm fistp i
+#define lua_number2integer(i, n) lua_number2int(i, n)
 
-		/* the next trick should work on any Pentium, but sometimes clashes
-		with a DirectX idiosyncrasy */
-	#else
+/* the next trick should work on any Pentium, but sometimes clashes
+with a DirectX idiosyncrasy */
+#else
 
-		#warning Using casting for lua_number2int  (SPRING)
-		union luai_Cast { double l_d; long l_l; };
-		#define lua_number2int(i,d) \
-		{ volatile union luai_Cast u; u.l_d = (d) + 6755399441055744.0; (i) = u.l_l; }
-		#define lua_number2integer(i,n)		lua_number2int(i, n)
+#warning Using casting for lua_number2int  (SPRING)
 
-	#endif
+union luai_Cast {
+	double l_d;
+	long l_l;
+};
+
+#define lua_number2int(i, d)              \
+	{                                     \
+		volatile union luai_Cast u;       \
+		u.l_d = (d) + 6755399441055744.0; \
+		(i) = u.l_l;                      \
+	}
+#define lua_number2integer(i, n) lua_number2int(i, n)
+
+#endif
 
 /* this option always works, but may be slow */
 #else
-	#define lua_number2int(i, d)        ((i) = (int)(d))
-	#define lua_number2integer(i, d)    ((i) = (lua_Integer)(d))
+#define lua_number2int(i, d) ((i) = (int)(d))
+#define lua_number2integer(i, d) ((i) = (lua_Integer)(d))
 
 #endif
 
@@ -610,7 +620,12 @@
 ** aligned in 16-byte boundaries, then you should add long double in the
 ** union.) Probably you do not need to change this.
 */
-#define LUAI_USER_ALIGNMENT_T	union { double u; void *s; long l; }
+#define LUAI_USER_ALIGNMENT_T \
+	union {                   \
+		double u;             \
+		void* s;              \
+		long l;               \
+	}
 
 
 /*
@@ -623,22 +638,34 @@
 */
 #if defined(__cplusplus)
 /* C++ exceptions */
-#define LUAI_THROW(L,c)	throw(c)
-#define LUAI_TRY(L,c,a)	try { a } catch(...) \
-	{ if ((c)->status == 0) (c)->status = -1; }
-#define luai_jmpbuf	int  /* dummy variable */
+#define LUAI_THROW(L, c) throw(c)
+#define LUAI_TRY(L, c, a)     \
+	try {                     \
+		a                     \
+	}                         \
+	catch (...) {             \
+		if ((c)->status == 0) \
+			(c)->status = -1; \
+	}
+#define luai_jmpbuf int /* dummy variable */
 
 #elif defined(LUA_USE_ULONGJMP)
 /* in Unix, try _longjmp/_setjmp (more efficient) */
-#define LUAI_THROW(L,c)	_longjmp((c)->b, 1)
-#define LUAI_TRY(L,c,a)	if (_setjmp((c)->b) == 0) { a }
-#define luai_jmpbuf	jmp_buf
+#define LUAI_THROW(L, c) _longjmp((c)->b, 1)
+#define LUAI_TRY(L, c, a)       \
+	if (_setjmp((c)->b) == 0) { \
+		a                       \
+	}
+#define luai_jmpbuf jmp_buf
 
 #else
 /* default handling with long jumps */
-#define LUAI_THROW(L,c)	longjmp((c)->b, 1)
-#define LUAI_TRY(L,c,a)	if (setjmp((c)->b) == 0) { a }
-#define luai_jmpbuf	jmp_buf
+#define LUAI_THROW(L, c) longjmp((c)->b, 1)
+#define LUAI_TRY(L, c, a)      \
+	if (setjmp((c)->b) == 0) { \
+		a                      \
+	}
+#define luai_jmpbuf jmp_buf
 
 #endif
 
@@ -648,7 +675,7 @@
 @* can do during pattern-matching.
 ** CHANGE it if you need more captures. This limit is arbitrary.
 */
-#define LUA_MAXCAPTURES		32
+#define LUA_MAXCAPTURES 32
 
 
 /*
@@ -663,16 +690,22 @@
 
 #if defined(LUA_USE_MKSTEMP)
 #include <unistd.h>
-#define LUA_TMPNAMBUFSIZE	32
-#define lua_tmpnam(b,e)	{ \
-	strcpy(b, "/tmp/lua_XXXXXX"); \
-	e = mkstemp(b); \
-	if (e != -1) close(e); \
-	e = (e == -1); }
+#define LUA_TMPNAMBUFSIZE 32
+#define lua_tmpnam(b, e)              \
+	{                                 \
+		strcpy(b, "/tmp/lua_XXXXXX"); \
+		e = mkstemp(b);               \
+		if (e != -1)                  \
+			close(e);                 \
+		e = (e == -1);                \
+	}
 
 #else
-#define LUA_TMPNAMBUFSIZE	L_tmpnam
-#define lua_tmpnam(b,e)		{ e = (tmpnam(b) == NULL); }
+#define LUA_TMPNAMBUFSIZE L_tmpnam
+#define lua_tmpnam(b, e)         \
+	{                            \
+		e = (tmpnam(b) == NULL); \
+	}
 #endif
 
 #endif
@@ -685,19 +718,18 @@
 */
 #if defined(LUA_USE_POPEN)
 
-#define lua_popen(L,c,m)	((void)L, fflush(NULL), popen(c,m))
-#define lua_pclose(L,file)	((void)L, (pclose(file) != -1))
+#define lua_popen(L, c, m) ((void)L, fflush(NULL), popen(c, m))
+#define lua_pclose(L, file) ((void)L, (pclose(file) != -1))
 
 #elif defined(LUA_WIN)
 
-#define lua_popen(L,c,m)	((void)L, _popen(c,m))
-#define lua_pclose(L,file)	((void)L, (_pclose(file) != -1))
+#define lua_popen(L, c, m) ((void)L, _popen(c, m))
+#define lua_pclose(L, file) ((void)L, (_pclose(file) != -1))
 
 #else
 
-#define lua_popen(L,c,m)	((void)((void)c, m),  \
-		luaL_error(L, LUA_QL("popen") " not supported"), (FILE*)0)
-#define lua_pclose(L,file)		((void)((void)L, file), 0)
+#define lua_popen(L, c, m) ((void)((void)c, m), luaL_error(L, LUA_QL("popen") " not supported"), (FILE*)0)
+#define lua_pclose(L, file) ((void)((void)L, file), 0)
 
 #endif
 
@@ -730,7 +762,7 @@
 ** CHANGE (define) this if you really need that. This value must be
 ** a multiple of the maximum alignment required for your machine.
 */
-#define LUAI_EXTRASPACE		0
+#define LUAI_EXTRASPACE 0
 
 
 /*
@@ -738,29 +770,30 @@
 ** CHANGE them if you defined LUAI_EXTRASPACE and need to do something
 ** extra when a thread is created/deleted/resumed/yielded.
 */
-//SPRING
+// SPRING
 #define ENABLE_USERSTATE_LOCKS 0
 #ifndef BUILDING_AI
-	#define LUA_USER_H "LuaUser.h"
-	#define luai_userstateopen(L)		LuaCreateMutex(L)
-	#define luai_userstateclose(L)		LuaDestroyMutex(L)
-	#define luai_userstatethread(L,L1)	LuaLinkMutex(L,L1)
-	#define luai_userstatefree(L)		LuaDestroyMutex(L)
-	#define luai_userstateresume(L,n)	((void)L)
-	#define luai_userstateyield(L,n)	((void)L)
-	// Don't use internal locking system yet, cause it makes _each_ c++ call to a lua function safe.
-	// But not a group of them, so it's possible that multiple threads modify the stack of a single lua_State and breaking each other.
-	// Solution might be to use coroutines for each c++ thread, cause they got their own stacks and so cannot break each other.
-	//#define luai_userstateyield(L,n)	LuaMutexYield(L)
-	#define lua_lock(L)			LuaMutexLock(L)
-	#define lua_unlock(L)			LuaMutexUnlock(L)
+#define LUA_USER_H "LuaUser.h"
+#define luai_userstateopen(L) LuaCreateMutex(L)
+#define luai_userstateclose(L) LuaDestroyMutex(L)
+#define luai_userstatethread(L, L1) LuaLinkMutex(L, L1)
+#define luai_userstatefree(L) LuaDestroyMutex(L)
+#define luai_userstateresume(L, n) ((void)L)
+#define luai_userstateyield(L, n) ((void)L)
+// Don't use internal locking system yet, cause it makes _each_ c++ call to a lua function safe.
+// But not a group of them, so it's possible that multiple threads modify the stack of a single lua_State and breaking
+// each other. Solution might be to use coroutines for each c++ thread, cause they got their own stacks and so cannot
+// break each other.
+// #define luai_userstateyield(L,n)	LuaMutexYield(L)
+#define lua_lock(L) LuaMutexLock(L)
+#define lua_unlock(L) LuaMutexUnlock(L)
 #else
-	#define luai_userstateopen(L)		((void)L)
-	#define luai_userstateclose(L)		((void)L)
-	#define luai_userstatethread(L,L1)	((void)L)
-	#define luai_userstatefree(L)		((void)L)
-	#define luai_userstateresume(L,n)	((void)L)
-	#define luai_userstateyield(L,n)	((void)L)
+#define luai_userstateopen(L) ((void)L)
+#define luai_userstateclose(L) ((void)L)
+#define luai_userstatethread(L, L1) ((void)L)
+#define luai_userstatefree(L) ((void)L)
+#define luai_userstateresume(L, n) ((void)L)
+#define luai_userstateyield(L, n) ((void)L)
 #endif
 
 /*
@@ -773,16 +806,15 @@
 
 #if defined(LUA_USELONGLONG)
 
-#define LUA_INTFRMLEN		"ll"
-#define LUA_INTFRM_T		long long
+#define LUA_INTFRMLEN "ll"
+#define LUA_INTFRM_T long long
 
 #else
 
-#define LUA_INTFRMLEN		"l"
-#define LUA_INTFRM_T		long
+#define LUA_INTFRMLEN "l"
+#define LUA_INTFRM_T long
 
 #endif
-
 
 
 /* =================================================================== */
@@ -793,6 +825,4 @@
 */
 
 
-
 #endif
-

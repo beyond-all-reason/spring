@@ -9,23 +9,28 @@
 #include <SDL2/SDL_rect.h>
 
 class Action;
+
 struct GameControllerTextInput {
 public:
 	void ViewResize();
 	void Draw();
 
-	void SetPos(float px, float py) {
-		inputTextPosX  = px;
-		inputTextPosY  = py;
+	void SetPos(float px, float py)
+	{
+		inputTextPosX = px;
+		inputTextPosY = py;
 	}
-	void SetSize(float sx, float sy) {
+
+	void SetSize(float sx, float sy)
+	{
 		inputTextSizeX = sx;
 		inputTextSizeY = sy;
 	}
 
-
 	int SetInputText(const std::string& utf8Text);
-	int SetEditText(const std::string& utf8Text) {
+
+	int SetEditText(const std::string& utf8Text)
+	{
 		if (!userWriting)
 			return 0;
 
@@ -34,8 +39,8 @@ public:
 		return 0;
 	}
 
-
-	void PromptInput(const std::string* inputPrefix) {
+	void PromptInput(const std::string* inputPrefix)
+	{
 		if (inputPrefix != nullptr)
 			userInputPrefix = *inputPrefix;
 
@@ -48,22 +53,23 @@ public:
 		writingPos = (int)userInput.length();
 	}
 
-	void PromptLabel() {
+	void PromptLabel()
+	{
 		userWriting = true;
 		userPrompt = "Label: ";
 		ignoreNextChar = true;
 	}
 
-
 	bool SendPromptInput();
 	bool SendLabelInput();
-	void ClearInput() {
+
+	void ClearInput()
+	{
 		userChatting = false;
 
 		userInput = "";
 		writingPos = 0;
 	}
-
 
 	bool CheckHandlePasteCommand(const std::string& rawLine);
 
@@ -88,7 +94,7 @@ public:
 	float inputTextSizeX = 0.0f;
 	float inputTextSizeY = 0.0f;
 
-	bool userWriting = false; // true for any text-input (chat, labels)
+	bool userWriting = false;  // true for any text-input (chat, labels)
 	bool userChatting = false; // true for chat-actions
 
 	bool ignoreNextChar = false;
@@ -105,4 +111,3 @@ public:
 extern GameControllerTextInput gameTextInput;
 
 #endif
-

@@ -2,43 +2,38 @@
 
 #include "PoolArchive.h"
 
-#include <algorithm>
-#include <stdexcept>
-#include <sstream>
-#include <string>
-#include <cassert>
-#include <cstring>
-#include <iostream>
-#include <format>
-
+#include "System/Exceptions.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/SpringTime.h"
+#include "System/StringUtil.h"
 #include "System/Threading/SpringThreading.h"
 #include "System/Threading/ThreadPool.h"
-#include "System/Misc/SpringTime.h"
-#include "System/Exceptions.h"
-#include "System/StringUtil.h"
-#include "System/Log/ILog.h"
 
+#include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <format>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
-CPoolArchiveFactory::CPoolArchiveFactory(): IArchiveFactory("sdp")
+CPoolArchiveFactory::CPoolArchiveFactory()
+    : IArchiveFactory("sdp")
 {
 }
 
-IArchive* CPoolArchiveFactory::DoCreateArchive(const std::string& filePath) const
-{
-	return new CPoolArchive(filePath);
-}
-
-
+IArchive* CPoolArchiveFactory::DoCreateArchive(const std::string& filePath) const { return new CPoolArchive(filePath); }
 
 static uint32_t parse_uint32(uint8_t c[4])
 {
 	uint32_t i = 0;
 	i = c[0] << 24 | i;
 	i = c[1] << 16 | i;
-	i = c[2] <<  8 | i;
-	i = c[3] <<  0 | i;
+	i = c[2] << 8 | i;
+	i = c[3] << 0 | i;
 	return i;
 }
 
@@ -48,7 +43,7 @@ static bool gz_really_read(gzFile file, voidp buf, uint32_t len)
 }
 
 CPoolArchive::CPoolArchive(const std::string& name)
-	: CBufferedArchive(name)
+    : CBufferedArchive(name)
 {
 	{
 		auto isOnSpinningDisk = FileSystem::IsPathOnSpinningDisk(CPoolArchive::GetPoolRootDirectory(archiveFile));
@@ -74,10 +69,14 @@ CPoolArchive::CPoolArchive(const std::string& name)
 	poolRootDir = GetPoolRootDirectory(name);
 
 	while (gz_really_read(in, &length, 1)) {
-		if (!gz_really_read(in, &c_name, length)) break;
-		if (!gz_really_read(in, &c_md5sum, 16)) break;
-		if (!gz_really_read(in, &c_crc32, 4)) break;
-		if (!gz_really_read(in, &c_size, 4)) break;
+		if (!gz_really_read(in, &c_name, length))
+			break;
+		if (!gz_really_read(in, &c_md5sum, 16))
+			break;
+		if (!gz_really_read(in, &c_crc32, 4))
+			break;
+		if (!gz_really_read(in, &c_size, 4))
+			break;
 
 		FileData& f = files.emplace_back();
 		FileStat& s = stats.emplace_back();
@@ -110,7 +109,8 @@ CPoolArchive::~CPoolArchive()
 	const unsigned long sumInflSize = sums.first / 1024;
 	const unsigned long sumReadTime = sums.second / (1000 * 1000);
 
-	LOG_L(L_INFO, "[%s] archiveFile=\"%s\" numZipFiles=%lu sumInflSize=%lukb sumReadTime=%lums", __func__, archiveFile.c_str(), numZipFiles, sumInflSize, sumReadTime);
+	LOG_L(L_INFO, "[%s] archiveFile=\"%s\" numZipFiles=%lu sumInflSize=%lukb sumReadTime=%lums", __func__,
+	    archiveFile.c_str(), numZipFiles, sumInflSize, sumReadTime);
 
 	std::partial_sort(stats.begin(), stats.begin() + std::min(stats.size(), size_t(10)), stats.end());
 
@@ -145,15 +145,14 @@ IArchive::SFileInfo CPoolArchive::FileInfo(uint32_t fid) const
 
 	if (file.modTime == 0) {
 		auto scopedSemAcq = AcquireSemaphoreScoped();
-		file.modTime = FileSystemAbstraction::GetFileModificationTime(GetPoolFilePath(poolRootDir, file.md5sum)); // file.modTime is mutable
+		file.modTime = FileSystemAbstraction::GetFileModificationTime(
+		    GetPoolFilePath(poolRootDir, file.md5sum)); // file.modTime is mutable
 	}
 
-	return IArchive::SFileInfo{
-		.fileName = file.name,
-		.specialFileName = GetPoolFileName(file.md5sum),
-		.size = static_cast<int32_t>(file.size),
-		.modTime = file.modTime
-	};
+	return IArchive::SFileInfo{.fileName = file.name,
+	    .specialFileName = GetPoolFileName(file.md5sum),
+	    .size = static_cast<int32_t>(file.size),
+	    .modTime = file.modTime};
 }
 
 bool CPoolArchive::CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std::uint8_t>& fb)
@@ -186,11 +185,11 @@ std::string CPoolArchive::GetPoolFileName(const std::array<uint8_t, 16>& md5Sum)
 	char c_hex[32];
 
 	for (int i = 0; i < 16; ++i) {
-		c_hex[2 * i    ] = table[(md5Sum[i] >> 4) & 0xF];
-		c_hex[2 * i + 1] = table[(md5Sum[i]     ) & 0xF];
+		c_hex[2 * i] = table[(md5Sum[i] >> 4) & 0xF];
+		c_hex[2 * i + 1] = table[(md5Sum[i]) & 0xF];
 	}
 
-	const std::string prefix(c_hex    ,  2);
+	const std::string prefix(c_hex, 2);
 	const std::string pstfix(c_hex + 2, 30);
 	return std::format("{}/{}.gz", prefix, pstfix);
 }
@@ -234,7 +233,10 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 			const char* errgz = gzerror(in, &errnum);
 			const char* errsys = std::strerror(errnum);
 
-			LOG_L(L_ERROR, "[PoolArchive::%s] could not read file GZIP reason: \"%s\", SYSTEM reason: \"%s\" (bytesRead=%d fileSize=%u)", __func__, errgz, errsys, bytesRead, f.size);
+			LOG_L(L_ERROR,
+			    "[PoolArchive::%s] could not read file GZIP reason: \"%s\", SYSTEM reason: \"%s\" (bytesRead=%d "
+			    "fileSize=%u)",
+			    __func__, errgz, errsys, bytesRead, f.size);
 		}
 
 		gzclose(in);
@@ -245,8 +247,8 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	int bytesRead = Z_ERRNO;
 	static constexpr int readRetries = 1000;
 
-	//Try to workaround occasional crashes
-	// (bytesRead=-1 fileSize=XXXX)
+	// Try to workaround occasional crashes
+	//  (bytesRead=-1 fileSize=XXXX)
 	int readTry;
 	for (readTry = 0; readTry < readRetries; ++readTry) {
 		bytesRead = GzRead(readTry == 0);
@@ -260,12 +262,14 @@ int CPoolArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffer)
 	s.readTime = (spring_now() - startTime).toNanoSecsi();
 
 	if (bytesRead != buffer.size()) {
-		LOG_L(L_ERROR, "[PoolArchive::%s] failed to read file \"%s\" after %d tries", __func__, path.c_str(), readRetries);
+		LOG_L(L_ERROR, "[PoolArchive::%s] failed to read file \"%s\" after %d tries", __func__, path.c_str(),
+		    readRetries);
 		buffer.clear();
 		return 0;
 	}
 	if (readTry > 0) {
-		LOG_L(L_WARNING, "[PoolArchive::%s] could read file \"%s\" only after %d tries", __func__, path.c_str(), readTry);
+		LOG_L(
+		    L_WARNING, "[PoolArchive::%s] could read file \"%s\" only after %d tries", __func__, path.c_str(), readTry);
 	}
 
 	sha512::calc_digest(buffer.data(), buffer.size(), f.shasum.data());

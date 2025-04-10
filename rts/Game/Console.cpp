@@ -3,25 +3,24 @@
 
 #include "Console.h"
 
-#include "System/Log/ILog.h"
 #include "Action.h"
 
-#include <cassert>
-#include <algorithm>
-
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+
+#include <algorithm>
+#include <cassert>
 
 CommandConsole gameCommandConsole;
 
-
 void CommandReceiver::RegisterAction(const std::string& name) { gameCommandConsole.AddCommandReceiver(name, this); }
-void CommandReceiver::SortRegisteredActions() { gameCommandConsole.SortCommandMap(); }
 
+void CommandReceiver::SortRegisteredActions() { gameCommandConsole.SortCommandMap(); }
 
 void CommandConsole::SortCommandMap()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto cmpPred = [](const CmdPair& a, const CmdPair& b) { return (a.first <  b.first); };
+	const auto cmpPred = [](const CmdPair& a, const CmdPair& b) { return (a.first < b.first); };
 	const auto dupPred = [](const CmdPair& a, const CmdPair& b) { return (a.first == b.first); };
 
 	std::sort(commandMap.begin(), commandMap.end(), cmpPred);
@@ -54,4 +53,3 @@ bool CommandConsole::ExecuteAction(const Action& action)
 	iter->second->PushAction(action);
 	return true;
 }
-

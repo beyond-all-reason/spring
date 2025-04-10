@@ -47,7 +47,7 @@ end
 local function AlmostEqual(a, b)
   return (math.abs(a - b) < 0.001)
 end
-  
+
 
 local function SameColor(a, b)
   if (AlmostEqual(a[1], b[1]) and
@@ -56,7 +56,7 @@ local function SameColor(a, b)
       AlmostEqual(a[4], b[4])) then
     return true
   end
-  return false  
+  return false
 end
 
 
@@ -126,7 +126,7 @@ local function SetupMaterial(mat, useDepthMask)
       gl.DepthMask(mat.diffuse[4] >= 1.0)
     end
     gl.Lighting(mat.lighting)
-    if (not mat.lighting) then  
+    if (not mat.lighting) then
       gl.Color(mat.diffuse)
     else
       gl.Material({

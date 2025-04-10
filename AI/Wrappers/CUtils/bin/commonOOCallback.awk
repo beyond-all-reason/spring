@@ -823,4 +823,3 @@ function wrappFunctionPlusMeta(retType, fullName, params, metaComment) {
 END {
 	# finalize things
 }
-

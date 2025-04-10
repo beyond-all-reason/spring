@@ -2,14 +2,11 @@
 
 #include "Socket.h"
 
-#include "lib/streflop/streflop_cond.h"
-
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
+#include "lib/streflop/streflop_cond.h"
 
-
-namespace netcode
-{
+namespace netcode {
 
 asio::io_service netservice;
 
@@ -18,11 +15,12 @@ bool CheckErrorCode(asio::error_code& err)
 	// connection reset can happen when host did not start up
 	// before the client wants to connect
 	if (!err || err.value() == asio::error::connection_reset ||
-		err.value() == asio::error::try_again) { // this should only ever happen with async sockets, but testing indicates it happens anyway...
+	    err.value() == asio::error::try_again) { // this should only ever happen with async sockets, but testing
+		                                         // indicates it happens anyway...
 		return false;
-	} else {
-		LOG_L(L_WARNING, "Network error %i: %s", err.value(),
-				err.message().c_str());
+	}
+	else {
+		LOG_L(L_WARNING, "Network error %i: %s", err.value(), err.message().c_str());
 		return true;
 	}
 }
@@ -45,19 +43,19 @@ asio::ip::udp::endpoint ResolveAddr(const std::string& host, int port, asio::err
 		return *iter;
 	}
 
-	if (!*err) *err = errBuf;
+	if (!*err)
+		*err = errBuf;
 	return ip::udp::endpoint(tempAddr, 0);
 }
 
-
-asio::ip::address WrapIP(const std::string& ip,
-		asio::error_code* err)
+asio::ip::address WrapIP(const std::string& ip, asio::error_code* err)
 {
 	asio::ip::address addr;
 
 	if (err == NULL) {
 		addr = asio::ip::address::from_string(ip);
-	} else {
+	}
+	else {
 		addr = asio::ip::address::from_string(ip, *err);
 	}
 
@@ -68,16 +66,15 @@ asio::ip::address WrapIP(const std::string& ip,
 	return addr;
 }
 
-asio::ip::udp::resolver::iterator WrapResolve(
-		asio::ip::udp::resolver& resolver,
-		asio::ip::udp::resolver::query& query,
-		asio::error_code* err)
+asio::ip::udp::resolver::iterator
+WrapResolve(asio::ip::udp::resolver& resolver, asio::ip::udp::resolver::query& query, asio::error_code* err)
 {
 	asio::ip::udp::resolver::iterator resolveIt;
 
 	if (err == NULL) {
 		resolveIt = resolver.resolve(query);
-	} else {
+	}
+	else {
 		resolveIt = resolver.resolve(query, *err);
 	}
 
@@ -86,7 +83,6 @@ asio::ip::udp::resolver::iterator WrapResolve(
 	streflop::streflop_init<streflop::Simple>();
 	return resolveIt;
 }
-
 
 asio::ip::address GetAnyAddress(const bool IPv6)
 {
@@ -98,4 +94,3 @@ asio::ip::address GetAnyAddress(const bool IPv6)
 
 
 } // namespace netcode
-

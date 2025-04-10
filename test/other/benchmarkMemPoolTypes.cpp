@@ -1,30 +1,29 @@
-#include "System/MemPoolTypes.h"
 #include "System/Log/ILog.h"
-
-#include <benchmark/benchmark.h>
+#include "System/MemPoolTypes.h"
 
 #include <array>
 #include <cstddef>
 #include <vector>
 
-namespace {
-	namespace objsizes {
-		// Allocators' page sizes are set to the largest object in particular category (e.g. Weapons)
-		// These are the page sizes that are commonly used in the engine
-		constexpr size_t micro=64; // CMatrix44f
-		constexpr size_t small=128; // SolidObjectGroundDecal
-		constexpr size_t medium=752; // CWeapon,PlasmaRepulser
-		constexpr size_t large=1472; // CFeature
-	}
-}
+#include <benchmark/benchmark.h>
 
-template <size_t T>
-struct ArrayData {
-	std::array<char, T> data={};
+namespace {
+namespace objsizes {
+// Allocators' page sizes are set to the largest object in particular category (e.g. Weapons)
+// These are the page sizes that are commonly used in the engine
+constexpr size_t micro = 64;   // CMatrix44f
+constexpr size_t small = 128;  // SolidObjectGroundDecal
+constexpr size_t medium = 752; // CWeapon,PlasmaRepulser
+constexpr size_t large = 1472; // CFeature
+} // namespace objsizes
+} // namespace
+
+template<size_t T> struct ArrayData {
+	std::array<char, T> data = {};
 };
 
-template <typename TMempool>
-static void BenchStaticMemPoolAllocation(benchmark::State& state) {
+template<typename TMempool> static void BenchStaticMemPoolAllocation(benchmark::State& state)
+{
 	static TMempool mempool;
 	mempool.clear();
 
@@ -32,7 +31,7 @@ static void BenchStaticMemPoolAllocation(benchmark::State& state) {
 	using AD = ArrayData<page_size>;
 	std::vector<AD*> allocated;
 
-	for (auto _ : state) {
+	for (auto _: state) {
 		if (!mempool.can_alloc()) {
 			state.PauseTiming();
 			mempool.clear();
@@ -68,8 +67,8 @@ BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::small
 BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::medium>>);
 BENCHMARK(BenchStaticMemPoolAllocation<FixedDynMemPool<1024, 32, objsizes::large>>);
 
-template <typename TMempool>
-static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
+template<typename TMempool> static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state)
+{
 	static TMempool mempool;
 	mempool.clear();
 
@@ -77,9 +76,9 @@ static void BenchStaticMemPoolAllocationDeallocation(benchmark::State& state) {
 	using AD = ArrayData<page_size>;
 	std::vector<AD*> allocated;
 
-	for (auto _ : state) {
+	for (auto _: state) {
 		if (!mempool.can_alloc()) {
-			for (auto* obj : allocated) {
+			for (auto* obj: allocated) {
 				mempool.free(obj);
 			}
 			allocated.clear();

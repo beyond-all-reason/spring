@@ -5,21 +5,21 @@
 
 // check if the correct defines are set by the build system
 #if !defined BUILDING_SKIRMISH_AI
-#	error BUILDING_SKIRMISH_AI should be defined when building Skirmish AIs
+#error BUILDING_SKIRMISH_AI should be defined when building Skirmish AIs
 #endif
 #if !defined BUILDING_AI
-#	error BUILDING_AI should be defined when building Skirmish AIs
+#error BUILDING_AI should be defined when building Skirmish AIs
 #endif
 #if defined BUILDING_AI_INTERFACE
-#	error BUILDING_AI_INTERFACE should not be defined when building Skirmish AIs
+#error BUILDING_AI_INTERFACE should not be defined when building Skirmish AIs
 #endif
 #if defined SYNCIFY
-#	error SYNCIFY should not be defined when building Skirmish AIs
+#error SYNCIFY should not be defined when building Skirmish AIs
 #endif
 
 
 #include "ExternalAI/Interface/aidefines.h"
-//#include "ExternalAI/Interface/ELevelOfSupport.h"
+// #include "ExternalAI/Interface/ELevelOfSupport.h"
 
 struct SSkirmishAICallback;
 
@@ -27,7 +27,7 @@ struct SSkirmishAICallback;
 // see struct SSkirmishAILibrary in "ExternalAI/Interface/SSkirmishAILibrary.h"
 
 // static AI library methods (optional to implement)
-//EXPORT(enum LevelOfSupport) getLevelOfSupportFor(int skirmishAIId,
+// EXPORT(enum LevelOfSupport) getLevelOfSupportFor(int skirmishAIId,
 //		const char* engineVersionString, int engineVersionNumber,
 //		const char* aiInterfaceShortName, const char* aiInterfaceVersion);
 

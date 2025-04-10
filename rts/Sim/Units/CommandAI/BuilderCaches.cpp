@@ -1,8 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 #include "Sim/Units/CommandAI/BuilderCaches.h"
+
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitHandler.h"
 
 // not adding to creg, should repopulate itself
 spring::unordered_set<int> CBuilderCaches::reclaimers;
@@ -19,14 +20,16 @@ void CBuilderCaches::InitStatic()
 }
 
 void CBuilderCaches::AddUnitToReclaimers(CUnit* unit) { reclaimers.insert(unit->id); }
+
 void CBuilderCaches::RemoveUnitFromReclaimers(CUnit* unit) { reclaimers.erase(unit->id); }
 
 void CBuilderCaches::AddUnitToFeatureReclaimers(CUnit* unit) { featureReclaimers.insert(unit->id); }
+
 void CBuilderCaches::RemoveUnitFromFeatureReclaimers(CUnit* unit) { featureReclaimers.erase(unit->id); }
 
 void CBuilderCaches::AddUnitToResurrecters(CUnit* unit) { resurrecters.insert(unit->id); }
-void CBuilderCaches::RemoveUnitFromResurrecters(CUnit* unit) { resurrecters.erase(unit->id); }
 
+void CBuilderCaches::RemoveUnitFromResurrecters(CUnit* unit) { resurrecters.erase(unit->id); }
 
 /**
  * Checks if a unit is being reclaimed by a friendly con.
@@ -67,13 +70,10 @@ bool CBuilderCaches::IsUnitBeingReclaimed(const CUnit* unit, const CUnit* friend
 		}
 	}
 
-	for (auto it = removees.begin(); it != removees.end(); ++it)
-		RemoveUnitFromReclaimers(unitHandler.GetUnit(*it));
+	for (auto it = removees.begin(); it != removees.end(); ++it) RemoveUnitFromReclaimers(unitHandler.GetUnit(*it));
 
 	return retval;
 }
-
-
 
 bool CBuilderCaches::IsFeatureBeingReclaimed(int featureId, const CUnit* friendUnit)
 {
@@ -97,7 +97,8 @@ bool CBuilderCaches::IsFeatureBeingReclaimed(int featureId, const CUnit* friendU
 			continue;
 		}
 		const int cmdFeatureId = (int)c.GetParam(0);
-		if ((cmdFeatureId - unitHandler.MaxUnits()) == featureId && (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
+		if ((cmdFeatureId - unitHandler.MaxUnits()) == featureId &&
+		    (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
 			retval = true;
 			break;
 		}
@@ -108,7 +109,6 @@ bool CBuilderCaches::IsFeatureBeingReclaimed(int featureId, const CUnit* friendU
 
 	return retval;
 }
-
 
 bool CBuilderCaches::IsFeatureBeingResurrected(int featureId, const CUnit* friendUnit)
 {
@@ -132,17 +132,14 @@ bool CBuilderCaches::IsFeatureBeingResurrected(int featureId, const CUnit* frien
 			continue;
 		}
 		const int cmdFeatureId = (int)c.GetParam(0);
-		if ((cmdFeatureId - unitHandler.MaxUnits()) == featureId && (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
+		if ((cmdFeatureId - unitHandler.MaxUnits()) == featureId &&
+		    (friendUnit == nullptr || teamHandler.Ally(friendUnit->allyteam, u->allyteam))) {
 			retval = true;
 			break;
 		}
 	}
 
-	for (auto it = removees.begin(); it != removees.end(); ++it)
-		RemoveUnitFromResurrecters(unitHandler.GetUnit(*it));
+	for (auto it = removees.begin(); it != removees.end(); ++it) RemoveUnitFromResurrecters(unitHandler.GetUnit(*it));
 
 	return retval;
 }
-
-
-

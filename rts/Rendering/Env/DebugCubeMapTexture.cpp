@@ -1,15 +1,15 @@
 #include "DebugCubeMapTexture.h"
 
+#include "Game/Camera.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/Textures/Bitmap.h"
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/Textures/Bitmap.h"
 #include "System/Log/ILog.h"
-#include "Game/Camera.h"
 
 DebugCubeMapTexture::DebugCubeMapTexture()
-	: texId(0)
-	, vao()
+    : texId(0)
+    , vao()
 {
 #ifndef HEADLESS
 	glGenTextures(1, &texId);
@@ -18,34 +18,38 @@ DebugCubeMapTexture::DebugCubeMapTexture()
 
 	CBitmap btex;
 	if (!btex.Load(texture) || btex.textype != GL_TEXTURE_CUBE_MAP) {
-		LOG_L(L_WARNING, "[DebugCubeMapTexture] could not load debug skybox texture from file %s, using fallback colors", texture);
+		LOG_L(L_WARNING,
+		    "[DebugCubeMapTexture] could not load debug skybox texture from file %s, using fallback colors", texture);
 
 		// match testsky.dds colors
 		static constexpr const SColor debugFaceColors[] = {
-			{1.0f, 1.0f, 0.0f, 1.0f}, // yellow GL_TEXTURE_CUBE_MAP_POSITIVE_X, Right
-			{0.0f, 1.0f, 0.0f, 1.0f}, // green 	GL_TEXTURE_CUBE_MAP_NEGATIVE_X, Left
-			{1.0f, 1.0f, 1.0f, 1.0f}, // white 	GL_TEXTURE_CUBE_MAP_POSITIVE_Y, Top
-			{0.0f, 0.0f, 0.0f, 1.0f}, // black	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, Bottom
-			{0.0f, 1.0f, 1.0f, 1.0f}, // cyan	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, Front
-			{1.0f, 0.0f, 0.0f, 1.0f}, // red  	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, Back
+		    {1.0f, 1.0f, 0.0f, 1.0f}, // yellow GL_TEXTURE_CUBE_MAP_POSITIVE_X, Right
+		    {0.0f, 1.0f, 0.0f, 1.0f}, // green 	GL_TEXTURE_CUBE_MAP_NEGATIVE_X, Left
+		    {1.0f, 1.0f, 1.0f, 1.0f}, // white 	GL_TEXTURE_CUBE_MAP_POSITIVE_Y, Top
+		    {0.0f, 0.0f, 0.0f, 1.0f}, // black	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, Bottom
+		    {0.0f, 1.0f, 1.0f, 1.0f}, // cyan	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, Front
+		    {1.0f, 0.0f, 0.0f, 1.0f}, // red  	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, Back
 		};
 
 		static constexpr GLsizei FALLBACK_DIM = 16;
 		std::vector<SColor> debugColorVec;
 		debugColorVec.resize(FALLBACK_DIM * FALLBACK_DIM);
 
-		dims = { FALLBACK_DIM, FALLBACK_DIM };
+		dims = {FALLBACK_DIM, FALLBACK_DIM};
 
 		glEnable(GL_TEXTURE_CUBE_MAP);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
 		for (GLenum glFace = GL_TEXTURE_CUBE_MAP_POSITIVE_X; glFace <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z; ++glFace) {
-			std::fill(debugColorVec.begin(), debugColorVec.end(), debugFaceColors[glFace - GL_TEXTURE_CUBE_MAP_POSITIVE_X]);
-			glTexImage2D(glFace, 0, GL_RGBA8, FALLBACK_DIM, FALLBACK_DIM, 0, GL_RGBA, GL_UNSIGNED_BYTE, debugColorVec.data());
+			std::fill(
+			    debugColorVec.begin(), debugColorVec.end(), debugFaceColors[glFace - GL_TEXTURE_CUBE_MAP_POSITIVE_X]);
+			glTexImage2D(
+			    glFace, 0, GL_RGBA8, FALLBACK_DIM, FALLBACK_DIM, 0, GL_RGBA, GL_UNSIGNED_BYTE, debugColorVec.data());
 		}
 		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 		glDisable(GL_TEXTURE_CUBE_MAP);
-	} else {
-		dims = { btex.xsize, btex.ysize };
+	}
+	else {
+		dims = {btex.xsize, btex.ysize};
 		texId = btex.CreateTexture();
 	}
 
@@ -83,11 +87,11 @@ void DebugCubeMapTexture::Draw(uint32_t face) const
 #ifndef HEADLESS
 	assert(face == 0 || (face >= GL_TEXTURE_CUBE_MAP_POSITIVE_X && face <= GL_TEXTURE_CUBE_MAP_NEGATIVE_Z));
 
-	//all faces (default) are expected
+	// all faces (default) are expected
 	GLint baseVertex = 0;
 	GLsizei vertCount = 36;
 
-	//one face is expected
+	// one face is expected
 	if (face > 0) {
 		baseVertex = (face - GL_TEXTURE_CUBE_MAP_POSITIVE_X) * 6;
 		vertCount = 6;

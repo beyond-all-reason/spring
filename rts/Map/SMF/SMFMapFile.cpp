@@ -2,16 +2,15 @@
 
 
 #include "SMFMapFile.h"
+
 #include "Map/ReadMap.h"
 #include "System/Exceptions.h"
-#include "System/StringHash.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Platform/byteorder.h"
+#include "System/StringHash.h"
 
 #include <cassert>
 #include <cstring>
-
-#include "System/Misc/TracyDefs.h"
-
 
 static bool CheckHeader(const SMFHeader& h)
 {
@@ -27,16 +26,16 @@ static bool CheckHeader(const SMFHeader& h)
 	return (std::strcmp(h.magic, "spring map file") == 0);
 }
 
-
 void CSMFMapFile::Open(const std::string& mapFileName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	char buf[512] = {0};
-	const char* fmts[] = {"[SMFMapFile::%s] could not open \"%s\"", "[SMFMapFile::%s] corrupt header for \"%s\" (v=%d ts=%d tps=%d ss=%d)"};
+	const char* fmts[] = {"[SMFMapFile::%s] could not open \"%s\"",
+	    "[SMFMapFile::%s] corrupt header for \"%s\" (v=%d ts=%d tps=%d ss=%d)"};
 
-	memset(&       header, 0, sizeof(       header));
+	memset(&header, 0, sizeof(header));
 	memset(&featureHeader, 0, sizeof(featureHeader));
-	memset( featureTypes , 0, sizeof(featureTypes ));
+	memset(featureTypes, 0, sizeof(featureTypes));
 
 	ifs.Open(mapFileName);
 
@@ -50,7 +49,8 @@ void CSMFMapFile::Open(const std::string& mapFileName)
 	if (CheckHeader(header))
 		return;
 
-	snprintf(buf, sizeof(buf), fmts[1], __func__, mapFileName.c_str(), header.version, header.tilesize, header.texelPerSquare, header.squareSize);
+	snprintf(buf, sizeof(buf), fmts[1], __func__, mapFileName.c_str(), header.version, header.tilesize,
+	    header.texelPerSquare, header.squareSize);
 	throw content_error(buf);
 }
 
@@ -59,13 +59,12 @@ void CSMFMapFile::Close()
 	RECOIL_DETAILED_TRACY_ZONE;
 	ifs.Close();
 
-	memset(&       header, 0, sizeof(       header));
+	memset(&header, 0, sizeof(header));
 	memset(&featureHeader, 0, sizeof(featureHeader));
-	memset( featureTypes , 0, sizeof(featureTypes ));
+	memset(featureTypes, 0, sizeof(featureTypes));
 
 	featureFileOffset = 0;
 }
-
 
 void CSMFMapFile::ReadMinimap(void* data)
 {
@@ -92,7 +91,6 @@ int CSMFMapFile::ReadMinimap(std::vector<std::uint8_t>& data, unsigned miplevel)
 	return mipsize;
 }
 
-
 // used only by ReadInfoMap (for unitsync)
 void CSMFMapFile::ReadHeightmap(unsigned short* heightmap)
 {
@@ -108,7 +106,6 @@ void CSMFMapFile::ReadHeightmap(unsigned short* heightmap)
 		swabWordInPlace(heightmap[i]);
 	}
 }
-
 
 void CSMFMapFile::ReadHeightmap(float* sHeightMap, float* uHeightMap, float base, float mod)
 {
@@ -134,19 +131,19 @@ void CSMFMapFile::ReadHeightmap(float* sHeightMap, float* uHeightMap, float base
 	}
 }
 
-
 void CSMFMapFile::ReadFeatureInfo()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ifs.Seek(header.featurePtr);
 	ReadMapFeatureHeader(featureHeader, ifs);
 
-	constexpr size_t S = sizeof(featureTypes   );
+	constexpr size_t S = sizeof(featureTypes);
 	constexpr size_t K = sizeof(featureTypes[0]);
 	constexpr size_t N = S / K;
 
 	if (featureHeader.numFeatureType > N) {
-		snprintf(featureTypes[0], S - 1, "[SMFMapFile::%s] " _STPF_ " excess feature-types defined\n", __func__, static_cast<size_t>(featureHeader.numFeatureType) - N);
+		snprintf(featureTypes[0], S - 1, "[SMFMapFile::%s] " _STPF_ " excess feature-types defined\n", __func__,
+		    static_cast<size_t>(featureHeader.numFeatureType) - N);
 		throw content_error(featureTypes[0]);
 	}
 
@@ -164,7 +161,6 @@ void CSMFMapFile::ReadFeatureInfo()
 	featureFileOffset = ifs.GetPos();
 }
 
-
 void CSMFMapFile::ReadFeatureInfo(MapFeatureInfo* f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -181,7 +177,6 @@ void CSMFMapFile::ReadFeatureInfo(MapFeatureInfo* f)
 	}
 }
 
-
 const char* CSMFMapFile::GetFeatureTypeName(int typeID) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -189,54 +184,60 @@ const char* CSMFMapFile::GetFeatureTypeName(int typeID) const
 	return featureTypes[typeID];
 }
 
-
 void CSMFMapFile::GetInfoMapSize(const char* name, MapBitmapInfo* info) const
 {
-
 	switch (hashString(name)) {
-		case hashString("height"): { *info = MapBitmapInfo(header.mapx + 1, header.mapy + 1); } break;
-		case hashString("grass" ): { *info = MapBitmapInfo(header.mapx / 4, header.mapy / 4); } break;
-		case hashString("metal" ): { *info = MapBitmapInfo(header.mapx / 2, header.mapy / 2); } break;
-		case hashString("type"  ): { *info = MapBitmapInfo(header.mapx / 2, header.mapy / 2); } break;
-		default                  : { *info = MapBitmapInfo(              0,               0); } break;
+	case hashString("height"): {
+		*info = MapBitmapInfo(header.mapx + 1, header.mapy + 1);
+	} break;
+	case hashString("grass"): {
+		*info = MapBitmapInfo(header.mapx / 4, header.mapy / 4);
+	} break;
+	case hashString("metal"): {
+		*info = MapBitmapInfo(header.mapx / 2, header.mapy / 2);
+	} break;
+	case hashString("type"): {
+		*info = MapBitmapInfo(header.mapx / 2, header.mapy / 2);
+	} break;
+	default: {
+		*info = MapBitmapInfo(0, 0);
+	} break;
 	}
 }
-
 
 bool CSMFMapFile::ReadInfoMap(const char* name, void* data)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(name)) {
-		case hashString("height"): {
-			ReadHeightmap(reinterpret_cast<unsigned short*>(data));
-			return true;
-		} break;
+	case hashString("height"): {
+		ReadHeightmap(reinterpret_cast<unsigned short*>(data));
+		return true;
+	} break;
 
-		case hashString("grass"): {
-			return ReadGrassMap(data);
-		} break;
+	case hashString("grass"): {
+		return ReadGrassMap(data);
+	} break;
 
-		case hashString("metal"): {
-			ifs.Seek(header.metalmapPtr);
-			ifs.Read(data, header.mapx / 2 * header.mapy / 2);
-			return true;
-		} break;
+	case hashString("metal"): {
+		ifs.Seek(header.metalmapPtr);
+		ifs.Read(data, header.mapx / 2 * header.mapy / 2);
+		return true;
+	} break;
 
-		case hashString("type"): {
-			ifs.Seek(header.typeMapPtr);
-			ifs.Read(data, header.mapx / 2 * header.mapy / 2);
-			return true;
-		} break;
+	case hashString("type"): {
+		ifs.Seek(header.typeMapPtr);
+		ifs.Read(data, header.mapx / 2 * header.mapy / 2);
+		return true;
+	} break;
 
-		default: {
-		} break;
+	default: {
+	} break;
 	}
 
 	return false;
 }
 
-
-bool CSMFMapFile::ReadGrassMap(void *data)
+bool CSMFMapFile::ReadGrassMap(void* data)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	ifs.Seek(sizeof(SMFHeader));
@@ -258,7 +259,7 @@ bool CSMFMapFile::ReadGrassMap(void *data)
 			ifs.Seek(pos);
 			ifs.Read(data, header.mapx / 4 * header.mapy / 4);
 			/* char; no swabbing. */
-			return true; //we arent interested in other extensions anyway
+			return true; // we arent interested in other extensions anyway
 		}
 
 		// assumes we can use data as scratch memory
@@ -268,7 +269,6 @@ bool CSMFMapFile::ReadGrassMap(void *data)
 
 	return false;
 }
-
 
 /// read a float from file (endian aware)
 static float ReadFloat(CFileHandler& file)
@@ -287,7 +287,6 @@ static int ReadInt(CFileHandler& file)
 	file.Read(&__tmpdw, sizeof(unsigned int));
 	return (int)swabDWord(__tmpdw);
 }
-
 
 /// Read SMFHeader head from file
 void CSMFMapFile::ReadMapHeader(SMFHeader& head, CFileHandler& file)
@@ -346,4 +345,3 @@ void CSMFMapFile::ReadMapTileFileHeader(TileFileHeader& head, CFileHandler& file
 	head.tileSize = ReadInt(file);
 	head.compressionType = ReadInt(file);
 }
-

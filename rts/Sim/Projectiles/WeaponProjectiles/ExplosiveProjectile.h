@@ -5,12 +5,11 @@
 
 #include "WeaponProjectile.h"
 
-class CExplosiveProjectile : public CWeaponProjectile
-{
+class CExplosiveProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CExplosiveProjectile)
 public:
 	// creg only
-	CExplosiveProjectile() { }
+	CExplosiveProjectile() {}
 
 	CExplosiveProjectile(const ProjectileParams& params);
 

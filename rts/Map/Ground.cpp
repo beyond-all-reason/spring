@@ -2,15 +2,16 @@
 
 
 #include "Ground.h"
+
 #include "ReadMap.h"
+
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 
 #include <cassert>
 #include <limits>
-
-#include "System/Misc/TracyDefs.h"
 
 #undef far // avoid collision with windef.h
 #undef near
@@ -47,17 +48,18 @@ static inline float InterpolateCornerHeight(float x, float z, const float* corne
 
 	if (dx + dz < 1.0f) {
 		// top-left triangle
-		const float h00 = cornerHeightMap[hs + 0                 ];
-		const float h10 = cornerHeightMap[hs + 1                 ];
+		const float h00 = cornerHeightMap[hs + 0];
+		const float h10 = cornerHeightMap[hs + 1];
 		const float h01 = cornerHeightMap[hs + 0 + mapDims.mapxp1];
 
 		const float xdif = dx * (h10 - h00);
 		const float zdif = dz * (h01 - h00);
 
 		h = h00 + xdif + zdif;
-	} else {
+	}
+	else {
 		// bottom-right triangle
-		const float h10 = cornerHeightMap[hs + 1                 ];
+		const float h10 = cornerHeightMap[hs + 1];
 		const float h01 = cornerHeightMap[hs + 0 + mapDims.mapxp1];
 		const float h11 = cornerHeightMap[hs + 1 + mapDims.mapxp1];
 
@@ -70,18 +72,16 @@ static inline float InterpolateCornerHeight(float x, float z, const float* corne
 	return h;
 }
 
-
-static inline float LineGroundSquareCol(
-	const float* heightmap,
-	const float3* normalmap,
-	const float3& from,
-	const float3& to,
-	const int xs,
-	const int ys
-) {
+static inline float LineGroundSquareCol(const float* heightmap,
+    const float3* normalmap,
+    const float3& from,
+    const float3& to,
+    const int xs,
+    const int ys)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const bool inMap = (xs >= 0) && (ys >= 0) && (xs <= mapDims.mapxm1) && (ys <= mapDims.mapym1);
-//	assert(inMap);
+	//	assert(inMap);
 	if (!inMap)
 		return -1.0f;
 
@@ -99,7 +99,7 @@ static inline float LineGroundSquareCol(
 
 		// project \<to - cornerVertex\> vector onto the TL-normal
 		// if \<to\> lies below the terrain, this will be negative
-		const float3 faceNormalTL = normalmap[(ys * mapDims.mapx + xs) * 2    ];
+		const float3 faceNormalTL = normalmap[(ys * mapDims.mapx + xs) * 2];
 		float toFacePlaneDist = (to - cornerVertex).dot(faceNormalTL);
 
 		if (toFacePlaneDist <= 0.0f) {
@@ -111,7 +111,8 @@ static inline float LineGroundSquareCol(
 				const float3 col = mix(from, to, alpha);
 
 				// point of intersection is inside the TL triangle
-				if ((col.x >= cornerVertex.x) && (col.z >= cornerVertex.z) && (col.x + col.z <= cornerVertex.x + cornerVertex.z + SQUARE_SIZE))
+				if ((col.x >= cornerVertex.x) && (col.z >= cornerVertex.z) &&
+				    (col.x + col.z <= cornerVertex.x + cornerVertex.z + SQUARE_SIZE))
 					return col.distance(from);
 			}
 		}
@@ -138,7 +139,8 @@ static inline float LineGroundSquareCol(
 				const float3 col = mix(from, to, alpha);
 
 				// point of intersection is inside the BR triangle
-				if ((col.x <= cornerVertex.x) && (col.z <= cornerVertex.z) && (col.x + col.z >= cornerVertex.x + cornerVertex.z - SQUARE_SIZE))
+				if ((col.x <= cornerVertex.x) && (col.z <= cornerVertex.z) &&
+				    (col.x + col.z >= cornerVertex.x + cornerVertex.z - SQUARE_SIZE))
 					return col.distance(from);
 			}
 		}
@@ -147,46 +149,44 @@ static inline float LineGroundSquareCol(
 	return -2.0f;
 }
 
-
-
 /*
 void CGround::CheckColSquare(CProjectile* p, int x, int y)
 {
-	if (!(x >= 0 && y >= 0 && x < mapDims.mapx && y < mapDims.mapy))
-		return;
+    if (!(x >= 0 && y >= 0 && x < mapDims.mapx && y < mapDims.mapy))
+        return;
 
-	float xp = p->pos.x;
-	float yp = p->pos.y;
-	float zp = p->pos.z;
+    float xp = p->pos.x;
+    float yp = p->pos.y;
+    float zp = p->pos.z;
 
-	const float* hm = readMap->GetCornerHeightMapSynced();
-	const float3* fn = readMap->GetFaceNormalsSynced();
-	const int hmIdx = (y * mapDims.mapx + x);
-	const float xt = x * SQUARE_SIZE;
-	const float& yt0 = hm[ y      * mapDims.mapxp1 + x    ];
-	const float& yt1 = hm[(y + 1) * mapDims.mapxp1 + x + 1];
-	const float zt = y * SQUARE_SIZE;
+    const float* hm = readMap->GetCornerHeightMapSynced();
+    const float3* fn = readMap->GetFaceNormalsSynced();
+    const int hmIdx = (y * mapDims.mapx + x);
+    const float xt = x * SQUARE_SIZE;
+    const float& yt0 = hm[ y      * mapDims.mapxp1 + x    ];
+    const float& yt1 = hm[(y + 1) * mapDims.mapxp1 + x + 1];
+    const float zt = y * SQUARE_SIZE;
 
-	const float3& fn0 = fn[hmIdx * 2    ];
-	const float3& fn1 = fn[hmIdx * 2 + 1];
-	const float dx0 = (xp -  xt     );
-	const float dy0 = (yp -  yt0    );
-	const float dz0 = (zp -  zt     );
-	const float dx1 = (xp - (xt + 2));
-	const float dy1 = (yp -  yt1    );
-	const float dz1 = (zp - (zt + 2));
-	const float d0 = dx0 * fn0.x + dy0 * fn0.y + dz0 * fn0.z;
-	const float d1 = dx1 * fn1.x + dy1 * fn1.y + dz1 * fn1.z;
-	const float s0 = xp + zp - xt - zt - p->radius;
-	const float s1 = xp + zp - xt - zt - SQUARE_SIZE * 2 + p->radius;
+    const float3& fn0 = fn[hmIdx * 2    ];
+    const float3& fn1 = fn[hmIdx * 2 + 1];
+    const float dx0 = (xp -  xt     );
+    const float dy0 = (yp -  yt0    );
+    const float dz0 = (zp -  zt     );
+    const float dx1 = (xp - (xt + 2));
+    const float dy1 = (yp -  yt1    );
+    const float dz1 = (zp - (zt + 2));
+    const float d0 = dx0 * fn0.x + dy0 * fn0.y + dz0 * fn0.z;
+    const float d1 = dx1 * fn1.x + dy1 * fn1.y + dz1 * fn1.z;
+    const float s0 = xp + zp - xt - zt - p->radius;
+    const float s1 = xp + zp - xt - zt - SQUARE_SIZE * 2 + p->radius;
 
-	if ((d0 <= p->radius) && (s0 < SQUARE_SIZE))
-		p->Collision();
+    if ((d0 <= p->radius) && (s0 < SQUARE_SIZE))
+        p->Collision();
 
-	if ((d1 <= p->radius) && (s1 > -SQUARE_SIZE))
-		p->Collision();
+    if ((d1 <= p->radius) && (s1 > -SQUARE_SIZE))
+        p->Collision();
 
-	return;
+    return;
 }
 */
 
@@ -203,7 +203,7 @@ inline static bool ClampInMapHeight(float3& from, float3& to)
 	if (dir.y >= 0.0f) {
 		// both `from` & `to` are above map's height
 		from = -OnesVector;
-		to   = -OnesVector;
+		to = -OnesVector;
 		return true;
 	}
 
@@ -211,11 +211,10 @@ inline static bool ClampInMapHeight(float3& from, float3& to)
 	return true;
 }
 
-
 float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float* hm  = readMap->GetSharedCornerHeightMap(synced);
+	const float* hm = readMap->GetSharedCornerHeightMap(synced);
 	const float3* nm = readMap->GetSharedFaceNormals(synced);
 
 	const float3 pfrom = from;
@@ -257,8 +256,8 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 	// clamp since LineGroundSquareCol() operates on the 2 triangle faces comprising each heightmap square
 	const float ffsx = std::clamp(from.x / SQUARE_SIZE, 0.0f, static_cast<float>(mapDims.mapx));
 	const float ffsz = std::clamp(from.z / SQUARE_SIZE, 0.0f, static_cast<float>(mapDims.mapy));
-	const float ttsx = std::clamp(  to.x / SQUARE_SIZE, 0.0f, static_cast<float>(mapDims.mapx));
-	const float ttsz = std::clamp(  to.z / SQUARE_SIZE, 0.0f, static_cast<float>(mapDims.mapy));
+	const float ttsx = std::clamp(to.x / SQUARE_SIZE, 0.0f, static_cast<float>(mapDims.mapx));
+	const float ttsz = std::clamp(to.z / SQUARE_SIZE, 0.0f, static_cast<float>(mapDims.mapy));
 	const int fsx = ffsx;
 	const int fsz = ffsz;
 	const int tsx = ttsx;
@@ -268,7 +267,7 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 
 	if ((fsx == tsx) && (fsz == tsz)) {
 		// <from> and <to> are the same
-		const float ret = LineGroundSquareCol(hm, nm,  from, to,  fsx, fsz);
+		const float ret = LineGroundSquareCol(hm, nm, from, to, fsx, fsz);
 
 		if (ret >= 0.0f)
 			return (ret + skippedDist);
@@ -281,7 +280,7 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 		int zp = fsz;
 
 		for (unsigned int i = 0, n = Square(mapDims.mapyp1); (Square(i) <= n && zp != tsz); i++) {
-			const float ret = LineGroundSquareCol(hm, nm,  from, to,  fsx, zp);
+			const float ret = LineGroundSquareCol(hm, nm, from, to, fsx, zp);
 
 			if (ret >= 0.0f)
 				return (ret + skippedDist);
@@ -297,7 +296,7 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 		int xp = fsx;
 
 		for (unsigned int i = 0, n = Square(mapDims.mapxp1); (Square(i) <= n && xp != tsx); i++) {
-			const float ret = LineGroundSquareCol(hm, nm,  from, to,  xp, fsz);
+			const float ret = LineGroundSquareCol(hm, nm, from, to, xp, fsz);
 
 			if (ret >= 0.0f)
 				return (ret + skippedDist);
@@ -335,7 +334,7 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 
 		for (unsigned int i = 0, n = Square(mapDims.mapxp1) + Square(mapDims.mapyp1); !stopTrace; i++) {
 			// test for collision with the ground-square triangles
-			const float ret = LineGroundSquareCol(hm, nm,  from, to,  curx, curz);
+			const float ret = LineGroundSquareCol(hm, nm, from, to, curx, curz);
 
 			if (ret >= 0.0f)
 				return (ret + skippedDist);
@@ -360,19 +359,27 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 			//     here xn = to.x but curx = to.x - 1 so
 			//     we would be beyond the end of the ray
 			//   2: floating point precision issues
-			if ((nextx - tsx) * dirx > 0) { xn = 1337.0f; nextx = tsx; }
-			if ((nextz - tsz) * dirz > 0) { zn = 1337.0f; nextz = tsz; }
+			if ((nextx - tsx) * dirx > 0) {
+				xn = 1337.0f;
+				nextx = tsx;
+			}
+			if ((nextz - tsz) * dirz > 0) {
+				zn = 1337.0f;
+				nextz = tsz;
+			}
 
 			// advance to the next nearest edge in either x or z dir, or in the case we reached the end make sure
 			// we set it to the exact square positions (floating point precision sometimes hinders us to hit it)
 			if (xn >= 1.0f && zn >= 1.0f) {
-				//assert(curx != nextx || curz != nextz);
+				// assert(curx != nextx || curz != nextz);
 				curx = nextx;
 				curz = nextz;
-			} else if (xn < zn) {
+			}
+			else if (xn < zn) {
 				assert(curx != nextx);
 				curx = nextx;
-			} else {
+			}
+			else {
 				assert(curz != nextz);
 				curz = nextz;
 			}
@@ -387,7 +394,6 @@ float CGround::LineGroundCol(const float3 pos, const float3 dir, float len, bool
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (LineGroundCol(pos, pos + dir * std::max(len, 0.0f), synced));
 }
-
 
 float CGround::LinePlaneCol(const float3 pos, const float3 dir, float len, float hgt)
 {
@@ -406,7 +412,6 @@ float CGround::LinePlaneCol(const float3 pos, const float3 dir, float len, float
 
 	return ((pos.y - hgt) / -dir.y);
 }
-
 
 float CGround::LineGroundWaterCol(const float3 pos, const float3 dir, float len, bool testWater, bool synced)
 {
@@ -432,7 +437,6 @@ float CGround::LineGroundWaterCol(const float3 pos, const float3 dir, float len,
 	return std::min(terraDist, waterDist);
 }
 
-
 float CGround::GetApproximateHeight(float x, float z, bool synced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -442,7 +446,6 @@ float CGround::GetApproximateHeight(float x, float z, bool synced)
 	const int zsquare = std::clamp(int(z) / SQUARE_SIZE, 0, mapDims.mapym1);
 	return heightMap[zsquare * mapDims.mapx + xsquare];
 }
-
 
 float CGround::GetApproximateHeightUnsafe(int x, int z, bool synced)
 {
@@ -476,7 +479,6 @@ float CGround::GetOrigHeight(float x, float z)
 	return InterpolateCornerHeight(x, z, readMap->GetOriginalHeightMapSynced());
 }
 
-
 const float3& CGround::GetNormal(float x, float z, bool synced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -496,7 +498,6 @@ const float3& CGround::GetNormalAboveWater(float x, float z, bool synced)
 	return (GetNormal(x, z, synced));
 }
 
-
 float CGround::GetSlope(float x, float z, bool synced)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -506,7 +507,6 @@ float CGround::GetSlope(float x, float z, bool synced)
 
 	return slopeMap[xhsquare + zhsquare * mapDims.hmapx];
 }
-
 
 float3 CGround::GetSmoothNormal(float x, float z, bool synced)
 {
@@ -525,7 +525,8 @@ float3 CGround::GetSmoothNormal(float x, float z, bool synced)
 	if (dz > 0.5f) {
 		sz2 = sz + 1;
 		fz = dz - 0.5f;
-	} else {
+	}
+	else {
 		sz2 = sz - 1;
 		fz = 0.5f - dz;
 	}
@@ -533,7 +534,8 @@ float3 CGround::GetSmoothNormal(float x, float z, bool synced)
 	if (dx > 0.5f) {
 		sx2 = sx + 1;
 		fx = dx - 0.5f;
-	} else {
+	}
+	else {
 		sx2 = sx - 1;
 		fx = 0.5f - dx;
 	}
@@ -543,17 +545,18 @@ float3 CGround::GetSmoothNormal(float x, float z, bool synced)
 
 	const float3* normalMap = readMap->GetSharedCenterNormals(synced);
 
-	const float3& n1 = normalMap[sz  * mapDims.mapx + sx ] * ifx * ifz;
-	const float3& n2 = normalMap[sz  * mapDims.mapx + sx2] *  fx * ifz;
-	const float3& n3 = normalMap[sz2 * mapDims.mapx + sx ] * ifx *  fz;
-	const float3& n4 = normalMap[sz2 * mapDims.mapx + sx2] *  fx *  fz;
+	const float3& n1 = normalMap[sz * mapDims.mapx + sx] * ifx * ifz;
+	const float3& n2 = normalMap[sz * mapDims.mapx + sx2] * fx * ifz;
+	const float3& n3 = normalMap[sz2 * mapDims.mapx + sx] * ifx * fz;
+	const float3& n4 = normalMap[sz2 * mapDims.mapx + sx2] * fx * fz;
 
 	return ((n1 + n2 + n3 + n4).Normalize());
 }
 
-
-
-float CGround::SimTrajectoryGroundColDist(const float3& trajStartPos, const float3& trajStartDir, const float3& acc, const float2& args)
+float CGround::SimTrajectoryGroundColDist(const float3& trajStartPos,
+    const float3& trajStartDir,
+    const float3& acc,
+    const float2& args)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// args.x := speed, args.y := length
@@ -587,7 +590,11 @@ float CGround::SimTrajectoryGroundColDist(const float3& trajStartPos, const floa
 	return (math::sqrt(pos.SqDistance2D(trajStartPos)));
 }
 
-float CGround::TrajectoryGroundCol(const float3& trajStartPos, const float3& trajTargetDir, float length, float linCoeff, float qdrCoeff)
+float CGround::TrajectoryGroundCol(const float3& trajStartPos,
+    const float3& trajTargetDir,
+    float length,
+    float linCoeff,
+    float qdrCoeff)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// trajTargetDir should be the normalized xz-vector from <trajStartPos> to the target
@@ -607,25 +614,23 @@ float CGround::TrajectoryGroundCol(const float3& trajStartPos, const float3& tra
 	for (float dist = minDist; dist < maxDist; dist += SQUARE_SIZE) {
 		const float3 pos = (trajStartPos + dir * dist) + (alt * dist * dist);
 
-		#if 1
+#if 1
 		if (GetApproximateHeight(pos) > pos.y)
 			return dist;
-		#else
+#else
 		if (GetHeightReal(pos) > pos.y)
 			return dist;
-		#endif
+#endif
 	}
 
 	return -1.0f;
 }
 
-
-
-int CGround::GetSquare(const float3& pos) {
+int CGround::GetSquare(const float3& pos)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int x = std::clamp((int(pos.x) / SQUARE_SIZE), 0, mapDims.mapxm1);
 	const int z = std::clamp((int(pos.z) / SQUARE_SIZE), 0, mapDims.mapym1);
 
 	return (x + z * mapDims.mapx);
 };
-

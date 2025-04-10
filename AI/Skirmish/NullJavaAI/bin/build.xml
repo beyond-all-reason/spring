@@ -252,7 +252,7 @@ or
 		<replace file="${project.dir.new}/data/AIInfo.lua"
 				token="'${skirmish.ai.name}'"
 				value="'${skirmish.ai.name.new}'"/>
-		
+
 		<echo level="info">
 Spring source independant Java Skirmish AI project copied to:
 	${project.dir.new}

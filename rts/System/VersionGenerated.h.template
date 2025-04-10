@@ -36,7 +36,3 @@ static constexpr const char* SPRING_VERSION_ENGINE_ADDITIONAL = "@SPRING_VERSION
 static constexpr bool        SPRING_VERSION_ENGINE_RELEASE    = @SPRING_VERSION_ENGINE_RELEASE@;
 
 #endif // VERSION_GENERATED_H
-
- 
- 
- 

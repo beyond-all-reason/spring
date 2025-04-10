@@ -4,9 +4,7 @@
 
 #include "System/FileSystem/FileHandler.h"
 
-VFSFileInterface::VFSFileInterface()
-{
-}
+VFSFileInterface::VFSFileInterface() {}
 
 Rml::FileHandle VFSFileInterface::Open(const Rml::String& path)
 {
@@ -34,23 +32,14 @@ bool VFSFileInterface::Seek(Rml::FileHandle file, long offset, int origin)
 {
 	std::ios_base::seekdir seekdir;
 	switch (origin) {
-		case SEEK_CUR:
-			seekdir = std::ios_base::cur;
-			break;
-		case SEEK_END:
-			seekdir = std::ios_base::end;
-			break;
-		case SEEK_SET:
-		default:
-			seekdir = std::ios_base::beg;
-			break;
+	case SEEK_CUR: seekdir = std::ios_base::cur; break;
+	case SEEK_END: seekdir = std::ios_base::end; break;
+	case SEEK_SET:
+	default: seekdir = std::ios_base::beg; break;
 	}
 	((CFileHandler*)file)->Seek(offset, seekdir);
 	// Doesn't seem like the result of this function is ever actually checked
 	return true;
 }
 
-size_t VFSFileInterface::Tell(Rml::FileHandle file)
-{
-	return ((CFileHandler*)file)->GetPos();
-}
+size_t VFSFileInterface::Tell(Rml::FileHandle file) { return ((CFileHandler*)file)->GetPos(); }

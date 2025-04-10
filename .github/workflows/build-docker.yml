@@ -49,7 +49,7 @@ on:
         required: false
         default: '*'
         #default: 'verybadsoldier/springrts-build:dbg'
-jobs: 
+jobs:
   build_engine:
     name: ${{ matrix.config.os }}
     runs-on: ${{ matrix.config.runs-on }}
@@ -65,7 +65,7 @@ jobs:
             os: 'linux-64',
             runs-on: 'ubuntu-latest'
           }
-    steps:  
+    steps:
       - name: Install pigz
         run: |
           sudo apt-get update
@@ -83,7 +83,7 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           df -h
         shell: bash
-        
+
       - name: Checkout Source Repository
         uses: actions/checkout@v3
 
@@ -159,7 +159,7 @@ jobs:
           name: ${{ steps.run-docker-build.outputs.dbg_name }}
           path: ${{ github.workspace }}/artifacts/${{ steps.run-docker-build.outputs.dbg_name }}
           if-no-files-found: error
-      
+
       - name: Upload Build Options Artifact
         uses: actions/upload-artifact@v4
         with:

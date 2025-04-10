@@ -38,7 +38,7 @@ local function Load()
       for menuEntry, menuTable in pairs(tdf) do
         if (type(menuTable) == 'table') then
           local unitMenu = SafeLower(menuTable.unitmenu)
-          
+
           local dlMenu = dlBuilds[unitMenu]
           if (dlMenu == nil) then
             dlMenu = {}
@@ -143,4 +143,3 @@ return {
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-

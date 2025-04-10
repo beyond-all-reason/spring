@@ -3,15 +3,13 @@
 #ifndef TEXTELEMENT_H
 #define TEXTELEMENT_H
 
-#include <string>
-
 #include "GuiElement.h"
 
-namespace agui
-{
+#include <string>
 
-class TextElement : public GuiElement
-{
+namespace agui {
+
+class TextElement : public GuiElement {
 public:
 	TextElement(const std::string& text, GuiElement* parent = NULL);
 	void SetText(const std::string& str);
@@ -21,5 +19,5 @@ private:
 
 	std::string text;
 };
-}
+} // namespace agui
 #endif // TEXTELEMENT_H

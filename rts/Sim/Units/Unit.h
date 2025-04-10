@@ -3,13 +3,13 @@
 #ifndef UNIT_H
 #define UNIT_H
 
-#include <vector>
-
-#include "Sim/Objects/SolidObject.h"
 #include "Sim/Misc/Resource.h"
+#include "Sim/Objects/SolidObject.h"
 #include "Sim/Weapons/WeaponTarget.h"
 #include "System/Matrix44f.h"
 #include "System/type2.h"
+
+#include <vector>
 
 // Added only to calculate the size of unit memory buffers.
 // change as appropriate if the largest type changes.
@@ -42,31 +42,29 @@ struct UnitLoadParams;
 struct SLosInstance;
 
 namespace icon {
-	class CIconData;
+class CIconData;
 }
 
 // LOS state bits
-static constexpr uint8_t LOS_INLOS     = (1 << 0);  // the unit is currently in the los of the allyteam
-static constexpr uint8_t LOS_INRADAR   = (1 << 1);  // the unit is currently in radar from the allyteam
-static constexpr uint8_t LOS_PREVLOS   = (1 << 2);  // the unit has previously been in los from the allyteam
-static constexpr uint8_t LOS_CONTRADAR = (1 << 3);  // the unit has continuously been in radar since it was last inlos by the allyteam
+static constexpr uint8_t LOS_INLOS = (1 << 0);   // the unit is currently in the los of the allyteam
+static constexpr uint8_t LOS_INRADAR = (1 << 1); // the unit is currently in radar from the allyteam
+static constexpr uint8_t LOS_PREVLOS = (1 << 2); // the unit has previously been in los from the allyteam
+static constexpr uint8_t LOS_CONTRADAR =
+    (1 << 3); // the unit has continuously been in radar since it was last inlos by the allyteam
 
 static constexpr uint8_t LOS_MASK_SHIFT = 4;
 
 // LOS mask bits  (masked bits are not automatically updated)
-static constexpr uint8_t LOS_INLOS_MASK     = (LOS_INLOS     << LOS_MASK_SHIFT);  // do not update LOS_INLOS
-static constexpr uint8_t LOS_INRADAR_MASK   = (LOS_INRADAR   << LOS_MASK_SHIFT);  // do not update LOS_INRADAR
-static constexpr uint8_t LOS_PREVLOS_MASK   = (LOS_PREVLOS   << LOS_MASK_SHIFT);  // do not update LOS_PREVLOS
-static constexpr uint8_t LOS_CONTRADAR_MASK = (LOS_CONTRADAR << LOS_MASK_SHIFT);  // do not update LOS_CONTRADAR
+static constexpr uint8_t LOS_INLOS_MASK = (LOS_INLOS << LOS_MASK_SHIFT);         // do not update LOS_INLOS
+static constexpr uint8_t LOS_INRADAR_MASK = (LOS_INRADAR << LOS_MASK_SHIFT);     // do not update LOS_INRADAR
+static constexpr uint8_t LOS_PREVLOS_MASK = (LOS_PREVLOS << LOS_MASK_SHIFT);     // do not update LOS_PREVLOS
+static constexpr uint8_t LOS_CONTRADAR_MASK = (LOS_CONTRADAR << LOS_MASK_SHIFT); // do not update LOS_CONTRADAR
 
-static constexpr uint8_t LOS_ALL_BITS = \
-	(LOS_INLOS      | LOS_INRADAR      | LOS_PREVLOS      | LOS_CONTRADAR);
-static constexpr uint8_t LOS_ALL_MASK_BITS = \
-	(LOS_INLOS_MASK | LOS_INRADAR_MASK | LOS_PREVLOS_MASK | LOS_CONTRADAR_MASK);
+static constexpr uint8_t LOS_ALL_BITS = (LOS_INLOS | LOS_INRADAR | LOS_PREVLOS | LOS_CONTRADAR);
+static constexpr uint8_t LOS_ALL_MASK_BITS =
+    (LOS_INLOS_MASK | LOS_INRADAR_MASK | LOS_PREVLOS_MASK | LOS_CONTRADAR_MASK);
 
-
-class CUnit : public CSolidObject
-{
+class CUnit : public CSolidObject {
 public:
 	CR_DECLARE(CUnit)
 
@@ -76,6 +74,7 @@ public:
 	static void InitStatic();
 
 	void SanityCheck() const;
+
 	void PreUpdate() { preFramePos = pos; }
 
 	virtual void PreInit(const UnitLoadParams& params);
@@ -84,9 +83,10 @@ public:
 	virtual void Update();
 	virtual void SlowUpdate();
 
-	const SolidObjectDef* GetDef() const { return ((const SolidObjectDef*) unitDef); }
+	const SolidObjectDef* GetDef() const { return ((const SolidObjectDef*)unitDef); }
 
-	virtual void DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID);
+	virtual void
+	DoDamage(const DamageArray& damages, const float3& impulse, CUnit* attacker, int weaponDefID, int projectileID);
 	virtual void DoWaterDamage();
 	virtual void FinishedBuilding(bool postInit);
 
@@ -151,39 +151,57 @@ public:
 	void UpdatePhysicalState(float eps);
 
 	float3 GetErrorVector(int allyteam) const;
-	float3 GetErrorPos(int allyteam, bool aiming = false) const { return (aiming? aimPos: midPos) + GetErrorVector(allyteam); }
+
+	float3 GetErrorPos(int allyteam, bool aiming = false) const
+	{
+		return (aiming ? aimPos : midPos) + GetErrorVector(allyteam);
+	}
+
 	float3 GetObjDrawErrorPos(int allyteam) const { return (GetObjDrawMidPos() + GetErrorVector(allyteam)); }
 
-	float3 GetLuaErrorVector(int allyteam, bool fullRead) const { return (fullRead? ZeroVector: GetErrorVector(allyteam)); }
-	float3 GetLuaErrorPos(int allyteam, bool fullRead) const { return (midPos + GetLuaErrorVector(allyteam, fullRead)); }
+	float3 GetLuaErrorVector(int allyteam, bool fullRead) const
+	{
+		return (fullRead ? ZeroVector : GetErrorVector(allyteam));
+	}
+
+	float3 GetLuaErrorPos(int allyteam, bool fullRead) const
+	{
+		return (midPos + GetLuaErrorVector(allyteam, fullRead));
+	}
 
 	float3 GetDrawDeltaPos(float dt) const { return ((pos - preFramePos) * dt); }
 
 	void UpdatePosErrorParams(bool updateError, bool updateDelta);
 
 	bool UsingScriptMoveType() const { return (prevMoveType != nullptr); }
+
 	bool UnderFirstPersonControl() const { return (fpsControlPlayer != nullptr); }
 
 	bool FloatOnWater() const;
 
 	bool IsNeutral() const { return neutral; }
+
 	bool IsCloaked() const { return isCloaked; }
+
 	bool IsStunned() const { return stunned; }
+
 	bool IsIdle() const;
 
 	bool HaveTarget() const { return (curTarget.type != Target_None); }
-	bool CanUpdateWeapons() const {
+
+	bool CanUpdateWeapons() const
+	{
 		return (forceUseWeapons || (allowUseWeapons && !onTempHoldFire && !isDead && !beingBuilt && !IsStunned()));
 	}
 
 	void SetNeutral(bool b);
 	void SetStunned(bool stun);
 
-	bool GetPosErrorBit(int at) const {
-		return (posErrorMask[at / 32] & (1 << (at % 32)));
-	}
-	void SetPosErrorBit(int at, int bit) {
-		posErrorMask[at / 32] |=  ((1 << (at % 32)) * (bit == 1));
+	bool GetPosErrorBit(int at) const { return (posErrorMask[at / 32] & (1 << (at % 32))); }
+
+	void SetPosErrorBit(int at, int bit)
+	{
+		posErrorMask[at / 32] |= ((1 << (at % 32)) * (bit == 1));
 		posErrorMask[at / 32] &= ~((1 << (at % 32)) * (bit == 0));
 	}
 
@@ -208,10 +226,11 @@ public:
 		ChangeGiven,
 		ChangeCaptured
 	};
+
 	virtual bool ChangeTeam(int team, ChangeType type);
 	virtual void StopAttackingAllyTeam(int ally);
 
-	//Transporter stuff
+	// Transporter stuff
 	CR_DECLARE_SUB(TransportedUnit)
 
 	struct TransportedUnit {
@@ -224,6 +243,7 @@ public:
 	void SetLastAttacker(CUnit* attacker);
 
 	void SetTransporter(CUnit* trans) { transporter = trans; }
+
 	CUnit* GetTransporter() const { return transporter; }
 
 	bool AttachUnit(CUnit* unit, int piece, bool force = false);
@@ -238,17 +258,24 @@ public:
 	short GetTransporteeWantedHeading(const CUnit* unit) const;
 
 public:
-	void KilledScriptFinished(int wreckLevel) { deathScriptFinished = true; delayedWreckLevel = wreckLevel; }
+	void KilledScriptFinished(int wreckLevel)
+	{
+		deathScriptFinished = true;
+		delayedWreckLevel = wreckLevel;
+	}
+
 	void ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID = 0);
 	virtual void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID = 0);
 	virtual void IncomingMissile(CMissileProjectile* missile);
 
 	void TempHoldFire(int cmdID);
+
 	void SetHoldFire(bool b) { onTempHoldFire = b; }
 
 	// start this unit in free fall from parent unit
 	void Drop(const float3& parentPos, const float3& parentDir, CUnit* parent);
 	void PostLoad();
+
 protected:
 	void ChangeTeamReset();
 	void UpdateResources();
@@ -258,17 +285,21 @@ public: // unsynced methods
 	bool SetGroup(CGroup* newGroup, bool fromFactory = false, bool autoSelect = true);
 
 	const CGroup* GetGroup() const;
-	      CGroup* GetGroup();
+	CGroup* GetGroup();
 
 	bool GetIsIcon() const { return HasDrawFlag(DrawFlags::SO_DRICON_FLAG); }
-	void SetIsIcon(bool b) {
+
+	void SetIsIcon(bool b)
+	{
 		if (b)
 			AddDrawFlag(DrawFlags::SO_DRICON_FLAG);
 		else
 			DelDrawFlag(DrawFlags::SO_DRICON_FLAG);
 	}
+
 public:
-	static float ExperienceScale(float limExperience, float experienceWeight) {
+	static float ExperienceScale(float limExperience, float experienceWeight)
+	{
 		// limExperience ranges from 0.0 to 0.9999...
 		return std::max(0.0f, 1.0f - (limExperience * experienceWeight));
 	}
@@ -444,7 +475,8 @@ public:
 	// the amount of storage the unit contributes to the team
 	SResourcePack storage;
 
-	// per unit storage (gets filled on reclaim and needs then to be unloaded at some storage building -> 2nd part is lua's job)
+	// per unit storage (gets filled on reclaim and needs then to be unloaded at some storage building -> 2nd part is
+	// lua's job)
 	SResourcePack harvestStorage;
 	SResourcePack harvested;
 
@@ -472,14 +504,15 @@ public:
 	 */
 	int flankingBonusMode = 0;
 
-	// how much the lowest damage direction of the flanking bonus can turn upon an attack (zeroed when attacked, slowly increases)
-	float  flankingBonusMobility = 10.0f;
+	// how much the lowest damage direction of the flanking bonus can turn upon an attack (zeroed when attacked, slowly
+	// increases)
+	float flankingBonusMobility = 10.0f;
 	// how much ability of the flanking bonus direction to move builds up each frame
-	float  flankingBonusMobilityAdd = 0.01f;
+	float flankingBonusMobilityAdd = 0.01f;
 	// average factor to multiply damage by
-	float  flankingBonusAvgDamage = 1.4f;
+	float flankingBonusAvgDamage = 1.4f;
 	// (max damage - min damage) / 2
-	float  flankingBonusDifDamage = 0.5f;
+	float flankingBonusDifDamage = 0.5f;
 
 	float armoredMultiple = 1.0f;
 	// multiply all damage the unit take with this
@@ -518,7 +551,7 @@ public:
 
 	// Lua overrides for CanUpdateWeapons
 	bool forceUseWeapons = false;
-	bool allowUseWeapons =  true;
+	bool allowUseWeapons = true;
 
 	// signals if script has finished executing Killed and the unit can be deleted
 	bool deathScriptFinished = false;
@@ -551,6 +584,7 @@ public:
 	icon::CIconData* myIcon = nullptr;
 
 	bool drawIcon = true;
+
 private:
 	// if we are stunned by a weapon or for other reason, access via IsStunned/SetStunned(bool)
 	bool stunned = false;
@@ -560,11 +594,11 @@ struct GlobalUnitParams {
 	CR_DECLARE_STRUCT(GlobalUnitParams)
 
 	float empDeclineRate = 0.0f;
-	float expMultiplier  = 0.0f;
-	float expPowerScale  = 0.0f;
+	float expMultiplier = 0.0f;
+	float expPowerScale = 0.0f;
 	float expHealthScale = 0.0f;
 	float expReloadScale = 0.0f;
-	float expGrade       = 0.0f;
+	float expGrade = 0.0f;
 };
 
 extern GlobalUnitParams globalUnitParams;

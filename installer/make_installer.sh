@@ -40,4 +40,3 @@ installer/make_uninstall_nsh.py installer/downloads/spring_testing_minimal-porta
 makensis -V3 $NSISDEFINES $@ -DNSI_UNINSTALL_FILES=downloads/uninstall.nsh \
 -DMIN_PORTABLE_ARCHIVE=downloads/spring_testing_minimal-portable.7z \
  installer/spring.nsi
-

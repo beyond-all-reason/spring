@@ -4,10 +4,9 @@
 #include "LuaConstGL.h"
 
 #include "LuaInclude.h"
-
 #include "LuaUtils.h"
-#include "Rendering/GL/myGL.h"
 
+#include "Rendering/GL/myGL.h"
 
 /***
  * OpenGL Constants
@@ -17,7 +16,7 @@
 bool LuaConstGL::PushEntries(lua_State* L)
 {
 /*** @field GL.cmd integer */
-#define PUSH_GL(cmd) LuaPushNamedNumber(L, #cmd, GL_ ## cmd)
+#define PUSH_GL(cmd) LuaPushNamedNumber(L, #cmd, GL_##cmd)
 
 	/***
 	 * Drawing Primitives
@@ -78,10 +77,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.ONE_MINUS_DST_ALPHA integer */
 	PUSH_GL(ONE_MINUS_DST_ALPHA);
 
-/***
- * BlendingFactorSrc
- * @section blendingfactorsrc
- */
+	/***
+	 * BlendingFactorSrc
+	 * @section blendingfactorsrc
+	 */
 
 	/*** @field GL.DST_COLOR integer */
 	PUSH_GL(DST_COLOR);
@@ -101,10 +100,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.MAX integer */
 	PUSH_GL(MAX);
 
-/***
- * AlphaFunction and DepthFunction
- * @section alphadepth
- */
+	/***
+	 * AlphaFunction and DepthFunction
+	 * @section alphadepth
+	 */
 
 	/*** @field GL.NEVER integer */
 	PUSH_GL(NEVER);
@@ -123,10 +122,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.ALWAYS integer */
 	PUSH_GL(ALWAYS);
 
-/***
- * LogicOp
- * @section logicop
- */
+	/***
+	 * LogicOp
+	 * @section logicop
+	 */
 
 	/*** @field GL.CLEAR integer */
 	PUSH_GL(CLEAR);
@@ -342,7 +341,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.SCISSOR_BIT integer */
 	PUSH_GL(SCISSOR_BIT);
 	/*** @field GL.ALL_ATTRIB_BITS integer */
-	//PUSH_GL(ALL_ATTRIB_BITS);  // floating point clip
+	// PUSH_GL(ALL_ATTRIB_BITS);  // floating point clip
 	LuaPushNamedNumber(L, "ALL_ATTRIB_BITS", -1.0f);
 
 	/***
@@ -475,7 +474,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.SHADER_STORAGE_BUFFER integer */
 	PUSH_GL(SHADER_STORAGE_BUFFER);
 
-	//Texture targets
+	// Texture targets
 	/*** @field GL.TEXTURE_1D integer */
 	PUSH_GL(TEXTURE_1D);
 	/*** @field GL.TEXTURE_2D integer */
@@ -487,7 +486,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.TEXTURE_2D_MULTISAMPLE integer */
 	PUSH_GL(TEXTURE_2D_MULTISAMPLE);
 
-	//Image formats
+	// Image formats
 	/*** @field GL.RGBA32F integer */
 	PUSH_GL(RGBA32F);
 	/*** @field GL.RGBA16F integer */
@@ -575,7 +574,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.DEPTH_COMPONENT32F integer */
 	PUSH_GL(DEPTH_COMPONENT32F);
 
-	//access specifiers
+	// access specifiers
 
 	/*** @field GL.READ_ONLY integer */
 	PUSH_GL(READ_ONLY);
@@ -584,7 +583,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.READ_WRITE integer */
 	PUSH_GL(READ_WRITE);
 
-	//memory barrier bits
+	// memory barrier bits
 
 	/*** @field GL.VERTEX_ATTRIB_ARRAY_BARRIER_BIT integer */
 	PUSH_GL(VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
@@ -653,11 +652,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(STENCIL_ATTACHMENT);
 
 
-
-/******************************************************************************
- * FBO Attachments
- * @section fboattachments
-******************************************************************************/
+	/******************************************************************************
+	 * FBO Attachments
+	 * @section fboattachments
+	 ******************************************************************************/
 
 	/*** @field GL.COLOR_ATTACHMENT0_EXT integer */
 	PUSH_GL(COLOR_ATTACHMENT0_EXT);
@@ -702,7 +700,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/******************************************************************************
 	 * OpenGL Object Types
 	 * @section objecttypes
-	******************************************************************************/
+	 ******************************************************************************/
 
 	/*** @field GL.BUFFER integer */
 	PUSH_GL(BUFFER);
@@ -726,13 +724,10 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	return true;
 }
 
-
-
-
 /******************************************************************************
  * Not included, but useful texture Formats
  * @section textureformats
-******************************************************************************/
+ ******************************************************************************/
 
 /// @field GL_RGBA16F_ARB 0x881A
 
@@ -743,7 +738,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 /******************************************************************************
  * Not included, but useful RBO Formats
  * @section rboformats
-******************************************************************************/
+ ******************************************************************************/
 
 /// @field GL_RGB 0x1907
 
@@ -756,7 +751,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 /******************************************************************************
  * Not included, but useful FBO Targets
  * @section fbotargets
-******************************************************************************/
+ ******************************************************************************/
 
 /// @field GL_FRAMEBUFFER_EXT 0x8D40
 
@@ -767,7 +762,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 /******************************************************************************
  * Not included, but useful FBO Status
  * @section fbostatus
-******************************************************************************/
+ ******************************************************************************/
 
 /// @field GL_FRAMEBUFFER_COMPLETE_EXT 0x8CD5
 

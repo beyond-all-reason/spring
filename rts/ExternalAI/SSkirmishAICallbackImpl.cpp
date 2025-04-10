@@ -1,52 +1,52 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "ExternalAI/SSkirmishAICallbackImpl.h"
+
 #include "ExternalAI/AICallback.h"
 #include "ExternalAI/AICheats.h"
 #include "ExternalAI/AILibraryManager.h"
-#include "ExternalAI/SSkirmishAICallbackImpl.h"
-#include "ExternalAI/SkirmishAILibraryInfo.h"
-#include "ExternalAI/SkirmishAIWrapper.h"
-#include "ExternalAI/SAIInterfaceCallbackImpl.h"
-#include "ExternalAI/SkirmishAIHandler.h"
 #include "ExternalAI/Interface/AISCommands.h"
 #include "ExternalAI/Interface/SSkirmishAICallback.h"
 #include "ExternalAI/Interface/SSkirmishAILibrary.h"
-
-#include "Game/GlobalUnsynced.h" // for myTeam
+#include "ExternalAI/SAIInterfaceCallbackImpl.h"
+#include "ExternalAI/SkirmishAIHandler.h"
+#include "ExternalAI/SkirmishAILibraryInfo.h"
+#include "ExternalAI/SkirmishAIWrapper.h"
 #include "Game/GameVersion.h"
+#include "Game/GlobalUnsynced.h" // for myTeam
 #include "Game/SelectedUnitsHandler.h"
-#include "Game/UI/GuiHandler.h"
-#include "Map/ReadMap.h"
-#include "Map/MetalMap.h"
-#include "Map/MapInfo.h"
-#include "Lua/LuaRulesParams.h"
-#include "Lua/LuaHandleSynced.h"
-#include "Sim/Features/Feature.h"
-#include "Sim/Units/UnitDef.h"
-#include "Sim/Units/UnitDefHandler.h"
-#include "Sim/Units/UnitHandler.h"
-#include "Sim/Units/CommandAI/CommandAI.h"
 #include "Game/UI/Groups/Group.h"
 #include "Game/UI/Groups/GroupHandler.h"
-#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Game/UI/GuiHandler.h"
+#include "Lua/LuaHandleSynced.h"
+#include "Lua/LuaRulesParams.h"
+#include "Map/MapInfo.h"
+#include "Map/MetalMap.h"
+#include "Map/ReadMap.h"
+#include "Sim/Features/Feature.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
 #include "Sim/Features/FeatureHandler.h"
-#include "Sim/Weapons/WeaponDefHandler.h"
-#include "Sim/Weapons/Weapon.h"
-#include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Misc/CategoryHandler.h"
+#include "Sim/Misc/LosHandler.h"
+#include "Sim/Misc/ModInfo.h"
+#include "Sim/Misc/QuadField.h" // for quadField.GetFeaturesExact(pos, radius)
 #include "Sim/Misc/Resource.h"
 #include "Sim/Misc/ResourceHandler.h"
 #include "Sim/Misc/ResourceMapAnalyzer.h"
-#include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "Sim/Misc/ModInfo.h"
-#include "Sim/Misc/QuadField.h" // for quadField.GetFeaturesExact(pos, radius)
-#include "System/SafeCStrings.h"
-#include "System/SpringMath.h"
+#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitDefHandler.h"
+#include "Sim/Units/UnitHandler.h"
+#include "Sim/Weapons/PlasmaRepulser.h"
+#include "Sim/Weapons/Weapon.h"
+#include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/FileSystem/ArchiveScanner.h"
 #include "System/Log/ILog.h"
+#include "System/SafeCStrings.h"
+#include "System/SpringMath.h"
 
 
 static std::array<std::pair<CAICallback, CAICheats>, MAX_AIS> AI_LEGACY_CALLBACKS;
@@ -61,12 +61,12 @@ static std::vector<LineMarker> AI_TMP_LINE_MARKERS[MAX_AIS];
 
 static constexpr size_t MAX_NUM_MARKERS = 16384;
 
-
 static inline CAICallback* GetCallBack(int skirmishAIId) { return &AI_LEGACY_CALLBACKS[skirmishAIId].first; }
+
 static inline CAICheats* GetCheatCallBack(int skirmishAIId) { return &AI_LEGACY_CALLBACKS[skirmishAIId].second; }
 
-
-static void CheckSkirmishAIId(int skirmishAIId, const char* caller) {
+static void CheckSkirmishAIId(int skirmishAIId, const char* caller)
+{
 	if (skirmishAIId >= 0 && skirmishAIId < MAX_AIS)
 		return;
 
@@ -80,11 +80,10 @@ static void CheckSkirmishAIId(int skirmishAIId, const char* caller) {
 	assert(false);
 }
 
-static size_t ShallowCopyKeyValPairs(
-	const spring::unordered_map<std::string, std::string>& map,
-	const char* cMapKeys[],
-	const char* cMapValues[]
-) {
+static size_t ShallowCopyKeyValPairs(const spring::unordered_map<std::string, std::string>& map,
+    const char* cMapKeys[],
+    const char* cMapValues[])
+{
 	auto it = map.cbegin();
 
 	for (int i = 0; it != map.cend(); ++i, it++) {
@@ -95,25 +94,20 @@ static size_t ShallowCopyKeyValPairs(
 	return (map.size());
 }
 
-
-
-static void toFloatArr(const short color[3], const short alpha, float arrColor[4]) {
+static void toFloatArr(const short color[3], const short alpha, float arrColor[4])
+{
 	arrColor[0] = color[0] / 255.0f;
 	arrColor[1] = color[1] / 255.0f;
 	arrColor[2] = color[2] / 255.0f;
-	arrColor[3] =    alpha / 255.0f;
+	arrColor[3] = alpha / 255.0f;
 }
 
-static bool isControlledByLocalPlayer(int skirmishAIId) {
-	return (gu->myTeam == AI_TEAM_IDS[skirmishAIId]);
-}
+static bool isControlledByLocalPlayer(int skirmishAIId) { return (gu->myTeam == AI_TEAM_IDS[skirmishAIId]); }
 
+static const CUnit* getUnit(int unitId) { return (unitHandler.GetUnit(unitId)); }
 
-static const CUnit* getUnit(int unitId) {
-	return (unitHandler.GetUnit(unitId));
-}
-
-static bool isUnitInLos(int skirmishAIId, const CUnit* unit) {
+static bool isUnitInLos(int skirmishAIId, const CUnit* unit)
+{
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
 	if (teamHandler.AlliedTeams(unit->team, teamId))
 		return true;
@@ -122,8 +116,8 @@ static bool isUnitInLos(int skirmishAIId, const CUnit* unit) {
 	return (unit->losStatus[allyID] & LOS_INLOS);
 }
 
-static int unitModParamLosMask(int skirmishAIId, const CUnit* unit) {
-
+static int unitModParamLosMask(int skirmishAIId, const CUnit* unit)
+{
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
 	const int allyID = teamHandler.AllyTeam(teamId);
 	const int losStatus = unit->losStatus[allyID];
@@ -149,8 +143,8 @@ static int unitModParamLosMask(int skirmishAIId, const CUnit* unit) {
 	return losMask;
 }
 
-static int featureModParamLosMask(int skirmishAIId, const CFeature* feature) {
-
+static int featureModParamLosMask(int skirmishAIId, const CFeature* feature)
+{
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
 	const int allyID = teamHandler.AllyTeam(teamId);
 
@@ -169,19 +163,23 @@ static int featureModParamLosMask(int skirmishAIId, const CFeature* feature) {
 	return losMask;
 }
 
-static inline bool modParamIsVisible(const LuaRulesParams::Param& param, const int losMask) {
+static inline bool modParamIsVisible(const LuaRulesParams::Param& param, const int losMask)
+{
 	return (param.los & losMask) > 0;
 }
 
-static const CTeam* getTeam(int teamId) {
+static const CTeam* getTeam(int teamId)
+{
 	return (teamId < teamHandler.ActiveTeams()) ? teamHandler.Team(teamId) : nullptr;
 }
 
-static bool isAlliedTeam(int skirmishAIId, const CTeam* team) {
+static bool isAlliedTeam(int skirmishAIId, const CTeam* team)
+{
 	return teamHandler.AlliedTeams(team->teamNum, AI_TEAM_IDS[skirmishAIId]);
 }
 
-static int teamModParamLosMask(int skirmishAIId, const CTeam* team) {
+static int teamModParamLosMask(int skirmishAIId, const CTeam* team)
+{
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
 	int losMask = LuaRulesParams::RULESPARAMLOS_PUBLIC_MASK;
 
@@ -195,17 +193,13 @@ static int teamModParamLosMask(int skirmishAIId, const CTeam* team) {
 	return losMask;
 }
 
-static inline int gameModParamLosMask() {
-	return LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK;
-}
+static inline int gameModParamLosMask() { return LuaRulesParams::RULESPARAMLOS_PRIVATE_MASK; }
 
-
-static float getRulesParamFloatValueByName(
-	const LuaRulesParams::Params& params,
-	const int losMask,
-	const char* rulesParamName,
-	float defaultValue
-) {
+static float getRulesParamFloatValueByName(const LuaRulesParams::Params& params,
+    const int losMask,
+    const char* rulesParamName,
+    float defaultValue)
+{
 	const std::string key(rulesParamName);
 	const auto it = params.find(key);
 	if (it == params.end())
@@ -215,20 +209,19 @@ static float getRulesParamFloatValueByName(
 	if (!modParamIsVisible(param, losMask))
 		return defaultValue;
 
-	if (std::holds_alternative <std::string> (param.value))
+	if (std::holds_alternative<std::string>(param.value))
 		return defaultValue;
-	else if (std::holds_alternative <bool> (param.value))
-		return std::get <bool> (param.value) ? 1.0f : 0.0f;
+	else if (std::holds_alternative<bool>(param.value))
+		return std::get<bool>(param.value) ? 1.0f : 0.0f;
 	else
-		return std::get <float> (param.value);
+		return std::get<float>(param.value);
 }
 
-static const char* getRulesParamStringValueByName(
-	const LuaRulesParams::Params& params,
-	const int losMask,
-	const char* rulesParamName,
-	const char* defaultValue
-) {
+static const char* getRulesParamStringValueByName(const LuaRulesParams::Params& params,
+    const int losMask,
+    const char* rulesParamName,
+    const char* defaultValue)
+{
 	const std::string key(rulesParamName);
 	const auto it = params.find(key);
 	if (it == params.end())
@@ -238,37 +231,39 @@ static const char* getRulesParamStringValueByName(
 	if (!modParamIsVisible(it->second, losMask))
 		return defaultValue;
 
-	if (!std::holds_alternative <std::string> (param.value))
+	if (!std::holds_alternative<std::string>(param.value))
 		return defaultValue;
 
-	return std::get <std::string> (param.value).c_str();
+	return std::get<std::string>(param.value).c_str();
 }
 
-
-
-static inline const UnitDef* getUnitDefById(int skirmishAIId, int unitDefId) {
+static inline const UnitDef* getUnitDefById(int skirmishAIId, int unitDefId)
+{
 	return unitDefHandler->GetUnitDefByID(unitDefId);
 }
 
-static inline const MoveDef* getUnitDefMoveDefById(int skirmishAIId, int unitDefId) {
+static inline const MoveDef* getUnitDefMoveDefById(int skirmishAIId, int unitDefId)
+{
 	const unsigned int mdType = getUnitDefById(skirmishAIId, unitDefId)->pathType;
-	const MoveDef* moveDef = (mdType != -1U)? moveDefHandler.GetMoveDefByPathType(mdType): nullptr;
+	const MoveDef* moveDef = (mdType != -1U) ? moveDefHandler.GetMoveDefByPathType(mdType) : nullptr;
 
 	// NOTE There is a callback method to check whether MoveData is available, use it.
 	return moveDef;
 }
 
-static inline const WeaponDef* getWeaponDefById(int skirmishAIId, int weaponDefId) {
+static inline const WeaponDef* getWeaponDefById(int skirmishAIId, int weaponDefId)
+{
 	return (weaponDefHandler->GetWeaponDefByID(weaponDefId));
 }
 
-static inline const FeatureDef* getFeatureDefById(int skirmishAIId, int featureDefId) {
+static inline const FeatureDef* getFeatureDefById(int skirmishAIId, int featureDefId)
+{
 	return (featureDefHandler->GetFeatureDefByID(featureDefId));
 }
 
-
-//FIXME: get rid of this function (=call functions directly)
-static int wrapper_HandleCommand(CAICallback* clb, CAICheats* clbCheat, int cmdId, void* cmdData) {
+// FIXME: get rid of this function (=call functions directly)
+static int wrapper_HandleCommand(CAICallback* clb, CAICheats* clbCheat, int cmdId, void* cmdData)
+{
 	if (clbCheat != nullptr) {
 		const int ret = clbCheat->HandleCommand(cmdId, cmdData);
 		if (ret != 0) {
@@ -279,21 +274,17 @@ static int wrapper_HandleCommand(CAICallback* clb, CAICheats* clbCheat, int cmdI
 	return clb->HandleCommand(cmdId, cmdData);
 }
 
-
-
-template<typename STypeCommand> static void SetCommonCmdParams(STypeCommand* dst, const RawCommand* src, int unitId, int groupId) {
+template<typename STypeCommand>
+static void SetCommonCmdParams(STypeCommand* dst, const RawCommand* src, int unitId, int groupId)
+{
 	dst->unitId = unitId;
 	dst->groupId = groupId;
 	dst->options = src->options;
 	dst->timeOut = src->timeOut;
 }
 
-EXPORT(int) skirmishAiCallback_Engine_executeCommand(
-	int skirmishAIId,
-	int unitId,
-	int groupId,
-	void* commandData
-) {
+EXPORT(int) skirmishAiCallback_Engine_executeCommand(int skirmishAIId, int unitId, int groupId, void* commandData)
+{
 	// NOTE:
 	//   executeCommand expects a RawCommand
 	//   handleCommand expects an S*Command
@@ -308,343 +299,344 @@ EXPORT(int) skirmishAiCallback_Engine_executeCommand(
 	int ret = -1;
 
 	switch (aiCmdId) {
-		case COMMAND_UNIT_STOP: {
-			SStopUnitCommand cmd;
+	case COMMAND_UNIT_STOP: {
+		SStopUnitCommand cmd;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_WAIT: {
-			SWaitUnitCommand cmd;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_WAIT: {
+		SWaitUnitCommand cmd;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_WAIT_TIME: {
-			STimeWaitUnitCommand cmd;
-			cmd.time = rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_WAIT_TIME: {
+		STimeWaitUnitCommand cmd;
+		cmd.time = rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_WAIT_DEATH: {
-			SDeathWaitUnitCommand cmd;
-			cmd.toDieUnitId = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_WAIT_DEATH: {
+		SDeathWaitUnitCommand cmd;
+		cmd.toDieUnitId = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_WAIT_SQUAD: {
-			SSquadWaitUnitCommand cmd;
-			cmd.numUnits = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_WAIT_SQUAD: {
+		SSquadWaitUnitCommand cmd;
+		cmd.numUnits = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_WAIT_GATHER: {
-			SGatherWaitUnitCommand cmd;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_WAIT_GATHER: {
+		SGatherWaitUnitCommand cmd;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_MOVE: {
-			SMoveUnitCommand cmd;
-			cmd.toPos_posF3 = rc->params;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_MOVE: {
+		SMoveUnitCommand cmd;
+		cmd.toPos_posF3 = rc->params;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_PATROL: {
-			SPatrolUnitCommand cmd;
-			cmd.toPos_posF3 = rc->params;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_PATROL: {
+		SPatrolUnitCommand cmd;
+		cmd.toPos_posF3 = rc->params;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_FIGHT: {
-			SFightUnitCommand cmd;
-			cmd.toPos_posF3 = rc->params;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_FIGHT: {
+		SFightUnitCommand cmd;
+		cmd.toPos_posF3 = rc->params;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_ATTACK: {
-			SAttackUnitCommand cmd;
-			cmd.toAttackUnitId = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_ATTACK: {
+		SAttackUnitCommand cmd;
+		cmd.toAttackUnitId = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_ATTACK_AREA: {
-			SAttackAreaUnitCommand cmd;
-			cmd.toAttackPos_posF3 = rc->params;
-			cmd.radius = (rc->numParams >= 4)? rc->params[3]: 0.0f;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_ATTACK_AREA: {
+		SAttackAreaUnitCommand cmd;
+		cmd.toAttackPos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_GUARD: {
-			SGuardUnitCommand cmd;
-			cmd.toGuardUnitId = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_GUARD: {
+		SGuardUnitCommand cmd;
+		cmd.toGuardUnitId = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_GROUP_ADD: {
-			SGroupAddUnitCommand cmd;
-			cmd.toGroupId = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_GROUP_ADD: {
+		SGroupAddUnitCommand cmd;
+		cmd.toGroupId = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_GROUP_CLEAR: {
-			SGroupClearUnitCommand cmd;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_GROUP_CLEAR: {
+		SGroupClearUnitCommand cmd;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_REPAIR: {
-			SRepairUnitCommand cmd;
-			cmd.toRepairUnitId = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_REPAIR: {
+		SRepairUnitCommand cmd;
+		cmd.toRepairUnitId = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_FIRE_STATE: {
-			SSetFireStateUnitCommand cmd;
-			cmd.fireState = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_FIRE_STATE: {
+		SSetFireStateUnitCommand cmd;
+		cmd.fireState = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_MOVE_STATE: {
-			SSetMoveStateUnitCommand cmd;
-			cmd.moveState = (int) rc->params[0];
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_MOVE_STATE: {
+		SSetMoveStateUnitCommand cmd;
+		cmd.moveState = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_BASE: {
-			SSetBaseUnitCommand cmd;
-			cmd.basePos_posF3 = rc->params;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_BASE: {
+		SSetBaseUnitCommand cmd;
+		cmd.basePos_posF3 = rc->params;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SELF_DESTROY: {
-			SSelfDestroyUnitCommand cmd;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SELF_DESTROY: {
+		SSelfDestroyUnitCommand cmd;
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_LOAD_UNITS: {
-			if (rc->numParams > 0) {
-				std::vector<int> tmpUnitIds(rc->numParams);
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_LOAD_UNITS: {
+		if (rc->numParams > 0) {
+			std::vector<int> tmpUnitIds(rc->numParams);
 
-				SLoadUnitsUnitCommand cmd;
-				cmd.toLoadUnitIds_size = rc->numParams;
-				cmd.toLoadUnitIds = &tmpUnitIds[0];
+			SLoadUnitsUnitCommand cmd;
+			cmd.toLoadUnitIds_size = rc->numParams;
+			cmd.toLoadUnitIds = &tmpUnitIds[0];
 
-				for (int u = 0; u < rc->numParams; ++u) {
-					cmd.toLoadUnitIds[u] = static_cast<int>(rc->params[u]);
-				}
-
-				SetCommonCmdParams(&cmd, rc, unitId, groupId);
-				ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-			}
-		} break;
-		case COMMAND_UNIT_LOAD_UNITS_AREA: {
-			SLoadUnitsAreaUnitCommand cmd;
-			cmd.pos_posF3 = rc->params;
-			cmd.radius = (rc->numParams >= 4)? rc->params[3]: 0.0f;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_LOAD_ONTO: {
-			SLoadOntoUnitCommand cmd;
-			cmd.transporterUnitId = (int) rc->params[0];
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_UNLOAD_UNIT: {
-			SUnloadUnitCommand cmd;
-			cmd.toPos_posF3 = rc->params;
-			cmd.toUnloadUnitId = (int) rc->params[3];
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_UNLOAD_UNITS_AREA: {
-			SUnloadUnitsAreaUnitCommand cmd;
-			cmd.toPos_posF3 = rc->params;
-			cmd.radius = (rc->numParams >= 4)? rc->params[3]: 0.0f;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_ON_OFF: {
-			SSetOnOffUnitCommand cmd;
-			cmd.on      = (bool) rc->params[0];
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_RECLAIM_UNIT: {
-			SReclaimUnitUnitCommand cmd;
-			cmd.toReclaimUnitId = (int) rc->params[0];
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_RECLAIM_FEATURE: {
-			SReclaimFeatureUnitCommand cmd;
-			cmd.toReclaimFeatureId = ((int) rc->params[0]) - maxUnits;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_RECLAIM_AREA: {
-			SReclaimAreaUnitCommand cmd;
-			cmd.pos_posF3 = rc->params;
-			cmd.radius    = (rc->numParams >= 4)? rc->params[3]: 0.0f;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_CLOAK: {
-			SCloakUnitCommand cmd;
-			cmd.cloak = (bool) rc->params[0];
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_STOCKPILE: {
-			SStockpileUnitCommand cmd;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_D_GUN: {
-			SDGunUnitCommand cmd;
-			cmd.toAttackUnitId = static_cast<int>(rc->params[0]);
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_D_GUN_POS: {
-			SDGunPosUnitCommand cmd;
-			cmd.pos_posF3 = rc->params;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_RESTORE_AREA: {
-			SRestoreAreaUnitCommand cmd;
-			cmd.pos_posF3 = rc->params;
-			cmd.radius = (rc->numParams >= 4)? rc->params[3]: 0.0f;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_REPEAT: {
-			SSetRepeatUnitCommand cmd;
-			cmd.repeat = (bool) rc->params[0];
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_TRAJECTORY: {
-			SSetTrajectoryUnitCommand cmd;
-			cmd.trajectory = static_cast<int>(rc->params[0]);
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_RESURRECT: {
-			SResurrectUnitCommand cmd;
-			cmd.toResurrectFeatureId = static_cast<int>(rc->params[0]);
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_RESURRECT_AREA: {
-			SResurrectAreaUnitCommand cmd;
-			cmd.pos_posF3 = rc->params;
-			cmd.radius = (rc->numParams >= 4)? rc->params[3]: 0.0f;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_CAPTURE: {
-			SCaptureUnitCommand cmd;
-			cmd.toCaptureUnitId = static_cast<int>(rc->params[0]);
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_CAPTURE_AREA: {
-			SCaptureAreaUnitCommand cmd;
-			cmd.pos_posF3 = rc->params;
-			cmd.radius = (rc->numParams >= 4)? rc->params[3]: 0.0f;
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_AUTO_REPAIR_LEVEL: {
-			SSetAutoRepairLevelUnitCommand cmd;
-			cmd.autoRepairLevel = static_cast<int>(rc->params[0]);
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_SET_IDLE_MODE: {
-			SSetIdleModeUnitCommand cmd;
-			cmd.idleMode = static_cast<int>(rc->params[0]);
-
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
-		case COMMAND_UNIT_BUILD: {
-			SBuildUnitCommand cmd;
-
-			cmd.toBuildUnitDefId = -rc->id[0];
-
-			if (rc->numParams >= 3) {
-				cmd.buildPos_posF3 = rc->params;
-			} else {
-				cmd.buildPos_posF3 = nullptr;
+			for (int u = 0; u < rc->numParams; ++u) {
+				cmd.toLoadUnitIds[u] = static_cast<int>(rc->params[u]);
 			}
 
-			cmd.facing = (rc->numParams >= 4)? rc->params[3]: UNIT_COMMAND_BUILD_NO_FACING;
-
 			SetCommonCmdParams(&cmd, rc, unitId, groupId);
 			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
+		}
+	} break;
+	case COMMAND_UNIT_LOAD_UNITS_AREA: {
+		SLoadUnitsAreaUnitCommand cmd;
+		cmd.pos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
 
-		default:
-		case COMMAND_UNIT_CUSTOM: {
-			SCustomUnitCommand cmd;
-			cmd.cmdId       = rc->id[0];
-			cmd.params_size = rc->numParams;
-			cmd.params      = rc->params;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_LOAD_ONTO: {
+		SLoadOntoUnitCommand cmd;
+		cmd.transporterUnitId = (int)rc->params[0];
 
-			SetCommonCmdParams(&cmd, rc, unitId, groupId);
-			ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
-		} break;
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_UNLOAD_UNIT: {
+		SUnloadUnitCommand cmd;
+		cmd.toPos_posF3 = rc->params;
+		cmd.toUnloadUnitId = (int)rc->params[3];
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_UNLOAD_UNITS_AREA: {
+		SUnloadUnitsAreaUnitCommand cmd;
+		cmd.toPos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_ON_OFF: {
+		SSetOnOffUnitCommand cmd;
+		cmd.on = (bool)rc->params[0];
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_RECLAIM_UNIT: {
+		SReclaimUnitUnitCommand cmd;
+		cmd.toReclaimUnitId = (int)rc->params[0];
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_RECLAIM_FEATURE: {
+		SReclaimFeatureUnitCommand cmd;
+		cmd.toReclaimFeatureId = ((int)rc->params[0]) - maxUnits;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_RECLAIM_AREA: {
+		SReclaimAreaUnitCommand cmd;
+		cmd.pos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_CLOAK: {
+		SCloakUnitCommand cmd;
+		cmd.cloak = (bool)rc->params[0];
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_STOCKPILE: {
+		SStockpileUnitCommand cmd;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_D_GUN: {
+		SDGunUnitCommand cmd;
+		cmd.toAttackUnitId = static_cast<int>(rc->params[0]);
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_D_GUN_POS: {
+		SDGunPosUnitCommand cmd;
+		cmd.pos_posF3 = rc->params;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_RESTORE_AREA: {
+		SRestoreAreaUnitCommand cmd;
+		cmd.pos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_REPEAT: {
+		SSetRepeatUnitCommand cmd;
+		cmd.repeat = (bool)rc->params[0];
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_TRAJECTORY: {
+		SSetTrajectoryUnitCommand cmd;
+		cmd.trajectory = static_cast<int>(rc->params[0]);
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_RESURRECT: {
+		SResurrectUnitCommand cmd;
+		cmd.toResurrectFeatureId = static_cast<int>(rc->params[0]);
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_RESURRECT_AREA: {
+		SResurrectAreaUnitCommand cmd;
+		cmd.pos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_CAPTURE: {
+		SCaptureUnitCommand cmd;
+		cmd.toCaptureUnitId = static_cast<int>(rc->params[0]);
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_CAPTURE_AREA: {
+		SCaptureAreaUnitCommand cmd;
+		cmd.pos_posF3 = rc->params;
+		cmd.radius = (rc->numParams >= 4) ? rc->params[3] : 0.0f;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_AUTO_REPAIR_LEVEL: {
+		SSetAutoRepairLevelUnitCommand cmd;
+		cmd.autoRepairLevel = static_cast<int>(rc->params[0]);
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_SET_IDLE_MODE: {
+		SSetIdleModeUnitCommand cmd;
+		cmd.idleMode = static_cast<int>(rc->params[0]);
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+	case COMMAND_UNIT_BUILD: {
+		SBuildUnitCommand cmd;
+
+		cmd.toBuildUnitDefId = -rc->id[0];
+
+		if (rc->numParams >= 3) {
+			cmd.buildPos_posF3 = rc->params;
+		}
+		else {
+			cmd.buildPos_posF3 = nullptr;
+		}
+
+		cmd.facing = (rc->numParams >= 4) ? rc->params[3] : UNIT_COMMAND_BUILD_NO_FACING;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
+
+	default:
+	case COMMAND_UNIT_CUSTOM: {
+		SCustomUnitCommand cmd;
+		cmd.cmdId = rc->id[0];
+		cmd.params_size = rc->numParams;
+		cmd.params = rc->params;
+
+		SetCommonCmdParams(&cmd, rc, unitId, groupId);
+		ret = skirmishAiCallback_Engine_handleCommand(skirmishAIId, COMMAND_TO_ID_ENGINE, -1, aiCmdId, &cmd);
+	} break;
 	}
 
 	return ret;
 }
 
-EXPORT(int) skirmishAiCallback_Engine_handleCommand(
-	int skirmishAIId,
-	int /*toId*/,
-	int commandId,
-	int commandTopic,
-	void* commandData
-) {
+EXPORT(int)
+skirmishAiCallback_Engine_handleCommand(int skirmishAIId,
+    int /*toId*/,
+    int commandId,
+    int commandTopic,
+    void* commandData)
+{
 	int ret = 0;
 
 	CAICallback* clb = GetCallBack(skirmishAIId);
@@ -655,581 +647,500 @@ EXPORT(int) skirmishAiCallback_Engine_handleCommand(
 		clbCheat = GetCheatCallBack(skirmishAIId);
 
 	switch (commandTopic) {
-		case COMMAND_CHEATS_SET_MY_INCOME_MULTIPLIER: {
-			const SSetMyIncomeMultiplierCheatCommand* cmd = static_cast<SSetMyIncomeMultiplierCheatCommand*>(commandData);
+	case COMMAND_CHEATS_SET_MY_INCOME_MULTIPLIER: {
+		const SSetMyIncomeMultiplierCheatCommand* cmd = static_cast<SSetMyIncomeMultiplierCheatCommand*>(commandData);
 
-			if (clbCheat != nullptr) {
-				clbCheat->SetMyIncomeMultiplier(cmd->factor);
-				ret = 0;
-			} else {
-				ret = -1;
-			}
-		} break;
+		if (clbCheat != nullptr) {
+			clbCheat->SetMyIncomeMultiplier(cmd->factor);
+			ret = 0;
+		}
+		else {
+			ret = -1;
+		}
+	} break;
 
-		case COMMAND_CHEATS_GIVE_ME_RESOURCE: {
-			const SGiveMeResourceCheatCommand* cmd = static_cast<SGiveMeResourceCheatCommand*>(commandData);
+	case COMMAND_CHEATS_GIVE_ME_RESOURCE: {
+		const SGiveMeResourceCheatCommand* cmd = static_cast<SGiveMeResourceCheatCommand*>(commandData);
 
-			if (clbCheat != nullptr) {
-				ret = -2;
+		if (clbCheat != nullptr) {
+			ret = -2;
 
-				if (cmd->resourceId == resourceHandler->GetMetalId ()) { clbCheat->GiveMeMetal (cmd->amount); ret = 0; } break;
-				if (cmd->resourceId == resourceHandler->GetEnergyId()) { clbCheat->GiveMeEnergy(cmd->amount); ret = 0; } break;
-			} else {
-				ret = -1;
-			}
-		} break;
-
-		case COMMAND_CHEATS_GIVE_ME_NEW_UNIT: {
-			SGiveMeNewUnitCheatCommand* cmd = static_cast<SGiveMeNewUnitCheatCommand*>(commandData);
-
-			if (clbCheat != nullptr) {
-				cmd->ret_newUnitId = clbCheat->CreateUnit(getUnitDefById(skirmishAIId, cmd->unitDefId)->name.c_str(), cmd->pos_posF3);
-
-				if (cmd->ret_newUnitId > 0) {
-					ret = 0;
-				} else {
-					ret = -2;
-				}
-			} else {
-				ret = -1;
-				cmd->ret_newUnitId = -1;
-			}
-		} break;
-
-
-		case COMMAND_SEND_START_POS: {
-			const SSendStartPosCommand* cmd = static_cast<SSendStartPosCommand*>(commandData);
-			clb->SendStartPos(cmd->ready, cmd->pos_posF3);
-		} break;
-
-		case COMMAND_DRAWER_POINT_ADD: {
-			const SAddPointDrawCommand* cmd = static_cast<SAddPointDrawCommand*>(commandData);
-			AIHCAddMapPoint data = {cmd->pos_posF3, cmd->label};
-			wrapper_HandleCommand(clb, clbCheat, AIHCAddMapPointId, &data);
-		} break;
-
-		case COMMAND_DRAWER_POINT_REMOVE: {
-			const SRemovePointDrawCommand* cmd = static_cast<SRemovePointDrawCommand*>(commandData);
-			AIHCRemoveMapPoint data = {cmd->pos_posF3};
-			wrapper_HandleCommand(clb, clbCheat, AIHCRemoveMapPointId, &data);
-		} break;
-
-		case COMMAND_DRAWER_LINE_ADD: {
-			const SAddLineDrawCommand* cmd = static_cast<SAddLineDrawCommand*>(commandData);
-			AIHCAddMapLine data = {cmd->posFrom_posF3, cmd->posTo_posF3};
-			wrapper_HandleCommand(clb, clbCheat, AIHCAddMapLineId, &data);
-		} break;
-
-
-		case COMMAND_SEND_TEXT_MESSAGE: {
-			const SSendTextMessageCommand* cmd = static_cast<SSendTextMessageCommand*>(commandData);
-			clb->SendTextMsg(cmd->text, cmd->zone);
-		} break;
-
-		case COMMAND_SET_LAST_POS_MESSAGE: {
-			const SSetLastPosMessageCommand* cmd = static_cast<SSetLastPosMessageCommand*>(commandData);
-			clb->SetLastMsgPos(cmd->pos_posF3);
-		} break;
-
-		case COMMAND_SEND_RESOURCES: {
-			SSendResourcesCommand* cmd = static_cast<SSendResourcesCommand*>(commandData);
 			if (cmd->resourceId == resourceHandler->GetMetalId()) {
-				cmd->ret_isExecuted = clb->SendResources(cmd->amount, 0, cmd->receivingTeamId);
+				clbCheat->GiveMeMetal(cmd->amount);
+				ret = 0;
+			}
+			break;
+			if (cmd->resourceId == resourceHandler->GetEnergyId()) {
+				clbCheat->GiveMeEnergy(cmd->amount);
+				ret = 0;
+			}
+			break;
+		}
+		else {
+			ret = -1;
+		}
+	} break;
+
+	case COMMAND_CHEATS_GIVE_ME_NEW_UNIT: {
+		SGiveMeNewUnitCheatCommand* cmd = static_cast<SGiveMeNewUnitCheatCommand*>(commandData);
+
+		if (clbCheat != nullptr) {
+			cmd->ret_newUnitId =
+			    clbCheat->CreateUnit(getUnitDefById(skirmishAIId, cmd->unitDefId)->name.c_str(), cmd->pos_posF3);
+
+			if (cmd->ret_newUnitId > 0) {
+				ret = 0;
+			}
+			else {
 				ret = -2;
-			} else if (cmd->resourceId == resourceHandler->GetEnergyId()) {
-				cmd->ret_isExecuted = clb->SendResources(0, cmd->amount, cmd->receivingTeamId);
-				ret = -3;
-			} else {
-				cmd->ret_isExecuted = false;
-				ret = -4;
 			}
-		} break;
+		}
+		else {
+			ret = -1;
+			cmd->ret_newUnitId = -1;
+		}
+	} break;
 
-		case COMMAND_SEND_UNITS: {
-			SSendUnitsCommand* cmd = static_cast<SSendUnitsCommand*>(commandData);
 
-			std::vector<int> tmpUnitIds(cmd->unitIds_size);
+	case COMMAND_SEND_START_POS: {
+		const SSendStartPosCommand* cmd = static_cast<SSendStartPosCommand*>(commandData);
+		clb->SendStartPos(cmd->ready, cmd->pos_posF3);
+	} break;
 
-			for (unsigned int i = 0; i < tmpUnitIds.size(); ++i) {
-				tmpUnitIds[i] = cmd->unitIds[i];
-			}
+	case COMMAND_DRAWER_POINT_ADD: {
+		const SAddPointDrawCommand* cmd = static_cast<SAddPointDrawCommand*>(commandData);
+		AIHCAddMapPoint data = {cmd->pos_posF3, cmd->label};
+		wrapper_HandleCommand(clb, clbCheat, AIHCAddMapPointId, &data);
+	} break;
 
-			cmd->ret_sentUnits = clb->SendUnits(tmpUnitIds, cmd->receivingTeamId);
-		} break;
+	case COMMAND_DRAWER_POINT_REMOVE: {
+		const SRemovePointDrawCommand* cmd = static_cast<SRemovePointDrawCommand*>(commandData);
+		AIHCRemoveMapPoint data = {cmd->pos_posF3};
+		wrapper_HandleCommand(clb, clbCheat, AIHCRemoveMapPointId, &data);
+	} break;
 
-		case COMMAND_GROUP_CREATE: {
-			SCreateGroupCommand* cmd = static_cast<SCreateGroupCommand*>(commandData);
-			cmd->ret_groupId = clb->CreateGroup();
-		} break;
-		case COMMAND_GROUP_ERASE: {
-			const SEraseGroupCommand* cmd = static_cast<SEraseGroupCommand*>(commandData);
-			clb->EraseGroup(cmd->groupId);
-		} break;
-/*
-		case COMMAND_GROUP_ADD_UNIT: {
-			SAddUnitToGroupCommand* cmd = (SAddUnitToGroupCommand*) commandData;
-			cmd->ret_isExecuted = clb->AddUnitToGroup(cmd->unitId, cmd->groupId);
-		} break;
-		case COMMAND_GROUP_REMOVE_UNIT: {
-			SRemoveUnitFromGroupCommand* cmd =
-					(SRemoveUnitFromGroupCommand*) commandData;
-			cmd->ret_isExecuted = clb->RemoveUnitFromGroup(cmd->unitId);
-		} break;
-*/
-		case COMMAND_PATH_INIT: {
-			SInitPathCommand* cmd = static_cast<SInitPathCommand*>(commandData);
-			cmd->ret_pathId = clb->InitPath(cmd->start_posF3, cmd->end_posF3, cmd->pathType, cmd->goalRadius);
-		} break;
+	case COMMAND_DRAWER_LINE_ADD: {
+		const SAddLineDrawCommand* cmd = static_cast<SAddLineDrawCommand*>(commandData);
+		AIHCAddMapLine data = {cmd->posFrom_posF3, cmd->posTo_posF3};
+		wrapper_HandleCommand(clb, clbCheat, AIHCAddMapLineId, &data);
+	} break;
 
-		case COMMAND_PATH_GET_APPROXIMATE_LENGTH: {
-			SGetApproximateLengthPathCommand* cmd = static_cast<SGetApproximateLengthPathCommand*>(commandData);
-			cmd->ret_approximatePathLength = clb->GetPathLength(cmd->start_posF3, cmd->end_posF3, cmd->pathType, cmd->goalRadius);
-		} break;
 
-		case COMMAND_PATH_GET_NEXT_WAYPOINT: {
-			SGetNextWaypointPathCommand* cmd = static_cast<SGetNextWaypointPathCommand*>(commandData);
-			clb->GetNextWaypoint(cmd->pathId).copyInto(cmd->ret_nextWaypoint_posF3_out);
-		} break;
+	case COMMAND_SEND_TEXT_MESSAGE: {
+		const SSendTextMessageCommand* cmd = static_cast<SSendTextMessageCommand*>(commandData);
+		clb->SendTextMsg(cmd->text, cmd->zone);
+	} break;
 
-		case COMMAND_PATH_FREE: {
-			clb->FreePath(static_cast<SFreePathCommand*>(commandData)->pathId);
-		} break;
+	case COMMAND_SET_LAST_POS_MESSAGE: {
+		const SSetLastPosMessageCommand* cmd = static_cast<SSetLastPosMessageCommand*>(commandData);
+		clb->SetLastMsgPos(cmd->pos_posF3);
+	} break;
 
-		// @see AI/Wrappers/Cpp/bin/wrappCallback.awk, printMember
-		#define SSAICALLBACK_CALL_LUA(HandleName, HANDLENAME)  \
-			case COMMAND_CALL_LUA_ ## HANDLENAME: {  \
-				SCallLua ## HandleName ## Command* cmd = static_cast<SCallLua ## HandleName ## Command*>(commandData);  \
-				size_t len = 0;                                                                                         \
-				const char* outData = clb->CallLua ## HandleName(cmd->inData, cmd->inSize, &len);                       \
-				if (cmd->ret_outData != NULL) {                                                                         \
-					if (outData != NULL) {                                                                              \
-						len = std::min(len, size_t(MAX_RESPONSE_SIZE - 1));                                             \
-						strncpy(cmd->ret_outData, outData, len);                                                        \
-						cmd->ret_outData[len] = '\0';                                                                   \
-					} else {                                                                                            \
-						cmd->ret_outData[0] = '\0';                                                                     \
-					}  \
-				}  \
-			} break;
+	case COMMAND_SEND_RESOURCES: {
+		SSendResourcesCommand* cmd = static_cast<SSendResourcesCommand*>(commandData);
+		if (cmd->resourceId == resourceHandler->GetMetalId()) {
+			cmd->ret_isExecuted = clb->SendResources(cmd->amount, 0, cmd->receivingTeamId);
+			ret = -2;
+		}
+		else if (cmd->resourceId == resourceHandler->GetEnergyId()) {
+			cmd->ret_isExecuted = clb->SendResources(0, cmd->amount, cmd->receivingTeamId);
+			ret = -3;
+		}
+		else {
+			cmd->ret_isExecuted = false;
+			ret = -4;
+		}
+	} break;
+
+	case COMMAND_SEND_UNITS: {
+		SSendUnitsCommand* cmd = static_cast<SSendUnitsCommand*>(commandData);
+
+		std::vector<int> tmpUnitIds(cmd->unitIds_size);
+
+		for (unsigned int i = 0; i < tmpUnitIds.size(); ++i) {
+			tmpUnitIds[i] = cmd->unitIds[i];
+		}
+
+		cmd->ret_sentUnits = clb->SendUnits(tmpUnitIds, cmd->receivingTeamId);
+	} break;
+
+	case COMMAND_GROUP_CREATE: {
+		SCreateGroupCommand* cmd = static_cast<SCreateGroupCommand*>(commandData);
+		cmd->ret_groupId = clb->CreateGroup();
+	} break;
+	case COMMAND_GROUP_ERASE: {
+		const SEraseGroupCommand* cmd = static_cast<SEraseGroupCommand*>(commandData);
+		clb->EraseGroup(cmd->groupId);
+	} break;
+		/*
+		        case COMMAND_GROUP_ADD_UNIT: {
+		            SAddUnitToGroupCommand* cmd = (SAddUnitToGroupCommand*) commandData;
+		            cmd->ret_isExecuted = clb->AddUnitToGroup(cmd->unitId, cmd->groupId);
+		        } break;
+		        case COMMAND_GROUP_REMOVE_UNIT: {
+		            SRemoveUnitFromGroupCommand* cmd =
+		                    (SRemoveUnitFromGroupCommand*) commandData;
+		            cmd->ret_isExecuted = clb->RemoveUnitFromGroup(cmd->unitId);
+		        } break;
+		*/
+	case COMMAND_PATH_INIT: {
+		SInitPathCommand* cmd = static_cast<SInitPathCommand*>(commandData);
+		cmd->ret_pathId = clb->InitPath(cmd->start_posF3, cmd->end_posF3, cmd->pathType, cmd->goalRadius);
+	} break;
+
+	case COMMAND_PATH_GET_APPROXIMATE_LENGTH: {
+		SGetApproximateLengthPathCommand* cmd = static_cast<SGetApproximateLengthPathCommand*>(commandData);
+		cmd->ret_approximatePathLength =
+		    clb->GetPathLength(cmd->start_posF3, cmd->end_posF3, cmd->pathType, cmd->goalRadius);
+	} break;
+
+	case COMMAND_PATH_GET_NEXT_WAYPOINT: {
+		SGetNextWaypointPathCommand* cmd = static_cast<SGetNextWaypointPathCommand*>(commandData);
+		clb->GetNextWaypoint(cmd->pathId).copyInto(cmd->ret_nextWaypoint_posF3_out);
+	} break;
+
+	case COMMAND_PATH_FREE: {
+		clb->FreePath(static_cast<SFreePathCommand*>(commandData)->pathId);
+	} break;
+
+// @see AI/Wrappers/Cpp/bin/wrappCallback.awk, printMember
+#define SSAICALLBACK_CALL_LUA(HandleName, HANDLENAME)                                                  \
+	case COMMAND_CALL_LUA_##HANDLENAME: {                                                              \
+		SCallLua##HandleName##Command* cmd = static_cast<SCallLua##HandleName##Command*>(commandData); \
+		size_t len = 0;                                                                                \
+		const char* outData = clb->CallLua##HandleName(cmd->inData, cmd->inSize, &len);                \
+		if (cmd->ret_outData != NULL) {                                                                \
+			if (outData != NULL) {                                                                     \
+				len = std::min(len, size_t(MAX_RESPONSE_SIZE - 1));                                    \
+				strncpy(cmd->ret_outData, outData, len);                                               \
+				cmd->ret_outData[len] = '\0';                                                          \
+			}                                                                                          \
+			else {                                                                                     \
+				cmd->ret_outData[0] = '\0';                                                            \
+			}                                                                                          \
+		}                                                                                              \
+	} break;
 
 		SSAICALLBACK_CALL_LUA(Rules, RULES)
 		SSAICALLBACK_CALL_LUA(UI, UI)
 
-		#undef SSAICALLBACK_CALL_LUA
+#undef SSAICALLBACK_CALL_LUA
 
 
-		case COMMAND_DRAWER_ADD_NOTIFICATION: {
-			const SAddNotificationDrawerCommand* cmd = static_cast<SAddNotificationDrawerCommand*>(commandData);
-			clb->AddNotification(cmd->pos_posF3,
-					float3(
-						cmd->color_colorS3[0] / 256.0f,
-						cmd->color_colorS3[1] / 256.0f,
-						cmd->color_colorS3[2] / 256.0f),
-					cmd->alpha / 256.0f);
-		} break;
+	case COMMAND_DRAWER_ADD_NOTIFICATION: {
+		const SAddNotificationDrawerCommand* cmd = static_cast<SAddNotificationDrawerCommand*>(commandData);
+		clb->AddNotification(cmd->pos_posF3,
+		    float3(cmd->color_colorS3[0] / 256.0f, cmd->color_colorS3[1] / 256.0f, cmd->color_colorS3[2] / 256.0f),
+		    cmd->alpha / 256.0f);
+	} break;
 
-		case COMMAND_DRAWER_PATH_START: {
-			const SStartPathDrawerCommand* cmd = static_cast<SStartPathDrawerCommand*>(commandData);
-			float arrColor[4];
-			toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
-			clb->LineDrawerStartPath(cmd->pos_posF3, arrColor);
-		} break;
+	case COMMAND_DRAWER_PATH_START: {
+		const SStartPathDrawerCommand* cmd = static_cast<SStartPathDrawerCommand*>(commandData);
+		float arrColor[4];
+		toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
+		clb->LineDrawerStartPath(cmd->pos_posF3, arrColor);
+	} break;
 
-		case COMMAND_DRAWER_PATH_FINISH: {
-			//const SFinishPathDrawerCommand* cmd =
-			//		(SFinishPathDrawerCommand*) commandData;
-			clb->LineDrawerFinishPath();
-		} break;
+	case COMMAND_DRAWER_PATH_FINISH: {
+		// const SFinishPathDrawerCommand* cmd =
+		//		(SFinishPathDrawerCommand*) commandData;
+		clb->LineDrawerFinishPath();
+	} break;
 
-		case COMMAND_DRAWER_PATH_DRAW_LINE: {
-			const SDrawLinePathDrawerCommand* cmd = static_cast<SDrawLinePathDrawerCommand*>(commandData);
-			float arrColor[4];
-			toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
-			clb->LineDrawerDrawLine(cmd->endPos_posF3, arrColor);
-		} break;
+	case COMMAND_DRAWER_PATH_DRAW_LINE: {
+		const SDrawLinePathDrawerCommand* cmd = static_cast<SDrawLinePathDrawerCommand*>(commandData);
+		float arrColor[4];
+		toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
+		clb->LineDrawerDrawLine(cmd->endPos_posF3, arrColor);
+	} break;
 
-		case COMMAND_DRAWER_PATH_DRAW_LINE_AND_ICON: {
-			const SDrawLineAndIconPathDrawerCommand* cmd = static_cast<SDrawLineAndIconPathDrawerCommand*>(commandData);
-			float arrColor[4];
-			toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
-			clb->LineDrawerDrawLineAndIcon(cmd->cmdId, cmd->endPos_posF3, arrColor);
-		} break;
+	case COMMAND_DRAWER_PATH_DRAW_LINE_AND_ICON: {
+		const SDrawLineAndIconPathDrawerCommand* cmd = static_cast<SDrawLineAndIconPathDrawerCommand*>(commandData);
+		float arrColor[4];
+		toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
+		clb->LineDrawerDrawLineAndIcon(cmd->cmdId, cmd->endPos_posF3, arrColor);
+	} break;
 
-		case COMMAND_DRAWER_PATH_DRAW_ICON_AT_LAST_POS: {
-			const SDrawIconAtLastPosPathDrawerCommand* cmd = static_cast<SDrawIconAtLastPosPathDrawerCommand*>(commandData);
-			clb->LineDrawerDrawIconAtLastPos(cmd->cmdId);
-		} break;
+	case COMMAND_DRAWER_PATH_DRAW_ICON_AT_LAST_POS: {
+		const SDrawIconAtLastPosPathDrawerCommand* cmd = static_cast<SDrawIconAtLastPosPathDrawerCommand*>(commandData);
+		clb->LineDrawerDrawIconAtLastPos(cmd->cmdId);
+	} break;
 
-		case COMMAND_DRAWER_PATH_BREAK: {
-			const SBreakPathDrawerCommand* cmd = static_cast<SBreakPathDrawerCommand*>(commandData);
-			float arrColor[4];
-			toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
-			clb->LineDrawerBreak(cmd->endPos_posF3, arrColor);
-		} break;
+	case COMMAND_DRAWER_PATH_BREAK: {
+		const SBreakPathDrawerCommand* cmd = static_cast<SBreakPathDrawerCommand*>(commandData);
+		float arrColor[4];
+		toFloatArr(cmd->color_colorS3, cmd->alpha, arrColor);
+		clb->LineDrawerBreak(cmd->endPos_posF3, arrColor);
+	} break;
 
-		case COMMAND_DRAWER_PATH_RESTART: {
-			const SRestartPathDrawerCommand* cmd = static_cast<SRestartPathDrawerCommand*>(commandData);
-			if (cmd->sameColor) {
-				clb->LineDrawerRestartSameColor();
-			} else {
-				clb->LineDrawerRestart();
+	case COMMAND_DRAWER_PATH_RESTART: {
+		const SRestartPathDrawerCommand* cmd = static_cast<SRestartPathDrawerCommand*>(commandData);
+		if (cmd->sameColor) {
+			clb->LineDrawerRestartSameColor();
+		}
+		else {
+			clb->LineDrawerRestart();
+		}
+	} break;
+
+	case COMMAND_DRAWER_FIGURE_CREATE_SPLINE: {
+		SCreateSplineFigureDrawerCommand* cmd = static_cast<SCreateSplineFigureDrawerCommand*>(commandData);
+		cmd->ret_newFigureGroupId = clb->CreateSplineFigure(cmd->pos1_posF3, cmd->pos2_posF3, cmd->pos3_posF3,
+		    cmd->pos4_posF3, cmd->width, cmd->arrow, cmd->lifeTime, cmd->figureGroupId);
+	} break;
+
+	case COMMAND_DRAWER_FIGURE_CREATE_LINE: {
+		SCreateLineFigureDrawerCommand* cmd = static_cast<SCreateLineFigureDrawerCommand*>(commandData);
+		cmd->ret_newFigureGroupId = clb->CreateLineFigure(
+		    cmd->pos1_posF3, cmd->pos2_posF3, cmd->width, cmd->arrow, cmd->lifeTime, cmd->figureGroupId);
+	} break;
+
+	case COMMAND_DRAWER_FIGURE_SET_COLOR: {
+		const SSetColorFigureDrawerCommand* cmd = static_cast<SSetColorFigureDrawerCommand*>(commandData);
+		clb->SetFigureColor(cmd->figureGroupId, cmd->color_colorS3[0] / 256.0f, cmd->color_colorS3[1] / 256.0f,
+		    cmd->color_colorS3[2] / 256.0f, cmd->alpha / 256.0f);
+	} break;
+
+	case COMMAND_DRAWER_FIGURE_DELETE: {
+		const SDeleteFigureDrawerCommand* cmd = static_cast<SDeleteFigureDrawerCommand*>(commandData);
+		clb->DeleteFigureGroup(cmd->figureGroupId);
+	} break;
+
+	case COMMAND_DRAWER_DRAW_UNIT: {
+		const SDrawUnitDrawerCommand* cmd = static_cast<SDrawUnitDrawerCommand*>(commandData);
+		clb->DrawUnit(getUnitDefById(skirmishAIId, cmd->toDrawUnitDefId)->name.c_str(), cmd->pos_posF3, cmd->rotation,
+		    cmd->lifeTime, cmd->teamId, cmd->transparent, cmd->drawBorder, cmd->facing);
+	} break;
+
+	case COMMAND_TRACE_RAY: {
+		STraceRayCommand* cCmdData = static_cast<STraceRayCommand*>(commandData);
+		AIHCTraceRay cppCmdData = {cCmdData->rayPos_posF3, cCmdData->rayDir_posF3, cCmdData->rayLen,
+		    cCmdData->srcUnitId, cCmdData->ret_hitUnitId, cCmdData->flags};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCTraceRayId, &cppCmdData);
+
+		cCmdData->rayLen = cppCmdData.rayLen;
+		cCmdData->ret_hitUnitId = cppCmdData.hitUID;
+	} break;
+
+	case COMMAND_TRACE_RAY_FEATURE: {
+		SFeatureTraceRayCommand* cCmdData = static_cast<SFeatureTraceRayCommand*>(commandData);
+		AIHCFeatureTraceRay cppCmdData = {cCmdData->rayPos_posF3, cCmdData->rayDir_posF3, cCmdData->rayLen,
+		    cCmdData->srcUnitId, cCmdData->ret_hitFeatureId, cCmdData->flags};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCFeatureTraceRayId, &cppCmdData);
+
+		cCmdData->rayLen = cppCmdData.rayLen;
+		cCmdData->ret_hitFeatureId = cppCmdData.hitFID;
+	} break;
+
+	case COMMAND_PAUSE: {
+		const SPauseCommand* cmd = static_cast<SPauseCommand*>(commandData);
+		AIHCPause cppCmdData = {cmd->enable, cmd->reason};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCPauseId, &cppCmdData);
+	} break;
+
+	case COMMAND_DEBUG_DRAWER_GRAPH_LINE_ADD_POINT: {
+		SAddPointLineGraphDrawerDebugCommand* cCmdData =
+		    static_cast<SAddPointLineGraphDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_ADD_GRAPH_POINT, cCmdData->x, cCmdData->y,
+		    0.0f, 0.0f, cCmdData->lineId, 0, ZeroVector, "", 0, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_GRAPH_LINE_DELETE_POINTS: {
+		SDeletePointsLineGraphDrawerDebugCommand* cCmdData =
+		    static_cast<SDeletePointsLineGraphDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_DEL_GRAPH_POINTS, 0.0f, 0.0f, 0.0f, 0.0f,
+		    cCmdData->lineId, cCmdData->numPoints, ZeroVector, "", 0, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_GRAPH_SET_POS: {
+		SSetPositionGraphDrawerDebugCommand* cCmdData = static_cast<SSetPositionGraphDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_POS, cCmdData->x, cCmdData->y, 0.0f,
+		    0.0f, 0, 0, ZeroVector, "", 0, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_GRAPH_SET_SIZE: {
+		SSetSizeGraphDrawerDebugCommand* cCmdData = static_cast<SSetSizeGraphDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_SIZE, 0.0f, 0.0f, cCmdData->w,
+		    cCmdData->h, 0, 0, ZeroVector, "", 0, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_COLOR: {
+		SSetColorLineGraphDrawerDebugCommand* cCmdData =
+		    static_cast<SSetColorLineGraphDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_LINE_COLOR, 0.0f, 0.0f, 0.0f, 0.0f,
+		    cCmdData->lineId, 0,
+		    float3(cCmdData->color_colorS3[0] / 256.0f, cCmdData->color_colorS3[1] / 256.0f,
+		        cCmdData->color_colorS3[2] / 256.0f),
+		    "", 0, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_LABEL: {
+		SSetLabelLineGraphDrawerDebugCommand* cCmdData =
+		    static_cast<SSetLabelLineGraphDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_LINE_LABEL, 0.0f, 0.0f, 0.0f, 0.0f,
+		    cCmdData->lineId, 0, ZeroVector, std::string(cCmdData->label), 0, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+
+
+	case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_ADD: {
+		SAddOverlayTextureDrawerDebugCommand* cCmdData =
+		    static_cast<SAddOverlayTextureDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_ADD_OVERLAY_TEXTURE, 0.0f, 0.0f,
+		    float(cCmdData->w), float(cCmdData->h), 0, 0, ZeroVector, "", 0, cCmdData->texData};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+
+		cCmdData->ret_overlayTextureId = cppCmdData.texHandle;
+	} break;
+	case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_UPDATE: {
+		SUpdateOverlayTextureDrawerDebugCommand* cCmdData =
+		    static_cast<SUpdateOverlayTextureDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_UPDATE_OVERLAY_TEXTURE, float(cCmdData->x),
+		    float(cCmdData->y), float(cCmdData->w), float(cCmdData->h), 0, 0, ZeroVector, "",
+		    cCmdData->overlayTextureId, cCmdData->texData};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+
+	case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_DELETE: {
+		SDeleteOverlayTextureDrawerDebugCommand* cCmdData =
+		    static_cast<SDeleteOverlayTextureDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_DEL_OVERLAY_TEXTURE, 0.0f, 0.0f, 0.0f, 0.0f, 0,
+		    0, ZeroVector, "", cCmdData->overlayTextureId, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_POS: {
+		SSetPositionOverlayTextureDrawerDebugCommand* cCmdData =
+		    static_cast<SSetPositionOverlayTextureDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_OVERLAY_TEXTURE_POS, cCmdData->x,
+		    cCmdData->y, 0.0f, 0.0f, 0, 0, ZeroVector, "", cCmdData->overlayTextureId, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_SIZE: {
+		SSetSizeOverlayTextureDrawerDebugCommand* cCmdData =
+		    static_cast<SSetSizeOverlayTextureDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_OVERLAY_TEXTURE_SIZE, 0.0f, 0.0f,
+		    cCmdData->w, cCmdData->h, 0, 0, ZeroVector, "", cCmdData->overlayTextureId, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+	case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_LABEL: {
+		SSetLabelOverlayTextureDrawerDebugCommand* cCmdData =
+		    static_cast<SSetLabelOverlayTextureDrawerDebugCommand*>(commandData);
+		AIHCDebugDraw cppCmdData = {AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_OVERLAY_TEXTURE_LABEL, 0.0f, 0.0f, 0.0f,
+		    0.0f, 0, 0, ZeroVector, std::string(cCmdData->label), cCmdData->overlayTextureId, nullptr};
+
+		wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
+	} break;
+
+
+	default: {
+		Command c;
+
+		// check if data is a known command
+		if (newCommand(commandData, commandTopic, unitHandler.MaxUnits(), &c)) {
+			c.SetAICmdID(commandId);
+
+			const SStopUnitCommand* cmd = static_cast<SStopUnitCommand*>(commandData);
+
+			if (cmd->unitId >= 0) {
+				ret = clb->GiveOrder(cmd->unitId, &c);
 			}
-		} break;
-
-		case COMMAND_DRAWER_FIGURE_CREATE_SPLINE: {
-			SCreateSplineFigureDrawerCommand* cmd = static_cast<SCreateSplineFigureDrawerCommand*>(commandData);
-			cmd->ret_newFigureGroupId = clb->CreateSplineFigure(
-				cmd->pos1_posF3, cmd->pos2_posF3,
-				cmd->pos3_posF3, cmd->pos4_posF3,
-				cmd->width,
-				cmd->arrow,
-				cmd->lifeTime,
-				cmd->figureGroupId
-			);
-		} break;
-
-		case COMMAND_DRAWER_FIGURE_CREATE_LINE: {
-			SCreateLineFigureDrawerCommand* cmd = static_cast<SCreateLineFigureDrawerCommand*>(commandData);
-			cmd->ret_newFigureGroupId = clb->CreateLineFigure(
-				cmd->pos1_posF3, cmd->pos2_posF3,
-				cmd->width,
-				cmd->arrow,
-				cmd->lifeTime,
-				cmd->figureGroupId
-			);
-		} break;
-
-		case COMMAND_DRAWER_FIGURE_SET_COLOR: {
-			const SSetColorFigureDrawerCommand* cmd = static_cast<SSetColorFigureDrawerCommand*>(commandData);
-			clb->SetFigureColor(cmd->figureGroupId,
-					cmd->color_colorS3[0] / 256.0f,
-					cmd->color_colorS3[1] / 256.0f,
-					cmd->color_colorS3[2] / 256.0f,
-					cmd->alpha / 256.0f);
-		} break;
-
-		case COMMAND_DRAWER_FIGURE_DELETE: {
-			const SDeleteFigureDrawerCommand* cmd = static_cast<SDeleteFigureDrawerCommand*>(commandData);
-			clb->DeleteFigureGroup(cmd->figureGroupId);
-		} break;
-
-		case COMMAND_DRAWER_DRAW_UNIT: {
-			const SDrawUnitDrawerCommand* cmd = static_cast<SDrawUnitDrawerCommand*>(commandData);
-			clb->DrawUnit(getUnitDefById(skirmishAIId,
-					cmd->toDrawUnitDefId)->name.c_str(), cmd->pos_posF3,
-					cmd->rotation, cmd->lifeTime, cmd->teamId, cmd->transparent,
-					cmd->drawBorder, cmd->facing);
-		} break;
-
-		case COMMAND_TRACE_RAY: {
-			STraceRayCommand* cCmdData = static_cast<STraceRayCommand*>(commandData);
-			AIHCTraceRay cppCmdData = {
-				cCmdData->rayPos_posF3,
-				cCmdData->rayDir_posF3,
-				cCmdData->rayLen,
-				cCmdData->srcUnitId,
-				cCmdData->ret_hitUnitId,
-				cCmdData->flags
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCTraceRayId, &cppCmdData);
-
-			cCmdData->rayLen = cppCmdData.rayLen;
-			cCmdData->ret_hitUnitId = cppCmdData.hitUID;
-		} break;
-
-		case COMMAND_TRACE_RAY_FEATURE: {
-			SFeatureTraceRayCommand* cCmdData = static_cast<SFeatureTraceRayCommand*>(commandData);
-			AIHCFeatureTraceRay cppCmdData = {
-				cCmdData->rayPos_posF3,
-				cCmdData->rayDir_posF3,
-				cCmdData->rayLen,
-				cCmdData->srcUnitId,
-				cCmdData->ret_hitFeatureId,
-				cCmdData->flags
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCFeatureTraceRayId, &cppCmdData);
-
-			cCmdData->rayLen = cppCmdData.rayLen;
-			cCmdData->ret_hitFeatureId = cppCmdData.hitFID;
-		} break;
-
-		case COMMAND_PAUSE: {
-			const SPauseCommand* cmd = static_cast<SPauseCommand*>(commandData);
-			AIHCPause cppCmdData = {
-				cmd->enable,
-				cmd->reason
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCPauseId, &cppCmdData);
-		} break;
-
-		case COMMAND_DEBUG_DRAWER_GRAPH_LINE_ADD_POINT: {
-			SAddPointLineGraphDrawerDebugCommand* cCmdData = static_cast<SAddPointLineGraphDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_ADD_GRAPH_POINT,
-				cCmdData->x, cCmdData->y,
-				0.0f, 0.0f,
-				cCmdData->lineId, 0,
-				ZeroVector,
-				"",
-				0, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_GRAPH_LINE_DELETE_POINTS: {
-			SDeletePointsLineGraphDrawerDebugCommand* cCmdData = static_cast<SDeletePointsLineGraphDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_DEL_GRAPH_POINTS,
-				0.0f, 0.0f,
-				0.0f, 0.0f,
-				cCmdData->lineId, cCmdData->numPoints,
-				ZeroVector,
-				"",
-				0, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_GRAPH_SET_POS: {
-			SSetPositionGraphDrawerDebugCommand* cCmdData = static_cast<SSetPositionGraphDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_POS,
-				cCmdData->x, cCmdData->y,
-				0.0f, 0.0f,
-				0, 0,
-				ZeroVector,
-				"",
-				0, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_GRAPH_SET_SIZE: {
-			SSetSizeGraphDrawerDebugCommand* cCmdData = static_cast<SSetSizeGraphDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_SIZE,
-				0.0f, 0.0f,
-				cCmdData->w, cCmdData->h,
-				0, 0,
-				ZeroVector,
-				"",
-				0, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_COLOR: {
-			SSetColorLineGraphDrawerDebugCommand* cCmdData = static_cast<SSetColorLineGraphDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_LINE_COLOR,
-				0.0f, 0.0f,
-				0.0f, 0.0f,
-				cCmdData->lineId, 0,
-				float3(cCmdData->color_colorS3[0] / 256.0f, cCmdData->color_colorS3[1] / 256.0f, cCmdData->color_colorS3[2] / 256.0f),
-				"",
-				0, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_LABEL: {
-			SSetLabelLineGraphDrawerDebugCommand* cCmdData = static_cast<SSetLabelLineGraphDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_GRAPH_LINE_LABEL,
-				0.0f, 0.0f,
-				0.0f, 0.0f,
-				cCmdData->lineId, 0,
-				ZeroVector,
-				std::string(cCmdData->label),
-				0, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-
-
-		case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_ADD: {
-			SAddOverlayTextureDrawerDebugCommand* cCmdData = static_cast<SAddOverlayTextureDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_ADD_OVERLAY_TEXTURE,
-				0.0f, 0.0f,
-				float(cCmdData->w), float(cCmdData->h),
-				0, 0,
-				ZeroVector,
-				"",
-				0, cCmdData->texData
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-
-			cCmdData->ret_overlayTextureId = cppCmdData.texHandle;
-		} break;
-		case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_UPDATE: {
-			SUpdateOverlayTextureDrawerDebugCommand* cCmdData = static_cast<SUpdateOverlayTextureDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_UPDATE_OVERLAY_TEXTURE,
-				float(cCmdData->x), float(cCmdData->y),
-				float(cCmdData->w), float(cCmdData->h),
-				0, 0,
-				ZeroVector,
-				"",
-				cCmdData->overlayTextureId, cCmdData->texData
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-
-		case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_DELETE: {
-			SDeleteOverlayTextureDrawerDebugCommand* cCmdData = static_cast<SDeleteOverlayTextureDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_DEL_OVERLAY_TEXTURE,
-				0.0f, 0.0f,
-				0.0f, 0.0f,
-				0, 0,
-				ZeroVector,
-				"",
-				cCmdData->overlayTextureId, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_POS: {
-			SSetPositionOverlayTextureDrawerDebugCommand* cCmdData = static_cast<SSetPositionOverlayTextureDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_OVERLAY_TEXTURE_POS,
-				cCmdData->x, cCmdData->y,
-				0.0f, 0.0f,
-				0, 0,
-				ZeroVector,
-				"",
-				cCmdData->overlayTextureId, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_SIZE: {
-			SSetSizeOverlayTextureDrawerDebugCommand* cCmdData = static_cast<SSetSizeOverlayTextureDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_OVERLAY_TEXTURE_SIZE,
-				0.0f, 0.0f,
-				cCmdData->w, cCmdData->h,
-				0, 0,
-				ZeroVector,
-				"",
-				cCmdData->overlayTextureId, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-		case COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_LABEL: {
-			SSetLabelOverlayTextureDrawerDebugCommand* cCmdData = static_cast<SSetLabelOverlayTextureDrawerDebugCommand*>(commandData);
-			AIHCDebugDraw cppCmdData = {
-				AIHCDebugDraw::AIHC_DEBUGDRAWER_MODE_SET_OVERLAY_TEXTURE_LABEL,
-				0.0f, 0.0f,
-				0.0f, 0.0f,
-				0, 0,
-				ZeroVector,
-				std::string(cCmdData->label),
-				cCmdData->overlayTextureId, nullptr
-			};
-
-			wrapper_HandleCommand(clb, clbCheat, AIHCDebugDrawId, &cppCmdData);
-		} break;
-
-
-		default: {
-			Command c;
-
-			// check if data is a known command
-			if (newCommand(commandData, commandTopic, unitHandler.MaxUnits(), &c)) {
-				c.SetAICmdID(commandId);
-
-				const SStopUnitCommand* cmd = static_cast<SStopUnitCommand*>(commandData);
-
-				if (cmd->unitId >= 0) {
-					ret = clb->GiveOrder(cmd->unitId, &c);
-				} else {
-					ret = clb->GiveGroupOrder(cmd->groupId, &c);
-				}
-			} else {
-				ret = -1;
+			else {
+				ret = clb->GiveGroupOrder(cmd->groupId, &c);
 			}
 		}
-
+		else {
+			ret = -1;
+		}
+	}
 	}
 
 	return ret;
 }
 
-
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getMajor(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getMajor(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getMajor(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getMinor(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getMinor(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getMinor(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getPatchset(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getPatchset(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getPatchset(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getCommits(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getCommits(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getCommits(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getHash(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getHash(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getHash(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getBranch(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getBranch(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getBranch(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getAdditional(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getAdditional(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getAdditional(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getBuildTime(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getBuildTime(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getBuildTime(-1);
 }
 
-EXPORT(bool) skirmishAiCallback_Engine_Version_isRelease(int skirmishAIId) {
+EXPORT(bool) skirmishAiCallback_Engine_Version_isRelease(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_isRelease(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getNormal(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getNormal(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getNormal(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getSync(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getSync(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getSync(-1);
 }
 
-EXPORT(const char*) skirmishAiCallback_Engine_Version_getFull(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Engine_Version_getFull(int skirmishAIId)
+{
 	return aiInterfaceCallback_Engine_Version_getFull(-1);
 }
 
-EXPORT(int) skirmishAiCallback_getNumTeams(int skirmishAIId) {
-	return teamHandler.ActiveTeams();
-}
+EXPORT(int) skirmishAiCallback_getNumTeams(int skirmishAIId) { return teamHandler.ActiveTeams(); }
 
-EXPORT(int) skirmishAiCallback_getNumSkirmishAIs(int skirmishAIId) {
-	return aiInterfaceCallback_getNumSkirmishAIs(-1);
-}
+EXPORT(int) skirmishAiCallback_getNumSkirmishAIs(int skirmishAIId) { return aiInterfaceCallback_getNumSkirmishAIs(-1); }
 
-EXPORT(int) skirmishAiCallback_getMaxSkirmishAIs(int skirmishAIId) {
-	return aiInterfaceCallback_getMaxSkirmishAIs(-1);
-}
+EXPORT(int) skirmishAiCallback_getMaxSkirmishAIs(int skirmishAIId) { return aiInterfaceCallback_getMaxSkirmishAIs(-1); }
 
-EXPORT(int) skirmishAiCallback_SkirmishAI_getTeamId(int skirmishAIId) {
-	return AI_TEAM_IDS[skirmishAIId];
-}
+EXPORT(int) skirmishAiCallback_SkirmishAI_getTeamId(int skirmishAIId) { return AI_TEAM_IDS[skirmishAIId]; }
 
-static inline const CSkirmishAILibraryInfo* getSkirmishAILibraryInfo(int skirmishAIId) {
+static inline const CSkirmishAILibraryInfo* getSkirmishAILibraryInfo(int skirmishAIId)
+{
 	const CSkirmishAILibraryInfo* info = nullptr;
 
 	const AILibraryManager* libMan = AILibraryManager::GetInstance();
@@ -1247,37 +1158,44 @@ static inline const CSkirmishAILibraryInfo* getSkirmishAILibraryInfo(int skirmis
 	return info;
 }
 
-EXPORT(int) skirmishAiCallback_SkirmishAI_Info_getSize(int skirmishAIId) {
-	return (int) getSkirmishAILibraryInfo(skirmishAIId)->size();
+EXPORT(int) skirmishAiCallback_SkirmishAI_Info_getSize(int skirmishAIId)
+{
+	return (int)getSkirmishAILibraryInfo(skirmishAIId)->size();
 }
 
 // note: fine to return c_str(), points to data held by SkirmishAIHandler
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getKey(int skirmishAIId, int infoIndex) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getKey(int skirmishAIId, int infoIndex)
+{
 	return ((getSkirmishAILibraryInfo(skirmishAIId)->GetKeyAt(infoIndex)).c_str());
 }
 
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getValue(int skirmishAIId, int infoIndex) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getValue(int skirmishAIId, int infoIndex)
+{
 	return ((getSkirmishAILibraryInfo(skirmishAIId)->GetValueAt(infoIndex)).c_str());
 }
 
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getDescription(int skirmishAIId, int infoIndex) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getDescription(int skirmishAIId, int infoIndex)
+{
 	return ((getSkirmishAILibraryInfo(skirmishAIId)->GetDescriptionAt(infoIndex)).c_str());
 }
 
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getValueByKey(int skirmishAIId, const char* const key) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_Info_getValueByKey(int skirmishAIId, const char* const key)
+{
 	return ((getSkirmishAILibraryInfo(skirmishAIId)->GetInfo(key)).c_str());
 }
 
-static inline bool checkOptionIndex(int optionIndex, const std::vector<std::string>& optionKeys) {
+static inline bool checkOptionIndex(int optionIndex, const std::vector<std::string>& optionKeys)
+{
 	return ((optionIndex < 0) || ((size_t)optionIndex >= optionKeys.size()));
 }
 
-EXPORT(int) skirmishAiCallback_SkirmishAI_OptionValues_getSize(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_SkirmishAI_OptionValues_getSize(int skirmishAIId)
+{
 	return (int)skirmishAIHandler.GetSkirmishAI(skirmishAIId)->options.size();
 }
 
-
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getKey(int skirmishAIId, int optionIndex) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getKey(int skirmishAIId, int optionIndex)
+{
 	const SkirmishAIData* data = skirmishAIHandler.GetSkirmishAI(skirmishAIId);
 	const auto& optionKeys = data->optionKeys;
 
@@ -1287,7 +1205,8 @@ EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getKey(int skirmi
 	return (optionKeys[optionIndex].c_str());
 }
 
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getValue(int skirmishAIId, int optionIndex) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getValue(int skirmishAIId, int optionIndex)
+{
 	const SkirmishAIData* data = skirmishAIHandler.GetSkirmishAI(skirmishAIId);
 	const auto& optionKeys = data->optionKeys;
 
@@ -1303,8 +1222,8 @@ EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getValue(int skir
 	return (option->second.c_str());
 }
 
-
-EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getValueByKey(int skirmishAIId, const char* const key) {
+EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getValueByKey(int skirmishAIId, const char* const key)
+{
 	const SkirmishAIData* data = skirmishAIHandler.GetSkirmishAI(skirmishAIId);
 
 	const auto& options = data->options;
@@ -1316,8 +1235,8 @@ EXPORT(const char*) skirmishAiCallback_SkirmishAI_OptionValues_getValueByKey(int
 	return (option->second.c_str());
 }
 
-
-EXPORT(void) skirmishAiCallback_Log_log(int skirmishAIId, const char* const msg) {
+EXPORT(void) skirmishAiCallback_Log_log(int skirmishAIId, const char* const msg)
+{
 	CheckSkirmishAIId(skirmishAIId, __func__);
 
 	const CSkirmishAILibraryInfo* info = getSkirmishAILibraryInfo(skirmishAIId);
@@ -1326,13 +1245,14 @@ EXPORT(void) skirmishAiCallback_Log_log(int skirmishAIId, const char* const msg)
 	LOG("Skirmish AI <%s-%s>: %s", aiName.c_str(), aiVersion.c_str(), msg);
 }
 
-EXPORT(void) skirmishAiCallback_Log_exception(int skirmishAIId, const char* const msg, int severity, bool die) {
+EXPORT(void) skirmishAiCallback_Log_exception(int skirmishAIId, const char* const msg, int severity, bool die)
+{
 	CheckSkirmishAIId(skirmishAIId, __func__);
 
 	const CSkirmishAILibraryInfo* info = getSkirmishAILibraryInfo(skirmishAIId);
 	const char* aiName = (info->GetName()).c_str();
 	const char* aiVersion = (info->GetVersion()).c_str();
-	const char* status = die? "AI shutting down" : "AI still running";
+	const char* status = die ? "AI shutting down" : "AI still running";
 
 	LOG_L(L_ERROR, "Skirmish AI <%s-%s>: severity %i: [%s] %s", aiName, aiVersion, severity, status, msg);
 
@@ -1342,57 +1262,73 @@ EXPORT(void) skirmishAiCallback_Log_exception(int skirmishAIId, const char* cons
 	skirmishAIHandler.SetLocalKillFlag(skirmishAIId, 4 /* = AI crashed */);
 }
 
-EXPORT(char) skirmishAiCallback_DataDirs_getPathSeparator(int UNUSED_skirmishAIId) {
+EXPORT(char) skirmishAiCallback_DataDirs_getPathSeparator(int UNUSED_skirmishAIId)
+{
 	return aiInterfaceCallback_DataDirs_getPathSeparator(-1);
 }
 
-EXPORT(int) skirmishAiCallback_DataDirs_Roots_getSize(int UNUSED_skirmishAIId) {
+EXPORT(int) skirmishAiCallback_DataDirs_Roots_getSize(int UNUSED_skirmishAIId)
+{
 	return aiInterfaceCallback_DataDirs_Roots_getSize(-1);
 }
 
-EXPORT(bool) skirmishAiCallback_DataDirs_Roots_getDir(int UNUSED_skirmishAIId, char* path, int pathMaxSize, int dirIndex) {
+EXPORT(bool)
+skirmishAiCallback_DataDirs_Roots_getDir(int UNUSED_skirmishAIId, char* path, int pathMaxSize, int dirIndex)
+{
 	return aiInterfaceCallback_DataDirs_Roots_getDir(-1, path, pathMaxSize, dirIndex);
 }
 
-EXPORT(bool) skirmishAiCallback_DataDirs_Roots_locatePath(int UNUSED_skirmishAIId, char* path, int pathMaxSize, const char* const relPath, bool writeable, bool create, bool dir) {
+EXPORT(bool)
+skirmishAiCallback_DataDirs_Roots_locatePath(int UNUSED_skirmishAIId,
+    char* path,
+    int pathMaxSize,
+    const char* const relPath,
+    bool writeable,
+    bool create,
+    bool dir)
+{
 	return aiInterfaceCallback_DataDirs_Roots_locatePath(-1, path, pathMaxSize, relPath, writeable, create, dir);
 }
 
-EXPORT(const char*) skirmishAiCallback_DataDirs_getConfigDir(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_DataDirs_getConfigDir(int skirmishAIId)
+{
 	CheckSkirmishAIId(skirmishAIId, __func__);
 
 	return ((getSkirmishAILibraryInfo(skirmishAIId)->GetDataDir()).c_str());
 }
 
-EXPORT(bool) skirmishAiCallback_DataDirs_locatePath(
-	int skirmishAIId,
-	char* path,
-	int pathMaxSize,
-	const char* const relPath,
-	bool writeable,
-	bool create,
-	bool dir,
-	bool common
-) {
+EXPORT(bool)
+skirmishAiCallback_DataDirs_locatePath(int skirmishAIId,
+    char* path,
+    int pathMaxSize,
+    const char* const relPath,
+    bool writeable,
+    bool create,
+    bool dir,
+    bool common)
+{
 	assert(relPath != nullptr);
 
 	const char ps = skirmishAiCallback_DataDirs_getPathSeparator(skirmishAIId);
 
-	const std::string& aiShortName = skirmishAiCallback_SkirmishAI_Info_getValueByKey(skirmishAIId, SKIRMISH_AI_PROPERTY_SHORT_NAME);
-	const std::string& aiVersion = skirmishAiCallback_SkirmishAI_Info_getValueByKey(skirmishAIId, SKIRMISH_AI_PROPERTY_VERSION);
+	const std::string& aiShortName =
+	    skirmishAiCallback_SkirmishAI_Info_getValueByKey(skirmishAIId, SKIRMISH_AI_PROPERTY_SHORT_NAME);
+	const std::string& aiVersion =
+	    skirmishAiCallback_SkirmishAI_Info_getValueByKey(skirmishAIId, SKIRMISH_AI_PROPERTY_VERSION);
 
 	std::string aiRelPath(SKIRMISH_AI_DATA_DIR);
 
 	// relPath="log/RAI.log", aiRelPath="AI/Skirmish/RAI/0.1" (e.g.)
 	aiRelPath += (ps + aiShortName);
-	aiRelPath += (ps + ((common)? "common": aiVersion));
+	aiRelPath += (ps + ((common) ? "common" : aiVersion));
 	aiRelPath += (ps + std::string(relPath));
 
-	return skirmishAiCallback_DataDirs_Roots_locatePath(skirmishAIId, path, pathMaxSize, aiRelPath.c_str(), writeable, create, dir);
+	return skirmishAiCallback_DataDirs_Roots_locatePath(
+	    skirmishAIId, path, pathMaxSize, aiRelPath.c_str(), writeable, create, dir);
 }
 
-
-EXPORT(const char*) skirmishAiCallback_DataDirs_getWriteableDir(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_DataDirs_getWriteableDir(int skirmishAIId)
+{
 	CheckSkirmishAIId(skirmishAIId, __func__);
 
 	static std::vector<std::string> writeableDataDirs;
@@ -1406,14 +1342,15 @@ EXPORT(const char*) skirmishAiCallback_DataDirs_getWriteableDir(int skirmishAIId
 	if (writeableDataDirs[skirmishAIId].empty()) {
 		char tmpRes[1024];
 
-		if (!skirmishAiCallback_DataDirs_locatePath(skirmishAIId, tmpRes, sizeof(tmpRes), "", true, true, true, false)) {
+		if (!skirmishAiCallback_DataDirs_locatePath(
+		        skirmishAIId, tmpRes, sizeof(tmpRes), "", true, true, true, false)) {
 			char errorMsg[1093];
-			SNPRINTF(errorMsg, sizeof(errorMsg),
-					"Unable to create writable data-dir for Skirmish AI (ID:%i): %s",
-					skirmishAIId, tmpRes);
+			SNPRINTF(errorMsg, sizeof(errorMsg), "Unable to create writable data-dir for Skirmish AI (ID:%i): %s",
+			    skirmishAIId, tmpRes);
 			skirmishAiCallback_Log_exception(skirmishAIId, errorMsg, 1, true);
 			return nullptr;
-		} else {
+		}
+		else {
 			writeableDataDirs[skirmishAIId] = tmpRes;
 		}
 	}
@@ -1421,11 +1358,8 @@ EXPORT(const char*) skirmishAiCallback_DataDirs_getWriteableDir(int skirmishAIId
 	return writeableDataDirs[skirmishAIId].c_str();
 }
 
-
-//##############################################################################
-EXPORT(bool) skirmishAiCallback_Cheats_isEnabled(int skirmishAIId) {
-	return AI_CHEAT_FLAGS[skirmishAIId].first;
-}
+// ##############################################################################
+EXPORT(bool) skirmishAiCallback_Cheats_isEnabled(int skirmishAIId) { return AI_CHEAT_FLAGS[skirmishAIId].first; }
 
 EXPORT(bool) skirmishAiCallback_Cheats_setEnabled(int skirmishAIId, bool enabled)
 {
@@ -1446,57 +1380,59 @@ EXPORT(bool) skirmishAiCallback_Cheats_setEventsEnabled(int skirmishAIId, bool e
 	return true;
 }
 
-EXPORT(bool) skirmishAiCallback_Cheats_isOnlyPassive(int skirmishAIId) {
-	return CAICheats::OnlyPassiveCheats();
-}
+EXPORT(bool) skirmishAiCallback_Cheats_isOnlyPassive(int skirmishAIId) { return CAICheats::OnlyPassiveCheats(); }
 
-EXPORT(int) skirmishAiCallback_Game_getAiInterfaceVersion(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Game_getAiInterfaceVersion(int skirmishAIId)
+{
 	return wrapper_HandleCommand(GetCallBack(skirmishAIId), nullptr, AIHCQuerySubVersionId, nullptr);
 }
 
-EXPORT(int) skirmishAiCallback_Game_getCurrentFrame(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Game_getCurrentFrame(int skirmishAIId)
+{
 	return GetCallBack(skirmishAIId)->GetCurrentFrame();
 }
 
-EXPORT(int) skirmishAiCallback_Game_getMyTeam(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetMyTeam();
-}
+EXPORT(int) skirmishAiCallback_Game_getMyTeam(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetMyTeam(); }
 
-EXPORT(int) skirmishAiCallback_Game_getMyAllyTeam(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Game_getMyAllyTeam(int skirmishAIId)
+{
 	return GetCallBack(skirmishAIId)->GetMyAllyTeam();
 }
 
-EXPORT(int) skirmishAiCallback_Game_getPlayerTeam(int skirmishAIId, int player) {
+EXPORT(int) skirmishAiCallback_Game_getPlayerTeam(int skirmishAIId, int player)
+{
 	return GetCallBack(skirmishAIId)->GetPlayerTeam(player);
 }
 
-EXPORT(int) skirmishAiCallback_Game_getTeams(int skirmishAIId) {
-	return teamHandler.ActiveTeams();
-}
+EXPORT(int) skirmishAiCallback_Game_getTeams(int skirmishAIId) { return teamHandler.ActiveTeams(); }
 
-EXPORT(const char*) skirmishAiCallback_Game_getTeamSide(int skirmishAIId, int otherTeamId) {
+EXPORT(const char*) skirmishAiCallback_Game_getTeamSide(int skirmishAIId, int otherTeamId)
+{
 	return GetCallBack(skirmishAIId)->GetTeamSide(otherTeamId);
 }
 
-EXPORT(void) skirmishAiCallback_Game_getTeamColor(int skirmishAIId, int otherTeamId, short* return_colorS3_out) {
-
+EXPORT(void) skirmishAiCallback_Game_getTeamColor(int skirmishAIId, int otherTeamId, short* return_colorS3_out)
+{
 	const unsigned char* color = teamHandler.Team(otherTeamId)->color;
 	return_colorS3_out[0] = color[0];
 	return_colorS3_out[1] = color[1];
 	return_colorS3_out[2] = color[2];
 }
 
-EXPORT(float) skirmishAiCallback_Game_getTeamIncomeMultiplier(int skirmishAIId, int otherTeamId) {
+EXPORT(float) skirmishAiCallback_Game_getTeamIncomeMultiplier(int skirmishAIId, int otherTeamId)
+{
 	return teamHandler.Team(otherTeamId)->GetIncomeMultiplier();
 }
 
-EXPORT(int) skirmishAiCallback_Game_getTeamAllyTeam(int skirmishAIId, int otherTeamId) {
+EXPORT(int) skirmishAiCallback_Game_getTeamAllyTeam(int skirmishAIId, int otherTeamId)
+{
 	return teamHandler.AllyTeam(otherTeamId);
 }
 
 static inline float aiGetTeamResource(int skirmishAiID, int teamID, int resourceID, SResourcePack CTeam::* resourcePack)
 {
-	if (!teamHandler.AlliedTeams(AI_TEAM_IDS[skirmishAiID], teamID) && !skirmishAiCallback_Cheats_isEnabled(skirmishAiID))
+	if (!teamHandler.AlliedTeams(AI_TEAM_IDS[skirmishAiID], teamID) &&
+	    !skirmishAiCallback_Cheats_isEnabled(skirmishAiID))
 		return -1.0f;
 
 	if (!resourceHandler->IsValidId(resourceID))
@@ -1550,15 +1486,13 @@ EXPORT(float) skirmishAiCallback_Game_getTeamResourceExcess(int skirmishAIId, in
 	return aiGetTeamResource(skirmishAIId, otherTeamId, resourceId, &CTeam::resPrevExcess);
 }
 
-EXPORT(bool) skirmishAiCallback_Game_isAllied(int skirmishAIId, int firstAllyTeamId, int secondAllyTeamId) {
+EXPORT(bool) skirmishAiCallback_Game_isAllied(int skirmishAIId, int firstAllyTeamId, int secondAllyTeamId)
+{
 	return teamHandler.Ally(firstAllyTeamId, secondAllyTeamId);
 }
 
-
-
-
-
-EXPORT(int) skirmishAiCallback_WeaponDef_getNumDamageTypes(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getNumDamageTypes(int skirmishAIId)
+{
 	int numDamageTypes = -1;
 
 	if (!GetCallBack(skirmishAIId)->GetValue(AIVAL_NUMDAMAGETYPES, &numDamageTypes))
@@ -1567,7 +1501,8 @@ EXPORT(int) skirmishAiCallback_WeaponDef_getNumDamageTypes(int skirmishAIId) {
 	return numDamageTypes;
 }
 
-EXPORT(bool) skirmishAiCallback_Game_isDebugModeEnabled(int skirmishAIId) {
+EXPORT(bool) skirmishAiCallback_Game_isDebugModeEnabled(int skirmishAIId)
+{
 	bool debugModeEnabled = false;
 
 	if (!GetCallBack(skirmishAIId)->GetValue(AIVAL_DEBUG_MODE, &debugModeEnabled))
@@ -1576,7 +1511,8 @@ EXPORT(bool) skirmishAiCallback_Game_isDebugModeEnabled(int skirmishAIId) {
 	return debugModeEnabled;
 }
 
-EXPORT(bool) skirmishAiCallback_Game_isPaused(int skirmishAIId) {
+EXPORT(bool) skirmishAiCallback_Game_isPaused(int skirmishAIId)
+{
 	bool paused = false;
 
 	if (!GetCallBack(skirmishAIId)->GetValue(AIVAL_GAME_PAUSED, &paused))
@@ -1585,7 +1521,8 @@ EXPORT(bool) skirmishAiCallback_Game_isPaused(int skirmishAIId) {
 	return paused;
 }
 
-EXPORT(float) skirmishAiCallback_Game_getSpeedFactor(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Game_getSpeedFactor(int skirmishAIId)
+{
 	float speedFactor = 0.0f;
 
 	if (!GetCallBack(skirmishAIId)->GetValue(AIVAL_GAME_SPEED_FACTOR, &speedFactor))
@@ -1594,16 +1531,18 @@ EXPORT(float) skirmishAiCallback_Game_getSpeedFactor(int skirmishAIId) {
 	return speedFactor;
 }
 
-EXPORT(int) skirmishAiCallback_Game_getCategoryFlag(int skirmishAIId, const char* categoryName) {
+EXPORT(int) skirmishAiCallback_Game_getCategoryFlag(int skirmishAIId, const char* categoryName)
+{
 	return CCategoryHandler::Instance()->GetCategory(categoryName);
 }
 
-EXPORT(int) skirmishAiCallback_Game_getCategoriesFlag(int skirmishAIId, const char* categoryNames) {
+EXPORT(int) skirmishAiCallback_Game_getCategoriesFlag(int skirmishAIId, const char* categoryNames)
+{
 	return CCategoryHandler::Instance()->GetCategories(categoryNames);
 }
 
-EXPORT(void) skirmishAiCallback_Game_getCategoryName(int skirmishAIId, int categoryFlag, char* name, int nameMaxSize) {
-
+EXPORT(void) skirmishAiCallback_Game_getCategoryName(int skirmishAIId, int categoryFlag, char* name, int nameMaxSize)
+{
 	const std::vector<std::string>& names = CCategoryHandler::Instance()->GetCategoryNames(categoryFlag);
 
 	const char* theName = "";
@@ -1613,159 +1552,132 @@ EXPORT(void) skirmishAiCallback_Game_getCategoryName(int skirmishAIId, int categ
 	STRCPY_T(name, nameMaxSize, theName);
 }
 
-
-EXPORT(float) skirmishAiCallback_Game_getRulesParamFloat(int skirmishAIId, const char* rulesParamName, float defaultValue) {
-	return getRulesParamFloatValueByName(CSplitLuaHandle::GetGameParams(), gameModParamLosMask(), rulesParamName, defaultValue);
+EXPORT(float)
+skirmishAiCallback_Game_getRulesParamFloat(int skirmishAIId, const char* rulesParamName, float defaultValue)
+{
+	return getRulesParamFloatValueByName(
+	    CSplitLuaHandle::GetGameParams(), gameModParamLosMask(), rulesParamName, defaultValue);
 }
 
-EXPORT(const char*) skirmishAiCallback_Game_getRulesParamString(int skirmishAIId, const char* rulesParamName, const char* defaultValue) {
-	return getRulesParamStringValueByName(CSplitLuaHandle::GetGameParams(), gameModParamLosMask(), rulesParamName, defaultValue);
+EXPORT(const char*)
+skirmishAiCallback_Game_getRulesParamString(int skirmishAIId, const char* rulesParamName, const char* defaultValue)
+{
+	return getRulesParamStringValueByName(
+	    CSplitLuaHandle::GetGameParams(), gameModParamLosMask(), rulesParamName, defaultValue);
 }
 
+// ########### BEGIN Mod
 
-//########### BEGIN Mod
+EXPORT(const char*) skirmishAiCallback_Mod_getFileName(int skirmishAIId) { return modInfo.filename.c_str(); }
 
-EXPORT(const char*) skirmishAiCallback_Mod_getFileName(int skirmishAIId) {
-	return modInfo.filename.c_str();
-}
-
-EXPORT(int) skirmishAiCallback_Mod_getHash(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Mod_getHash(int skirmishAIId)
+{
 	return archiveScanner->GetArchiveCompleteChecksum(modInfo.humanNameVersioned);
 }
-EXPORT(const char*) skirmishAiCallback_Mod_getHumanName(int skirmishAIId) {
-	return modInfo.humanNameVersioned.c_str();
-}
 
-EXPORT(const char*) skirmishAiCallback_Mod_getShortName(int skirmishAIId) {
-	return modInfo.shortName.c_str();
-}
+EXPORT(const char*) skirmishAiCallback_Mod_getHumanName(int skirmishAIId) { return modInfo.humanNameVersioned.c_str(); }
 
-EXPORT(const char*) skirmishAiCallback_Mod_getVersion(int skirmishAIId) {
-	return modInfo.version.c_str();
-}
+EXPORT(const char*) skirmishAiCallback_Mod_getShortName(int skirmishAIId) { return modInfo.shortName.c_str(); }
 
-EXPORT(const char*) skirmishAiCallback_Mod_getMutator(int skirmishAIId) {
-	return modInfo.mutator.c_str();
-}
+EXPORT(const char*) skirmishAiCallback_Mod_getVersion(int skirmishAIId) { return modInfo.version.c_str(); }
 
-EXPORT(const char*) skirmishAiCallback_Mod_getDescription(int skirmishAIId) {
-	return modInfo.description.c_str();
-}
+EXPORT(const char*) skirmishAiCallback_Mod_getMutator(int skirmishAIId) { return modInfo.mutator.c_str(); }
 
-EXPORT(bool) skirmishAiCallback_Mod_getConstructionDecay(int skirmishAIId) {
-	return modInfo.constructionDecay;
-}
+EXPORT(const char*) skirmishAiCallback_Mod_getDescription(int skirmishAIId) { return modInfo.description.c_str(); }
 
-EXPORT(int) skirmishAiCallback_Mod_getConstructionDecayTime(int skirmishAIId) {
-	return modInfo.constructionDecayTime;
-}
+EXPORT(bool) skirmishAiCallback_Mod_getConstructionDecay(int skirmishAIId) { return modInfo.constructionDecay; }
 
-EXPORT(float) skirmishAiCallback_Mod_getConstructionDecaySpeed(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Mod_getConstructionDecayTime(int skirmishAIId) { return modInfo.constructionDecayTime; }
+
+EXPORT(float) skirmishAiCallback_Mod_getConstructionDecaySpeed(int skirmishAIId)
+{
 	return modInfo.constructionDecaySpeed;
 }
 
-EXPORT(int) skirmishAiCallback_Mod_getMultiReclaim(int skirmishAIId) {
-	return modInfo.multiReclaim;
-}
+EXPORT(int) skirmishAiCallback_Mod_getMultiReclaim(int skirmishAIId) { return modInfo.multiReclaim; }
 
-EXPORT(int) skirmishAiCallback_Mod_getReclaimMethod(int skirmishAIId) {
-	return modInfo.reclaimMethod;
-}
+EXPORT(int) skirmishAiCallback_Mod_getReclaimMethod(int skirmishAIId) { return modInfo.reclaimMethod; }
 
-EXPORT(int) skirmishAiCallback_Mod_getReclaimUnitMethod(int skirmishAIId) {
-	return modInfo.reclaimUnitMethod;
-}
+EXPORT(int) skirmishAiCallback_Mod_getReclaimUnitMethod(int skirmishAIId) { return modInfo.reclaimUnitMethod; }
 
-EXPORT(float) skirmishAiCallback_Mod_getReclaimUnitEnergyCostFactor(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Mod_getReclaimUnitEnergyCostFactor(int skirmishAIId)
+{
 	return modInfo.reclaimUnitEnergyCostFactor;
 }
 
-EXPORT(float) skirmishAiCallback_Mod_getReclaimUnitEfficiency(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Mod_getReclaimUnitEfficiency(int skirmishAIId)
+{
 	return modInfo.reclaimUnitEfficiency;
 }
 
-EXPORT(float) skirmishAiCallback_Mod_getReclaimFeatureEnergyCostFactor(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Mod_getReclaimFeatureEnergyCostFactor(int skirmishAIId)
+{
 	return modInfo.reclaimFeatureEnergyCostFactor;
 }
 
-EXPORT(bool) skirmishAiCallback_Mod_getReclaimUnitDrainHealth(int skirmishAIId) {
+EXPORT(bool) skirmishAiCallback_Mod_getReclaimUnitDrainHealth(int skirmishAIId)
+{
 	return modInfo.reclaimUnitDrainHealth;
 }
 
-EXPORT(bool) skirmishAiCallback_Mod_getReclaimAllowEnemies(int skirmishAIId) {
-	return modInfo.reclaimAllowEnemies;
-}
+EXPORT(bool) skirmishAiCallback_Mod_getReclaimAllowEnemies(int skirmishAIId) { return modInfo.reclaimAllowEnemies; }
 
-EXPORT(bool) skirmishAiCallback_Mod_getReclaimAllowAllies(int skirmishAIId) {
-	return modInfo.reclaimAllowAllies;
-}
+EXPORT(bool) skirmishAiCallback_Mod_getReclaimAllowAllies(int skirmishAIId) { return modInfo.reclaimAllowAllies; }
 
-EXPORT(float) skirmishAiCallback_Mod_getRepairEnergyCostFactor(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Mod_getRepairEnergyCostFactor(int skirmishAIId)
+{
 	return modInfo.repairEnergyCostFactor;
 }
 
-EXPORT(float) skirmishAiCallback_Mod_getResurrectEnergyCostFactor(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Mod_getResurrectEnergyCostFactor(int skirmishAIId)
+{
 	return modInfo.resurrectEnergyCostFactor;
 }
 
-EXPORT(float) skirmishAiCallback_Mod_getCaptureEnergyCostFactor(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Mod_getCaptureEnergyCostFactor(int skirmishAIId)
+{
 	return modInfo.captureEnergyCostFactor;
 }
 
-EXPORT(int) skirmishAiCallback_Mod_getTransportGround(int skirmishAIId) {
-	return modInfo.transportGround;
-}
+EXPORT(int) skirmishAiCallback_Mod_getTransportGround(int skirmishAIId) { return modInfo.transportGround; }
 
-EXPORT(int) skirmishAiCallback_Mod_getTransportHover(int skirmishAIId) {
-	return modInfo.transportHover;
-}
+EXPORT(int) skirmishAiCallback_Mod_getTransportHover(int skirmishAIId) { return modInfo.transportHover; }
 
-EXPORT(int) skirmishAiCallback_Mod_getTransportShip(int skirmishAIId) {
-	return modInfo.transportShip;
-}
+EXPORT(int) skirmishAiCallback_Mod_getTransportShip(int skirmishAIId) { return modInfo.transportShip; }
 
-EXPORT(int) skirmishAiCallback_Mod_getTransportAir(int skirmishAIId) {
-	return modInfo.transportAir;
-}
+EXPORT(int) skirmishAiCallback_Mod_getTransportAir(int skirmishAIId) { return modInfo.transportAir; }
 
-EXPORT(int) skirmishAiCallback_Mod_getFireAtKilled(int skirmishAIId) {
-	return modInfo.fireAtKilled;
-}
+EXPORT(int) skirmishAiCallback_Mod_getFireAtKilled(int skirmishAIId) { return modInfo.fireAtKilled; }
 
-EXPORT(int) skirmishAiCallback_Mod_getFireAtCrashing(int skirmishAIId) {
-	return modInfo.fireAtCrashing;
-}
+EXPORT(int) skirmishAiCallback_Mod_getFireAtCrashing(int skirmishAIId) { return modInfo.fireAtCrashing; }
 
-EXPORT(int) skirmishAiCallback_Mod_getFlankingBonusModeDefault(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Mod_getFlankingBonusModeDefault(int skirmishAIId)
+{
 	return modInfo.flankingBonusModeDefault;
 }
 
-EXPORT(int) skirmishAiCallback_Mod_getLosMipLevel(int skirmishAIId) {
-	return modInfo.losMipLevel;
-}
+EXPORT(int) skirmishAiCallback_Mod_getLosMipLevel(int skirmishAIId) { return modInfo.losMipLevel; }
 
-EXPORT(int) skirmishAiCallback_Mod_getAirMipLevel(int skirmishAIId) {
-	return modInfo.airMipLevel;
-}
+EXPORT(int) skirmishAiCallback_Mod_getAirMipLevel(int skirmishAIId) { return modInfo.airMipLevel; }
 
-EXPORT(int) skirmishAiCallback_Mod_getRadarMipLevel(int skirmishAIId) {
-	return modInfo.radarMipLevel;
-}
+EXPORT(int) skirmishAiCallback_Mod_getRadarMipLevel(int skirmishAIId) { return modInfo.radarMipLevel; }
 
-EXPORT(bool) skirmishAiCallback_Mod_getRequireSonarUnderWater(int skirmishAIId) {
+EXPORT(bool) skirmishAiCallback_Mod_getRequireSonarUnderWater(int skirmishAIId)
+{
 	return modInfo.requireSonarUnderWater;
 }
 
-//########### END Mod
+// ########### END Mod
 
 
-
-//########### BEGIN Map
-EXPORT(bool) skirmishAiCallback_Map_isPosInCamera(int skirmishAIId, float* pos_posF3, float radius) {
+// ########### BEGIN Map
+EXPORT(bool) skirmishAiCallback_Map_isPosInCamera(int skirmishAIId, float* pos_posF3, float radius)
+{
 	return GetCallBack(skirmishAIId)->PosInCamera(pos_posF3, radius);
 }
 
-EXPORT(int) skirmishAiCallback_Map_getChecksum(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Map_getChecksum(int skirmishAIId)
+{
 	unsigned int checksum;
 
 	if (!GetCallBack(skirmishAIId)->GetValue(AIVAL_MAP_CHECKSUM, &checksum))
@@ -1774,17 +1686,12 @@ EXPORT(int) skirmishAiCallback_Map_getChecksum(int skirmishAIId) {
 	return checksum;
 }
 
-EXPORT(int) skirmishAiCallback_Map_getWidth(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetMapWidth();
-}
+EXPORT(int) skirmishAiCallback_Map_getWidth(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetMapWidth(); }
 
-EXPORT(int) skirmishAiCallback_Map_getHeight(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetMapHeight();
-}
+EXPORT(int) skirmishAiCallback_Map_getHeight(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetMapHeight(); }
 
-EXPORT(int) skirmishAiCallback_Map_getHeightMap(int skirmishAIId, float* heights,
-		int heightsMaxSize) {
-
+EXPORT(int) skirmishAiCallback_Map_getHeightMap(int skirmishAIId, float* heights, int heightsMaxSize)
+{
 	const int heightsRealSize = mapDims.mapx * mapDims.mapy;
 
 	int heightsSize = heightsRealSize;
@@ -1801,15 +1708,14 @@ EXPORT(int) skirmishAiCallback_Map_getHeightMap(int skirmishAIId, float* heights
 	return heightsSize;
 }
 
-EXPORT(int) skirmishAiCallback_Map_getCornersHeightMap(int skirmishAIId,
-		float* cornerHeights, int cornerHeightsMaxSize) {
-
+EXPORT(int) skirmishAiCallback_Map_getCornersHeightMap(int skirmishAIId, float* cornerHeights, int cornerHeightsMaxSize)
+{
 	const int cornerHeightsRealSize = mapDims.mapxp1 * mapDims.mapyp1;
 
 	int cornerHeightsSize = cornerHeightsRealSize;
 
 	if (cornerHeights != nullptr) {
-		const float* tmpMap =  GetCallBack(skirmishAIId)->GetCornersHeightMap();
+		const float* tmpMap = GetCallBack(skirmishAIId)->GetCornersHeightMap();
 		cornerHeightsSize = std::min(cornerHeightsRealSize, cornerHeightsMaxSize);
 
 		for (int i = 0; i < cornerHeightsSize; ++i) {
@@ -1820,23 +1726,24 @@ EXPORT(int) skirmishAiCallback_Map_getCornersHeightMap(int skirmishAIId,
 	return cornerHeightsSize;
 }
 
-EXPORT(float) skirmishAiCallback_Map_getMinHeight(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Map_getMinHeight(int skirmishAIId)
+{
 	return GetCallBack(skirmishAIId)->GetMinHeight();
 }
 
-EXPORT(float) skirmishAiCallback_Map_getMaxHeight(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Map_getMaxHeight(int skirmishAIId)
+{
 	return GetCallBack(skirmishAIId)->GetMaxHeight();
 }
 
-EXPORT(int) skirmishAiCallback_Map_getSlopeMap(int skirmishAIId,
-		float* slopes, int slopesMaxSize) {
-
+EXPORT(int) skirmishAiCallback_Map_getSlopeMap(int skirmishAIId, float* slopes, int slopesMaxSize)
+{
 	const int slopesRealSize = mapDims.hmapx * mapDims.hmapy;
 
 	int slopesSize = slopesRealSize;
 
 	if (slopes != nullptr) {
-		const float* tmpMap =  GetCallBack(skirmishAIId)->GetSlopeMap();
+		const float* tmpMap = GetCallBack(skirmishAIId)->GetSlopeMap();
 		slopesSize = std::min(slopesRealSize, slopesMaxSize);
 
 		for (int i = 0; i < slopesSize; ++i) {
@@ -1847,26 +1754,26 @@ EXPORT(int) skirmishAiCallback_Map_getSlopeMap(int skirmishAIId,
 	return slopesSize;
 }
 
-#define GET_SENSOR_MAP(name, sensor)	\
-EXPORT(int) skirmishAiCallback_Map_get##name##Map(int skirmishAIId,	\
-		int* sensor##Values, int sensor##ValuesMaxSize) {	\
-\
-	const int sensor##ValuesRealSize = losHandler->sensor.size.x * losHandler->sensor.size.y;	\
-\
-	int sensor##ValuesSize = sensor##ValuesRealSize;	\
-\
-	if (sensor##Values != NULL) {	\
-		int teamId = AI_TEAM_IDS[skirmishAIId];	\
-		const unsigned short* tmpMap = &losHandler->sensor.losMaps[teamHandler.AllyTeam(teamId)].front();	\
-		sensor##ValuesSize = std::min(sensor##ValuesRealSize, sensor##ValuesMaxSize);	\
-		int i;	\
-		for (i=0; i < sensor##ValuesSize; ++i) {	\
-			sensor##Values[i] = tmpMap[i];	\
-		}	\
-	}	\
-\
-	return sensor##ValuesSize;	\
-}
+#define GET_SENSOR_MAP(name, sensor)                                                                          \
+	EXPORT(int)                                                                                               \
+	skirmishAiCallback_Map_get##name##Map(int skirmishAIId, int* sensor##Values, int sensor##ValuesMaxSize)   \
+	{                                                                                                         \
+		const int sensor##ValuesRealSize = losHandler->sensor.size.x * losHandler->sensor.size.y;             \
+                                                                                                              \
+		int sensor##ValuesSize = sensor##ValuesRealSize;                                                      \
+                                                                                                              \
+		if (sensor##Values != NULL) {                                                                         \
+			int teamId = AI_TEAM_IDS[skirmishAIId];                                                           \
+			const unsigned short* tmpMap = &losHandler->sensor.losMaps[teamHandler.AllyTeam(teamId)].front(); \
+			sensor##ValuesSize = std::min(sensor##ValuesRealSize, sensor##ValuesMaxSize);                     \
+			int i;                                                                                            \
+			for (i = 0; i < sensor##ValuesSize; ++i) {                                                        \
+				sensor##Values[i] = tmpMap[i];                                                                \
+			}                                                                                                 \
+		}                                                                                                     \
+                                                                                                              \
+		return sensor##ValuesSize;                                                                            \
+	}
 
 // skirmishAiCallback_Map_getLosMap
 GET_SENSOR_MAP(Los, los)
@@ -1889,12 +1796,9 @@ GET_SENSOR_MAP(Jammer, jammer)
 // skirmishAiCallback_Map_getSonarJammerMap
 GET_SENSOR_MAP(SonarJammer, sonarJammer)
 
-EXPORT(int) skirmishAiCallback_Map_getResourceMapRaw(
-	int skirmishAIId,
-	int resourceId,
-	short* resources,
-	int resourcesMaxSize
-) {
+EXPORT(int)
+skirmishAiCallback_Map_getResourceMapRaw(int skirmishAIId, int resourceId, short* resources, int resourcesMaxSize)
+{
 	int resourcesRealSize = 0;
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -1909,7 +1813,8 @@ EXPORT(int) skirmishAiCallback_Map_getResourceMapRaw(
 
 		if (resourceId == resourceHandler->GetMetalId()) {
 			tmpMap = GetCallBack(skirmishAIId)->GetMetalMap();
-		} else {
+		}
+		else {
 			resourcesSize = 0;
 		}
 
@@ -1924,16 +1829,14 @@ EXPORT(int) skirmishAiCallback_Map_getResourceMapRaw(
 	return resourcesSize;
 }
 
-static inline const CResourceMapAnalyzer* getResourceMapAnalyzer(int resourceId) {
+static inline const CResourceMapAnalyzer* getResourceMapAnalyzer(int resourceId)
+{
 	return resourceHandler->GetResourceMapAnalyzer(resourceId);
 }
 
-EXPORT(int) skirmishAiCallback_Map_getResourceMapSpotsPositions(
-	int skirmishAIId,
-	int resourceId,
-	float* spots,
-	int spotsMaxSize
-) {
+EXPORT(int)
+skirmishAiCallback_Map_getResourceMapSpotsPositions(int skirmishAIId, int resourceId, float* spots, int spotsMaxSize)
+{
 	const std::vector<float3>& intSpots = getResourceMapAnalyzer(resourceId)->GetSpots();
 	const int spotsRealSize = intSpots.size() * 3;
 
@@ -1953,86 +1856,71 @@ EXPORT(int) skirmishAiCallback_Map_getResourceMapSpotsPositions(
 	return static_cast<int>(spotsSize);
 }
 
-EXPORT(float) skirmishAiCallback_Map_getResourceMapSpotsAverageIncome(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Map_getResourceMapSpotsAverageIncome(int skirmishAIId, int resourceId)
+{
 	return getResourceMapAnalyzer(resourceId)->GetAverageIncome();
 }
 
-EXPORT(void) skirmishAiCallback_Map_getResourceMapSpotsNearest(
-	int skirmishAIId,
-	int resourceId,
-	float* pos_posF3,
-	float* return_posF3_out
-) {
+EXPORT(void)
+skirmishAiCallback_Map_getResourceMapSpotsNearest(int skirmishAIId,
+    int resourceId,
+    float* pos_posF3,
+    float* return_posF3_out)
+{
 	getResourceMapAnalyzer(resourceId)->GetNearestSpot(pos_posF3, AI_TEAM_IDS[skirmishAIId]).copyInto(return_posF3_out);
 }
 
-EXPORT(int) skirmishAiCallback_Map_getHash(int skirmishAIId) {
+EXPORT(int) skirmishAiCallback_Map_getHash(int skirmishAIId)
+{
 	return archiveScanner->GetArchiveCompleteChecksum(mapInfo->map.name);
 }
 
-EXPORT(const char*) skirmishAiCallback_Map_getName(int skirmishAIId) {
-	return mapInfo->map.name.c_str();
-}
+EXPORT(const char*) skirmishAiCallback_Map_getName(int skirmishAIId) { return mapInfo->map.name.c_str(); }
 
-EXPORT(const char*) skirmishAiCallback_Map_getHumanName(int skirmishAIId) {
-	return mapInfo->map.description.c_str();
-}
+EXPORT(const char*) skirmishAiCallback_Map_getHumanName(int skirmishAIId) { return mapInfo->map.description.c_str(); }
 
-EXPORT(float) skirmishAiCallback_Map_getElevationAt(int skirmishAIId, float x, float z) {
+EXPORT(float) skirmishAiCallback_Map_getElevationAt(int skirmishAIId, float x, float z)
+{
 	return GetCallBack(skirmishAIId)->GetElevation(x, z);
 }
 
-
-EXPORT(float) skirmishAiCallback_Map_getMaxResource(int skirmishAIId, int resourceId) {
-
+EXPORT(float) skirmishAiCallback_Map_getMaxResource(int skirmishAIId, int resourceId)
+{
 	if (resourceId == resourceHandler->GetMetalId())
 		return GetCallBack(skirmishAIId)->GetMaxMetal();
 
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Map_getExtractorRadius(int skirmishAIId, int resourceId) {
-
+EXPORT(float) skirmishAiCallback_Map_getExtractorRadius(int skirmishAIId, int resourceId)
+{
 	if (resourceId == resourceHandler->GetMetalId())
 		return GetCallBack(skirmishAIId)->GetExtractorRadius();
 
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Map_getMinWind(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetMinWind();
-}
+EXPORT(float) skirmishAiCallback_Map_getMinWind(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetMinWind(); }
 
-EXPORT(float) skirmishAiCallback_Map_getMaxWind(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetMaxWind();
-}
+EXPORT(float) skirmishAiCallback_Map_getMaxWind(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetMaxWind(); }
 
-EXPORT(float) skirmishAiCallback_Map_getCurWind(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetCurWind();
-}
+EXPORT(float) skirmishAiCallback_Map_getCurWind(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetCurWind(); }
 
-EXPORT(float) skirmishAiCallback_Map_getTidalStrength(int skirmishAIId) {
+EXPORT(float) skirmishAiCallback_Map_getTidalStrength(int skirmishAIId)
+{
 	return GetCallBack(skirmishAIId)->GetTidalStrength();
 }
 
-EXPORT(float) skirmishAiCallback_Map_getGravity(int skirmishAIId) {
-	return GetCallBack(skirmishAIId)->GetGravity();
-}
+EXPORT(float) skirmishAiCallback_Map_getGravity(int skirmishAIId) { return GetCallBack(skirmishAIId)->GetGravity(); }
 
-EXPORT(float) skirmishAiCallback_Map_getWaterDamage(int skirmishAIId) {
-	return mapInfo->water.damage;
-}
+EXPORT(float) skirmishAiCallback_Map_getWaterDamage(int skirmishAIId) { return mapInfo->water.damage; }
 
+EXPORT(bool) skirmishAiCallback_Map_isDeformable(int skirmishAIId) { return !mapInfo->map.notDeformable; }
 
-EXPORT(bool) skirmishAiCallback_Map_isDeformable(int skirmishAIId) {
-	return !mapInfo->map.notDeformable;
-}
+EXPORT(float) skirmishAiCallback_Map_getHardness(int skirmishAIId) { return mapInfo->map.hardness; }
 
-EXPORT(float) skirmishAiCallback_Map_getHardness(int skirmishAIId) {
-	return mapInfo->map.hardness;
-}
-
-EXPORT(int) skirmishAiCallback_Map_getHardnessModMap(int skirmishAIId, float* hardMods, int hardModsMaxSize) {
+EXPORT(int) skirmishAiCallback_Map_getHardnessModMap(int skirmishAIId, float* hardMods, int hardModsMaxSize)
+{
 	const int hardModsRealSize = mapDims.hmapx * mapDims.hmapy;
 
 	int hardModsSize = hardModsRealSize;
@@ -2049,12 +1937,9 @@ EXPORT(int) skirmishAiCallback_Map_getHardnessModMap(int skirmishAIId, float* ha
 	return hardModsSize;
 }
 
-EXPORT(int) skirmishAiCallback_Map_getSpeedModMap(
-	int skirmishAIId,
-	int speedModClass,
-	float* speedMods,
-	int speedModsMaxSize
-) {
+EXPORT(int)
+skirmishAiCallback_Map_getSpeedModMap(int skirmishAIId, int speedModClass, float* speedMods, int speedModsMaxSize)
+{
 	const int speedModsRealSize = mapDims.hmapx * mapDims.hmapy;
 
 	int speedModsSize = speedModsRealSize;
@@ -2064,64 +1949,67 @@ EXPORT(int) skirmishAiCallback_Map_getSpeedModMap(
 		speedModsSize = std::min(speedModsRealSize, speedModsMaxSize);
 
 		switch (speedModClass) {
-			case MoveDef::Tank:
-				for (int i = 0; i < speedModsSize; ++i) {
-					speedMods[i] = mapInfo->terrainTypes[typeMap[i]].tankSpeed;
-				}
-				break;
-			case MoveDef::KBot:
-				for (int i = 0; i < speedModsSize; ++i) {
-					speedMods[i] = mapInfo->terrainTypes[typeMap[i]].kbotSpeed;
-				}
-				break;
-			case MoveDef::Hover:
-				for (int i = 0; i < speedModsSize; ++i) {
-					speedMods[i] = mapInfo->terrainTypes[typeMap[i]].hoverSpeed;
-				}
-				break;
-			case MoveDef::Ship:
-				for (int i = 0; i < speedModsSize; ++i) {
-					speedMods[i] = mapInfo->terrainTypes[typeMap[i]].shipSpeed;
-				}
-				break;
-			default:
-				assert(false);
+		case MoveDef::Tank:
+			for (int i = 0; i < speedModsSize; ++i) {
+				speedMods[i] = mapInfo->terrainTypes[typeMap[i]].tankSpeed;
+			}
+			break;
+		case MoveDef::KBot:
+			for (int i = 0; i < speedModsSize; ++i) {
+				speedMods[i] = mapInfo->terrainTypes[typeMap[i]].kbotSpeed;
+			}
+			break;
+		case MoveDef::Hover:
+			for (int i = 0; i < speedModsSize; ++i) {
+				speedMods[i] = mapInfo->terrainTypes[typeMap[i]].hoverSpeed;
+			}
+			break;
+		case MoveDef::Ship:
+			for (int i = 0; i < speedModsSize; ++i) {
+				speedMods[i] = mapInfo->terrainTypes[typeMap[i]].shipSpeed;
+			}
+			break;
+		default: assert(false);
 		}
 	}
 
 	return speedModsSize;
 }
 
-
-EXPORT(bool) skirmishAiCallback_Map_isPossibleToBuildAt(int skirmishAIId, int unitDefId, float* pos_posF3, int facing) {
+EXPORT(bool) skirmishAiCallback_Map_isPossibleToBuildAt(int skirmishAIId, int unitDefId, float* pos_posF3, int facing)
+{
 	return GetCallBack(skirmishAIId)->CanBuildAt(getUnitDefById(skirmishAIId, unitDefId), pos_posF3, facing);
 }
 
-EXPORT(void) skirmishAiCallback_Map_findClosestBuildSite(
-	int skirmishAIId,
-	int unitDefId,
-	float* pos_posF3,
-	float searchRadius,
-	int minDist,
-	int facing,
-	float* return_posF3_out
-) {
+EXPORT(void)
+skirmishAiCallback_Map_findClosestBuildSite(int skirmishAIId,
+    int unitDefId,
+    float* pos_posF3,
+    float searchRadius,
+    int minDist,
+    int facing,
+    float* return_posF3_out)
+{
 	const UnitDef* unitDef = getUnitDefById(skirmishAIId, unitDefId);
-	const float3 buildPos = GetCallBack(skirmishAIId)->ClosestBuildSite(unitDef, pos_posF3, searchRadius, minDist, facing);
+	const float3 buildPos =
+	    GetCallBack(skirmishAIId)->ClosestBuildSite(unitDef, pos_posF3, searchRadius, minDist, facing);
 
 	buildPos.copyInto(return_posF3_out);
 }
 
-EXPORT(int) skirmishAiCallback_Map_getPoints(int skirmishAIId, bool includeAllies) {
+EXPORT(int) skirmishAiCallback_Map_getPoints(int skirmishAIId, bool includeAllies)
+{
 	GetCallBack(skirmishAIId)->GetMapPoints(AI_TMP_POINT_MARKERS[skirmishAIId], MAX_NUM_MARKERS, includeAllies);
 	return (int)AI_TMP_POINT_MARKERS[skirmishAIId].size();
 }
 
-EXPORT(void) skirmishAiCallback_Map_Point_getPosition(int skirmishAIId, int pointId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Map_Point_getPosition(int skirmishAIId, int pointId, float* return_posF3_out)
+{
 	AI_TMP_POINT_MARKERS[skirmishAIId][pointId].pos.copyInto(return_posF3_out);
 }
 
-EXPORT(void) skirmishAiCallback_Map_Point_getColor(int skirmishAIId, int pointId, short* return_colorS3_out) {
+EXPORT(void) skirmishAiCallback_Map_Point_getColor(int skirmishAIId, int pointId, short* return_colorS3_out)
+{
 	const unsigned char* color = AI_TMP_POINT_MARKERS[skirmishAIId][pointId].color;
 
 	return_colorS3_out[0] = color[0];
@@ -2129,24 +2017,29 @@ EXPORT(void) skirmishAiCallback_Map_Point_getColor(int skirmishAIId, int pointId
 	return_colorS3_out[2] = color[2];
 }
 
-EXPORT(const char*) skirmishAiCallback_Map_Point_getLabel(int skirmishAIId, int pointId) {
+EXPORT(const char*) skirmishAiCallback_Map_Point_getLabel(int skirmishAIId, int pointId)
+{
 	return AI_TMP_POINT_MARKERS[skirmishAIId][pointId].label;
 }
 
-EXPORT(int) skirmishAiCallback_Map_getLines(int skirmishAIId, bool includeAllies) {
+EXPORT(int) skirmishAiCallback_Map_getLines(int skirmishAIId, bool includeAllies)
+{
 	GetCallBack(skirmishAIId)->GetMapLines(AI_TMP_LINE_MARKERS[skirmishAIId], MAX_NUM_MARKERS, includeAllies);
 	return (int)AI_TMP_LINE_MARKERS[skirmishAIId].size();
 }
 
-EXPORT(void) skirmishAiCallback_Map_Line_getFirstPosition(int skirmishAIId, int lineId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Map_Line_getFirstPosition(int skirmishAIId, int lineId, float* return_posF3_out)
+{
 	AI_TMP_LINE_MARKERS[skirmishAIId][lineId].pos.copyInto(return_posF3_out);
 }
 
-EXPORT(void) skirmishAiCallback_Map_Line_getSecondPosition(int skirmishAIId, int lineId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Map_Line_getSecondPosition(int skirmishAIId, int lineId, float* return_posF3_out)
+{
 	AI_TMP_LINE_MARKERS[skirmishAIId][lineId].pos2.copyInto(return_posF3_out);
 }
 
-EXPORT(void) skirmishAiCallback_Map_Line_getColor(int skirmishAIId, int lineId, short* return_colorS3_out) {
+EXPORT(void) skirmishAiCallback_Map_Line_getColor(int skirmishAIId, int lineId, short* return_colorS3_out)
+{
 	const unsigned char* color = AI_TMP_LINE_MARKERS[skirmishAIId][lineId].color;
 
 	return_colorS3_out[0] = color[0];
@@ -2154,47 +2047,49 @@ EXPORT(void) skirmishAiCallback_Map_Line_getColor(int skirmishAIId, int lineId, 
 	return_colorS3_out[2] = color[2];
 }
 
-EXPORT(void) skirmishAiCallback_Map_getStartPos(int skirmishAIId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Map_getStartPos(int skirmishAIId, float* return_posF3_out)
+{
 	GetCallBack(skirmishAIId)->GetStartPos()->copyInto(return_posF3_out);
 }
 
-EXPORT(void) skirmishAiCallback_Map_getMousePos(int skirmishAIId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Map_getMousePos(int skirmishAIId, float* return_posF3_out)
+{
 	GetCallBack(skirmishAIId)->GetMousePos().copyInto(return_posF3_out);
 }
 
-//########### END Map
+// ########### END Map
 
 
-EXPORT(int) skirmishAiCallback_File_getSize(int skirmishAIId, const char* fileName) {
+EXPORT(int) skirmishAiCallback_File_getSize(int skirmishAIId, const char* fileName)
+{
 	return GetCallBack(skirmishAIId)->GetFileSize(fileName);
 }
 
-EXPORT(bool) skirmishAiCallback_File_getContent(int skirmishAIId, const char* fileName, void* buffer, int bufferLen) {
+EXPORT(bool) skirmishAiCallback_File_getContent(int skirmishAIId, const char* fileName, void* buffer, int bufferLen)
+{
 	return GetCallBack(skirmishAIId)->ReadFile(fileName, buffer, bufferLen);
 }
 
-
-
-
-
 // BEGIN OBJECT Resource
-EXPORT(int) skirmishAiCallback_getResources(int skirmishAIId) {
-	return resourceHandler->GetNumResources();
-}
+EXPORT(int) skirmishAiCallback_getResources(int skirmishAIId) { return resourceHandler->GetNumResources(); }
 
-EXPORT(int) skirmishAiCallback_getResourceByName(int skirmishAIId, const char* resourceName) {
+EXPORT(int) skirmishAiCallback_getResourceByName(int skirmishAIId, const char* resourceName)
+{
 	return resourceHandler->GetResourceId(resourceName);
 }
 
-EXPORT(const char*) skirmishAiCallback_Resource_getName(int skirmishAIId, int resourceId) {
+EXPORT(const char*) skirmishAiCallback_Resource_getName(int skirmishAIId, int resourceId)
+{
 	return resourceHandler->GetResource(resourceId)->name.c_str();
 }
 
-EXPORT(float) skirmishAiCallback_Resource_getOptimum(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Resource_getOptimum(int skirmishAIId, int resourceId)
+{
 	return resourceHandler->GetResource(resourceId)->optimum;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getCurrent(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getCurrent(int skirmishAIId, int resourceId)
+{
 	CAICallback* clb = GetCallBack(skirmishAIId);
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2206,7 +2101,8 @@ EXPORT(float) skirmishAiCallback_Economy_getCurrent(int skirmishAIId, int resour
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getIncome(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getIncome(int skirmishAIId, int resourceId)
+{
 	CAICallback* clb = GetCallBack(skirmishAIId);
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2218,7 +2114,8 @@ EXPORT(float) skirmishAiCallback_Economy_getIncome(int skirmishAIId, int resourc
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getUsage(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getUsage(int skirmishAIId, int resourceId)
+{
 	CAICallback* clb = GetCallBack(skirmishAIId);
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2230,7 +2127,8 @@ EXPORT(float) skirmishAiCallback_Economy_getUsage(int skirmishAIId, int resource
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getStorage(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getStorage(int skirmishAIId, int resourceId)
+{
 	CAICallback* clb = GetCallBack(skirmishAIId);
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2242,7 +2140,8 @@ EXPORT(float) skirmishAiCallback_Economy_getStorage(int skirmishAIId, int resour
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getPull(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getPull(int skirmishAIId, int resourceId)
+{
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2254,7 +2153,8 @@ EXPORT(float) skirmishAiCallback_Economy_getPull(int skirmishAIId, int resourceI
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getShare(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getShare(int skirmishAIId, int resourceId)
+{
 	int teamId = AI_TEAM_IDS[skirmishAIId];
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2266,7 +2166,8 @@ EXPORT(float) skirmishAiCallback_Economy_getShare(int skirmishAIId, int resource
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getSent(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getSent(int skirmishAIId, int resourceId)
+{
 	int teamId = AI_TEAM_IDS[skirmishAIId];
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2278,7 +2179,8 @@ EXPORT(float) skirmishAiCallback_Economy_getSent(int skirmishAIId, int resourceI
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getReceived(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getReceived(int skirmishAIId, int resourceId)
+{
 	int teamId = AI_TEAM_IDS[skirmishAIId];
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2290,7 +2192,8 @@ EXPORT(float) skirmishAiCallback_Economy_getReceived(int skirmishAIId, int resou
 	return -1.0f;
 }
 
-EXPORT(float) skirmishAiCallback_Economy_getExcess(int skirmishAIId, int resourceId) {
+EXPORT(float) skirmishAiCallback_Economy_getExcess(int skirmishAIId, int resourceId)
+{
 	int teamId = AI_TEAM_IDS[skirmishAIId];
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2302,7 +2205,8 @@ EXPORT(float) skirmishAiCallback_Economy_getExcess(int skirmishAIId, int resourc
 	return -1.0f;
 }
 
-EXPORT(const char*) skirmishAiCallback_Game_getSetupScript(int skirmishAIId) {
+EXPORT(const char*) skirmishAiCallback_Game_getSetupScript(int skirmishAIId)
+{
 	// points to GameSetup text
 	const char* setupScript = "";
 
@@ -2312,18 +2216,9 @@ EXPORT(const char*) skirmishAiCallback_Game_getSetupScript(int skirmishAIId) {
 	return setupScript;
 }
 
-
-
-
-
-
-
-//########### BEGIN UnitDef
-EXPORT(int) skirmishAiCallback_getUnitDefs(
-	int skirmishAIId,
-	int* unitDefIds,
-	int unitDefIdsMaxSize
-) {
+// ########### BEGIN UnitDef
+EXPORT(int) skirmishAiCallback_getUnitDefs(int skirmishAIId, int* unitDefIds, int unitDefIdsMaxSize)
+{
 	const int unitDefIdsRealSize = GetCallBack(skirmishAIId)->GetNumUnitDefs();
 
 	int unitDefIdsSize = unitDefIdsRealSize;
@@ -2335,14 +2230,15 @@ EXPORT(int) skirmishAiCallback_getUnitDefs(
 
 		for (int ud = 0; ud < unitDefIdsSize; ++ud) {
 			// AI's should double-check for this
-			unitDefIds[ud] = (defList[ud] != nullptr)? defList[ud]->id: -1;
+			unitDefIds[ud] = (defList[ud] != nullptr) ? defList[ud]->id : -1;
 		}
 	}
 
 	return unitDefIdsSize;
 }
 
-EXPORT(int) skirmishAiCallback_getUnitDefByName(int skirmishAIId, const char* unitName) {
+EXPORT(int) skirmishAiCallback_getUnitDefByName(int skirmishAIId, const char* unitName)
+{
 	const UnitDef* ud = GetCallBack(skirmishAIId)->GetUnitDef(unitName);
 
 	if (ud != nullptr)
@@ -2351,24 +2247,28 @@ EXPORT(int) skirmishAiCallback_getUnitDefByName(int skirmishAIId, const char* un
 	return -1;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getHeight(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getHeight(int skirmishAIId, int unitDefId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitDefHeight(unitDefId);
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getRadius(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getRadius(int skirmishAIId, int unitDefId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitDefRadius(unitDefId);
 }
 
-EXPORT(const char*) skirmishAiCallback_UnitDef_getName(int skirmishAIId, int unitDefId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_getName(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->name.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_UnitDef_getHumanName(int skirmishAIId, int unitDefId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_getHumanName(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->humanName.c_str();
 }
 
-
-EXPORT(float) skirmishAiCallback_UnitDef_getUpkeep(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getUpkeep(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
@@ -2377,7 +2277,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getUpkeep(int skirmishAIId, int unitDef
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getResourceMake(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getResourceMake(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
@@ -2386,18 +2287,19 @@ EXPORT(float) skirmishAiCallback_UnitDef_getResourceMake(int skirmishAIId, int u
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMakesResource(int skirmishAIId,
-		int unitDefId, int resourceId) {
-
+EXPORT(float) skirmishAiCallback_UnitDef_getMakesResource(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 	if (resourceId == resourceHandler->GetMetalId()) {
 		return ud->makesMetal;
-	} else {
+	}
+	else {
 		return 0.0f;
 	}
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getCost(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getCost(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
@@ -2406,7 +2308,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getCost(int skirmishAIId, int unitDefId
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getExtractsResource(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getExtractsResource(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2415,7 +2318,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getExtractsResource(int skirmishAIId, i
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getResourceExtractorRange(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getResourceExtractorRange(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId == resourceHandler->GetMetalId())
@@ -2424,7 +2328,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getResourceExtractorRange(int skirmishA
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getWindResourceGenerator(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getWindResourceGenerator(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId == resourceHandler->GetEnergyId())
@@ -2433,7 +2338,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getWindResourceGenerator(int skirmishAI
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTidalResourceGenerator(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getTidalResourceGenerator(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId == resourceHandler->GetEnergyId())
@@ -2442,7 +2348,8 @@ EXPORT(float) skirmishAiCallback_UnitDef_getTidalResourceGenerator(int skirmishA
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getStorage(int skirmishAIId, int unitDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getStorage(int skirmishAIId, int unitDefId, int resourceId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
 
 	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
@@ -2451,436 +2358,528 @@ EXPORT(float) skirmishAiCallback_UnitDef_getStorage(int skirmishAIId, int unitDe
 	return 0.0f;
 }
 
-
-EXPORT(float) skirmishAiCallback_UnitDef_getBuildTime(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getBuildTime(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->buildTime;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getAutoHeal(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getAutoHeal(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->autoHeal;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getIdleAutoHeal(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getIdleAutoHeal(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->idleAutoHeal;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getIdleTime(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getIdleTime(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->idleTime;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getPower(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getPower(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->power;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getHealth(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getHealth(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->health;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getCategory(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getCategory(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->category;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->speed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTurnRate(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getTurnRate(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->turnRate;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isTurnInPlace(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isTurnInPlace(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->turnInPlace;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTurnInPlaceDistance(int skirmishAIId, int unitDefId) {
-	return 0.0f;
-}
+EXPORT(float) skirmishAiCallback_UnitDef_getTurnInPlaceDistance(int skirmishAIId, int unitDefId) { return 0.0f; }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTurnInPlaceSpeedLimit(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getTurnInPlaceSpeedLimit(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->turnInPlaceSpeedLimit;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isUpright(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isUpright(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->upright;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isCollide(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isCollide(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->collide;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getLosRadius(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getLosRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->losRadius;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getAirLosRadius(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getAirLosRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->airLosRadius;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getLosHeight(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getLosHeight(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->losHeight;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getRadarRadius(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getRadarRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->radarRadius;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getSonarRadius(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getSonarRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->sonarRadius;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getJammerRadius(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getJammerRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->jammerRadius;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getSonarJamRadius(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getSonarJamRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->sonarJamRadius;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getSeismicRadius(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getSeismicRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->seismicRadius;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getSeismicSignature(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getSeismicSignature(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->seismicSignature;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isStealth(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isStealth(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->stealth;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isSonarStealth(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isSonarStealth(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->sonarStealth;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isBuildRange3D(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isBuildRange3D(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->buildRange3D;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getBuildDistance(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getBuildDistance(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->buildDistance;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getBuildSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getBuildSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->buildSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getReclaimSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getReclaimSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->reclaimSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getRepairSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getRepairSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->repairSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxRepairSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxRepairSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxRepairSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getResurrectSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getResurrectSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->resurrectSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getCaptureSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getCaptureSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->captureSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTerraformSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getTerraformSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->terraformSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getUpDirSmoothing(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getUpDirSmoothing(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->upDirSmoothing;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMass(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMass(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->mass;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isPushResistant(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isPushResistant(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->pushResistant;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isStrafeToAttack(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isStrafeToAttack(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->strafeToAttack;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMinCollisionSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMinCollisionSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->minCollisionSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getSlideTolerance(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getSlideTolerance(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->slideTolerance;
 }
 
-
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxHeightDif(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxHeightDif(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxHeightDif;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMinWaterDepth(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMinWaterDepth(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->minWaterDepth;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getWaterline(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getWaterline(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->waterline;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxWaterDepth(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxWaterDepth(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxWaterDepth;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getArmoredMultiple(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getArmoredMultiple(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->armoredMultiple;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getArmorType(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getArmorType(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->armorType;
 }
-EXPORT(int) skirmishAiCallback_UnitDef_FlankingBonus_getMode(int skirmishAIId, int unitDefId) {
+
+EXPORT(int) skirmishAiCallback_UnitDef_FlankingBonus_getMode(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flankingBonusMode;
 }
 
-EXPORT(void) skirmishAiCallback_UnitDef_FlankingBonus_getDir(int skirmishAIId, int unitDefId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_UnitDef_FlankingBonus_getDir(int skirmishAIId, int unitDefId, float* return_posF3_out)
+{
 	getUnitDefById(skirmishAIId, unitDefId)->flankingBonusDir.copyInto(return_posF3_out);
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_FlankingBonus_getMax(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_FlankingBonus_getMax(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flankingBonusMax;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_FlankingBonus_getMin(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_FlankingBonus_getMin(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flankingBonusMin;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_FlankingBonus_getMobilityAdd(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_FlankingBonus_getMobilityAdd(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flankingBonusMobilityAdd;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxWeaponRange(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxWeaponRange(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxWeaponRange;
 }
 
-
-EXPORT(const char*) skirmishAiCallback_UnitDef_getTooltip(int skirmishAIId, int unitDefId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_getTooltip(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->tooltip.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_UnitDef_getWreckName(int skirmishAIId, int unitDefId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_getWreckName(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->wreckName.c_str();
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getDeathExplosion(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getDeathExplosion(int skirmishAIId, int unitDefId)
+{
 	const WeaponDef* wd = getUnitDefById(skirmishAIId, unitDefId)->deathExpWeaponDef;
 	return (wd == nullptr) ? -1 : wd->id;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getSelfDExplosion(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getSelfDExplosion(int skirmishAIId, int unitDefId)
+{
 	const WeaponDef* wd = getUnitDefById(skirmishAIId, unitDefId)->selfdExpWeaponDef;
 	return (wd == nullptr) ? -1 : wd->id;
 }
 
-EXPORT(const char*) skirmishAiCallback_UnitDef_getCategoryString(int skirmishAIId, int unitDefId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_getCategoryString(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->categoryString.c_str();
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToSelfD(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToSelfD(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canSelfD;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getSelfDCountdown(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getSelfDCountdown(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->selfDCountdown;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToSubmerge(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToSubmerge(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canSubmerge;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToFly(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToFly(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canfly;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToMove(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToMove(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canmove;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToHover(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToHover(int skirmishAIId, int unitDefId)
+{
 	const MoveDef* md = getUnitDefMoveDefById(skirmishAIId, unitDefId);
 
 	return ((md != nullptr) ? (md->speedModClass == MoveDef::Hover) : false);
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isFloater(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isFloater(int skirmishAIId, int unitDefId)
+{
 	const UnitDef* ud = getUnitDefById(skirmishAIId, unitDefId);
-	const MoveDef* md = (ud->pathType != -1U)? moveDefHandler.GetMoveDefByPathType(ud->pathType): nullptr;
+	const MoveDef* md = (ud->pathType != -1U) ? moveDefHandler.GetMoveDefByPathType(ud->pathType) : nullptr;
 
 	return ((md != nullptr) ? md->FloatOnWater() : ud->floatOnWater);
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isBuilder(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isBuilder(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->builder;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isActivateWhenBuilt(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isActivateWhenBuilt(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->activateWhenBuilt;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isOnOffable(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isOnOffable(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->onoffable;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isFullHealthFactory(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isFullHealthFactory(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->fullHealthFactory;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isFactoryHeadingTakeoff(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isFactoryHeadingTakeoff(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->factoryHeadingTakeoff;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isReclaimable(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isReclaimable(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->reclaimable;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isCapturable(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isCapturable(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->capturable;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToRestore(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToRestore(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canRestore;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToRepair(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToRepair(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canRepair;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToSelfRepair(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToSelfRepair(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canSelfRepair;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToReclaim(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToReclaim(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canReclaim;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToAttack(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToAttack(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canAttack;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToPatrol(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToPatrol(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canPatrol;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToFight(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToFight(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canFight;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToGuard(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToGuard(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canGuard;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToAssist(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToAssist(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canAssist;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAssistable(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAssistable(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canBeAssisted;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToRepeat(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToRepeat(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canRepeat;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToFireControl(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToFireControl(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canFireControl;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getFireState(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getFireState(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->fireState;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getMoveState(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getMoveState(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->moveState;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getWingDrag(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getWingDrag(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->wingDrag;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getWingAngle(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getWingAngle(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->wingAngle;
 }
 
-
-EXPORT(float) skirmishAiCallback_UnitDef_getFrontToSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getFrontToSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->frontToSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getSpeedToFront(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getSpeedToFront(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->speedToFront;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMyGravity(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMyGravity(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->myGravity;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxBank(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxBank(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxBank;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxPitch(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxPitch(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxPitch;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTurnRadius(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getTurnRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->turnRadius;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getWantedHeight(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getWantedHeight(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->wantedHeight;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getVerticalSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getVerticalSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->verticalSpeed;
 }
 
-
-EXPORT(bool) skirmishAiCallback_UnitDef_isHoverAttack(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isHoverAttack(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->hoverAttack;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAirStrafe(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAirStrafe(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->airStrafe;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getDlHoverFactor(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getDlHoverFactor(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->dlHoverFactor;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxAcceleration(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxAcceleration(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxAcc;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxDeceleration(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxDeceleration(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxDec;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxAileron(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxAileron(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxAileron;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxElevator(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxElevator(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxElevator;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMaxRudder(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMaxRudder(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxRudder;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getYardMap(
-	int skirmishAIId,
-	int unitDefId,
-	int facing,
-	short* yardMap,
-	int yardMapMaxSize
-) {
+EXPORT(int)
+skirmishAiCallback_UnitDef_getYardMap(int skirmishAIId, int unitDefId, int facing, short* yardMap, int yardMapMaxSize)
+{
 	const UnitDef* unitDef = getUnitDefById(skirmishAIId, unitDefId);
 	const YardMapStatus* udYardMap = unitDef->GetYardMapPtr();
 
@@ -2899,32 +2898,31 @@ EXPORT(int) skirmishAiCallback_UnitDef_getYardMap(
 		int startIdx = 0; // position of udYardMap[0] in the new destination array
 
 		switch (facing) {
-			case FACING_SOUTH:
-				xdir = int2( 1, 0);
-				zdir = int2( 0, 1);
-				rowWidth = xsize;
-				startIdx  = 0; // topleft
-				break;
-			case FACING_NORTH:
-				xdir = int2(-1, 0);
-				zdir = int2( 0,-1);
-				rowWidth = xsize;
-				startIdx  = (xsize * zsize) - 1; // bottomright
-				break;
-			case FACING_EAST:
-				xdir = int2( 0, 1);
-				zdir = int2(-1, 0);
-				rowWidth = zsize;
-				startIdx  = (xsize - 1) * zsize; // bottomleft
-				break;
-			case FACING_WEST:
-				xdir = int2( 0,-1);
-				zdir = int2( 1, 0);
-				rowWidth = zsize;
-				startIdx  = zsize - 1;  // topright
-				break;
-			default:
-				assert(false);
+		case FACING_SOUTH:
+			xdir = int2(1, 0);
+			zdir = int2(0, 1);
+			rowWidth = xsize;
+			startIdx = 0; // topleft
+			break;
+		case FACING_NORTH:
+			xdir = int2(-1, 0);
+			zdir = int2(0, -1);
+			rowWidth = xsize;
+			startIdx = (xsize * zsize) - 1; // bottomright
+			break;
+		case FACING_EAST:
+			xdir = int2(0, 1);
+			zdir = int2(-1, 0);
+			rowWidth = zsize;
+			startIdx = (xsize - 1) * zsize; // bottomleft
+			break;
+		case FACING_WEST:
+			xdir = int2(0, -1);
+			zdir = int2(1, 0);
+			rowWidth = zsize;
+			startIdx = zsize - 1; // topright
+			break;
+		default: assert(false);
 		}
 
 		// rotate yardmap for backward compatibility
@@ -2934,7 +2932,7 @@ EXPORT(int) skirmishAiCallback_UnitDef_getYardMap(
 				const int zt = zdir.x * x + zdir.y * z;
 				const int idx = startIdx + xt + zt * rowWidth;
 				assert(idx >= 0 && idx < yardMapSize);
-				yardMap[idx] = (short) udYardMap[x + z * xsize];
+				yardMap[idx] = (short)udYardMap[x + z * xsize];
 			}
 		}
 	}
@@ -2942,212 +2940,259 @@ EXPORT(int) skirmishAiCallback_UnitDef_getYardMap(
 	return yardMapSize;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getXSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getXSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->xsize;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getZSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getZSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->zsize;
 }
 
-
-EXPORT(float) skirmishAiCallback_UnitDef_getLoadingRadius(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getLoadingRadius(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->loadingRadius;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getUnloadSpread(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getUnloadSpread(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->unloadSpread;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getTransportCapacity(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getTransportCapacity(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->transportCapacity;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getTransportSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getTransportSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->transportSize;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getMinTransportSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getMinTransportSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->minTransportSize;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAirBase(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAirBase(int skirmishAIId, int unitDefId)
+{
 	return false; // DEPRECATED
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getTransportMass(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getTransportMass(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->transportMass;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getMinTransportMass(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getMinTransportMass(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->minTransportMass;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isHoldSteady(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isHoldSteady(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->holdSteady;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isReleaseHeld(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isReleaseHeld(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->releaseHeld;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isNotTransportable(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isNotTransportable(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->cantBeTransported;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isTransportByEnemy(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isTransportByEnemy(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->transportByEnemy;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getTransportUnloadMethod(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getTransportUnloadMethod(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->transportUnloadMethod;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getFallSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getFallSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->fallSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getUnitFallSpeed(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getUnitFallSpeed(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->unitFallSpeed;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToCloak(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToCloak(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canCloak;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isStartCloaked(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isStartCloaked(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->startCloaked;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getCloakCost(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getCloakCost(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->cloakCost;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getCloakCostMoving(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getCloakCostMoving(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->cloakCostMoving;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getDecloakDistance(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getDecloakDistance(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->decloakDistance;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isDecloakSpherical(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isDecloakSpherical(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->decloakSpherical;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isDecloakOnFire(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isDecloakOnFire(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->decloakOnFire;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToKamikaze(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToKamikaze(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canKamikaze;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getKamikazeDist(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getKamikazeDist(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->kamikazeDist;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isTargetingFacility(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isTargetingFacility(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->targfac;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_canManualFire(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_canManualFire(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canManualFire;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isNeedGeo(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isNeedGeo(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->needGeo;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isFeature(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isFeature(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->isFeature;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isHideDamage(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isHideDamage(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->hideDamage;
 }
 
-
-EXPORT(bool) skirmishAiCallback_UnitDef_isShowPlayerName(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isShowPlayerName(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->showPlayerName;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToResurrect(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToResurrect(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canResurrect;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToCapture(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToCapture(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canCapture;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getHighTrajectoryType(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getHighTrajectoryType(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->highTrajectoryType;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getNoChaseCategory(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getNoChaseCategory(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->noChaseCategory;
 }
 
-
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToDropFlare(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToDropFlare(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canDropFlare;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getFlareReloadTime(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getFlareReloadTime(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flareReloadTime;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getFlareEfficiency(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getFlareEfficiency(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flareEfficiency;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_getFlareDelay(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_getFlareDelay(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flareDelay;
 }
 
-EXPORT(void) skirmishAiCallback_UnitDef_getFlareDropVector(int skirmishAIId, int unitDefId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_UnitDef_getFlareDropVector(int skirmishAIId, int unitDefId, float* return_posF3_out)
+{
 	getUnitDefById(skirmishAIId, unitDefId)->flareDropVector.copyInto(return_posF3_out);
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getFlareTime(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getFlareTime(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flareTime;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getFlareSalvoSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getFlareSalvoSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flareSalvoSize;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getFlareSalvoDelay(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getFlareSalvoDelay(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->flareSalvoDelay;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToLoopbackAttack(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isAbleToLoopbackAttack(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->canLoopbackAttack;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isLevelGround(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isLevelGround(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->levelGround;
 }
 
-
-EXPORT(bool) skirmishAiCallback_UnitDef_isFirePlatform(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isFirePlatform(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->isFirePlatform;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getMaxThisUnit(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getMaxThisUnit(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->maxThisUnit;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getDecoyDef(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getDecoyDef(int skirmishAIId, int unitDefId)
+{
 	const UnitDef* decoyDef = getUnitDefById(skirmishAIId, unitDefId)->decoyDef;
 	return (decoyDef == nullptr) ? -1 : decoyDef->id;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isDontLand(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isDontLand(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->DontLand();
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getShieldDef(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getShieldDef(int skirmishAIId, int unitDefId)
+{
 	const WeaponDef* wd = getUnitDefById(skirmishAIId, unitDefId)->shieldWeaponDef;
 
 	if (wd == nullptr)
@@ -3156,7 +3201,8 @@ EXPORT(int) skirmishAiCallback_UnitDef_getShieldDef(int skirmishAIId, int unitDe
 	return wd->id;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getStockpileDef(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getStockpileDef(int skirmishAIId, int unitDefId)
+{
 	const WeaponDef* wd = getUnitDefById(skirmishAIId, unitDefId)->stockpileWeaponDef;
 
 	if (wd == nullptr)
@@ -3165,12 +3211,9 @@ EXPORT(int) skirmishAiCallback_UnitDef_getStockpileDef(int skirmishAIId, int uni
 	return wd->id;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getBuildOptions(
-	int skirmishAIId,
-	int unitDefId,
-	int* unitDefIds,
-	int unitDefIdsMaxSize
-) {
+EXPORT(int)
+skirmishAiCallback_UnitDef_getBuildOptions(int skirmishAIId, int unitDefId, int* unitDefIds, int unitDefIdsMaxSize)
+{
 	const auto& bo = getUnitDefById(skirmishAIId, unitDefId)->buildOptions;
 	const int unitDefIdsRealSize = bo.size();
 
@@ -3189,12 +3232,9 @@ EXPORT(int) skirmishAiCallback_UnitDef_getBuildOptions(
 	return unitDefIdsSize;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_getCustomParams(
-	int skirmishAIId,
-	int unitDefId,
-	const char** keys,
-	const char** values
-) {
+EXPORT(int)
+skirmishAiCallback_UnitDef_getCustomParams(int skirmishAIId, int unitDefId, const char** keys, const char** values)
+{
 	const auto& ps = getUnitDefById(skirmishAIId, unitDefId)->customParams;
 	const size_t paramsRealSize = ps.size();
 
@@ -3204,121 +3244,144 @@ EXPORT(int) skirmishAiCallback_UnitDef_getCustomParams(
 	return paramsRealSize;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_isMoveDataAvailable(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_isMoveDataAvailable(int skirmishAIId, int unitDefId)
+{
 	// NOTE We can not use getUnitDefMoveDefById() here, cause it would assert
 	return (getUnitDefById(skirmishAIId, unitDefId)->pathType != -1U);
 }
 
-
-EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getXSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getXSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->xsize;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getZSize(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getZSize(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->zsize;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getDepth(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getDepth(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->depth;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getMaxSlope(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getMaxSlope(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->maxSlope;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getSlopeMod(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getSlopeMod(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->slopeMod;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getDepthMod(int skirmishAIId, int unitDefId, float height) {
+EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getDepthMod(int skirmishAIId, int unitDefId, float height)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->GetDepthMod(height);
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getPathType(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getPathType(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->pathType;
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getCrushStrength(int skirmishAIId, int unitDefId) {
+EXPORT(float) skirmishAiCallback_UnitDef_MoveData_getCrushStrength(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->crushStrength;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getSpeedModClass(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getSpeedModClass(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->speedModClass;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getTerrainClass(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_MoveData_getTerrainClass(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->terrainClass;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_MoveData_getFollowGround(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_MoveData_getFollowGround(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->followGround;
 }
 
-EXPORT(bool) skirmishAiCallback_UnitDef_MoveData_isSubMarine(int skirmishAIId, int unitDefId) {
+EXPORT(bool) skirmishAiCallback_UnitDef_MoveData_isSubMarine(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->isSubmarine;
 }
 
-EXPORT(const char*) skirmishAiCallback_UnitDef_MoveData_getName(int skirmishAIId, int unitDefId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_MoveData_getName(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefMoveDefById(skirmishAIId, unitDefId)->name.c_str();
 }
 
-
-
-EXPORT(int) skirmishAiCallback_UnitDef_getWeaponMounts(int skirmishAIId, int unitDefId) {
+EXPORT(int) skirmishAiCallback_UnitDef_getWeaponMounts(int skirmishAIId, int unitDefId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->NumWeapons();
 }
 
-EXPORT(const char*) skirmishAiCallback_UnitDef_WeaponMount_getName(int skirmishAIId, int unitDefId, int weaponMountId) {
+EXPORT(const char*) skirmishAiCallback_UnitDef_WeaponMount_getName(int skirmishAIId, int unitDefId, int weaponMountId)
+{
 	return ""; // getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).name.c_str();
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getWeaponDef(int skirmishAIId, int unitDefId, int weaponMountId) {
+EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getWeaponDef(int skirmishAIId, int unitDefId, int weaponMountId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).def->id;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getSlavedTo(int skirmishAIId, int unitDefId, int weaponMountId) {
+EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getSlavedTo(int skirmishAIId, int unitDefId, int weaponMountId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).slavedTo;
 }
 
-EXPORT(void) skirmishAiCallback_UnitDef_WeaponMount_getMainDir(int skirmishAIId, int unitDefId, int weaponMountId, float* return_posF3_out) {
+EXPORT(void)
+skirmishAiCallback_UnitDef_WeaponMount_getMainDir(int skirmishAIId,
+    int unitDefId,
+    int weaponMountId,
+    float* return_posF3_out)
+{
 	getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).mainDir.copyInto(return_posF3_out);
 }
 
-EXPORT(float) skirmishAiCallback_UnitDef_WeaponMount_getMaxAngleDif(int skirmishAIId, int unitDefId, int weaponMountId) {
+EXPORT(float) skirmishAiCallback_UnitDef_WeaponMount_getMaxAngleDif(int skirmishAIId, int unitDefId, int weaponMountId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).maxMainDirAngleDif;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getBadTargetCategory(int skirmishAIId, int unitDefId, int weaponMountId) {
+EXPORT(int)
+skirmishAiCallback_UnitDef_WeaponMount_getBadTargetCategory(int skirmishAIId, int unitDefId, int weaponMountId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).badTargetCat;
 }
 
-EXPORT(int) skirmishAiCallback_UnitDef_WeaponMount_getOnlyTargetCategory(int skirmishAIId, int unitDefId, int weaponMountId) {
+EXPORT(int)
+skirmishAiCallback_UnitDef_WeaponMount_getOnlyTargetCategory(int skirmishAIId, int unitDefId, int weaponMountId)
+{
 	return getUnitDefById(skirmishAIId, unitDefId)->weapons.at(weaponMountId).onlyTargetCat;
 }
 
-//########### END UnitDef
+// ########### END UnitDef
 
 
-
-
-
-//########### BEGIN Unit
-EXPORT(int) skirmishAiCallback_Unit_getLimit(int skirmishAIId) {
+// ########### BEGIN Unit
+EXPORT(int) skirmishAiCallback_Unit_getLimit(int skirmishAIId)
+{
 	const int team = AI_TEAM_IDS[skirmishAIId];
 	const int limit = teamHandler.Team(team)->GetMaxUnits();
 	return limit;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getMax(int skirmishAIId) {
-	return unitHandler.MaxUnits();
-}
+EXPORT(int) skirmishAiCallback_Unit_getMax(int skirmishAIId) { return unitHandler.MaxUnits(); }
 
-EXPORT(int) skirmishAiCallback_Unit_getDef(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getDef(int skirmishAIId, int unitId)
+{
 	const UnitDef* unitDef = nullptr;
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		unitDef = GetCheatCallBack(skirmishAIId)->GetUnitDef(unitId);
-	} else {
+	}
+	else {
 		unitDef = GetCallBack(skirmishAIId)->GetUnitDef(unitId);
 	}
 
@@ -3328,70 +3391,88 @@ EXPORT(int) skirmishAiCallback_Unit_getDef(int skirmishAIId, int unitId) {
 	return -1;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getRulesParamFloat(int skirmishAIId, int unitId, const char* rulesParamName, float defaultValue) {
+EXPORT(float)
+skirmishAiCallback_Unit_getRulesParamFloat(int skirmishAIId, int unitId, const char* rulesParamName, float defaultValue)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr)
 		return defaultValue;
 
-	return getRulesParamFloatValueByName(unit->modParams, unitModParamLosMask(skirmishAIId, unit), rulesParamName, defaultValue);
+	return getRulesParamFloatValueByName(
+	    unit->modParams, unitModParamLosMask(skirmishAIId, unit), rulesParamName, defaultValue);
 }
 
-EXPORT(const char*) skirmishAiCallback_Unit_getRulesParamString(int skirmishAIId, int unitId, const char* rulesParamName, const char* defaultValue) {
+EXPORT(const char*)
+skirmishAiCallback_Unit_getRulesParamString(int skirmishAIId,
+    int unitId,
+    const char* rulesParamName,
+    const char* defaultValue)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr)
 		return defaultValue;
 
-	return getRulesParamStringValueByName(unit->modParams, unitModParamLosMask(skirmishAIId, unit), rulesParamName, defaultValue);
+	return getRulesParamStringValueByName(
+	    unit->modParams, unitModParamLosMask(skirmishAIId, unit), rulesParamName, defaultValue);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getTeam(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getTeam(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetUnitTeam(unitId);
 
 	return GetCallBack(skirmishAIId)->GetUnitTeam(unitId);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getAllyTeam(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getAllyTeam(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetUnitAllyTeam(unitId);
 
 	return GetCallBack(skirmishAIId)->GetUnitAllyTeam(unitId);
 }
 
-
-EXPORT(int) skirmishAiCallback_Unit_getSupportedCommands(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getSupportedCommands(int skirmishAIId, int unitId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitCommands(unitId)->size();
 }
 
-EXPORT(int) skirmishAiCallback_Unit_SupportedCommand_getId(int skirmishAIId, int unitId, int supportedCommandId) {
+EXPORT(int) skirmishAiCallback_Unit_SupportedCommand_getId(int skirmishAIId, int unitId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitCommands(unitId)->at(supportedCommandId)->id;
 }
 
-EXPORT(const char*) skirmishAiCallback_Unit_SupportedCommand_getName(int skirmishAIId, int unitId, int supportedCommandId) {
+EXPORT(const char*)
+skirmishAiCallback_Unit_SupportedCommand_getName(int skirmishAIId, int unitId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitCommands(unitId)->at(supportedCommandId)->name.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_Unit_SupportedCommand_getToolTip(int skirmishAIId, int unitId, int supportedCommandId) {
+EXPORT(const char*)
+skirmishAiCallback_Unit_SupportedCommand_getToolTip(int skirmishAIId, int unitId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitCommands(unitId)->at(supportedCommandId)->tooltip.c_str();
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_SupportedCommand_isShowUnique(int skirmishAIId, int unitId, int supportedCommandId) {
+EXPORT(bool) skirmishAiCallback_Unit_SupportedCommand_isShowUnique(int skirmishAIId, int unitId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitCommands(unitId)->at(supportedCommandId)->showUnique;
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_SupportedCommand_isDisabled(int skirmishAIId, int unitId, int supportedCommandId) {
+EXPORT(bool) skirmishAiCallback_Unit_SupportedCommand_isDisabled(int skirmishAIId, int unitId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitCommands(unitId)->at(supportedCommandId)->disabled;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_SupportedCommand_getParams(
-	int skirmishAIId,
-	int unitId,
-	int supportedCommandId,
-	const char** params,
-	int maxNumParams
-) {
+EXPORT(int)
+skirmishAiCallback_Unit_SupportedCommand_getParams(int skirmishAIId,
+    int unitId,
+    int supportedCommandId,
+    const char** params,
+    int maxNumParams)
+{
 	/*const*/ CAICallback* cb = GetCallBack(skirmishAIId);
 	const std::vector<const SCommandDescription*>* cq = cb->GetUnitCommands(unitId);
 	const std::vector<std::string>& ps = cq->at(supportedCommandId)->params;
@@ -3409,7 +3490,8 @@ EXPORT(int) skirmishAiCallback_Unit_SupportedCommand_getParams(
 	return retNumParams;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getStockpile(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getStockpile(int skirmishAIId, int unitId)
+{
 	int stockpile;
 
 	if (!GetCallBack(skirmishAIId)->GetProperty(unitId, AIVAL_STOCKPILED, &stockpile))
@@ -3418,7 +3500,8 @@ EXPORT(int) skirmishAiCallback_Unit_getStockpile(int skirmishAIId, int unitId) {
 	return stockpile;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getStockpileQueued(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getStockpileQueued(int skirmishAIId, int unitId)
+{
 	int stockpileQueue;
 
 	if (!GetCallBack(skirmishAIId)->GetProperty(unitId, AIVAL_STOCKPILE_QUED, &stockpileQueue))
@@ -3427,7 +3510,8 @@ EXPORT(int) skirmishAiCallback_Unit_getStockpileQueued(int skirmishAIId, int uni
 	return stockpileQueue;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getMaxSpeed(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getMaxSpeed(int skirmishAIId, int unitId)
+{
 	float maxSpeed;
 
 	if (!GetCallBack(skirmishAIId)->GetProperty(unitId, AIVAL_UNIT_MAXSPEED, &maxSpeed))
@@ -3436,23 +3520,23 @@ EXPORT(float) skirmishAiCallback_Unit_getMaxSpeed(int skirmishAIId, int unitId) 
 	return maxSpeed;
 }
 
-
-EXPORT(float) skirmishAiCallback_Unit_getMaxRange(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getMaxRange(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		const CUnit* unit = getUnit(unitId);
-		return (unit != nullptr)? unit->maxRange : -1.0f;
+		return (unit != nullptr) ? unit->maxRange : -1.0f;
 	}
 
 	return GetCallBack(skirmishAIId)->GetUnitMaxRange(unitId);
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getMaxHealth(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getMaxHealth(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetUnitMaxHealth(unitId);
 
 	return GetCallBack(skirmishAIId)->GetUnitMaxHealth(unitId);
 }
-
 
 /**
  * Returns a units command queue.
@@ -3460,12 +3544,14 @@ EXPORT(float) skirmishAiCallback_Unit_getMaxHealth(int skirmishAIId, int unitId)
  * eg. when cheats are disabled and we try to fetch from an enemy unit.
  * For internal use only.
  */
-static inline const CCommandQueue* _intern_Unit_getCurrentCommandQueue(int skirmishAIId, int unitId) {
+static inline const CCommandQueue* _intern_Unit_getCurrentCommandQueue(int skirmishAIId, int unitId)
+{
 	const CCommandQueue* q = nullptr;
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		q = GetCheatCallBack(skirmishAIId)->GetCurrentUnitCommands(unitId);
-	} else {
+	}
+	else {
 		q = GetCallBack(skirmishAIId)->GetCurrentUnitCommands(unitId);
 	}
 
@@ -3476,48 +3562,52 @@ static inline const CCommandQueue* _intern_Unit_getCurrentCommandQueue(int skirm
  * Checks if a given commandId is valid for a commandQueue.
  * For internal use only.
  */
-#define CHECK_COMMAND_ID(commandQueue, commandId) \
-		(commandQueue != NULL && \
-			commandId >= 0 && \
-			static_cast<unsigned int>(commandId) < commandQueue->size())
+#define CHECK_COMMAND_ID(commandQueue, commandId)                                                           \
+	(commandQueue != NULL && commandId >= 0 && static_cast<unsigned int>(commandId) < commandQueue->size())
 
-EXPORT(int) skirmishAiCallback_Unit_getCurrentCommands(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getCurrentCommands(int skirmishAIId, int unitId)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
-	return ((q != nullptr)? q->size(): 0);
+	return ((q != nullptr) ? q->size() : 0);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getType(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getType(int skirmishAIId, int unitId)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
-	return ((q != nullptr)? q->GetType(): -1);
+	return ((q != nullptr) ? q->GetType() : -1);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getId(int skirmishAIId, int unitId, int commandId) {
+EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getId(int skirmishAIId, int unitId, int commandId)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
 	return (CHECK_COMMAND_ID(q, commandId) ? q->at(commandId).GetID() : 0);
 }
 
-EXPORT(short) skirmishAiCallback_Unit_CurrentCommand_getOptions(int skirmishAIId, int unitId, int commandId) {
+EXPORT(short) skirmishAiCallback_Unit_CurrentCommand_getOptions(int skirmishAIId, int unitId, int commandId)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
 	return (CHECK_COMMAND_ID(q, commandId) ? q->at(commandId).GetOpts() : 0);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getTag(int skirmishAIId, int unitId, int commandId) {
+EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getTag(int skirmishAIId, int unitId, int commandId)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
 	return (CHECK_COMMAND_ID(q, commandId) ? q->at(commandId).GetTag() : 0);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getTimeOut(int skirmishAIId, int unitId, int commandId) {
+EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getTimeOut(int skirmishAIId, int unitId, int commandId)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
 	return (CHECK_COMMAND_ID(q, commandId) ? q->at(commandId).GetTimeOut() : 0);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getParams(
-	int skirmishAIId,
-	int unitId,
-	int commandId,
-	float* params,
-	int maxNumParams
-) {
+EXPORT(int)
+skirmishAiCallback_Unit_CurrentCommand_getParams(int skirmishAIId,
+    int unitId,
+    int commandId,
+    float* params,
+    int maxNumParams)
+{
 	const CCommandQueue* q = _intern_Unit_getCurrentCommandQueue(skirmishAIId, unitId);
 
 	if (!CHECK_COMMAND_ID(q, commandId))
@@ -3540,27 +3630,29 @@ EXPORT(int) skirmishAiCallback_Unit_CurrentCommand_getParams(
 
 #undef CHECK_COMMAND_ID
 
-
-
-EXPORT(float) skirmishAiCallback_Unit_getExperience(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getExperience(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetUnitExperience(unitId);
 
 	return GetCallBack(skirmishAIId)->GetUnitExperience(unitId);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getGroup(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getGroup(int skirmishAIId, int unitId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitGroup(unitId);
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getHealth(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getHealth(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetUnitHealth(unitId);
 
 	return GetCallBack(skirmishAIId)->GetUnitHealth(unitId);
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getParalyzeDamage(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getParalyzeDamage(int skirmishAIId, int unitId)
+{
 	float result = -1.0f;
 
 	const CUnit* unit = getUnit(unitId);
@@ -3575,13 +3667,15 @@ EXPORT(float) skirmishAiCallback_Unit_getParalyzeDamage(int skirmishAIId, int un
 
 	if (teamHandler.Ally(unit->allyteam, allyId)) {
 		result = unit->paralyzeDamage;
-	} else if (unit->losStatus[allyId] & LOS_INLOS) {
+	}
+	else if (unit->losStatus[allyId] & LOS_INLOS) {
 		const UnitDef* unitDef = unit->unitDef;
 		const UnitDef* decoyDef = unitDef->decoyDef;
 
 		if (decoyDef == nullptr) {
 			result = unit->paralyzeDamage;
-		} else {
+		}
+		else {
 			result = unit->paralyzeDamage * (decoyDef->health / unitDef->health);
 		}
 	}
@@ -3589,7 +3683,8 @@ EXPORT(float) skirmishAiCallback_Unit_getParalyzeDamage(int skirmishAIId, int un
 	return result;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getCaptureProgress(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getCaptureProgress(int skirmishAIId, int unitId)
+{
 	const float fail = -1.0f;
 
 	const CUnit* unit = getUnit(unitId);
@@ -3608,7 +3703,8 @@ EXPORT(float) skirmishAiCallback_Unit_getCaptureProgress(int skirmishAIId, int u
 	return fail;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getBuildProgress(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getBuildProgress(int skirmishAIId, int unitId)
+{
 	const float fail = -1.0f;
 
 	const CUnit* unit = getUnit(unitId);
@@ -3627,19 +3723,21 @@ EXPORT(float) skirmishAiCallback_Unit_getBuildProgress(int skirmishAIId, int uni
 	return fail;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getSpeed(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getSpeed(int skirmishAIId, int unitId)
+{
 	return GetCallBack(skirmishAIId)->GetUnitSpeed(unitId);
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getPower(int skirmishAIId, int unitId) {
+EXPORT(float) skirmishAiCallback_Unit_getPower(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetUnitPower(unitId);
 
 	return GetCallBack(skirmishAIId)->GetUnitPower(unitId);
 }
 
-
-EXPORT(void) skirmishAiCallback_Unit_getPos(int skirmishAIId, int unitId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Unit_getPos(int skirmishAIId, int unitId, float* return_posF3_out)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		GetCheatCallBack(skirmishAIId)->GetUnitPos(unitId).copyInto(return_posF3_out);
 		return;
@@ -3648,7 +3746,8 @@ EXPORT(void) skirmishAiCallback_Unit_getPos(int skirmishAIId, int unitId, float*
 	GetCallBack(skirmishAIId)->GetUnitPos(unitId).copyInto(return_posF3_out);
 }
 
-EXPORT(void) skirmishAiCallback_Unit_getVel(int skirmishAIId, int unitId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Unit_getVel(int skirmishAIId, int unitId, float* return_posF3_out)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		GetCheatCallBack(skirmishAIId)->GetUnitVelocity(unitId).copyInto(return_posF3_out);
 		return;
@@ -3657,16 +3756,12 @@ EXPORT(void) skirmishAiCallback_Unit_getVel(int skirmishAIId, int unitId, float*
 	GetCallBack(skirmishAIId)->GetUnitVelocity(unitId).copyInto(return_posF3_out);
 }
 
-
-//EXPORT(int) skirmishAiCallback_Unit_0MULTI1SIZE0ResourceInfo(int skirmishAIId, int unitId) {
+// EXPORT(int) skirmishAiCallback_Unit_0MULTI1SIZE0ResourceInfo(int skirmishAIId, int unitId) {
 //	return skirmishAiCallback_0MULTI1SIZE0Resource(skirmishAIId);
-//}
+// }
 
-EXPORT(float) skirmishAiCallback_Unit_getResourceUse(
-	int skirmishAIId,
-	int unitId,
-	int resourceId
-) {
+EXPORT(float) skirmishAiCallback_Unit_getResourceUse(int skirmishAIId, int unitId, int resourceId)
+{
 	float res = -1.0f;
 	bool fetchOk = false;
 
@@ -3674,14 +3769,16 @@ EXPORT(float) skirmishAiCallback_Unit_getResourceUse(
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		fetchOk = GetCheatCallBack(skirmishAIId)->GetUnitResourceInfo(unitId, &resourceInfo);
-	} else {
+	}
+	else {
 		fetchOk = GetCallBack(skirmishAIId)->GetUnitResourceInfo(unitId, &resourceInfo);
 	}
 
 	if (fetchOk) {
 		if (resourceId == resourceHandler->GetMetalId()) {
 			res = resourceInfo.metalUse;
-		} else if (resourceId == resourceHandler->GetEnergyId()) {
+		}
+		else if (resourceId == resourceHandler->GetEnergyId()) {
 			res = resourceInfo.energyUse;
 		}
 	}
@@ -3689,11 +3786,8 @@ EXPORT(float) skirmishAiCallback_Unit_getResourceUse(
 	return res;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_getResourceMake(
-	int skirmishAIId,
-	int unitId,
-	int resourceId
-) {
+EXPORT(float) skirmishAiCallback_Unit_getResourceMake(int skirmishAIId, int unitId, int resourceId)
+{
 	float res = -1.0f;
 	bool fetchOk = false;
 
@@ -3701,14 +3795,16 @@ EXPORT(float) skirmishAiCallback_Unit_getResourceMake(
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		fetchOk = GetCheatCallBack(skirmishAIId)->GetUnitResourceInfo(unitId, &resourceInfo);
-	} else {
+	}
+	else {
 		fetchOk = GetCallBack(skirmishAIId)->GetUnitResourceInfo(unitId, &resourceInfo);
 	}
 
 	if (fetchOk) {
 		if (resourceId == resourceHandler->GetMetalId()) {
 			res = resourceInfo.metalMake;
-		} else if (resourceId == resourceHandler->GetEnergyId()) {
+		}
+		else if (resourceId == resourceHandler->GetEnergyId()) {
 			res = resourceInfo.energyMake;
 		}
 	}
@@ -3716,56 +3812,64 @@ EXPORT(float) skirmishAiCallback_Unit_getResourceMake(
 	return res;
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_isActivated(int skirmishAIId, int unitId) {
+EXPORT(bool) skirmishAiCallback_Unit_isActivated(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->IsUnitActivated(unitId);
 
 	return GetCallBack(skirmishAIId)->IsUnitActivated(unitId);
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_isBeingBuilt(int skirmishAIId, int unitId) {
+EXPORT(bool) skirmishAiCallback_Unit_isBeingBuilt(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->UnitBeingBuilt(unitId);
 
 	return GetCallBack(skirmishAIId)->UnitBeingBuilt(unitId);
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_isCloaked(int skirmishAIId, int unitId) {
+EXPORT(bool) skirmishAiCallback_Unit_isCloaked(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->IsUnitCloaked(unitId);
 
 	return GetCallBack(skirmishAIId)->IsUnitCloaked(unitId);
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_isParalyzed(int skirmishAIId, int unitId) {
+EXPORT(bool) skirmishAiCallback_Unit_isParalyzed(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->IsUnitParalyzed(unitId);
 
 	return GetCallBack(skirmishAIId)->IsUnitParalyzed(unitId);
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_isNeutral(int skirmishAIId, int unitId) {
+EXPORT(bool) skirmishAiCallback_Unit_isNeutral(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->IsUnitNeutral(unitId);
 
 	return GetCallBack(skirmishAIId)->IsUnitNeutral(unitId);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getBuildingFacing(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getBuildingFacing(int skirmishAIId, int unitId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetBuildingFacing(unitId);
 
 	return GetCallBack(skirmishAIId)->GetBuildingFacing(unitId);
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getLastUserOrderFrame(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getLastUserOrderFrame(int skirmishAIId, int unitId)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return -1;
 
 	return unitHandler.GetUnit(unitId)->commandAI->lastUserCommand;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getWeapons(int skirmishAIId, int unitId) {
+EXPORT(int) skirmishAiCallback_Unit_getWeapons(int skirmishAIId, int unitId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit != nullptr && (skirmishAiCallback_Cheats_isEnabled(skirmishAIId) || isUnitInLos(skirmishAIId, unit)))
@@ -3774,7 +3878,8 @@ EXPORT(int) skirmishAiCallback_Unit_getWeapons(int skirmishAIId, int unitId) {
 	return 0;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_getWeapon(int skirmishAIId, int unitId, int weaponMountId) {
+EXPORT(int) skirmishAiCallback_Unit_getWeapon(int skirmishAIId, int unitId, int weaponMountId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr || ((size_t)weaponMountId >= unit->weapons.size()))
@@ -3786,23 +3891,32 @@ EXPORT(int) skirmishAiCallback_Unit_getWeapon(int skirmishAIId, int unitId, int 
 	return -1;
 }
 
-//########### END Unit
+// ########### END Unit
 
-EXPORT(int) skirmishAiCallback_getEnemyUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getEnemyUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetEnemyUnits(unitIds, unitIdsMaxSize);
 
 	return GetCallBack(skirmishAIId)->GetEnemyUnits(unitIds, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getEnemyUnitsIn(int skirmishAIId, float* pos_posF3, float radius, bool spherical, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int)
+skirmishAiCallback_getEnemyUnitsIn(int skirmishAIId,
+    float* pos_posF3,
+    float radius,
+    bool spherical,
+    int* unitIds,
+    int unitIdsMaxSize)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetEnemyUnits(unitIds, pos_posF3, radius, spherical, unitIdsMaxSize);
 
 	return GetCallBack(skirmishAIId)->GetEnemyUnits(unitIds, pos_posF3, radius, spherical, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getEnemyUnitsInRadarAndLos(int skirmishAIId, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getEnemyUnitsInRadarAndLos(int skirmishAIId, int* unitIds, int unitIdsMaxSize)
+{
 	// with cheats on, act like global-LOS -> getEnemyUnitsIn() == getEnemyUnitsInRadarAndLos()
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetEnemyUnits(unitIds, unitIdsMaxSize);
@@ -3810,33 +3924,51 @@ EXPORT(int) skirmishAiCallback_getEnemyUnitsInRadarAndLos(int skirmishAIId, int*
 	return GetCallBack(skirmishAIId)->GetEnemyUnitsInRadarAndLos(unitIds, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getFriendlyUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getFriendlyUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize)
+{
 	return GetCallBack(skirmishAIId)->GetFriendlyUnits(unitIds, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getFriendlyUnitsIn(int skirmishAIId, float* pos_posF3, float radius, bool spherical, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int)
+skirmishAiCallback_getFriendlyUnitsIn(int skirmishAIId,
+    float* pos_posF3,
+    float radius,
+    bool spherical,
+    int* unitIds,
+    int unitIdsMaxSize)
+{
 	return GetCallBack(skirmishAIId)->GetFriendlyUnits(unitIds, pos_posF3, radius, spherical, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getNeutralUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getNeutralUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetNeutralUnits(unitIds, unitIdsMaxSize);
 
 	return GetCallBack(skirmishAIId)->GetNeutralUnits(unitIds, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getNeutralUnitsIn(int skirmishAIId, float* pos_posF3, float radius, bool spherical, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int)
+skirmishAiCallback_getNeutralUnitsIn(int skirmishAIId,
+    float* pos_posF3,
+    float radius,
+    bool spherical,
+    int* unitIds,
+    int unitIdsMaxSize)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId))
 		return GetCheatCallBack(skirmishAIId)->GetNeutralUnits(unitIds, pos_posF3, radius, spherical, unitIdsMaxSize);
 
 	return GetCallBack(skirmishAIId)->GetNeutralUnits(unitIds, pos_posF3, radius, spherical, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getSelectedUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getSelectedUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize)
+{
 	return GetCallBack(skirmishAIId)->GetSelectedUnits(unitIds, unitIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getTeamUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getTeamUnits(int skirmishAIId, int* unitIds, int unitIdsMaxSize)
+{
 	int a = 0;
 
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
@@ -3857,16 +3989,17 @@ EXPORT(int) skirmishAiCallback_getTeamUnits(int skirmishAIId, int* unitIds, int 
 	return a;
 }
 
-
-//########### BEGIN Team
-EXPORT(bool) skirmishAiCallback_Team_hasAIController(int skirmishAIId, int teamId) {
+// ########### BEGIN Team
+EXPORT(bool) skirmishAiCallback_Team_hasAIController(int skirmishAIId, int teamId)
+{
 	// return (AI_TEAM_IDS[skirmishAIId] == teamId);
 	const auto pred = [&](const int aiTeamID) { return (teamId == aiTeamID); };
 	const auto iter = std::find_if(AI_TEAM_IDS.begin(), AI_TEAM_IDS.end(), pred);
 	return (iter != AI_TEAM_IDS.end());
 }
 
-EXPORT(int) skirmishAiCallback_getEnemyTeams(int skirmishAIId, int* teamIds, int teamIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getEnemyTeams(int skirmishAIId, int* teamIds, int teamIdsMaxSize)
+{
 	int a = 0;
 
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
@@ -3875,20 +4008,20 @@ EXPORT(int) skirmishAiCallback_getEnemyTeams(int skirmishAIId, int* teamIds, int
 		for (int i = 0; i < teamHandler.ActiveTeams() && a < teamIdsMaxSize; i++) {
 			if (!teamHandler.AlliedTeams(i, teamId))
 				teamIds[a++] = i;
-
 		}
-	} else {
+	}
+	else {
 		for (int i = 0; i < teamHandler.ActiveTeams(); i++) {
 			if (!teamHandler.AlliedTeams(i, teamId))
 				a++;
-
 		}
 	}
 
 	return a;
 }
 
-EXPORT(int) skirmishAiCallback_getAlliedTeams(int skirmishAIId, int* teamIds, int teamIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getAlliedTeams(int skirmishAIId, int* teamIds, int teamIdsMaxSize)
+{
 	int a = 0;
 
 	const int teamId = AI_TEAM_IDS[skirmishAIId];
@@ -3897,43 +4030,51 @@ EXPORT(int) skirmishAiCallback_getAlliedTeams(int skirmishAIId, int* teamIds, in
 		for (int i = 0; i < teamHandler.ActiveTeams() && a < teamIdsMaxSize; i++) {
 			if (teamHandler.AlliedTeams(i, teamId))
 				teamIds[a++] = i;
-
 		}
-	} else {
+	}
+	else {
 		for (int i = 0; i < teamHandler.ActiveTeams(); i++) {
 			if (teamHandler.AlliedTeams(i, teamId))
 				a++;
-
 		}
 	}
 
 	return a;
 }
 
-
-EXPORT(float) skirmishAiCallback_Team_getRulesParamFloat(int skirmishAIId, int teamId, const char* rulesParamName, float defaultValue) {
+EXPORT(float)
+skirmishAiCallback_Team_getRulesParamFloat(int skirmishAIId, int teamId, const char* rulesParamName, float defaultValue)
+{
 	const CTeam* team = getTeam(teamId);
 
 	if (team == nullptr)
 		return defaultValue;
 
-	return getRulesParamFloatValueByName(team->modParams, teamModParamLosMask(skirmishAIId, team), rulesParamName, defaultValue);
+	return getRulesParamFloatValueByName(
+	    team->modParams, teamModParamLosMask(skirmishAIId, team), rulesParamName, defaultValue);
 }
 
-EXPORT(const char*) skirmishAiCallback_Team_getRulesParamString(int skirmishAIId, int teamId, const char* rulesParamName, const char* defaultValue) {
+EXPORT(const char*)
+skirmishAiCallback_Team_getRulesParamString(int skirmishAIId,
+    int teamId,
+    const char* rulesParamName,
+    const char* defaultValue)
+{
 	const CTeam* team = getTeam(teamId);
 
 	if (team == nullptr)
 		return defaultValue;
 
-	return getRulesParamStringValueByName(team->modParams, teamModParamLosMask(skirmishAIId, team), rulesParamName, defaultValue);
+	return getRulesParamStringValueByName(
+	    team->modParams, teamModParamLosMask(skirmishAIId, team), rulesParamName, defaultValue);
 }
 
-//########### END Team
+// ########### END Team
 
 
-//########### BEGIN FeatureDef
-EXPORT(int) skirmishAiCallback_getFeatureDefs(int skirmishAIId, int* featureDefIds, int featureDefIdsMaxSize) {
+// ########### BEGIN FeatureDef
+EXPORT(int) skirmishAiCallback_getFeatureDefs(int skirmishAIId, int* featureDefIds, int featureDefIdsMaxSize)
+{
 	const auto& featureDefs = featureDefHandler->GetFeatureDefsVec();
 	const int featureDefIdsRealSize = featureDefs.size();
 
@@ -3953,17 +4094,18 @@ EXPORT(int) skirmishAiCallback_getFeatureDefs(int skirmishAIId, int* featureDefI
 	return featureDefIdsSize;
 }
 
-EXPORT(const char*) skirmishAiCallback_FeatureDef_getName(int skirmishAIId, int featureDefId) {
+EXPORT(const char*) skirmishAiCallback_FeatureDef_getName(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->name.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_FeatureDef_getDescription(int skirmishAIId, int featureDefId) {
+EXPORT(const char*) skirmishAiCallback_FeatureDef_getDescription(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->description.c_str();
 }
 
-
-EXPORT(float) skirmishAiCallback_FeatureDef_getContainedResource(int skirmishAIId, int featureDefId, int resourceId) {
-
+EXPORT(float) skirmishAiCallback_FeatureDef_getContainedResource(int skirmishAIId, int featureDefId, int resourceId)
+{
 	const FeatureDef* fd = getFeatureDefById(skirmishAIId, featureDefId);
 
 	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
@@ -3972,85 +4114,102 @@ EXPORT(float) skirmishAiCallback_FeatureDef_getContainedResource(int skirmishAII
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_FeatureDef_getMaxHealth(int skirmishAIId, int featureDefId) {
+EXPORT(float) skirmishAiCallback_FeatureDef_getMaxHealth(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->health;
 }
 
-EXPORT(float) skirmishAiCallback_FeatureDef_getReclaimTime(int skirmishAIId, int featureDefId) {
+EXPORT(float) skirmishAiCallback_FeatureDef_getReclaimTime(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->reclaimTime;
 }
 
-EXPORT(float) skirmishAiCallback_FeatureDef_getMass(int skirmishAIId, int featureDefId) {
+EXPORT(float) skirmishAiCallback_FeatureDef_getMass(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->mass;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isUpright(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isUpright(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->upright;
 }
 
-EXPORT(int) skirmishAiCallback_FeatureDef_getDrawType(int skirmishAIId, int featureDefId) {
+EXPORT(int) skirmishAiCallback_FeatureDef_getDrawType(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->drawType;
 }
 
-EXPORT(const char*) skirmishAiCallback_FeatureDef_getModelName(int skirmishAIId, int featureDefId) {
+EXPORT(const char*) skirmishAiCallback_FeatureDef_getModelName(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->modelName.c_str();
 }
 
-EXPORT(int) skirmishAiCallback_FeatureDef_getResurrectable(int skirmishAIId, int featureDefId) {
+EXPORT(int) skirmishAiCallback_FeatureDef_getResurrectable(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->resurrectable;
 }
 
-EXPORT(int) skirmishAiCallback_FeatureDef_getSmokeTime(int skirmishAIId, int featureDefId) {
+EXPORT(int) skirmishAiCallback_FeatureDef_getSmokeTime(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->smokeTime;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isDestructable(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isDestructable(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->destructable;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isReclaimable(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isReclaimable(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->reclaimable;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isAutoreclaimable(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isAutoreclaimable(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->autoreclaim;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isBlocking(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isBlocking(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->collidable;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isBurnable(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isBurnable(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->burnable;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isFloating(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isFloating(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->floating;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isNoSelect(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isNoSelect(int skirmishAIId, int featureDefId)
+{
 	return !getFeatureDefById(skirmishAIId, featureDefId)->selectable;
 }
 
-EXPORT(bool) skirmishAiCallback_FeatureDef_isGeoThermal(int skirmishAIId, int featureDefId) {
+EXPORT(bool) skirmishAiCallback_FeatureDef_isGeoThermal(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->geoThermal;
 }
 
-
-EXPORT(int) skirmishAiCallback_FeatureDef_getXSize(int skirmishAIId, int featureDefId) {
+EXPORT(int) skirmishAiCallback_FeatureDef_getXSize(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->xsize;
 }
 
-EXPORT(int) skirmishAiCallback_FeatureDef_getZSize(int skirmishAIId, int featureDefId) {
+EXPORT(int) skirmishAiCallback_FeatureDef_getZSize(int skirmishAIId, int featureDefId)
+{
 	return getFeatureDefById(skirmishAIId, featureDefId)->zsize;
 }
 
-EXPORT(int) skirmishAiCallback_FeatureDef_getCustomParams(
-	int skirmishAIId,
-	int featureDefId,
-	const char** keys,
-	const char** values
-) {
+EXPORT(int)
+skirmishAiCallback_FeatureDef_getCustomParams(int skirmishAIId,
+    int featureDefId,
+    const char** keys,
+    const char** values)
+{
 	const auto& ps = getFeatureDefById(skirmishAIId, featureDefId)->customParams;
 	const size_t paramsRealSize = ps.size();
 
@@ -4060,10 +4219,11 @@ EXPORT(int) skirmishAiCallback_FeatureDef_getCustomParams(
 	return paramsRealSize;
 }
 
-//########### END FeatureDef
+// ########### END FeatureDef
 
 
-EXPORT(int) skirmishAiCallback_getFeatures(int skirmishAIId, int* featureIds, int featureIdsMaxSize) {
+EXPORT(int) skirmishAiCallback_getFeatures(int skirmishAIId, int* featureIds, int featureIdsMaxSize)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		// cheating
 		const auto& activeFeatureIDs = featureHandler.GetActiveFeatureIDs();
@@ -4091,7 +4251,14 @@ EXPORT(int) skirmishAiCallback_getFeatures(int skirmishAIId, int* featureIds, in
 	return GetCallBack(skirmishAIId)->GetFeatures(featureIds, featureIdsMaxSize);
 }
 
-EXPORT(int) skirmishAiCallback_getFeaturesIn(int skirmishAIId, float* pos_posF3, float radius, bool spherical, int* featureIds, int featureIdsMaxSize) {
+EXPORT(int)
+skirmishAiCallback_getFeaturesIn(int skirmishAIId,
+    float* pos_posF3,
+    float radius,
+    bool spherical,
+    int* featureIds,
+    int featureIdsMaxSize)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		// cheating
 		QuadFieldQuery qfQuery;
@@ -4106,7 +4273,6 @@ EXPORT(int) skirmishAiCallback_getFeaturesIn(int skirmishAIId, float* pos_posF3,
 			size_t f = 0;
 
 			for (const CFeature* feature: *qfQuery.features) {
-
 				assert(feature != nullptr);
 				featureIds[f++] = feature->id;
 			}
@@ -4119,8 +4285,8 @@ EXPORT(int) skirmishAiCallback_getFeaturesIn(int skirmishAIId, float* pos_posF3,
 	return GetCallBack(skirmishAIId)->GetFeatures(featureIds, featureIdsMaxSize, pos_posF3, radius, spherical);
 }
 
-
-EXPORT(int) skirmishAiCallback_Feature_getDef(int skirmishAIId, int featureId) {
+EXPORT(int) skirmishAiCallback_Feature_getDef(int skirmishAIId, int featureId)
+{
 	const FeatureDef* def = nullptr;
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
@@ -4129,32 +4295,36 @@ EXPORT(int) skirmishAiCallback_Feature_getDef(int skirmishAIId, int featureId) {
 		if (f != nullptr) {
 			def = f->def;
 		}
-	} else {
+	}
+	else {
 		def = GetCallBack(skirmishAIId)->GetFeatureDef(featureId);
 	}
 
-	return (def != nullptr)? def->id: -1;
+	return (def != nullptr) ? def->id : -1;
 }
 
-EXPORT(float) skirmishAiCallback_Feature_getHealth(int skirmishAIId, int featureId) {
+EXPORT(float) skirmishAiCallback_Feature_getHealth(int skirmishAIId, int featureId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		const CFeature* f = featureHandler.GetFeature(featureId);
-		return (f != nullptr)? f->health: 0.0f;
+		return (f != nullptr) ? f->health : 0.0f;
 	}
 
 	return GetCallBack(skirmishAIId)->GetFeatureHealth(featureId);
 }
 
-EXPORT(float) skirmishAiCallback_Feature_getReclaimLeft(int skirmishAIId, int featureId) {
+EXPORT(float) skirmishAiCallback_Feature_getReclaimLeft(int skirmishAIId, int featureId)
+{
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		const CFeature* f = featureHandler.GetFeature(featureId);
-		return (f != nullptr)? f->reclaimLeft: 0.0f;
+		return (f != nullptr) ? f->reclaimLeft : 0.0f;
 	}
 
 	return GetCallBack(skirmishAIId)->GetFeatureReclaimLeft(featureId);
 }
 
-EXPORT(void) skirmishAiCallback_Feature_getPosition(int skirmishAIId, int featureId, float* return_posF3_out) {
+EXPORT(void) skirmishAiCallback_Feature_getPosition(int skirmishAIId, int featureId, float* return_posF3_out)
+{
 	float3 pos;
 
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
@@ -4163,32 +4333,46 @@ EXPORT(void) skirmishAiCallback_Feature_getPosition(int skirmishAIId, int featur
 		if (f != nullptr) {
 			pos = f->pos;
 		}
-	} else {
+	}
+	else {
 		pos = GetCallBack(skirmishAIId)->GetFeaturePos(featureId);
 	}
 
 	pos.copyInto(return_posF3_out);
 }
 
-EXPORT(float) skirmishAiCallback_Feature_getRulesParamFloat(int skirmishAIId, int featureId, const char* rulesParamName, float defaultValue) {
+EXPORT(float)
+skirmishAiCallback_Feature_getRulesParamFloat(int skirmishAIId,
+    int featureId,
+    const char* rulesParamName,
+    float defaultValue)
+{
 	const CFeature* feature = featureHandler.GetFeature(featureId);
 
 	if (feature == nullptr)
 		return defaultValue;
 
-	return getRulesParamFloatValueByName(feature->modParams, featureModParamLosMask(skirmishAIId, feature), rulesParamName, defaultValue);
+	return getRulesParamFloatValueByName(
+	    feature->modParams, featureModParamLosMask(skirmishAIId, feature), rulesParamName, defaultValue);
 }
 
-EXPORT(const char*) skirmishAiCallback_Feature_getRulesParamString(int skirmishAIId, int featureId, const char* rulesParamName, const char* defaultValue) {
+EXPORT(const char*)
+skirmishAiCallback_Feature_getRulesParamString(int skirmishAIId,
+    int featureId,
+    const char* rulesParamName,
+    const char* defaultValue)
+{
 	const CFeature* feature = featureHandler.GetFeature(featureId);
 
 	if (feature == nullptr)
 		return defaultValue;
 
-	return getRulesParamStringValueByName(feature->modParams, featureModParamLosMask(skirmishAIId, feature), rulesParamName, defaultValue);
+	return getRulesParamStringValueByName(
+	    feature->modParams, featureModParamLosMask(skirmishAIId, feature), rulesParamName, defaultValue);
 }
 
-EXPORT(int) skirmishAiCallback_Feature_getResurrectDef(int skirmishAIId, int featureId) {
+EXPORT(int) skirmishAiCallback_Feature_getResurrectDef(int skirmishAIId, int featureId)
+{
 	const CFeature* f = featureHandler.GetFeature(featureId);
 	if ((f == nullptr) || (f->udef == nullptr)) {
 		return -1;
@@ -4197,26 +4381,26 @@ EXPORT(int) skirmishAiCallback_Feature_getResurrectDef(int skirmishAIId, int fea
 	const UnitDef* def = nullptr;
 	if (skirmishAiCallback_Cheats_isEnabled(skirmishAIId)) {
 		def = f->udef;
-	} else {
+	}
+	else {
 		if (f->IsInLosForAllyTeam(teamHandler.AllyTeam(AI_TEAM_IDS[skirmishAIId])))
 			def = f->udef;
 	}
 
-	return (def != nullptr)? def->id: -1;
+	return (def != nullptr) ? def->id : -1;
 }
 
-EXPORT(short) skirmishAiCallback_Feature_getBuildingFacing(int skirmishAIId, int featureId) {
+EXPORT(short) skirmishAiCallback_Feature_getBuildingFacing(int skirmishAIId, int featureId)
+{
 	const CFeature* f = featureHandler.GetFeature(featureId);
-	return (f != nullptr)? (short)f->buildFacing: -1;
+	return (f != nullptr) ? (short)f->buildFacing : -1;
 }
 
+// ########### BEGIN WeaponDef
+EXPORT(int) skirmishAiCallback_getWeaponDefs(int skirmishAIId) { return (weaponDefHandler->NumWeaponDefs()); }
 
-//########### BEGIN WeaponDef
-EXPORT(int) skirmishAiCallback_getWeaponDefs(int skirmishAIId) {
-	return (weaponDefHandler->NumWeaponDefs());
-}
-
-EXPORT(int) skirmishAiCallback_getWeaponDefByName(int skirmishAIId, const char* weaponDefName) {
+EXPORT(int) skirmishAiCallback_getWeaponDefByName(int skirmishAIId, const char* weaponDefName)
+{
 	const WeaponDef* wd = GetCallBack(skirmishAIId)->GetWeapon(weaponDefName);
 
 	if (wd != nullptr)
@@ -4225,77 +4409,94 @@ EXPORT(int) skirmishAiCallback_getWeaponDefByName(int skirmishAIId, const char* 
 	return -1;
 }
 
-
-EXPORT(const char*) skirmishAiCallback_WeaponDef_getName(int skirmishAIId, int weaponDefId) {
+EXPORT(const char*) skirmishAiCallback_WeaponDef_getName(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->name.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_WeaponDef_getType(int skirmishAIId, int weaponDefId) {
+EXPORT(const char*) skirmishAiCallback_WeaponDef_getType(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->type.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_WeaponDef_getDescription(int skirmishAIId, int weaponDefId) {
+EXPORT(const char*) skirmishAiCallback_WeaponDef_getDescription(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->description.c_str();
 }
 
-
-EXPORT(float) skirmishAiCallback_WeaponDef_getRange(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getRange(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->range;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getHeightMod(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getHeightMod(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->heightmod;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getAccuracy(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getAccuracy(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->accuracy;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getSprayAngle(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getSprayAngle(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->sprayAngle;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getMovingAccuracy(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getMovingAccuracy(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->movingAccuracy;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getTargetMoveError(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getTargetMoveError(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->targetMoveError;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getLeadLimit(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getLeadLimit(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->leadLimit;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getLeadBonus(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getLeadBonus(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->leadBonus;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getPredictBoost(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getPredictBoost(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->predictBoost;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_Damage_getParalyzeDamageTime(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_Damage_getParalyzeDamageTime(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.paralyzeDamageTime;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getImpulseFactor(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getImpulseFactor(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.impulseFactor;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getImpulseBoost(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getImpulseBoost(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.impulseBoost;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getCraterMult(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getCraterMult(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.craterMult;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getCraterBoost(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Damage_getCraterBoost(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.craterBoost;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_Damage_getTypes(int skirmishAIId, int weaponDefId, float* types, int typesMaxSize) {
+EXPORT(int)
+skirmishAiCallback_WeaponDef_Damage_getTypes(int skirmishAIId, int weaponDefId, float* types, int typesMaxSize)
+{
 	const WeaponDef* weaponDef = getWeaponDefById(skirmishAIId, weaponDefId);
 	const int typesRealSize = weaponDef->damages.GetNumTypes();
 
@@ -4312,87 +4513,108 @@ EXPORT(int) skirmishAiCallback_WeaponDef_Damage_getTypes(int skirmishAIId, int w
 	return typesSize;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getAreaOfEffect(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getAreaOfEffect(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.damageAreaOfEffect;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isNoSelfDamage(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isNoSelfDamage(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->noSelfDamage;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getFireStarter(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getFireStarter(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->fireStarter;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getEdgeEffectiveness(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getEdgeEffectiveness(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.edgeEffectiveness;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getSize(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getSize(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->size;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getSizeGrowth(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getSizeGrowth(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->sizeGrowth;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getCollisionSize(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getCollisionSize(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->collisionSize;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getSalvoSize(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getSalvoSize(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->salvosize;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getSalvoDelay(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getSalvoDelay(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->salvodelay;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getReload(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getReload(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->reload;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getBeamTime(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getBeamTime(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->beamtime;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isBeamBurst(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isBeamBurst(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->beamburst;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isWaterBounce(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isWaterBounce(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->waterBounce;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isGroundBounce(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isGroundBounce(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->groundBounce;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getBounceRebound(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getBounceRebound(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->bounceRebound;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getBounceSlip(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getBounceSlip(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->bounceSlip;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getNumBounce(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getNumBounce(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->numBounce;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getMaxAngle(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getMaxAngle(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->maxAngle;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getUpTime(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getUpTime(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->uptime;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getFlightTime(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getFlightTime(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->flighttime;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getCost(int skirmishAIId, int weaponDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getCost(int skirmishAIId, int weaponDefId, int resourceId)
+{
 	const WeaponDef* wd = getWeaponDefById(skirmishAIId, weaponDefId);
 
 	if (resourceId >= 0 && resourceId < SResourcePack::MAX_RESOURCES)
@@ -4401,186 +4623,222 @@ EXPORT(float) skirmishAiCallback_WeaponDef_getCost(int skirmishAIId, int weaponD
 	return 0.0f;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getProjectilesPerShot(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getProjectilesPerShot(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->projectilespershot;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isTurret(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isTurret(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->turret;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isOnlyForward(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isOnlyForward(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->onlyForward;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isFixedLauncher(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isFixedLauncher(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->fixedLauncher;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isWaterWeapon(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isWaterWeapon(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->waterweapon;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isFireSubmersed(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isFireSubmersed(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->fireSubmersed;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isSubMissile(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isSubMissile(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->submissile;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isTracks(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isTracks(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->tracks;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isDropped(int skirmishAIId, int weaponDefId) {
-	return false;
-}
+EXPORT(bool) skirmishAiCallback_WeaponDef_isDropped(int skirmishAIId, int weaponDefId) { return false; }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isParalyzer(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isParalyzer(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->paralyzer;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isImpactOnly(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isImpactOnly(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->impactOnly;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isNoAutoTarget(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isNoAutoTarget(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->noAutoTarget;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isManualFire(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isManualFire(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->manualfire;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getInterceptor(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getInterceptor(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->interceptor;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getTargetable(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getTargetable(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->targetable;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isStockpileable(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isStockpileable(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->stockpile;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getCoverageRange(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getCoverageRange(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->coverageRange;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getStockpileTime(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getStockpileTime(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->stockpileTime;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getIntensity(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getIntensity(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->intensity;
 }
 
-
-EXPORT(float) skirmishAiCallback_WeaponDef_getDuration(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getDuration(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->duration;
 }
 
-
-EXPORT(float) skirmishAiCallback_WeaponDef_getFalloffRate(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getFalloffRate(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->falloffRate;
 }
 
-
-EXPORT(bool) skirmishAiCallback_WeaponDef_isSelfExplode(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isSelfExplode(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->selfExplode;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isGravityAffected(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isGravityAffected(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->gravityAffected;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getHighTrajectory(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getHighTrajectory(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->highTrajectory;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getMyGravity(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getMyGravity(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->myGravity;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isNoExplode(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isNoExplode(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->noExplode;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getStartVelocity(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getStartVelocity(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->startvelocity;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getWeaponAcceleration(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getWeaponAcceleration(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->weaponacceleration;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getTurnRate(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getTurnRate(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->turnrate;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getMaxVelocity(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getMaxVelocity(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->projectilespeed * GAME_SPEED; // DEPRECATED
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getProjectileSpeed(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getProjectileSpeed(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->projectilespeed;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getExplosionSpeed(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getExplosionSpeed(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.explosionSpeed;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getOnlyTargetCategory(int skirmishAIId, int weaponDefId) {
-	return 0xFFFFFFFF;
-}
+EXPORT(int) skirmishAiCallback_WeaponDef_getOnlyTargetCategory(int skirmishAIId, int weaponDefId) { return 0xFFFFFFFF; }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getWobble(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getWobble(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->wobble;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getDance(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getDance(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->dance;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getTrajectoryHeight(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getTrajectoryHeight(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->trajectoryHeight;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isLargeBeamLaser(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isLargeBeamLaser(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->largeBeamLaser;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isShield(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isShield(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->isShield;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isShieldRepulser(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isShieldRepulser(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldRepulser;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isSmartShield(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isSmartShield(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->smartShield;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isExteriorShield(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isExteriorShield(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->exteriorShield;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isVisibleShield(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isVisibleShield(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->visibleShield;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isVisibleShieldRepulse(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isVisibleShieldRepulse(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->visibleShieldRepulse;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getVisibleShieldHitFrames(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getVisibleShieldHitFrames(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->visibleShieldHitFrames;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getResourceUse(int skirmishAIId, int weaponDefId, int resourceId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getResourceUse(int skirmishAIId, int weaponDefId, int resourceId)
+{
 	const WeaponDef* wd = getWeaponDefById(skirmishAIId, weaponDefId);
 
 	if (resourceId == resourceHandler->GetEnergyId())
@@ -4589,27 +4847,34 @@ EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getResourceUse(int skirmishAII
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getRadius(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getRadius(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldRadius;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getForce(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getForce(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldForce;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getMaxSpeed(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getMaxSpeed(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldMaxSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getPower(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getPower(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldPower;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getPowerRegen(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getPowerRegen(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldPowerRegen;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getPowerRegenResource(int skirmishAIId, int weaponDefId, int resourceId) {
+EXPORT(float)
+skirmishAiCallback_WeaponDef_Shield_getPowerRegenResource(int skirmishAIId, int weaponDefId, int resourceId)
+{
 	const WeaponDef* wd = getWeaponDefById(skirmishAIId, weaponDefId);
 
 	if (resourceId == resourceHandler->GetEnergyId())
@@ -4618,93 +4883,109 @@ EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getPowerRegenResource(int skir
 	return 0.0f;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getStartingPower(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_Shield_getStartingPower(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldStartingPower;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_Shield_getRechargeDelay(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_Shield_getRechargeDelay(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldRechargeDelay;
 }
 
-
-EXPORT(int) skirmishAiCallback_WeaponDef_Shield_getInterceptType(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_Shield_getInterceptType(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->shieldInterceptType;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getInterceptedByShieldType(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getInterceptedByShieldType(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->interceptedByShieldType;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isAvoidFriendly(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isAvoidFriendly(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->avoidFriendly;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isAvoidFeature(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isAvoidFeature(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->avoidFeature;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isAvoidNeutral(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isAvoidNeutral(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->avoidNeutral;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getTargetBorder(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getTargetBorder(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->targetBorder;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getCylinderTargetting(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getCylinderTargetting(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->cylinderTargeting;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getMinIntensity(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getMinIntensity(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->minIntensity;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getHeightBoostFactor(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getHeightBoostFactor(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->heightBoostFactor;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getProximityPriority(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getProximityPriority(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->proximityPriority;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getCollisionFlags(int skirmishAIId, int weaponDefId) {
+EXPORT(int) skirmishAiCallback_WeaponDef_getCollisionFlags(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->collisionFlags;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isSweepFire(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isSweepFire(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->sweepFire;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isAbleToAttackGround(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isAbleToAttackGround(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->canAttackGround;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getCameraShake(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getCameraShake(int skirmishAIId, int weaponDefId)
+{
 	return 0.0f; // DEPRECATED
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getDynDamageExp(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getDynDamageExp(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.dynDamageExp;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getDynDamageMin(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getDynDamageMin(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.dynDamageMin;
 }
 
-EXPORT(float) skirmishAiCallback_WeaponDef_getDynDamageRange(int skirmishAIId, int weaponDefId) {
+EXPORT(float) skirmishAiCallback_WeaponDef_getDynDamageRange(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.dynDamageRange;
 }
 
-EXPORT(bool) skirmishAiCallback_WeaponDef_isDynDamageInverted(int skirmishAIId, int weaponDefId) {
+EXPORT(bool) skirmishAiCallback_WeaponDef_isDynDamageInverted(int skirmishAIId, int weaponDefId)
+{
 	return getWeaponDefById(skirmishAIId, weaponDefId)->damages.dynDamageInverted;
 }
 
-EXPORT(int) skirmishAiCallback_WeaponDef_getCustomParams(
-	int skirmishAIId,
-	int weaponDefId,
-	const char** keys,
-	const char** values
-) {
+EXPORT(int)
+skirmishAiCallback_WeaponDef_getCustomParams(int skirmishAIId, int weaponDefId, const char** keys, const char** values)
+{
 	const auto& ps = getWeaponDefById(skirmishAIId, weaponDefId)->customParams;
 	const size_t paramsRealSize = ps.size();
 
@@ -4714,11 +4995,12 @@ EXPORT(int) skirmishAiCallback_WeaponDef_getCustomParams(
 	return paramsRealSize;
 }
 
-//########### END WeaponDef
+// ########### END WeaponDef
 
 
-//########### BEGIN Weapon
-EXPORT(int) skirmishAiCallback_Unit_Weapon_getDef(int skirmishAIId, int unitId, int weaponId) {
+// ########### BEGIN Weapon
+EXPORT(int) skirmishAiCallback_Unit_Weapon_getDef(int skirmishAIId, int unitId, int weaponId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr || ((size_t)weaponId >= unit->weapons.size()))
@@ -4727,7 +5009,8 @@ EXPORT(int) skirmishAiCallback_Unit_Weapon_getDef(int skirmishAIId, int unitId, 
 	return unit->weapons[weaponId]->weaponDef->id;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_Weapon_getReloadFrame(int skirmishAIId, int unitId, int weaponId) {
+EXPORT(int) skirmishAiCallback_Unit_Weapon_getReloadFrame(int skirmishAIId, int unitId, int weaponId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr || ((size_t)weaponId >= unit->weapons.size()))
@@ -4736,7 +5019,8 @@ EXPORT(int) skirmishAiCallback_Unit_Weapon_getReloadFrame(int skirmishAIId, int 
 	return unit->weapons[weaponId]->reloadStatus;
 }
 
-EXPORT(int) skirmishAiCallback_Unit_Weapon_getReloadTime(int skirmishAIId, int unitId, int weaponId) {
+EXPORT(int) skirmishAiCallback_Unit_Weapon_getReloadTime(int skirmishAIId, int unitId, int weaponId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr || ((size_t)weaponId >= unit->weapons.size()))
@@ -4746,7 +5030,8 @@ EXPORT(int) skirmishAiCallback_Unit_Weapon_getReloadTime(int skirmishAIId, int u
 	return weapon->reloadTime / unit->reloadSpeed;
 }
 
-EXPORT(float) skirmishAiCallback_Unit_Weapon_getRange(int skirmishAIId, int unitId, int weaponId) {
+EXPORT(float) skirmishAiCallback_Unit_Weapon_getRange(int skirmishAIId, int unitId, int weaponId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr || ((size_t)weaponId >= unit->weapons.size()))
@@ -4755,7 +5040,8 @@ EXPORT(float) skirmishAiCallback_Unit_Weapon_getRange(int skirmishAIId, int unit
 	return unit->weapons[weaponId]->range;
 }
 
-EXPORT(bool) skirmishAiCallback_Unit_Weapon_isShieldEnabled(int skirmishAIId, int unitId, int weaponId) {
+EXPORT(bool) skirmishAiCallback_Unit_Weapon_isShieldEnabled(int skirmishAIId, int unitId, int weaponId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr)
@@ -4765,7 +5051,8 @@ EXPORT(bool) skirmishAiCallback_Unit_Weapon_isShieldEnabled(int skirmishAIId, in
 
 	if ((size_t)weaponId >= unit->weapons.size()) {
 		shield = static_cast<const CPlasmaRepulser*>(unit->shieldWeapon);
-	} else {
+	}
+	else {
 		shield = dynamic_cast<const CPlasmaRepulser*>(unit->weapons[weaponId]);
 	}
 
@@ -4775,7 +5062,8 @@ EXPORT(bool) skirmishAiCallback_Unit_Weapon_isShieldEnabled(int skirmishAIId, in
 	return shield->IsEnabled();
 }
 
-EXPORT(float) skirmishAiCallback_Unit_Weapon_getShieldPower(int skirmishAIId, int unitId, int weaponId) {
+EXPORT(float) skirmishAiCallback_Unit_Weapon_getShieldPower(int skirmishAIId, int unitId, int weaponId)
+{
 	const CUnit* unit = getUnit(unitId);
 
 	if (unit == nullptr)
@@ -4785,7 +5073,8 @@ EXPORT(float) skirmishAiCallback_Unit_Weapon_getShieldPower(int skirmishAIId, in
 
 	if ((size_t)weaponId >= unit->weapons.size()) {
 		shield = static_cast<const CPlasmaRepulser*>(unit->shieldWeapon);
-	} else {
+	}
+	else {
 		shield = dynamic_cast<const CPlasmaRepulser*>(unit->weapons[weaponId]);
 	}
 
@@ -4795,15 +5084,17 @@ EXPORT(float) skirmishAiCallback_Unit_Weapon_getShieldPower(int skirmishAIId, in
 	return shield->GetCurPower();
 }
 
-//########### END Weapon
+// ########### END Weapon
 
 
-EXPORT(bool) skirmishAiCallback_Debug_GraphDrawer_isEnabled(int skirmishAIId) {
+EXPORT(bool) skirmishAiCallback_Debug_GraphDrawer_isEnabled(int skirmishAIId)
+{
 	return GetCallBack(skirmishAIId)->IsDebugDrawerEnabled();
 }
 
-EXPORT(int) skirmishAiCallback_getGroups(int skirmishAIId, int* groupIds, int maxGroups) {
-	const CGroupHandler& gh = uiGroupHandlers[ AI_TEAM_IDS[skirmishAIId] ];
+EXPORT(int) skirmishAiCallback_getGroups(int skirmishAIId, int* groupIds, int maxGroups)
+{
+	const CGroupHandler& gh = uiGroupHandlers[AI_TEAM_IDS[skirmishAIId]];
 	const std::vector<CGroup>& gs = gh.GetGroups();
 
 	const int numGroups = gs.size();
@@ -4820,38 +5111,48 @@ EXPORT(int) skirmishAiCallback_getGroups(int skirmishAIId, int* groupIds, int ma
 	return numGroupsRet;
 }
 
-EXPORT(int) skirmishAiCallback_Group_getSupportedCommands(int skirmishAIId, int groupId) {
+EXPORT(int) skirmishAiCallback_Group_getSupportedCommands(int skirmishAIId, int groupId)
+{
 	return GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->size();
 }
 
-EXPORT(int) skirmishAiCallback_Group_SupportedCommand_getId(int skirmishAIId, int groupId, int supportedCommandId) {
+EXPORT(int) skirmishAiCallback_Group_SupportedCommand_getId(int skirmishAIId, int groupId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->id;
 }
 
-EXPORT(const char*) skirmishAiCallback_Group_SupportedCommand_getName(int skirmishAIId, int groupId, int supportedCommandId) {
+EXPORT(const char*)
+skirmishAiCallback_Group_SupportedCommand_getName(int skirmishAIId, int groupId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->name.c_str();
 }
 
-EXPORT(const char*) skirmishAiCallback_Group_SupportedCommand_getToolTip(int skirmishAIId, int groupId, int supportedCommandId) {
+EXPORT(const char*)
+skirmishAiCallback_Group_SupportedCommand_getToolTip(int skirmishAIId, int groupId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->tooltip.c_str();
 }
 
-EXPORT(bool) skirmishAiCallback_Group_SupportedCommand_isShowUnique(int skirmishAIId, int groupId, int supportedCommandId) {
+EXPORT(bool)
+skirmishAiCallback_Group_SupportedCommand_isShowUnique(int skirmishAIId, int groupId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->showUnique;
 }
 
-EXPORT(bool) skirmishAiCallback_Group_SupportedCommand_isDisabled(int skirmishAIId, int groupId, int supportedCommandId) {
+EXPORT(bool) skirmishAiCallback_Group_SupportedCommand_isDisabled(int skirmishAIId, int groupId, int supportedCommandId)
+{
 	return GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->disabled;
 }
 
-EXPORT(int) skirmishAiCallback_Group_SupportedCommand_getParams(
-	int skirmishAIId,
-	int groupId,
-	int supportedCommandId,
-	const char** params,
-	int maxNumParams
-) {
-	const std::vector<std::string>& ps = GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->params;
+EXPORT(int)
+skirmishAiCallback_Group_SupportedCommand_getParams(int skirmishAIId,
+    int groupId,
+    int supportedCommandId,
+    const char** params,
+    int maxNumParams)
+{
+	const std::vector<std::string>& ps =
+	    GetCallBack(skirmishAIId)->GetGroupCommands(groupId)->at(supportedCommandId)->params;
 	const int cqNumParams = ps.size();
 	// NOTE: LegacyCpp AI interface wrapper expects real array size as return-value after 1st call with outArray=nullptr
 	int retNumParams = cqNumParams;
@@ -4865,40 +5166,41 @@ EXPORT(int) skirmishAiCallback_Group_SupportedCommand_getParams(
 	return retNumParams;
 }
 
-EXPORT(int) skirmishAiCallback_Group_OrderPreview_getId(int skirmishAIId, int groupId) {
+EXPORT(int) skirmishAiCallback_Group_OrderPreview_getId(int skirmishAIId, int groupId)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return -1;
 
 	return (guihandler->GetOrderPreview()).GetID();
 }
 
-EXPORT(short) skirmishAiCallback_Group_OrderPreview_getOptions(int skirmishAIId, int groupId) {
+EXPORT(short) skirmishAiCallback_Group_OrderPreview_getOptions(int skirmishAIId, int groupId)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return 0;
 
 	return (guihandler->GetOrderPreview()).GetOpts();
 }
 
-EXPORT(int) skirmishAiCallback_Group_OrderPreview_getTag(int skirmishAIId, int groupId) {
+EXPORT(int) skirmishAiCallback_Group_OrderPreview_getTag(int skirmishAIId, int groupId)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return 0;
 
 	return (guihandler->GetOrderPreview()).GetTag();
 }
 
-EXPORT(int) skirmishAiCallback_Group_OrderPreview_getTimeOut(int skirmishAIId, int groupId) {
+EXPORT(int) skirmishAiCallback_Group_OrderPreview_getTimeOut(int skirmishAIId, int groupId)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return -1;
 
 	return (guihandler->GetOrderPreview()).GetTimeOut();
 }
 
-EXPORT(int) skirmishAiCallback_Group_OrderPreview_getParams(
-	int skirmishAIId,
-	int groupId,
-	float* params,
-	int maxNumParams
-) {
+EXPORT(int)
+skirmishAiCallback_Group_OrderPreview_getParams(int skirmishAIId, int groupId, float* params, int maxNumParams)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return 0;
 
@@ -4918,19 +5220,19 @@ EXPORT(int) skirmishAiCallback_Group_OrderPreview_getParams(
 	return retNumParams;
 }
 
-EXPORT(bool) skirmishAiCallback_Group_isSelected(int skirmishAIId, int groupId) {
+EXPORT(bool) skirmishAiCallback_Group_isSelected(int skirmishAIId, int groupId)
+{
 	if (!isControlledByLocalPlayer(skirmishAIId))
 		return false;
 
 	return (selectedUnitsHandler.IsGroupSelected(groupId));
 }
 
-//##############################################################################
+// ##############################################################################
 
 
-
-
-static void skirmishAiCallback_init(SSkirmishAICallback* callback) {
+static void skirmishAiCallback_init(SSkirmishAICallback* callback)
+{
 	memset(callback, 0, sizeof(SSkirmishAICallback));
 
 	// register function pointers to accessors (which wrap around the legacy callbacks)
@@ -5529,7 +5831,7 @@ static void skirmishAiCallback_init(SSkirmishAICallback* callback) {
 
 SSkirmishAICallback* skirmishAiCallback_GetInstance(CSkirmishAIWrapper* ai)
 {
-	AI_LEGACY_CALLBACKS[ai->GetSkirmishAIID()].first  = CAICallback(ai->GetTeamId());
+	AI_LEGACY_CALLBACKS[ai->GetSkirmishAIID()].first = CAICallback(ai->GetTeamId());
 	AI_LEGACY_CALLBACKS[ai->GetSkirmishAIID()].second = CAICheats(ai); // NB: leaks <ai>
 
 	AI_CHEAT_FLAGS[ai->GetSkirmishAIID()] = {false, false};
@@ -5540,8 +5842,9 @@ SSkirmishAICallback* skirmishAiCallback_GetInstance(CSkirmishAIWrapper* ai)
 	return &AI_CALLBACK_WRAPPERS[ai->GetSkirmishAIID()];
 }
 
-void skirmishAiCallback_Release(const CSkirmishAIWrapper* ai) {
-	AI_LEGACY_CALLBACKS[ai->GetSkirmishAIID()].first  = {};
+void skirmishAiCallback_Release(const CSkirmishAIWrapper* ai)
+{
+	AI_LEGACY_CALLBACKS[ai->GetSkirmishAIID()].first = {};
 	AI_LEGACY_CALLBACKS[ai->GetSkirmishAIID()].second = {};
 
 	AI_CHEAT_FLAGS[ai->GetSkirmishAIID()] = {false, false};
@@ -5552,4 +5855,3 @@ void skirmishAiCallback_BlockOrders(const CSkirmishAIWrapper* ai)
 {
 	GetCallBack(ai->GetSkirmishAIID())->AllowOrders(false);
 }
-

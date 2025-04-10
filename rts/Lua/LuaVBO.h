@@ -13,6 +13,7 @@ public:
 	static int GetVBO(lua_State* L);
 	static bool PushEntries(lua_State* L);
 	std::vector<std::weak_ptr<LuaVBOImpl>> luaVBOs;
+
 private:
 	static bool CheckAndReportSupported(lua_State* L, const unsigned int target);
 };

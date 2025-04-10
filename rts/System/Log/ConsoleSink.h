@@ -18,8 +18,8 @@ void log_console_colorizedOutput(bool enable);
 #endif
 
 struct ConsoleSinkRegistrator {
-    ConsoleSinkRegistrator();
-    ~ConsoleSinkRegistrator();
+	ConsoleSinkRegistrator();
+	~ConsoleSinkRegistrator();
 };
 
 #endif // LOG_CONSOLE_SINK_H

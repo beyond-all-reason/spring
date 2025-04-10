@@ -269,7 +269,7 @@ local function AnimFinished(waitingForAnim, piece, axis)
 	if wthreads then
 		waitingForAnim[index] = {}
 
-		while (#wthreads > 0) do	
+		while (#wthreads > 0) do
 			wthread = wthreads[#wthreads]
 			wthreads[#wthreads] = nil
 

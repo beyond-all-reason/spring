@@ -6,14 +6,12 @@
 #include <string>
 #include <vector>
 
-
 /**
  * @brief logging class
  * Game UI elements that display log can subscribe to it to receive the log
  * messages.
  */
-class CLogOutput
-{
+class CLogOutput {
 public:
 	CLogOutput();
 
@@ -26,12 +24,14 @@ public:
 	 * @see Initialize()
 	 */
 	void SetFileName(std::string fileName);
+
 	/**
 	 * @brief returns the log file name (without path)
 	 *
 	 * Relative paths are relative to the writable data-dir.
 	 */
 	const std::string& GetFileName() const { return fileName; }
+
 	/**
 	 * @brief returns the absolute path to the log file
 	 *
@@ -49,8 +49,8 @@ public:
 	 * after the engine chdir'ed to the correct directory.
 	 */
 	void Initialize();
-	bool IsInitialized() const { return (!filePath.empty()); }
 
+	bool IsInitialized() const { return (!filePath.empty()); }
 
 	/**
 	 * Log()s system information (CPU, 32/64bit, gcc/boost version, ...)
@@ -80,11 +80,8 @@ private:
 
 	std::string fileName;
 	std::string filePath;
-
 };
-
 
 extern CLogOutput logOutput;
 
 #endif // LOG_OUTPUT_H
-

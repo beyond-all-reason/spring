@@ -34,7 +34,7 @@ mouseBoxBlendDst   one_minus_src_alpha
 alwaysDrawQueue   1
 
 useQueueIcons     1
-queueIconAlpha    0.5   
+queueIconAlpha    0.5
 queueIconScale    1.0
 
 // If set to 0, the first order in a unit's drawn queue

@@ -3,32 +3,36 @@
 #ifndef DEMO_RECORDER
 #define DEMO_RECORDER
 
-#include <vector>
-#include <sstream>
-#include <zlib.h>
-
 #include "Demo.h"
+
 #include "Game/Players/PlayerStatistics.h"
 #include "Sim/Misc/TeamStatistics.h"
 
+#include <sstream>
+#include <vector>
+
+#include <zlib.h>
 
 /**
  * @brief Used to record demos
  */
-class CDemoRecorder : public CDemo
-{
+class CDemoRecorder : public CDemo {
 public:
 	CDemoRecorder() { memset(&fileHeader, 0, sizeof(fileHeader)); }
+
 	CDemoRecorder(const std::string& mapName, const std::string& modName, bool serverDemo);
 
 	CDemoRecorder(const CDemoRecorder&) = delete;
+
 	CDemoRecorder(CDemoRecorder&& r) { *this = std::move(r); }
 
 	~CDemoRecorder();
 
 
-	CDemoRecorder& operator = (const CDemoRecorder&) = delete;
-	CDemoRecorder& operator = (CDemoRecorder&& r) {
+	CDemoRecorder& operator=(const CDemoRecorder&) = delete;
+
+	CDemoRecorder& operator=(CDemoRecorder&& r)
+	{
 		memcpy(&fileHeader, &r.fileHeader, sizeof(fileHeader));
 		memset(&r.fileHeader, 0, sizeof(fileHeader));
 
@@ -43,7 +47,6 @@ public:
 		return *this;
 	}
 
-
 	bool IsValid() const { return (file != nullptr); }
 
 	void WriteSetupText(const std::string& text);
@@ -51,6 +54,7 @@ public:
 
 	void SetStream();
 	void SetName(const std::string& mapName, const std::string& modName);
+
 	const std::string& GetName() const { return demoName; }
 
 	void SetGameID(const unsigned char* buf);
@@ -74,7 +78,7 @@ private:
 	gzFile file = nullptr;
 
 	std::vector<PlayerStatistics> playerStats;
-	std::vector< std::vector<TeamStatistics> > teamStats;
+	std::vector<std::vector<TeamStatistics>> teamStats;
 	std::vector<unsigned char> winningAllyTeams;
 
 	bool isServerDemo = false;
@@ -82,4 +86,3 @@ private:
 
 
 #endif
-

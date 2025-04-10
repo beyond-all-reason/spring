@@ -5,23 +5,20 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CGeoSquareProjectile : public CProjectile
-{
+class CGeoSquareProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CGeoSquareProjectile)
 public:
-	CGeoSquareProjectile() { }
-	CGeoSquareProjectile(
-		const float3& p1, const float3& p2,
-		const float3& v1, const float3& v2,
-		float w1, float w2
-	);
+	CGeoSquareProjectile() {}
+
+	CGeoSquareProjectile(const float3& p1, const float3& p2, const float3& v1, const float3& v2, float w1, float w2);
 
 	void Draw() override;
 	void Update() override;
 
 	int GetProjectilesCount() const override;
 
-	void SetColor(float r, float g, float b, float a) {
+	void SetColor(float r, float g, float b, float a)
+	{
 		this->r = r;
 		this->g = g;
 		this->b = b;
@@ -30,8 +27,8 @@ public:
 
 private:
 	float3 p1, p2, v1, v2; ///< FIXME what is this?
-	float w1, w2; ///< FIXME what is this?
-	float r, g, b, a; ///< RGBA color
+	float w1, w2;          ///< FIXME what is this?
+	float r, g, b, a;      ///< RGBA color
 };
 
 

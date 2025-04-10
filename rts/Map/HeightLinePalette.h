@@ -4,12 +4,11 @@
 #define HEIGHT_LINE_PALETTE_H
 
 #include "System/Color.h"
+
 #include <array>
 
-
 /** @brief The palette used in height-map rendering mode (F1). */
-class CHeightLinePalette
-{
+class CHeightLinePalette {
 public:
 	/**
 	 * @brief Returns the palette.

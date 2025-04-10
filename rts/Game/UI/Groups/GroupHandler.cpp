@@ -1,39 +1,41 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <SDL_keycode.h>
-
 #include "GroupHandler.h"
+
 #include "Group.h"
-#include "Game/SelectedUnitsHandler.h"
+
 #include "Game/CameraHandler.h"
+#include "Game/SelectedUnitsHandler.h"
 #include "Sim/Units/UnitHandler.h"
-#include "System/Input/KeyInput.h"
-#include "System/Log/ILog.h"
 #include "System/ContainerUtil.h"
 #include "System/EventHandler.h"
+#include "System/Input/KeyInput.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringHash.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <SDL_keycode.h>
 
 std::vector<CGroupHandler> uiGroupHandlers;
 
 CR_BIND(CGroupHandler, (0))
-CR_REG_METADATA(CGroupHandler, (
-	CR_MEMBER(groups),
-	CR_MEMBER(freeGroups),
-	CR_MEMBER(changedGroups),
-	CR_MEMBER(unitGroups),
+CR_REG_METADATA(CGroupHandler,
+    (CR_MEMBER(groups),
+        CR_MEMBER(freeGroups),
+        CR_MEMBER(changedGroups),
+        CR_MEMBER(unitGroups),
 
-	CR_MEMBER(team),
-	CR_MEMBER(firstUnusedGroup)
+        CR_MEMBER(team),
+        CR_MEMBER(firstUnusedGroup)
 
-))
+            ))
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CGroupHandler::CGroupHandler(int teamId): team(teamId)
+CGroupHandler::CGroupHandler(int teamId)
+    : team(teamId)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	groups.reserve(FIRST_SPECIAL_GROUP);
@@ -42,7 +44,6 @@ CGroupHandler::CGroupHandler(int teamId): team(teamId)
 		groups.emplace_back(groupId, teamId);
 	}
 }
-
 
 void CGroupHandler::Update()
 {
@@ -75,7 +76,7 @@ bool CGroupHandler::GroupCommand(int num)
 	bool error;
 
 	if (KeyInput::GetKeyModState(KMOD_CTRL))
-		return GroupCommand(num, (!KeyInput::GetKeyModState(KMOD_SHIFT))? "set": "add", error);
+		return GroupCommand(num, (!KeyInput::GetKeyModState(KMOD_SHIFT)) ? "set" : "add", error);
 
 	if (KeyInput::GetKeyModState(KMOD_SHIFT))
 		return GroupCommand(num, "selectadd", error);
@@ -93,84 +94,85 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 	CGroup* group = GetGroup(num);
 
 	switch (hashString(cmd.c_str())) {
-		case hashString("set"):
-		case hashString("add"): {
-			if (cmd[0] == 's')
-				group->ClearUnits();
+	case hashString("set"):
+	case hashString("add"): {
+		if (cmd[0] == 's')
+			group->ClearUnits();
 
-			for (const int unitID: selectedUnitsHandler.selectedUnits) {
-				CUnit* u = unitHandler.GetUnit(unitID);
+		for (const int unitID: selectedUnitsHandler.selectedUnits) {
+			CUnit* u = unitHandler.GetUnit(unitID);
 
-				if (u == nullptr) {
-					assert(false);
-					continue;
-				}
-
-				// change group, but do not call SUH::AddUnit while iterating
-				u->SetGroup(group, false, false);
-			}
-		} break;
-
-		case hashString("select"): {
-			if (group->units.empty())
-				return false;
-
-			selectedUnitsHandler.SelectGroup(num);
-
-			return true;
-		} break;
-
-		case hashString("focus"): {
-			if (group->units.empty())
-				return false;
-
-			camHandler->CameraTransition(0.5f);
-			camHandler->GetCurrentController().SetPos(group->CalculateCenter());
-
-			return true;
-		} break;
-
-		case hashString("selectadd"): {
-			// do not select the group, just add its members to the current selection
-			for (const int unitID: group->units) {
-				selectedUnitsHandler.AddUnit(unitHandler.GetUnit(unitID));
+			if (u == nullptr) {
+				assert(false);
+				continue;
 			}
 
-			return true;
-		} break;
-
-		case hashString("selectclear"): {
-			// do not select the group, just remove its members from the current selection
-			for (const int unitID: group->units) {
-				selectedUnitsHandler.RemoveUnit(unitHandler.GetUnit(unitID));
-			}
-
-			return true;
-		} break;
-
-		case hashString("selecttoggle"): {
-			// do not select the group, just toggle its members with the current selection
-			const auto& selUnits = selectedUnitsHandler.selectedUnits;
-
-			for (const int unitID: group->units) {
-				CUnit* unit = unitHandler.GetUnit(unitID);
-
-				if (selUnits.find(unitID) == selUnits.end()) {
-					selectedUnitsHandler.AddUnit(unit);
-				} else {
-					selectedUnitsHandler.RemoveUnit(unit);
-				}
-			}
-
-			return true;
-		} break;
-		// Selects or focuses camera on group.
-		case hashString(""): break;
-		// Unrecognized command
-		default: {
-			error = true;
-			return false;
+			// change group, but do not call SUH::AddUnit while iterating
+			u->SetGroup(group, false, false);
 		}
+	} break;
+
+	case hashString("select"): {
+		if (group->units.empty())
+			return false;
+
+		selectedUnitsHandler.SelectGroup(num);
+
+		return true;
+	} break;
+
+	case hashString("focus"): {
+		if (group->units.empty())
+			return false;
+
+		camHandler->CameraTransition(0.5f);
+		camHandler->GetCurrentController().SetPos(group->CalculateCenter());
+
+		return true;
+	} break;
+
+	case hashString("selectadd"): {
+		// do not select the group, just add its members to the current selection
+		for (const int unitID: group->units) {
+			selectedUnitsHandler.AddUnit(unitHandler.GetUnit(unitID));
+		}
+
+		return true;
+	} break;
+
+	case hashString("selectclear"): {
+		// do not select the group, just remove its members from the current selection
+		for (const int unitID: group->units) {
+			selectedUnitsHandler.RemoveUnit(unitHandler.GetUnit(unitID));
+		}
+
+		return true;
+	} break;
+
+	case hashString("selecttoggle"): {
+		// do not select the group, just toggle its members with the current selection
+		const auto& selUnits = selectedUnitsHandler.selectedUnits;
+
+		for (const int unitID: group->units) {
+			CUnit* unit = unitHandler.GetUnit(unitID);
+
+			if (selUnits.find(unitID) == selUnits.end()) {
+				selectedUnitsHandler.AddUnit(unit);
+			}
+			else {
+				selectedUnitsHandler.RemoveUnit(unit);
+			}
+		}
+
+		return true;
+	} break;
+	// Selects or focuses camera on group.
+	case hashString(""): break;
+	// Unrecognized command
+	default: {
+		error = true;
+		return false;
+	}
 	}
 
 	if (group->units.empty())
@@ -185,7 +187,6 @@ bool CGroupHandler::GroupCommand(int num, const std::string& cmd, bool& error)
 	return true;
 }
 
-
 CGroup* CGroupHandler::CreateNewGroup()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -194,7 +195,7 @@ CGroup* CGroupHandler::CreateNewGroup()
 		return &groups[groups.size() - 1];
 	}
 
-	return &groups[ spring::VectorBackPop(freeGroups) ];
+	return &groups[spring::VectorBackPop(freeGroups)];
 }
 
 void CGroupHandler::RemoveGroup(CGroup* group)

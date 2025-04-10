@@ -3,42 +3,32 @@
 // Used for all metal-extractors.
 // Handles the metal-make-process.
 
-#include <typeinfo>
 #include "ExtractorBuilding.h"
-#include "Sim/Units/Scripts/UnitScript.h"
-#include "Sim/Units/UnitHandler.h"
-#include "Map/ReadMap.h"
-#include "Sim/Units/UnitDef.h"
-#include "Map/MetalMap.h"
-#include "Sim/Misc/QuadField.h"
-#include "System/ContainerUtil.h"
 
+#include "Map/MetalMap.h"
+#include "Map/ReadMap.h"
+#include "Sim/Misc/QuadField.h"
+#include "Sim/Units/Scripts/UnitScript.h"
+#include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitHandler.h"
+#include "System/ContainerUtil.h"
 #include "System/Misc/TracyDefs.h"
+
+#include <typeinfo>
 
 
 CR_BIND_DERIVED(CExtractorBuilding, CBuilding, )
-CR_REG_METADATA(CExtractorBuilding, (
-	CR_MEMBER(extractionRange),
-	CR_MEMBER(extractionDepth),
-	CR_MEMBER(metalAreaOfControl),
-	CR_MEMBER(neighbours)
-))
+CR_REG_METADATA(CExtractorBuilding,
+    (CR_MEMBER(extractionRange), CR_MEMBER(extractionDepth), CR_MEMBER(metalAreaOfControl), CR_MEMBER(neighbours)))
 
 CR_BIND(CExtractorBuilding::MetalSquareOfControl, )
 
-CR_REG_METADATA_SUB(CExtractorBuilding,MetalSquareOfControl, (
-	CR_MEMBER(x),
-	CR_MEMBER(z),
-	CR_MEMBER(extractionDepth)
-))
+CR_REG_METADATA_SUB(CExtractorBuilding, MetalSquareOfControl, (CR_MEMBER(x), CR_MEMBER(z), CR_MEMBER(extractionDepth)))
 
 // TODO: How are class statics incorporated into creg?
 float CExtractorBuilding::maxExtractionRange = 0.0f;
 
-CExtractorBuilding::~CExtractorBuilding()
-{
-	ResetExtraction();
-}
+CExtractorBuilding::~CExtractorBuilding() { ResetExtraction(); }
 
 void CExtractorBuilding::PreInit(const UnitLoadParams& params)
 {
@@ -70,8 +60,6 @@ void CExtractorBuilding::ResetExtraction()
 	}
 	neighbours.clear();
 }
-
-
 
 /* determine if two extraction areas overlap */
 bool CExtractorBuilding::IsNeighbour(CExtractorBuilding* other)
@@ -117,10 +105,10 @@ void CExtractorBuilding::SetExtractionRangeAndDepth(float range, float depth)
 	// calculate this extractor's area of control and metalExtract amount
 	metalExtract = 0;
 
-	const int xBegin = std::max(                   0, (int) ((pos.x - extractionRange) / METAL_MAP_SQUARE_SIZE));
-	const int xEnd   = std::min(mapDims.mapx / 2 - 1, (int) ((pos.x + extractionRange) / METAL_MAP_SQUARE_SIZE));
-	const int zBegin = std::max(                   0, (int) ((pos.z - extractionRange) / METAL_MAP_SQUARE_SIZE));
-	const int zEnd   = std::min(mapDims.mapy / 2 - 1, (int) ((pos.z + extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int xBegin = std::max(0, (int)((pos.x - extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int xEnd = std::min(mapDims.mapx / 2 - 1, (int)((pos.x + extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int zBegin = std::max(0, (int)((pos.z - extractionRange) / METAL_MAP_SQUARE_SIZE));
+	const int zEnd = std::min(mapDims.mapy / 2 - 1, (int)((pos.z + extractionRange) / METAL_MAP_SQUARE_SIZE));
 
 	metalAreaOfControl.reserve((xEnd - xBegin + 1) * (zEnd - zBegin + 1));
 
@@ -128,8 +116,7 @@ void CExtractorBuilding::SetExtractionRangeAndDepth(float range, float depth)
 	for (int x = xBegin; x <= xEnd; x++) {
 		for (int z = zBegin; z <= zEnd; z++) {
 			// center of metalsquare at (x, z)
-			const float3 msqrPos((x + 0.5f) * METAL_MAP_SQUARE_SIZE, pos.y,
-													 (z + 0.5f) * METAL_MAP_SQUARE_SIZE);
+			const float3 msqrPos((x + 0.5f) * METAL_MAP_SQUARE_SIZE, pos.y, (z + 0.5f) * METAL_MAP_SQUARE_SIZE);
 			const float sqrCenterDistance = msqrPos.SqDistance2D(this->pos);
 
 			if (sqrCenterDistance < Square(extractionRange)) {
@@ -148,7 +135,6 @@ void CExtractorBuilding::SetExtractionRangeAndDepth(float range, float depth)
 	script->ExtractionRateChanged(metalExtract);
 }
 
-
 /* adds a neighbour for this extractor */
 void CExtractorBuilding::AddNeighbour(CExtractorBuilding* neighbour)
 {
@@ -164,7 +150,6 @@ void CExtractorBuilding::RemoveNeighbour(CExtractorBuilding* neighbour)
 	assert(neighbour != this);
 	spring::VectorErase(neighbours, neighbour);
 }
-
 
 /* recalculate metalExtract for this extractor (eg. when a neighbour dies) */
 void CExtractorBuilding::ReCalculateMetalExtraction()
@@ -186,7 +171,6 @@ void CExtractorBuilding::ReCalculateMetalExtraction()
 	script->ExtractionRateChanged(metalExtract);
 }
 
-
 void CExtractorBuilding::Activate()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -198,7 +182,6 @@ void CExtractorBuilding::Activate()
 	/* Finds the amount of metal to extract and sets the rotationspeed when the extractor is built. */
 	SetExtractionRangeAndDepth(extractionRange, extractionDepth);
 }
-
 
 void CExtractorBuilding::Deactivate()
 {

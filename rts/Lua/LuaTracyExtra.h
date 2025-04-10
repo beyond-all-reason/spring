@@ -5,5 +5,5 @@
 struct lua_State;
 
 namespace LuaTracyExtra {
-	bool PushEntries(lua_State* L);
+bool PushEntries(lua_State* L);
 };

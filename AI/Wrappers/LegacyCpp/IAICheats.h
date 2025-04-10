@@ -4,9 +4,9 @@
 #define I_AI_CHEATS_H
 
 #include "IAICallback.h"
+
 #include "Sim/Misc/GlobalConstants.h" // needed for MAX_UNITS
 #include "System/float3.h"
-
 
 namespace springLegacyAI {
 
@@ -20,8 +20,7 @@ struct UnitResourceInfo;
  * or more players are around (although you actually can't,
  * since they call OnlyPassiveCheats() internally)
  */
-class IAICheats
-{
+class IAICheats {
 public:
 	/**
 	 * This function has the same effect as setting a handicap value
@@ -54,9 +53,8 @@ public:
 	virtual int GetNeutralUnits(int* unitIds, int unitIds_max = MAX_UNITS) = 0;
 	virtual int GetNeutralUnits(int* unitIds, const float3& pos, float radius, int unitIds_max = MAX_UNITS) = 0;
 
-	virtual int GetFeatures(int *features, int max) = 0;
-	virtual int GetFeatures(int *features, int max, const float3& pos,
-			float radius) = 0;
+	virtual int GetFeatures(int* features, int max) = 0;
+	virtual int GetFeatures(int* features, int max, const float3& pos, float radius) = 0;
 
 	virtual int GetUnitTeam(int unitid) = 0;
 	virtual int GetUnitAllyTeam(int unitid) = 0;

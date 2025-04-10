@@ -3,9 +3,10 @@
 #ifndef _INTERFACE_H
 #define _INTERFACE_H
 
-#include "ExternalAI/Interface/SSkirmishAILibrary.h"
 #include "SSkirmishAISpecifier.h"
+
 #include "CUtils/SharedLibrary.h"
+#include "ExternalAI/Interface/SSkirmishAILibrary.h"
 
 #include <map>
 #include <set>
@@ -23,14 +24,8 @@ public:
 	// LevelOfSupport GetLevelOfSupportFor(const char* engineVersion, int engineAIInterfaceGeneratedVersion);
 
 	// skirmish AI methods
-	const SSkirmishAILibrary* LoadSkirmishAILibrary(
-		const char* const shortName,
-		const char* const version
-	);
-	int UnloadSkirmishAILibrary(
-		const char* const shortName,
-		const char* const version
-	);
+	const SSkirmishAILibrary* LoadSkirmishAILibrary(const char* const shortName, const char* const version);
+	int UnloadSkirmishAILibrary(const char* const shortName, const char* const version);
 	int UnloadAllSkirmishAILibraries();
 
 private:
@@ -38,10 +33,7 @@ private:
 	sharedLib_t Load(const SSkirmishAISpecifier& aiKeyHash, SSkirmishAILibrary* ai);
 	sharedLib_t LoadSkirmishAILib(const std::string& libFilePath, SSkirmishAILibrary* ai);
 
-	static void reportInterfaceFunctionError(
-		const std::string& libFileName,
-		const std::string& functionName
-	);
+	static void reportInterfaceFunctionError(const std::string& libFileName, const std::string& functionName);
 
 	static void reportError(const std::string& msg);
 	std::string FindLibFile(const SSkirmishAISpecifier& sAISpecifier);

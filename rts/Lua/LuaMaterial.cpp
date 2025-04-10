@@ -8,18 +8,17 @@
 
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h" // randVector
-#include "Rendering/GlobalRendering.h" // drawFrame
-#include "Rendering/ShadowHandler.h"
 #include "Rendering/Common/ModelDrawerState.hpp"
 #include "Rendering/Env/ISky.h"
-#include "Sim/Objects/SolidObject.h"
+#include "Rendering/GlobalRendering.h" // drawFrame
+#include "Rendering/ShadowHandler.h"
 #include "Sim/Misc/GlobalSynced.h" // simFrame
+#include "Sim/Objects/SolidObject.h"
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/StringUtil.h"
 
 #include <cctype>
-
-#include "System/Misc/TracyDefs.h"
 
 struct ActiveUniform {
 	GLint size = 0;
@@ -28,7 +27,8 @@ struct ActiveUniform {
 };
 
 struct LuaMatBinPtrLessThan {
-	bool operator()(const LuaMatBin* a, const LuaMatBin* b) const {
+	bool operator()(const LuaMatBin* a, const LuaMatBin* b) const
+	{
 		const LuaMaterial* ma = static_cast<const LuaMaterial*>(a);
 		const LuaMaterial* mb = static_cast<const LuaMaterial*>(b);
 		return (*ma < *mb);
@@ -49,17 +49,17 @@ static const char* GLUniformTypeToString(const GLenum uType)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (uType) {
-		case      GL_FLOAT: return "float";
-		case GL_FLOAT_VEC2: return "vec2";
-		case GL_FLOAT_VEC3: return "vec3";
-		case GL_FLOAT_VEC4: return "vec4";
-		case        GL_INT: return "sampler/int/bool";
-		case   GL_INT_VEC2: return "ivec2/bvec2";
-		case   GL_INT_VEC3: return "ivec3/bvec3";
-		case   GL_INT_VEC4: return "ivec4/bvec4";
-		case GL_FLOAT_MAT2: return "mat2";
-		case GL_FLOAT_MAT3: return "mat3";
-		case GL_FLOAT_MAT4: return "mat4";
+	case GL_FLOAT: return "float";
+	case GL_FLOAT_VEC2: return "vec2";
+	case GL_FLOAT_VEC3: return "vec3";
+	case GL_FLOAT_VEC4: return "vec4";
+	case GL_INT: return "sampler/int/bool";
+	case GL_INT_VEC2: return "ivec2/bvec2";
+	case GL_INT_VEC3: return "ivec3/bvec3";
+	case GL_INT_VEC4: return "ivec4/bvec4";
+	case GL_FLOAT_MAT2: return "mat2";
+	case GL_FLOAT_MAT3: return "mat3";
+	case GL_FLOAT_MAT4: return "mat4";
 	}
 
 	return "unknown";
@@ -71,19 +71,17 @@ static const char* GetMatTypeName(LuaMatType type)
 	const char* typeName = "Unknown";
 
 	switch (type) {
-		case LUAMAT_ALPHA:          { typeName = "LUAMAT_ALPHA";          } break;
-		case LUAMAT_OPAQUE:         { typeName = "LUAMAT_OPAQUE";         } break;
-		case LUAMAT_ALPHA_REFLECT:  { typeName = "LUAMAT_ALPHA_REFLECT";  } break;
-		case LUAMAT_OPAQUE_REFLECT: { typeName = "LUAMAT_OPAQUE_REFLECT"; } break;
-		case LUAMAT_SHADOW:         { typeName = "LUAMAT_SHADOW";         } break;
+	case LUAMAT_ALPHA: typeName = "LUAMAT_ALPHA"; break;
+	case LUAMAT_OPAQUE: typeName = "LUAMAT_OPAQUE"; break;
+	case LUAMAT_ALPHA_REFLECT: typeName = "LUAMAT_ALPHA_REFLECT"; break;
+	case LUAMAT_OPAQUE_REFLECT: typeName = "LUAMAT_OPAQUE_REFLECT"; break;
+	case LUAMAT_SHADOW: typeName = "LUAMAT_SHADOW"; break;
 
-		case LUAMAT_TYPE_COUNT: {
-		} break;
+	case LUAMAT_TYPE_COUNT: break;
 	}
 
 	return typeName;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -107,7 +105,6 @@ bool LuaObjectMaterial::SetLastLOD(unsigned int lod)
 	return true;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 //
@@ -126,45 +123,43 @@ int LuaMatShader::Compare(const LuaMatShader& a, const LuaMatShader& b)
 	return 0;
 }
 
-
 void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	static_assert(int(LUASHADER_3DO) == int(MODELTYPE_3DO  ), "");
-	static_assert(int(LUASHADER_S3O) == int(MODELTYPE_S3O  ), "");
-	static_assert(int(LUASHADER_ASS) == int(MODELTYPE_ASS  ), "");
-	static_assert(int(LUASHADER_GL ) == int(MODELTYPE_CNT), "");
+	static_assert(int(LUASHADER_3DO) == int(MODELTYPE_3DO), "");
+	static_assert(int(LUASHADER_S3O) == int(MODELTYPE_S3O), "");
+	static_assert(int(LUASHADER_ASS) == int(MODELTYPE_ASS), "");
+	static_assert(int(LUASHADER_GL) == int(MODELTYPE_CNT), "");
 
 	if (type != prev.type) {
 		switch (prev.type) {
-			case LUASHADER_GL: {
-				glUseProgram(0);
-			} break;
-			case LUASHADER_3DO:
-			case LUASHADER_S3O:
-			case LUASHADER_ASS: {
-				if (luaMatHandler.resetDrawStateFuncs[prev.type]) {
-					luaMatHandler.resetDrawStateFuncs[prev.type](prev.type, deferredPass);
-				}
-			} break;
-			case LUASHADER_NONE: {} break;
-			default: { assert(false); } break;
+		case LUASHADER_GL: glUseProgram(0); break;
+		case LUASHADER_3DO:
+		case LUASHADER_S3O:
+		case LUASHADER_ASS:
+			if (luaMatHandler.resetDrawStateFuncs[prev.type]) {
+				luaMatHandler.resetDrawStateFuncs[prev.type](prev.type, deferredPass);
+			}
+			break;
+
+		case LUASHADER_NONE: break;
+		default: assert(false); break;
 		}
 
 		switch (type) {
-			case LUASHADER_GL: {
-				// custom shader
-				glUseProgram(openglID);
-			} break;
-			case LUASHADER_3DO:
-			case LUASHADER_S3O:
-			case LUASHADER_ASS: {
-				if (luaMatHandler.setupDrawStateFuncs[type]) {
-					luaMatHandler.setupDrawStateFuncs[type](type, deferredPass);
-				}
-			} break;
-			case LUASHADER_NONE: {} break;
-			default: { assert(false); } break;
+		case LUASHADER_GL:
+			// custom shader
+			glUseProgram(openglID);
+			break;
+		case LUASHADER_3DO:
+		case LUASHADER_S3O:
+		case LUASHADER_ASS:
+			if (luaMatHandler.setupDrawStateFuncs[type]) {
+				luaMatHandler.setupDrawStateFuncs[type](type, deferredPass);
+			}
+			break;
+		case LUASHADER_NONE: break;
+		default: assert(false); break;
 		}
 	}
 	else if (type == LUASHADER_GL) {
@@ -174,28 +169,24 @@ void LuaMatShader::Execute(const LuaMatShader& prev, bool deferredPass) const
 	}
 }
 
-
 void LuaMatShader::Print(const string& indent, bool isDeferred) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const char* typeName = "Unknown";
 
 	switch (type) {
-		case LUASHADER_NONE: { typeName = "LUASHADER_NONE"; } break;
-		case LUASHADER_GL  : { typeName = "LUASHADER_GL"  ; } break;
-		case LUASHADER_3DO : { typeName = "LUASHADER_3DO" ; } break;
-		case LUASHADER_S3O : { typeName = "LUASHADER_S3O" ; } break;
-		case LUASHADER_ASS : { typeName = "LUASHADER_ASS" ; } break;
-		default            : {               assert(false); } break;
+	case LUASHADER_NONE: typeName = "LUASHADER_NONE"; break;
+	case LUASHADER_GL: typeName = "LUASHADER_GL"; break;
+	case LUASHADER_3DO: typeName = "LUASHADER_3DO"; break;
+	case LUASHADER_S3O: typeName = "LUASHADER_S3O"; break;
+	case LUASHADER_ASS: typeName = "LUASHADER_ASS"; break;
+	default: assert(false); break;
 	}
 
-	LOG("%s[shader][%s]", indent.c_str(), (isDeferred? "deferred": "standard"));
+	LOG("%s[shader][%s]", indent.c_str(), (isDeferred ? "deferred" : "standard"));
 	LOG("%s  type=%s", indent.c_str(), typeName);
 	LOG("%s  glID=%u", indent.c_str(), openglID);
 }
-
-
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -205,13 +196,12 @@ void LuaMatShader::Print(const string& indent, bool isDeferred) const
 
 const LuaMaterial LuaMaterial::defMat;
 
-void LuaMaterial::Parse(
-	lua_State* L,
-	const int tableIdx,
-	void(*ParseShader)(lua_State*, int, LuaMatShader&),
-	void(*ParseTexture)(lua_State*, int, LuaMatTexture&),
-	GLuint(*ParseDisplayList)(lua_State*, int)
-) {
+void LuaMaterial::Parse(lua_State* L,
+    const int tableIdx,
+    void (*ParseShader)(lua_State*, int, LuaMatShader&),
+    void (*ParseTexture)(lua_State*, int, LuaMatTexture&),
+    GLuint (*ParseDisplayList)(lua_State*, int))
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
 		if (!lua_israwstring(L, -2))
@@ -277,7 +267,8 @@ void LuaMaterial::Parse(
 
 					ParseTexture(L, -1, textures[texUnit]);
 				}
-			} else {
+			}
+			else {
 				// "texunitX" = string|table
 				const unsigned int texUnit = atoi(key.c_str() + 7);
 
@@ -325,7 +316,6 @@ void LuaMaterial::Parse(
 	}
 }
 
-
 void LuaMaterial::Finalize()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -343,7 +333,6 @@ void LuaMaterial::Finalize()
 		}
 	}
 }
-
 
 void LuaMaterial::Execute(const LuaMaterial& prev, bool deferredPass) const
 {
@@ -368,7 +357,8 @@ void LuaMaterial::Execute(const LuaMaterial& prev, bool deferredPass) const
 	if (useCamera != prev.useCamera) {
 		if (useCamera) {
 			glPopMatrix();
-		} else {
+		}
+		else {
 			glPushMatrix();
 			glLoadIdentity();
 		}
@@ -378,7 +368,8 @@ void LuaMaterial::Execute(const LuaMaterial& prev, bool deferredPass) const
 		if (cullingMode != 0) {
 			glEnable(GL_CULL_FACE);
 			glCullFace(cullingMode);
-		} else {
+		}
+		else {
 			glDisable(GL_CULL_FACE);
 		}
 	}
@@ -387,7 +378,7 @@ void LuaMaterial::Execute(const LuaMaterial& prev, bool deferredPass) const
 void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredPass) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const LuaMatShader&   matShader   =  shaders[deferredPass];
+	const LuaMatShader& matShader = shaders[deferredPass];
 	const LuaMatUniforms& matUniforms = uniforms[deferredPass];
 
 	const auto& objUniforms = matUniforms.objectUniforms[objType];
@@ -400,36 +391,38 @@ void LuaMaterial::ExecuteInstanceUniforms(int objId, int objType, bool deferredP
 	// can stop at first empty slot, Clear ensures contiguity
 	for (const LuaMatUniform& u: objUniformsIt->second) {
 		switch (u.loc) {
-			case -3: {   return; } break;
-			case -2: {
-				if ((u.loc = glGetUniformLocation(matShader.openglID, u.name)) == -1) {
-					LOG_L(L_WARNING, "[LuaMaterial::%s(objId=%d objType=%d)][uuid=%d] uniform \"%s\" not present in %s shader for material %s", __func__, objId, objType, uuid, u.name, deferredPass? "deferred": "forward", GetMatTypeName(type));
-					continue;
-				}
-			} break;
-			case -1: { continue; } break;
-			default: {           } break;
+		case -3: return; break;
+		case -2: {
+			if ((u.loc = glGetUniformLocation(matShader.openglID, u.name)) == -1) {
+				LOG_L(L_WARNING,
+				    "[LuaMaterial::%s(objId=%d objType=%d)][uuid=%d] uniform \"%s\" not present in %s shader for "
+				    "material %s",
+				    __func__, objId, objType, uuid, u.name, deferredPass ? "deferred" : "forward",
+				    GetMatTypeName(type));
+				continue;
+			}
+		} break;
+		case -1: continue;
+		default: break;
 		}
 
 		switch (u.type) {
-			case GL_INT       : { glUniform1iv      (u.loc, u.size       , u.data.i); } break;
-			case GL_INT_VEC2  : { glUniform2iv      (u.loc, u.size       , u.data.i); } break;
-			case GL_INT_VEC3  : { glUniform3iv      (u.loc, u.size       , u.data.i); } break;
-			case GL_INT_VEC4  : { glUniform4iv      (u.loc, u.size       , u.data.i); } break;
+		case GL_INT: glUniform1iv(u.loc, u.size, u.data.i); break;
+		case GL_INT_VEC2: glUniform2iv(u.loc, u.size, u.data.i); break;
+		case GL_INT_VEC3: glUniform3iv(u.loc, u.size, u.data.i); break;
+		case GL_INT_VEC4: glUniform4iv(u.loc, u.size, u.data.i); break;
 
-			case GL_FLOAT     : { glUniform1fv      (u.loc, u.size       , u.data.f); } break;
-			case GL_FLOAT_VEC2: { glUniform2fv      (u.loc, u.size       , u.data.f); } break;
-			case GL_FLOAT_VEC3: { glUniform3fv      (u.loc, u.size       , u.data.f); } break;
-			case GL_FLOAT_VEC4: { glUniform4fv      (u.loc, u.size       , u.data.f); } break;
+		case GL_FLOAT: glUniform1fv(u.loc, u.size, u.data.f); break;
+		case GL_FLOAT_VEC2: glUniform2fv(u.loc, u.size, u.data.f); break;
+		case GL_FLOAT_VEC3: glUniform3fv(u.loc, u.size, u.data.f); break;
+		case GL_FLOAT_VEC4: glUniform4fv(u.loc, u.size, u.data.f); break;
 
-			case GL_FLOAT_MAT3: { glUniformMatrix3fv(u.loc, u.size, false, u.data.f); } break;
-			case GL_FLOAT_MAT4: { glUniformMatrix4fv(u.loc, u.size, false, u.data.f); } break;
-			default           : {                                                     } break;
+		case GL_FLOAT_MAT3: glUniformMatrix3fv(u.loc, u.size, false, u.data.f); break;
+		case GL_FLOAT_MAT4: glUniformMatrix4fv(u.loc, u.size, false, u.data.f); break;
+		default: break;
 		}
 	}
 }
-
-
 
 int LuaMaterial::Compare(const LuaMaterial& a, const LuaMaterial& b)
 {
@@ -438,14 +431,16 @@ int LuaMaterial::Compare(const LuaMaterial& a, const LuaMaterial& b)
 	int cmp = 0;
 
 	if (a.type != b.type)
-		return ((a.type > b.type) * 2 - 1);  // should not happen
+		return ((a.type > b.type) * 2 - 1); // should not happen
 	if (a.order != b.order)
 		return ((a.order > b.order) * 2 - 1);
 
 
-	if ((cmp = LuaMatShader::Compare(a.shaders[LuaMatShader::LUASHADER_PASS_FWD], b.shaders[LuaMatShader::LUASHADER_PASS_FWD])) != 0)
+	if ((cmp = LuaMatShader::Compare(
+	         a.shaders[LuaMatShader::LUASHADER_PASS_FWD], b.shaders[LuaMatShader::LUASHADER_PASS_FWD])) != 0)
 		return cmp;
-	if ((cmp = LuaMatShader::Compare(a.shaders[LuaMatShader::LUASHADER_PASS_DFR], b.shaders[LuaMatShader::LUASHADER_PASS_DFR])) != 0)
+	if ((cmp = LuaMatShader::Compare(
+	         a.shaders[LuaMatShader::LUASHADER_PASS_DFR], b.shaders[LuaMatShader::LUASHADER_PASS_DFR])) != 0)
 		return cmp;
 
 	for (int t = 0; t < CGlobalRendering::MAX_TEXTURE_UNITS; t++) {
@@ -470,15 +465,15 @@ int LuaMaterial::Compare(const LuaMaterial& a, const LuaMaterial& b)
 	// previously LuaMaterial/LuaMatBin were kept in a std::set (LuaMatBinSet, now a sorted std::vector)
 	// for which the comparison operator < was also used to detect equality (a == b iff !(a<b) && !(b<a))
 	// so check _all_ properties
-	if ((cmp = LuaMatUniforms::Compare(a.uniforms[LuaMatShader::LUASHADER_PASS_FWD], b.uniforms[LuaMatShader::LUASHADER_PASS_FWD])) != 0)
+	if ((cmp = LuaMatUniforms::Compare(
+	         a.uniforms[LuaMatShader::LUASHADER_PASS_FWD], b.uniforms[LuaMatShader::LUASHADER_PASS_FWD])) != 0)
 		return cmp;
-	if ((cmp = LuaMatUniforms::Compare(a.uniforms[LuaMatShader::LUASHADER_PASS_DFR], b.uniforms[LuaMatShader::LUASHADER_PASS_DFR])) != 0)
+	if ((cmp = LuaMatUniforms::Compare(
+	         a.uniforms[LuaMatShader::LUASHADER_PASS_DFR], b.uniforms[LuaMatShader::LUASHADER_PASS_DFR])) != 0)
 		return cmp;
 
 	return 0;
 }
-
-
 
 int LuaMatUniforms::Compare(const LuaMatUniforms& a, const LuaMatUniforms& b)
 {
@@ -522,22 +517,20 @@ int LuaMatUniforms::Compare(const LuaMatUniforms& a, const LuaMatUniforms& b)
 	return 0;
 }
 
-
 void LuaMaterial::Print(const string& indent) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-#define CULL_TO_STR(x) \
-	(x==GL_FRONT) ? "front" : (x==GL_BACK) ? "back" : (x!=0) ? "false" : "unknown"
+#define CULL_TO_STR(x) (x == GL_FRONT) ? "front" : (x == GL_BACK) ? "back" : (x != 0) ? "false" : "unknown"
 
 	LOG("%s%s", indent.c_str(), GetMatTypeName(type));
 	LOG("%suuid = %i", indent.c_str(), uuid);
 	LOG("%sorder = %i", indent.c_str(), order);
 
 	shaders[LuaMatShader::LUASHADER_PASS_FWD].Print(indent, false);
-	shaders[LuaMatShader::LUASHADER_PASS_DFR].Print(indent,  true);
+	shaders[LuaMatShader::LUASHADER_PASS_DFR].Print(indent, true);
 
 	uniforms[LuaMatShader::LUASHADER_PASS_FWD].Print(indent, false);
-	uniforms[LuaMatShader::LUASHADER_PASS_DFR].Print(indent,  true);
+	uniforms[LuaMatShader::LUASHADER_PASS_DFR].Print(indent, true);
 
 	LOG("%stexCount = %i", indent.c_str(), texCount);
 
@@ -547,16 +540,12 @@ void LuaMaterial::Print(const string& indent) const
 		textures[t].Print(buf);
 	}
 
-	LOG("%spreList  = %i",  indent.c_str(), preList);
-	LOG("%spostList = %i",  indent.c_str(), postList);
+	LOG("%spreList  = %i", indent.c_str(), preList);
+	LOG("%spostList = %i", indent.c_str(), postList);
 
 	LOG("%suseCamera   = %s", indent.c_str(), (useCamera ? "true" : "false"));
 	LOG("%scullingMode = %s", indent.c_str(), CULL_TO_STR(cullingMode));
 }
-
-
-
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -567,61 +556,60 @@ void LuaMaterial::Print(const string& indent) const
 spring::unsynced_map<LuaMatUniforms::IUniform*, std::string> LuaMatUniforms::GetEngineUniformNamePairs()
 {
 	return {
-		{&viewMatrix,    "ViewMatrix"},
-		{&projMatrix,    "ProjectionMatrix"},
-		{&viprMatrix,    "ViewProjectionMatrix"},
-		{&viewMatrixInv, "ViewMatrixInverse"},
-		{&projMatrixInv, "ProjectionMatrixInverse"},
-		{&viprMatrixInv, "ViewProjectionMatrixInverse"},
-		{&shadowMatrix,  "ShadowMatrix"},
-		{&shadowParams,  "ShadowParams"},
-		{&camPos,        "CameraPos"},
-		{&camDir,        "CameraDir"},
-		{&sunDir,        "SunDir"},
-		{&rndVec,        "RndVec"},
-		{&simFrame,      "SimFrame"},
-		{&visFrame,      "VisFrame"},
-		{&teamColor,     "TeamColor"},
+	    {&viewMatrix,    "ViewMatrix"                 },
+	    {&projMatrix,    "ProjectionMatrix"           },
+	    {&viprMatrix,    "ViewProjectionMatrix"       },
+	    {&viewMatrixInv, "ViewMatrixInverse"          },
+	    {&projMatrixInv, "ProjectionMatrixInverse"    },
+	    {&viprMatrixInv, "ViewProjectionMatrixInverse"},
+	    {&shadowMatrix,  "ShadowMatrix"               },
+	    {&shadowParams,  "ShadowParams"               },
+	    {&camPos,        "CameraPos"                  },
+	    {&camDir,        "CameraDir"                  },
+	    {&sunDir,        "SunDir"                     },
+	    {&rndVec,        "RndVec"                     },
+	    {&simFrame,      "SimFrame"                   },
+	    {&visFrame,      "VisFrame"                   },
+	    {&teamColor,     "TeamColor"                  },
 	};
 }
 
 spring::unsynced_map<std::string, LuaMatUniforms::IUniform*> LuaMatUniforms::GetEngineNameUniformPairs()
 {
 	return {
-		{"Camera",                  &viewMatrix},
-		{"ViewMatrix",              &viewMatrix},
-		{"ProjMatrix",              &projMatrix},
-		{"ProjectionMatrix",        &projMatrix},
-		{"ViPrMatrix",              &viprMatrix},
-		{"ViewProjMatrix",          &viprMatrix},
-		{"ViewProjectionMatrix",    &viprMatrix},
-		{"CameraInv",               &viewMatrixInv},
-		{"ViewMatrixInv",           &viewMatrixInv},
-		{"ProjMatrixInv",           &projMatrixInv},
-		{"ProjectionMatrixInv",     &projMatrixInv},
-		{"ViPrMatrixInv",           &viprMatrixInv},
-		{"ViewProjectionMatrixInv", &viprMatrixInv},
+	    {"Camera",                  &viewMatrix   },
+	    {"ViewMatrix",              &viewMatrix   },
+	    {"ProjMatrix",              &projMatrix   },
+	    {"ProjectionMatrix",        &projMatrix   },
+	    {"ViPrMatrix",              &viprMatrix   },
+	    {"ViewProjMatrix",          &viprMatrix   },
+	    {"ViewProjectionMatrix",    &viprMatrix   },
+	    {"CameraInv",               &viewMatrixInv},
+	    {"ViewMatrixInv",           &viewMatrixInv},
+	    {"ProjMatrixInv",           &projMatrixInv},
+	    {"ProjectionMatrixInv",     &projMatrixInv},
+	    {"ViPrMatrixInv",           &viprMatrixInv},
+	    {"ViewProjectionMatrixInv", &viprMatrixInv},
 
-		{"Shadow",        &shadowMatrix},
-		{"ShadowMatrix",  &shadowMatrix},
-		{"ShadowParams",  &shadowParams},
+	    {"Shadow",                  &shadowMatrix },
+	    {"ShadowMatrix",            &shadowMatrix },
+	    {"ShadowParams",            &shadowParams },
 
-		{"CameraPos",     &camPos},
-		{"CameraDir",     &camDir},
-		{"SunPos",        &sunDir},
-		{"SunDir",        &sunDir},
-		{"RndVec",        &rndVec},
+	    {"CameraPos",               &camPos       },
+	    {"CameraDir",               &camDir       },
+	    {"SunPos",                  &sunDir       },
+	    {"SunDir",                  &sunDir       },
+	    {"RndVec",                  &rndVec       },
 
-		{"SimFrame",      &simFrame},
-		{"VisFrame",      &visFrame},
-		{"DrawFrame",     &visFrame},
+	    {"SimFrame",                &simFrame     },
+	    {"VisFrame",                &visFrame     },
+	    {"DrawFrame",               &visFrame     },
 
-		//{"speed", },
-		//{"health", },
-		{"TeamColor", &teamColor},
+	    //{"speed", },
+	    //{"health", },
+	    {"TeamColor",               &teamColor    },
 	};
 }
-
 
 void LuaMatUniforms::AutoLink(LuaMatShader* shader)
 {
@@ -659,13 +647,12 @@ void LuaMatUniforms::AutoLink(LuaMatShader* shader)
 	}
 }
 
-
 void LuaMatUniforms::Validate(LuaMatShader* s)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr const char* fmts[2] = {
-		"[LuaMatUniforms::%s] engine shaders prohibit the usage of uniform \"%s\"",
-		"[LuaMatUniforms::%s] incorrect uniform-type for \"%s\" at location %d (declared %s, expected %s)",
+	    "[LuaMatUniforms::%s] engine shaders prohibit the usage of uniform \"%s\"",
+	    "[LuaMatUniforms::%s] incorrect uniform-type for \"%s\" at location %d (declared %s, expected %s)",
 	};
 
 	if (!s->IsCustomType()) {
@@ -681,7 +668,7 @@ void LuaMatUniforms::Validate(LuaMatShader* s)
 	}
 
 	const decltype(GetEngineNameUniformPairs())& uniforms = GetEngineNameUniformPairs();
-	      decltype(uniforms.end()) uniformsIt;
+	decltype(uniforms.end()) uniformsIt;
 
 
 	ActiveUniform au;
@@ -714,10 +701,10 @@ void LuaMatUniforms::Validate(LuaMatShader* s)
 		if (au.type == expectedType)
 			continue;
 
-		LOG_L(L_WARNING, fmts[1], __func__, au.name, uniformLoc,  GLUniformTypeToString(au.type), GLUniformTypeToString(expectedType));
+		LOG_L(L_WARNING, fmts[1], __func__, au.name, uniformLoc, GLUniformTypeToString(au.type),
+		    GLUniformTypeToString(expectedType));
 	}
 }
-
 
 void LuaMatUniforms::Parse(lua_State* L, const int tableIdx)
 {
@@ -725,7 +712,7 @@ void LuaMatUniforms::Parse(lua_State* L, const int tableIdx)
 	decltype(GetEngineNameUniformPairs()) lcNameUniformPairs;
 
 	for (const auto& p: GetEngineNameUniformPairs()) {
-		lcNameUniformPairs[ StringToLower(p.first) ] = p.second;
+		lcNameUniformPairs[StringToLower(p.first)] = p.second;
 	}
 
 	for (lua_pushnil(L); lua_next(L, tableIdx) != 0; lua_pop(L, 1)) {
@@ -777,11 +764,10 @@ void LuaMatUniforms::Execute() const
 	visFrame.Execute(globalRendering->drawFrame);
 }
 
-
 void LuaMatUniforms::Print(const string& indent, bool isDeferred) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	LOG("%s[uniforms][%s]", indent.c_str(), (isDeferred? "deferred": "standard"));
+	LOG("%s[uniforms][%s]", indent.c_str(), (isDeferred ? "deferred" : "standard"));
 	LOG("%s  viewMatrixLoc    = %i", indent.c_str(), viewMatrix.loc);
 	LOG("%s  projMatrixLoc    = %i", indent.c_str(), projMatrix.loc);
 	LOG("%s  viewMatrixInvLoc = %i", indent.c_str(), viewMatrixInv.loc);
@@ -800,11 +786,6 @@ void LuaMatUniforms::Print(const string& indent, bool isDeferred) const
 	LOG("%s  simFrameLoc      = %i", indent.c_str(), simFrame.loc);
 	LOG("%s  visFrameLoc      = %i", indent.c_str(), visFrame.loc);
 }
-
-
-
-
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -839,7 +820,6 @@ LuaMatRef::LuaMatRef(const LuaMatRef& mr)
 	bin->Ref();
 }
 
-
 void LuaMatRef::Reset()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -849,16 +829,18 @@ void LuaMatRef::Reset()
 	bin = nullptr;
 }
 
-
 LuaMatRef& LuaMatRef::operator=(const LuaMatRef& mr)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (mr.bin != nullptr) { mr.bin->Ref();   }
-	if (   bin != nullptr) {    bin->UnRef(); }
+	if (mr.bin != nullptr) {
+		mr.bin->Ref();
+	}
+	if (bin != nullptr) {
+		bin->UnRef();
+	}
 	bin = mr.bin;
 	return *this;
 }
-
 
 void LuaMatRef::AddUnit(CSolidObject* o)
 {
@@ -876,8 +858,6 @@ void LuaMatRef::AddFeature(CSolidObject* o)
 	bin->AddFeature(o);
 }
 
-
-
 /******************************************************************************/
 /******************************************************************************/
 //
@@ -893,7 +873,6 @@ void LuaMatBin::UnRef()
 	luaMatHandler.FreeBin(this);
 }
 
-
 void LuaMatBin::Print(const string& indent) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -902,7 +881,6 @@ void LuaMatBin::Print(const string& indent) const
 	LOG("%spointer = %p", indent.c_str(), this);
 	LuaMaterial::Print(indent + "  ");
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -919,7 +897,6 @@ LuaMatHandler::LuaMatHandler()
 	}
 }
 
-
 LuaMatHandler::~LuaMatHandler()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -930,7 +907,6 @@ LuaMatHandler::~LuaMatHandler()
 	}
 }
 
-
 LuaMatRef LuaMatHandler::GetRef(const LuaMaterial& mat)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -939,12 +915,11 @@ LuaMatRef LuaMatHandler::GetRef(const LuaMaterial& mat)
 		return LuaMatRef();
 	}
 
-	LuaMatBin* fakeBin = (LuaMatBin*) &mat;
+	LuaMatBin* fakeBin = (LuaMatBin*)&mat;
 
 	LuaMatBinSet& binSet = binTypes[mat.type];
-	LuaMatBinSet::iterator it = std::find_if(binSet.begin(), binSet.end(), [&](LuaMatBin* bin) {
-		return (!matBinCmp(bin, fakeBin) && !matBinCmp(fakeBin, bin));
-	});
+	LuaMatBinSet::iterator it = std::find_if(binSet.begin(), binSet.end(),
+	    [&](LuaMatBin* bin) { return (!matBinCmp(bin, fakeBin) && !matBinCmp(fakeBin, bin)); });
 
 	if (it != binSet.end()) {
 		assert(*fakeBin == *(*it));
@@ -967,7 +942,6 @@ LuaMatRef LuaMatHandler::GetRef(const LuaMaterial& mat)
 	return ref;
 }
 
-
 void LuaMatHandler::ClearBins(LuaObjType objType, LuaMatType matType)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -976,13 +950,12 @@ void LuaMatHandler::ClearBins(LuaObjType objType, LuaMatType matType)
 
 	for (LuaMatBin* bin: binTypes[matType]) {
 		switch (objType) {
-			case LUAOBJ_UNIT   : { bin->ClearUnits   (); } break;
-			case LUAOBJ_FEATURE: { bin->ClearFeatures(); } break;
-			default            : {        assert(false); } break;
+		case LUAOBJ_UNIT: bin->ClearUnits(); break;
+		case LUAOBJ_FEATURE: bin->ClearFeatures(); break;
+		default: assert(false); break;
 		}
 	}
 }
-
 
 void LuaMatHandler::ClearBins(LuaObjType objType)
 {
@@ -992,14 +965,12 @@ void LuaMatHandler::ClearBins(LuaObjType objType)
 	}
 }
 
-
 void LuaMatHandler::FreeBin(LuaMatBin* argBin)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LuaMatBinSet& binSet = binTypes[argBin->type];
-	LuaMatBinSet::iterator it = std::find_if(binSet.begin(), binSet.end(), [&](LuaMatBin* bin) {
-		return (!matBinCmp(bin, argBin) && !matBinCmp(argBin, bin));
-	});
+	LuaMatBinSet::iterator it = std::find_if(binSet.begin(), binSet.end(),
+	    [&](LuaMatBin* bin) { return (!matBinCmp(bin, argBin) && !matBinCmp(argBin, bin)); });
 
 	if (it == binSet.end())
 		return;
@@ -1017,7 +988,6 @@ void LuaMatHandler::FreeBin(LuaMatBin* argBin)
 	delete argBin;
 }
 
-
 void LuaMatHandler::PrintBins(const string& indent, LuaMatType type) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1033,7 +1003,6 @@ void LuaMatHandler::PrintBins(const string& indent, LuaMatType type) const
 	}
 }
 
-
 void LuaMatHandler::PrintAllBins(const string& indent) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1042,9 +1011,7 @@ void LuaMatHandler::PrintAllBins(const string& indent) const
 	}
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 float LuaObjectMaterialData::GLOBAL_LOD_FACTORS[LUAOBJ_LAST] = {1.0f, 1.0f};
-

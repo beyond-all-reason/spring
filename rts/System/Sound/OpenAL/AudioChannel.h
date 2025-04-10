@@ -3,11 +3,11 @@
 #ifndef AUDIO_CHANNEL_H
 #define AUDIO_CHANNEL_H
 
-#include <deque>
-#include <cstring>
-
 #include "System/Sound/IAudioChannel.h"
 #include "System/UnorderedSet.hpp"
+
+#include <cstring>
+#include <deque>
 
 struct GuiSoundSet;
 class CSoundSource;
@@ -37,6 +37,7 @@ public:
 	void PlayRandomSample(const GuiSoundSet& soundSet, const float3& pos, const float3& vel = ZeroVector);
 
 	void StreamPlay(const StreamQueueItem& item, bool enqueue) { StreamPlay(item.first, item.second, enqueue); }
+
 	void StreamPlay(const std::string& path, float volume = 1.0f, bool enqueue = false);
 
 	/**

@@ -64,7 +64,7 @@ local function DummyHandler(xIcons, yIcons, cmdCount, commands)
   widgetHandler.commands   = commands
   widgetHandler.commands.n = cmdCount
   widgetHandler:CommandsChanged()
-  
+
   return "", xIcons, yIcons, {}, {}, {}, {}, {}, {}, {}, {}
 end
 
@@ -77,11 +77,11 @@ local function DefaultHandler(xIcons, yIcons, cmdCount, commands)
   widgetHandler.commands.n = cmdCount
   widgetHandler:CommandsChanged()
 
-  -- FIXME: custom commands  
+  -- FIXME: custom commands
   if (cmdCount <= 0) then
     return "", xIcons, yIcons, {}, {}, {}, {}, {}, {}, {}, {}
   end
-  
+
   local menuName = ''
   local removeCmds = {}
   local customCmds = widgetHandler.customCommands

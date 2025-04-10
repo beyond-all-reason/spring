@@ -27,7 +27,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 // </license>
 
 #ifndef _SOP_HPP
@@ -43,231 +43,249 @@
 
 // Descriptor for an application bound to an application profile
 struct Application {
-    unsigned long version;
-    unsigned long isPredefined;
-    unsigned short appName[2048];
-    unsigned short userFriendlyName[2048];
-    unsigned short launcher[2048];
-    unsigned short fileInFolder[2048];
+	unsigned long version;
+	unsigned long isPredefined;
+	unsigned short appName[2048];
+	unsigned short userFriendlyName[2048];
+	unsigned short launcher[2048];
+	unsigned short fileInFolder[2048];
 };
 
 // Application profile descriptor
 struct Profile {
-    unsigned long version;
-    unsigned short profileName[2048];
-    unsigned long* gpuSupport;
-    unsigned long isPredefined;
-    unsigned long numOfApps;
-    unsigned long numOfSettings;
+	unsigned long version;
+	unsigned short profileName[2048];
+	unsigned long* gpuSupport;
+	unsigned long isPredefined;
+	unsigned long numOfApps;
+	unsigned long numOfSettings;
 };
 
 // Setting descriptor
 struct Setting {
-    struct BinarySetting {
-        unsigned long valueLength;
-        unsigned char valueData[4096];
-    };
+	struct BinarySetting {
+		unsigned long valueLength;
+		unsigned char valueData[4096];
+	};
 
-    unsigned long version;
-    unsigned short settingName[2048];
-    unsigned long settingID;
-    unsigned long settingType;
-    unsigned long settingLocation;
-    unsigned long isCurrentPredefined; 
-    unsigned long isPredefinedValid;
+	unsigned long version;
+	unsigned short settingName[2048];
+	unsigned long settingID;
+	unsigned long settingType;
+	unsigned long settingLocation;
+	unsigned long isCurrentPredefined;
+	unsigned long isPredefinedValid;
 
-    union {
-        unsigned long u32PredefinedValue;
-        BinarySetting binaryPredefinedValue;
-        unsigned short strPredefinedValue[2048];
-    };
+	union {
+		unsigned long u32PredefinedValue;
+		BinarySetting binaryPredefinedValue;
+		unsigned short strPredefinedValue[2048];
+	};
 
-    union {
-        unsigned long u32CurrentValue;
-        BinarySetting binaryCurrentValue;
-        unsigned short strCurrentValue[2048];
-    };
+	union {
+		unsigned long u32CurrentValue;
+		BinarySetting binaryCurrentValue;
+		unsigned short strCurrentValue[2048];
+	};
 };
 
-
-#define NV_DECLARE_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
+#define NV_DECLARE_HANDLE(name)   \
+	struct name##__ {             \
+		int unused;               \
+	};                            \
+	typedef struct name##__* name
 NV_DECLARE_HANDLE(NvDRSSessionHandle);
 NV_DECLARE_HANDLE(NvDRSProfileHandle);
 #undef NV_DECLARE_HANDLE
 
 // Definitions for required NvAPI functions
 typedef int (*CreateApplicationT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, Application* application);
-CreateApplicationT CreateApplication =  nullptr;
+CreateApplicationT CreateApplication = nullptr;
 
 typedef int (*CreateProfileT)(NvDRSSessionHandle session, Profile* profileInfo, NvDRSProfileHandle* profile);
-CreateProfileT CreateProfile =  nullptr;
+CreateProfileT CreateProfile = nullptr;
 
 typedef int (*CreateSessionT)(NvDRSSessionHandle* session);
-CreateSessionT CreateSession =  nullptr;
+CreateSessionT CreateSession = nullptr;
 
 typedef int (*DeleteProfileT)(NvDRSSessionHandle session, NvDRSProfileHandle profile);
-DeleteProfileT DeleteProfile =  nullptr;
+DeleteProfileT DeleteProfile = nullptr;
 
 typedef int (*DestroySessionT)(NvDRSSessionHandle session);
-DestroySessionT DestroySession =  nullptr;
+DestroySessionT DestroySession = nullptr;
 
-typedef int (*EnumApplicationsT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, unsigned long startIndex, unsigned long* appCount, Application* application);
-EnumApplicationsT EnumApplications =  nullptr;
+typedef int (*EnumApplicationsT)(NvDRSSessionHandle session,
+    NvDRSProfileHandle profile,
+    unsigned long startIndex,
+    unsigned long* appCount,
+    Application* application);
+EnumApplicationsT EnumApplications = nullptr;
 
-typedef int (*FindProfileByNameT)(NvDRSSessionHandle session, unsigned short profileName[2048], NvDRSProfileHandle* profile);
-FindProfileByNameT FindProfileByName =  nullptr;
+typedef int (
+    *FindProfileByNameT)(NvDRSSessionHandle session, unsigned short profileName[2048], NvDRSProfileHandle* profile);
+FindProfileByNameT FindProfileByName = nullptr;
 
 typedef int (*GetProfileInfoT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, Profile* profileInfo);
-GetProfileInfoT GetProfileInfo =  nullptr;
+GetProfileInfoT GetProfileInfo = nullptr;
 
 typedef int (*LoadSettingsT)(NvDRSSessionHandle session);
-LoadSettingsT LoadSettings =  nullptr;
+LoadSettingsT LoadSettings = nullptr;
 
 typedef int (*SaveSettingsT)(NvDRSSessionHandle session);
-SaveSettingsT SaveSettings =  nullptr;
+SaveSettingsT SaveSettings = nullptr;
 
 typedef int (*SetSettingT)(NvDRSSessionHandle session, NvDRSProfileHandle profile, Setting* setting);
-SetSettingT SetSetting =  nullptr;
+SetSettingT SetSetting = nullptr;
 
 typedef int (*InitializeT)();
-InitializeT Initialize =  nullptr;
+InitializeT Initialize = nullptr;
 
 typedef int* (*QueryInterfaceT)(unsigned int offset);
-QueryInterfaceT QueryInterface =  nullptr;
+QueryInterfaceT QueryInterface = nullptr;
 
-bool CheckForError(int status) {
-    if (status != 0) {
-
+bool CheckForError(int status)
+{
+	if (status != 0) {
 #if _DEBUG
-        fprintf(stderr, "NvAPI error in SetOptimusProfile: %i\n", status);
+		fprintf(stderr, "NvAPI error in SetOptimusProfile: %i\n", status);
 #endif
 
-        return true;
-    }
-    else {
-        return false;
-    }
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
-bool UnicodeStringCompare(unsigned short firstString[2048], unsigned short secondString[2048]) {
-    for (int i = 0; i < 2048; i++) {
-        if (firstString[i] != secondString[i]) {
-            return false;
-        }
-    }
+bool UnicodeStringCompare(unsigned short firstString[2048], unsigned short secondString[2048])
+{
+	for (int i = 0; i < 2048; i++) {
+		if (firstString[i] != secondString[i]) {
+			return false;
+		}
+	}
 
-    return true;
+	return true;
 }
 
-void GetUnicodeString(std::string sourceString, unsigned short (* destinationString)[2048]) {
-    for (unsigned int i = 0; i < 2048; i++) {
-        if (i < sourceString.length()) {
-            (*destinationString)[i] = (unsigned short) sourceString[i];
-        }
-        else {
-            (*destinationString)[i] = 0;
-        }
-    }
+void GetUnicodeString(std::string sourceString, unsigned short (*destinationString)[2048])
+{
+	for (unsigned int i = 0; i < 2048; i++) {
+		if (i < sourceString.length()) {
+			(*destinationString)[i] = (unsigned short)sourceString[i];
+		}
+		else {
+			(*destinationString)[i] = 0;
+		}
+	}
 }
 
-bool GetProcs() {
-    auto hMod = LoadLibraryA("nvapi64.dll");
-    
-    // Check if the nvapi64.dll is available
-    if (hMod ==  nullptr) {
+bool GetProcs()
+{
+	auto hMod = LoadLibraryA("nvapi64.dll");
+
+	// Check if the nvapi64.dll is available
+	if (hMod == nullptr) {
 #if _DEBUG
-        fprintf(stderr, "The nvapi64.dll could not be found.");
+		fprintf(stderr, "The nvapi64.dll could not be found.");
 #endif
 
-        return false;
-    }
+		return false;
+	}
 
-    // This function is used to get all other function procs
-    QueryInterface = (QueryInterfaceT) GetProcAddress(hMod, "nvapi_QueryInterface");
+	// This function is used to get all other function procs
+	QueryInterface = (QueryInterfaceT)GetProcAddress(hMod, "nvapi_QueryInterface");
 
 #define SafeQueryInterface(var, type, value) \
-	var = (type) (*QueryInterface)(value); \
-	if (var ==  nullptr) return false;
-    // Query the procs with an ID
-    // the IDs can be retrieved by parsing the nvapi.lib such that no library has to be linked
-    SafeQueryInterface(CreateApplication, CreateApplicationT, 0x4347A9DE);
-    SafeQueryInterface(CreateProfile,     CreateProfileT,     0xCC176068);
-    SafeQueryInterface(CreateSession,     CreateSessionT,     0x0694D52E);
-    SafeQueryInterface(DeleteProfile,     DeleteProfileT,     0x17093206);
-    SafeQueryInterface(DestroySession,    DestroySessionT,    0xDAD9CFF8);
-    SafeQueryInterface(EnumApplications,  EnumApplicationsT,  0x7FA2173A);
-    SafeQueryInterface(FindProfileByName, FindProfileByNameT, 0x7E4A9A0B);
-    SafeQueryInterface(GetProfileInfo,    GetProfileInfoT,    0x61CD6FD6);
-    SafeQueryInterface(LoadSettings,      LoadSettingsT,      0x375DBD6B);
-    SafeQueryInterface(SaveSettings,      SaveSettingsT,      0xFCBC7E14);
-    SafeQueryInterface(SetSetting,        SetSettingT,        0x577DD202);
-    SafeQueryInterface(Initialize,        InitializeT,        0x0150E828);
+	var = (type)(*QueryInterface)(value);    \
+	if (var == nullptr)                      \
+		return false;
+	// Query the procs with an ID
+	// the IDs can be retrieved by parsing the nvapi.lib such that no library has to be linked
+	SafeQueryInterface(CreateApplication, CreateApplicationT, 0x4347A9DE);
+	SafeQueryInterface(CreateProfile, CreateProfileT, 0xCC176068);
+	SafeQueryInterface(CreateSession, CreateSessionT, 0x0694D52E);
+	SafeQueryInterface(DeleteProfile, DeleteProfileT, 0x17093206);
+	SafeQueryInterface(DestroySession, DestroySessionT, 0xDAD9CFF8);
+	SafeQueryInterface(EnumApplications, EnumApplicationsT, 0x7FA2173A);
+	SafeQueryInterface(FindProfileByName, FindProfileByNameT, 0x7E4A9A0B);
+	SafeQueryInterface(GetProfileInfo, GetProfileInfoT, 0x61CD6FD6);
+	SafeQueryInterface(LoadSettings, LoadSettingsT, 0x375DBD6B);
+	SafeQueryInterface(SaveSettings, SaveSettingsT, 0xFCBC7E14);
+	SafeQueryInterface(SetSetting, SetSettingT, 0x577DD202);
+	SafeQueryInterface(Initialize, InitializeT, 0x0150E828);
 
-    return true;
+	return true;
 }
 
-bool ContainsApplication(NvDRSSessionHandle session, NvDRSProfileHandle profile, Profile profileDescriptor, unsigned short applicationName[2048], Application* application) {
-    if (profileDescriptor.numOfApps == 0) {
-        return false;
-    }
+bool ContainsApplication(NvDRSSessionHandle session,
+    NvDRSProfileHandle profile,
+    Profile profileDescriptor,
+    unsigned short applicationName[2048],
+    Application* application)
+{
+	if (profileDescriptor.numOfApps == 0) {
+		return false;
+	}
 
-    // Iterate over all applications bound to the profile
-    unsigned long numAppsRead = profileDescriptor.numOfApps;
-    Application* allApplications = new Application[profileDescriptor.numOfApps];
-    allApplications[0].version = 147464; // Calculated from the size of the descriptor
-    
-    if (CheckForError((*EnumApplications)(session, profile, 0, &numAppsRead, allApplications))) {
-        delete[] allApplications;
+	// Iterate over all applications bound to the profile
+	unsigned long numAppsRead = profileDescriptor.numOfApps;
+	Application* allApplications = new Application[profileDescriptor.numOfApps];
+	allApplications[0].version = 147464; // Calculated from the size of the descriptor
 
-        return false;
-    }
+	if (CheckForError((*EnumApplications)(session, profile, 0, &numAppsRead, allApplications))) {
+		delete[] allApplications;
 
-    for (unsigned int i = 0; i < numAppsRead; i++) {
-        if (UnicodeStringCompare(allApplications[i].appName, applicationName)) {
-            application = &allApplications[i];
+		return false;
+	}
 
-            return true;
-        }
-    }
+	for (unsigned int i = 0; i < numAppsRead; i++) {
+		if (UnicodeStringCompare(allApplications[i].appName, applicationName)) {
+			application = &allApplications[i];
 
-    delete[] allApplications;
+			return true;
+		}
+	}
 
-    return false;
+	delete[] allApplications;
+
+	return false;
 }
 
 // Call this from your application to check if an application profile with
 // the name provided exists.
-bool SOP_CheckProfile(std::string profileNameString) {
-    bool result = false;
-    NvDRSSessionHandle session = 0;
-    NvDRSProfileHandle profile = 0;
-    
-    // Initialize NvAPI
-    if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
-        return false;
-    }
-    
-    // Create a unicode string from the profile name
-    unsigned short profileName[2048];
-    GetUnicodeString(profileNameString, &profileName);
+bool SOP_CheckProfile(std::string profileNameString)
+{
+	bool result = false;
+	NvDRSSessionHandle session = 0;
+	NvDRSProfileHandle profile = 0;
 
-    // Create the session handle to access driver settings
-    if (CheckForError((*CreateSession)(&session))) {
-        return false;
-    }
+	// Initialize NvAPI
+	if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
+		return false;
+	}
 
-    // Load all the system settings into the session
-    if (CheckForError((*LoadSettings)(session))) {
-        return false;
-    }
+	// Create a unicode string from the profile name
+	unsigned short profileName[2048];
+	GetUnicodeString(profileNameString, &profileName);
 
-    // Check if the application profile with the specified name exists
-    result = ((*FindProfileByName)(session, profileName, &profile) == 0);
-    
-    (*DestroySession)(session);
-    session = 0;
+	// Create the session handle to access driver settings
+	if (CheckForError((*CreateSession)(&session))) {
+		return false;
+	}
 
-    return result;
+	// Load all the system settings into the session
+	if (CheckForError((*LoadSettings)(session))) {
+		return false;
+	}
+
+	// Check if the application profile with the specified name exists
+	result = ((*FindProfileByName)(session, profileName, &profile) == 0);
+
+	(*DestroySession)(session);
+	session = 0;
+
+	return result;
 }
 
 // Call this from your application to delete the application profile with
@@ -275,56 +293,56 @@ bool SOP_CheckProfile(std::string profileNameString) {
 // for all applications bound to it.
 // After the profile has been erased, the application will use the default GPU
 // the next time it is started, usually the integrated GPU.
-int SOP_RemoveProfile(std::string profileNameString) {
-    int result = SOP_RESULT_NO_CHANGE;
-    int status = 0;
-    NvDRSSessionHandle session = 0;
-    NvDRSProfileHandle profile = 0;
-    
-    // Initialize NvAPI
-    if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
-        return SOP_RESULT_ERROR;
-    }
-    
-    // Create a unicode string from the profile name
-    unsigned short profileName[2048];
-    GetUnicodeString(profileNameString, &profileName);
+int SOP_RemoveProfile(std::string profileNameString)
+{
+	int result = SOP_RESULT_NO_CHANGE;
+	int status = 0;
+	NvDRSSessionHandle session = 0;
+	NvDRSProfileHandle profile = 0;
 
-    // Create the session handle to access driver settings
-    if (CheckForError((*CreateSession)(&session))) {
-        return SOP_RESULT_ERROR;
-    }
+	// Initialize NvAPI
+	if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
+		return SOP_RESULT_ERROR;
+	}
 
-    // Load all the system settings into the session
-    if (CheckForError((*LoadSettings)(session))) {
-        return SOP_RESULT_ERROR;
-    }
+	// Create a unicode string from the profile name
+	unsigned short profileName[2048];
+	GetUnicodeString(profileNameString, &profileName);
 
-    // Check if the application profile with the specified name already exists
-    status = (*FindProfileByName)(session, profileName, &profile);
+	// Create the session handle to access driver settings
+	if (CheckForError((*CreateSession)(&session))) {
+		return SOP_RESULT_ERROR;
+	}
 
-    if (status == 0) {
-        // The application profile with the specified name exists and can be deleted
-        if ((CheckForError((*DeleteProfile)(session, profile))) ||
-            CheckForError((*SaveSettings)(session))) {
-            return SOP_RESULT_ERROR;
-        }
-        else {
-            result = SOP_RESULT_CHANGE;
-        }
-    }
-    else if (status == -163 /* Profile not found */) {
-        // The application profile does not exist and does not have to be deleted
-        result = SOP_RESULT_NO_CHANGE;
-    }
-    else {
-        return SOP_RESULT_ERROR;
-    }
-    
-    (*DestroySession)(session);
-    session = 0;
+	// Load all the system settings into the session
+	if (CheckForError((*LoadSettings)(session))) {
+		return SOP_RESULT_ERROR;
+	}
 
-    return result;
+	// Check if the application profile with the specified name already exists
+	status = (*FindProfileByName)(session, profileName, &profile);
+
+	if (status == 0) {
+		// The application profile with the specified name exists and can be deleted
+		if ((CheckForError((*DeleteProfile)(session, profile))) || CheckForError((*SaveSettings)(session))) {
+			return SOP_RESULT_ERROR;
+		}
+		else {
+			result = SOP_RESULT_CHANGE;
+		}
+	}
+	else if (status == -163 /* Profile not found */) {
+		// The application profile does not exist and does not have to be deleted
+		result = SOP_RESULT_NO_CHANGE;
+	}
+	else {
+		return SOP_RESULT_ERROR;
+	}
+
+	(*DestroySession)(session);
+	session = 0;
+
+	return result;
 }
 
 // Call this from your application to create a generic application profile with
@@ -333,104 +351,105 @@ int SOP_RemoveProfile(std::string profileNameString) {
 // already exists because it is shared among several applications, the provided
 // application name is bound to the existing profile.
 // The changes take effect the next time the application is started.
-int SOP_SetProfile(std::string profileNameString, std::string applicationNameString) {
-    int result = SOP_RESULT_NO_CHANGE;
-    int status = 0;
-    NvDRSSessionHandle session = 0;
-    NvDRSProfileHandle profile = 0;
-    
-    // Initialize NvAPI
-    if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
-        return SOP_RESULT_ERROR;
-    }
+int SOP_SetProfile(std::string profileNameString, std::string applicationNameString)
+{
+	int result = SOP_RESULT_NO_CHANGE;
+	int status = 0;
+	NvDRSSessionHandle session = 0;
+	NvDRSProfileHandle profile = 0;
 
-    // Create a unicode string from the profile name
-    unsigned short profileName[2048];
-    GetUnicodeString(profileNameString, &profileName);
-    
-    // Create a unicode string from the application name
-    std::transform(applicationNameString.begin(), applicationNameString.end(), applicationNameString.begin(), ::tolower);
-    unsigned short applicationName[2048];
-    GetUnicodeString(applicationNameString, &applicationName);
+	// Initialize NvAPI
+	if ((!GetProcs()) || (CheckForError((*Initialize)()))) {
+		return SOP_RESULT_ERROR;
+	}
 
-    // Create the session handle to access driver settings
-    if (CheckForError((*CreateSession)(&session))) {
-        return SOP_RESULT_ERROR;
-    }
+	// Create a unicode string from the profile name
+	unsigned short profileName[2048];
+	GetUnicodeString(profileNameString, &profileName);
 
-    // Load all the system settings into the session
-    if (CheckForError((*LoadSettings)(session))) {
-        return SOP_RESULT_ERROR;
-    }
-    
-    // Check if the application profile with the specified name already exists
-    status = (*FindProfileByName)(session, profileName, &profile);
+	// Create a unicode string from the application name
+	std::transform(
+	    applicationNameString.begin(), applicationNameString.end(), applicationNameString.begin(), ::tolower);
+	unsigned short applicationName[2048];
+	GetUnicodeString(applicationNameString, &applicationName);
 
-    if (status == -163 /* Profile not found */) {
-        // The application profile does not yet exist and has to be created
-        Profile newProfileDescriptor = { 0 };
-        newProfileDescriptor.version = 69652; // Calculated from the size of the descriptor
-        newProfileDescriptor.isPredefined = 0;
-        memcpy(&newProfileDescriptor.profileName, &profileName, 2048);
-        newProfileDescriptor.gpuSupport = new unsigned long[32];
-        newProfileDescriptor.gpuSupport[0] = 1;
+	// Create the session handle to access driver settings
+	if (CheckForError((*CreateSession)(&session))) {
+		return SOP_RESULT_ERROR;
+	}
 
-        // Create the application profile
-        if (CheckForError((*CreateProfile)(session, &newProfileDescriptor, &profile))) {
-            delete newProfileDescriptor.gpuSupport;
+	// Load all the system settings into the session
+	if (CheckForError((*LoadSettings)(session))) {
+		return SOP_RESULT_ERROR;
+	}
 
-            return SOP_RESULT_ERROR;
-        }
+	// Check if the application profile with the specified name already exists
+	status = (*FindProfileByName)(session, profileName, &profile);
 
-        // Create the application settings. This is where the discrete GPU for Optimus is set.
-        Setting optimusSetting = { 0 };
-        optimusSetting.version = 77856; // Calculated from the size of the descriptor
-        optimusSetting.settingID = 0x10F9DC81; // Shim rendering mode ID
-        optimusSetting.u32CurrentValue = 0x00000001 | 0x00000010; // Enable | Auto select
-        
-        if (CheckForError((*SetSetting)(session, profile, &optimusSetting))) {
-            delete newProfileDescriptor.gpuSupport;
+	if (status == -163 /* Profile not found */) {
+		// The application profile does not yet exist and has to be created
+		Profile newProfileDescriptor = {0};
+		newProfileDescriptor.version = 69652; // Calculated from the size of the descriptor
+		newProfileDescriptor.isPredefined = 0;
+		memcpy(&newProfileDescriptor.profileName, &profileName, 2048);
+		newProfileDescriptor.gpuSupport = new unsigned long[32];
+		newProfileDescriptor.gpuSupport[0] = 1;
 
-            return SOP_RESULT_ERROR;
-        }
+		// Create the application profile
+		if (CheckForError((*CreateProfile)(session, &newProfileDescriptor, &profile))) {
+			delete newProfileDescriptor.gpuSupport;
 
-        delete newProfileDescriptor.gpuSupport;
-    }
-    else if (CheckForError(status)) {
-        return SOP_RESULT_ERROR;
-    }
+			return SOP_RESULT_ERROR;
+		}
 
-    // Retrieve the profile information of the application profile
-    Profile profileDescriptor = { 0 };
-    profileDescriptor.version = 69652; // Calculated from the size of the descriptor
+		// Create the application settings. This is where the discrete GPU for Optimus is set.
+		Setting optimusSetting = {0};
+		optimusSetting.version = 77856;                           // Calculated from the size of the descriptor
+		optimusSetting.settingID = 0x10F9DC81;                    // Shim rendering mode ID
+		optimusSetting.u32CurrentValue = 0x00000001 | 0x00000010; // Enable | Auto select
 
-    if (CheckForError((*GetProfileInfo)(session, profile, &profileDescriptor))) {
-        return SOP_RESULT_ERROR;
-    }
+		if (CheckForError((*SetSetting)(session, profile, &optimusSetting))) {
+			delete newProfileDescriptor.gpuSupport;
 
-    // Application descriptor
-    Application applicationDescriptor = { 0 };
+			return SOP_RESULT_ERROR;
+		}
 
-    if (!ContainsApplication(session, profile, profileDescriptor, applicationName, &applicationDescriptor)) {
-        applicationDescriptor.version = 147464; // Calculated from the size of the descriptor
-        applicationDescriptor.isPredefined = 0;
-        memcpy(&applicationDescriptor.appName, &applicationName, 2048);
+		delete newProfileDescriptor.gpuSupport;
+	}
+	else if (CheckForError(status)) {
+		return SOP_RESULT_ERROR;
+	}
 
-        // Add the current application to the new profile
-        if ((CheckForError((*CreateApplication)(session, profile, &applicationDescriptor))) ||
-            (CheckForError((*SaveSettings)(session)))) {
-            return SOP_RESULT_ERROR;
-        }
-        else {
-            result = SOP_RESULT_CHANGE;
-        }
-    }
+	// Retrieve the profile information of the application profile
+	Profile profileDescriptor = {0};
+	profileDescriptor.version = 69652; // Calculated from the size of the descriptor
 
-    (*DestroySession)(session);
-    session = 0;
+	if (CheckForError((*GetProfileInfo)(session, profile, &profileDescriptor))) {
+		return SOP_RESULT_ERROR;
+	}
 
-    return result;
+	// Application descriptor
+	Application applicationDescriptor = {0};
+
+	if (!ContainsApplication(session, profile, profileDescriptor, applicationName, &applicationDescriptor)) {
+		applicationDescriptor.version = 147464; // Calculated from the size of the descriptor
+		applicationDescriptor.isPredefined = 0;
+		memcpy(&applicationDescriptor.appName, &applicationName, 2048);
+
+		// Add the current application to the new profile
+		if ((CheckForError((*CreateApplication)(session, profile, &applicationDescriptor))) ||
+		    (CheckForError((*SaveSettings)(session)))) {
+			return SOP_RESULT_ERROR;
+		}
+		else {
+			result = SOP_RESULT_CHANGE;
+		}
+	}
+
+	(*DestroySession)(session);
+	session = 0;
+
+	return result;
 }
 
 #endif
-

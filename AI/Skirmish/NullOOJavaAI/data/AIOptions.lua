@@ -12,4 +12,3 @@ local options = {
 }
 
 return options
-

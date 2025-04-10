@@ -3,20 +3,20 @@
 #ifndef HAPFS_PATHESTIMATOR_H
 #define HAPFS_PATHESTIMATOR_H
 
+#include "IPath.h"
+#include "IPathFinder.h"
+#include "PathConstants.h"
+#include "PathDataTypes.h"
+#include "PathingState.h"
+
+#include "System/float3.h"
+
 #include <atomic>
 #include <cinttypes>
 #include <deque>
 #include <string>
 #include <vector>
-
-#include "PathingState.h"
-
-#include "IPath.h"
-#include "IPathFinder.h"
-#include "PathConstants.h"
-#include "PathDataTypes.h"
-#include "System/float3.h"
-//#include "System/Threading/SpringThreading.h"
+// #include "System/Threading/SpringThreading.h"
 
 
 struct MoveDef;
@@ -31,7 +31,7 @@ namespace HAPFS {
 class PathingState;
 class CPathFinder;
 
-class CPathEstimator: public IPathFinder {
+class CPathEstimator : public IPathFinder {
 public:
 	/**
 	 * Creates a new estimator based on a couple of parameters
@@ -53,54 +53,47 @@ public:
 	/**
 	 * called every frame
 	 */
-	//void Update();
+	// void Update();
 
 	IPathFinder* GetParent() override { return parentPathFinder; }
 
-	//const std::vector<float>& GetVertexCosts() const { return vertexCosts; }
-	//const std::deque<int2>& GetUpdatedBlocks() const { return updatedBlocks; }
+	// const std::vector<float>& GetVertexCosts() const { return vertexCosts; }
+	// const std::deque<int2>& GetUpdatedBlocks() const { return updatedBlocks; }
 
 
 protected: // IPathFinder impl
 	IPath::SearchResult DoBlockSearch(const CSolidObject* owner, const MoveDef& moveDef, const int2 s, const int2 g);
-	IPath::SearchResult DoBlockSearch(const CSolidObject* owner, const MoveDef& moveDef, const float3 sw, const float3 gw);
+	IPath::SearchResult
+	DoBlockSearch(const CSolidObject* owner, const MoveDef& moveDef, const float3 sw, const float3 gw);
 	IPath::SearchResult DoSearch(const MoveDef&, const CPathFinderDef&, const CSolidObject* owner) override;
 
-	bool TestBlock(
-		const MoveDef& moveDef,
-		const CPathFinderDef& pfDef,
-		const PathNode* parentSquare,
-		const CSolidObject* owner,
-		const unsigned int pathOptDir,
-		const unsigned int blockStatus,
-		float speedMod
-	) override;
+	bool TestBlock(const MoveDef& moveDef,
+	    const CPathFinderDef& pfDef,
+	    const PathNode* parentSquare,
+	    const CSolidObject* owner,
+	    const unsigned int pathOptDir,
+	    const unsigned int blockStatus,
+	    float speedMod) override;
 	void FinishSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, IPath::Path& path) const override;
 
-	const CPathCache::CacheItem& GetCache(
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType,
-		const bool synced
-	) const override;
+	const CPathCache::CacheItem& GetCache(const int2 strtBlock,
+	    const int2 goalBlock,
+	    float goalRadius,
+	    int pathType,
+	    const bool synced) const override;
 
-	void AddCache(
-		const IPath::Path* path,
-		const IPath::SearchResult result,
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType,
-		const bool synced
-	) override;
+	void AddCache(const IPath::Path* path,
+	    const IPath::SearchResult result,
+	    const int2 strtBlock,
+	    const int2 goalBlock,
+	    float goalRadius,
+	    int pathType,
+	    const bool synced) override;
 
-	bool SetStartBlock(
-		const MoveDef& moveDef,
-		const CPathFinderDef& peDef,
-		const CSolidObject* owner,
-		float3 startPos
-	) override;
+	bool SetStartBlock(const MoveDef& moveDef,
+	    const CPathFinderDef& peDef,
+	    const CSolidObject* owner,
+	    float3 startPos) override;
 
 	float GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const override;
 
@@ -108,12 +101,10 @@ private:
 	void InitEstimator();
 	void InitBlocks();
 
-	bool TestBlockReachability(
-		const MoveDef& moveDef,
-		const CPathFinderDef& peDef,
-		const CSolidObject* owner,
-		const unsigned int testBlockIdx
-	);
+	bool TestBlockReachability(const MoveDef& moveDef,
+	    const CPathFinderDef& peDef,
+	    const CSolidObject* owner,
+	    const unsigned int testBlockIdx);
 
 	std::uint32_t CalcHash(const char* caller) const;
 
@@ -124,7 +115,7 @@ private:
 	unsigned int BLOCKS_TO_UPDATE = 0;
 
 	unsigned int nextOffsetMessageIdx = 0;
-	//unsigned int nextCostMessageIdx = 0;
+	// unsigned int nextCostMessageIdx = 0;
 
 	std::uint32_t pathChecksum = 0;
 	std::uint32_t fileHashCode = 0;
@@ -133,13 +124,13 @@ private:
 	std::atomic<std::int64_t> costBlockNum = {0};
 
 	IPathFinder* parentPathFinder; // parent (PF if BLOCK_SIZE is 16, PE[16] if 32)
-	//CPathEstimator* nextPathEstimator; // next lower-resolution estimator
+	// CPathEstimator* nextPathEstimator; // next lower-resolution estimator
 
 	mutable CPathCache::CacheItem tempCacheItem;
 
 	PathingState* pathingState;
 };
 
-}
+} // namespace HAPFS
 
 #endif

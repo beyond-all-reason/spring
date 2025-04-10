@@ -3,23 +3,25 @@
 #ifndef UNITHANDLER_H
 #define UNITHANDLER_H
 
-#include <array>
-#include <vector>
-
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/SimObjectIDPool.h"
 #include "System/creg/STL_Map.h"
+
+#include <array>
+#include <vector>
 
 struct UnitDef;
 class CUnit;
 class CBuilderCAI;
 
-class CUnitHandler
-{
+class CUnitHandler {
 	CR_DECLARE_STRUCT(CUnitHandler)
 
 public:
-	CUnitHandler(): idPool(MAX_UNITS) {}
+	CUnitHandler()
+	    : idPool(MAX_UNITS)
+	{
+	}
 
 	void Init();
 	void Kill();
@@ -29,7 +31,8 @@ public:
 	void Update();
 	bool AddUnit(CUnit* unit);
 
-	bool CanAddUnit(int id) const {
+	bool CanAddUnit(int id) const
+	{
 		// do we want to be assigned a random ID and are any left in pool?
 		if (id < 0)
 			return (!idPool.IsEmpty());
@@ -40,9 +43,15 @@ public:
 		return false;
 	}
 
-	unsigned int NumUnitsByTeam      (int teamNum               ) const { return (unitsByDefs[teamNum][        0].size()); }
-	unsigned int NumUnitsByTeamAndDef(int teamNum, int unitDefID) const { return (unitsByDefs[teamNum][unitDefID].size()); }
+	unsigned int NumUnitsByTeam(int teamNum) const { return (unitsByDefs[teamNum][0].size()); }
+
+	unsigned int NumUnitsByTeamAndDef(int teamNum, int unitDefID) const
+	{
+		return (unitsByDefs[teamNum][unitDefID].size());
+	}
+
 	unsigned int MaxUnits() const { return maxUnits; }
+
 	unsigned int CalcMaxUnits() const;
 
 	float MaxUnitRadius() const { return maxUnitRadius; }
@@ -58,18 +67,26 @@ public:
 
 	// note: negative ID's are implicitly converted
 	CUnit* GetUnitUnsafe(unsigned int id) const { return units[id]; }
-	CUnit* GetUnit(unsigned int id) const { return ((id < MaxUnits())? units[id]: nullptr); }
+
+	CUnit* GetUnit(unsigned int id) const { return ((id < MaxUnits()) ? units[id] : nullptr); }
 
 	static CUnit* NewUnit(const UnitDef* ud);
 
 	const std::vector<CUnit*>& GetUnitsToBeRemoved() const { return unitsToBeRemoved; }
+
 	const std::vector<CUnit*>& GetActiveUnits() const { return activeUnits; }
-	      std::vector<CUnit*>& GetActiveUnits()       { return activeUnits; }
 
-	const std::vector<CUnit*>& GetUnitsByTeam      (int teamNum               ) const { return unitsByDefs[teamNum][        0]; }
-	const std::vector<CUnit*>& GetUnitsByTeamAndDef(int teamNum, int unitDefID) const { return unitsByDefs[teamNum][unitDefID]; }
+	std::vector<CUnit*>& GetActiveUnits() { return activeUnits; }
 
-	std::vector<CUnit*>& GetUnitsByTeam      (int teamNum               ) { return unitsByDefs[teamNum][        0]; }
+	const std::vector<CUnit*>& GetUnitsByTeam(int teamNum) const { return unitsByDefs[teamNum][0]; }
+
+	const std::vector<CUnit*>& GetUnitsByTeamAndDef(int teamNum, int unitDefID) const
+	{
+		return unitsByDefs[teamNum][unitDefID];
+	}
+
+	std::vector<CUnit*>& GetUnitsByTeam(int teamNum) { return unitsByDefs[teamNum][0]; }
+
 	std::vector<CUnit*>& GetUnitsByTeamAndDef(int teamNum, int unitDefID) { return unitsByDefs[teamNum][unitDefID]; }
 
 	const spring::unordered_map<unsigned int, CBuilderCAI*>& GetBuilderCAIs() const { return builderCAIs; }
@@ -94,17 +111,17 @@ private:
 private:
 	SimObjectIDPool idPool;
 
-	std::vector<CUnit*> units;                                           ///< used to get units from IDs (0 if not created)
+	std::vector<CUnit*> units; ///< used to get units from IDs (0 if not created)
 	std::array<std::vector<std::vector<CUnit*>>, MAX_TEAMS> unitsByDefs; ///< units sorted by team and unitDef
 
-	std::vector<CUnit*> activeUnits;                                     ///< used to get all active units
-	std::vector<CUnit*> unitsToBeRemoved;                                ///< units that will be removed at start of next update
+	std::vector<CUnit*> activeUnits;      ///< used to get all active units
+	std::vector<CUnit*> unitsToBeRemoved; ///< units that will be removed at start of next update
 
 	spring::unordered_map<unsigned int, CBuilderCAI*> builderCAIs;
 
 
-	size_t activeSlowUpdateUnit = 0;  ///< first unit of batch that will be SlowUpdate'd this frame
-	size_t activeUpdateUnit = 0;      ///< first unit of batch that will be SlowUpdate'd this frame
+	size_t activeSlowUpdateUnit = 0; ///< first unit of batch that will be SlowUpdate'd this frame
+	size_t activeUpdateUnit = 0;     ///< first unit of batch that will be SlowUpdate'd this frame
 
 
 	///< global unit-limit (derived from the per-team limit)

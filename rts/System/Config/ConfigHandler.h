@@ -3,20 +3,18 @@
 #ifndef CONFIGHANDLER_H
 #define CONFIGHANDLER_H
 
-#include <string>
-#include <sstream>
-#include <vector>
-#include <map>
+#include "ConfigVariable.h"
 
 #include <functional>
-
-#include "ConfigVariable.h"
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 /**
  * @brief Config handler interface
  */
-class ConfigHandler
-{
+class ConfigHandler {
 public:
 	/**
 	 * @brief Instantiate global configHandler
@@ -46,23 +44,17 @@ public:
 	 * It is not called when the config variable is changed from another
 	 * application and the new value was read in a read-modify-write cycle.
 	 */
-	template<class T>
-	void NotifyOnChange(T* observer, const std::vector<std::string>& configs)
+	template<class T> void NotifyOnChange(T* observer, const std::vector<std::string>& configs)
 	{
 		// issues: still needs to call configHandler->Get() on startup, automate it
-		AddObserver(std::bind(&T::ConfigNotify, observer, std::placeholders::_1, std::placeholders::_2), (void*) observer, configs);
+		AddObserver(std::bind(&T::ConfigNotify, observer, std::placeholders::_1, std::placeholders::_2),
+		    (void*)observer, configs);
 	}
 
-	template<class T>
-	void RemoveObserver(T* observer)
-	{
-		RemoveObserver((void*) observer);
-	}
-
+	template<class T> void RemoveObserver(T* observer) { RemoveObserver((void*)observer); }
 
 	/// @see SetString
-	template<typename T>
-	void Set(const std::string& key, const T& value, bool useOverlay = false, bool notify = true)
+	template<typename T> void Set(const std::string& key, const T& value, bool useOverlay = false, bool notify = true)
 	{
 		std::ostringstream buffer;
 		buffer << value;
@@ -71,20 +63,30 @@ public:
 
 	/// @brief Get bool, throw if key not present
 	bool GetBool(const std::string& key) const { return (Get<bool>(key)); }
+
 	/// @brief Get int, throw if key not present
 	int GetInt(const std::string& key) const { return (Get<int>(key)); }
+
 	/// @brief Get int, throw if key not present
 	int GetUnsigned(const std::string& key) const { return (Get<unsigned>(key)); }
+
 	/// @brief Get float, throw if key not present
 	float GetFloat(const std::string& key) const { return (Get<float>(key)); }
 
-	bool GetBoolSafe(const std::string& key, bool def) const { return (IsSet(key)? GetBool(key): def); }
-	int GetIntSafe(const std::string& key, int def) const { return (IsSet(key)? GetInt(key): def); }
-	float GetFloatSafe(const std::string& key, float def) const { return (IsSet(key)? GetFloat(key): def); }
-	std::string GetStringSafe(const std::string& key, const std::string& def) const { return (IsSet(key)? GetString(key): def); }
+	bool GetBoolSafe(const std::string& key, bool def) const { return (IsSet(key) ? GetBool(key) : def); }
+
+	int GetIntSafe(const std::string& key, int def) const { return (IsSet(key) ? GetInt(key) : def); }
+
+	float GetFloatSafe(const std::string& key, float def) const { return (IsSet(key) ? GetFloat(key) : def); }
+
+	std::string GetStringSafe(const std::string& key, const std::string& def) const
+	{
+		return (IsSet(key) ? GetString(key) : def);
+	}
 
 public:
 	virtual ~ConfigHandler() {}
+
 	virtual void FinalizeLoad() = 0;
 
 	/**
@@ -94,7 +96,8 @@ public:
 	 * @param useOverlay if true, the value will only be set in memory,
 	 *        and therefore be lost for the next game
 	 */
-	virtual void SetString(const std::string& key, const std::string& value, bool useOverlay = false, bool notify = true) = 0;
+	virtual void
+	SetString(const std::string& key, const std::string& value, bool useOverlay = false, bool notify = true) = 0;
 
 	/**
 	 * @brief Get string config value
@@ -155,13 +158,13 @@ public:
 protected:
 	typedef std::function<void(const std::string&, const std::string&)> ConfigNotifyCallback;
 
-	virtual void AddObserver(ConfigNotifyCallback callback, void* observer, const std::vector<std::string>& configs) = 0;
+	virtual void
+	AddObserver(ConfigNotifyCallback callback, void* observer, const std::vector<std::string>& configs) = 0;
 	virtual void RemoveObserver(void* observer) = 0;
 
 private:
 	/// @see GetString
-	template<typename T>
-	T Get(const std::string& key) const
+	template<typename T> T Get(const std::string& key) const
 	{
 		std::istringstream buf(GetString(key));
 		T temp;

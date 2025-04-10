@@ -4,10 +4,10 @@
 #define STARTPOSSELECTER_H
 
 #include "InputReceiver.h"
+
 #include "System/float3.h"
 
-class CStartPosSelecter: public CInputReceiver
-{
+class CStartPosSelecter : public CInputReceiver {
 public:
 	CStartPosSelecter();
 	~CStartPosSelecter();
@@ -16,6 +16,7 @@ public:
 	virtual void Draw() override;
 
 	bool Ready(bool luaForcedReady);
+
 	void ShowReadyBox(bool b) { showReadyBox = b; }
 
 	static CStartPosSelecter* GetSelector() { return selector; }

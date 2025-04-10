@@ -349,7 +349,7 @@ for i, tbl in ipairs(sorted) do
   local offy = sy * cellY
   gd.copy(out, tbl.img, offx, imgY - offy - sy, 0, 0, sx, sy)
   print(string.format('    [%q] = { %3i, %3i, %3i, %3i, name = %q },',
-        tbl.abbr, 
+        tbl.abbr,
         offx,
         offy,
         (offx + sx),

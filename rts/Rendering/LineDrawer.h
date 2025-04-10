@@ -3,70 +3,67 @@
 #ifndef _LINE_DRAWER_H
 #define _LINE_DRAWER_H
 
-#include <vector>
-#include <array>
-
 #include "Game/UI/CursorIcons.h"
 #include "Rendering/GL/myGL.h"
 
+#include <array>
+#include <vector>
+
 class CLineDrawer {
-	public:
-		CLineDrawer();
+public:
+	CLineDrawer();
 
-		void Configure(bool useColorRestarts, bool useRestartColor,
-		               const float* restartColor, float restartAlpha);
+	void Configure(bool useColorRestarts, bool useRestartColor, const float* restartColor, float restartAlpha);
 
-		void SetupLineStipple();
-		void UpdateLineStipple();
-		               
-		void StartPath(const float3& pos, const float* color);
-		void FinishPath() const;
-		void DrawLine(const float3& endPos, const float* color);
-		void DrawLineAndIcon(int cmdID, const float3& endPos, const float* color);
-		void DrawIconAtLastPos(int cmdID);
-		void Break(const float3& endPos, const float* color);
-		void Restart();
-		/// now same as restart
-		void RestartSameColor();
-		void RestartWithColor(const float* color);
-		const float3& GetLastPos() const { return lastPos; }
+	void SetupLineStipple();
+	void UpdateLineStipple();
 
-		void DrawAll();
+	void StartPath(const float3& pos, const float* color);
+	void FinishPath() const;
+	void DrawLine(const float3& endPos, const float* color);
+	void DrawLineAndIcon(int cmdID, const float3& endPos, const float* color);
+	void DrawIconAtLastPos(int cmdID);
+	void Break(const float3& endPos, const float* color);
+	void Restart();
+	/// now same as restart
+	void RestartSameColor();
+	void RestartWithColor(const float* color);
 
-	private:
-		bool lineStipple;
-		bool useColorRestarts;
-		bool useRestartColor;
-		float restartAlpha;
-		const float* restartColor;
-		
-		float3 lastPos;
-		const float* lastColor;
-		
-		float stippleTimer;
+	const float3& GetLastPos() const { return lastPos; }
 
-		// queue all lines and draw them in one go later
-		struct LinePair {
-			GLenum type;
-			std::vector<GLfloat> verts;
-			std::vector<GLfloat> colors;
-		};
+	void DrawAll();
 
-		std::vector<LinePair> lines;
-		std::vector<LinePair> stippled;
+private:
+	bool lineStipple;
+	bool useColorRestarts;
+	bool useRestartColor;
+	float restartAlpha;
+	const float* restartColor;
+
+	float3 lastPos;
+	const float* lastColor;
+
+	float stippleTimer;
+
+	// queue all lines and draw them in one go later
+	struct LinePair {
+		GLenum type;
+		std::vector<GLfloat> verts;
+		std::vector<GLfloat> colors;
+	};
+
+	std::vector<LinePair> lines;
+	std::vector<LinePair> stippled;
 };
 
-
 extern CLineDrawer lineDrawer;
-
 
 /******************************************************************************/
 //
 //  Inlines
 //
 
-inline void CLineDrawer::Configure(bool ucr, bool urc,
-                                   const float* rc, float ra)
+inline void CLineDrawer::Configure(bool ucr, bool urc, const float* rc, float ra)
 {
 	restartAlpha = ra;
 	restartColor = rc;
@@ -74,12 +71,10 @@ inline void CLineDrawer::Configure(bool ucr, bool urc,
 	useColorRestarts = ucr;
 }
 
-
 inline void CLineDrawer::FinishPath() const
 {
 	// noop, left for compatibility
 }
-
 
 inline void CLineDrawer::Break(const float3& endPos, const float* color)
 {
@@ -87,20 +82,20 @@ inline void CLineDrawer::Break(const float3& endPos, const float* color)
 	lastColor = color;
 }
 
-
 inline void CLineDrawer::Restart()
 {
-	LinePair *ptr;
+	LinePair* ptr;
 	if (lineStipple) {
 		stippled.push_back(LinePair());
 		ptr = &stippled.back();
-	} else {
+	}
+	else {
 		lines.push_back(LinePair());
 		ptr = &lines.back();
 	}
 	LinePair& p = *ptr;
 
-	if (!useColorRestarts)	 {
+	if (!useColorRestarts) {
 		p.type = GL_LINE_STRIP;
 		p.colors.push_back(lastColor[0]);
 		p.colors.push_back(lastColor[1]);
@@ -109,18 +104,17 @@ inline void CLineDrawer::Restart()
 		p.verts.push_back(lastPos[0]);
 		p.verts.push_back(lastPos[1]);
 		p.verts.push_back(lastPos[2]);
-	} else {
+	}
+	else {
 		p.type = GL_LINES;
 	}
 }
 
-
-inline void CLineDrawer::RestartWithColor(const float *color)
+inline void CLineDrawer::RestartWithColor(const float* color)
 {
 	lastColor = color;
 	Restart();
 }
-
 
 inline void CLineDrawer::RestartSameColor()
 {
@@ -129,7 +123,6 @@ inline void CLineDrawer::RestartSameColor()
 	Restart();
 }
 
-
 inline void CLineDrawer::StartPath(const float3& pos, const float* color)
 {
 	lastPos = pos;
@@ -137,13 +130,13 @@ inline void CLineDrawer::StartPath(const float3& pos, const float* color)
 	Restart();
 }
 
-
 inline void CLineDrawer::DrawLine(const float3& endPos, const float* color)
 {
-	LinePair *ptr;
+	LinePair* ptr;
 	if (lineStipple) {
 		ptr = &stippled.back();
-	} else {
+	}
+	else {
 		ptr = &lines.back();
 	}
 	LinePair& p = *ptr;
@@ -156,13 +149,15 @@ inline void CLineDrawer::DrawLine(const float3& endPos, const float* color)
 		p.verts.push_back(endPos.x);
 		p.verts.push_back(endPos.y);
 		p.verts.push_back(endPos.z);
-	} else {
+	}
+	else {
 		if (useRestartColor) {
 			p.colors.push_back(restartColor[0]);
 			p.colors.push_back(restartColor[1]);
 			p.colors.push_back(restartColor[2]);
 			p.colors.push_back(restartColor[3]);
-		} else {
+		}
+		else {
 			p.colors.push_back(color[0]);
 			p.colors.push_back(color[1]);
 			p.colors.push_back(color[2]);
@@ -185,19 +180,13 @@ inline void CLineDrawer::DrawLine(const float3& endPos, const float* color)
 	lastColor = color;
 }
 
-
-inline void CLineDrawer::DrawLineAndIcon(
-                         int cmdID, const float3& endPos, const float* color)
+inline void CLineDrawer::DrawLineAndIcon(int cmdID, const float3& endPos, const float* color)
 {
 	cursorIcons.AddIcon(cmdID, endPos);
 	DrawLine(endPos, color);
 }
 
-
-inline void CLineDrawer::DrawIconAtLastPos(int cmdID)
-{
-	cursorIcons.AddIcon(cmdID, lastPos);
-}
+inline void CLineDrawer::DrawIconAtLastPos(int cmdID) { cursorIcons.AddIcon(cmdID, lastPos); }
 
 
 #endif // _LINE_DRAWER_H

@@ -3,8 +3,8 @@
 This directory contains work in progress next version of the Docker engine
 build scripts.
 
-> [!WARNING]  
-> Currently the build script supports **only** Docker *Engine*! Docker Desktop, Podman etc. won't work correctly with the build script. Under Windows it requires usage of WSL, see [section below](#windows-instructions) for step-by-step Windows instructions. 
+> [!WARNING]
+> Currently the build script supports **only** Docker *Engine*! Docker Desktop, Podman etc. won't work correctly with the build script. Under Windows it requires usage of WSL, see [section below](#windows-instructions) for step-by-step Windows instructions.
 
 ## Local usage - Step 2 on Windows
 
@@ -106,9 +106,9 @@ To sum up, there is a separation:
 
 #### Smaller QoL Tips - Windows
 - If you're using VSCode as your IDE you can use [Remote Development Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
-  
+
 - Symbolic Links can replace Remote Development, use them to make edits on your regular Windows OS with whatever IDE you like and sync up with WSL's folder
-  
+
 - They are also useful for quick debugging, link up your `WSL/Ubuntu/{Spring-Repo-Folder}/build-windows/install` with your `{BAR-Game-Folder}/data/engine/{Local-Engine-Folder-Name}` this way you can quickly run `docker-build-v2/build.sh windows` on WSL and it will appear and ready to use in your BAR Folder
 
 - To use Symbolic Links, you can do so with `mklink` command in Terminal, like so:

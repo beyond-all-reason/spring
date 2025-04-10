@@ -3,9 +3,9 @@
 #ifndef _CPPWRAPPER_AI_FLOAT_3_H
 #define _CPPWRAPPER_AI_FLOAT_3_H
 
-#include <string>
-
 #include "System/float3.h"
+
+#include <string>
 
 namespace springai {
 
@@ -14,7 +14,6 @@ namespace springai {
  */
 class AIFloat3 : public float3 {
 public:
-
 	AIFloat3();
 	AIFloat3(float x, float y, float z);
 	AIFloat3(float* xyz);
@@ -24,12 +23,12 @@ public:
 	void LoadInto(float* xyz) const;
 
 	virtual std::string ToString() const;
-//	virtual int HashCode() const;
-//	virtual bool Equals(const void* obj) const;
+	//	virtual int HashCode() const;
+	//	virtual bool Equals(const void* obj) const;
 
 	static const AIFloat3 NULL_VALUE;
 }; // class AIFloat3
 
-}  // namespace springai
+} // namespace springai
 
 #endif // _CPPWRAPPER_AI_FLOAT_3_H

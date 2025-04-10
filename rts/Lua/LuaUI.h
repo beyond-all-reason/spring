@@ -3,11 +3,12 @@
 #ifndef LUA_UI_H
 #define LUA_UI_H
 
+#include "LuaHandle.h"
+
+#include "System/UnorderedMap.hpp"
+
 #include <string>
 #include <vector>
-
-#include "LuaHandle.h"
-#include "System/UnorderedMap.hpp"
 
 
 class CUnit;
@@ -16,13 +17,11 @@ struct Command;
 struct lua_State;
 struct SCommandDescription;
 
-
-class CLuaUI : public CLuaHandle
-{
+class CLuaUI : public CLuaHandle {
 public: // structs
 	enum QueuedAction {
-		ACTION_RELOAD  =  0,
-		ACTION_DISABLE =  1,
+		ACTION_RELOAD = 0,
+		ACTION_DISABLE = 1,
 		ACTION_NOVALUE = -1,
 	};
 
@@ -38,16 +37,20 @@ public: // structs
 
 public:
 	void QueueAction(const QueuedAction action) { queuedAction = action; }
-	void CheckAction() {
+
+	void CheckAction()
+	{
 		switch (queuedAction) {
-			case ACTION_RELOAD:  { ReloadHandler(); } break;
-			case ACTION_DISABLE: {   FreeHandler(); } break;
-			default:             {                  } break;
+		case ACTION_RELOAD: ReloadHandler(); break;
+		case ACTION_DISABLE: FreeHandler(); break;
+		default: break;
 		}
 	}
 
 	static bool CanLoadHandler() { return true; }
+
 	static bool ReloadHandler() { return (FreeHandler(), LoadFreeHandler()); } // NOTE the ','
+
 	static bool LoadFreeHandler() { return (LoadHandler() || FreeHandler()); }
 
 	static bool LoadHandler();
@@ -58,17 +61,18 @@ public:
 public: // call-ins
 	bool HasCallIn(lua_State* L, const string& name) const;
 
-	bool LayoutButtons(int& xButtons, int& yButtons,
-	                   const vector<SCommandDescription>& cmds,
-	                   vector<int>& removeCmds,
-	                   vector<SCommandDescription>& customCmds,
-	                   vector<int>& onlyTextureCmds,
-	                   vector<ReStringPair>& reTextureCmds,
-	                   vector<ReStringPair>& reNamedCmds,
-	                   vector<ReStringPair>& reTooltipCmds,
-	                   vector<ReParamsPair>& reParamsCmds,
-	                   spring::unordered_map<int, int>& iconList,
-	                   string& menuName);
+	bool LayoutButtons(int& xButtons,
+	    int& yButtons,
+	    const vector<SCommandDescription>& cmds,
+	    vector<int>& removeCmds,
+	    vector<SCommandDescription>& customCmds,
+	    vector<int>& onlyTextureCmds,
+	    vector<ReStringPair>& reTextureCmds,
+	    vector<ReStringPair>& reNamedCmds,
+	    vector<ReStringPair>& reTooltipCmds,
+	    vector<ReParamsPair>& reParamsCmds,
+	    spring::unordered_map<int, int>& iconList,
+	    string& menuName);
 
 	bool ConfigureLayout(const string& command);
 
@@ -88,7 +92,7 @@ protected:
 	bool GetLuaIntList(lua_State* L, int index, vector<int>& intList);
 	bool GetLuaReStringList(lua_State* L, int index, vector<ReStringPair>& reStringCmds);
 	bool GetLuaReParamsList(lua_State* L, int index, vector<ReParamsPair>& reParamsCmds);
-	bool GetLuaCmdDescList(lua_State* L, int index,  vector<SCommandDescription>& customCmds);
+	bool GetLuaCmdDescList(lua_State* L, int index, vector<SCommandDescription>& customCmds);
 
 protected:
 	QueuedAction queuedAction;
@@ -101,7 +105,6 @@ protected:
 private: // call-outs
 	static int SetShockFrontFactors(lua_State* L);
 };
-
 
 extern CLuaUI* luaUI;
 

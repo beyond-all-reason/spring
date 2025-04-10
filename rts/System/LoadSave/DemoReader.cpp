@@ -7,20 +7,21 @@
 
 #ifndef TOOLS
 #include "System/Config/ConfigHandler.h"
-CONFIG(bool, DisableDemoVersionCheck).defaultValue(false).description("Allow to play every replay file (may crash / cause undefined behaviour in replays)");
+CONFIG(bool, DisableDemoVersionCheck)
+    .defaultValue(false)
+    .description("Allow to play every replay file (may crash / cause undefined behaviour in replays)");
 #endif
 #include "System/Exceptions.h"
-#include "System/FileSystem/GZFileHandler.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/FileSystem/GZFileHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Net/RawPacket.h"
 
 #include <array>
-#include <climits>
-#include <stdexcept>
 #include <cassert>
+#include <climits>
 #include <cstring>
-
+#include <stdexcept>
 
 static bool CheckDemoHeader(const DemoFileHeader& fileHeader)
 {
@@ -38,18 +39,18 @@ static bool CheckDemoHeader(const DemoFileHeader& fileHeader)
 	if (fileHeader.teamStatElemSize != sizeof(TeamStatistics))
 		return false;
 
-	// do not compare Spring version in debug mode: we do not want to make
-	// debugging dev-version demos impossible (because the version differs
-	// each build)
-	#ifndef _DEBUG
+// do not compare Spring version in debug mode: we do not want to make
+// debugging dev-version demos impossible (because the version differs
+// each build)
+#ifndef _DEBUG
 	return (!SpringVersion::IsRelease() || strcmp(fileHeader.versionString, SpringVersion::GetSync().c_str()) == 0);
-	#endif
+#endif
 
 	return true;
 }
 
-
-CDemoReader::CDemoReader(const std::string& filename, float curTime): playbackDemo(new CGZFileHandler(filename, SPRING_VFS_PWD_ALL))
+CDemoReader::CDemoReader(const std::string& filename, float curTime)
+    : playbackDemo(new CGZFileHandler(filename, SPRING_VFS_PWD_ALL))
 {
 	if (FileSystem::GetExtension(filename) != "sdfz")
 		throw content_error("Unknown demo extension: " + FileSystem::GetExtension(filename));
@@ -62,17 +63,19 @@ CDemoReader::CDemoReader(const std::string& filename, float curTime): playbackDe
 	fileHeader.swab();
 
 	if (!CheckDemoHeader(fileHeader)) {
-			char buf[1024];
-			const char* fmt = "[%s] demo-file \"%s\" (%d bytes, magic \"%s\") corrupt or created by a different Spring version, expected \"%s\"";
+		char buf[1024];
+		const char* fmt = "[%s] demo-file \"%s\" (%d bytes, magic \"%s\") corrupt or created by a different Spring "
+		                  "version, expected \"%s\"";
 
-			memset(buf, 0, sizeof(buf));
-			snprintf(buf, sizeof(buf) - 1, fmt, __func__, filename.c_str(), playbackDemo->FileSize(), fileHeader.magic, fileHeader.versionString);
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf) - 1, fmt, __func__, filename.c_str(), playbackDemo->FileSize(), fileHeader.magic,
+		    fileHeader.versionString);
 
 #ifndef TOOLS
-			if (!configHandler->GetBool("DisableDemoVersionCheck"))
-				throw std::runtime_error(buf);
+		if (!configHandler->GetBool("DisableDemoVersionCheck"))
+			throw std::runtime_error(buf);
 #endif
-			LOG_L(L_WARNING, "%s", buf);
+		LOG_L(L_WARNING, "%s", buf);
 	}
 
 	if (fileHeader.scriptSize != 0) {
@@ -92,7 +95,8 @@ CDemoReader::CDemoReader(const std::string& filename, float curTime): playbackDe
 
 	if (fileHeader.demoStreamSize != 0) {
 		bytesRemaining = fileHeader.demoStreamSize;
-	} else {
+	}
+	else {
 		// Spring crashed while recording the demo: replay until EOF,
 		// but at most filesize bytes to block watching demo of running game.
 		// For this we must determine the file size.
@@ -102,12 +106,7 @@ CDemoReader::CDemoReader(const std::string& filename, float curTime): playbackDe
 	playbackDemo->Seek(curPos);
 }
 
-
-CDemoReader::~CDemoReader()
-{
-	delete playbackDemo;
-}
-
+CDemoReader::~CDemoReader() { delete playbackDemo; }
 
 netcode::RawPacket* CDemoReader::GetData(const float readTime)
 {
@@ -152,7 +151,6 @@ bool CDemoReader::ReachedEnd()
 	return (bytesRemaining <= 0 || playbackDemo->Eof() || (playbackDemo->GetPos() > playbackDemoSize));
 }
 
-
 void CDemoReader::LoadStats()
 {
 	// Stats are not available if Spring crashed while writing the demo.
@@ -168,7 +166,7 @@ void CDemoReader::LoadStats()
 
 	for (int allyTeamNum = 0; allyTeamNum < fileHeader.winningAllyTeamsSize; ++allyTeamNum) {
 		unsigned char winnerAllyTeam;
-		playbackDemo->Read((char*) &winnerAllyTeam, sizeof(unsigned char));
+		playbackDemo->Read((char*)&winnerAllyTeam, sizeof(unsigned char));
 		winningAllyTeams.push_back(winnerAllyTeam);
 	}
 

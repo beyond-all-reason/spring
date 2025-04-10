@@ -1,41 +1,41 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "ResourceHandler.h"
+
 #include "ResourceMapAnalyzer.h"
+
 #include "Map/MapInfo.h" // for the metal extractor radius
-#include "Map/ReadMap.h" // for the metal map
 #include "Map/MetalMap.h"
+#include "Map/ReadMap.h" // for the metal map
+#include "System/Misc/TracyDefs.h"
 
 #include <cfloat>
 
-#include "System/Misc/TracyDefs.h"
-
 
 CR_BIND(CResourceHandler, )
-CR_REG_METADATA(CResourceHandler, (
-	CR_IGNORED(resourceDescriptions),
-	CR_IGNORED(resourceMapAnalyzers),
-	CR_MEMBER(metalResourceId),
-	CR_MEMBER(energyResourceId),
+CR_REG_METADATA(CResourceHandler,
+    (CR_IGNORED(resourceDescriptions),
+        CR_IGNORED(resourceMapAnalyzers),
+        CR_MEMBER(metalResourceId),
+        CR_MEMBER(energyResourceId),
 
-	CR_POSTLOAD(PostLoad)
-))
+        CR_POSTLOAD(PostLoad)))
 
 
 static CResourceHandler instance;
 
-
 CResourceHandler* CResourceHandler::GetInstance() { return &instance; }
 
 void CResourceHandler::CreateInstance() { instance.Init(); }
-void CResourceHandler::FreeInstance() { instance.Kill(); }
 
+void CResourceHandler::FreeInstance() { instance.Kill(); }
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-void CResourceHandler::AddResources() {
+void CResourceHandler::AddResources()
+{
 	resourceDescriptions.clear();
 	resourceDescriptions.reserve(SResourcePack::MAX_RESOURCES);
 	resourceMapAnalyzers.clear();
@@ -67,7 +67,6 @@ int CResourceHandler::AddResource(const CResourceDescription& resource)
 	return (resourceDescriptions.size() - 1);
 }
 
-
 const CResourceDescription* CResourceHandler::GetResource(int resourceId) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -88,7 +87,7 @@ int CResourceHandler::GetResourceId(const std::string& resourceName) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	const auto pred = [&](const CResourceDescription& rd) { return (resourceName == rd.name); };
 	const auto iter = std::find_if(resourceDescriptions.cbegin(), resourceDescriptions.cend(), pred);
-	return ((iter == resourceDescriptions.end())? -1: (iter - resourceDescriptions.cbegin()));
+	return ((iter == resourceDescriptions.end()) ? -1 : (iter - resourceDescriptions.cbegin()));
 }
 
 const unsigned char* CResourceHandler::GetResourceMap(int resourceId) const
@@ -140,4 +139,3 @@ const CResourceMapAnalyzer* CResourceHandler::GetResourceMapAnalyzer(int resourc
 
 	return rma;
 }
-

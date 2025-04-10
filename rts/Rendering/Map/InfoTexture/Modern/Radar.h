@@ -5,22 +5,21 @@
 
 
 #include "PboInfoTexture.h"
+
 #include "Rendering/GL/FBO.h"
 
-
 namespace Shader {
-	struct IProgramObject;
+struct IProgramObject;
 }
 
-
-class CRadarTexture : public CPboInfoTexture
-{
+class CRadarTexture : public CPboInfoTexture {
 public:
 	CRadarTexture();
 	~CRadarTexture() override;
 
 public:
 	void Update() override;
+
 	bool IsUpdateNeeded() override { return true; }
 
 private:

@@ -3,11 +3,12 @@
 /* exports the #defines from CobDefines.h to Lua */
 
 #include "LuaConstCOB.h"
+
 #include "LuaInclude.h"
 #include "LuaUtils.h"
-#include "Sim/Units/Scripts/CobDefines.h"
-#include "Sim/Projectiles/PieceProjectile.h"
 
+#include "Sim/Projectiles/PieceProjectile.h"
+#include "Sim/Units/Scripts/CobDefines.h"
 
 bool LuaConstCOB::PushEntries(lua_State* L)
 {
@@ -58,16 +59,16 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 	/*** @field COB.ARMORED integer */
 	PUSH_COB(ARMORED);
 
-/*	PUSH_COB(WEAPON_AIM_ABORTED);
-	PUSH_COB(WEAPON_READY);
-	PUSH_COB(WEAPON_LAUNCH_NOW);
-	PUSH_COB(FINISHED_DYING);
-	PUSH_COB(ORIENTATION);*/
+	/*	PUSH_COB(WEAPON_AIM_ABORTED);
+	    PUSH_COB(WEAPON_READY);
+	    PUSH_COB(WEAPON_LAUNCH_NOW);
+	    PUSH_COB(FINISHED_DYING);
+	    PUSH_COB(ORIENTATION);*/
 	/*** @field COB.IN_WATER integer */
 	PUSH_COB(IN_WATER);
 	/*** @field COB.CURRENT_SPEED integer */
 	PUSH_COB(CURRENT_SPEED);
-//	PUSH_COB(MAGIC_DEATH);
+	//	PUSH_COB(MAGIC_DEATH);
 	/*** @field COB.VETERAN_LEVEL integer */
 	PUSH_COB(VETERAN_LEVEL);
 	/*** @field COB.ON_ROAD integer */
@@ -188,13 +189,13 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 
 bool LuaConstSFX::PushEntries(lua_State* L)
 {
-	/*** 
+	/***
 	 * @enum SFX
 	 */
 
 	/***
 	 * Piece flag for `Spring.UnitScript.Explode`.
-	 * 
+	 *
 	 * @field SFX.SHATTER integer
 	 * @field SFX.EXPLODE integer
 	 * @field SFX.EXPLODE_ON_HIT integer
@@ -209,10 +210,10 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	LuaPushNamedNumber(L, "SHATTER", PF_Shatter);
 	LuaPushNamedNumber(L, "EXPLODE", PF_Explode);
 	LuaPushNamedNumber(L, "EXPLODE_ON_HIT", PF_Explode);
-	LuaPushNamedNumber(L, "FALL",  0);
+	LuaPushNamedNumber(L, "FALL", 0);
 	LuaPushNamedNumber(L, "SMOKE", PF_Smoke);
-	LuaPushNamedNumber(L, "FIRE",  PF_Fire);
-	LuaPushNamedNumber(L, "NONE",  PF_NONE); // BITMAP_ONLY
+	LuaPushNamedNumber(L, "FIRE", PF_Fire);
+	LuaPushNamedNumber(L, "NONE", PF_NONE); // BITMAP_ONLY
 	LuaPushNamedNumber(L, "NO_CEG_TRAIL", PF_NoCEGTrail);
 	LuaPushNamedNumber(L, "NO_HEATCLOUD", PF_NoHeatCloud);
 	LuaPushNamedNumber(L, "RECURSIVE", PF_Recursive);
@@ -223,12 +224,12 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	 * @field SFX.WAKE integer
 	 * @field SFX.REVERSE_WAKE integer
 	 */
-	LuaPushNamedNumber(L, "VTOL",            SFX_VTOL);
-	LuaPushNamedNumber(L, "WAKE",            SFX_WAKE);
-	LuaPushNamedNumber(L, "REVERSE_WAKE",    SFX_REVERSE_WAKE);
+	LuaPushNamedNumber(L, "VTOL", SFX_VTOL);
+	LuaPushNamedNumber(L, "WAKE", SFX_WAKE);
+	LuaPushNamedNumber(L, "REVERSE_WAKE", SFX_REVERSE_WAKE);
 	// no need for WAKE_2 and REVERSE_WAKE_2 as they are same as WAKE and REVERSE_WAKE
-	//LuaPushNamedNumber(L, "WAKE_2",          SFX_WAKE_2);
-	//LuaPushNamedNumber(L, "REVERSE_WAKE_2",  SFX_REVERSE_WAKE_2);
+	// LuaPushNamedNumber(L, "WAKE_2",          SFX_WAKE_2);
+	// LuaPushNamedNumber(L, "REVERSE_WAKE_2",  SFX_REVERSE_WAKE_2);
 
 	/***
 	 * Piece flag for `Spring.UnitScript.EmitSfx`.
@@ -240,13 +241,13 @@ bool LuaConstSFX::PushEntries(lua_State* L)
 	 * @field SFX.DETONATE_WEAPON integer
 	 * @field SFX.GLOBAL integer
 	 */
-	LuaPushNamedNumber(L, "WHITE_SMOKE",     SFX_WHITE_SMOKE);
-	LuaPushNamedNumber(L, "BLACK_SMOKE",     SFX_BLACK_SMOKE);
-	LuaPushNamedNumber(L, "BUBBLE",          SFX_BUBBLE);
-	LuaPushNamedNumber(L, "CEG",             SFX_CEG);
-	LuaPushNamedNumber(L, "FIRE_WEAPON",     SFX_FIRE_WEAPON);
+	LuaPushNamedNumber(L, "WHITE_SMOKE", SFX_WHITE_SMOKE);
+	LuaPushNamedNumber(L, "BLACK_SMOKE", SFX_BLACK_SMOKE);
+	LuaPushNamedNumber(L, "BUBBLE", SFX_BUBBLE);
+	LuaPushNamedNumber(L, "CEG", SFX_CEG);
+	LuaPushNamedNumber(L, "FIRE_WEAPON", SFX_FIRE_WEAPON);
 	LuaPushNamedNumber(L, "DETONATE_WEAPON", SFX_DETONATE_WEAPON);
-	LuaPushNamedNumber(L, "GLOBAL",          SFX_GLOBAL);
+	LuaPushNamedNumber(L, "GLOBAL", SFX_GLOBAL);
 
 	return true;
 }

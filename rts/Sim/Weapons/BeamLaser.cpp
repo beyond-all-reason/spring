@@ -1,8 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "BeamLaser.h"
+
 #include "PlasmaRepulser.h"
 #include "WeaponDef.h"
+
 #include "Game/GameHelper.h"
 #include "Game/TraceRay.h"
 #include "Map/Ground.h"
@@ -15,9 +17,8 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Matrix44f.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 #include <vector>
 
@@ -25,30 +26,27 @@
 
 CR_BIND_DERIVED(CBeamLaser, CWeapon, )
 
-CR_REG_METADATA(CBeamLaser,(
-	CR_MEMBER(color),
-	CR_MEMBER(oldDir),
+CR_REG_METADATA(CBeamLaser,
+    (CR_MEMBER(color),
+        CR_MEMBER(oldDir),
 
-	CR_MEMBER(salvoDamageMult),
-	CR_MEMBER(sweepFireState)
-))
+        CR_MEMBER(salvoDamageMult),
+        CR_MEMBER(sweepFireState)))
 
 CR_BIND(CBeamLaser::SweepFireState, )
-CR_REG_METADATA_SUB(CBeamLaser, SweepFireState, (
-	CR_MEMBER(sweepInitPos),
-	CR_MEMBER(sweepGoalPos),
-	CR_MEMBER(sweepInitDir),
-	CR_MEMBER(sweepGoalDir),
-	CR_MEMBER(sweepCurrDir),
-	CR_MEMBER(sweepTempDir),
-	CR_MEMBER(sweepInitDst),
-	CR_MEMBER(sweepGoalDst),
-	CR_MEMBER(sweepCurrDst),
-	CR_MEMBER(sweepStartAngle),
-	CR_MEMBER(sweepFiring)
-))
-
-
+CR_REG_METADATA_SUB(CBeamLaser,
+    SweepFireState,
+    (CR_MEMBER(sweepInitPos),
+        CR_MEMBER(sweepGoalPos),
+        CR_MEMBER(sweepInitDir),
+        CR_MEMBER(sweepGoalDir),
+        CR_MEMBER(sweepCurrDir),
+        CR_MEMBER(sweepTempDir),
+        CR_MEMBER(sweepInitDst),
+        CR_MEMBER(sweepGoalDst),
+        CR_MEMBER(sweepCurrDst),
+        CR_MEMBER(sweepStartAngle),
+        CR_MEMBER(sweepFiring)))
 
 void CBeamLaser::SweepFireState::Init(const float3& newTargetPos, const float3& muzzlePos)
 {
@@ -67,7 +65,8 @@ void CBeamLaser::SweepFireState::Init(const float3& newTargetPos, const float3& 
 	sweepFiring = true;
 }
 
-float CBeamLaser::SweepFireState::GetTargetDist2D() const {
+float CBeamLaser::SweepFireState::GetTargetDist2D() const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (sweepStartAngle < 0.01f)
 		return sweepGoalDst;
@@ -82,11 +81,9 @@ float CBeamLaser::SweepFireState::GetTargetDist2D() const {
 	return (mix(sweepInitDst, sweepGoalDst, 1.0f - sweepAngleAlpha));
 }
 
-
-
 CBeamLaser::CBeamLaser(CUnit* owner, const WeaponDef* def)
-	: CWeapon(owner, def)
-	, salvoDamageMult(1.0f)
+    : CWeapon(owner, def)
+    , salvoDamageMult(1.0f)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// null happens when loading
@@ -95,8 +92,6 @@ CBeamLaser::CBeamLaser(CUnit* owner, const WeaponDef* def)
 
 	sweepFireState.SetDamageAllies((collisionFlags & Collision::NOFRIENDLIES) == 0);
 }
-
-
 
 void CBeamLaser::Init()
 {
@@ -131,7 +126,8 @@ void CBeamLaser::UpdatePosAndMuzzlePos()
 		weaponMuzzlePos = owner->GetObjectSpacePos(relWeaponMuzzlePos);
 
 		sweepFireState.SetSweepTempDir(newWeaponDir);
-	} else {
+	}
+	else {
 		UpdateWeaponVectors();
 
 		if (weaponDef->sweepFire) {
@@ -159,9 +155,9 @@ void CBeamLaser::UpdateSweep()
 	if (!weaponDef->sweepFire)
 		return;
 
-	#if (!SWEEPFIRE_ENABLED)
+#if (!SWEEPFIRE_ENABLED)
 	return;
-	#endif
+#endif
 
 	// if current target position changed, start sweeping through a new arc
 	if (sweepFireState.StartSweep(currentTargetPos))
@@ -213,16 +209,20 @@ float3 CBeamLaser::GetFireDir(bool sweepFire, bool scriptCall)
 	if (!sweepFire) {
 		if (scriptCall) {
 			dir = dir.SafeNormalize();
-		} else {
+		}
+		else {
 			if (onlyForward && owner->unitDef->IsStrafingAirUnit()) {
 				// [?] StrafeAirMovetype cannot align itself properly, change back when that is fixed
 				dir = owner->frontdir;
-			} else {
+			}
+			else {
 				if (salvoLeft == salvoSize - 1) {
 					oldDir = (dir = dir.SafeNormalize());
-				} else if (weaponDef->beamburst) {
+				}
+				else if (weaponDef->beamburst) {
 					dir = dir.SafeNormalize();
-				} else {
+				}
+				else {
 					dir = oldDir;
 				}
 			}
@@ -238,7 +238,8 @@ float3 CBeamLaser::GetFireDir(bool sweepFire, bool scriptCall)
 				dir = -dir;
 			}
 		}
-	} else {
+	}
+	else {
 		// need to emit the sweeping beams from the right place
 		// NOTE:
 		//   this way of implementing sweep-fire is extremely bugged
@@ -251,7 +252,8 @@ float3 CBeamLaser::GetFireDir(bool sweepFire, bool scriptCall)
 		dir = sweepFireState.GetSweepTempDir();
 		dir.Normalize2D();
 
-		const float3 tgtPos = float3(dir.x * sweepFireState.GetTargetDist2D(), 0.0f, dir.z * sweepFireState.GetTargetDist2D());
+		const float3 tgtPos =
+		    float3(dir.x * sweepFireState.GetTargetDist2D(), 0.0f, dir.z * sweepFireState.GetTargetDist2D());
 		const float tgtHgt = CGround::GetHeightReal(weaponMuzzlePos.x + tgtPos.x, weaponMuzzlePos.z + tgtPos.z);
 
 		// NOTE: INTENTIONALLY NOT NORMALIZED HERE
@@ -279,16 +281,16 @@ void CBeamLaser::FireInternal(float3 curDir)
 	/* FPS mode targeting essentially behaves as if with targetBorder=1,
 	 * even for units without this property. The practical effect is that
 	 * you can FPS a beamlaser turret and shoot units (esp. enemy turrets
- 	 * of the same type) that normal target acquisition would refuse to.
+	 * of the same type) that normal target acquisition would refuse to.
 	 *
 	 * This arbitrary -5% range penalty aims to mitigate this. It relies
 	 * on the relative sizes of hitvolumes being circa about that big in
 	 * relation to unit ranges, which happens to be valid in games that
 	 * keep FPS mode available.
-  	 *
- 	 * Long-term it would be good to do something definitive about FPS
-    	 * mode (embrace or deprecate) but for now it doesn't hurt too much
-       	 * to keep this. */
+	 *
+	 * Long-term it would be good to do something definitive about FPS
+	 * mode (embrace or deprecate) but for now it doesn't hurt too much
+	 * to keep this. */
 	float rangeMod = 1.0f - (0.05f * owner->UnderFirstPersonControl());
 
 	bool tryAgain = true;
@@ -324,17 +326,20 @@ void CBeamLaser::FireInternal(float3 curDir)
 		if (currentTarget.type == Target_Unit && weaponDef->targetBorder != 0.0f) {
 			maxLength += (currentTarget.unit->radius * weaponDef->targetBorder);
 		}
-	} else {
+	}
+	else {
 		// restrict the range when sweeping
 		maxLength = std::min(maxLength, sweepFireState.GetTargetDist3D() * 1.125f);
 	}
 
 	for (int tries = 0; tries < 5 && tryAgain; ++tries) {
-		float beamLength = TraceRay::TraceRay(curPos, curDir, maxLength - curLength, collisionFlags, owner, hitUnit, hitFeature, &hitColQuery);
+		float beamLength = TraceRay::TraceRay(
+		    curPos, curDir, maxLength - curLength, collisionFlags, owner, hitUnit, hitFeature, &hitColQuery);
 
 		if (hitUnit != nullptr && teamHandler.AlliedTeams(hitUnit->team, owner->team)) {
 			if (sweepFireState.IsSweepFiring() && !sweepFireState.DamageAllies()) {
-				doDamage = false; break;
+				doDamage = false;
+				break;
 			}
 		}
 
@@ -356,7 +361,8 @@ void CBeamLaser::FireInternal(float3 curDir)
 		TraceRay::TraceRayShields(this, curPos, curDir, beamLength, hitShields);
 
 		for (const TraceRay::SShieldDist& sd: hitShields) {
-			if (sd.dist < beamLength && sd.rep->IncomingBeam(this, curPos, curPos + (curDir * sd.dist), salvoDamageMult)) {
+			if (sd.dist < beamLength &&
+			    sd.rep->IncomingBeam(this, curPos, curPos + (curDir * sd.dist), salvoDamageMult)) {
 				beamLength = sd.dist;
 
 				hitUnit = nullptr;
@@ -376,14 +382,15 @@ void CBeamLaser::FireInternal(float3 curDir)
 
 			newDir = curDir - prjDir;
 			tryAgain = true;
-		} else {
+		}
+		else {
 			tryAgain = false;
 		}
 
 		{
-			const float baseAlpha  = weaponDef->intensity * 255.0f;
-			const float startAlpha = (1.0f - (curLength             ) / maxLength);
-			const float endAlpha   = (1.0f - (curLength + beamLength) / maxLength);
+			const float baseAlpha = weaponDef->intensity * 255.0f;
+			const float startAlpha = (1.0f - (curLength) / maxLength);
+			const float endAlpha = (1.0f - (curLength + beamLength) / maxLength);
 
 			ProjectileParams pparams = GetProjectileParams();
 			pparams.pos = curPos;
@@ -416,25 +423,23 @@ void CBeamLaser::FireInternal(float3 curDir)
 
 		const DamageArray& baseDamages = damages->GetDynamicDamages(weaponMuzzlePos, curPos);
 		const DamageArray da = baseDamages * (hitIntensity * salvoDamageMult);
-		const CExplosionParams params = {
-			.pos                  = hitPos,
-			.dir                  = curDir,
-			.damages              = da,
-			.weaponDef            = weaponDef,
-			.owner                = owner,
-			.hitUnit              = hitUnit,
-			.hitFeature           = hitFeature,
-			.craterAreaOfEffect   = damages->craterAreaOfEffect,
-			.damageAreaOfEffect   = damages->damageAreaOfEffect,
-			.edgeEffectiveness    = damages->edgeEffectiveness,
-			.explosionSpeed       = damages->explosionSpeed,
-			.gfxMod               = 1.0f,
-			.maxGroundDeformation = 0.0f,
-			.impactOnly           = weaponDef->impactOnly,
-			.ignoreOwner          = weaponDef->noExplode || weaponDef->noSelfDamage,
-			.damageGround         = true,
-			.projectileID         = static_cast<uint32_t>(-1u)
-		};
+		const CExplosionParams params = {.pos = hitPos,
+		    .dir = curDir,
+		    .damages = da,
+		    .weaponDef = weaponDef,
+		    .owner = owner,
+		    .hitUnit = hitUnit,
+		    .hitFeature = hitFeature,
+		    .craterAreaOfEffect = damages->craterAreaOfEffect,
+		    .damageAreaOfEffect = damages->damageAreaOfEffect,
+		    .edgeEffectiveness = damages->edgeEffectiveness,
+		    .explosionSpeed = damages->explosionSpeed,
+		    .gfxMod = 1.0f,
+		    .maxGroundDeformation = 0.0f,
+		    .impactOnly = weaponDef->impactOnly,
+		    .ignoreOwner = weaponDef->noExplode || weaponDef->noSelfDamage,
+		    .damageGround = true,
+		    .projectileID = static_cast<uint32_t>(-1u)};
 
 		helper->Explosion(params);
 	}

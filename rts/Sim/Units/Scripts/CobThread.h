@@ -3,18 +3,17 @@
 #ifndef COB_THREAD_H
 #define COB_THREAD_H
 
-#include <string>
-#include <array>
-
 #include "CobInstance.h"
+
 #include "Lua/LuaRules.h"
+
+#include <array>
+#include <string>
 
 class CCobFile;
 class CCobInstance;
 
-
-class CCobThread
-{
+class CCobThread {
 	CR_DECLARE_STRUCT(CCobThread)
 	CR_DECLARE_SUB(CallInfo)
 
@@ -23,15 +22,24 @@ public:
 	CCobThread() {}
 
 	CCobThread(CCobInstance* _cobInst);
+
 	CCobThread(CCobThread&& t) { *this = std::move(t); }
+
 	CCobThread(const CCobThread& t) { *this = t; }
 
 	~CCobThread();
 
-	CCobThread& operator = (CCobThread&& t);
-	CCobThread& operator = (const CCobThread& t);
+	CCobThread& operator=(CCobThread&& t);
+	CCobThread& operator=(const CCobThread& t);
 
-	enum State {Init, Sleep, Run, Dead, WaitTurn, WaitMove};
+	enum State {
+		Init,
+		Sleep,
+		Run,
+		Dead,
+		WaitTurn,
+		WaitMove
+	};
 
 	/**
 	 * Returns false if this thread is dead and needs to be killed.
@@ -46,21 +54,24 @@ public:
 	void Stop();
 
 	void SetID(int threadID) { id = threadID; }
+
 	void SetState(State s) { state = s; }
 
 	/**
 	 * Sets a callback that will be called when the thread dies.
 	 * There can be only one.
 	 */
-	void SetCallback(CCobInstance::ThreadCallbackType cb, int cbp) {
+	void SetCallback(CCobInstance::ThreadCallbackType cb, int cbp)
+	{
 		cbType = cb;
 		cbParam = cbp;
 	}
-	void MakeGarbage() {
+
+	void MakeGarbage()
+	{
 		cobInst = nullptr;
 		cobFile = nullptr;
 	}
-
 
 	/**
 	 * @brief Checks whether the stack has at least size items.
@@ -79,18 +90,27 @@ public:
 	const std::string& GetName();
 
 	int GetID() const { return id; }
+
 	int GetStackVal(int pos) const { return dataStack[pos]; }
+
 	int GetWakeTime() const { return wakeTime; }
+
 	int GetRetCode() const { return retCode; }
+
 	int GetSignalMask() const { return signalMask; }
+
 	State GetState() const { return state; }
 
-	bool Reschedule(CUnitScript::AnimType type) const {
-		return ((state == WaitMove && type == CCobInstance::AMove) || (state == WaitTurn && type == CCobInstance::ATurn));
+	bool Reschedule(CUnitScript::AnimType type) const
+	{
+		return (
+		    (state == WaitMove && type == CCobInstance::AMove) || (state == WaitTurn && type == CCobInstance::ATurn));
 	}
 
 	bool IsDead() const { return (state == Dead); }
+
 	bool IsGarbage() const { return (cobInst == nullptr); }
+
 	bool IsWaiting() const { return (waitAxis != -1); }
 
 	// script instance that owns this thread
@@ -108,14 +128,19 @@ protected:
 	void LuaCall();
 
 	void PushCallStack(CallInfo v) { callStack.push_back(v); }
+
 	void PushDataStack(int v) { dataStack.push_back(v); }
+
 	CallInfo& PushCallStackRef() { return callStack.emplace_back(); }
 
 	int LocalFunctionID() const { return callStack.back().functionId; }
+
 	int LocalReturnAddr() const { return callStack.back().returnAddr; }
+
 	int LocalStackFrame() const { return callStack.back().stackTop; }
 
-	int PopDataStack() {
+	int PopDataStack()
+	{
 		if (dataStack.empty()) {
 			return 0;
 		}

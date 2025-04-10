@@ -103,7 +103,7 @@ if(PREFER_STATIC_LIBS)
   find_package(JPEG 90 QUIET)
   find_package(GIF 5.2.1 QUIET)
   unprefer_static_libs()
-  
+
   FIND_PACKAGE_HANDLE_STANDARD_ARGS(DevIL DEFAULT_MSG
                                     IL_LIBRARIES ILU_LIBRARIES
                                     IL_INCLUDE_DIR
@@ -130,18 +130,18 @@ if(DevIL_FOUND)
   else()
     set(DevIL_ILUT_FOUND FALSE)
   endif()
-  
+
   if(NOT TARGET DevIL::IL)
     add_library(DevIL::IL UNKNOWN IMPORTED)
     set_target_properties(DevIL::IL PROPERTIES
                           INTERFACE_INCLUDE_DIRECTORIES "${IL_INCLUDE_DIR}"
                           IMPORTED_LOCATION "${IL_LIBRARIES}")
-    
+
     if(PREFER_STATIC_LIBS)
       target_link_libraries(DevIL::IL INTERFACE PNG::PNG TIFF::TIFF JPEG::JPEG GIF::GIF)
     endif()
   endif()
-  
+
   # DevIL Utilities target
   if(NOT TARGET DevIL::ILU)
     add_library(DevIL::ILU UNKNOWN IMPORTED)
@@ -149,7 +149,7 @@ if(DevIL_FOUND)
                           IMPORTED_LOCATION "${ILU_LIBRARIES}")
     target_link_libraries(DevIL::ILU INTERFACE DevIL::IL)
   endif()
-  
+
   # ILUT (if found)
   if(NOT TARGET DevIL::ILUT AND DevIL_ILUT_FOUND)
     add_library(DevIL::ILUT UNKNOWN IMPORTED)

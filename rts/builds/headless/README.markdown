@@ -25,4 +25,3 @@ to that file on the `spring-headless` command-line.
 ## What is the license?
 
 GPL v2 or later, as for the rest of Spring.
-

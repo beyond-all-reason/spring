@@ -3,50 +3,53 @@
 #ifndef HAPFS_PATH_FINDER_H
 #define HAPFS_PATH_FINDER_H
 
-#include <vector>
-
 #include "IPath.h"
 #include "IPathFinder.h"
 #include "PathConstants.h"
 #include "PathDataTypes.h"
+
 #include "Sim/MoveTypes/MoveMath/MoveMath.h"
 #include "Sim/Objects/SolidObject.h"
+
+#include <vector>
 
 struct MoveDef;
 class CPathFinderDef;
 
 namespace HAPFS {
 
-class CPathFinder: public IPathFinder {
+class CPathFinder : public IPathFinder {
 public:
 	static void InitStatic();
 
 	CPathFinder() = default; // defer Init
+
 	CPathFinder(bool threadSafe) { Init(threadSafe); }
 
 	void Init(bool threadSafe);
+
 	void Kill() { IPathFinder::Kill(); }
 
 	typedef CMoveMath::BlockType (*BlockCheckFunc)(const MoveDef&, int, int, const CSolidObject*);
 
 protected:
 	/// Performs the actual search.
-	IPath::SearchResult DoRawSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner) override;
-	IPath::SearchResult DoSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner) override;
+	IPath::SearchResult
+	DoRawSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner) override;
+	IPath::SearchResult
+	DoSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner) override;
 
 	/**
 	 * Test the availability and value of a square,
 	 * and possibly add it to the queue of open squares.
 	 */
-	bool TestBlock(
-		const MoveDef& moveDef,
-		const CPathFinderDef& pfDef,
-		const PathNode* parentSquare,
-		const CSolidObject* owner,
-		const unsigned int pathOptDir,
-		const unsigned int blockStatus,
-		float speedMod
-	) override;
+	bool TestBlock(const MoveDef& moveDef,
+	    const CPathFinderDef& pfDef,
+	    const PathNode* parentSquare,
+	    const CSolidObject* owner,
+	    const unsigned int pathOptDir,
+	    const unsigned int blockStatus,
+	    float speedMod) override;
 	/**
 	 * Recreates the path found by pathfinder.
 	 * Starting at goalSquare and tracking backwards.
@@ -55,59 +58,46 @@ protected:
 	 */
 	void FinishSearch(const MoveDef&, const CPathFinderDef&, IPath::Path&) const override;
 
-	const CPathCache::CacheItem& GetCache(
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType,
-		const bool synced
-	) const override {
+	const CPathCache::CacheItem& GetCache(const int2 strtBlock,
+	    const int2 goalBlock,
+	    float goalRadius,
+	    int pathType,
+	    const bool synced) const override
+	{
 		// only cache in Estimator! (cause of flow & heatmapping etc.)
 		return dummyCacheItem;
 	}
 
-	void AddCache(
-		const IPath::Path* path,
-		const IPath::SearchResult result,
-		const int2 strtBlock,
-		const int2 goalBlock,
-		float goalRadius,
-		int pathType,
-		const bool synced
-	) override { }
+	void AddCache(const IPath::Path* path,
+	    const IPath::SearchResult result,
+	    const int2 strtBlock,
+	    const int2 goalBlock,
+	    float goalRadius,
+	    int pathType,
+	    const bool synced) override
+	{
+	}
 
 	float GetHeuristic(const MoveDef& moveDef, const CPathFinderDef& pfDef, const int2& square) const override;
 
 private:
-	void TestNeighborSquares(
-		const MoveDef& moveDef,
-		const CPathFinderDef& pfDef,
-		const PathNode* parentSquare,
-		const CSolidObject* owner,
-		int thread
-	);
+	void TestNeighborSquares(const MoveDef& moveDef,
+	    const CPathFinderDef& pfDef,
+	    const PathNode* parentSquare,
+	    const CSolidObject* owner,
+	    int thread);
 
 	/**
 	 * Adjusts the found path to cut corners where possible.
 	 */
-	void AdjustFoundPath(
-		const MoveDef&,
-		IPath::Path&,
-		const int2& p1,
-		const int2& p2,
-		const int2& p0
-	) const;
+	void AdjustFoundPath(const MoveDef&, IPath::Path&, const int2& p1, const int2& p2, const int2& p0) const;
 
-	inline void SmoothMidWaypoint(
-		const int2 testSqr,
-		const int2 prevSqr,
-		const MoveDef& moveDef,
-		IPath::Path& foundPath
-	) const;
+	inline void
+	SmoothMidWaypoint(const int2 testSqr, const int2 prevSqr, const MoveDef& moveDef, IPath::Path& foundPath) const;
 
 	CPathCache::CacheItem dummyCacheItem;
 };
 
-}
+} // namespace HAPFS
 
 #endif // PATH_FINDER_H

@@ -7,11 +7,11 @@
  * @brief POSIX file locking class
  * Does nothing on WIN32.
  */
-class ScopedFileLock
-{
+class ScopedFileLock {
 public:
 	ScopedFileLock(int fd, bool write);
 	~ScopedFileLock();
+
 private:
 	int filedes;
 };

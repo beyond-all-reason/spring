@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Platform/WindowManagerHelper.h"
+
 #include <SDL_syswm.h>
 #include <windows.h>
-
 
 namespace WindowManagerHelper {
 
@@ -15,7 +15,8 @@ void BlockCompositing(SDL_Window* window)
 
 	if (dwmapiDllHandle != nullptr) {
 		typedef HRESULT (*DwmEnableCompositionFunction)(UINT uCompositionAction);
-		auto DwmEnableComposition = (DwmEnableCompositionFunction) ::GetProcAddress(dwmapiDllHandle, "DwmEnableComposition");
+		auto DwmEnableComposition =
+		    (DwmEnableCompositionFunction)::GetProcAddress(dwmapiDllHandle, "DwmEnableComposition");
 		if (DwmEnableComposition != nullptr) {
 			static const unsigned int DWM_EC_DISABLECOMPOSITION = 0U;
 			DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
@@ -25,7 +26,6 @@ void BlockCompositing(SDL_Window* window)
 	}
 #endif
 }
-
 
 int GetWindowState(SDL_Window* window)
 {
@@ -48,7 +48,6 @@ int GetWindowState(SDL_Window* window)
 	return state;
 }
 
-
 // taken from http://stackoverflow.com/questions/27116152
 void SetWindowResizable(SDL_Window* window, bool resizable)
 {
@@ -61,7 +60,8 @@ void SetWindowResizable(SDL_Window* window, bool resizable)
 	DWORD style = GetWindowLong(hwnd, GWL_STYLE);
 	if (resizable) {
 		style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
-	} else {
+	}
+	else {
 		style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
 	}
 	SetWindowLong(hwnd, GWL_STYLE, style);

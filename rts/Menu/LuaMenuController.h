@@ -6,8 +6,7 @@
 #include "Game/GameController.h"
 #include "System/Misc/SpringTime.h"
 
-class CLuaMenuController : public CGameController
-{
+class CLuaMenuController : public CGameController {
 public:
 	CLuaMenuController(const std::string& menuName);
 	~CLuaMenuController();
@@ -27,9 +26,8 @@ public:
 	bool Draw() override;
 	void ResizeEvent() override;
 
-
-
 	bool Valid() const { return !menuArchive.empty(); }
+
 	const std::string& GetMenuName() const { return menuArchive; }
 
 private:
@@ -39,4 +37,4 @@ private:
 
 extern CLuaMenuController* luaMenuController;
 
-#endif //LUA_MENU_CONTROLLER
+#endif // LUA_MENU_CONTROLLER

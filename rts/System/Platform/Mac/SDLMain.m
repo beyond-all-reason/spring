@@ -66,18 +66,18 @@ void MacMessageBox(const char *msg, const char *caption, unsigned int flags){
 {
     char parentdir[MAXPATHLEN];
     char *c;
-    
+
     strncpy ( parentdir, gArgv[0], sizeof(parentdir) );
     c = (char*) parentdir;
 
     while (*c != '\0')     /* go to end */
         c++;
-    
+
     while (*c != '/')      /* back up to parent */
         c--;
-    
+
     *c++ = '\0';             /* cut off last part (binary name) */
-  
+
     if (shouldChdir)
     {
       assert ( chdir (parentdir) == 0 );   /* chdir to the binary app's parent */
@@ -122,7 +122,7 @@ void setupAppleMenu(void)
     appleMenuController = [[NSAppleMenuController alloc] init];
     appleMenu = [[NSMenu alloc] initWithTitle:@""];
     appleMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
-    
+
     [appleMenuItem setSubmenu:appleMenu];
 
     /* yes, we do need to add it and then remove it --
@@ -146,17 +146,17 @@ void setupWindowMenu(void)
 
 
     windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
-    
+
     /* "Minimize" item */
     menuItem = [[NSMenuItem alloc] initWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
     [windowMenu addItem:menuItem];
     [menuItem release];
-    
+
     /* Put menu into the menubar */
     windowMenuItem = [[NSMenuItem alloc] initWithTitle:@"Window" action:nil keyEquivalent:@""];
     [windowMenuItem setSubmenu:windowMenu];
     [[NSApp mainMenu] addItem:windowMenuItem];
-    
+
     /* Tell the application object that this is now the window menu */
     [NSApp setWindowsMenu:windowMenu];
 
@@ -174,24 +174,24 @@ void CustomApplicationMain ()
 
     /* Ensure the application object is initialised */
     [SDLApplication sharedApplication];
-    
+
     /* Set up the menubar */
     [NSApp setMainMenu:[[NSMenu alloc] init]];
     setupAppleMenu();
     setupWindowMenu();
-    
+
     /* Create SDLMain and make it the app delegate */
     sdlMain = [[SDLMain alloc] init];
     [NSApp setDelegate:sdlMain];
-	
+
     /* Bring the app to foreground */
     ProcessSerialNumber psn;
     GetCurrentProcess(&psn);
     TransformProcessType(&psn,kProcessTransformToForegroundApplication);
-    
+
     /* Start the main event loop */
     [NSApp run];
-    
+
     [sdlMain release];
     [pool release];
 }
@@ -233,27 +233,27 @@ void CustomApplicationMain ()
 
     bufferSize = selfLen + aStringLen - aRange.length;
     buffer = NSAllocateMemoryPages(bufferSize*sizeof(unichar));
-    
+
     /* Get first part into buffer */
     localRange.location = 0;
     localRange.length = aRange.location;
     [self getCharacters:buffer range:localRange];
-    
+
     /* Get middle part into buffer */
     localRange.location = 0;
     localRange.length = aStringLen;
     [aString getCharacters:(buffer+aRange.location) range:localRange];
-     
+
     /* Get last part into buffer */
     localRange.location = aRange.location + aRange.length;
     localRange.length = selfLen - localRange.location;
     [self getCharacters:(buffer+aRange.location+aStringLen) range:localRange];
-    
+
     /* Build output string */
     result = [NSString stringWithCharacters:buffer length:bufferSize];
-    
+
     NSDeallocateMemoryPages(buffer, bufferSize);
-    
+
     return result;
 }
 
@@ -272,7 +272,7 @@ int main (int argc, char **argv)
 
     /* Copy the arguments into a global variable */
     int i;
-    
+
     /* This is passed if we are launched by double-clicking */
     if ( argc >= 2 && strncmp (argv[1], "-psn", 4) == 0 ) {
         gArgc = 1;
@@ -295,5 +295,3 @@ int main (int argc, char **argv)
 #endif
     return 0;
 }
-
-

@@ -3,42 +3,49 @@
 #ifndef IATLAS_ALLOC_H
 #define IATLAS_ALLOC_H
 
-#include <string>
-#include <limits>
-
+#include "System/SpringMath.h"
+#include "System/StringHash.h"
+#include "System/UnorderedMap.hpp"
 #include "System/float4.h"
 #include "System/type2.h"
-#include "System/UnorderedMap.hpp"
-#include "System/StringHash.h"
-#include "System/SpringMath.h"
 
+#include <limits>
+#include <string>
 
-class IAtlasAllocator
-{
+class IAtlasAllocator {
 public:
-	struct SAtlasEntry
-	{
-		SAtlasEntry() : data(nullptr) {}
+	struct SAtlasEntry {
+		SAtlasEntry()
+		    : data(nullptr)
+		{
+		}
+
 		SAtlasEntry(const int2 _size, std::string _name, void* _data = nullptr)
-			: size(_size)
-			, name(std::move(_name))
-			, data(_data)
-		{}
+		    : size(_size)
+		    , name(std::move(_name))
+		    , data(_data)
+		{
+		}
 
 		int2 size;
 		std::string name;
 		float4 texCoords;
 		void* data;
 	};
+
 public:
 	IAtlasAllocator() = default;
+
 	virtual ~IAtlasAllocator() {}
 
 	void SetMaxSize(int xsize, int ysize) { maxsize = int2(xsize, ysize); }
+
 public:
 	virtual bool Allocate() = 0;
 	virtual int GetNumTexLevels() const = 0;
+
 	void SetMaxTexLevel(int maxLevels) { numLevels = maxLevels; };
+
 public:
 	void AddEntry(const std::string& name, int2 size, void* data = nullptr)
 	{
@@ -46,15 +53,9 @@ public:
 		entries[name] = SAtlasEntry(size, name, data);
 	}
 
-	float4 GetEntry(const std::string& name)
-	{
-		return entries[name].texCoords;
-	}
+	float4 GetEntry(const std::string& name) { return entries[name].texCoords; }
 
-	void*& GetEntryData(const std::string& name)
-	{
-		return entries[name].data;
-	}
+	void*& GetEntryData(const std::string& name) { return entries[name].data; }
 
 	const spring::unordered_map<std::string, SAtlasEntry>& GetEntries() const { return entries; }
 
@@ -75,10 +76,7 @@ public:
 		return uv;
 	}
 
-	bool contains(const std::string& name) const
-	{
-		return entries.contains(name);
-	}
+	bool contains(const std::string& name) const { return entries.contains(name); }
 
 	//! note: it doesn't clear the atlas! it only clears the entry db!
 	void clear()
@@ -90,6 +88,7 @@ public:
 	int GetMinDim() const { return minDim < std::numeric_limits<int>::max() ? minDim : 1; }
 
 	int2 GetMaxSize() const { return maxsize; }
+
 	int2 GetAtlasSize() const { return atlasSize; }
 
 protected:

@@ -11,17 +11,17 @@
 /**
  * @addtogroup unitsync_api Unitsync API
  * @{
-*/
+ */
 
 #ifdef ENABLE_DEPRECATED_FUNCTIONS
-#endif //ENABLE_DEPRECATED_FUNCTIONS
+#endif // ENABLE_DEPRECATED_FUNCTIONS
 /**
  * @brief Available bitmap typeHints
  * @sa GetInfoMap
  */
 enum BitmapType {
-	bm_grayscale_8  = 1, ///< 8 bits per pixel grayscale bitmap
-	bm_grayscale_16 = 2  ///< 16 bits per pixel grayscale bitmap
+	bm_grayscale_8 = 1, ///< 8 bits per pixel grayscale bitmap
+	bm_grayscale_16 = 2 ///< 16 bits per pixel grayscale bitmap
 };
 
 /** @} */
@@ -30,4 +30,3 @@ enum BitmapType {
 const char* GetStr(const std::string& str);
 
 #endif // _UNITSYNC_H
-

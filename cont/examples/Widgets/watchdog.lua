@@ -35,4 +35,3 @@ function widget:Update()
 	-- reset watchdog counter
 	i=0
 end
-

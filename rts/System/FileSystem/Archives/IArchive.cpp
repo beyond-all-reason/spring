@@ -2,13 +2,13 @@
 
 #include "IArchive.h"
 
-#include <cassert>
-
 #include "System/StringUtil.h"
 #include "System/Threading/ThreadPool.h"
 
+#include <cassert>
+
 IArchive::IArchive(const std::string& archiveFile)
-	: archiveFile(archiveFile)
+    : archiveFile(archiveFile)
 {
 	static_assert(decltype(sem)::element_type::max() >= ThreadPool::MAX_THREADS);
 }

@@ -8,12 +8,12 @@
 
 #include <string>
 
-springai::CallbackAIException::CallbackAIException(const std::string& methodName, int errorNumber, const exception* cause)
-	: AIException(errorNumber, "Error calling method \"" + methodName + "\": " + IntToString(errorNumber))
-	, methodName(methodName)
+springai::CallbackAIException::CallbackAIException(const std::string& methodName,
+    int errorNumber,
+    const exception* cause)
+    : AIException(errorNumber, "Error calling method \"" + methodName + "\": " + IntToString(errorNumber))
+    , methodName(methodName)
 {
 }
 
-const std::string& springai::CallbackAIException::GetMethodName() const {
-	return methodName;
-}
+const std::string& springai::CallbackAIException::GetMethodName() const { return methodName; }

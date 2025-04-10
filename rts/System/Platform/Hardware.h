@@ -5,10 +5,9 @@
 
 #include <cstdint>
 
-namespace Platform
-{
-	uint64_t TotalRAM();
-	uint64_t TotalPageFile();
-}
+namespace Platform {
+uint64_t TotalRAM();
+uint64_t TotalPageFile();
+} // namespace Platform
 
 #endif // PLATFORM_HARDWARE_H

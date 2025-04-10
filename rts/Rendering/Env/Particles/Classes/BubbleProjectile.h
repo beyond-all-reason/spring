@@ -5,20 +5,17 @@
 
 #include "Sim/Projectiles/Projectile.h"
 
-class CBubbleProjectile : public CProjectile
-{
+class CBubbleProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CBubbleProjectile)
 public:
 	CBubbleProjectile();
-	CBubbleProjectile(
-		CUnit* owner,
-		float3 pos,
-		float3 speed,
-		int ttl,
-		float startSize,
-		float sizeExpansion,
-		float alpha
-	);
+	CBubbleProjectile(CUnit* owner,
+	    float3 pos,
+	    float3 speed,
+	    int ttl,
+	    float startSize,
+	    float sizeExpansion,
+	    float alpha);
 
 	void Update() override;
 	void Draw() override;

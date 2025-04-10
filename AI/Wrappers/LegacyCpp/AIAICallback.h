@@ -3,17 +3,16 @@
 #ifndef _AI_AI_CALLBACK_H
 #define _AI_AI_CALLBACK_H
 
-#include <memory>
-
 #include "IAICallback.h"
 
+#include <memory>
+
 // engine header copies
-#include "UnitDef.h"
 #include "FeatureDef.h"
+#include "UnitDef.h"
 #include "WeaponDef.h"
 
 struct SSkirmishAICallback;
-
 
 namespace springLegacyAI {
 
@@ -87,7 +86,7 @@ public:
 	float GetUnitPower(int unitid);
 	float GetUnitExperience(int unitid);
 	float GetUnitMaxRange(int unitid);
-	bool IsUnitActivated (int unitid);
+	bool IsUnitActivated(int unitid);
 	bool UnitBeingBuilt(int unitid);
 	const UnitDef* GetUnitDef(int unitid);
 
@@ -107,8 +106,7 @@ public:
 	float3 GetNextWaypoint(int pathid);
 	void FreePath(int pathid);
 
-	float GetPathLength(float3 start, float3 end, int pathType,
-			float goalRadius);
+	float GetPathLength(float3 start, float3 end, int pathType, float goalRadius);
 
 	int GetEnemyUnits(int* unitIds, int unitIds_max);
 	int GetEnemyUnitsInRadarAndLos(int* unitIds, int unitIds_max);
@@ -153,24 +151,32 @@ public:
 	void LineDrawerStartPath(const float3& pos, const float* color);
 	void LineDrawerFinishPath();
 	void LineDrawerDrawLine(const float3& endPos, const float* color);
-	void LineDrawerDrawLineAndIcon(int cmdID, const float3& endPos,
-			const float* color);
+	void LineDrawerDrawLineAndIcon(int cmdID, const float3& endPos, const float* color);
 	void LineDrawerDrawIconAtLastPos(int cmdID);
 	void LineDrawerBreak(const float3& endPos, const float* color);
 	void LineDrawerRestart();
 	void LineDrawerRestartSameColor();
 
-	int CreateSplineFigure(float3 pos1, float3 pos2, float3 pos3,
-			float3 pos4, float width, int arrow, int lifetime, int group);
-	int CreateLineFigure(float3 pos1, float3 pos2, float width,
-			int arrow, int lifetime, int group);
-	void SetFigureColor(int group, float red, float green, float blue,
-			float alpha);
+	int CreateSplineFigure(float3 pos1,
+	    float3 pos2,
+	    float3 pos3,
+	    float3 pos4,
+	    float width,
+	    int arrow,
+	    int lifetime,
+	    int group);
+	int CreateLineFigure(float3 pos1, float3 pos2, float width, int arrow, int lifetime, int group);
+	void SetFigureColor(int group, float red, float green, float blue, float alpha);
 	void DeleteFigureGroup(int group);
 
-	void DrawUnit(const char* name, float3 pos, float rotation,
-			int lifetime, int team, bool transparent, bool drawBorder,
-			int facing);
+	void DrawUnit(const char* name,
+	    float3 pos,
+	    float rotation,
+	    int lifetime,
+	    int team,
+	    bool transparent,
+	    bool drawBorder,
+	    int facing);
 
 
 	bool IsDebugDrawerEnabled() const;
@@ -191,8 +197,7 @@ public:
 
 	bool CanBuildAt(const UnitDef* unitDef, float3 pos, int facing);
 
-	float3 ClosestBuildSite(const UnitDef* unitdef, float3 pos,
-			float searchRadius, int minDist, int facing);
+	float3 ClosestBuildSite(const UnitDef* unitdef, float3 pos, float searchRadius, int minDist, int facing);
 
 	bool GetProperty(int id, int property, void* dst);
 	bool GetValue(int id, void* dst);
@@ -216,9 +221,8 @@ public:
 	float GetEnergyUsage();
 	float GetEnergyStorage();
 
-	int GetFeatures(int *features, int max);
-	int GetFeatures(int *features, int max, const float3& pos,
-			float radius);
+	int GetFeatures(int* features, int max);
+	int GetFeatures(int* features, int max, const float3& pos, float radius);
 	const FeatureDef* GetFeatureDef(int feature);
 	const FeatureDef* GetFeatureDefById(int featureDefId);
 	float GetFeatureHealth(int feature);
@@ -264,9 +268,9 @@ private:
 	std::vector<int> weaponDefFrames;
 
 	// the following three are needed to prevent memory leaks
-	std::vector< std::vector<SCommandDescription> > groupPossibleCommands;
-	std::vector< std::vector<SCommandDescription> > unitPossibleCommands;
-	std::vector< std::unique_ptr<CCommandQueue> > unitCurrentCommandQueues;
+	std::vector<std::vector<SCommandDescription>> groupPossibleCommands;
+	std::vector<std::vector<SCommandDescription>> unitPossibleCommands;
+	std::vector<std::unique_ptr<CCommandQueue>> unitCurrentCommandQueues;
 
 	float3 startPos;
 

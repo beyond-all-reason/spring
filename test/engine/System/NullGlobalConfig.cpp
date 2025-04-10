@@ -4,4 +4,3 @@
 
 // default values only
 GlobalConfig globalConfig;
-

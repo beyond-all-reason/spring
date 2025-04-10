@@ -36,7 +36,7 @@ if (System == nil) then
     CMDTYPE = CMDTYPE,
     LOG = LOG,
     RmlUi = RmlUi,
-    
+
     UnitDefs        = UnitDefs,
     UnitDefNames    = UnitDefNames,
     FeatureDefs     = FeatureDefs,
@@ -55,18 +55,18 @@ if (System == nil) then
     string = string,
     package = package,
     coroutine = coroutine,
-    
+
     -- luasocket
     socket          = socket,
 
-    --  
+    --
     --  Standard functions and variables
     --
     assert         = assert,
     error          = error,
 
     print          = print,
-    
+
     next           = next,
     pairs          = pairs,
     ipairs         = ipairs,

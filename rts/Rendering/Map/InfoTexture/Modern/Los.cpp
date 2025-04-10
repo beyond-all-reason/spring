@@ -1,21 +1,19 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Los.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GlobalRendering.h"
-#include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
 #include "Sim/Misc/LosHandler.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
-
 #include "System/Misc/TracyDefs.h"
 
-
-
 CLosTexture::CLosTexture()
-: CPboInfoTexture("los")
-, uploadTex(0)
+    : CPboInfoTexture("los")
+    , uploadTex(0)
 {
 	texSize = losHandler->los.size;
 	texChannels = 1;
@@ -35,7 +33,7 @@ CLosTexture::CLosTexture()
 	if (FBO::IsSupported()) {
 		fbo.Bind();
 		fbo.AttachTexture(texture);
-		/*bool status =*/ fbo.CheckStatus("CLosTexture");
+		/*bool status =*/fbo.CheckStatus("CLosTexture");
 		FBO::Unbind();
 	}
 
@@ -60,13 +58,14 @@ CLosTexture::CLosTexture()
 	)";
 
 	shader = shaderHandler->CreateProgramObject("[CLosTexture]", "CLosTexture");
-	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode,   "", GL_VERTEX_SHADER));
+	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode, "", GL_VERTEX_SHADER));
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(fragmentCode, "", GL_FRAGMENT_SHADER));
 	shader->Link();
 	if (!shader->IsValid()) {
 		const char* fmt = "%s-shader compilation error: %s";
 		LOG_L(L_ERROR, fmt, shader->GetName().c_str(), shader->GetLog().c_str());
-	} else {
+	}
+	else {
 		shader->Enable();
 		shader->SetUniform("tex0", 0);
 		shader->Disable();
@@ -92,14 +91,12 @@ CLosTexture::CLosTexture()
 	}
 }
 
-
 CLosTexture::~CLosTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glDeleteTextures(1, &uploadTex);
 	shaderHandler->ReleaseProgramObject("[CLosTexture]", "CLosTexture");
 }
-
 
 void CLosTexture::UpdateCPU()
 {
@@ -114,7 +111,8 @@ void CLosTexture::UpdateCPU()
 				infoTexMem[y * texSize.x + x] = (myLos[y * texSize.x + x] != 0) ? 255 : 0;
 			}
 		}
-	} else {
+	}
+	else {
 		memset(infoTexMem, 255, texSize.x * texSize.y);
 	}
 
@@ -125,7 +123,6 @@ void CLosTexture::UpdateCPU()
 	infoTexPBO.Invalidate();
 	infoTexPBO.Unbind();
 }
-
 
 void CLosTexture::Update()
 {
@@ -152,9 +149,9 @@ void CLosTexture::Update()
 	memcpy(infoTexMem, myLos, texSize.x * texSize.y * texChannels * sizeof(short));
 	infoTexPBO.UnmapBuffer();
 
-	//Trick: Upload the ushort as 2 ubytes, and then check both for `!=0` in the shader.
-	// Faster than doing it on the CPU! And uploading it as shorts would be slow, cause the GPU
-	// has no native support for them and so the transformation would happen on the CPU, too.
+	// Trick: Upload the ushort as 2 ubytes, and then check both for `!=0` in the shader.
+	//  Faster than doing it on the CPU! And uploading it as shorts would be slow, cause the GPU
+	//  has no native support for them and so the transformation would happen on the CPU, too.
 	glBindTexture(GL_TEXTURE_2D, uploadTex);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texSize.x, texSize.y, GL_RG, GL_UNSIGNED_BYTE, infoTexPBO.GetPtr());
 	infoTexPBO.Invalidate();
@@ -166,10 +163,10 @@ void CLosTexture::Update()
 	shader->Enable();
 	glDisable(GL_BLEND);
 	glBegin(GL_QUADS);
-		glVertex2f(-1.f, -1.f);
-		glVertex2f(-1.f, +1.f);
-		glVertex2f(+1.f, +1.f);
-		glVertex2f(+1.f, -1.f);
+	glVertex2f(-1.f, -1.f);
+	glVertex2f(-1.f, +1.f);
+	glVertex2f(+1.f, +1.f);
+	glVertex2f(+1.f, -1.f);
 	glEnd();
 	shader->Disable();
 	globalRendering->LoadViewport();

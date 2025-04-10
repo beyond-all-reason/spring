@@ -1,25 +1,22 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "System/creg/Serializer.h"
 #include "System/creg/SerializeLuaState.h"
+#include "System/creg/Serializer.h"
 
 #include <catch_amalgamated.hpp>
 
-
-static int handlepanic(lua_State* L)
-{
-	throw "lua paniced";
-}
-
+static int handlepanic(lua_State* L) { throw "lua paniced"; }
 
 // from lauxlib.cpp
-static void* l_alloc (void* ud, void* ptr, size_t osize, size_t nsize) {
+static void* l_alloc(void* ud, void* ptr, size_t osize, size_t nsize)
+{
 	(void)ud;
 	(void)osize;
 	if (nsize == 0) {
 		free(ptr);
 		return NULL;
-	} else {
+	}
+	else {
 		return realloc(ptr, nsize);
 	}
 }
@@ -31,19 +28,16 @@ struct FakeLuaHandle {
 
 FakeLuaHandle flh;
 
-
 struct LuaRoot {
 	CR_DECLARE_STRUCT(LuaRoot);
 	void Serialize(creg::ISerializer* s);
 };
 
 CR_BIND(LuaRoot, );
-CR_REG_METADATA(LuaRoot, (
-	CR_SERIALIZER(Serialize)
-))
+CR_REG_METADATA(LuaRoot, (CR_SERIALIZER(Serialize)))
 
-
-void LuaRoot::Serialize(creg::ISerializer* s) {
+void LuaRoot::Serialize(creg::ISerializer* s)
+{
 	creg::SerializeLuaState(s, &flh.L);
 	creg::SerializeLuaThread(s, &flh.L_GC);
 }
@@ -64,11 +58,11 @@ TEST_CASE("SerializeLuaState")
 	creg::AutoRegisterCFunctions("Test::", flh.L);
 	flh.L_GC = lua_newthread(flh.L);
 	int idx = luaL_ref(flh.L, LUA_REGISTRYINDEX);
-	const char* code = "local co = coroutine.create(function ()\n local function f()\n coroutine.yield()\n end\n f()\n end);\ncoroutine.resume(co);\n";
+	const char* code = "local co = coroutine.create(function ()\n local function f()\n coroutine.yield()\n end\n f()\n "
+	                   "end);\ncoroutine.resume(co);\n";
 
 	int err = luaL_loadbuffer(flh.L, code, strlen(code), "yield");
-	if (err)
-	{
+	if (err) {
 		printf("%s\n", lua_tostring(flh.L, -1));
 		lua_pop(flh.L, 1);
 	}
@@ -88,7 +82,7 @@ TEST_CASE("SerializeLuaState")
 		creg::CopyLuaContext(flh.L);
 		LUA_CLOSE(&flh.L);
 		iser.LoadPackage(&ss, loaded, loadedCls);
-		LuaRoot* loadedRoot = (LuaRoot*) loaded;
+		LuaRoot* loadedRoot = (LuaRoot*)loaded;
 		delete loadedRoot;
 	}
 

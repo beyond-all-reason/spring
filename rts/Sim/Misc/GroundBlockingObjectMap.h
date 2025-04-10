@@ -3,15 +3,14 @@
 #ifndef GROUNDBLOCKINGOBJECTMAP_H
 #define GROUNDBLOCKINGOBJECTMAP_H
 
-#include <array>
-#include <vector>
-
 #include "Sim/Objects/SolidObject.h"
 #include "System/creg/creg_cond.h"
 #include "System/float3.h"
 
-class CGroundBlockingObjectMap
-{
+#include <array>
+#include <vector>
+
+class CGroundBlockingObjectMap {
 	CR_DECLARE_STRUCT(CGroundBlockingObjectMap)
 
 private:
@@ -19,7 +18,8 @@ private:
 	public:
 		CR_DECLARE_STRUCT(ArrayCell)
 
-		void Clear() {
+		void Clear()
+		{
 			arr.fill(nullptr);
 
 			numObjs = 0;
@@ -27,7 +27,9 @@ private:
 		}
 
 		bool InsertUnique(T* o) { return (!Contains(o) && Insert(o)); }
-		bool Insert(T* o) {
+
+		bool Insert(T* o)
+		{
 			if (Full())
 				return false;
 
@@ -35,7 +37,8 @@ private:
 			return true;
 		}
 
-		bool Erase(T* o) {
+		bool Erase(T* o)
+		{
 			const auto ae = arr.begin() + numObjs;
 			const auto it = std::find(arr.begin(), ae, o);
 
@@ -48,20 +51,25 @@ private:
 		}
 
 		bool Empty() const { return (numObjs == 0); }
+
 		bool Full() const { return (numObjs == S); }
-		bool Contains(const T* o) const {
+
+		bool Contains(const T* o) const
+		{
 			const auto ab = arr.begin();
 			const auto ae = arr.begin() + numObjs;
 
 			return (std::find(ab, ae, o) != ae);
 		}
 
-		T* operator [] (size_t i) const { return arr[i]; }
+		T* operator[](size_t i) const { return arr[i]; }
 
 		uint32_t GetNumObjs() const { return numObjs; }
+
 		uint32_t GetVecIndx() const { return vecIndx; }
+
 		uint32_t SetVecIndx(uint32_t i) { return (vecIndx = i); }
-	
+
 	private:
 		uint32_t numObjs = 0;
 		uint32_t vecIndx = 0;
@@ -76,18 +84,24 @@ public:
 	struct BlockingMapCell {
 	public:
 		BlockingMapCell() = delete;
-		BlockingMapCell(const ArrCell& ac, const VecCell* vc): arrCell(ac), vecCell(vc) {
+
+		BlockingMapCell(const ArrCell& ac, const VecCell* vc)
+		    : arrCell(ac)
+		    , vecCell(vc)
+		{
 		}
 
-		VecCell::value_type operator [] (size_t i) const {
+		VecCell::value_type operator[](size_t i) const
+		{
 			assert(i < size());
-			assert(i < arrCell.GetNumObjs() || (i - arrCell.GetNumObjs()) < vecCell[ arrCell.GetVecIndx() ].size());
+			assert(i < arrCell.GetNumObjs() || (i - arrCell.GetNumObjs()) < vecCell[arrCell.GetVecIndx()].size());
 
-			return ((i < arrCell.GetNumObjs())? arrCell[i]: vecCell[ arrCell.GetVecIndx() ][ i - arrCell.GetNumObjs() ]);
+			return ((i < arrCell.GetNumObjs()) ? arrCell[i] : vecCell[arrCell.GetVecIndx()][i - arrCell.GetNumObjs()]);
 		}
 
 		size_t size() const { return (arrCell.GetNumObjs() + vsize()); }
-		size_t vsize() const { return ((arrCell.Full())? vecCell[ arrCell.GetVecIndx() ].size(): 0); }
+
+		size_t vsize() const { return ((arrCell.Full()) ? vecCell[arrCell.GetVecIndx()].size() : 0); }
 
 		bool empty() const { return (arrCell.Empty()); }
 
@@ -96,8 +110,8 @@ public:
 		const VecCell* vecCell;
 	};
 
-
-	void Init(unsigned int numSquares) {
+	void Init(unsigned int numSquares)
+	{
 		arrCells.resize(numSquares);
 		vecCells.reserve(32);
 		vecIndcs.reserve(32);
@@ -106,7 +120,9 @@ public:
 		if (vecCells.empty())
 			vecCells.emplace_back();
 	}
-	void Kill() {
+
+	void Kill()
+	{
 		// reuse inner vectors when reloading
 		// vecCells.clear();
 		for (auto& v: arrCells) {
@@ -127,9 +143,10 @@ public:
 
 	void OpenBlockingYard(CSolidObject* object);
 	void CloseBlockingYard(CSolidObject* object);
-	bool CanOpenYard(const CSolidObject* object) const { return CheckYard(object, YARDMAP_YARDINV); }
-	bool CanCloseYard(const CSolidObject* object) const { return CheckYard(object, YARDMAP_YARD); }
 
+	bool CanOpenYard(const CSolidObject* object) const { return CheckYard(object, YARDMAP_YARDINV); }
+
+	bool CanCloseYard(const CSolidObject* object) const { return CheckYard(object, YARDMAP_YARD); }
 
 	// these retrieve either the first object in
 	// a given cell, or NULL if the cell is empty
@@ -137,7 +154,8 @@ public:
 	CSolidObject* GroundBlocked(const float3& pos) const;
 
 	// same as GroundBlocked(), but does not bounds-check mapSquare
-	CSolidObject* GroundBlockedUnsafe(unsigned int mapSquare) const {
+	CSolidObject* GroundBlockedUnsafe(unsigned int mapSquare) const
+	{
 		const BlockingMapCell& cell = GetCellUnsafeConst(mapSquare);
 
 		if (cell.empty())
@@ -146,11 +164,11 @@ public:
 		return cell[0];
 	}
 
-
 	bool GroundBlocked(int x, int z, const CSolidObject* ignoreObj) const;
 	bool GroundBlocked(const float3& pos, const CSolidObject* ignoreObj) const;
 
-	bool ObjectInCell(unsigned int mapSquare, const CSolidObject* obj) const {
+	bool ObjectInCell(unsigned int mapSquare, const CSolidObject* obj) const
+	{
 		if (mapSquare >= arrCells.size())
 			return false;
 
@@ -160,12 +178,14 @@ public:
 		if (ac.Contains(obj))
 			return true;
 
-		return (((vc = &GetVecCell(mapSquare)) != &vecCells[0]) && (std::find(vc->begin(), vc->end(), obj) != vc->end()));
+		return (
+		    ((vc = &GetVecCell(mapSquare)) != &vecCells[0]) && (std::find(vc->begin(), vc->end(), obj) != vc->end()));
 	}
 
-
 	BlockingMapCell GetCellUnsafeConst(const float3& pos) const;
-	BlockingMapCell GetCellUnsafeConst(unsigned int mapSquare) const {
+
+	BlockingMapCell GetCellUnsafeConst(unsigned int mapSquare) const
+	{
 		assert(mapSquare < arrCells.size());
 		// avoid vec-cell lookup unless needed
 		return {GetArrCell(mapSquare), vecCells.data()};
@@ -174,10 +194,13 @@ public:
 private:
 	bool CheckYard(const CSolidObject* yardUnit, const YardMapStatus& mask) const;
 
-	const ArrCell& GetArrCell(unsigned int mapSquare) const { return           arrCells[mapSquare]               ; }
-	      ArrCell& GetArrCell(unsigned int mapSquare)       { return           arrCells[mapSquare]               ; }
-	const VecCell& GetVecCell(unsigned int mapSquare) const { return vecCells[ arrCells[mapSquare].GetVecIndx() ]; }
-	      VecCell& GetVecCell(unsigned int mapSquare)       { return vecCells[ arrCells[mapSquare].GetVecIndx() ]; }
+	const ArrCell& GetArrCell(unsigned int mapSquare) const { return arrCells[mapSquare]; }
+
+	ArrCell& GetArrCell(unsigned int mapSquare) { return arrCells[mapSquare]; }
+
+	const VecCell& GetVecCell(unsigned int mapSquare) const { return vecCells[arrCells[mapSquare].GetVecIndx()]; }
+
+	VecCell& GetVecCell(unsigned int mapSquare) { return vecCells[arrCells[mapSquare].GetVecIndx()]; }
 
 	bool CellInsertUnique(unsigned int sqr, CSolidObject* o);
 	bool CellErase(unsigned int sqr, CSolidObject* o);

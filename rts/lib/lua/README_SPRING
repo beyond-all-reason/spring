@@ -16,14 +16,14 @@ Lua-5.1.4 source code modifications:
      #undef LUA_NUMBER_DOUBLE
 
      //SPRING#define LUA_NUMBER  double
-     #define LUA_NUMBER  float                                               
+     #define LUA_NUMBER  float
 
      //SPRING#define LUA_NUMBER_SCAN "%lf"
      #define LUA_NUMBER_SCAN "%f"
 
   5. Moved the *.c files to *.cpp for C++ compilation
 
-  6. Swapped <math.h> includes with "streflop_cond.h" includes  (for sync) 
+  6. Swapped <math.h> includes with "streflop_cond.h" includes  (for sync)
 
   6. removed the following files:
      Makefile
@@ -59,4 +59,3 @@ Lua-5.1.4 source code modifications:
       modify lauxlib.cpp::luaL_checknumber and LuaInclude.h::lua_tofloat to
       trigger asserts if a Lua script pushes a NaN or Inf onto the stack and
       the engine reads it (asserts are disabled for Lua-internal math calls)
-

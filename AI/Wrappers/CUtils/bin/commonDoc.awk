@@ -195,4 +195,3 @@ function getFunctionComment_Common(container__doc, index__doc) {
 END {
 	# finalize things
 }
-

@@ -7,26 +7,23 @@
 
 struct AtlasedTexture;
 
-class CSmokeTrailProjectile : public CProjectile
-{
+class CSmokeTrailProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CSmokeTrailProjectile)
 public:
 	CSmokeTrailProjectile() = default;
-	CSmokeTrailProjectile(
-		const CUnit* owner,
-		const float3& pos1,
-		const float3& pos2,
-		const float3& dir1,
-		const float3& dir2,
-		bool firstSegment,
-		bool lastSegment,
-		float size,
-		int time,
-		int period,
-		float color,
-		AtlasedTexture* texture,
-		bool castShadow = true
-	);
+	CSmokeTrailProjectile(const CUnit* owner,
+	    const float3& pos1,
+	    const float3& pos2,
+	    const float3& dir1,
+	    const float3& dir2,
+	    bool firstSegment,
+	    bool lastSegment,
+	    float size,
+	    int time,
+	    int period,
+	    float color,
+	    AtlasedTexture* texture,
+	    bool castShadow = true);
 
 	void Serialize(creg::ISerializer* s);
 

@@ -11,8 +11,7 @@ class CStrafeAirMoveType;
 struct Command;
 class AAirMoveType;
 
-class CAirCAI : public CMobileCAI
-{
+class CAirCAI : public CMobileCAI {
 public:
 	CR_DECLARE(CAirCAI)
 	CAirCAI(CUnit* owner);
@@ -24,7 +23,7 @@ public:
 	void AddUnit(CUnit* unit);
 	void FinishCommand();
 	void BuggerOff(const float3& pos, float radius);
-//	void StopMove();
+	//	void StopMove();
 
 	void ExecuteGuard(Command& c);
 	void ExecuteAreaAttack(Command& c);
@@ -37,16 +36,15 @@ public:
 private:
 	bool AirAutoGenerateTarget(AAirMoveType*);
 	bool SelectNewAreaAttackTargetOrPos(const Command& ac);
-	void PushOrUpdateReturnFight() {
-		CCommandAI::PushOrUpdateReturnFight(commandPos1, commandPos2);
-	}
+
+	void PushOrUpdateReturnFight() { CCommandAI::PushOrUpdateReturnFight(commandPos1, commandPos2); }
 
 	float3 basePos;
 	float3 baseDir;
 
 	int activeCommand;
 	int targetAge;
-//	unsigned int patrolTime;
+	//	unsigned int patrolTime;
 
 	int lastPC1;
 	int lastPC2;

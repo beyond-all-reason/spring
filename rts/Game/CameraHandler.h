@@ -3,34 +3,35 @@
 #ifndef _CAMERA_HANDLER_H
 #define _CAMERA_HANDLER_H
 
-#include <array>
-#include <vector>
-#include <string>
+#include "Console.h"
 
 #include "Camera/CameraController.h"
 #include "Game/Camera/DollyController.h"
 #include "System/UnorderedMap.hpp"
-#include "Console.h"
+
+#include <array>
+#include <string>
+#include <vector>
 
 class CCamera;
 class CPlayer;
 
-class CCameraHandler : public CommandReceiver
-{
+class CCameraHandler : public CommandReceiver {
 public:
 	typedef CCameraController::StateMap ViewData;
 
 	enum {
 		CAMERA_MODE_FIRSTPERSON = 0,
-		CAMERA_MODE_OVERHEAD    = 1,
-		CAMERA_MODE_SPRING      = 2,
+		CAMERA_MODE_OVERHEAD = 1,
+		CAMERA_MODE_SPRING = 2,
 		CAMERA_MODE_ROTOVERHEAD = 3,
-		CAMERA_MODE_FREE        = 4,
-		CAMERA_MODE_OVERVIEW    = 5,
-		CAMERA_MODE_DOLLY       = 6,
-		CAMERA_MODE_DUMMY       = 7,
-		CAMERA_MODE_LAST        = 8,
+		CAMERA_MODE_FREE = 4,
+		CAMERA_MODE_OVERVIEW = 5,
+		CAMERA_MODE_DOLLY = 6,
+		CAMERA_MODE_DUMMY = 7,
+		CAMERA_MODE_LAST = 8,
 	};
+
 	enum {
 		CAMERA_TRANSITION_MODE_EXP_DECAY = 0,
 		CAMERA_TRANSITION_MODE_SPRING_DAMPENED = 1,
@@ -76,10 +77,12 @@ public:
 	static CCamera* GetActiveCamera();
 
 	// sets the current active camera, returns the previous
-	static CCamera* GetSetActiveCamera(unsigned int camType) {
-		CCamera* cam = GetActiveCamera(); SetActiveCamera(camType); return cam;
+	static CCamera* GetSetActiveCamera(unsigned int camType)
+	{
+		CCamera* cam = GetActiveCamera();
+		SetActiveCamera(camType);
+		return cam;
 	}
-
 
 	void Init();
 	void Kill();
@@ -94,10 +97,12 @@ public:
 
 	void ConfigNotify(const std::string& key, const std::string& value);
 
-	void SetTransitionParams(float factor, float expon) {
-		camTransState.timeFactor   = factor;
-		camTransState.timeExponent =  expon;
-  }
+	void SetTransitionParams(float factor, float expon)
+	{
+		camTransState.timeFactor = factor;
+		camTransState.timeExponent = expon;
+	}
+
 	void CameraTransition(float nsecs);
 	void UpdateTransition();
 
@@ -110,11 +115,12 @@ public:
 	bool LoadView(const std::string& name);
 
 	int GetModeIndex(const std::string& modeName) const;
+
 	unsigned int GetCurrentControllerNum() const { return currCamCtrlNum; }
 
 	float GetTransitionTimeFactor() const { return camTransState.timeFactor; }
-	float GetTransitionTimeExponent() const { return camTransState.timeExponent; }
 
+	float GetTransitionTimeExponent() const { return camTransState.timeExponent; }
 
 	/**
 	 * @brief write current camera settings in a vector
@@ -129,11 +135,14 @@ public:
 	 */
 	bool SetState(const CCameraController::StateMap& sm);
 
-
 	const CCameraController& GetCurrentController() const { return *(camControllers[currCamCtrlNum]); }
-	      CCameraController& GetCurrentController()       { return *(camControllers[currCamCtrlNum]); }
 
-	CDollyController& GetDollyController() { return *(static_cast<CDollyController*>(camControllers[CAMERA_MODE_DOLLY])); }
+	CCameraController& GetCurrentController() { return *(camControllers[currCamCtrlNum]); }
+
+	CDollyController& GetDollyController()
+	{
+		return *(static_cast<CDollyController*>(camControllers[CAMERA_MODE_DOLLY]));
+	}
 
 	const std::array<CCameraController*, CAMERA_MODE_LAST>& GetControllers() const { return camControllers; }
 
@@ -164,4 +173,3 @@ private:
 extern CCameraHandler* camHandler;
 
 #endif // _CAMERA_HANDLER_H
-

@@ -4,13 +4,13 @@
 #define SPRING_MATH_H
 
 #include "Sim/Misc/GlobalConstants.h"
-#include "System/type2.h"
+#include "System/MathConstants.h"
 #include "System/float3.h"
 #include "System/float4.h"
-#include "System/MathConstants.h"
+#include "System/type2.h"
 
-#include <cmath> // std::fabs
 #include <algorithm> // std::{min,max}
+#include <cmath>     // std::fabs
 #include <limits>
 
 static constexpr int SPRING_MAX_HEADING = 32768;
@@ -21,19 +21,19 @@ static constexpr int SPRING_CIRCLE_DIVS = (SPRING_MAX_HEADING << 1);
 #define NUM_HEADINGS 4096
 
 #if (NUM_HEADINGS == 1024)
-	#define HEADING_CHECKSUM  HEADING_CHECKSUM_1024
+#define HEADING_CHECKSUM HEADING_CHECKSUM_1024
 #elif (NUM_HEADINGS == 4096)
-	#define HEADING_CHECKSUM  HEADING_CHECKSUM_4096
+#define HEADING_CHECKSUM HEADING_CHECKSUM_4096
 #else
-	#error "HEADING_CHECKSUM not set, invalid NUM_HEADINGS?"
+#error "HEADING_CHECKSUM not set, invalid NUM_HEADINGS?"
 #endif
 
 enum FacingMap {
 	FACING_NORTH = 2,
 	FACING_SOUTH = 0,
-	FACING_EAST  = 1,
-	FACING_WEST  = 3,
-	NUM_FACINGS  = 4,
+	FACING_EAST = 1,
+	FACING_WEST = 3,
+	NUM_FACINGS = 4,
 };
 
 class SpringMath {
@@ -42,22 +42,21 @@ public:
 	static float2 headingToVectorTable[NUM_HEADINGS];
 };
 
-
 struct shortint2 {
 	short int x, y;
 };
-
 
 short int GetHeadingFromFacing(const int facing) _pure _warn_unused_result;
 int GetFacingFromHeading(const short int heading) _pure _warn_unused_result;
 float GetHeadingFromVectorF(const float dx, const float dz) _pure _warn_unused_result;
 short int GetHeadingFromVector(const float dx, const float dz) _pure _warn_unused_result;
 shortint2 GetHAndPFromVector(const float3 vec) _pure _warn_unused_result; // vec should be normalized
-float2 GetHAndPFromVectorF(const float3 vec) _pure _warn_unused_result; // vec should be normalized
+float2 GetHAndPFromVectorF(const float3 vec) _pure _warn_unused_result;   // vec should be normalized
 float3 GetVectorFromHeading(const short int heading) _pure _warn_unused_result;
 float3 GetVectorFromHAndPExact(const short int heading, const short int pitch) _pure _warn_unused_result;
 
-float3 CalcBeizer(const float i, const float3 p1, const float3 p2, const float3 p3, const float3 p4) _pure _warn_unused_result;
+float3
+CalcBeizer(const float i, const float3 p1, const float3 p2, const float3 p3, const float3 p4) _pure _warn_unused_result;
 
 float LinePointDist(const float3 l1, const float3 l2, const float3 p) _pure _warn_unused_result;
 float3 ClosestPointOnLine(const float3 l1, const float3 l2, const float3 p) _pure _warn_unused_result;
@@ -69,7 +68,8 @@ bool RayHitsSphere(const float4 sphere, const float3 p0, const float3 ray) _pure
  * @param p0 float3 the start point of the ray
  * @param p1 float3 the end point of the ray
  * @param plane the canonical plane equation Ax + By + Cy + D = 0
- * @param directional if the plane should be considered directional (intersection happens only when plane.n dot ray is negative)
+ * @param directional if the plane should be considered directional (intersection happens only when plane.n dot ray is
+ * negative)
  * @param px the intersection point
  * @return true if px is valid and the intersection point has been found, false otherwise
  */
@@ -83,7 +83,7 @@ bool RayAndPlaneIntersection(const float3& p0, const float3& p1, const float4& p
  * @param line <direction,point> std::pair<float3,float3> the direction and a point on the line
  * @return bool whether planes intersect
  */
-bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3> &line);
+bool IntersectPlanes(const float4& plane1, const float4& plane2, std::pair<float3, float3>& line);
 
 /**
  * @brief Returns the line result of the intersection of two lines
@@ -138,11 +138,13 @@ float linearstep(const float edge0, const float edge1, const float value) _pure 
 
 
 #ifndef FAST_EPS_CMP
-template<class T> inline bool epscmp(const T a, const T b, const T eps) {
+template<class T> inline bool epscmp(const T a, const T b, const T eps)
+{
 	return ((a == b) || (math::fabs(a - b) <= (eps * std::max(std::max(math::fabs(a), math::fabs(b)), T(1)))));
 }
 #else
-template<class T> inline bool epscmp(const T a, const T b, const T eps) {
+template<class T> inline bool epscmp(const T a, const T b, const T eps)
+{
 	return ((a == b) || (std::fabs(a - b) <= (eps * (T(1) + std::fabs(a) + std::fabs(b)))));
 }
 #endif
@@ -150,47 +152,50 @@ template<class T> inline bool epscmp(const T a, const T b, const T eps) {
 
 // inlined to avoid multiple definitions due to the specializing templates
 template<class T> inline T argmin(const T v1, const T v2) { return std::min(v1, v2); }
+
 template<class T> inline T argmax(const T v1, const T v2) { return std::max(v1, v2); }
+
 template<> inline float3 argmin(const float3 v1, const float3 v2) { return float3::min(v1, v2); }
+
 template<> inline float3 argmax(const float3 v1, const float3 v2) { return float3::max(v1, v2); }
 
 // multiple arguments option
-template<typename T>
-inline T argmin(const T v1) { return v1; }
-template<typename T>
-inline T argmax(const T v1) { return v1; }
-template<typename T, typename ...Ts>
-inline T argmin(const T v1, const Ts... vs) { return argmin(v1, argmin(vs...)); }
-template<typename T, typename ...Ts>
-inline T argmax(const T v1, const Ts... vs) { return argmax(v1, argmax(vs...)); }
+template<typename T> inline T argmin(const T v1) { return v1; }
+
+template<typename T> inline T argmax(const T v1) { return v1; }
+
+template<typename T, typename... Ts> inline T argmin(const T v1, const Ts... vs) { return argmin(v1, argmin(vs...)); }
+
+template<typename T, typename... Ts> inline T argmax(const T v1, const Ts... vs) { return argmax(v1, argmax(vs...)); }
 
 // template<class T> T mix(const T v1, const T v2, const float a) { return (v1 * (1.0f - a) + v2 * a); }
 template<class T, typename T2> constexpr T mix(const T v1, const T v2, const T2 a) { return (v1 + (v2 - v1) * a); }
 
-template <class T, class T2> constexpr T mixRotation(T v1, T v2, T2 a) {
-    v1=ClampRad(v1);
-    v2=ClampRad(v2);
-    return ClampRad(v1 + GetRadAngleToward(v1, v2) * a);
+template<class T, class T2> constexpr T mixRotation(T v1, T v2, T2 a)
+{
+	v1 = ClampRad(v1);
+	v2 = ClampRad(v2);
+	return ClampRad(v1 + GetRadAngleToward(v1, v2) * a);
 }
 
 template<class T> constexpr T Blend(const T v1, const T v2, const float a) { return mix(v1, v2, a); }
 
 int Round(const float f) _const _warn_unused_result;
 
-template<class T> constexpr T Square(const T x) { return x*x; }
+template<class T> constexpr T Square(const T x) { return x * x; }
+
 template<class T> constexpr T SignedSquare(const T x) { return x * std::abs(x); }
+
 // NOTE: '>' instead of '>=' s.t. Sign(int(true)) != Sign(int(false)) --> zero is negative!
 template<class T> constexpr T Sign(const T v) { return ((v > T(0)) * T(2) - T(1)); }
 
-template <typename T>
-constexpr T AlignUp(T value, size_t size)
+template<typename T> constexpr T AlignUp(T value, size_t size)
 {
 	static_assert(std::is_unsigned<T>(), "T must be an unsigned value.");
 	return static_cast<T>(value + (size - value % size) % size);
 }
 
-template <typename T>
-constexpr T AlignDown(T value, size_t size)
+template<typename T> constexpr T AlignDown(T value, size_t size)
 {
 	static_assert(std::is_unsigned<T>(), "T must be an unsigned value.");
 	return static_cast<T>(value - value % size);

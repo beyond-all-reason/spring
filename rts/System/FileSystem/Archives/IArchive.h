@@ -3,16 +3,17 @@
 #ifndef _ARCHIVE_BASE_H
 #define _ARCHIVE_BASE_H
 
-#include <string>
-#include <vector>
+#include "ArchiveTypes.h"
+
+#include "System/ScopedResource.h"
+#include "System/Sync/SHA512.hpp"
+#include "System/UnorderedMap.hpp"
+
 #include <cinttypes>
 #include <memory>
 #include <semaphore>
-
-#include "ArchiveTypes.h"
-#include "System/Sync/SHA512.hpp"
-#include "System/ScopedResource.h"
-#include "System/UnorderedMap.hpp"
+#include <string>
+#include <vector>
 
 /**
  * @brief Abstraction of different archive types
@@ -22,8 +23,7 @@
  * 	//stuff
  * }
  */
-class IArchive
-{
+class IArchive {
 public:
 	struct SFileInfo {
 		std::string fileName;
@@ -31,14 +31,17 @@ public:
 		int32_t size = -1;
 		uint32_t modTime = 0;
 	};
+
 protected:
 	IArchive(const std::string& archiveFile);
+
 public:
 	virtual ~IArchive() {}
 
 	virtual int GetType() const = 0;
 
 	virtual bool IsOpen() = 0;
+
 	const std::string& GetArchiveFile() const { return archiveFile; }
 
 	/**
@@ -46,20 +49,21 @@ public:
 	 * lifetime
 	 */
 	virtual uint32_t NumFiles() const = 0;
+
 	/**
 	 * Returns whether the supplied fileId is valid and available in this
 	 * archive.
 	 */
-	inline bool IsFileId(uint32_t fileId) const {
-		return (fileId < NumFiles());
-	}
+	inline bool IsFileId(uint32_t fileId) const { return (fileId < NumFiles()); }
+
 	/**
 	 * Returns true if the file exists in this archive.
 	 * @param normalizedFilePath VFS path to the file in lower-case,
 	 *   using forward-slashes, for example "maps/mymap.smf"
 	 * @return true if the file exists in this archive, false otherwise
 	 */
-	bool FileExists(const std::string& normalizedFilePath) const {
+	bool FileExists(const std::string& normalizedFilePath) const
+	{
 		return (lcNameIndex.find(normalizedFilePath) != lcNameIndex.end());
 	}
 
@@ -90,7 +94,8 @@ public:
 	 */
 	bool GetFile(const std::string& name, std::vector<std::uint8_t>& buffer);
 
-	uint32_t ExtractedSize() const {
+	uint32_t ExtractedSize() const
+	{
 		uint32_t size = 0;
 
 		// no archive should be larger than 4GB when extracted
@@ -134,18 +139,26 @@ public:
 	 * @return true if archive type can be packed solid (which is VERY slow when reading)
 	 */
 	virtual bool CheckForSolid() const { return false; }
+
 	/**
 	 * Fetches the (SHA512) hash of a file by its ID.
 	 */
 	virtual bool CalcHash(uint32_t fid, sha512::raw_digest& hash, std::vector<std::uint8_t>& fb);
+
 protected:
 	static uint32_t GetSpinningDiskParallelAccessNum();
-	auto AcquireSemaphoreScoped() const { // fake const
-		return spring::ScopedNullResource(
-			[this]() { if (sem) sem->acquire(); },
-			[this]() { if (sem) sem->release(); }
-		);
+
+	auto AcquireSemaphoreScoped() const
+	{ // fake const
+		return spring::ScopedNullResource([this]() {
+			if (sem)
+				sem->acquire();
+		}, [this]() {
+			if (sem)
+				sem->release();
+		});
 	}
+
 protected:
 	// Spring expects the contents of archives to be case-independent
 	// this map (which must be populated by subclass archives) is kept

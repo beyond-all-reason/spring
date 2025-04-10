@@ -16,25 +16,26 @@
 #include <thread>
 
 #if defined(__MINGW32__) && !defined(_GLIBCXX_HAS_GTHREADS)
-	#include <mutex>
-	#include <atomic>
-	#include <condition_variable>
+#include "Once.h"
 
-	#include <mingw.thread.h>
-	#include <mingw.condition_variable.h>
-	#include <mingw.mutex.h>
-	#include "Once.h"
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 
-	namespace std {
-		using spring::once_flag;
-		using spring::call_once;
-	}
+#include <mingw.condition_variable.h>
+#include <mingw.mutex.h>
+#include <mingw.thread.h>
 
-	#define _GLIBCXX_HAS_GTHREADS
-	#include <future>
-	#undef _GLIBCXX_HAS_GTHREADS
+namespace std {
+using spring::call_once;
+using spring::once_flag;
+} // namespace std
+
+#define _GLIBCXX_HAS_GTHREADS
+#include <future>
+#undef _GLIBCXX_HAS_GTHREADS
 #else
-	#include <future>
+#include <future>
 #endif
 
 

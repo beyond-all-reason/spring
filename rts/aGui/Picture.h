@@ -3,15 +3,13 @@
 #ifndef PICTURE_H
 #define PICTURE_H
 
-#include <string>
-
 #include "GuiElement.h"
 
-namespace agui
-{
+#include <string>
 
-class Picture : public GuiElement
-{
+namespace agui {
+
+class Picture : public GuiElement {
 public:
 	Picture(GuiElement* parent = NULL);
 	~Picture();
@@ -20,11 +18,11 @@ public:
 
 private:
 	virtual void DrawSelf();
-	
+
 	unsigned texture;
 	std::string file;
 };
 
-}
+} // namespace agui
 
 #endif

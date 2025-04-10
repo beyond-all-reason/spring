@@ -1,38 +1,38 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaTextures.h"
-#include "Rendering/Textures/TextureFormat.h"
-#include "Rendering/GlobalRendering.h"
+
+#include "Lua/LuaFBOs.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GL/TexBind.h"
+#include "Rendering/GlobalRendering.h"
+#include "Rendering/Textures/TextureFormat.h"
+#include "System/Exceptions.h"
+#include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
-#include "System/Log/ILog.h"
-#include "System/Exceptions.h"
-#include "Lua/LuaFBOs.h"
-
 #include "fmt/format.h"
 
-
 namespace Impl {
-	static inline bool IsValidLuaTextureTarget(GLenum target) {
-		switch(target) {
-			case GL_TEXTURE_1D:
-			case GL_TEXTURE_2D:
-			case GL_TEXTURE_3D:
-			//case GL_TEXTURE_1D_ARRAY:
-			case GL_TEXTURE_2D_ARRAY:
-			//case GL_TEXTURE_RECTANGLE:
-			case GL_TEXTURE_CUBE_MAP:
-			//case GL_TEXTURE_BUFFER:
-			case GL_TEXTURE_2D_MULTISAMPLE:
-			//case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
-				return true;
-			default: break;
-		}
-		return false;
+static inline bool IsValidLuaTextureTarget(GLenum target)
+{
+	switch (target) {
+	case GL_TEXTURE_1D:
+	case GL_TEXTURE_2D:
+	case GL_TEXTURE_3D:
+	// case GL_TEXTURE_1D_ARRAY:
+	case GL_TEXTURE_2D_ARRAY:
+	// case GL_TEXTURE_RECTANGLE:
+	case GL_TEXTURE_CUBE_MAP:
+	// case GL_TEXTURE_BUFFER:
+	case GL_TEXTURE_2D_MULTISAMPLE:
+		// case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+		return true;
+	default: break;
 	}
+	return false;
 }
+} // namespace Impl
 
 /******************************************************************************/
 /******************************************************************************/
@@ -58,36 +58,37 @@ std::string LuaTextures::Create(const Texture& tex)
 	glClearErrors("LuaTex", __func__, globalRendering->glDebugErrors);
 
 	GLenum dataFormat = GL::GetInternalFormatDataFormat(tex.format);
-	GLenum dataType   = GL::GetInternalFormatDataType(tex.format);
+	GLenum dataType = GL::GetInternalFormatDataType(tex.format);
 
 	switch (tex.target) {
-		case GL_TEXTURE_1D: {
-			glTexImage1D(tex.target, 0, tex.format, tex.xsize                      , tex.border, dataFormat, dataType, nullptr);
-		} break;
-		case GL_TEXTURE_2D: {
-			glTexImage2D(tex.target, 0, tex.format, tex.xsize, tex.ysize           , tex.border, dataFormat, dataType, nullptr);
-		} break;
-		case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
-		case GL_TEXTURE_3D: {
-			glTexImage3D(tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.zsize, tex.border, dataFormat, dataType, nullptr);
-		} break;
+	case GL_TEXTURE_1D: {
+		glTexImage1D(tex.target, 0, tex.format, tex.xsize, tex.border, dataFormat, dataType, nullptr);
+	} break;
+	case GL_TEXTURE_2D: {
+		glTexImage2D(tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.border, dataFormat, dataType, nullptr);
+	} break;
+	case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
+	case GL_TEXTURE_3D: {
+		glTexImage3D(
+		    tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.zsize, tex.border, dataFormat, dataType, nullptr);
+	} break;
 
-		case GL_TEXTURE_2D_MULTISAMPLE: {
-			assert(tex.samples > 1);
+	case GL_TEXTURE_2D_MULTISAMPLE: {
+		assert(tex.samples > 1);
 
-			// 2DMS target only makes sense for FBO's
-			if (!globalRendering->supportMSAAFrameBuffer) {
-				glDeleteTextures(1, &texID);
-				glBindTexture(tex.target, currentBinding);
-				return "";
-			}
+		// 2DMS target only makes sense for FBO's
+		if (!globalRendering->supportMSAAFrameBuffer) {
+			glDeleteTextures(1, &texID);
+			glBindTexture(tex.target, currentBinding);
+			return "";
+		}
 
-			glTexImage2DMultisample(tex.target, tex.samples, tex.format, tex.xsize, tex.ysize, GL_TRUE);
-		} break;
+		glTexImage2DMultisample(tex.target, tex.samples, tex.format, tex.xsize, tex.ysize, GL_TRUE);
+	} break;
 
-		default: {
-			assert(false);
-		} break;
+	default: {
+		assert(false);
+	} break;
 	}
 
 	if (glGetError() != GL_NO_ERROR) {
@@ -118,14 +119,16 @@ std::string LuaTextures::Create(const Texture& tex)
 		if (tex.fboDepth != 0) {
 			glGenRenderbuffersEXT(1, &fboDepth);
 			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fboDepth);
-			GLenum depthFormat = static_cast<GLenum>(CGlobalRendering::DepthBitsToFormat(globalRendering->supportDepthBufferBitDepth));
+			GLenum depthFormat =
+			    static_cast<GLenum>(CGlobalRendering::DepthBitsToFormat(globalRendering->supportDepthBufferBitDepth));
 			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, depthFormat, tex.xsize, tex.ysize);
 			glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fboDepth);
 		}
 
 		bool attachFailure = false;
 		try {
-			LuaFBOs::AttachObjectTexTarget(__func__, GL_FRAMEBUFFER_EXT, tex.target, texID, GL_COLOR_ATTACHMENT0_EXT, 0);
+			LuaFBOs::AttachObjectTexTarget(
+			    __func__, GL_FRAMEBUFFER_EXT, tex.target, texID, GL_COLOR_ATTACHMENT0_EXT, 0);
 		}
 		catch (const opengl_error& e) {
 			attachFailure = true;
@@ -163,7 +166,6 @@ std::string LuaTextures::Create(const Texture& tex)
 	return str;
 }
 
-
 bool LuaTextures::Bind(const std::string& name) const
 {
 	const auto it = textureMap.find(name);
@@ -176,7 +178,6 @@ bool LuaTextures::Bind(const std::string& name) const
 
 	return false;
 }
-
 
 bool LuaTextures::Free(const std::string& name)
 {
@@ -199,7 +200,6 @@ bool LuaTextures::Free(const std::string& name)
 	return false;
 }
 
-
 bool LuaTextures::FreeFBO(const std::string& name)
 {
 	if (!FBO::IsSupported())
@@ -220,7 +220,6 @@ bool LuaTextures::FreeFBO(const std::string& name)
 	return true;
 }
 
-
 void LuaTextures::FreeAll()
 {
 	for (const auto& item: textureMap) {
@@ -238,7 +237,6 @@ void LuaTextures::FreeAll()
 	freeIndices.clear();
 }
 
-
 void LuaTextures::ApplyParams(const Texture& tex) const
 {
 	glTexParameteri(tex.target, GL_TEXTURE_WRAP_S, tex.wrap_s);
@@ -252,22 +250,22 @@ void LuaTextures::ApplyParams(const Texture& tex) const
 	}
 	else {
 		glTexParameteri(tex.target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-		glTexParameteri(tex.target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL); //sensible default
+		glTexParameteri(tex.target, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL); // sensible default
 	}
 
 	if (tex.lodBias != 0.0f)
 		glTexParameterf(tex.target, GL_TEXTURE_LOD_BIAS, tex.lodBias);
 
 	if (tex.aniso != 0.0f && GLAD_GL_EXT_texture_filter_anisotropic)
-		glTexParameterf(tex.target, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::clamp(tex.aniso, 1.0f, globalRendering->maxTexAnisoLvl));
+		glTexParameterf(
+		    tex.target, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::clamp(tex.aniso, 1.0f, globalRendering->maxTexAnisoLvl));
 }
 
-void LuaTextures::ChangeParams(const Texture& tex)  const
+void LuaTextures::ChangeParams(const Texture& tex) const
 {
 	auto texBind = GL::TexBind(tex.target, tex.id);
 	ApplyParams(tex);
 }
-
 
 size_t LuaTextures::GetIdx(const std::string& name) const
 {
@@ -278,4 +276,3 @@ size_t LuaTextures::GetIdx(const std::string& name) const
 
 	return (size_t(-1));
 }
-

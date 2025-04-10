@@ -1,18 +1,18 @@
 /*
-	Copyright (c) 2008 Robin Vobruba <hoijui.quaero@gmail.com>
+    Copyright (c) 2008 Robin Vobruba <hoijui.quaero@gmail.com>
 
-	This program is free software; you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation; either version 2 of the License, or
-	(at your option) any later version.
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #if defined BUILDING_AI_INTERFACE
@@ -23,8 +23,8 @@
 #include "System/MainDefines.h"
 #include "System/SafeCStrings.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if 0
 static int string_simpleHash(const char* const input) {
@@ -74,10 +74,9 @@ int SSkirmishAISpecifier_hash(
 }
 #endif
 
-int SSkirmishAISpecifier_compare(
-	const struct SSkirmishAISpecifier* const specThis,
-	const struct SSkirmishAISpecifier* const specThat
-) {
+int SSkirmishAISpecifier_compare(const struct SSkirmishAISpecifier* const specThis,
+    const struct SSkirmishAISpecifier* const specThat)
+{
 	int comp = strcmp(specThis->shortName, specThat->shortName);
 
 	if (comp == 0)
@@ -87,15 +86,12 @@ int SSkirmishAISpecifier_compare(
 }
 
 
-
 #ifdef __cplusplus
-bool SSkirmishAISpecifier_Comparator::operator()(
-	const struct SSkirmishAISpecifier& specThis,
-	const struct SSkirmishAISpecifier& specThat
-) const {
+bool SSkirmishAISpecifier_Comparator::operator()(const struct SSkirmishAISpecifier& specThis,
+    const struct SSkirmishAISpecifier& specThat) const
+{
 	return (SSkirmishAISpecifier_compare(&specThis, &specThat) < 0);
 }
 #endif // defined __cplusplus
 
 #endif // defined BUILDING_AI_INTERFACE
-

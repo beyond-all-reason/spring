@@ -39,4 +39,3 @@ function widget:GameOver()
    local time = Spring.DiffTimers(Spring.GetTimer(), timer)
    Spring.Echo(string.format('Game over, realtime: %i seconds, gametime: %i seconds', time, Spring.GetGameSeconds()))
 end
-

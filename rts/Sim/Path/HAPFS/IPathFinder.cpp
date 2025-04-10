@@ -1,14 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "IPathFinder.h"
+
 #include "PathFinderDef.h"
 #include "PathLog.h"
-#include "Sim/Path/HAPFS/PathGlobal.h"
-#include "Sim/MoveTypes/MoveDefHandler.h"
-#include "System/Log/ILog.h"
-#include "System/TimeProfiler.h"
 
+#include "Sim/MoveTypes/MoveDefHandler.h"
+#include "Sim/Path/HAPFS/PathGlobal.h"
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/TimeProfiler.h"
 
 // #include "PathGlobal.h"
 // #include "System/Threading/ThreadPool.h"
@@ -22,10 +23,9 @@ namespace HAPFS {
 static std::vector<PathNodeStateBuffer> nodeStateBuffers;
 static std::vector<IPathFinder*> pathFinderInstances;
 
-
 void IPathFinder::InitStatic() { pathFinderInstances.reserve(8); }
-void IPathFinder::KillStatic() { pathFinderInstances.clear  ( ); }
 
+void IPathFinder::KillStatic() { pathFinderInstances.clear(); }
 
 void IPathFinder::Init(unsigned int _BLOCK_SIZE)
 {
@@ -71,7 +71,6 @@ void IPathFinder::Kill()
 		nodeStateBuffers[instanceIndex] = std::move(blockStates);
 }
 
-
 void IPathFinder::AllocStateBuffer()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -100,16 +99,15 @@ void IPathFinder::ResetSearch()
 	testedBlocks = 0;
 }
 
-//std::mutex cacheAccessLock;
+// std::mutex cacheAccessLock;
 
-IPath::SearchResult IPathFinder::GetPath(
-	const MoveDef& moveDef,
-	const CPathFinderDef& pfDef,
-	const CSolidObject* owner,
-	float3 startPos,
-	IPath::Path& path,
-	const unsigned int maxNodes
-) {
+IPath::SearchResult IPathFinder::GetPath(const MoveDef& moveDef,
+    const CPathFinderDef& pfDef,
+    const CSolidObject* owner,
+    float3 startPos,
+    IPath::Path& path,
+    const unsigned int maxNodes)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	startPos.ClampInBounds();
 
@@ -121,7 +119,8 @@ IPath::SearchResult IPathFinder::GetPath(
 	// initial calculations
 	if (BLOCK_SIZE != 1) {
 		maxBlocksToBeSearched = std::min(MAX_SEARCHED_NODES_PE - 8U, maxNodes);
-	} else {
+	}
+	else {
 		maxBlocksToBeSearched = std::min(MAX_SEARCHED_NODES_PF - 8U, maxNodes);
 	}
 
@@ -137,17 +136,15 @@ IPath::SearchResult IPathFinder::GetPath(
 
 	// if (gs->frameNum == 2251 && BLOCK_SIZE == 16){
 	// 	debugLoggingActive = ThreadPool::GetThreadNum();
-	// if (owner != nullptr && selectedUnitsHandler.selectedUnits.find(owner->id) != selectedUnitsHandler.selectedUnits.end()){
-	// 	LOG("Starting deeper logging for query: start (%d, %d) -> (%d, %d) (%d -> %d) [%f:%d] [%d] = %d"
-	// 			, mStartBlock.x, mStartBlock.y
-	// 			, goalBlock.x, goalBlock.y
-	// 			, mStartBlockIdx, mGoalBlockIdx
-	// 			, pfDef.sqGoalRadius, moveDef.pathType
-	// 			, BLOCK_SIZE, debugLoggingActive);
+	// if (owner != nullptr && selectedUnitsHandler.selectedUnits.find(owner->id) !=
+	// selectedUnitsHandler.selectedUnits.end()){ 	LOG("Starting deeper logging for query: start (%d, %d) -> (%d, %d) (%d
+	// -> %d) [%f:%d] [%d] = %d" 			, mStartBlock.x, mStartBlock.y 			, goalBlock.x, goalBlock.y 			, mStartBlockIdx,
+	// mGoalBlockIdx 			, pfDef.sqGoalRadius, moveDef.pathType 			, BLOCK_SIZE, debugLoggingActive);
 	// }
 
 
-	const CPathCache::CacheItem& ci = GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
+	const CPathCache::CacheItem& ci =
+	    GetCache(mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 
 	if (ci.pathType != -1) {
 		path = ci.path;
@@ -161,8 +158,8 @@ IPath::SearchResult IPathFinder::GetPath(
 	if (result == IPath::Ok || result == IPath::GoalOutOfRange) {
 		FinishSearch(moveDef, pfDef, path);
 
-		//if (ci.pathType == -1)
-		// When the MT 'Pathing System' is running, it will handle updating the cache separately.
+		// if (ci.pathType == -1)
+		//  When the MT 'Pathing System' is running, it will handle updating the cache separately.
 		if (!ThreadPool::inMultiThreadedSection)
 			AddCache(&path, result, mStartBlock, goalBlock, pfDef.sqGoalRadius, moveDef.pathType, pfDef.synced);
 		// else{
@@ -234,14 +231,14 @@ IPath::SearchResult IPathFinder::GetPath(
 	return result;
 }
 
-
 // set up the starting point of the search
-IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner)
+IPath::SearchResult
+IPathFinder::InitSearch(const MoveDef& moveDef, const CPathFinderDef& pfDef, const CSolidObject* owner)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	int2 square = mStartBlock;
 
-	if (BLOCK_SIZE != 1){
+	if (BLOCK_SIZE != 1) {
 		if (psBlockStates != nullptr)
 			square = (*psBlockStates).peNodeOffsets[moveDef.pathType][mStartBlockIdx];
 		else
@@ -279,11 +276,11 @@ IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathF
 	// start a new search and add the starting block to the open-blocks-queue
 	openBlockBuffer.SetSize(0);
 	PathNode* ob = openBlockBuffer.GetNode(openBlockBuffer.GetSize());
-		ob->fCost   = 0.0f;
-		ob->gCost   = 0.0f;
-		ob->nodePos = mStartBlock;
-		ob->nodeNum = mStartBlockIdx;
-		ob->exitOnly = moveDef.IsInExitOnly(mStartBlock.x, mStartBlock.y);
+	ob->fCost = 0.0f;
+	ob->gCost = 0.0f;
+	ob->nodePos = mStartBlock;
+	ob->nodeNum = mStartBlockIdx;
+	ob->exitOnly = moveDef.IsInExitOnly(mStartBlock.x, mStartBlock.y);
 	openBlocks.push(ob);
 
 	// mark starting point as best found position
@@ -296,8 +293,8 @@ IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathF
 	};
 
 	// perform the search
-	results[RAW] = (allowRawPath                                )? DoRawSearch(moveDef, pfDef, owner): IPath::Error;
-	results[IPF] = (allowDefPath && results[RAW] == IPath::Error)? DoSearch(moveDef, pfDef, owner): results[RAW];
+	results[RAW] = (allowRawPath) ? DoRawSearch(moveDef, pfDef, owner) : IPath::Error;
+	results[IPF] = (allowDefPath && results[RAW] == IPath::Error) ? DoSearch(moveDef, pfDef, owner) : results[RAW];
 
 	if (results[IPF] == IPath::Ok)
 		return IPath::Ok;
@@ -311,20 +308,18 @@ IPath::SearchResult IPathFinder::InitSearch(const MoveDef& moveDef, const CPathF
 	return results[IPF + ((!allowRawPath || allowDefPath) && (!isStartGoal || startInGoal))];
 }
 
-bool IPathFinder::SetStartBlock(
-	const MoveDef& moveDef,
-	const CPathFinderDef& peDef,
-	const CSolidObject* owner,
-	float3 startPos
-)
+bool IPathFinder::SetStartBlock(const MoveDef& moveDef,
+    const CPathFinderDef& peDef,
+    const CSolidObject* owner,
+    float3 startPos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	mStartBlock.x  = startPos.x / BLOCK_PIXEL_SIZE;
-	mStartBlock.y  = startPos.z / BLOCK_PIXEL_SIZE;
+	mStartBlock.x = startPos.x / BLOCK_PIXEL_SIZE;
+	mStartBlock.y = startPos.z / BLOCK_PIXEL_SIZE;
 	mStartBlockIdx = BlockPosToIdx(mStartBlock);
-	mGoalBlockIdx  = mStartBlockIdx;
+	mGoalBlockIdx = mStartBlockIdx;
 
 	return true;
 }
 
-}
+} // namespace HAPFS

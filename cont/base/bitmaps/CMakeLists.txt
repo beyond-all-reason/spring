@@ -134,4 +134,3 @@ set(FILES
 )
 
 create_base_content_archive("base/spring" "bitmaps.sdz" "${FILES}")
-

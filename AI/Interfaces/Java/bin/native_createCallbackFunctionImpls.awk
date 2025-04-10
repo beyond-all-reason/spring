@@ -8,7 +8,7 @@
 # Accepts input like this:
 # [code]
 # 	bool requireSonarUnderWater;
-# 
+#
 # 	// construction related fields
 # 	/// Should constructions without builders decay?
 # 	bool constructionDecay;

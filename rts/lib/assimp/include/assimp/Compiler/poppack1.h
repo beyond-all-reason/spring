@@ -10,11 +10,11 @@
 // ===============================================================================
 
 #ifndef AI_PUSHPACK_IS_DEFINED
-#	error pushpack1.h must be included after poppack1.h
+#error pushpack1.h must be included after poppack1.h
 #endif
 
 // reset packing to the original value
-#pragma pack( pop )
+#pragma pack(pop)
 #undef PACK_STRUCT
 
 #undef AI_PUSHPACK_IS_DEFINED

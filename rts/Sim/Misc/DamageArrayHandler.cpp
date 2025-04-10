@@ -1,36 +1,32 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "DamageArrayHandler.h"
+
+#include "Game/GameVersion.h"
+#include "Lua/LuaParser.h"
+#include "System/Exceptions.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
+#include "System/creg/STL_Map.h"
+
 #include <algorithm>
+#include <cctype>
 #include <locale>
 #include <string>
 #include <vector>
-#include <cctype>
-
-#include "DamageArrayHandler.h"
-#include "Game/GameVersion.h"
-#include "Lua/LuaParser.h"
-#include "System/creg/STL_Map.h"
-#include "System/Log/ILog.h"
-#include "System/Exceptions.h"
-#include "System/StringUtil.h"
-
-#include "System/Misc/TracyDefs.h"
 
 CR_BIND(CDamageArrayHandler, )
 
-CR_REG_METADATA(CDamageArrayHandler, (
-	CR_MEMBER(armorDefNameIdxMap),
-	CR_MEMBER(armorDefKeys)
-))
+CR_REG_METADATA(CDamageArrayHandler, (CR_MEMBER(armorDefNameIdxMap), CR_MEMBER(armorDefKeys)))
 
 
 CDamageArrayHandler damageArrayHandler;
 
-
 void CDamageArrayHandler::Init(LuaParser* defsParser)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#define DEFAULT_ARMORDEF_NAME "default"
+#define DEFAULT_ARMORDEF_NAME "default"
 
 	try {
 		const LuaTable rootTable = defsParser->GetRoot().SubTable("ArmorDefs");
@@ -53,7 +49,8 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 
 			if (armorDefName == DEFAULT_ARMORDEF_NAME) {
 				// ignore, no need to clear entire table
-				LOG_L(L_WARNING, "[%s] ArmorDefs: tried to define the \"%s\" armor type!", __FUNCTION__, DEFAULT_ARMORDEF_NAME);
+				LOG_L(L_WARNING, "[%s] ArmorDefs: tried to define the \"%s\" armor type!", __FUNCTION__,
+				    DEFAULT_ARMORDEF_NAME);
 				continue;
 			}
 
@@ -71,12 +68,12 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 					continue;
 				}
 
-				LOG_L(L_WARNING,
-					"[%s] UnitDef \"%s\" in ArmorDef \"%s\" already belongs to ArmorDef category %d!",
-					__FUNCTION__, unitDefName.c_str(), armorDefName.c_str(), armorDefTableIt->second);
+				LOG_L(L_WARNING, "[%s] UnitDef \"%s\" in ArmorDef \"%s\" already belongs to ArmorDef category %d!",
+				    __FUNCTION__, unitDefName.c_str(), armorDefName.c_str(), armorDefTableIt->second);
 			}
 		}
-	} catch (const content_error&) {
+	}
+	catch (const content_error&) {
 		armorDefNameIdxMap.clear();
 		armorDefNameIdxMap[DEFAULT_ARMORDEF_NAME] = 0;
 
@@ -84,8 +81,6 @@ void CDamageArrayHandler::Init(LuaParser* defsParser)
 		armorDefKeys.push_back(DEFAULT_ARMORDEF_NAME);
 	}
 }
-
-
 
 int CDamageArrayHandler::GetTypeFromName(const std::string& name) const
 {
@@ -97,4 +92,3 @@ int CDamageArrayHandler::GetTypeFromName(const std::string& name) const
 
 	return 0; // 'default' armor index
 }
-

@@ -7,14 +7,14 @@
 // '-DUSING_CREG'
 
 #if defined BUILDING_AI && !defined USING_CREG
-	#if !defined NOT_USING_CREG
-		#define NOT_USING_CREG
-	#endif
+#if !defined NOT_USING_CREG
+#define NOT_USING_CREG
+#endif
 #elif !defined NOT_USING_CREG // defined BUILDING_AI && !defined USING_CREG
-	#if !defined USING_CREG
-		#define USING_CREG
-	#endif // !defined USING_CREG
-	#include "creg.h"
+#if !defined USING_CREG
+#define USING_CREG
+#endif // !defined USING_CREG
+#include "creg.h"
 #endif // defined BUILDING_AI && !defined USING_CREG
 
 #ifdef NOT_USING_CREG

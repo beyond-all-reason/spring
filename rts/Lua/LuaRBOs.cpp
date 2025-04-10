@@ -3,18 +3,17 @@
 
 #include "LuaRBOs.h"
 
-#include "LuaInclude.h"
-
 #include "LuaHandle.h"
 #include "LuaHashString.h"
+#include "LuaInclude.h"
 #include "LuaUtils.h"
-#include "Rendering/GlobalRendering.h"
 
+#include "Rendering/GlobalRendering.h"
 
 /******************************************************************************
  * RBO
  * @see rts/Lua/LuaRBOs.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 LuaRBOs::~LuaRBOs()
 {
@@ -22,7 +21,6 @@ LuaRBOs::~LuaRBOs()
 		glDeleteRenderbuffersEXT(1, &rbo->id);
 	}
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -37,17 +35,15 @@ bool LuaRBOs::PushEntries(lua_State* L)
 	return true;
 }
 
-
 bool LuaRBOs::CreateMetatable(lua_State* L)
 {
 	luaL_newmetatable(L, "RBO");
-	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
-	HSTR_PUSH_CFUNC(L, "__index",     meta_index);
-	HSTR_PUSH_CFUNC(L, "__newindex",  meta_newindex);
+	HSTR_PUSH_CFUNC(L, "__gc", meta_gc);
+	HSTR_PUSH_CFUNC(L, "__index", meta_index);
+	HSTR_PUSH_CFUNC(L, "__newindex", meta_newindex);
 	lua_pop(L, 1);
 	return true;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -57,23 +53,21 @@ const LuaRBOs::RBO* LuaRBOs::GetLuaRBO(lua_State* L, int index)
 	return static_cast<RBO*>(LuaUtils::GetUserData(L, index, "RBO"));
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 void LuaRBOs::RBO::Init()
 {
-	index   = -1u;
-	id      = 0;
+	index = -1u;
+	id = 0;
 
-	target  = GL_RENDERBUFFER_EXT;
-	format  = GL_RGBA;
+	target = GL_RENDERBUFFER_EXT;
+	format = GL_RGBA;
 
-	xsize   = 0;
-	ysize   = 0;
+	xsize = 0;
+	ysize = 0;
 	samples = 0;
 }
-
 
 void LuaRBOs::RBO::Free(lua_State* L)
 {
@@ -97,7 +91,6 @@ void LuaRBOs::RBO::Free(lua_State* L)
 	}
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -108,30 +101,22 @@ int LuaRBOs::meta_gc(lua_State* L)
 	return 0;
 }
 
-
 int LuaRBOs::meta_index(lua_State* L)
 {
 	const RBO* rbo = static_cast<RBO*>(luaL_checkudata(L, 1, "RBO"));
 
 	switch (hashString(luaL_checkstring(L, 2))) {
-		case hashString(  "valid"): { lua_pushboolean(L, glIsRenderbufferEXT(rbo->id)); return 1; } break;
-		case hashString( "target"): { lua_pushnumber(L, rbo->target );                  return 1; } break;
-		case hashString( "format"): { lua_pushnumber(L, rbo->format );                  return 1; } break;
-		case hashString(  "xsize"): { lua_pushnumber(L, rbo->xsize  );                  return 1; } break;
-		case hashString(  "ysize"): { lua_pushnumber(L, rbo->ysize  );                  return 1; } break;
-		case hashString("samples"): { lua_pushnumber(L, rbo->samples);                  return 1; } break;
-		default                   : {                                                             } break;
+	case hashString("valid"): lua_pushboolean(L, glIsRenderbufferEXT(rbo->id)); return 1;
+	case hashString("target"): lua_pushnumber(L, rbo->target); return 1;
+	case hashString("format"): lua_pushnumber(L, rbo->format); return 1;
+	case hashString("xsize"): lua_pushnumber(L, rbo->xsize); return 1;
+	case hashString("ysize"): lua_pushnumber(L, rbo->ysize); return 1;
+	case hashString("samples"): lua_pushnumber(L, rbo->samples); return 1;
+	default: return 0;
 	}
-
-	return 0;
 }
 
-
-int LuaRBOs::meta_newindex(lua_State* L)
-{
-	return 0;
-}
-
+int LuaRBOs::meta_newindex(lua_State* L) { return 0; }
 
 /******************************************************************************/
 /******************************************************************************/
@@ -229,7 +214,6 @@ int LuaRBOs::CreateRBO(lua_State* L)
 	return 1;
 }
 
-
 /***
  * @function gl.DeleteRBO
  * @param rbo RBO
@@ -243,7 +227,6 @@ int LuaRBOs::DeleteRBO(lua_State* L)
 	rbo->Free(L);
 	return 0;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

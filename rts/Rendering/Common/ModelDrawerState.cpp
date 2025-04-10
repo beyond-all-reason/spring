@@ -1,30 +1,29 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "ModelDrawerState.hpp"
+
 #include "ModelDrawer.h"
+
 #include "Game/Camera.h"
 #include "Game/Game.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/ShadowHandler.h"
-#include "Rendering/Env/SunLighting.h"
+#include "Rendering/Common/ModelDrawerHelpers.h"
+#include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/Env/ISky.h"
 #include "Rendering/Env/IWater.h"
-#include "Rendering/Env/CubeMapHandler.h"
 #include "Rendering/Env/SkyLight.h"
+#include "Rendering/Env/SunLighting.h"
 #include "Rendering/GL/GeometryBuffer.h"
 #include "Rendering/GL/myGL.h"
-#include "Rendering/Common/ModelDrawerHelpers.h"
-#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "Rendering/ShadowHandler.h"
 #include "Sim/Misc/TeamHandler.h"
-#include "System/Matrix44f.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/Matrix44f.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
-
-#include "System/Misc/TracyDefs.h"
-
-
 
 bool IModelDrawerState::SetTeamColor(int team, float alpha) const
 {
@@ -44,7 +43,8 @@ void IModelDrawerState::SetupOpaqueDrawing(bool deferredPass) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
+	glPolygonMode(GL_FRONT_AND_BACK,
+	    GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
 
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
@@ -72,7 +72,8 @@ void IModelDrawerState::SetupAlphaDrawing(bool deferredPass) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_POLYGON_BIT | (GL_COLOR_BUFFER_BIT * IsLegacy()));
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
+	glPolygonMode(GL_FRONT_AND_BACK,
+	    GL_LINE * CModelDrawerConcept::WireFrameModeRef() + GL_FILL * (1 - CModelDrawerConcept::WireFrameModeRef()));
 
 	Enable(/*deferredPass always false*/ false, true);
 
@@ -95,7 +96,6 @@ void IModelDrawerState::ResetAlphaDrawing(bool deferredPass) const
 	glPopAttrib();
 }
 
-
 ////////////// GLSL ////////////////
 
 CModelDrawerStateGLSL::CModelDrawerStateGLSL()
@@ -108,19 +108,21 @@ CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 
 	const GL::LightHandler* lightHandler = CModelDrawerConcept::GetLightHandler();
 	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
-		"ModelShaderGLSL-NoShadowStandard",
-		"ModelShaderGLSL-ShadowedStandard",
-		"ModelShaderGLSL-NoShadowDeferred",
-		"ModelShaderGLSL-ShadowedDeferred",
+	    "ModelShaderGLSL-NoShadowStandard",
+	    "ModelShaderGLSL-ShadowedStandard",
+	    "ModelShaderGLSL-NoShadowDeferred",
+	    "ModelShaderGLSL-ShadowedDeferred",
 	};
 	const std::string extraDefs =
-		("#define BASE_DYNAMIC_MODEL_LIGHT " + IntToString(lightHandler->GetBaseLight()) + "\n") +
-		("#define MAX_DYNAMIC_MODEL_LIGHTS " + IntToString(lightHandler->GetMaxLights()) + "\n");
+	    ("#define BASE_DYNAMIC_MODEL_LIGHT " + IntToString(lightHandler->GetBaseLight()) + "\n") +
+	    ("#define MAX_DYNAMIC_MODEL_LIGHTS " + IntToString(lightHandler->GetMaxLights()) + "\n");
 
 	for (uint32_t n = MODEL_SHADER_NOSHADOW_STANDARD; n <= MODEL_SHADER_SHADOWED_DEFERRED; n++) {
 		modelShaders[n] = sh->CreateProgramObject(PO_CLASS, shaderNames[n]);
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProg.glsl", extraDefs, GL_VERTEX_SHADER));
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelFragProg.glsl", extraDefs, GL_FRAGMENT_SHADER));
+		modelShaders[n]->AttachShaderObject(
+		    sh->CreateShaderObject("GLSL/ModelVertProg.glsl", extraDefs, GL_VERTEX_SHADER));
+		modelShaders[n]->AttachShaderObject(
+		    sh->CreateShaderObject("GLSL/ModelFragProg.glsl", extraDefs, GL_FRAGMENT_SHADER));
 
 		modelShaders[n]->SetFlag("USE_SHADOWS", int((n & 1) == 1));
 		modelShaders[n]->SetFlag("DEFERRED_MODE", int(n >= MODEL_SHADER_NOSHADOW_DEFERRED));
@@ -135,12 +137,12 @@ CModelDrawerStateGLSL::CModelDrawerStateGLSL()
 
 		modelShaders[n]->Enable();
 
-		modelShaders[n]->SetUniform("diffuseTex"    , 0);
-		modelShaders[n]->SetUniform("shadingTex"    , 1);
-		modelShaders[n]->SetUniform("shadowTex"     , 2);
+		modelShaders[n]->SetUniform("diffuseTex", 0);
+		modelShaders[n]->SetUniform("shadingTex", 1);
+		modelShaders[n]->SetUniform("shadowTex", 2);
 		modelShaders[n]->SetUniform("shadowColorTex", 3);
-		modelShaders[n]->SetUniform("reflectTex"    , 4);
-		modelShaders[n]->SetUniform("specularTex"   , 5);
+		modelShaders[n]->SetUniform("reflectTex", 4);
+		modelShaders[n]->SetUniform("specularTex", 5);
 
 		modelShaders[n]->SetUniform3v("sunDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 		modelShaders[n]->SetUniform3v("cameraPos", &camera->GetPos()[0]);
@@ -169,6 +171,7 @@ CModelDrawerStateGLSL::~CModelDrawerStateGLSL()
 }
 
 bool CModelDrawerStateGLSL::CanEnable() const { return true; }
+
 bool CModelDrawerStateGLSL::CanDrawDeferred() const { return CModelDrawerConcept::DeferredAllowed(); }
 
 bool CModelDrawerStateGLSL::SetTeamColor(int team, float alpha) const
@@ -230,6 +233,7 @@ void CModelDrawerStateGLSL::SetNanoColor(const float4& color) const
 }
 
 void CModelDrawerStateGLSL::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
+
 void CModelDrawerStateGLSL::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
 
 ////////////// GL4 ////////////////
@@ -243,16 +247,17 @@ CModelDrawerStateGL4::CModelDrawerStateGL4()
 	auto* sh = shaderHandler;
 
 	static const std::string shaderNames[MODEL_SHADER_COUNT] = {
-		"ModelShaderGL4-NoShadowStandard",
-		"ModelShaderGL4-ShadowedStandard",
-		"ModelShaderGL4-NoShadowDeferred",
-		"ModelShaderGL4-ShadowedDeferred",
+	    "ModelShaderGL4-NoShadowStandard",
+	    "ModelShaderGL4-ShadowedStandard",
+	    "ModelShaderGL4-NoShadowDeferred",
+	    "ModelShaderGL4-ShadowedDeferred",
 	};
 
 	for (uint32_t n = MODEL_SHADER_NOSHADOW_STANDARD; n <= MODEL_SHADER_SHADOWED_DEFERRED; n++) {
 		modelShaders[n] = sh->CreateProgramObject(PO_CLASS, shaderNames[n]);
 		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelVertProgGL4.glsl", "", GL_VERTEX_SHADER));
-		modelShaders[n]->AttachShaderObject(sh->CreateShaderObject("GLSL/ModelFragProgGL4.glsl", "", GL_FRAGMENT_SHADER));
+		modelShaders[n]->AttachShaderObject(
+		    sh->CreateShaderObject("GLSL/ModelFragProgGL4.glsl", "", GL_FRAGMENT_SHADER));
 
 		modelShaders[n]->SetFlag("USE_SHADOWS", int((n & 1) == 1));
 		modelShaders[n]->SetFlag("DEFERRED_MODE", int(n >= MODEL_SHADER_NOSHADOW_DEFERRED));
@@ -272,7 +277,7 @@ CModelDrawerStateGL4::CModelDrawerStateGL4()
 	// make the active shader non-NULL
 	SetActiveShader(shadowHandler.ShadowsLoaded(), false);
 
-	#undef sh
+#undef sh
 }
 
 CModelDrawerStateGL4::~CModelDrawerStateGL4()
@@ -284,6 +289,7 @@ CModelDrawerStateGL4::~CModelDrawerStateGL4()
 }
 
 bool CModelDrawerStateGL4::CanEnable() const { return globalRendering->haveGL4; }
+
 bool CModelDrawerStateGL4::CanDrawDeferred() const { return CModelDrawerConcept::DeferredAllowed(); }
 
 bool CModelDrawerStateGL4::SetTeamColor(int team, float alpha) const
@@ -310,8 +316,7 @@ void CModelDrawerStateGL4::Enable(bool deferredPass, bool alphaPass) const
 	assert(modelShader != nullptr);
 	modelShader->Enable();
 
-	switch (game->GetDrawMode())
-	{
+	switch (game->GetDrawMode()) {
 	case CGame::GameDrawMode::gameReflectionDraw: {
 		glEnable(GL_CLIP_DISTANCE2);
 		SetCameraMode(ShaderCameraModes::REFLCT_CAMERA);
@@ -338,15 +343,15 @@ void CModelDrawerStateGL4::Disable(bool deferredPass) const
 
 	SetActiveShader(shadowHandler.ShadowsLoaded(), deferredPass);
 
-	switch (game->GetDrawMode())
-	{
+	switch (game->GetDrawMode()) {
 	case CGame::GameDrawMode::gameReflectionDraw: {
 		glDisable(GL_CLIP_DISTANCE2);
 	} break;
 	case CGame::GameDrawMode::gameRefractionDraw: {
 		glDisable(GL_CLIP_DISTANCE2);
 	} break;
-	default: {} break;
+	default: {
+	} break;
 	}
 
 	CModelDrawerHelper::DisableTexturesCommon();
@@ -362,6 +367,7 @@ void CModelDrawerStateGL4::SetNanoColor(const float4& color) const
 }
 
 void CModelDrawerStateGL4::EnableTextures() const { CModelDrawerHelper::EnableTexturesCommon(); }
+
 void CModelDrawerStateGL4::DisableTextures() const { CModelDrawerHelper::DisableTexturesCommon(); }
 
 void CModelDrawerStateGL4::SetColorMultiplier(float r, float g, float b, float a) const
@@ -381,20 +387,13 @@ ShaderCameraModes CModelDrawerStateGL4::SetCameraMode(ShaderCameraModes scm_) co
 	std::swap(scm, scm_);
 	modelShader->SetUniform("cameraMode", static_cast<int>(scm));
 
-	switch (scm)
-	{
-	case ShaderCameraModes::REFLCT_CAMERA:
-		SetClipPlane(2, { 0.0f,  1.0f, 0.0f, 0.0f });
-		break;
-	case ShaderCameraModes::REFRAC_CAMERA:
-		SetClipPlane(2, { 0.0f, -1.0f, 0.0f, 0.0f });
-		break;
-	default:
-		SetClipPlane(2  /* default, no clipping  */);
-		break;
+	switch (scm) {
+	case ShaderCameraModes::REFLCT_CAMERA: SetClipPlane(2, {0.0f, 1.0f, 0.0f, 0.0f}); break;
+	case ShaderCameraModes::REFRAC_CAMERA: SetClipPlane(2, {0.0f, -1.0f, 0.0f, 0.0f}); break;
+	default: SetClipPlane(2 /* default, no clipping  */); break;
 	}
 
-	return scm_; //old state
+	return scm_; // old state
 }
 
 ShaderMatrixModes CModelDrawerStateGL4::SetMatrixMode(ShaderMatrixModes smm_) const
@@ -406,7 +405,7 @@ ShaderMatrixModes CModelDrawerStateGL4::SetMatrixMode(ShaderMatrixModes smm_) co
 	std::swap(smm, smm_);
 	modelShader->SetUniform("matrixMode", static_cast<int>(smm));
 
-	return smm_; //old state
+	return smm_; // old state
 }
 
 ShaderShadingModes CModelDrawerStateGL4::SetShadingMode(ShaderShadingModes ssm_) const
@@ -418,7 +417,7 @@ ShaderShadingModes CModelDrawerStateGL4::SetShadingMode(ShaderShadingModes ssm_)
 	std::swap(ssm, ssm_);
 	modelShader->SetUniform("shadingMode", static_cast<int>(ssm));
 
-	return ssm_; //old state
+	return ssm_; // old state
 }
 
 void CModelDrawerStateGL4::SetStaticModelMatrix(const CMatrix44f& mat) const
@@ -433,20 +432,17 @@ void CModelDrawerStateGL4::SetStaticModelMatrix(const CMatrix44f& mat) const
 void CModelDrawerStateGL4::SetClipPlane(uint8_t idx, const float4& cp) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	switch (idx)
-	{
-	case 0: //upper construction clip plane
+	switch (idx) {
+	case 0: // upper construction clip plane
 		modelShader->SetUniform("clipPlane0", cp.x, cp.y, cp.z, cp.w);
 		break;
-	case 1: //lower construction clip plane
+	case 1: // lower construction clip plane
 		modelShader->SetUniform("clipPlane1", cp.x, cp.y, cp.z, cp.w);
 		break;
-	case 2: //water clip plane
+	case 2: // water clip plane
 		modelShader->SetUniform("clipPlane2", cp.x, cp.y, cp.z, cp.w);
 		break;
-	default:
-		assert(false);
-		break;
+	default: assert(false); break;
 	}
 }
 
@@ -455,7 +451,7 @@ IModelDrawerState::IModelDrawerState()
 	RECOIL_DETAILED_TRACY_ZONE;
 	modelShaders.fill(nullptr);
 
-	//dup with every instance, but ok
+	// dup with every instance, but ok
 	alphaValues.x = std::max(0.11f, std::min(1.0f, 1.0f - configHandler->GetFloat("UnitTransparency")));
 	alphaValues.y = std::min(1.0f, alphaValues.x + 0.1f);
 	alphaValues.z = std::min(1.0f, alphaValues.x + 0.2f);
@@ -466,7 +462,7 @@ bool IModelDrawerState::IsValid() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	bool valid = true;
-	for (auto ms : modelShaders) {
+	for (auto ms: modelShaders) {
 		if (!ms)
 			continue;
 

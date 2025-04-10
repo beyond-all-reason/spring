@@ -5,15 +5,15 @@
  * EXT_framebuffer_object class implementation
  */
 
-#include <cassert>
-#include <vector>
-
 #include "FBO.h"
+
+#include "System/Config/ConfigHandler.h"
 #include "System/ContainerUtil.h"
 #include "System/Log/ILog.h"
-#include "System/Config/ConfigHandler.h"
-
 #include "System/Misc/TracyDefs.h"
+
+#include <cassert>
+#include <vector>
 
 CONFIG(bool, AtiSwapRBFix).defaultValue(false);
 
@@ -23,15 +23,10 @@ spring::unordered_map<GLuint, FBO::TexData> FBO::fboTexData;
 GLint FBO::maxAttachments = 0;
 GLsizei FBO::maxSamples = -1;
 
-
 /**
  * Returns if the current gpu supports Framebuffer Objects
  */
-bool FBO::IsSupported()
-{
-	return (GLAD_GL_EXT_framebuffer_object);
-}
-
+bool FBO::IsSupported() { return (GLAD_GL_EXT_framebuffer_object); }
 
 GLint FBO::GetCurrentBoundFBO()
 {
@@ -41,14 +36,13 @@ GLint FBO::GetCurrentBoundFBO()
 	return curFBO;
 }
 
-
-
 /**
  * Detects the textureTarget just by the textureName/ID
  */
 GLenum FBO::GetTextureTargetByID(const GLuint id, const unsigned int i)
 {
-	static constexpr std::array _targets = { GL_TEXTURE_2D, GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_1D, GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY };
+	static constexpr std::array _targets = {
+	    GL_TEXTURE_2D, GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_1D, GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY};
 	GLint format;
 	glBindTexture(_targets[i], id);
 	glGetTexLevelParameteriv(_targets[i], 0, GL_TEXTURE_INTERNAL_FORMAT, &format);
@@ -60,7 +54,6 @@ GLenum FBO::GetTextureTargetByID(const GLuint id, const unsigned int i)
 	return GL_INVALID_ENUM;
 }
 
-
 /**
  * Makes a copy of a texture/RBO in the system ram
  */
@@ -70,8 +63,10 @@ void FBO::DownloadAttachment(const GLenum attachment)
 	GLuint target;
 	GLuint id;
 
-	glGetFramebufferAttachmentParameterivEXT(GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, (GLint*) &target);
-	glGetFramebufferAttachmentParameterivEXT(GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT, (GLint*) &id);
+	glGetFramebufferAttachmentParameterivEXT(
+	    GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, (GLint*)&target);
+	glGetFramebufferAttachmentParameterivEXT(
+	    GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT, (GLint*)&id);
 
 	if (target == GL_NONE || id == 0)
 		return;
@@ -96,18 +91,25 @@ void FBO::DownloadAttachment(const GLenum attachment)
 
 	if (target == GL_RENDERBUFFER_EXT) {
 		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, id);
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_WIDTH_EXT,  &tex.xsize);
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_WIDTH_EXT, &tex.xsize);
 		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_HEIGHT_EXT, &tex.ysize);
 		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_INTERNAL_FORMAT_EXT, (GLint*)&tex.format);
 
 		GLint _cbits;
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_RED_SIZE_EXT, &_cbits); bits += _cbits;
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_GREEN_SIZE_EXT, &_cbits); bits += _cbits;
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_BLUE_SIZE_EXT, &_cbits); bits += _cbits;
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_ALPHA_SIZE_EXT, &_cbits); bits += _cbits;
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_DEPTH_SIZE_EXT, &_cbits); bits += _cbits;
-		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_STENCIL_SIZE_EXT, &_cbits); bits += _cbits;
-	} else {
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_RED_SIZE_EXT, &_cbits);
+		bits += _cbits;
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_GREEN_SIZE_EXT, &_cbits);
+		bits += _cbits;
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_BLUE_SIZE_EXT, &_cbits);
+		bits += _cbits;
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_ALPHA_SIZE_EXT, &_cbits);
+		bits += _cbits;
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_DEPTH_SIZE_EXT, &_cbits);
+		bits += _cbits;
+		glGetRenderbufferParameterivEXT(GL_RENDERBUFFER_EXT, GL_RENDERBUFFER_STENCIL_SIZE_EXT, &_cbits);
+		bits += _cbits;
+	}
+	else {
 		glBindTexture(target, id);
 
 		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_WIDTH, &tex.xsize);
@@ -116,17 +118,23 @@ void FBO::DownloadAttachment(const GLenum attachment)
 		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_INTERNAL_FORMAT, (GLint*)&tex.format);
 
 		GLint _cbits;
-		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_RED_SIZE, &_cbits); bits += _cbits;
-		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_GREEN_SIZE, &_cbits); bits += _cbits;
-		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_BLUE_SIZE, &_cbits); bits += _cbits;
-		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_ALPHA_SIZE, &_cbits); bits += _cbits;
-		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_DEPTH_SIZE, &_cbits); bits += _cbits;
+		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_RED_SIZE, &_cbits);
+		bits += _cbits;
+		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_GREEN_SIZE, &_cbits);
+		bits += _cbits;
+		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_BLUE_SIZE, &_cbits);
+		bits += _cbits;
+		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_ALPHA_SIZE, &_cbits);
+		bits += _cbits;
+		glGetTexLevelParameteriv(target, 0, GL_TEXTURE_DEPTH_SIZE, &_cbits);
+		bits += _cbits;
 	}
 
 	if (configHandler->GetBool("AtiSwapRBFix")) {
 		if (tex.format == GL_RGBA) {
 			tex.format = GL_BGRA;
-		} else if (tex.format == GL_RGB) {
+		}
+		else if (tex.format == GL_RGB) {
 			tex.format = GL_BGR;
 		}
 	}
@@ -135,23 +143,23 @@ void FBO::DownloadAttachment(const GLenum attachment)
 		bits = 32;
 
 	switch (target) {
-		case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
-		case GL_TEXTURE_3D:
-			tex.pixels.resize(tex.xsize * tex.ysize * tex.zsize * (bits / 8));
-			glGetTexImage(tex.target, 0, /*FIXME*/GL_RGBA, /*FIXME*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-			break;
-		case GL_TEXTURE_1D:
-			tex.pixels.resize(tex.xsize * (bits / 8));
-			glGetTexImage(tex.target, 0, /*FIXME*/GL_RGBA, /*FIXME*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-			break;
-		case GL_RENDERBUFFER_EXT:
-			tex.pixels.resize(tex.xsize * tex.ysize * (bits / 8));
-			glReadBuffer(attachment);
-			glReadPixels(0, 0, tex.xsize, tex.ysize, /*FIXME*/GL_RGBA, /*FIXME*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-			break;
-		default: //GL_TEXTURE_2D & GL_TEXTURE_RECTANGLE
-			tex.pixels.resize(tex.xsize * tex.ysize * (bits / 8));
-			glGetTexImage(tex.target, 0, /*FIXME*/GL_RGBA, /*FIXME*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
+	case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
+	case GL_TEXTURE_3D:
+		tex.pixels.resize(tex.xsize * tex.ysize * tex.zsize * (bits / 8));
+		glGetTexImage(tex.target, 0, /*FIXME*/ GL_RGBA, /*FIXME*/ GL_UNSIGNED_BYTE, &tex.pixels[0]);
+		break;
+	case GL_TEXTURE_1D:
+		tex.pixels.resize(tex.xsize * (bits / 8));
+		glGetTexImage(tex.target, 0, /*FIXME*/ GL_RGBA, /*FIXME*/ GL_UNSIGNED_BYTE, &tex.pixels[0]);
+		break;
+	case GL_RENDERBUFFER_EXT:
+		tex.pixels.resize(tex.xsize * tex.ysize * (bits / 8));
+		glReadBuffer(attachment);
+		glReadPixels(0, 0, tex.xsize, tex.ysize, /*FIXME*/ GL_RGBA, /*FIXME*/ GL_UNSIGNED_BYTE, &tex.pixels[0]);
+		break;
+	default: // GL_TEXTURE_2D & GL_TEXTURE_RECTANGLE
+		tex.pixels.resize(tex.xsize * tex.ysize * (bits / 8));
+		glGetTexImage(tex.target, 0, /*FIXME*/ GL_RGBA, /*FIXME*/ GL_UNSIGNED_BYTE, &tex.pixels[0]);
 	}
 }
 
@@ -185,7 +193,6 @@ void FBO::GLContextLost()
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
-
 /**
  * @brief GLContextReinit
  */
@@ -203,27 +210,33 @@ void FBO::GLContextReinit()
 
 			// TODO regen mipmaps?
 			switch (tex.target) {
-				case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
-				case GL_TEXTURE_3D:
-					// glTexSubImage3D(tex.target, 0, 0,0,0, tex.xsize, tex.ysize, tex.zsize, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-					glTexImage3D(tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.zsize, 0, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-					break;
-				case GL_TEXTURE_1D:
-					// glTexSubImage1D(tex.target, 0, 0, tex.xsize, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-					glTexImage1D(tex.target, 0, tex.format, tex.xsize, /*FIXME?*/GL_RGBA, 0, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-					break;
-				default: // case GL_TEXTURE_2D & GL_TEXTURE_RECTANGLE
-					// glTexSubImage2D(tex.target, 0, 0,0, tex.xsize, tex.ysize, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
-					glTexImage2D(tex.target, 0, tex.format, tex.xsize, tex.ysize, 0, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
+			case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
+			case GL_TEXTURE_3D:
+				// glTexSubImage3D(tex.target, 0, 0,0,0, tex.xsize, tex.ysize, tex.zsize, /*FIXME?*/GL_RGBA,
+				// /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
+				glTexImage3D(tex.target, 0, tex.format, tex.xsize, tex.ysize, tex.zsize, 0, /*FIXME?*/ GL_RGBA,
+				    /*FIXME?*/ GL_UNSIGNED_BYTE, &tex.pixels[0]);
+				break;
+			case GL_TEXTURE_1D:
+				// glTexSubImage1D(tex.target, 0, 0, tex.xsize, /*FIXME?*/GL_RGBA, /*FIXME?*/GL_UNSIGNED_BYTE,
+				// &tex.pixels[0]);
+				glTexImage1D(tex.target, 0, tex.format, tex.xsize, /*FIXME?*/ GL_RGBA, 0, /*FIXME?*/ GL_UNSIGNED_BYTE,
+				    &tex.pixels[0]);
+				break;
+			default: // case GL_TEXTURE_2D & GL_TEXTURE_RECTANGLE
+				// glTexSubImage2D(tex.target, 0, 0,0, tex.xsize, tex.ysize, /*FIXME?*/GL_RGBA,
+				// /*FIXME?*/GL_UNSIGNED_BYTE, &tex.pixels[0]);
+				glTexImage2D(tex.target, 0, tex.format, tex.xsize, tex.ysize, 0, /*FIXME?*/ GL_RGBA,
+				    /*FIXME?*/ GL_UNSIGNED_BYTE, &tex.pixels[0]);
 			}
-		} else if (glIsRenderbufferEXT(tex.id)) {
+		}
+		else if (glIsRenderbufferEXT(tex.id)) {
 			// FIXME implement rendering buffer context init
 		}
 	}
 
 	fboTexData.clear();
 }
-
 
 /**
  * Tests for support of the EXT_framebuffer_object
@@ -251,7 +264,6 @@ void FBO::Init(bool noop)
 
 	valid = true;
 }
-
 
 /**
  * Unbinds the framebuffer and deletes it
@@ -289,7 +301,6 @@ void FBO::Kill()
 	fboTexData.clear();
 }
 
-
 /**
  * Tests if we have a valid (generated and complete) framebuffer
  */
@@ -299,7 +310,6 @@ bool FBO::IsValid() const
 	return (fboId != 0 && valid);
 }
 
-
 /**
  * Makes the framebuffer the active framebuffer context
  */
@@ -308,7 +318,6 @@ void FBO::Bind()
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
 }
-
 
 /**
  * Unbinds the framebuffer from the current context
@@ -329,7 +338,12 @@ void FBO::Unbind()
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
-bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, const std::array<int, 4>& dstRect, uint32_t mask, uint32_t filter)
+bool FBO::Blit(int32_t fromID,
+    int32_t toID,
+    const std::array<int, 4>& srcRect,
+    const std::array<int, 4>& dstRect,
+    uint32_t mask,
+    uint32_t filter)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!GLAD_GL_EXT_framebuffer_blit)
@@ -347,24 +361,26 @@ bool FBO::Blit(int32_t fromID, int32_t toID, const std::array<int, 4>& srcRect, 
 		fromID = currentFBO;
 
 	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fromID);
-	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT,   toID);
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, toID);
 
-	int samples; int sampleBuffers;
+	int samples;
+	int sampleBuffers;
 	glGetFramebufferParameteriv(GL_READ_FRAMEBUFFER_EXT, GL_SAMPLES, &samples);
 	glGetFramebufferParameteriv(GL_READ_FRAMEBUFFER_EXT, GL_SAMPLE_BUFFERS, &sampleBuffers);
 
 	glGetFramebufferParameteriv(GL_DRAW_FRAMEBUFFER_EXT, GL_SAMPLES, &samples);
 	glGetFramebufferParameteriv(GL_DRAW_FRAMEBUFFER_EXT, GL_SAMPLE_BUFFERS, &sampleBuffers);
 
-	glBlitFramebufferEXT(srcRect[0], srcRect[1], srcRect[2], srcRect[3], dstRect[0], dstRect[1], dstRect[2], dstRect[3], mask, filter);
+	glBlitFramebufferEXT(
+	    srcRect[0], srcRect[1], srcRect[2], srcRect[3], dstRect[0], dstRect[1], dstRect[2], dstRect[3], mask, filter);
 
 	// required call
-	// Calling glBindFramebuffer with target set to GL_FRAMEBUFFER binds framebuffer to both the read and draw framebuffer targets.
+	// Calling glBindFramebuffer with target set to GL_FRAMEBUFFER binds framebuffer to both the read and draw
+	// framebuffer targets.
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
 
 	return true;
 }
-
 
 /**
  * Tests if the framebuffer is a complete and
@@ -379,37 +395,25 @@ bool FBO::CheckStatus(const char* name)
 	const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
 
 	switch (status) {
-		case GL_FRAMEBUFFER_COMPLETE_EXT:
-			return (valid = true);
-		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-			LOG_L(L_WARNING, "FBO-%s: None/Unsupported textures/buffers attached!", name);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-			LOG_L(L_WARNING, "FBO-%s: Missing a required texture/buffer attachment!", name);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-			LOG_L(L_WARNING, "FBO-%s: Has mismatched texture/buffer dimensions!", name);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-			LOG_L(L_WARNING, "FBO-%s: Incomplete buffer formats!", name);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-			LOG_L(L_WARNING, "FBO-%s: Incomplete draw buffers!", name);
-			break;
-		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-			LOG_L(L_WARNING, "FBO-%s: Incomplete read buffer!", name);
-			break;
-		case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-			LOG_L(L_WARNING, "FBO-%s: GL_FRAMEBUFFER_UNSUPPORTED_EXT", name);
-			break;
-		default:
-			LOG_L(L_WARNING, "FBO-%s: error code 0x%X", name, status);
-			break;
+	case GL_FRAMEBUFFER_COMPLETE_EXT: return (valid = true);
+	case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
+		LOG_L(L_WARNING, "FBO-%s: None/Unsupported textures/buffers attached!", name);
+		break;
+	case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
+		LOG_L(L_WARNING, "FBO-%s: Missing a required texture/buffer attachment!", name);
+		break;
+	case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
+		LOG_L(L_WARNING, "FBO-%s: Has mismatched texture/buffer dimensions!", name);
+		break;
+	case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: LOG_L(L_WARNING, "FBO-%s: Incomplete buffer formats!", name); break;
+	case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT: LOG_L(L_WARNING, "FBO-%s: Incomplete draw buffers!", name); break;
+	case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT: LOG_L(L_WARNING, "FBO-%s: Incomplete read buffer!", name); break;
+	case GL_FRAMEBUFFER_UNSUPPORTED_EXT: LOG_L(L_WARNING, "FBO-%s: GL_FRAMEBUFFER_UNSUPPORTED_EXT", name); break;
+	default: LOG_L(L_WARNING, "FBO-%s: error code 0x%X", name, status); break;
 	}
 
 	return (valid = false);
 }
-
 
 /**
  * Returns the current framebuffer status
@@ -423,11 +427,14 @@ GLenum FBO::GetStatus()
 	return glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
 }
 
-
 /**
  * Attaches a GL texture to the framebuffer
  */
-void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum attachment, const int mipLevel, const int zSlice )
+void FBO::AttachTexture(const GLuint texId,
+    const GLenum texTarget,
+    const GLenum attachment,
+    const int mipLevel,
+    const int zSlice)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS
@@ -435,16 +442,18 @@ void FBO::AttachTexture(const GLuint texId, const GLenum texTarget, const GLenum
 #endif
 	if (texTarget == GL_TEXTURE_1D) {
 		glFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_1D, texId, mipLevel);
-	} else if (texTarget == GL_TEXTURE_3D) {
+	}
+	else if (texTarget == GL_TEXTURE_3D) {
 		glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_3D, texId, mipLevel, zSlice);
-	} else if (texTarget == GL_TEXTURE_CUBE_MAP || texTarget == GL_TEXTURE_2D_ARRAY) {
+	}
+	else if (texTarget == GL_TEXTURE_CUBE_MAP || texTarget == GL_TEXTURE_2D_ARRAY) {
 		if (GLAD_GL_VERSION_3_2)
-			glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); //attach the whole texture
-	} else {
+			glFramebufferTexture(GL_FRAMEBUFFER_EXT, attachment, texId, mipLevel); // attach the whole texture
+	}
+	else {
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, texTarget, texId, mipLevel);
 	}
 }
-
 
 /**
  * Attaches a GL RenderBuffer to the framebuffer
@@ -458,7 +467,6 @@ void FBO::AttachRenderBuffer(const GLuint rboId, const GLenum attachment)
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, attachment, GL_RENDERBUFFER_EXT, rboId);
 }
 
-
 /**
  * Detaches an attachment from the framebuffer
  */
@@ -469,7 +477,8 @@ void FBO::Detach(const GLenum attachment)
 	assert(GetCurrentBoundFBO() == fboId);
 #endif
 	GLuint target = 0;
-	glGetFramebufferAttachmentParameterivEXT(GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, (GLint*) &target);
+	glGetFramebufferAttachmentParameterivEXT(
+	    GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, (GLint*)&target);
 
 	if (target != GL_RENDERBUFFER_EXT) {
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, GL_TEXTURE_2D, 0, 0);
@@ -478,15 +487,17 @@ void FBO::Detach(const GLenum attachment)
 
 	//! check if the RBO was created via FBO::CreateRenderBuffer()
 	GLuint attID;
-	glGetFramebufferAttachmentParameterivEXT(GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT, (GLint*) &attID);
+	glGetFramebufferAttachmentParameterivEXT(
+	    GL_FRAMEBUFFER_EXT, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT, (GLint*)&attID);
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, attachment, GL_RENDERBUFFER_EXT, 0);
 
 	spring::VectorEraseIf(rboIDs, [&](GLuint& rboID) {
-		if (rboID != attID) return false;
-		glDeleteRenderbuffersEXT(1, &rboID); return true;
+		if (rboID != attID)
+			return false;
+		glDeleteRenderbuffersEXT(1, &rboID);
+		return true;
 	});
 }
-
 
 /**
  * Detaches any attachments from the framebuffer
@@ -503,7 +514,6 @@ void FBO::DetachAll()
 	Detach(GL_DEPTH_ATTACHMENT_EXT);
 	Detach(GL_STENCIL_ATTACHMENT_EXT);
 }
-
 
 /**
  * Creates and attaches a RBO
@@ -522,11 +532,14 @@ void FBO::CreateRenderBuffer(const GLenum attachment, const GLenum format, const
 	rboIDs.push_back(rbo);
 }
 
-
 /**
  * Creates and attaches a multisampled RBO
  */
-void FBO::CreateRenderBufferMultisample(const GLenum attachment, const GLenum format, const GLsizei width, const GLsizei height, GLsizei samples)
+void FBO::CreateRenderBufferMultisample(const GLenum attachment,
+    const GLenum format,
+    const GLsizei width,
+    const GLsizei height,
+    GLsizei samples)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 #ifndef HEADLESS

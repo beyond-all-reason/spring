@@ -12,7 +12,7 @@
 #define ASIO_DETAIL_LOCAL_FREE_ON_BLOCK_EXIT_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
@@ -21,31 +21,25 @@
 #if !defined(ASIO_WINDOWS_APP)
 
 #include "asio/detail/noncopyable.hpp"
-#include "asio/detail/socket_types.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/detail/socket_types.hpp"
 
 namespace asio {
 namespace detail {
 
-class local_free_on_block_exit
-  : private noncopyable
-{
+class local_free_on_block_exit : private noncopyable {
 public:
-  // Constructor blocks all signals for the calling thread.
-  explicit local_free_on_block_exit(void* p)
-    : p_(p)
-  {
-  }
+	// Constructor blocks all signals for the calling thread.
+	explicit local_free_on_block_exit(void* p)
+	    : p_(p)
+	{
+	}
 
-  // Destructor restores the previous signal mask.
-  ~local_free_on_block_exit()
-  {
-    ::LocalFree(p_);
-  }
+	// Destructor restores the previous signal mask.
+	~local_free_on_block_exit() { ::LocalFree(p_); }
 
 private:
-  void* p_;
+	void* p_;
 };
 
 } // namespace detail

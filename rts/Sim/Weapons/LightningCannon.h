@@ -5,14 +5,14 @@
 
 #include "Weapon.h"
 
-class CLightningCannon: public CWeapon
-{
+class CLightningCannon : public CWeapon {
 	CR_DECLARE_DERIVED(CLightningCannon)
 public:
 	CLightningCannon(CUnit* owner = nullptr, const WeaponDef* def = nullptr);
 
 private:
 	void FireImpl(const bool scriptCall) override final;
+
 	float GetPredictedImpactTime(float3 p) const override final { return 0.0f; }
 
 private:

@@ -7,17 +7,14 @@
 
 struct lua_State;
 
-class LuaConstCOB
-{
-	public:
-		static bool PushEntries(lua_State* L);
+class LuaConstCOB {
+public:
+	static bool PushEntries(lua_State* L);
 };
 
-
-class LuaConstSFX
-{
-	public:
-		static bool PushEntries(lua_State* L);
+class LuaConstSFX {
+public:
+	static bool PushEntries(lua_State* L);
 };
 
 #endif

@@ -5,8 +5,7 @@
 
 #include "System/float3.h"
 
-class IMapDamage
-{
+class IMapDamage {
 public:
 	static IMapDamage* InitMapDamage();
 	static void FreeMapDamage(IMapDamage*);
@@ -16,7 +15,9 @@ public:
 
 	virtual void Explosion(const float3& pos, float strength, float radius, float& maxHeightDiff) = 0;
 	virtual void RecalcArea(int x1, int x2, int y1, int y2) = 0;
+
 	virtual void TerrainTypeHardnessChanged(int ttIndex) {}
+
 	virtual void TerrainTypeSpeedModChanged(int ttIndex) {}
 
 	virtual void Init() = 0;

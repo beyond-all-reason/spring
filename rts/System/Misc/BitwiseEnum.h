@@ -28,33 +28,36 @@
  *  foo(1);                            // not valid
  **/
 
-namespace Bitwise
-{
+namespace Bitwise {
 
-template <class Enum>
-class BitwiseEnum
-{
+template<class Enum> class BitwiseEnum {
 private:
 	int v;
 
 public:
-	BitwiseEnum(const Enum& _v) : v(_v) {}
-	BitwiseEnum() : v(0) {}
+	BitwiseEnum(const Enum& _v)
+	    : v(_v)
+	{
+	}
+
+	BitwiseEnum()
+	    : v(0)
+	{
+	}
 
 	//! fixes http://code.google.com/p/mili/issues/detail?id=40
-	//operator int() const { return v; }
+	// operator int() const { return v; }
 	operator Enum() const { return Enum(v); }
-
 
 	// We use c++ default ones
 	/*BitwiseEnum<Enum>& operator = (const Enum& v2)
 	{
-		return v = v2;
+	    return v = v2;
 	}
 
 	BitwiseEnum<Enum>& operator = (const BitwiseEnum<Enum>& be2)
 	{
-		return v = be2.v;
+	    return v = be2.v;
 	}*/
 
 
@@ -62,140 +65,120 @@ public:
 	// BitwiseEnum<Enum> operators
 
 	// Compound assignment operators
-	BitwiseEnum<Enum>& operator |= (const BitwiseEnum<Enum>& be2)
+	BitwiseEnum<Enum>& operator|=(const BitwiseEnum<Enum>& be2)
 	{
 		v |= be2.v;
 		return *this;
 	}
 
-	BitwiseEnum<Enum>& operator &= (const BitwiseEnum<Enum>& be2)
+	BitwiseEnum<Enum>& operator&=(const BitwiseEnum<Enum>& be2)
 	{
 		v &= be2.v;
 		return *this;
 	}
 
-	BitwiseEnum<Enum>& operator ^= (const BitwiseEnum<Enum>& be2)
+	BitwiseEnum<Enum>& operator^=(const BitwiseEnum<Enum>& be2)
 	{
 		v ^= be2.v;
 		return *this;
 	}
 
-
 	// Bitwise operators
-	BitwiseEnum<Enum> operator | (const BitwiseEnum<Enum>& be2) const
+	BitwiseEnum<Enum> operator|(const BitwiseEnum<Enum>& be2) const
 	{
 		BitwiseEnum<Enum> be(*this);
 		be.v |= be2.v;
 		return be;
 	}
 
-	BitwiseEnum<Enum> operator & (const BitwiseEnum<Enum>& be2) const
+	BitwiseEnum<Enum> operator&(const BitwiseEnum<Enum>& be2) const
 	{
 		BitwiseEnum<Enum> be(*this);
 		be.v &= be2.v;
 		return be;
 	}
 
-	BitwiseEnum<Enum> operator ^ (const BitwiseEnum<Enum>& be2) const
+	BitwiseEnum<Enum> operator^(const BitwiseEnum<Enum>& be2) const
 	{
 		BitwiseEnum<Enum> be(*this);
 		be.v ^= be2.v;
 		return be;
 	}
 
-
 	// Comparison operators
-	bool operator == (const BitwiseEnum<Enum>& be2) const
-	{
-		return v == be2.v;
-	}
+	bool operator==(const BitwiseEnum<Enum>& be2) const { return v == be2.v; }
 
-	bool operator != (const BitwiseEnum<Enum>& be2) const
-	{
-		return v != be2.v;
-	}
-
+	bool operator!=(const BitwiseEnum<Enum>& be2) const { return v != be2.v; }
 
 	//===================================
 	// Enum operators
 
 	// Compound assignment operators
-	BitwiseEnum<Enum>& operator |= (const Enum& v2)
+	BitwiseEnum<Enum>& operator|=(const Enum& v2)
 	{
 		v |= v2;
 		return *this;
 	}
 
-	BitwiseEnum<Enum>& operator &= (const Enum& v2)
+	BitwiseEnum<Enum>& operator&=(const Enum& v2)
 	{
 		v &= v2;
 		return *this;
 	}
 
-	BitwiseEnum<Enum>& operator ^= (const Enum& v2)
+	BitwiseEnum<Enum>& operator^=(const Enum& v2)
 	{
 		v ^= v2;
 		return *this;
 	}
 
-
 	// Bitwise operators
-	BitwiseEnum<Enum> operator | (const Enum& v) const
+	BitwiseEnum<Enum> operator|(const Enum& v) const
 	{
 		BitwiseEnum<Enum> be(*this);
 		be.v |= v;
 		return be;
 	}
 
-	BitwiseEnum<Enum> operator & (const Enum& v) const
+	BitwiseEnum<Enum> operator&(const Enum& v) const
 	{
 		BitwiseEnum<Enum> be(*this);
 		be.v &= v;
 		return be;
 	}
 
-	BitwiseEnum<Enum> operator ^ (const Enum& v) const
+	BitwiseEnum<Enum> operator^(const Enum& v) const
 	{
 		BitwiseEnum<Enum> be(*this);
 		be.v ^= v;
 		return be;
 	}
 
-
 	// Comparison operators
-	bool operator == (const Enum& v2) const
-	{
-		return v == v2;
-	}
+	bool operator==(const Enum& v2) const { return v == v2; }
 
-	bool operator != (const Enum& v2) const
-	{
-		return v != v2;
-	}
+	bool operator!=(const Enum& v2) const { return v != v2; }
 };
 
-
-template <class Enum>
-inline BitwiseEnum<Enum> operator | (Enum a, Enum b)
+template<class Enum> inline BitwiseEnum<Enum> operator|(Enum a, Enum b)
 {
 	return BitwiseEnum<Enum>(a) | BitwiseEnum<Enum>(b);
 }
 
-}
-
+} // namespace Bitwise
 
 /* WE DO NOT NEED THESE (I ASSUME)
 
 template <class Enum>
 inline BitwiseEnum<Enum> operator & (Enum a, Enum b)
 {
-	return BitwiseEnum<Enum>(a) | BitwiseEnum<Enum>(b);
+    return BitwiseEnum<Enum>(a) | BitwiseEnum<Enum>(b);
 }
 
 template <class Enum>
 inline BitwiseEnum<Enum> operator ^ (Enum a, Enum b)
 {
-	return BitwiseEnum<Enum>(a) | BitwiseEnum<Enum>(b);
+    return BitwiseEnum<Enum>(a) | BitwiseEnum<Enum>(b);
 }
 
 */

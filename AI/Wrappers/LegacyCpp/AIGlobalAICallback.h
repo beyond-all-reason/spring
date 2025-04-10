@@ -3,12 +3,11 @@
 #ifndef _AI_GLOBAL_AI_CALLBACK_H
 #define _AI_GLOBAL_AI_CALLBACK_H
 
-#include <memory>
-
 #include "IGlobalAICallback.h"
 
-struct SSkirmishAICallback;
+#include <memory>
 
+struct SSkirmishAICallback;
 
 namespace springLegacyAI {
 

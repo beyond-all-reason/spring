@@ -252,7 +252,7 @@ end
 
 
 function PrintPlayerInfo(playerID)
-  local name, active, spectator, team, allyteam, ping, cpuUsage = 
+  local name, active, spectator, team, allyteam, ping, cpuUsage =
     Spring.GetPlayerInfo(playerID)
   print('   name:     '..name)
   print('   id:       '..playerID)
@@ -323,7 +323,7 @@ function Debug()
   PrintPlayerTree()
 
   PrintAlliedUnits()
-  
+
   PrintSelection()
   PrintGroups()
   PrintInCommand()
@@ -336,8 +336,6 @@ function Debug()
   print("My Player Info:")
   local myPlayerID = Spring.GetMyPlayerID()
   PrintPlayerInfo(myPlayerID)
-  
+
   PrintTeamUnitsCounts(Spring.GetMyTeamID())
 end
-
-

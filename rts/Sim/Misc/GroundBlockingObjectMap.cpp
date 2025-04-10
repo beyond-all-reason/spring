@@ -1,9 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-
 #include "GroundBlockingObjectMap.h"
+
 #include "GlobalConstants.h"
+
 #include "Map/Ground.h"
 #include "Map/ReadMap.h"
 #include "Sim/Misc/YardmapStatusEffectsMap.h"
@@ -11,27 +11,18 @@
 #include "Sim/Path/IPathManager.h"
 #include "Sim/Units/Unit.h"
 #include "System/ContainerUtil.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringHash.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cassert>
 
 CGroundBlockingObjectMap groundBlockingObjectMap;
 
 CR_BIND_TEMPLATE(CGroundBlockingObjectMap::ArrCell, )
-CR_REG_METADATA_TEMPLATE(CGroundBlockingObjectMap::ArrCell, (
-	CR_MEMBER(arr),
-	CR_MEMBER(numObjs),
-	CR_MEMBER(vecIndx)
-))
+CR_REG_METADATA_TEMPLATE(CGroundBlockingObjectMap::ArrCell, (CR_MEMBER(arr), CR_MEMBER(numObjs), CR_MEMBER(vecIndx)))
 
 CR_BIND(CGroundBlockingObjectMap, )
-CR_REG_METADATA(CGroundBlockingObjectMap, (
-	CR_MEMBER(arrCells),
-	CR_MEMBER(vecCells),
-	CR_MEMBER(vecIndcs)
-))
-
-
+CR_REG_METADATA(CGroundBlockingObjectMap, (CR_MEMBER(arrCells), CR_MEMBER(vecCells), CR_MEMBER(vecIndcs)))
 
 void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object)
 {
@@ -79,10 +70,11 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 
 	for (int z = zminSqr; z < zmaxSqr; z++) {
 		for (int x = xminSqr; x < xmaxSqr; x++) {
-			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+			auto yardmapState =
+			    object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
 
 			// Add Exit-only zone
-			if (yardmapState & YARDMAP_EXITONLY){
+			if (yardmapState & YARDMAP_EXITONLY) {
 				objectCol.SetExitOnlyAt(x, z);
 				objectCol.SetBlockBuildingAt(x, z);
 				continue;
@@ -113,7 +105,6 @@ void CGroundBlockingObjectMap::AddGroundBlockingObject(CSolidObject* object, con
 	pathManager->TerrainChange(xminSqr, zminSqr, xmaxSqr, zmaxSqr, TERRAINCHANGE_OBJECT_INSERTED_YM);
 }
 
-
 void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -127,10 +118,11 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 
 	for (int z = bz; z < bz + sz; ++z) {
 		for (int x = bx; x < bx + sx; ++x) {
-			auto yardmapState = object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
+			auto yardmapState =
+			    object->GetGroundBlockingMaskAtPos({x * SQUARE_SIZE * 1.0f, 0.0f, z * SQUARE_SIZE * 1.0f});
 
 			// Remove Exit-only zone
-			if (yardmapState & YARDMAP_EXITONLY){
+			if (yardmapState & YARDMAP_EXITONLY) {
 				objectCol.ClearExitOnlyAt(x, z);
 				objectCol.ClearBlockBuildingAt(x, z);
 				continue;
@@ -139,7 +131,7 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 				objectCol.ClearBlockBuildingAt(x, z);
 				continue;
 			}
-			if (yardmapState & (YARDMAP_YARD|YARDMAP_YARDINV)) {
+			if (yardmapState & (YARDMAP_YARD | YARDMAP_YARDINV)) {
 				objectCol.ClearBlockBuildingAt(x, z);
 				// may need to be removed from ground map
 			}
@@ -155,9 +147,8 @@ void CGroundBlockingObjectMap::RemoveGroundBlockingObject(CSolidObject* object)
 	pathManager->TerrainChange(bx, bz, bx + sx, bz + sz, TERRAINCHANGE_OBJECT_DELETED);
 }
 
-
-
-CSolidObject* CGroundBlockingObjectMap::GroundBlocked(int x, int z) const {
+CSolidObject* CGroundBlockingObjectMap::GroundBlocked(int x, int z) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (static_cast<unsigned int>(x) >= mapDims.mapx || static_cast<unsigned int>(z) >= mapDims.mapy)
 		return nullptr;
@@ -165,14 +156,13 @@ CSolidObject* CGroundBlockingObjectMap::GroundBlocked(int x, int z) const {
 	return (GroundBlockedUnsafe(x + z * mapDims.mapx));
 }
 
-
-CSolidObject* CGroundBlockingObjectMap::GroundBlocked(const float3& pos) const {
+CSolidObject* CGroundBlockingObjectMap::GroundBlocked(const float3& pos) const
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int xSqr = int(pos.x / SQUARE_SIZE);
 	const int zSqr = int(pos.z / SQUARE_SIZE);
 	return (GroundBlocked(xSqr, zSqr));
 }
-
 
 bool CGroundBlockingObjectMap::GroundBlocked(int x, int z, const CSolidObject* ignoreObj) const
 {
@@ -196,7 +186,6 @@ bool CGroundBlockingObjectMap::GroundBlocked(int x, int z, const CSolidObject* i
 	return (cell.size() >= 2);
 }
 
-
 bool CGroundBlockingObjectMap::GroundBlocked(const float3& pos, const CSolidObject* ignoreObj) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -204,7 +193,6 @@ bool CGroundBlockingObjectMap::GroundBlocked(const float3& pos, const CSolidObje
 	const int zSqr = static_cast<unsigned>(pos.z / SQUARE_SIZE);
 	return (GroundBlocked(xSqr, zSqr, ignoreObj));
 }
-
 
 CGroundBlockingObjectMap::BlockingMapCell CGroundBlockingObjectMap::GetCellUnsafeConst(const float3& pos) const
 {
@@ -214,11 +202,10 @@ CGroundBlockingObjectMap::BlockingMapCell CGroundBlockingObjectMap::GetCellUnsaf
 	return (GetCellUnsafeConst(zSqr * mapDims.mapx + xSqr));
 }
 
-
 /**
-  * Opens up a yard in a blocked area.
-  * When a factory opens up, for example.
-  */
+ * Opens up a yard in a blocked area.
+ * When a factory opens up, for example.
+ */
 void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -233,9 +220,9 @@ void CGroundBlockingObjectMap::OpenBlockingYard(CSolidObject* object)
 ///
 
 /**
-  * Closes a yard, blocking the area.
-  * When a factory closes, for example.
-  */
+ * Closes a yard, blocking the area.
+ * When a factory closes, for example.
+ */
 void CGroundBlockingObjectMap::CloseBlockingYard(CSolidObject* object)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -244,7 +231,6 @@ void CGroundBlockingObjectMap::CloseBlockingYard(CSolidObject* object)
 
 	object->yardOpen = false;
 }
-
 
 bool CGroundBlockingObjectMap::CheckYard(const CSolidObject* yardUnit, const YardMapStatus& mask) const
 {
@@ -265,7 +251,6 @@ bool CGroundBlockingObjectMap::CheckYard(const CSolidObject* yardUnit, const Yar
 	return true;
 }
 
-
 unsigned int CGroundBlockingObjectMap::CalcChecksum() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -279,9 +264,8 @@ unsigned int CGroundBlockingObjectMap::CalcChecksum() const
 	return checksum;
 }
 
-
-
-bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* o) {
+bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* o)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	ArrCell& ac = GetArrCell(sqr);
 	VecCell* vc = nullptr;
@@ -297,7 +281,8 @@ bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* 
 			assert(vecCells.size() > 0);
 			ac.SetVecIndx(vecCells.size());
 			vc = &vecCells.emplace_back();
-		} else {
+		}
+		else {
 			ac.SetVecIndx(spring::VectorBackPop(vecIndcs));
 			vc = &vecCells[ac.GetVecIndx()];
 		}
@@ -306,7 +291,8 @@ bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* 
 	return (spring::VectorInsertUnique(*vc, o, true));
 }
 
-bool CGroundBlockingObjectMap::CellErase(unsigned int sqr, CSolidObject* o) {
+bool CGroundBlockingObjectMap::CellErase(unsigned int sqr, CSolidObject* o)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	ArrCell& ac = GetArrCell(sqr);
 	VecCell* vc = nullptr;
@@ -344,4 +330,3 @@ CommonExit:
 
 	return true;
 }
-

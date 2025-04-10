@@ -4,9 +4,9 @@
 #define SPRING_MEM_H
 
 namespace spring {
-	void* AllocateAlignedMemory(size_t size, size_t alignment);
-	void* ReallocateAlignedMemory(void* ptr, size_t size, size_t alignment);
-	void FreeAlignedMemory(void* ptr);
-}
+void* AllocateAlignedMemory(size_t size, size_t alignment);
+void* ReallocateAlignedMemory(void* ptr, size_t size, size_t alignment);
+void FreeAlignedMemory(void* ptr);
+} // namespace spring
 
 #endif

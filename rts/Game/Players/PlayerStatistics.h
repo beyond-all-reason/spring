@@ -3,14 +3,14 @@
 #ifndef PLAYER_STATISTICS_H
 #define PLAYER_STATISTICS_H
 
-#include "System/creg/creg_cond.h"
 #include "TeamController.h"
+
+#include "System/creg/creg_cond.h"
 
 /**
  * @brief Contains statistical data about a player concerning a single game.
  */
-struct PlayerStatistics : public TeamControllerStatistics
-{
+struct PlayerStatistics : public TeamControllerStatistics {
 public:
 	CR_DECLARE_STRUCT(PlayerStatistics)
 

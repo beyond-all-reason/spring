@@ -18,4 +18,3 @@ void log_formatter_setFrameNumReference(int* frameNumReference);
 #endif
 
 #endif // LOG_DEFAULT_FORMATTER_H
-

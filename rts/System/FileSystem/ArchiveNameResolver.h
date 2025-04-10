@@ -6,8 +6,8 @@
 #include <string>
 
 namespace ArchiveNameResolver {
-	std::string GetGame(const std::string& lazyName);
-	std::string GetMap(const std::string& lazyName);
-}
+std::string GetGame(const std::string& lazyName);
+std::string GetMap(const std::string& lazyName);
+} // namespace ArchiveNameResolver
 
 #endif // _NAME_RESOLVER_H

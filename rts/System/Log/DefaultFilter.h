@@ -73,7 +73,6 @@ void log_filter_section_setMinLevel(int level, const char* section);
 int log_filter_section_getMinLevel(const char* section);
 
 
-
 /**
  * Returns the number of currently registered sections.
  * @see #log_filter_section_getRegisteredIndex
@@ -86,7 +85,7 @@ int log_filter_section_getNumRegisteredSections();
 const char* log_filter_section_getRegisteredIndex(int index);
 
 #define LOG_DISABLE() log_enable_and_disable(false)
-#define LOG_ENABLE()  log_enable_and_disable(true)
+#define LOG_ENABLE() log_enable_and_disable(true)
 
 void log_enable_and_disable(const bool enable);
 
@@ -111,4 +110,3 @@ const char* log_filter_section_getSectionCString(const char* section_cstr_tmp);
 /** @} */ // logging_filter_defaultFilter_control
 
 #endif // LOG_DEFAULT_FILTER_H
-

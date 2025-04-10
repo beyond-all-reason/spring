@@ -3,9 +3,9 @@
 #ifndef LOG_SINK_HANDLER_H
 #define LOG_SINK_HANDLER_H
 
-#include <string>
 #include "System/UnorderedSet.hpp"
 
+#include <string>
 
 /**
  * C++/OO API for log sinks.
@@ -14,6 +14,7 @@
 class ILogSink {
 public:
 	virtual void RecordLogMessage(int level, const std::string& section, const std::string& text) = 0;
+
 protected:
 	~ILogSink() {}
 };
@@ -23,7 +24,8 @@ protected:
  */
 class LogSinkHandler {
 public:
-	static LogSinkHandler& GetInstance() {
+	static LogSinkHandler& GetInstance()
+	{
 		static LogSinkHandler lsh;
 		return lsh;
 	}
@@ -40,6 +42,7 @@ public:
 	 * subscribers should not be notified anymore (eg. SDL shutdown).
 	 */
 	void SetSinking(bool enabled) { sinking = enabled; }
+
 	/**
 	 * Indicates whether sinking to registered sinks is enabled
 	 *
@@ -61,4 +64,3 @@ private:
 #define logSinkHandler (LogSinkHandler::GetInstance())
 
 #endif // LOG_SINK_HANDLER_H
-

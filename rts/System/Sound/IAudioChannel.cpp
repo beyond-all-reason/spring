@@ -3,11 +3,10 @@
 #include "IAudioChannel.h"
 
 IAudioChannel::IAudioChannel()
-	: volume(1.0f)
-	, enabled(true)
-	, emitsPerFrame(1000)
-	, emitsThisFrame(0)
-	, maxConcurrentSources(1024)
+    : volume(1.0f)
+    , enabled(true)
+    , emitsPerFrame(1000)
+    , emitsThisFrame(0)
+    , maxConcurrentSources(1024)
 {
 }
-

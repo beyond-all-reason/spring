@@ -8,16 +8,15 @@
 #include "System/VersionGenerated.h"
 
 #include <ciso646> // _LIBCPP*
-#include <cstring>
 #include <cstdio>
+#include <cstring>
 
 /**
  * @brief Defines the current version string.
  * Take special care when moving this file.
  * The build-bot refers to this file to append the exact SCM version.
  */
-namespace SpringVersion
-{
+namespace SpringVersion {
 
 const std::string& GetMajor()
 {
@@ -64,59 +63,59 @@ inline const std::string CreateAdditionalVersion()
 #define GV_ADD_SPACE ""
 
 #if defined DEBUG
-	GV_ADD_SPACE "Debug"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Debug"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if defined PROFILE
-	GV_ADD_SPACE "Profile"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Profile"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if defined TRACE_SYNC
-	GV_ADD_SPACE "Sync-Trace"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Sync-Trace"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if defined SYNCDEBUG
-	GV_ADD_SPACE "Sync-Debug"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Sync-Debug"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if !defined SYNCCHECK
-	GV_ADD_SPACE "Sync-Check-Disabled"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Sync-Check-Disabled"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
-#if defined  __SUPPORT_SNAN__
-	GV_ADD_SPACE "Signal-NaNs"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+#if defined __SUPPORT_SNAN__
+	    GV_ADD_SPACE "Signal-NaNs"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if defined HEADLESS && !defined DEDICATED
-	GV_ADD_SPACE "Headless"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Headless"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if defined DEDICATED
-	GV_ADD_SPACE "Dedicated"
-	#undef GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Dedicated"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
 
 #if defined UNITSYNC
-	GV_ADD_SPACE "Unitsync"
-	#undef  GV_ADD_SPACE
-	#define GV_ADD_SPACE " "
+	    GV_ADD_SPACE "Unitsync"
+#undef GV_ADD_SPACE
+#define GV_ADD_SPACE " "
 #endif
-	;
+	    ;
 
 	return additional;
 }
@@ -135,19 +134,19 @@ const std::string& GetCompiler()
 {
 	static const std::string compiler = ""
 #ifdef __GNUC__
-	"gcc-" __VERSION__;
+	                                    "gcc-" __VERSION__;
 #elif defined(__clang__)
-	"clang-" __clang_version__ ;
+	                                    "clang-" __clang_version__;
 #elif defined(_MSC_VER)
-	#ifdef _MSC_FULL_VER
-		"msvc-" QUOTEME(_MSC_FULL_VER);
-	#else
-		"msvc-" QUOTEME(_MSC_VER);
-	#endif
-#elif defined(__VERSION__)
-	"unknown-" __VERSION__;
+#ifdef _MSC_FULL_VER
+	                                    "msvc-" QUOTEME(_MSC_FULL_VER);
 #else
-	"unknown";
+	                                    "msvc-" QUOTEME(_MSC_VER);
+#endif
+#elif defined(__VERSION__)
+	                                    "unknown-" __VERSION__;
+#else
+	                                    "unknown";
 #endif
 	return compiler;
 }
@@ -155,17 +154,17 @@ const std::string& GetCompiler()
 const std::string& GetBuildEnvironment()
 {
 #if (defined(__GNUC__) || defined(__clang__))
-	#if (defined(_LIBCPP_VERSION))
-		static const std::string environment = "clang libc++ version " QUOTEME(_LIBCPP_VERSION);
-	#elif (defined(__GLIBCXX__) || defined(__GLIBCPP__))
-		#ifdef __GLIBCXX__
-		static const std::string environment = "gcc libstdc++ version " QUOTEME(__GLIBCXX__);
-		#else
-		static const std::string environment = "gcc libstdc++ version " QUOTEME(__GLIBCPP__);
-		#endif
-	#else
-		#error "undefined lib{std}c++ version"
-	#endif
+#if (defined(_LIBCPP_VERSION))
+	static const std::string environment = "clang libc++ version " QUOTEME(_LIBCPP_VERSION);
+#elif (defined(__GLIBCXX__) || defined(__GLIBCPP__))
+#ifdef __GLIBCXX__
+	static const std::string environment = "gcc libstdc++ version " QUOTEME(__GLIBCXX__);
+#else
+	static const std::string environment = "gcc libstdc++ version " QUOTEME(__GLIBCPP__);
+#endif
+#else
+#error "undefined lib{std}c++ version"
+#endif
 #elif (defined(_MSC_VER))
 	// _CPPLIB_VER no longer officially exists, _CLR_VER is not what we want
 	static const std::string environment = "msvc++ version " QUOTEME(_MSC_VER);
@@ -202,9 +201,9 @@ bool IsUnitsync()
 
 const std::string& Get()
 {
-	static const std::string base = IsRelease()
-			? GetMajor() + "." + GetMinor() + "." + GetPatchSet()
-			: GetMajor() + "." + GetMinor() + "." + GetPatchSet() + "-" + GetCommits();
+	static const std::string base = IsRelease() ?
+	                                    GetMajor() + "." + GetMinor() + "." + GetPatchSet() :
+	                                    GetMajor() + "." + GetMinor() + "." + GetPatchSet() + "-" + GetCommits();
 
 	return base;
 }
@@ -217,10 +216,10 @@ const std::string& GetSync()
 
 const std::string& GetFull()
 {
-	static const std::string full = SPRING_VERSION_ENGINE
-			+ (GetAdditional().empty() ? "" : (" (" + GetAdditional() + ")"));
+	static const std::string full =
+	    SPRING_VERSION_ENGINE + (GetAdditional().empty() ? "" : (" (" + GetAdditional() + ")"));
 
 	return full;
 }
 
-}
+} // namespace SpringVersion

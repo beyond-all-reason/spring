@@ -3,12 +3,12 @@
 #ifndef DEBUG_DRAWER_AI_HDR
 #define DEBUG_DRAWER_AI_HDR
 
-#include <deque>
-#include <vector>
-
+#include "System/UnorderedMap.hpp"
 #include "System/float3.h"
 #include "System/type2.h"
-#include "System/UnorderedMap.hpp"
+
+#include <deque>
+#include <vector>
 
 class DebugDrawerAI {
 public:
@@ -20,6 +20,7 @@ public:
 	void Draw();
 
 	void SetDraw(bool b) { draw = b; }
+
 	bool GetDraw() const { return draw; }
 
 	void AddGraphPoint(int, int, float, float);
@@ -40,27 +41,41 @@ private:
 	struct Graph {
 	public:
 		Graph(const float3& mins = ZeroVector, const float3& maxs = ZeroVector);
+
 		~Graph() {}
+
 		void Clear();
 
 		void Draw();
 		void AddPoint(int, float, float);
 		void DelPoints(int, int);
 
-		void SetPos(float x, float y) { pos.x = x; pos.y = y; }
-		void SetSize(float w, float h) { size.x = w; size.y = h; }
+		void SetPos(float x, float y)
+		{
+			pos.x = x;
+			pos.y = y;
+		}
+
+		void SetSize(float w, float h)
+		{
+			size.x = w;
+			size.y = h;
+		}
+
 		void SetColor(int, const float3&);
 		void SetLabel(int, const std::string&);
 
 	private:
 		struct GraphLine {
 		public:
-			GraphLine(const float3& mins = ZeroVector, const float3& maxs = ZeroVector):
-				lineMin(mins), lineMax(maxs),
-				lineWidth(2.0f),
-				lineLabelSize(0),
-				lineLabelWidth(0.0f),
-				lineLabelHeight(0.0f) {
+			GraphLine(const float3& mins = ZeroVector, const float3& maxs = ZeroVector)
+			    : lineMin(mins)
+			    , lineMax(maxs)
+			    , lineWidth(2.0f)
+			    , lineLabelSize(0)
+			    , lineLabelWidth(0.0f)
+			    , lineLabelHeight(0.0f)
+			{
 			}
 
 			std::deque<float3> lineData;
@@ -81,18 +96,25 @@ private:
 
 		float3 pos;
 		float3 size;
-		float3 scale;    // maxScale - minScale
+		float3 scale; // maxScale - minScale
 		float3 minScale;
 		float3 maxScale;
 
-		int minLabelSize; float minLabelWidth;
-		int maxLabelSize; float maxLabelWidth;
+		int minLabelSize;
+		float minLabelWidth;
+		int maxLabelSize;
+		float maxLabelWidth;
 	};
 
 	struct TexSet {
 	public:
-		TexSet(): curTexHandle(0) {}
+		TexSet()
+		    : curTexHandle(0)
+		{
+		}
+
 		~TexSet() {}
+
 		void Clear();
 
 		void Draw();
@@ -112,26 +134,32 @@ private:
 			unsigned int GetID() const { return id; }
 
 			int GetWidth() const { return xsize; }
+
 			int GetHeight() const { return ysize; }
 
 			const float3& GetPos() const { return pos; }
+
 			const float3& GetSize() const { return size; }
+
 			const std::string& GetLabel() const { return label; }
 
 			float GetLabelWidth() const { return labelWidth; }
+
 			float GetLabelHeight() const { return labelHeight; }
 
 			void SetPos(const float3& p) { pos = p; }
+
 			void SetSize(const float3& s) { size = s; }
+
 			void SetLabel(const std::string&);
 
-			bool operator < (const Texture& t) const { return (id < t.id); }
+			bool operator<(const Texture& t) const { return (id < t.id); }
 
 		private:
 			unsigned int id;
 
-			int xsize;   // in pixels
-			int ysize;   // in pixels
+			int xsize; // in pixels
+			int ysize; // in pixels
 
 			float3 pos;  // in relative screen-space
 			float3 size; // in relative screen-space

@@ -1,11 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LuaObjectRendering.h"
-#include "LuaMaterial.h"
 
-#include "LuaInclude.h"
 #include "LuaHandle.h"
 #include "LuaHashString.h"
+#include "LuaInclude.h"
+#include "LuaMaterial.h"
 #include "LuaUtils.h"
 
 #include "Rendering/LuaObjectDrawer.h"
@@ -13,21 +13,19 @@
 // see ParseUnitTexture
 // #include "Rendering/Textures/3DOTextureHandler.h"
 // #include "Rendering/Textures/S3OTextureHandler.h"
-#include "Sim/Objects/SolidObjectDef.h"
-#include "Sim/Units/UnitHandler.h"
 #include "Sim/Features/FeatureHandler.h"
+#include "Sim/Objects/SolidObjectDef.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
-
+#include "Sim/Units/UnitHandler.h"
 #include "System/Log/ILog.h"
-#include "System/StringUtil.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
 
 static int material_index(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	LuaMatRef** matRef = (LuaMatRef**) luaL_checkudata(L, 1, "MatRef");
+	LuaMatRef** matRef = (LuaMatRef**)luaL_checkudata(L, 1, "MatRef");
 
 	const string key = luaL_checkstring(L, 2);
 	const LuaMatBin* bin = (*matRef)->GetBin();
@@ -35,9 +33,9 @@ static int material_index(lua_State* L)
 	if (bin == nullptr)
 		return 0;
 
-	//const LuaMaterial& mat = *bin;
-	//if (key == "type") {
-	//}
+	// const LuaMaterial& mat = *bin;
+	// if (key == "type") {
+	// }
 	return 0;
 }
 
@@ -51,14 +49,11 @@ static int material_newindex(lua_State* L)
 static int material_gc(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	LuaMatRef** matRef = (LuaMatRef**) luaL_checkudata(L, 1, "MatRef");
+	LuaMatRef** matRef = (LuaMatRef**)luaL_checkudata(L, 1, "MatRef");
 
 	delete *matRef;
 	return 0;
 }
-
-
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -75,28 +70,31 @@ static inline CSolidObject* ParseSolidObject(lua_State* L, const char* caller, i
 	}
 
 	switch (objType) {
-		case LUAOBJ_UNIT   : { return (   unitHandler.GetUnit   (lua_toint(L, index))); } break;
-		case LUAOBJ_FEATURE: { return (featureHandler.GetFeature(lua_toint(L, index))); } break;
-		default            : {                                           assert(false); } break;
+	case LUAOBJ_UNIT: {
+		return (unitHandler.GetUnit(lua_toint(L, index)));
+	} break;
+	case LUAOBJ_FEATURE: {
+		return (featureHandler.GetFeature(lua_toint(L, index)));
+	} break;
+	default: {
+		assert(false);
+	} break;
 	}
 
 	return nullptr;
 }
 
-
 /*
 static inline CUnit* ParseUnit(lua_State* L, const char* caller, int index)
 {
-	return (static_cast<CUnit*>(ParseSolidObject(L, caller, index, LUAOBJ_UNIT)));
+    return (static_cast<CUnit*>(ParseSolidObject(L, caller, index, LUAOBJ_UNIT)));
 }
 
 static inline CFeature* ParseFeature(lua_State* L, const char* caller, int index)
 {
-	return (static_cast<CFeature*>(ParseSolidObject(L, caller, index, LUAOBJ_FEATURE)));
+    return (static_cast<CFeature*>(ParseSolidObject(L, caller, index, LUAOBJ_FEATURE)));
 }
 */
-
-
 
 
 /******************************************************************************/
@@ -104,14 +102,12 @@ static inline CFeature* ParseFeature(lua_State* L, const char* caller, int index
 
 std::vector<LuaObjType> LuaObjectRenderingImpl::objectTypeStack;
 
-
-
 void LuaObjectRenderingImpl::CreateMatRefMetatable(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	luaL_newmetatable(L, "MatRef");
-	HSTR_PUSH_CFUNC(L, "__gc",       material_gc);
-	HSTR_PUSH_CFUNC(L, "__index",    material_index);
+	HSTR_PUSH_CFUNC(L, "__gc", material_gc);
+	HSTR_PUSH_CFUNC(L, "__index", material_index);
 	HSTR_PUSH_CFUNC(L, "__newindex", material_newindex);
 	lua_pop(L, 1);
 }
@@ -123,8 +119,6 @@ void LuaObjectRenderingImpl::PushFunction(lua_State* L, int (*fnPntr)(lua_State*
 	lua_pushcfunction(L, fnPntr);
 	lua_rawset(L, -3);
 }
-
-
 
 int LuaObjectRenderingImpl::GetLODCount(lua_State* L)
 {
@@ -157,7 +151,6 @@ int LuaObjectRenderingImpl::SetLODCount(lua_State* L)
 	return 0;
 }
 
-
 static int SetLODLengthCommon(lua_State* L, CSolidObject* obj, float scale)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -187,7 +180,6 @@ int LuaObjectRenderingImpl::SetLODDistance(lua_State* L)
 	// constant is 2.0f * math::tanf((45.0f * 0.5f) * (PI / 180.0f)) / 768.0f)
 	return (SetLODLengthCommon(L, ParseSolidObject(L, __func__, 1, GetObjectType()), 0.0010786811520132682f));
 }
-
 
 /******************************************************************************/
 
@@ -222,7 +214,6 @@ int LuaObjectRenderingImpl::SetPieceList(lua_State* L)
 	return 0;
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -230,18 +221,28 @@ static LuaMatType ParseMaterialType(const char* matName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(matName)) {
-		case hashString("alpha"         ): { return LUAMAT_ALPHA         ; } break;
-		case hashString("opaque"        ): { return LUAMAT_OPAQUE        ; } break;
-		case hashString("alpha_reflect" ): { return LUAMAT_ALPHA_REFLECT ; } break;
-		case hashString("opaque_reflect"): { return LUAMAT_OPAQUE_REFLECT; } break;
-		case hashString("shadow"        ): { return LUAMAT_SHADOW        ; } break;
-		default                          : {                               } break;
+	case hashString("alpha"): {
+		return LUAMAT_ALPHA;
+	} break;
+	case hashString("opaque"): {
+		return LUAMAT_OPAQUE;
+	} break;
+	case hashString("alpha_reflect"): {
+		return LUAMAT_ALPHA_REFLECT;
+	} break;
+	case hashString("opaque_reflect"): {
+		return LUAMAT_OPAQUE_REFLECT;
+	} break;
+	case hashString("shadow"): {
+		return LUAMAT_SHADOW;
+	} break;
+	default: {
+	} break;
 	}
 
 	LOG_L(L_WARNING, "[%s] unknown Lua material type \"%s\"", __func__, matName);
-	return (LuaMatType) -1; 
+	return (LuaMatType)-1;
 }
-
 
 static LuaObjectMaterial* GetObjectMaterial(CSolidObject* obj, const char* matName)
 {
@@ -255,7 +256,6 @@ static LuaObjectMaterial* GetObjectMaterial(CSolidObject* obj, const char* matNa
 	return (lmd->GetLuaMaterial(matType));
 }
 
-
 /******************************************************************************/
 
 static void ParseShader(lua_State* L, int index, LuaMatShader& shader)
@@ -264,20 +264,21 @@ static void ParseShader(lua_State* L, int index, LuaMatShader& shader)
 	const LuaShaders& shaders = CLuaHandle::GetActiveShaders(L);
 
 	switch (lua_type(L, index)) {
-		case LUA_TNUMBER: {
-			shader.SetCustomTypeFromID(shaders.GetProgramName(luaL_checknumber(L, index)));
-		} break;
+	case LUA_TNUMBER: {
+		shader.SetCustomTypeFromID(shaders.GetProgramName(luaL_checknumber(L, index)));
+	} break;
 
-		case LUA_TSTRING: {
-			shader.SetEngineTypeFromKey(lua_tostring(L, index));
-		} break;
+	case LUA_TSTRING: {
+		shader.SetEngineTypeFromKey(lua_tostring(L, index));
+	} break;
 
-		default: {
-		} break;
+	default: {
+	} break;
 	}
 }
 
-static void ParseTexture(lua_State* L, int index, LuaMatTexture& texUnit) {
+static void ParseTexture(lua_State* L, int index, LuaMatTexture& texUnit)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (index < 0)
 		index = lua_gettop(L) + index + 1;
@@ -323,7 +324,8 @@ static GLuint ParseDisplayList(lua_State* L, int index)
 	return displayLists.GetDList(ilist);
 }
 
-static LuaMatRef ParseMaterial(lua_State* L, int index, LuaMatType matType) {
+static LuaMatRef ParseMaterial(lua_State* L, int index, LuaMatType matType)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!lua_istable(L, index))
 		return LuaMatRef();
@@ -333,7 +335,6 @@ static LuaMatRef ParseMaterial(lua_State* L, int index, LuaMatType matType) {
 	mat.Finalize();
 	return (luaMatHandler.GetRef(mat));
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -346,7 +347,7 @@ int LuaObjectRenderingImpl::GetMaterial(lua_State* L)
 	if (!lua_istable(L, 2))
 		luaL_error(L, "Incorrect arguments to GetMaterial");
 
-	LuaMatRef** matRef = (LuaMatRef**) lua_newuserdata(L, sizeof(LuaMatRef*));
+	LuaMatRef** matRef = (LuaMatRef**)lua_newuserdata(L, sizeof(LuaMatRef*));
 	luaL_getmetatable(L, "MatRef");
 	lua_setmetatable(L, -2);
 
@@ -355,7 +356,6 @@ int LuaObjectRenderingImpl::GetMaterial(lua_State* L)
 
 	return 1;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -383,18 +383,17 @@ int LuaObjectRenderingImpl::SetMaterial(lua_State* L)
 		return 0;
 
 	if (lua_isuserdata(L, 4)) {
-		LuaMatRef** matRef = (LuaMatRef**) luaL_checkudata(L, 4, "MatRef");
+		LuaMatRef** matRef = (LuaMatRef**)luaL_checkudata(L, 4, "MatRef");
 
 		if (matRef != nullptr)
 			lodMat->matref = **matRef;
-
-	} else {
+	}
+	else {
 		lodMat->matref = ParseMaterial(L, 4, matType);
 	}
 
 	return 0;
 }
-
 
 int LuaObjectRenderingImpl::SetMaterialLastLOD(lua_State* L)
 {
@@ -449,7 +448,7 @@ static int SetMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::Pa
 	LuaMatBin* matBin = nullptr;
 
 	const char* materialName = luaL_checkstring(L, 2);
-	const char*  uniformName = luaL_checkstring(L, 4);
+	const char* uniformName = luaL_checkstring(L, 4);
 
 	if (obj == nullptr)
 		return 0;
@@ -480,31 +479,58 @@ static int SetMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::Pa
 	}
 
 	switch (objUniform.type = luaL_checkint(L, 5)) {
-		case GL_INT       : { objUniform.size = LuaUtils::ParseIntArray  (L, 6, objUniform.data.i, N) / 1; } break;
-		case GL_INT_VEC2  : { objUniform.size = LuaUtils::ParseIntArray  (L, 6, objUniform.data.i, N) / 2; } break;
-		case GL_INT_VEC3  : { objUniform.size = LuaUtils::ParseIntArray  (L, 6, objUniform.data.i, N) / 3; } break;
-		case GL_INT_VEC4  : { objUniform.size = LuaUtils::ParseIntArray  (L, 6, objUniform.data.i, N) / 4; } break;
+	case GL_INT: {
+		objUniform.size = LuaUtils::ParseIntArray(L, 6, objUniform.data.i, N) / 1;
+	} break;
+	case GL_INT_VEC2: {
+		objUniform.size = LuaUtils::ParseIntArray(L, 6, objUniform.data.i, N) / 2;
+	} break;
+	case GL_INT_VEC3: {
+		objUniform.size = LuaUtils::ParseIntArray(L, 6, objUniform.data.i, N) / 3;
+	} break;
+	case GL_INT_VEC4: {
+		objUniform.size = LuaUtils::ParseIntArray(L, 6, objUniform.data.i, N) / 4;
+	} break;
 
-		case GL_FLOAT     : { objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 1; } break;
-		case GL_FLOAT_VEC2: { objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 2; } break;
-		case GL_FLOAT_VEC3: { objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 3; } break;
-		case GL_FLOAT_VEC4: { objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 4; } break;
+	case GL_FLOAT: {
+		objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 1;
+	} break;
+	case GL_FLOAT_VEC2: {
+		objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 2;
+	} break;
+	case GL_FLOAT_VEC3: {
+		objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 3;
+	} break;
+	case GL_FLOAT_VEC4: {
+		objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 4;
+	} break;
 
-		case GL_FLOAT_MAT3: { objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) /  9; } break;
-		case GL_FLOAT_MAT4: { objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 16; } break;
+	case GL_FLOAT_MAT3: {
+		objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 9;
+	} break;
+	case GL_FLOAT_MAT4: {
+		objUniform.size = LuaUtils::ParseFloatArray(L, 6, objUniform.data.f, N) / 16;
+	} break;
 
-		default: {
-			return 0;
-		} break;
+	default: {
+		return 0;
+	} break;
 	}
 
-	lua_pushboolean(L, &objUniform != &dmyUniform || matUniforms.AddObjectUniform(lua_toint(L, 1), objType, objUniform));
+	lua_pushboolean(
+	    L, &objUniform != &dmyUniform || matUniforms.AddObjectUniform(lua_toint(L, 1), objType, objUniform));
 	return 1;
 }
 
-int LuaObjectRenderingImpl::SetDeferredMaterialUniform(lua_State* L) { return (SetMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_DFR)); }
-int LuaObjectRenderingImpl::SetForwardMaterialUniform(lua_State* L) { return (SetMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_FWD)); }
+int LuaObjectRenderingImpl::SetDeferredMaterialUniform(lua_State* L)
+{
+	return (SetMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_DFR));
+}
 
+int LuaObjectRenderingImpl::SetForwardMaterialUniform(lua_State* L)
+{
+	return (SetMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_FWD));
+}
 
 static int ClearMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::Pass matPass)
 {
@@ -518,7 +544,7 @@ static int ClearMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::
 	LuaMatUniforms* matUniforms = nullptr;
 
 	const char* materialName = luaL_checkstring(L, 2);
-	const char*  uniformName = luaL_checkstring(L, 4);
+	const char* uniformName = luaL_checkstring(L, 4);
 
 	if (obj == nullptr)
 		return 0;
@@ -533,23 +559,34 @@ static int ClearMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::
 		return 0;
 
 	switch (hashString(uniformName)) {
-		case hashString("$obj"): { lua_pushboolean(L, matUniforms->ClearObjectUniforms(obj->id, objType             )); } break; // clears all uniforms for one object
-		case hashString("$all"): { lua_pushboolean(L, matUniforms->ClearObjectUniforms(         objType             )); } break; // clears all uniforms for all objects
-		default                : { lua_pushboolean(L, matUniforms->ClearObjectUniform (obj->id, objType, uniformName)); } break; // clears one uniform for one object by name
+	case hashString("$obj"): {
+		lua_pushboolean(L, matUniforms->ClearObjectUniforms(obj->id, objType));
+	} break; // clears all uniforms for one object
+	case hashString("$all"): {
+		lua_pushboolean(L, matUniforms->ClearObjectUniforms(objType));
+	} break; // clears all uniforms for all objects
+	default: {
+		lua_pushboolean(L, matUniforms->ClearObjectUniform(obj->id, objType, uniformName));
+	} break; // clears one uniform for one object by name
 	}
 
 	return 1;
 }
 
-int LuaObjectRenderingImpl::ClearDeferredMaterialUniform(lua_State* L) { return (ClearMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_FWD)); }
-int LuaObjectRenderingImpl::ClearForwardMaterialUniform(lua_State* L) { return (ClearMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_DFR)); }
+int LuaObjectRenderingImpl::ClearDeferredMaterialUniform(lua_State* L)
+{
+	return (ClearMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_FWD));
+}
 
+int LuaObjectRenderingImpl::ClearForwardMaterialUniform(lua_State* L)
+{
+	return (ClearMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_DFR));
+}
 
 /******************************************************************************/
 /******************************************************************************/
 
-template<typename ObjectType>
-static int SetObjectLuaDraw(lua_State* L, ObjectType* obj)
+template<typename ObjectType> static int SetObjectLuaDraw(lua_State* L, ObjectType* obj)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (obj == nullptr)
@@ -561,7 +598,6 @@ static int SetObjectLuaDraw(lua_State* L, ObjectType* obj)
 	obj->luaDraw = lua_toboolean(L, 2);
 	return 0;
 }
-
 
 int LuaObjectRenderingImpl::SetUnitLuaDraw(lua_State* L)
 {
@@ -605,7 +641,6 @@ static void PrintObjectLOD(const CSolidObject* obj, int lod)
 	}
 }
 
-
 int LuaObjectRenderingImpl::Debug(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -632,11 +667,11 @@ int LuaObjectRenderingImpl::Debug(lua_State* L)
 	LOG_L(L_DEBUG, "CurrentLod    = %i", lmd->GetCurrentLOD());
 	LOG_L(L_DEBUG, "%s", "");
 
-	const LuaObjectMaterial& alphaMat      = mats[LUAMAT_ALPHA];
-	const LuaObjectMaterial& opaqueMat     = mats[LUAMAT_OPAQUE];
-	const LuaObjectMaterial& alphaReflMat  = mats[LUAMAT_ALPHA_REFLECT];
+	const LuaObjectMaterial& alphaMat = mats[LUAMAT_ALPHA];
+	const LuaObjectMaterial& opaqueMat = mats[LUAMAT_OPAQUE];
+	const LuaObjectMaterial& alphaReflMat = mats[LUAMAT_ALPHA_REFLECT];
 	const LuaObjectMaterial& opaqueReflMat = mats[LUAMAT_OPAQUE_REFLECT];
-	const LuaObjectMaterial& shadowMat     = mats[LUAMAT_SHADOW];
+	const LuaObjectMaterial& shadowMat = mats[LUAMAT_SHADOW];
 
 	LOG_L(L_DEBUG, "LUAMAT_ALPHA          lastLOD = %i", alphaMat.GetLastLOD());
 	LOG_L(L_DEBUG, "LUAMAT_OPAQUE         lastLOD = %i", opaqueMat.GetLastLOD());
@@ -653,4 +688,3 @@ int LuaObjectRenderingImpl::Debug(lua_State* L)
 
 /******************************************************************************/
 /******************************************************************************/
-

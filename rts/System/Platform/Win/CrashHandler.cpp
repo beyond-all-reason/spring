@@ -1,25 +1,27 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <windows.h>
-#include <process.h>
-#include <imagehlp.h>
-#include <signal.h>
-
 #include "System/Platform/CrashHandler.h"
-#include "System/Platform/errorhandler.h"
-#include "System/Log/ILog.h"
+
+#include "seh.h"
+
+#include "Game/GameVersion.h"
 #include "System/Log/FileSink.h"
+#include "System/Log/ILog.h"
 #include "System/Log/LogSinkHandler.h"
 #include "System/LogOutput.h"
-#include "System/Threading/SpringThreading.h"
-#include "seh.h"
-#include "System/StringUtil.h"
+#include "System/Platform/errorhandler.h"
 #include "System/SafeCStrings.h"
-#include "Game/GameVersion.h"
+#include "System/StringUtil.h"
+#include "System/Threading/SpringThreading.h"
 
-#include <new> // set_new_handler
 #include <chrono>
+#include <new> // set_new_handler
 #include <vector>
+
+#include <imagehlp.h>
+#include <process.h>
+#include <signal.h>
+#include <windows.h>
 
 
 #ifdef _MSC_VER
@@ -27,14 +29,14 @@
 #endif
 
 #define MAX_FRAMES 256
-#define DBG_LOG_RAW_LINE(level, fmt, ...) do {                               \
-	fprintf((level >= LOG_LEVEL_ERROR)? stderr: stdout, fmt, ##__VA_ARGS__); \
-	fprintf((level >= LOG_LEVEL_ERROR)? stderr: stdout, "\n"              ); \
-	fprintf(logFile, fmt, ##__VA_ARGS__);                                    \
-	fprintf(logFile, "\n"              );                                    \
-} while (false)
+#define DBG_LOG_RAW_LINE(level, fmt, ...)                                          \
+	do {                                                                           \
+		fprintf((level >= LOG_LEVEL_ERROR) ? stderr : stdout, fmt, ##__VA_ARGS__); \
+		fprintf((level >= LOG_LEVEL_ERROR) ? stderr : stdout, "\n");               \
+		fprintf(logFile, fmt, ##__VA_ARGS__);                                      \
+		fprintf(logFile, "\n");                                                    \
+	} while (false)
 #define LOG_RAW_LINE(level, fmt, ...) LOG_I(level, fmt, ##__VA_ARGS__);
-
 
 namespace CrashHandler {
 
@@ -63,55 +65,45 @@ static bool imageHelpInitialised = false;
 
 
 static const char* aiLibWarning = "This stacktrace indicates a problem with a skirmish AI.";
-static const char* glLibWarning =
-	"This stacktrace indicates a problem with your graphics card driver, please try "
-	"upgrading it. Specifically recommended is the latest version; do not forget to "
-	"use a driver removal utility first.";
+static const char* glLibWarning = "This stacktrace indicates a problem with your graphics card driver, please try "
+                                  "upgrading it. Specifically recommended is the latest version; do not forget to "
+                                  "use a driver removal utility first.";
 
-static const char* addrFmts[2] = {
-	"\t(%d) %s:%u %s [0x%p]",
-	"\t(%d) %s [0x%p]"
-};
-static const char* errFmt =
-	"Spring has crashed:\n  %s.\n\n"
-	"A stacktrace has been written to:\n  %s";
+static const char* addrFmts[2] = {"\t(%d) %s:%u %s [0x%p]", "\t(%d) %s [0x%p]"};
+static const char* errFmt = "Spring has crashed:\n  %s.\n\n"
+                            "A stacktrace has been written to:\n  %s";
 
 static FILE* logFile = nullptr;
-
-
-
 
 /** Convert exception code to human readable string. */
 static const char* ExceptionName(DWORD exceptionCode)
 {
 	switch (exceptionCode) {
-		case EXCEPTION_ACCESS_VIOLATION:         return "Access violation";
-		case EXCEPTION_DATATYPE_MISALIGNMENT:    return "Datatype misalignment";
-		case EXCEPTION_BREAKPOINT:               return "Breakpoint";
-		case EXCEPTION_SINGLE_STEP:              return "Single step";
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:    return "Array bounds exceeded";
-		case EXCEPTION_FLT_DENORMAL_OPERAND:     return "Float denormal operand";
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO:       return "Float divide by zero";
-		case EXCEPTION_FLT_INEXACT_RESULT:       return "Float inexact result";
-		case EXCEPTION_FLT_INVALID_OPERATION:    return "Float invalid operation";
-		case EXCEPTION_FLT_OVERFLOW:             return "Float overflow";
-		case EXCEPTION_FLT_STACK_CHECK:          return "Float stack check";
-		case EXCEPTION_FLT_UNDERFLOW:            return "Float underflow";
-		case EXCEPTION_INT_DIVIDE_BY_ZERO:       return "Integer divide by zero";
-		case EXCEPTION_INT_OVERFLOW:             return "Integer overflow";
-		case EXCEPTION_PRIV_INSTRUCTION:         return "Privileged instruction";
-		case EXCEPTION_IN_PAGE_ERROR:            return "In page error";
-		case EXCEPTION_ILLEGAL_INSTRUCTION:      return "Illegal instruction";
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Noncontinuable exception";
-		case EXCEPTION_STACK_OVERFLOW:           return "Stack overflow";
-		case EXCEPTION_INVALID_DISPOSITION:      return "Invalid disposition";
-		case EXCEPTION_GUARD_PAGE:               return "Guard page";
-		case EXCEPTION_INVALID_HANDLE:           return "Invalid handle";
+	case EXCEPTION_ACCESS_VIOLATION: return "Access violation";
+	case EXCEPTION_DATATYPE_MISALIGNMENT: return "Datatype misalignment";
+	case EXCEPTION_BREAKPOINT: return "Breakpoint";
+	case EXCEPTION_SINGLE_STEP: return "Single step";
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "Array bounds exceeded";
+	case EXCEPTION_FLT_DENORMAL_OPERAND: return "Float denormal operand";
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "Float divide by zero";
+	case EXCEPTION_FLT_INEXACT_RESULT: return "Float inexact result";
+	case EXCEPTION_FLT_INVALID_OPERATION: return "Float invalid operation";
+	case EXCEPTION_FLT_OVERFLOW: return "Float overflow";
+	case EXCEPTION_FLT_STACK_CHECK: return "Float stack check";
+	case EXCEPTION_FLT_UNDERFLOW: return "Float underflow";
+	case EXCEPTION_INT_DIVIDE_BY_ZERO: return "Integer divide by zero";
+	case EXCEPTION_INT_OVERFLOW: return "Integer overflow";
+	case EXCEPTION_PRIV_INSTRUCTION: return "Privileged instruction";
+	case EXCEPTION_IN_PAGE_ERROR: return "In page error";
+	case EXCEPTION_ILLEGAL_INSTRUCTION: return "Illegal instruction";
+	case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "Noncontinuable exception";
+	case EXCEPTION_STACK_OVERFLOW: return "Stack overflow";
+	case EXCEPTION_INVALID_DISPOSITION: return "Invalid disposition";
+	case EXCEPTION_GUARD_PAGE: return "Guard page";
+	case EXCEPTION_INVALID_HANDLE: return "Invalid handle";
 	}
 	return "Unknown exception";
 }
-
-
 
 bool InitImageHlpDll()
 {
@@ -138,8 +130,6 @@ bool InitImageHlpDll()
 	return false;
 }
 
-
-
 /** Callback for SymEnumerateModules */
 #if defined(_M_X64) || defined(__amd64__)
 static BOOL CALLBACK EnumModules(PCSTR moduleName, DWORD64 baseOfDll, PVOID userContext)
@@ -156,9 +146,11 @@ static BOOL CALLBACK EnumModules(PCSTR moduleName, ULONG baseOfDll, PVOID userCo
 #endif
 
 
-
 /** Print out a stacktrace. */
-inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS e, HANDLE hThread = INVALID_HANDLE_VALUE, const int logLevel = LOG_LEVEL_ERROR)
+inline static void StacktraceInline(const char* threadName,
+    LPEXCEPTION_POINTERS e,
+    HANDLE hThread = INVALID_HANDLE_VALUE,
+    const int logLevel = LOG_LEVEL_ERROR)
 {
 	STACKFRAME64 frame;
 	CONTEXT context;
@@ -167,9 +159,9 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 	const HANDLE process = GetCurrentProcess();
 	const HANDLE cThread = GetCurrentThread();
 
-	DWORD64 dwModBase =  0;
-	DWORD64 dwModAddr =  0;
-	DWORD machineType =  0;
+	DWORD64 dwModBase = 0;
+	DWORD64 dwModAddr = 0;
+	DWORD machineType = 0;
 
 	const bool wdThread = (hThread != INVALID_HANDLE_VALUE);
 
@@ -192,7 +184,8 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 	// NOTE: this line is parsed by the stacktrans script
 	if (threadName != nullptr) {
 		LOG_RAW_LINE(logLevel, "Stacktrace (%s) for Spring %s:", threadName, (SpringVersion::GetFull()).c_str());
-	} else {
+	}
+	else {
 		LOG_RAW_LINE(logLevel, "Stacktrace for Spring %s:", (SpringVersion::GetFull()).c_str());
 	}
 
@@ -200,7 +193,8 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 		// reached when an exception occurs
 		context = *e->ContextRecord;
 		thread = cThread;
-	} else if (wdThread) {
+	}
+	else if (wdThread) {
 		// reached when watchdog triggers, suspend thread (it might be in an infinite loop)
 		context.ContextFlags = CONTEXT_FULL;
 
@@ -223,7 +217,8 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 			LOG_RAW_LINE(logLevel, "\t[failed to get thread context]");
 			return;
 		}
-	} else {
+	}
+	else {
 		// fallback; get context directly from CPU-registers
 #ifdef _M_IX86
 		context.ContextFlags = CONTEXT_CONTROL;
@@ -240,9 +235,9 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 #else
 		// GCC
 		DWORD eip, esp, ebp;
-		__asm__ __volatile__ ("call func; func: pop %%eax; mov %%eax, %0;" : "=m" (eip) : : "%eax" );
-		__asm__ __volatile__ ("mov %%ebp, %0;" : "=m" (ebp) : : );
-		__asm__ __volatile__ ("mov %%esp, %0;" : "=m" (esp) : : );
+		__asm__ __volatile__("call func; func: pop %%eax; mov %%eax, %0;" : "=m"(eip) : : "%eax");
+		__asm__ __volatile__("mov %%ebp, %0;" : "=m"(ebp) : :);
+		__asm__ __volatile__("mov %%esp, %0;" : "=m"(esp) : :);
 
 		context.Eip = eip;
 		context.Ebp = ebp;
@@ -257,20 +252,20 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 
 
 	{
-		// retrieve program-counter and starting stack-frame address
-		#ifdef _M_IX86
+// retrieve program-counter and starting stack-frame address
+#ifdef _M_IX86
 		machineType = IMAGE_FILE_MACHINE_I386;
 		frame.AddrPC.Offset = context.Eip;
 		frame.AddrStack.Offset = context.Esp;
 		frame.AddrFrame.Offset = context.Ebp;
-		#elif _M_X64
+#elif _M_X64
 		machineType = IMAGE_FILE_MACHINE_AMD64;
 		frame.AddrPC.Offset = context.Rip;
 		frame.AddrStack.Offset = context.Rsp;
 		frame.AddrFrame.Offset = context.Rbp;
-		#else
-		#error "CrashHandler: Unsupported platform"
-		#endif
+#else
+#error "CrashHandler: Unsupported platform"
+#endif
 
 		frame.AddrPC.Mode = AddrModeFlat;
 		frame.AddrStack.Mode = AddrModeFlat;
@@ -282,14 +277,16 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 	}
 
 
-	while (StackWalk64(machineType, process, thread, &frame, &context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
+	while (StackWalk64(machineType, process, thread, &frame, &context, nullptr, SymFunctionTableAccess64,
+	    SymGetModuleBase64, nullptr)) {
 		if (numFrames >= MAX_FRAMES)
 			break;
 
 
 		if ((dwModBase = SymGetModuleBase64(process, frame.AddrPC.Offset)) != 0) {
-			GetModuleFileName((HINSTANCE) dwModBase, modName, MAX_PATH);
-		} else {
+			GetModuleFileName((HINSTANCE)dwModBase, modName, MAX_PATH);
+		}
+		else {
 			strcpy(modName, "Unknown");
 		}
 
@@ -316,7 +313,8 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 			stl.lineNumber = line.LineNumber;
 			strncpy(stl.symName, pSym->Name, SYMLENGTH);
 			stl.pcOffset = frame.AddrPC.Offset;
-		} else
+		}
+		else
 #endif
 		{
 			// this is the code path taken on MinGW, and MSVC if no debugging syms are found
@@ -324,7 +322,8 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 			// internal/relative address
 			if (strstr(modName, ".exe") != nullptr) {
 				dwModAddr = frame.AddrPC.Offset;
-			} else {
+			}
+			else {
 				dwModAddr = frame.AddrPC.Offset - dwModBase;
 			}
 
@@ -365,23 +364,23 @@ inline static void StacktraceInline(const char* threadName, LPEXCEPTION_POINTERS
 
 		switch (stl.type) {
 #ifdef _MSC_VER
-			case 0: {
-				LOG_RAW_LINE(logLevel, addrFmts[stl.type], i, stl.fileName, stl.lineNumber, stl.symName, stl.pcOffset);
-			} break;
+		case 0: {
+			LOG_RAW_LINE(logLevel, addrFmts[stl.type], i, stl.fileName, stl.lineNumber, stl.symName, stl.pcOffset);
+		} break;
 #endif
-			case 1: {
-				LOG_RAW_LINE(logLevel, addrFmts[stl.type], i, stl.modName, stl.dwModAddr);
-			} break;
-			default: {
-				assert(false);
-			} break;
+		case 1: {
+			LOG_RAW_LINE(logLevel, addrFmts[stl.type], i, stl.modName, stl.dwModAddr);
+		} break;
+		default: {
+			assert(false);
+		} break;
 		}
 	}
 }
 
-
 // internally called, lock should already be held
-static void Stacktrace(const char* threadName, LPEXCEPTION_POINTERS e, HANDLE hThread, const int logLevel) {
+static void Stacktrace(const char* threadName, LPEXCEPTION_POINTERS e, HANDLE hThread, const int logLevel)
+{
 	StacktraceInline(threadName, e, hThread, logLevel);
 }
 
@@ -395,9 +394,8 @@ void Stacktrace(Threading::NativeThreadHandle thread, const std::string& threadN
 	// LeaveCriticalSection(&stackLock);
 }
 
-
-
-void PrepareStacktrace(const int logLevel) {
+void PrepareStacktrace(const int logLevel)
+{
 	EnterCriticalSection(&stackLock);
 	InitImageHlpDll();
 
@@ -415,7 +413,8 @@ void PrepareStacktrace(const int logLevel) {
 #endif
 }
 
-void CleanupStacktrace(const int logLevel) {
+void CleanupStacktrace(const int logLevel)
+{
 	LOG_CLEANUP();
 
 	// Uninitialize IMAGEHLP.DLL
@@ -425,7 +424,8 @@ void CleanupStacktrace(const int logLevel) {
 	LeaveCriticalSection(&stackLock);
 }
 
-void OutputStacktrace() {
+void OutputStacktrace()
+{
 	LOG_RAW_LINE(LOG_LEVEL_ERROR, "Error handler invoked for Spring %s.", (SpringVersion::GetFull()).c_str());
 
 	PrepareStacktrace();
@@ -433,9 +433,8 @@ void OutputStacktrace() {
 	CleanupStacktrace();
 }
 
-
-
-void NewHandler() {
+void NewHandler()
+{
 	std::set_new_handler(nullptr); // prevent recursion; OST or EMB might perform hidden allocs
 	LOG_RAW_LINE(LOG_LEVEL_ERROR, "Failed to allocate memory"); // make sure this ends up in the log also
 
@@ -451,9 +450,6 @@ static void SigAbrtHandler(int signal)
 	ErrorMessageBox("Abort / abnormal termination", "Spring: Fatal Error", MBF_OK | MBF_CRASH);
 }
 
-
-
-
 /** Called by windows if an exception happens. */
 LONG CALLBACK ExceptionHandler(LPEXCEPTION_POINTERS e)
 {
@@ -466,7 +462,7 @@ LONG CALLBACK ExceptionHandler(LPEXCEPTION_POINTERS e)
 	char errBuf[2048];
 
 	LOG_RAW_LINE(LOG_LEVEL_ERROR, "Exception: %s (0x%08lx)", errStr, e->ExceptionRecord->ExceptionCode);
-	LOG_RAW_LINE(LOG_LEVEL_ERROR, "Exception Address: 0x%p", (PVOID) e->ExceptionRecord->ExceptionAddress);
+	LOG_RAW_LINE(LOG_LEVEL_ERROR, "Exception Address: 0x%p", (PVOID)e->ExceptionRecord->ExceptionAddress);
 
 	// print trace inline: avoids modifying the stack which might confuse
 	// StackWalk when using the context record passed to ExceptionHandler
@@ -478,20 +474,18 @@ LONG CALLBACK ExceptionHandler(LPEXCEPTION_POINTERS e)
 
 	// inform user about the exception
 	SNPRINTF(errBuf, sizeof(errBuf), errFmt, errStr, (logOutput.GetFilePath()).c_str());
-	ErrorMessageBox(errBuf, "Spring: Unhandled exception", MBF_OK | MBF_CRASH); //calls exit()!
+	ErrorMessageBox(errBuf, "Spring: Unhandled exception", MBF_OK | MBF_CRASH); // calls exit()!
 
 	// this seems to silently close the application
 	return EXCEPTION_EXECUTE_HANDLER;
 
 	// this triggers the microsoft "application has crashed" error dialog
-	//return EXCEPTION_CONTINUE_SEARCH;
+	// return EXCEPTION_CONTINUE_SEARCH;
 
 	// in practice, 100% CPU usage but no continuation of execution
 	// (tested segmentation fault and division by zero)
-	//return EXCEPTION_CONTINUE_EXECUTION;
+	// return EXCEPTION_CONTINUE_EXECUTION;
 }
-
-
 
 /** Install crash handler. */
 void Install()
@@ -514,4 +508,3 @@ void Remove()
 }
 
 }; // namespace CrashHandler
-

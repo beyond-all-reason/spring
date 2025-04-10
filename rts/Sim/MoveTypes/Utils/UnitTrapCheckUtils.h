@@ -7,8 +7,8 @@ struct CFeature;
 struct CUnit;
 
 namespace MoveTypes {
-    void RegisterFeatureForUnitTrapCheck(CFeature* object);
-    void RegisterUnitForUnitTrapCheck(CUnit* object);
-}
+void RegisterFeatureForUnitTrapCheck(CFeature* object);
+void RegisterUnitForUnitTrapCheck(CUnit* object);
+} // namespace MoveTypes
 
 #endif

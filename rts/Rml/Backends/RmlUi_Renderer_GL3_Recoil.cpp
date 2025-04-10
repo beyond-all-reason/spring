@@ -29,25 +29,26 @@
  */
 
 #include "RmlUi_Renderer_GL3_Recoil.h"
-#include <RmlUi/Core/Log.h>
 
 #include "Rendering/GL/VAO.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/myGL.h"
-
 #include "Rendering/Shaders/Shader.h"
 #include "Rendering/Shaders/ShaderHandler.h"
 #include "Rendering/Textures/Bitmap.h"
-#include "System/Log/ILog.h"
-#include "RmlUi/Core/Mesh.h"
 #include "RmlUi/Core/Colour.h"
-#include "RmlUi/Core/MeshUtilities.h"
-#include "RmlUi/Core/Dictionary.h"
 #include "RmlUi/Core/Core.h"
-#include "RmlUi/Core/SystemInterface.h"
 #include "RmlUi/Core/DecorationTypes.h"
+#include "RmlUi/Core/Dictionary.h"
+#include "RmlUi/Core/Mesh.h"
+#include "RmlUi/Core/MeshUtilities.h"
+#include "RmlUi/Core/SystemInterface.h"
+#include "System/Log/ILog.h"
 
-// Determines the anti-aliasing quality when creating layers. Enables better-looking visuals, especially when transforms are applied.
+#include <RmlUi/Core/Log.h>
+
+// Determines the anti-aliasing quality when creating layers. Enables better-looking visuals, especially when transforms
+// are applied.
 static constexpr int NUM_MSAA_SAMPLES = 2;
 
 #define MAX_NUM_STOPS 16
@@ -58,8 +59,7 @@ static constexpr int NUM_MSAA_SAMPLES = 2;
 #define RMLUI_STRINGIFY(x) RMLUI_STRINGIFY_IMPL(x)
 
 #define RMLUI_SHADER_HEADER_VERSION "#version 330\n"
-#define RMLUI_SHADER_HEADER \
-    RMLUI_SHADER_HEADER_VERSION "#define MAX_NUM_STOPS " RMLUI_STRINGIFY(MAX_NUM_STOPS) "\n"
+#define RMLUI_SHADER_HEADER RMLUI_SHADER_HEADER_VERSION "#define MAX_NUM_STOPS " RMLUI_STRINGIFY(MAX_NUM_STOPS) "\n"
 
 static const char* shader_vert_main = RMLUI_SHADER_HEADER R"(
 uniform vec2 _translate;
@@ -107,9 +107,13 @@ void main() {
 }
 )";
 
-enum class ShaderGradientFunction
-{
-	Linear, Radial, Conic, RepeatingLinear, RepeatingRadial, RepeatingConic
+enum class ShaderGradientFunction {
+	Linear,
+	Radial,
+	Conic,
+	RepeatingLinear,
+	RepeatingRadial,
+	RepeatingConic
 }; // Must match shader definitions below.
 
 static const char* shader_frag_gradient = RMLUI_SHADER_HEADER R"(
@@ -256,8 +260,9 @@ void main() {
 }
 )";
 
-#define RMLUI_SHADER_BLUR_HEADER \
-    RMLUI_SHADER_HEADER "\n#define BLUR_SIZE " RMLUI_STRINGIFY(BLUR_SIZE) "\n#define BLUR_NUM_WEIGHTS " RMLUI_STRINGIFY(BLUR_NUM_WEIGHTS)
+#define RMLUI_SHADER_BLUR_HEADER                                                   \
+	RMLUI_SHADER_HEADER "\n#define BLUR_SIZE " RMLUI_STRINGIFY(                    \
+	    BLUR_SIZE) "\n#define BLUR_NUM_WEIGHTS " RMLUI_STRINGIFY(BLUR_NUM_WEIGHTS)
 
 static const char* shader_vert_blur = RMLUI_SHADER_BLUR_HEADER R"(
 uniform vec2 _texelOffset;
@@ -309,8 +314,7 @@ void main() {
 }
 )";
 
-enum class ProgramId
-{
+enum class ProgramId {
 	None = 0,
 	Color,
 	Texture,
@@ -323,15 +327,13 @@ enum class ProgramId
 	DropShadow,
 	Count,
 };
-enum class VertShaderId
-{
+enum class VertShaderId {
 	Main = 0,
 	Passthrough,
 	Blur,
 	Count,
 };
-enum class FragShaderId
-{
+enum class FragShaderId {
 	Color = 0,
 	Texture,
 	Gradient,
@@ -344,9 +346,8 @@ enum class FragShaderId
 	Count,
 };
 
-namespace Uniform
-{
-#define UniformStr(N, S) const char *const N = S
+namespace Uniform {
+#define UniformStr(N, S) const char* const N = S
 UniformStr(Translate, "_translate");
 UniformStr(Transform, "_transform");
 UniformStr(Tex, "_tex");
@@ -366,37 +367,36 @@ UniformStr(NumStops, "_num_stops");
 UniformStr(Value, "_value");
 UniformStr(Dimensions, "_dimensions");
 #undef UniformStr
-}
+} // namespace Uniform
 
-namespace Gfx
-{
+namespace Gfx {
 
-#define VA_ATTR_DEF(T, idx, count, type, member, normalized, name) AttributeDef(idx, count, type, sizeof(T), VA_TYPE_OFFSET(T, member), normalized, name)
-struct VA_TYPE_RML_VERTEX
-{
+#define VA_ATTR_DEF(T, idx, count, type, member, normalized, name)                         \
+	AttributeDef(idx, count, type, sizeof(T), VA_TYPE_OFFSET(T, member), normalized, name)
+
+struct VA_TYPE_RML_VERTEX {
 	static std::array<AttributeDef, 3> attributeDefs;
 };
+
 std::array<AttributeDef, 3> VA_TYPE_RML_VERTEX::attributeDefs = {
-	VA_ATTR_DEF(Rml::Vertex, 0, 2, GL_FLOAT, position, false, "inPosition"),
-	VA_ATTR_DEF(Rml::Vertex, 1, 4, GL_UNSIGNED_BYTE, colour, true, "inColor0"),
-	VA_ATTR_DEF(Rml::Vertex, 2, 2, GL_FLOAT, tex_coord, false, "inTexCoord0")
-};
+    VA_ATTR_DEF(Rml::Vertex, 0, 2, GL_FLOAT, position, false, "inPosition"),
+    VA_ATTR_DEF(Rml::Vertex, 1, 4, GL_UNSIGNED_BYTE, colour, true, "inColor0"),
+    VA_ATTR_DEF(Rml::Vertex, 2, 2, GL_FLOAT, tex_coord, false, "inTexCoord0")};
 #undef VA_ATTR_DEF
 
-struct VertShaderDefinition
-{
+struct VertShaderDefinition {
 	VertShaderId id;
 	const char* name_str;
 	const char* code_str;
 };
-struct FragShaderDefinition
-{
+
+struct FragShaderDefinition {
 	FragShaderId id;
 	const char* name_str;
 	const char* code_str;
 };
-struct ProgramDefinition
-{
+
+struct ProgramDefinition {
 	ProgramId id;
 	const char* name_str;
 	VertShaderId vert_shader;
@@ -433,49 +433,42 @@ static const ProgramDefinition program_definitions[] = {
 };
 // clang-format on
 
-template<typename T, typename Enum>
-class EnumArray
-{
+template<typename T, typename Enum> class EnumArray {
 public:
 	const T& operator[](Enum id) const
 	{
-		RMLUI_ASSERT((size_t) id < (size_t) Enum::Count)
+		RMLUI_ASSERT((size_t)id < (size_t)Enum::Count)
 		return ids[size_t(id)];
 	}
 
 	T& operator[](Enum id)
 	{
-		RMLUI_ASSERT((size_t) id < (size_t) Enum::Count)
+		RMLUI_ASSERT((size_t)id < (size_t)Enum::Count)
 		return ids[size_t(id)];
 	}
 
-	[[nodiscard]] auto begin() const
-	{ return ids.begin(); }
+	[[nodiscard]] auto begin() const { return ids.begin(); }
 
-	[[nodiscard]] auto end() const
-	{ return ids.end(); }
+	[[nodiscard]] auto end() const { return ids.end(); }
 
 private:
-	Rml::Array<T, (size_t) Enum::Count> ids = {};
+	Rml::Array<T, (size_t)Enum::Count> ids = {};
 };
 
 using Programs = EnumArray<Shader::IProgramObject*, ProgramId>;
 
-struct ProgramData
-{
+struct ProgramData {
 	Programs programs;
 };
 
-struct CompiledGeometryData
-{
+struct CompiledGeometryData {
 	std::unique_ptr<VAO> vao;
 	std::unique_ptr<VBO> vbo;
 	std::unique_ptr<VBO> ibo;
 	GLsizei num_indices = 0;
 };
 
-struct FramebufferData
-{
+struct FramebufferData {
 	int width, height;
 	GLuint framebuffer;
 	GLuint color_tex_buffer;
@@ -484,9 +477,10 @@ struct FramebufferData
 	bool owns_depth_stencil_buffer;
 };
 
-enum class FramebufferAttachment
-{
-	None, Depth, DepthStencil
+enum class FramebufferAttachment {
+	None,
+	Depth,
+	DepthStencil
 };
 
 static void CheckGLError(const char* operation_name)
@@ -494,10 +488,12 @@ static void CheckGLError(const char* operation_name)
 #ifdef RMLUI_DEBUG
 	GLenum error_code = glGetError();
 	if (error_code != GL_NO_ERROR) {
-		static const Rml::Pair<GLenum, const char*> error_names[] = {{GL_INVALID_ENUM,      "GL_INVALID_ENUM"},
-																	 {GL_INVALID_VALUE,     "GL_INVALID_VALUE"},
-																	 {GL_INVALID_OPERATION, "GL_INVALID_OPERATION"},
-																	 {GL_OUT_OF_MEMORY,     "GL_OUT_OF_MEMORY"}};
+		static const Rml::Pair<GLenum, const char*> error_names[] = {
+		    {GL_INVALID_ENUM,      "GL_INVALID_ENUM"     },
+            {GL_INVALID_VALUE,     "GL_INVALID_VALUE"    },
+		    {GL_INVALID_OPERATION, "GL_INVALID_OPERATION"},
+            {GL_OUT_OF_MEMORY,     "GL_OUT_OF_MEMORY"    }
+        };
 		const char* error_str = "''";
 		for (auto& err: error_names) {
 			if (err.first == error_code) {
@@ -505,18 +501,19 @@ static void CheckGLError(const char* operation_name)
 				break;
 			}
 		}
-		Rml::Log::Message(Rml::Log::LT_ERROR, "OpenGL error during %s. Error code 0x%x (%s).", operation_name,
-						  error_code, error_str);
+		Rml::Log::Message(
+		    Rml::Log::LT_ERROR, "OpenGL error during %s. Error code 0x%x (%s).", operation_name, error_code, error_str);
 	}
 #endif
-	(void) operation_name;
+	(void)operation_name;
 }
 
-static bool CreateFramebuffer(
-	FramebufferData& out_fb, int width, int height,
-	int samples, FramebufferAttachment attachment,
-	GLuint shared_depth_stencil_buffer
-)
+static bool CreateFramebuffer(FramebufferData& out_fb,
+    int width,
+    int height,
+    int samples,
+    FramebufferAttachment attachment,
+    GLuint shared_depth_stencil_buffer)
 {
 #ifdef RMLUI_PLATFORM_EMSCRIPTEN
 	constexpr GLint wrap_mode = GL_CLAMP_TO_EDGE;
@@ -524,7 +521,7 @@ static bool CreateFramebuffer(
 	constexpr GLint wrap_mode = GL_CLAMP_TO_BORDER; // GL_REPEAT GL_MIRRORED_REPEAT GL_CLAMP_TO_EDGE
 #endif
 
-	constexpr GLenum color_format = GL_RGBA8;   // GL_RGBA8 GL_SRGB8_ALPHA8 GL_RGBA16F
+	constexpr GLenum color_format = GL_RGBA8;    // GL_RGBA8 GL_SRGB8_ALPHA8 GL_RGBA16F
 	constexpr GLint min_mag_filter = GL_NEAREST; // GL_NEAREST
 	const Rml::Colourf border_color(0.f, 0.f);
 
@@ -539,7 +536,8 @@ static bool CreateFramebuffer(
 		glBindRenderbuffer(GL_RENDERBUFFER, color_render_buffer);
 		glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, color_format, width, height);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, color_render_buffer);
-	} else {
+	}
+	else {
 		glGenTextures(1, &color_tex_buffer);
 		glBindTexture(GL_TEXTURE_2D, color_tex_buffer);
 		glTexImage2D(GL_TEXTURE_2D, 0, color_format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -561,27 +559,26 @@ static bool CreateFramebuffer(
 		if (shared_depth_stencil_buffer) {
 			// Share depth/stencil buffer
 			depth_stencil_buffer = shared_depth_stencil_buffer;
-		} else {
+		}
+		else {
 			// Create new depth/stencil buffer
 			glGenRenderbuffers(1, &depth_stencil_buffer);
 			glBindRenderbuffer(GL_RENDERBUFFER, depth_stencil_buffer);
 
-			const GLenum internal_format = (
-				attachment == FramebufferAttachment::DepthStencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24
-			);
+			const GLenum internal_format =
+			    (attachment == FramebufferAttachment::DepthStencil ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24);
 			glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, internal_format, width, height);
 		}
 
-		const GLenum attachment_type = (
-			attachment == FramebufferAttachment::DepthStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT
-		);
+		const GLenum attachment_type =
+		    (attachment == FramebufferAttachment::DepthStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment_type, GL_RENDERBUFFER, depth_stencil_buffer);
 	}
 
 	const GLuint framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
-		Rml::Log::Message(Rml::Log::LT_ERROR, "OpenGL framebuffer could not be generated. Error code %x.",
-						  framebuffer_status);
+		Rml::Log::Message(
+		    Rml::Log::LT_ERROR, "OpenGL framebuffer could not be generated. Error code %x.", framebuffer_status);
 		return false;
 	}
 
@@ -619,9 +616,9 @@ static void DestroyFramebuffer(FramebufferData& fb)
 static void BindTexture(const FramebufferData& fb)
 {
 	if (!fb.color_tex_buffer) {
-		RMLUI_ERRORMSG(
-			"Only framebuffers with color textures can be bound as textures. This framebuffer probably uses multisampling which needs a "
-			"blit step first.")
+		RMLUI_ERRORMSG("Only framebuffers with color textures can be bound as textures. This framebuffer probably uses "
+		               "multisampling which needs a "
+		               "blit step first.")
 	}
 
 	glBindTexture(GL_TEXTURE_2D, fb.color_tex_buffer);
@@ -633,8 +630,8 @@ static bool CreateShaders(ProgramData& data)
 
 #define sh shaderHandler
 	for (const ProgramDefinition& def: program_definitions) {
-		auto vert_def = vert_shader_definitions[(size_t) def.vert_shader];
-		auto frag_def = frag_shader_definitions[(size_t) def.frag_shader];
+		auto vert_def = vert_shader_definitions[(size_t)def.vert_shader];
+		auto frag_def = frag_shader_definitions[(size_t)def.frag_shader];
 
 		auto program = sh->CreateProgramObject("[Rml RenderInterface]", def.name_str);
 		program->AttachShaderObject(sh->CreateShaderObject(vert_def.code_str, "", GL_VERTEX_SHADER));
@@ -645,7 +642,7 @@ static bool CreateShaders(ProgramData& data)
 		if (!program->IsValid()) {
 			const char* fmt = "RMLUI Shader '%s' (vert: '%s' frag: '%s') compilation error: %s";
 			LOG_L(L_ERROR, fmt, program->GetName().c_str(), vert_def.name_str, frag_def.name_str,
-				  program->GetLog().c_str());
+			    program->GetLog().c_str());
 			return false;
 		}
 
@@ -691,7 +688,7 @@ void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
 {
 	viewport_width = Rml::Math::Max(width, 1);
 	viewport_height = Rml::Math::Max(height, 1);
-	projection = Rml::Matrix4f::ProjectOrtho(0, (float) viewport_width, (float) viewport_height, 0, -10000, 10000);
+	projection = Rml::Matrix4f::ProjectOrtho(0, (float)viewport_width, (float)viewport_height, 0, -10000, 10000);
 }
 
 void RenderInterface_GL3_Recoil::BeginFrame()
@@ -786,13 +783,14 @@ void RenderInterface_GL3_Recoil::EndFrame()
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_postprocess.framebuffer);
 
 	glBlitFramebuffer(0, 0, fb_active.width, fb_active.height, 0, 0, fb_postprocess.width, fb_postprocess.height,
-					  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	    GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	// Draw to backbuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// Assuming we have an opaque background, we can just write to it with the premultiplied alpha blend mode and we'll get the correct result.
-	// Instead, if we had a transparent destination that didn't use premultiplied alpha, we would need to perform a manual un-premultiplication step.
+	// Assuming we have an opaque background, we can just write to it with the premultiplied alpha blend mode and we'll
+	// get the correct result. Instead, if we had a transparent destination that didn't use premultiplied alpha, we
+	// would need to perform a manual un-premultiplication step.
 	glActiveTexture(GL_TEXTURE0);
 	Gfx::BindTexture(fb_postprocess);
 	UseProgram(ProgramId::Passthrough);
@@ -828,35 +826,34 @@ void RenderInterface_GL3_Recoil::EndFrame()
 	else
 		glDisable(GL_DEPTH_TEST);
 
-	glViewport(glstate_backup.viewport[0], glstate_backup.viewport[1], glstate_backup.viewport[2],
-			   glstate_backup.viewport[3]);
-	glScissor(glstate_backup.scissor[0], glstate_backup.scissor[1], glstate_backup.scissor[2],
-			  glstate_backup.scissor[3]);
+	glViewport(
+	    glstate_backup.viewport[0], glstate_backup.viewport[1], glstate_backup.viewport[2], glstate_backup.viewport[3]);
+	glScissor(
+	    glstate_backup.scissor[0], glstate_backup.scissor[1], glstate_backup.scissor[2], glstate_backup.scissor[3]);
 
 	glActiveTexture(glstate_backup.active_texture);
 
 	glClearStencil(glstate_backup.stencil_clear_value);
 	glClearColor(glstate_backup.color_clear_value[0], glstate_backup.color_clear_value[1],
-				 glstate_backup.color_clear_value[2],
-				 glstate_backup.color_clear_value[3]);
+	    glstate_backup.color_clear_value[2], glstate_backup.color_clear_value[3]);
 	glColorMask(glstate_backup.color_writemask[0], glstate_backup.color_writemask[1], glstate_backup.color_writemask[2],
-				glstate_backup.color_writemask[3]);
+	    glstate_backup.color_writemask[3]);
 
 	glBlendEquationSeparate(glstate_backup.blend_equation_rgb, glstate_backup.blend_equation_alpha);
 	glBlendFuncSeparate(glstate_backup.blend_src_rgb, glstate_backup.blend_dst_rgb, glstate_backup.blend_src_alpha,
-						glstate_backup.blend_dst_alpha);
+	    glstate_backup.blend_dst_alpha);
 
 	glStencilFuncSeparate(GL_FRONT, glstate_backup.stencil_front.func, glstate_backup.stencil_front.ref,
-						  glstate_backup.stencil_front.value_mask);
+	    glstate_backup.stencil_front.value_mask);
 	glStencilMaskSeparate(GL_FRONT, glstate_backup.stencil_front.writemask);
 	glStencilOpSeparate(GL_FRONT, glstate_backup.stencil_front.fail, glstate_backup.stencil_front.pass_depth_fail,
-						glstate_backup.stencil_front.pass_depth_pass);
+	    glstate_backup.stencil_front.pass_depth_pass);
 
 	glStencilFuncSeparate(GL_BACK, glstate_backup.stencil_back.func, glstate_backup.stencil_back.ref,
-						  glstate_backup.stencil_back.value_mask);
+	    glstate_backup.stencil_back.value_mask);
 	glStencilMaskSeparate(GL_BACK, glstate_backup.stencil_back.writemask);
 	glStencilOpSeparate(GL_BACK, glstate_backup.stencil_back.fail, glstate_backup.stencil_back.pass_depth_fail,
-						glstate_backup.stencil_back.pass_depth_pass);
+	    glstate_backup.stencil_back.pass_depth_pass);
 
 	Gfx::CheckGLError("EndFrame");
 }
@@ -867,8 +864,8 @@ void RenderInterface_GL3_Recoil::Clear()
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-Rml::CompiledGeometryHandle
-RenderInterface_GL3_Recoil::CompileGeometry(Rml::Span<const Rml::Vertex> vertices, Rml::Span<const int> indices)
+Rml::CompiledGeometryHandle RenderInterface_GL3_Recoil::CompileGeometry(Rml::Span<const Rml::Vertex> vertices,
+    Rml::Span<const int> indices)
 {
 	auto vao = std::make_unique<VAO>();
 	auto vbo = std::make_unique<VBO>(GL_ARRAY_BUFFER);
@@ -895,23 +892,25 @@ RenderInterface_GL3_Recoil::CompileGeometry(Rml::Span<const Rml::Vertex> vertice
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	return (Rml::CompiledGeometryHandle) new Gfx::CompiledGeometryData{
-		std::move(vao), std::move(vbo), std::move(ibo), (GLsizei) indices.size()
-	};
+	    std::move(vao), std::move(vbo), std::move(ibo), (GLsizei)indices.size()};
 }
 
-void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle handle, Rml::Vector2f translation,
-												Rml::TextureHandle texture)
+void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle handle,
+    Rml::Vector2f translation,
+    Rml::TextureHandle texture)
 {
-	auto* geometry = (Gfx::CompiledGeometryData*) handle;
+	auto* geometry = (Gfx::CompiledGeometryData*)handle;
 
 	if (texture == TexturePostprocess) {
 		// Do nothing.
-	} else if (texture) {
+	}
+	else if (texture) {
 		UseProgram(ProgramId::Texture);
 		SubmitTransformUniform(translation);
 		if (texture != TextureEnableWithoutBinding)
-			glBindTexture(GL_TEXTURE_2D, (GLuint) texture);
-	} else {
+			glBindTexture(GL_TEXTURE_2D, (GLuint)texture);
+	}
+	else {
 		UseProgram(ProgramId::Color);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		SubmitTransformUniform(translation);
@@ -920,7 +919,7 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle hand
 	geometry->vao->Bind();
 	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
 	geometry->vao->Unbind();
-	
+
 	if (texture != TexturePostprocess) {
 		UseProgram(ProgramId::None);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -931,7 +930,7 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle hand
 
 void RenderInterface_GL3_Recoil::ReleaseGeometry(Rml::CompiledGeometryHandle handle)
 {
-	auto geometry = (Gfx::CompiledGeometryData*) handle;
+	auto geometry = (Gfx::CompiledGeometryData*)handle;
 
 	geometry->vao->Delete();
 	geometry->vbo->Release();
@@ -983,10 +982,7 @@ void RenderInterface_GL3_Recoil::EnableScissorRegion(bool enable)
 		SetScissor(Rml::Rectanglei::MakeInvalid(), false);
 }
 
-void RenderInterface_GL3_Recoil::SetScissorRegion(Rml::Rectanglei region)
-{
-	SetScissor(region);
-}
+void RenderInterface_GL3_Recoil::SetScissorRegion(Rml::Rectanglei region) { SetScissor(region); }
 
 void RenderInterface_GL3_Recoil::EnableClipMask(bool enable)
 {
@@ -996,9 +992,9 @@ void RenderInterface_GL3_Recoil::EnableClipMask(bool enable)
 		glDisable(GL_STENCIL_TEST);
 }
 
-void
-RenderInterface_GL3_Recoil::RenderToClipMask(Rml::ClipMaskOperation operation, Rml::CompiledGeometryHandle geometry,
-											 Rml::Vector2f translation)
+void RenderInterface_GL3_Recoil::RenderToClipMask(Rml::ClipMaskOperation operation,
+    Rml::CompiledGeometryHandle geometry,
+    Rml::Vector2f translation)
 {
 	RMLUI_ASSERT(glIsEnabled(GL_STENCIL_TEST))
 	using Rml::ClipMaskOperation;
@@ -1016,21 +1012,18 @@ RenderInterface_GL3_Recoil::RenderToClipMask(Rml::ClipMaskOperation operation, R
 	glStencilFunc(GL_ALWAYS, GLint(1), GLuint(-1));
 
 	switch (operation) {
-		case ClipMaskOperation::Set: {
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			stencil_test_value = 1;
-		}
-			break;
-		case ClipMaskOperation::SetInverse: {
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			stencil_test_value = 0;
-		}
-			break;
-		case ClipMaskOperation::Intersect: {
-			glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
-			stencil_test_value += 1;
-		}
-			break;
+	case ClipMaskOperation::Set: {
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		stencil_test_value = 1;
+	} break;
+	case ClipMaskOperation::SetInverse: {
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		stencil_test_value = 0;
+	} break;
+	case ClipMaskOperation::Intersect: {
+		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+		stencil_test_value += 1;
+	} break;
 	}
 
 	RenderGeometry(geometry, translation, {});
@@ -1053,8 +1046,8 @@ Rml::TextureHandle RenderInterface_GL3_Recoil::LoadTexture(Rml::Vector2i& textur
 	return bmp.CreateTexture();
 }
 
-Rml::TextureHandle
-RenderInterface_GL3_Recoil::GenerateTexture(Rml::Span<const Rml::byte> source_data, Rml::Vector2i source_dimensions)
+Rml::TextureHandle RenderInterface_GL3_Recoil::GenerateTexture(Rml::Span<const Rml::byte> source_data,
+    Rml::Vector2i source_dimensions)
 {
 	GLuint texture_id = 0;
 	glGenTextures(1, &texture_id);
@@ -1066,7 +1059,7 @@ RenderInterface_GL3_Recoil::GenerateTexture(Rml::Span<const Rml::byte> source_da
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, source_dimensions.x, source_dimensions.y, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-				 source_data.data());
+	    source_data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -1075,7 +1068,7 @@ RenderInterface_GL3_Recoil::GenerateTexture(Rml::Span<const Rml::byte> source_da
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	return (Rml::TextureHandle) texture_id;
+	return (Rml::TextureHandle)texture_id;
 }
 
 void RenderInterface_GL3_Recoil::DrawFullscreenQuad()
@@ -1088,8 +1081,7 @@ void RenderInterface_GL3_Recoil::DrawFullscreenQuad(Rml::Vector2f uv_offset, Rml
 	Rml::Mesh mesh;
 	Rml::MeshUtilities::GenerateQuad(mesh, Rml::Vector2f(-1), Rml::Vector2f(2), {});
 	if (uv_offset != Rml::Vector2f() || uv_scaling != Rml::Vector2f(1.f)) {
-		for (Rml::Vertex& vertex: mesh.vertices)
-			vertex.tex_coord = (vertex.tex_coord * uv_scaling) + uv_offset;
+		for (Rml::Vertex& vertex: mesh.vertices) vertex.tex_coord = (vertex.tex_coord * uv_scaling) + uv_offset;
 	}
 	const Rml::CompiledGeometryHandle geometry = CompileGeometry(mesh.vertices, mesh.indices);
 	RenderGeometry(geometry, {}, RenderInterface_GL3_Recoil::TexturePostprocess);
@@ -1099,8 +1091,7 @@ void RenderInterface_GL3_Recoil::DrawFullscreenQuad(Rml::Vector2f uv_offset, Rml
 static Rml::Colourf ConvertToColorf(Rml::ColourbPremultiplied c0)
 {
 	Rml::Colourf result;
-	for (int i = 0; i < 4; i++)
-		result[i] = (1.f / 255.f) * float(c0[i]);
+	for (int i = 0; i < 4; i++) result[i] = (1.f / 255.f) * float(c0[i]);
 	return result;
 }
 
@@ -1109,8 +1100,8 @@ static void SigmaToParameters(const float desired_sigma, int& out_pass_level, fl
 	constexpr int max_num_passes = 10;
 	static_assert(max_num_passes < 31);
 	constexpr float max_single_pass_sigma = 3.0f;
-	out_pass_level = Rml::Math::Clamp(Rml::Math::Log2(int(desired_sigma * (2.f / max_single_pass_sigma))), 0,
-									  max_num_passes);
+	out_pass_level =
+	    Rml::Math::Clamp(Rml::Math::Log2(int(desired_sigma * (2.f / max_single_pass_sigma))), 0, max_num_passes);
 	out_sigma = Rml::Math::Clamp(desired_sigma / float(1 << out_pass_level), 0.0f, max_single_pass_sigma);
 }
 
@@ -1120,9 +1111,9 @@ SetTexCoordLimits(Shader::IProgramObject* program, Rml::Rectanglei rectangle_fli
 	// Offset by half-texel values so that texture lookups are clamped to fragment centers, thereby avoiding color
 	// bleeding from neighboring texels due to bilinear interpolation.
 	const Rml::Vector2f min =
-		(Rml::Vector2f(rectangle_flipped.p0) + Rml::Vector2f(0.5f)) / Rml::Vector2f(framebuffer_size);
+	    (Rml::Vector2f(rectangle_flipped.p0) + Rml::Vector2f(0.5f)) / Rml::Vector2f(framebuffer_size);
 	const Rml::Vector2f max =
-		(Rml::Vector2f(rectangle_flipped.p1) - Rml::Vector2f(0.5f)) / Rml::Vector2f(framebuffer_size);
+	    (Rml::Vector2f(rectangle_flipped.p1) - Rml::Vector2f(0.5f)) / Rml::Vector2f(framebuffer_size);
 
 	program->SetUniform(Uniform::TexCoordMin, min.x, min.y);
 	program->SetUniform(Uniform::TexCoordMax, max.x, max.y);
@@ -1138,23 +1129,23 @@ static void SetBlurWeights(Shader::IProgramObject* program, float sigma)
 			weights[i] = float(i == 0);
 		else
 			weights[i] = Rml::Math::Exp(-float(i * i) / (2.0f * sigma * sigma)) /
-						 (Rml::Math::SquareRoot(2.f * Rml::Math::RMLUI_PI) * sigma);
+			             (Rml::Math::SquareRoot(2.f * Rml::Math::RMLUI_PI) * sigma);
 
 		normalization += (i == 0 ? 1.f : 2.0f) * weights[i];
 	}
 
-	for (float& weight: weights)
-		weight /= normalization;
+	for (float& weight: weights) weight /= normalization;
 
 	program->SetUniform1v(Uniform::Weights, num_weights, weights);
 }
 
-void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferData& source_destination,
-											const Gfx::FramebufferData& temp,
-											const Rml::Rectanglei window_flipped)
+void RenderInterface_GL3_Recoil::RenderBlur(float sigma,
+    const Gfx::FramebufferData& source_destination,
+    const Gfx::FramebufferData& temp,
+    const Rml::Rectanglei window_flipped)
 {
 	RMLUI_ASSERT(&source_destination != &temp && source_destination.width == temp.width &&
-				 source_destination.height == temp.height)
+	             source_destination.height == temp.height)
 	RMLUI_ASSERT(window_flipped.Valid())
 
 	int pass_level = 0;
@@ -1171,11 +1162,11 @@ void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferD
 	// Downscale by iterative half-scaling with bilinear filtering, to reduce aliasing.
 	glViewport(0, 0, source_destination.width / 2, source_destination.height / 2);
 
-	// Scale UVs if we have even dimensions, such that texture fetches align perfectly between texels, thereby producing a 50% blend of
-	// neighboring texels.
+	// Scale UVs if we have even dimensions, such that texture fetches align perfectly between texels, thereby producing
+	// a 50% blend of neighboring texels.
 	const Rml::Vector2f uv_scaling = {
-		(source_destination.width % 2 == 1) ? (1.f - 1.f / float(source_destination.width)) : 1.f,
-		(source_destination.height % 2 == 1) ? (1.f - 1.f / float(source_destination.height)) : 1.f};
+	    (source_destination.width % 2 == 1) ? (1.f - 1.f / float(source_destination.width)) : 1.f,
+	    (source_destination.height % 2 == 1) ? (1.f - 1.f / float(source_destination.height)) : 1.f};
 
 	for (int i = 0; i < pass_level; i++) {
 		scissor.p0 = (scissor.p0 + Rml::Vector2i(1)) / 2;
@@ -1190,7 +1181,8 @@ void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferD
 
 	glViewport(0, 0, source_destination.width, source_destination.height);
 
-	// Ensure texture data end up in the temp buffer. Depending on the last downscaling, we might need to move it from the source_destination buffer.
+	// Ensure texture data end up in the temp buffer. Depending on the last downscaling, we might need to move it from
+	// the source_destination buffer.
 	const bool transfer_to_temp_buffer = (pass_level % 2 == 0);
 	if (transfer_to_temp_buffer) {
 		Gfx::BindTexture(source_destination);
@@ -1241,19 +1233,19 @@ void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferD
 	const Rml::Vector2i dst_min = window_flipped.p0;
 	const Rml::Vector2i dst_max = window_flipped.p1;
 	glBlitFramebuffer(src_min.x, src_min.y, src_max.x, src_max.y, dst_min.x, dst_min.y, dst_max.x, dst_max.y,
-					  GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	    GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
-	// The above upscale blit might be jittery at low resolutions (large pass levels). This is especially noticeable when moving an element with
-	// backdrop blur around or when trying to click/hover an element within a blurred region since it may be rendered at an offset. For more stable
-	// and accurate rendering we next upscale the blur image by an exact power-of-two. However, this may not fill the edges completely so we need to
-	// do the above first. Note that this strategy may sometimes result in visible seams. Alternatively, we could try to enlarge the window to the
-	// next power-of-two size and then downsample and blur that.
+	// The above upscale blit might be jittery at low resolutions (large pass levels). This is especially noticeable
+	// when moving an element with backdrop blur around or when trying to click/hover an element within a blurred region
+	// since it may be rendered at an offset. For more stable and accurate rendering we next upscale the blur image by
+	// an exact power-of-two. However, this may not fill the edges completely so we need to do the above first. Note
+	// that this strategy may sometimes result in visible seams. Alternatively, we could try to enlarge the window to
+	// the next power-of-two size and then downsample and blur that.
 	const Rml::Vector2i target_min = src_min * (1 << pass_level);
 	const Rml::Vector2i target_max = src_max * (1 << pass_level);
 	if (target_min != dst_min || target_max != dst_max) {
 		glBlitFramebuffer(src_min.x, src_min.y, src_max.x, src_max.y, target_min.x, target_min.y, target_max.x,
-						  target_max.y, GL_COLOR_BUFFER_BIT,
-						  GL_LINEAR);
+		    target_max.y, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	}
 
 	// Restore render state.
@@ -1264,7 +1256,7 @@ void RenderInterface_GL3_Recoil::RenderBlur(float sigma, const Gfx::FramebufferD
 
 void RenderInterface_GL3_Recoil::ReleaseTexture(Rml::TextureHandle texture_handle)
 {
-	glDeleteTextures(1, (GLuint*) &texture_handle);
+	glDeleteTextures(1, (GLuint*)&texture_handle);
 }
 
 void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f* new_transform)
@@ -1273,12 +1265,16 @@ void RenderInterface_GL3_Recoil::SetTransform(const Rml::Matrix4f* new_transform
 	program_transform_dirty.set();
 }
 
-enum class FilterType
-{
-	Invalid = 0, Passthrough, Blur, DropShadow, ColorMatrix, MaskImage
+enum class FilterType {
+	Invalid = 0,
+	Passthrough,
+	Blur,
+	DropShadow,
+	ColorMatrix,
+	MaskImage
 };
-struct CompiledFilter
-{
+
+struct CompiledFilter {
 	FilterType type;
 
 	// Passthrough
@@ -1295,39 +1291,45 @@ struct CompiledFilter
 	Rml::Matrix4f color_matrix;
 };
 
-Rml::CompiledFilterHandle
-RenderInterface_GL3_Recoil::CompileFilter(const Rml::String& name, const Rml::Dictionary& parameters)
+Rml::CompiledFilterHandle RenderInterface_GL3_Recoil::CompileFilter(const Rml::String& name,
+    const Rml::Dictionary& parameters)
 {
 	CompiledFilter filter = {};
 
 	if (name == "opacity") {
 		filter.type = FilterType::Passthrough;
 		filter.blend_factor = Rml::Get(parameters, "value", 1.0f);
-	} else if (name == "blur") {
+	}
+	else if (name == "blur") {
 		filter.type = FilterType::Blur;
 		filter.sigma = Rml::Get(parameters, "sigma", 1.0f);
-	} else if (name == "drop-shadow") {
+	}
+	else if (name == "drop-shadow") {
 		filter.type = FilterType::DropShadow;
 		filter.sigma = Rml::Get(parameters, "sigma", 0.f);
 		filter.color = Rml::Get(parameters, "color", Rml::Colourb()).ToPremultiplied();
 		filter.offset = Rml::Get(parameters, "offset", Rml::Vector2f(0.f));
-	} else if (name == "brightness") {
+	}
+	else if (name == "brightness") {
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Get(parameters, "value", 1.0f);
 		filter.color_matrix = Rml::Matrix4f::Diag(value, value, value, 1.f);
-	} else if (name == "contrast") {
+	}
+	else if (name == "contrast") {
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Get(parameters, "value", 1.0f);
 		const float grayness = 0.5f - 0.5f * value;
 		filter.color_matrix = Rml::Matrix4f::Diag(value, value, value, 1.f);
 		filter.color_matrix.SetColumn(3, Rml::Vector4f(grayness, grayness, grayness, 1.f));
-	} else if (name == "invert") {
+	}
+	else if (name == "invert") {
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Math::Clamp(Rml::Get(parameters, "value", 1.0f), 0.f, 1.f);
 		const float inverted = 1.f - 2.f * value;
 		filter.color_matrix = Rml::Matrix4f::Diag(inverted, inverted, inverted, 1.f);
 		filter.color_matrix.SetColumn(3, Rml::Vector4f(value, value, value, 1.f));
-	} else if (name == "grayscale") {
+	}
+	else if (name == "grayscale") {
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Get(parameters, "value", 1.0f);
 		const float rev_value = 1.f - value;
@@ -1340,7 +1342,8 @@ RenderInterface_GL3_Recoil::CompileFilter(const Rml::String& name, const Rml::Di
 			{0.f, 0.f, 0.f, 1.f}
 		);
 		// clang-format on
-	} else if (name == "sepia") {
+	}
+	else if (name == "sepia") {
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Get(parameters, "value", 1.0f);
 		const float rev_value = 1.f - value;
@@ -1355,8 +1358,10 @@ RenderInterface_GL3_Recoil::CompileFilter(const Rml::String& name, const Rml::Di
 			{0.f, 0.f, 0.f, 1.f}
 		);
 		// clang-format on
-	} else if (name == "hue-rotate") {
-		// Hue-rotation and saturation values based on: https://www.w3.org/TR/filter-effects-1/#attr-valuedef-type-huerotate
+	}
+	else if (name == "hue-rotate") {
+		// Hue-rotation and saturation values based on:
+		// https://www.w3.org/TR/filter-effects-1/#attr-valuedef-type-huerotate
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Get(parameters, "value", 1.0f);
 		const float s = Rml::Math::Sin(value);
@@ -1369,7 +1374,8 @@ RenderInterface_GL3_Recoil::CompileFilter(const Rml::String& name, const Rml::Di
 			{0.f, 0.f, 0.f, 1.f}
 		);
 		// clang-format on
-	} else if (name == "saturate") {
+	}
+	else if (name == "saturate") {
 		filter.type = FilterType::ColorMatrix;
 		const float value = Rml::Get(parameters, "value", 1.0f);
 		// clang-format off
@@ -1394,12 +1400,13 @@ void RenderInterface_GL3_Recoil::ReleaseFilter(Rml::CompiledFilterHandle filter)
 	delete reinterpret_cast<CompiledFilter*>(filter);
 }
 
-enum class CompiledShaderType
-{
-	Invalid = 0, Gradient, Creation
+enum class CompiledShaderType {
+	Invalid = 0,
+	Gradient,
+	Creation
 };
-struct CompiledShader
-{
+
+struct CompiledShader {
 	CompiledShaderType type;
 
 	// Gradient
@@ -1413,14 +1420,14 @@ struct CompiledShader
 	Rml::Vector2f dimensions;
 };
 
-Rml::CompiledShaderHandle
-RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name, const Rml::Dictionary& parameters)
+Rml::CompiledShaderHandle RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name,
+    const Rml::Dictionary& parameters)
 {
 	auto ApplyColorStopList = [](CompiledShader& shader, const Rml::Dictionary& shader_parameters) {
 		auto it = shader_parameters.find("color_stop_list");
 		RMLUI_ASSERT(it != shader_parameters.end() && it->second.GetType() == Rml::Variant::COLORSTOPLIST)
 		const auto& color_stop_list = it->second.GetReference<Rml::ColorStopList>();
-		const int num_stops = Rml::Math::Min((int) color_stop_list.size(), MAX_NUM_STOPS);
+		const int num_stops = Rml::Math::Min((int)color_stop_list.size(), MAX_NUM_STOPS);
 
 		shader.stop_positions.resize(num_stops);
 		shader.stop_colors.resize(num_stops);
@@ -1437,22 +1444,22 @@ RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name, const Rml::Di
 	if (name == "linear-gradient") {
 		shader.type = CompiledShaderType::Gradient;
 		const bool repeating = Rml::Get(parameters, "repeating", false);
-		shader.gradient_function = (
-			repeating ? ShaderGradientFunction::RepeatingLinear : ShaderGradientFunction::Linear
-		);
+		shader.gradient_function =
+		    (repeating ? ShaderGradientFunction::RepeatingLinear : ShaderGradientFunction::Linear);
 		shader.p = Rml::Get(parameters, "p0", Rml::Vector2f(0.f));
 		shader.v = Rml::Get(parameters, "p1", Rml::Vector2f(0.f)) - shader.p;
 		ApplyColorStopList(shader, parameters);
-	} else if (name == "radial-gradient") {
+	}
+	else if (name == "radial-gradient") {
 		shader.type = CompiledShaderType::Gradient;
 		const bool repeating = Rml::Get(parameters, "repeating", false);
-		shader.gradient_function = (
-			repeating ? ShaderGradientFunction::RepeatingRadial : ShaderGradientFunction::Radial
-		);
+		shader.gradient_function =
+		    (repeating ? ShaderGradientFunction::RepeatingRadial : ShaderGradientFunction::Radial);
 		shader.p = Rml::Get(parameters, "center", Rml::Vector2f(0.f));
 		shader.v = Rml::Vector2f(1.f) / Rml::Get(parameters, "radius", Rml::Vector2f(1.f));
 		ApplyColorStopList(shader, parameters);
-	} else if (name == "conic-gradient") {
+	}
+	else if (name == "conic-gradient") {
 		shader.type = CompiledShaderType::Gradient;
 		const bool repeating = Rml::Get(parameters, "repeating", false);
 		shader.gradient_function = (repeating ? ShaderGradientFunction::RepeatingConic : ShaderGradientFunction::Conic);
@@ -1460,7 +1467,8 @@ RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name, const Rml::Di
 		const float angle = Rml::Get(parameters, "angle", 0.f);
 		shader.v = {Rml::Math::Cos(angle), Rml::Math::Sin(angle)};
 		ApplyColorStopList(shader, parameters);
-	} else if (name == "shader") {
+	}
+	else if (name == "shader") {
 		const Rml::String value = Rml::Get(parameters, "value", Rml::String());
 		if (value == "creation") {
 			shader.type = CompiledShaderType::Creation;
@@ -1476,50 +1484,48 @@ RenderInterface_GL3_Recoil::CompileShader(const Rml::String& name, const Rml::Di
 }
 
 void RenderInterface_GL3_Recoil::RenderShader(Rml::CompiledShaderHandle shader_handle,
-											  Rml::CompiledGeometryHandle geometry_handle,
-											  Rml::Vector2f translation, Rml::TextureHandle /*texture*/)
+    Rml::CompiledGeometryHandle geometry_handle,
+    Rml::Vector2f translation,
+    Rml::TextureHandle /*texture*/)
 {
 	RMLUI_ASSERT(shader_handle && geometry_handle)
 	const CompiledShader& shader = *reinterpret_cast<CompiledShader*>(shader_handle);
 	const CompiledShaderType type = shader.type;
-	const auto* geometry = (Gfx::CompiledGeometryData*) geometry_handle;
+	const auto* geometry = (Gfx::CompiledGeometryData*)geometry_handle;
 
 	switch (type) {
-		case CompiledShaderType::Gradient: {
-			RMLUI_ASSERT(shader.stop_positions.size() == shader.stop_colors.size())
-			const int num_stops = (int) shader.stop_positions.size();
+	case CompiledShaderType::Gradient: {
+		RMLUI_ASSERT(shader.stop_positions.size() == shader.stop_colors.size())
+		const int num_stops = (int)shader.stop_positions.size();
 
-			auto gradient_prog = UseProgram(ProgramId::Gradient);
-			gradient_prog->SetUniform(Uniform::Func, static_cast<int>(shader.gradient_function));
-			gradient_prog->SetUniform(Uniform::P, shader.p.x, shader.p.y);
-			gradient_prog->SetUniform(Uniform::V, shader.v.x, shader.v.y);
-			gradient_prog->SetUniform(Uniform::NumStops, num_stops);
-			gradient_prog->SetUniform1v(Uniform::StopPositions, num_stops, shader.stop_positions.data());
-			gradient_prog->SetUniform4v(Uniform::StopColors, num_stops, (float*) &shader.stop_colors[0]);
+		auto gradient_prog = UseProgram(ProgramId::Gradient);
+		gradient_prog->SetUniform(Uniform::Func, static_cast<int>(shader.gradient_function));
+		gradient_prog->SetUniform(Uniform::P, shader.p.x, shader.p.y);
+		gradient_prog->SetUniform(Uniform::V, shader.v.x, shader.v.y);
+		gradient_prog->SetUniform(Uniform::NumStops, num_stops);
+		gradient_prog->SetUniform1v(Uniform::StopPositions, num_stops, shader.stop_positions.data());
+		gradient_prog->SetUniform4v(Uniform::StopColors, num_stops, (float*)&shader.stop_colors[0]);
 
-			SubmitTransformUniform(translation);
-			geometry->vao->Bind();
-			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
-			geometry->vao->Unbind();
-		}
-			break;
-		case CompiledShaderType::Creation: {
-			const double time = Rml::GetSystemInterface()->GetElapsedTime();
+		SubmitTransformUniform(translation);
+		geometry->vao->Bind();
+		glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
+		geometry->vao->Unbind();
+	} break;
+	case CompiledShaderType::Creation: {
+		const double time = Rml::GetSystemInterface()->GetElapsedTime();
 
-			auto creation_prog = UseProgram(ProgramId::Creation);
-			creation_prog->SetUniform(Uniform::Value, (float) time);
-			creation_prog->SetUniform(Uniform::Dimensions, shader.dimensions.x, shader.dimensions.y);
+		auto creation_prog = UseProgram(ProgramId::Creation);
+		creation_prog->SetUniform(Uniform::Value, (float)time);
+		creation_prog->SetUniform(Uniform::Dimensions, shader.dimensions.x, shader.dimensions.y);
 
-			SubmitTransformUniform(translation);
-			geometry->vao->Bind();
-			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
-			geometry->vao->Unbind();
-		}
-			break;
-		case CompiledShaderType::Invalid: {
-			Rml::Log::Message(Rml::Log::LT_WARNING, "Unhandled render shader %d.", (int) type);
-		}
-			break;
+		SubmitTransformUniform(translation);
+		geometry->vao->Bind();
+		glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
+		geometry->vao->Unbind();
+	} break;
+	case CompiledShaderType::Invalid: {
+		Rml::Log::Message(Rml::Log::LT_WARNING, "Unhandled render shader %d.", (int)type);
+	} break;
 	}
 
 	Gfx::CheckGLError("RenderShader");
@@ -1539,7 +1545,7 @@ void RenderInterface_GL3_Recoil::BlitLayerToPostprocessPrimary(Rml::LayerHandle 
 
 	// Blit and resolve MSAA. Any active scissor state will restrict the size of the blit region.
 	glBlitFramebuffer(0, 0, source.width, source.height, 0, 0, destination.width, destination.height,
-					  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	    GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
 void RenderInterface_GL3_Recoil::RenderFilters(Rml::Span<const Rml::CompiledFilterHandle> filter_handles)
@@ -1549,109 +1555,103 @@ void RenderInterface_GL3_Recoil::RenderFilters(Rml::Span<const Rml::CompiledFilt
 		const FilterType type = filter.type;
 
 		switch (type) {
-			case FilterType::Passthrough: {
-				UseProgram(ProgramId::Passthrough);
-				glBlendFunc(GL_CONSTANT_COLOR, GL_ZERO);
-				glBlendColor(0.0f, 0.0f, 0.0f, filter.blend_factor);
+		case FilterType::Passthrough: {
+			UseProgram(ProgramId::Passthrough);
+			glBlendFunc(GL_CONSTANT_COLOR, GL_ZERO);
+			glBlendColor(0.0f, 0.0f, 0.0f, filter.blend_factor);
 
-				const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
-				const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
-				Gfx::BindTexture(source);
-				glBindFramebuffer(GL_FRAMEBUFFER, destination.framebuffer);
+			const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
+			const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
+			Gfx::BindTexture(source);
+			glBindFramebuffer(GL_FRAMEBUFFER, destination.framebuffer);
 
-				DrawFullscreenQuad();
+			DrawFullscreenQuad();
 
-				render_layers.SwapPostprocessPrimarySecondary();
-				glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			render_layers.SwapPostprocessPrimarySecondary();
+			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		} break;
+		case FilterType::Blur: {
+			glDisable(GL_BLEND);
+
+			const Gfx::FramebufferData& source_destination = render_layers.GetPostprocessPrimary();
+			const Gfx::FramebufferData& temp = render_layers.GetPostprocessSecondary();
+
+			const Rml::Rectanglei window_flipped = VerticallyFlipped(scissor_state, viewport_height);
+			RenderBlur(filter.sigma, source_destination, temp, window_flipped);
+
+			glEnable(GL_BLEND);
+		} break;
+		case FilterType::DropShadow: {
+			auto drop_shadow_prog = UseProgram(ProgramId::DropShadow);
+			glDisable(GL_BLEND);
+
+			Rml::Colourf color = ConvertToColorf(filter.color);
+			drop_shadow_prog->SetUniform4v(Uniform::Color, &color[0]);
+
+			const Gfx::FramebufferData& primary = render_layers.GetPostprocessPrimary();
+			const Gfx::FramebufferData& secondary = render_layers.GetPostprocessSecondary();
+			Gfx::BindTexture(primary);
+			glBindFramebuffer(GL_FRAMEBUFFER, secondary.framebuffer);
+
+			const Rml::Rectanglei window_flipped = VerticallyFlipped(scissor_state, viewport_height);
+			SetTexCoordLimits(drop_shadow_prog, window_flipped, {primary.width, primary.height});
+
+			const Rml::Vector2f uv_offset =
+			    filter.offset / Rml::Vector2f(-(float)viewport_width, (float)viewport_height);
+			DrawFullscreenQuad(uv_offset);
+
+			if (filter.sigma >= 0.5f) {
+				const Gfx::FramebufferData& tertiary = render_layers.GetPostprocessTertiary();
+				RenderBlur(filter.sigma, secondary, tertiary, window_flipped);
 			}
-				break;
-			case FilterType::Blur: {
-				glDisable(GL_BLEND);
 
-				const Gfx::FramebufferData& source_destination = render_layers.GetPostprocessPrimary();
-				const Gfx::FramebufferData& temp = render_layers.GetPostprocessSecondary();
+			UseProgram(ProgramId::Passthrough);
+			BindTexture(primary);
+			glEnable(GL_BLEND);
+			DrawFullscreenQuad();
 
-				const Rml::Rectanglei window_flipped = VerticallyFlipped(scissor_state, viewport_height);
-				RenderBlur(filter.sigma, source_destination, temp, window_flipped);
+			render_layers.SwapPostprocessPrimarySecondary();
+		} break;
+		case FilterType::ColorMatrix: {
+			auto color_matrix_prog = UseProgram(ProgramId::ColorMatrix);
+			glDisable(GL_BLEND);
 
-				glEnable(GL_BLEND);
-			}
-				break;
-			case FilterType::DropShadow: {
-				auto drop_shadow_prog = UseProgram(ProgramId::DropShadow);
-				glDisable(GL_BLEND);
+			constexpr bool transpose = std::is_same<decltype(filter.color_matrix), Rml::RowMajorMatrix4f>::value;
+			color_matrix_prog->SetUniformMatrix4x4(Uniform::ColorMatrix, transpose, filter.color_matrix.data());
 
-				Rml::Colourf color = ConvertToColorf(filter.color);
-				drop_shadow_prog->SetUniform4v(Uniform::Color, &color[0]);
+			const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
+			const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
+			Gfx::BindTexture(source);
+			glBindFramebuffer(GL_FRAMEBUFFER, destination.framebuffer);
 
-				const Gfx::FramebufferData& primary = render_layers.GetPostprocessPrimary();
-				const Gfx::FramebufferData& secondary = render_layers.GetPostprocessSecondary();
-				Gfx::BindTexture(primary);
-				glBindFramebuffer(GL_FRAMEBUFFER, secondary.framebuffer);
+			DrawFullscreenQuad();
 
-				const Rml::Rectanglei window_flipped = VerticallyFlipped(scissor_state, viewport_height);
-				SetTexCoordLimits(drop_shadow_prog, window_flipped, {primary.width, primary.height});
+			render_layers.SwapPostprocessPrimarySecondary();
+			glEnable(GL_BLEND);
+		} break;
+		case FilterType::MaskImage: {
+			UseProgram(ProgramId::BlendMask);
+			glDisable(GL_BLEND);
 
-				const Rml::Vector2f uv_offset =
-					filter.offset / Rml::Vector2f(-(float) viewport_width, (float) viewport_height);
-				DrawFullscreenQuad(uv_offset);
+			const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
+			const Gfx::FramebufferData& blend_mask = render_layers.GetBlendMask();
+			const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
 
-				if (filter.sigma >= 0.5f) {
-					const Gfx::FramebufferData& tertiary = render_layers.GetPostprocessTertiary();
-					RenderBlur(filter.sigma, secondary, tertiary, window_flipped);
-				}
+			Gfx::BindTexture(source);
+			glActiveTexture(GL_TEXTURE1);
+			Gfx::BindTexture(blend_mask);
+			glActiveTexture(GL_TEXTURE0);
 
-				UseProgram(ProgramId::Passthrough);
-				BindTexture(primary);
-				glEnable(GL_BLEND);
-				DrawFullscreenQuad();
+			glBindFramebuffer(GL_FRAMEBUFFER, destination.framebuffer);
 
-				render_layers.SwapPostprocessPrimarySecondary();
-			}
-				break;
-			case FilterType::ColorMatrix: {
-				auto color_matrix_prog = UseProgram(ProgramId::ColorMatrix);
-				glDisable(GL_BLEND);
+			DrawFullscreenQuad();
 
-				constexpr bool transpose = std::is_same<decltype(filter.color_matrix), Rml::RowMajorMatrix4f>::value;
-				color_matrix_prog->SetUniformMatrix4x4(Uniform::ColorMatrix, transpose, filter.color_matrix.data());
-
-				const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
-				const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
-				Gfx::BindTexture(source);
-				glBindFramebuffer(GL_FRAMEBUFFER, destination.framebuffer);
-
-				DrawFullscreenQuad();
-
-				render_layers.SwapPostprocessPrimarySecondary();
-				glEnable(GL_BLEND);
-			}
-				break;
-			case FilterType::MaskImage: {
-				UseProgram(ProgramId::BlendMask);
-				glDisable(GL_BLEND);
-
-				const Gfx::FramebufferData& source = render_layers.GetPostprocessPrimary();
-				const Gfx::FramebufferData& blend_mask = render_layers.GetBlendMask();
-				const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
-
-				Gfx::BindTexture(source);
-				glActiveTexture(GL_TEXTURE1);
-				Gfx::BindTexture(blend_mask);
-				glActiveTexture(GL_TEXTURE0);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, destination.framebuffer);
-
-				DrawFullscreenQuad();
-
-				render_layers.SwapPostprocessPrimarySecondary();
-				glEnable(GL_BLEND);
-			}
-				break;
-			case FilterType::Invalid: {
-				Rml::Log::Message(Rml::Log::LT_WARNING, "Unhandled render filter %d.", (int) type);
-			}
-				break;
+			render_layers.SwapPostprocessPrimarySecondary();
+			glEnable(GL_BLEND);
+		} break;
+		case FilterType::Invalid: {
+			Rml::Log::Message(Rml::Log::LT_WARNING, "Unhandled render filter %d.", (int)type);
+		} break;
 		}
 	}
 
@@ -1668,15 +1668,17 @@ Rml::LayerHandle RenderInterface_GL3_Recoil::PushLayer()
 	return layer_handle;
 }
 
-void RenderInterface_GL3_Recoil::CompositeLayers(Rml::LayerHandle source_handle, Rml::LayerHandle destination_handle,
-												 Rml::BlendMode blend_mode,
-												 Rml::Span<const Rml::CompiledFilterHandle> filters)
+void RenderInterface_GL3_Recoil::CompositeLayers(Rml::LayerHandle source_handle,
+    Rml::LayerHandle destination_handle,
+    Rml::BlendMode blend_mode,
+    Rml::Span<const Rml::CompiledFilterHandle> filters)
 {
 	using Rml::BlendMode;
 
 	// Blit source layer to postprocessing buffer. Do this regardless of whether we actually have any filters to be
 	// applied, because we need to resolve the multi-sampled framebuffer in any case.
-	// @performance If we have BlendMode::Replace and no filters or mask then we can just blit directly to the destination.
+	// @performance If we have BlendMode::Replace and no filters or mask then we can just blit directly to the
+	// destination.
 	BlitLayerToPostprocessPrimary(source_handle);
 
 	// Render the filters, the PostprocessPrimary framebuffer is used for both input and output.
@@ -1725,17 +1727,17 @@ Rml::TextureHandle RenderInterface_GL3_Recoil::SaveLayerAsTexture()
 	const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination.framebuffer);
-	
+
 	// Flip the image vertically, as that convention is used for textures, and move to origin.
 	glBlitFramebuffer(                                  //
-		bounds.Left(), source.height - bounds.Bottom(), // src0
-		bounds.Right(), source.height - bounds.Top(),   // src1
-		0, bounds.Height(),                             // dst0
-		bounds.Width(), 0,                              // dst1
-		GL_COLOR_BUFFER_BIT, GL_NEAREST                 //
+	    bounds.Left(), source.height - bounds.Bottom(), // src0
+	    bounds.Right(), source.height - bounds.Top(),   // src1
+	    0, bounds.Height(),                             // dst0
+	    bounds.Width(), 0,                              // dst1
+	    GL_COLOR_BUFFER_BIT, GL_NEAREST                 //
 	);
 
-	glBindTexture(GL_TEXTURE_2D, (GLuint) render_texture);
+	glBindTexture(GL_TEXTURE_2D, (GLuint)render_texture);
 
 	const Gfx::FramebufferData& texture_source = destination;
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, texture_source.framebuffer);
@@ -1792,8 +1794,8 @@ int RenderInterface_GL3_Recoil::GetUniformLocation(const char* name) const
 
 void RenderInterface_GL3_Recoil::SubmitTransformUniform(Rml::Vector2f translation)
 {
-	static_assert((size_t) ProgramId::Count < MaxNumPrograms, "Maximum number of programs exceeded.");
-	const auto program_index = (size_t) active_program_id;
+	static_assert((size_t)ProgramId::Count < MaxNumPrograms, "Maximum number of programs exceeded.");
+	const auto program_index = (size_t)active_program_id;
 	auto program = program_data->programs[active_program_id];
 
 	if (program_transform_dirty.test(program_index)) {
@@ -1809,34 +1811,28 @@ void RenderInterface_GL3_Recoil::SubmitTransformUniform(Rml::Vector2f translatio
 RenderInterface_GL3_Recoil::operator bool() const
 {
 	bool result = true;
-	for (auto i = 1; i < (int) ProgramId::Count; i++) {
-		auto prog = program_data->programs[(ProgramId) i];
+	for (auto i = 1; i < (int)ProgramId::Count; i++) {
+		auto prog = program_data->programs[(ProgramId)i];
 		result = result && prog != nullptr && prog->IsValid();
 	}
 	return result;
 }
 
-RenderInterface_GL3_Recoil::RenderLayerStack::RenderLayerStack()
-{
-	fb_postprocess.resize(4);
-}
+RenderInterface_GL3_Recoil::RenderLayerStack::RenderLayerStack() { fb_postprocess.resize(4); }
 
-RenderInterface_GL3_Recoil::RenderLayerStack::~RenderLayerStack()
-{
-	DestroyFramebuffers();
-}
+RenderInterface_GL3_Recoil::RenderLayerStack::~RenderLayerStack() { DestroyFramebuffers(); }
 
 Rml::LayerHandle RenderInterface_GL3_Recoil::RenderLayerStack::PushLayer()
 {
-	RMLUI_ASSERT(layers_size <= (int) fb_layers.size())
+	RMLUI_ASSERT(layers_size <= (int)fb_layers.size())
 
-	if (layers_size == (int) fb_layers.size()) {
+	if (layers_size == (int)fb_layers.size()) {
 		// All framebuffers should share a single stencil buffer.
 		GLuint shared_depth_stencil = (fb_layers.empty() ? 0 : fb_layers.front().depth_stencil_buffer);
 
 		fb_layers.push_back(Gfx::FramebufferData{});
 		Gfx::CreateFramebuffer(fb_layers.back(), width, height, NUM_MSAA_SAMPLES,
-							   Gfx::FramebufferAttachment::DepthStencil, shared_depth_stencil);
+		    Gfx::FramebufferAttachment::DepthStencil, shared_depth_stencil);
 	}
 
 	layers_size += 1;
@@ -1851,7 +1847,7 @@ void RenderInterface_GL3_Recoil::RenderLayerStack::PopLayer()
 
 const Gfx::FramebufferData& RenderInterface_GL3_Recoil::RenderLayerStack::GetLayer(Rml::LayerHandle layer) const
 {
-	RMLUI_ASSERT((size_t) layer < (size_t) layers_size)
+	RMLUI_ASSERT((size_t)layer < (size_t)layers_size)
 	return fb_layers[layer];
 }
 
@@ -1893,21 +1889,19 @@ void RenderInterface_GL3_Recoil::RenderLayerStack::EndFrame()
 
 void RenderInterface_GL3_Recoil::RenderLayerStack::DestroyFramebuffers()
 {
-	RMLUI_ASSERTMSG(layers_size == 0,
-					"Do not call this during frame rendering, that is, between BeginFrame() and EndFrame().")
+	RMLUI_ASSERTMSG(
+	    layers_size == 0, "Do not call this during frame rendering, that is, between BeginFrame() and EndFrame().")
 
-	for (Gfx::FramebufferData& fb: fb_layers)
-		Gfx::DestroyFramebuffer(fb);
+	for (Gfx::FramebufferData& fb: fb_layers) Gfx::DestroyFramebuffer(fb);
 
 	fb_layers.clear();
 
-	for (Gfx::FramebufferData& fb: fb_postprocess)
-		Gfx::DestroyFramebuffer(fb);
+	for (Gfx::FramebufferData& fb: fb_postprocess) Gfx::DestroyFramebuffer(fb);
 }
 
 const Gfx::FramebufferData& RenderInterface_GL3_Recoil::RenderLayerStack::EnsureFramebufferPostprocess(int index)
 {
-	RMLUI_ASSERT(index < (int) fb_postprocess.size())
+	RMLUI_ASSERT(index < (int)fb_postprocess.size())
 	Gfx::FramebufferData& fb = fb_postprocess[index];
 	if (!fb.framebuffer)
 		Gfx::CreateFramebuffer(fb, width, height, 0, Gfx::FramebufferAttachment::None, 0);

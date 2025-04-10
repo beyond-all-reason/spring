@@ -5,7 +5,7 @@
  * LuaZip
  *
  * @see rts/Lua/LuaZip.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 
 /**
@@ -34,18 +34,21 @@
  */
 
 #include "LuaZip.h"
-#include "LuaInclude.h"
+
 #include "LuaHashString.h"
-#include "System/FileSystem/Archives/IArchive.h"
+#include "LuaInclude.h"
+#include "zlib.h"
+
 #include "System/FileSystem/ArchiveLoader.h"
+#include "System/FileSystem/Archives/IArchive.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileQueryFlags.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/SafeUtil.h"
 #include "System/StringUtil.h"
-#include "zlib.h"
 #include "minizip/zip.h"
+
 #include <cstring>
 #include <sstream>
 #include <string>
@@ -73,17 +76,15 @@ bool LuaZipFileWriter::PushSynced(lua_State* L)
 	return true;
 }
 
-
 bool LuaZipFileWriter::PushUnsynced(lua_State* L)
 {
 	CreateMetatable(L);
 
 	// FIXME when this is enabled LuaGaia/LuaRules unsynced has access to it too!
-	//HSTR_PUSH_CFUNC(L, "CreateZipFileWriter", open);
+	// HSTR_PUSH_CFUNC(L, "CreateZipFileWriter", open);
 
 	return true;
 }
-
 
 bool LuaZipFileWriter::CreateMetatable(lua_State* L)
 {
@@ -93,15 +94,14 @@ bool LuaZipFileWriter::CreateMetatable(lua_State* L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 
-	HSTR_PUSH_CFUNC(L, "__gc",  meta_gc);
+	HSTR_PUSH_CFUNC(L, "__gc", meta_gc);
 	HSTR_PUSH_CFUNC(L, "close", meta_gc);
-	HSTR_PUSH_CFUNC(L, "open",  meta_open);
+	HSTR_PUSH_CFUNC(L, "open", meta_open);
 	HSTR_PUSH_CFUNC(L, "write", meta_write);
 
 	lua_pop(L, 1);
 	return true;
 }
-
 
 struct ZipFileWriterUserdata {
 	zipFile zip;
@@ -109,13 +109,11 @@ struct ZipFileWriterUserdata {
 	bool dontClose;
 };
 
-
 static bool FileExists(const std::string& filename)
 {
 	CFileHandler test(filename);
 	return test.FileExists();
 }
-
 
 /**
  * @brief Pushes a new ZipFileWriter userdatum on the Lua stack.
@@ -155,19 +153,16 @@ bool LuaZipFileWriter::PushNew(lua_State* L, const std::string& filename, zipFil
 	return udata->zip != nullptr;
 }
 
-
 int LuaZipFileWriter::open(lua_State* L)
 {
 	PushNew(L, std::string(luaL_checkstring(L, 1)), nullptr);
 	return 1;
 }
 
-
 static ZipFileWriterUserdata* towriter(lua_State* L)
 {
 	return static_cast<ZipFileWriterUserdata*>(luaL_checkudata(L, 1, "ZipFileWriter"));
 }
-
 
 int LuaZipFileWriter::meta_gc(lua_State* L)
 {
@@ -182,7 +177,6 @@ int LuaZipFileWriter::meta_gc(lua_State* L)
 	return 0;
 }
 
-
 int LuaZipFileWriter::meta_open(lua_State* L)
 {
 	ZipFileWriterUserdata* f = towriter(L);
@@ -193,11 +187,11 @@ int LuaZipFileWriter::meta_open(lua_State* L)
 	}
 
 	// zipOpenNewFileInZip closes existing open file in zip.
-	f->fileOpen = (Z_OK == zipOpenNewFileInZip(f->zip, name.c_str(), nullptr, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION));
+	f->fileOpen = (Z_OK == zipOpenNewFileInZip(f->zip, name.c_str(), nullptr, nullptr, 0, nullptr, 0, nullptr,
+	                           Z_DEFLATED, Z_BEST_COMPRESSION));
 
 	return pushresult(L, f->fileOpen, "zipOpenNewFileInZip failed");
 }
-
 
 int LuaZipFileWriter::meta_write(lua_State* L)
 {
@@ -216,7 +210,7 @@ int LuaZipFileWriter::meta_write(lua_State* L)
 	int status = 1;
 	for (; nargs--; arg++) {
 		size_t l;
-		const char *s = luaL_checklstring(L, arg, &l);
+		const char* s = luaL_checklstring(L, arg, &l);
 		status = status && (zipWriteInFileInZip(f->zip, s, l) == Z_OK);
 	}
 	return pushresult(L, status, "write failed");
@@ -232,17 +226,15 @@ bool LuaZipFileReader::PushSynced(lua_State* L)
 	return true;
 }
 
-
 bool LuaZipFileReader::PushUnsynced(lua_State* L)
 {
 	CreateMetatable(L);
 
 	// FIXME when this is enabled LuaGaia/LuaRules unsynced has access to it too!
-	//HSTR_PUSH_CFUNC(L, "CreateZipFileReader", open);
+	// HSTR_PUSH_CFUNC(L, "CreateZipFileReader", open);
 
 	return true;
 }
-
 
 bool LuaZipFileReader::CreateMetatable(lua_State* L)
 {
@@ -252,22 +244,20 @@ bool LuaZipFileReader::CreateMetatable(lua_State* L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 
-	HSTR_PUSH_CFUNC(L, "__gc",  meta_gc);
+	HSTR_PUSH_CFUNC(L, "__gc", meta_gc);
 	HSTR_PUSH_CFUNC(L, "close", meta_gc);
-	HSTR_PUSH_CFUNC(L, "open",  meta_open);
-	HSTR_PUSH_CFUNC(L, "read",  meta_read);
+	HSTR_PUSH_CFUNC(L, "open", meta_open);
+	HSTR_PUSH_CFUNC(L, "read", meta_read);
 
 	lua_pop(L, 1);
 	return true;
 }
-
 
 struct ZipFileReaderUserdata {
 	IArchive* archive;
 	std::stringstream* stream;
 	bool dontClose;
 };
-
 
 /**
  * @brief Pushes a new ZipFileReader userdatum on the Lua stack.
@@ -308,19 +298,16 @@ bool LuaZipFileReader::PushNew(lua_State* L, const std::string& filename, IArchi
 	return udata->archive != nullptr;
 }
 
-
 int LuaZipFileReader::open(lua_State* L)
 {
 	PushNew(L, std::string(luaL_checkstring(L, 1)), nullptr);
 	return 1;
 }
 
-
 static ZipFileReaderUserdata* toreader(lua_State* L)
 {
 	return static_cast<ZipFileReaderUserdata*>(luaL_checkudata(L, 1, "ZipFileReader"));
 }
-
 
 int LuaZipFileReader::meta_gc(lua_State* L)
 {
@@ -339,7 +326,6 @@ int LuaZipFileReader::meta_gc(lua_State* L)
 	return 0;
 }
 
-
 int LuaZipFileReader::meta_open(lua_State* L)
 {
 	ZipFileReaderUserdata* f = toreader(L);
@@ -353,13 +339,12 @@ int LuaZipFileReader::meta_open(lua_State* L)
 	std::vector<std::uint8_t> buf;
 	const bool result = f->archive->GetFile(name, buf);
 
-	f->stream = new std::stringstream(std::string((char*) &*buf.begin(), buf.size()), std::ios_base::in);
+	f->stream = new std::stringstream(std::string((char*)&*buf.begin(), buf.size()), std::ios_base::in);
 
 	return pushresult(L, result, "open failed");
 }
 
-
-static int test_eof (lua_State* L, ZipFileReaderUserdata* f)
+static int test_eof(lua_State* L, ZipFileReaderUserdata* f)
 {
 	// based on liolib.cpp test_eof
 	int c = f->stream->peek();
@@ -367,17 +352,16 @@ static int test_eof (lua_State* L, ZipFileReaderUserdata* f)
 	return (c != EOF);
 }
 
-
 static int read_chars(lua_State* L, ZipFileReaderUserdata* f, size_t n)
 {
 	// based on liolib.cpp read_chars
 	size_t rlen; /* how much to read */
-	size_t nr; /* number of chars actually read */
+	size_t nr;   /* number of chars actually read */
 	luaL_Buffer b;
 	luaL_buffinit(L, &b);
 	rlen = LUAL_BUFFERSIZE; /* try to read that much each time */
 	do {
-		char *p = luaL_prepbuffer(&b);
+		char* p = luaL_prepbuffer(&b);
 		if (rlen > n)
 			rlen = n; /* cannot read more than asked */
 		nr = f->stream->read(p, rlen).gcount();
@@ -387,7 +371,6 @@ static int read_chars(lua_State* L, ZipFileReaderUserdata* f, size_t n)
 	luaL_pushresult(&b); /* close buffer */
 	return (n == 0 || lua_objlen(L, -1) > 0);
 }
-
 
 /**
  * Similar to Lua's built-in (I/O library) read function.
@@ -427,25 +410,23 @@ int LuaZipFileReader::meta_read(lua_State* L)
 		if (lua_type(L, n) == LUA_TNUMBER) {
 			int l = lua_toint(L, n);
 			success = (l == 0) ? test_eof(L, f) : read_chars(L, f, static_cast<size_t>(l));
-		} else {
-			const char *p = lua_tostring(L, n);
+		}
+		else {
+			const char* p = lua_tostring(L, n);
 			luaL_argcheck(L, p && p[0] == '*', n, "invalid option");
 			switch (p[1]) {
-			case 'n': /* number */
-				return luaL_argerror(L, n, "*n is not supported");
-			case 'l': /* line */
-				return luaL_argerror(L, n, "*l is not supported");
-			case 'a': /* file */
-				read_chars(L, f, ~((size_t) 0)); /* read MAX_SIZE_T chars */
-				success = 1; /* always success */
+			case 'n': /* number */ return luaL_argerror(L, n, "*n is not supported");
+			case 'l': /* line */ return luaL_argerror(L, n, "*l is not supported");
+			case 'a':                           /* file */
+				read_chars(L, f, ~((size_t)0)); /* read MAX_SIZE_T chars */
+				success = 1;                    /* always success */
 				break;
-			default:
-				return luaL_argerror(L, n, "invalid format");
+			default: return luaL_argerror(L, n, "invalid format");
 			}
 		}
 	}
 	if (!success) {
-		lua_pop(L, 1); /* remove last result */
+		lua_pop(L, 1);  /* remove last result */
 		lua_pushnil(L); /* push nil instead */
 	}
 	return n - first;
@@ -454,7 +435,8 @@ int LuaZipFileReader::meta_read(lua_State* L)
 /******************************************************************************/
 
 // generates the info for the zipped version of the file
-static zip_fileinfo* GenerateZipFileInfo(const std::string& path) {
+static zip_fileinfo* GenerateZipFileInfo(const std::string& path)
+{
 	std::string fileModificationDate = FileSystem::GetFileModificationDate(path);
 
 	auto zipfi = new zip_fileinfo();
@@ -470,25 +452,31 @@ static zip_fileinfo* GenerateZipFileInfo(const std::string& path) {
 	return zipfi;
 }
 
-void RecurseZipFolder(const std::string& folderPath, zipFile& zip, const std::string& zipFolderPath, const std::string& modes) {
+void RecurseZipFolder(const std::string& folderPath,
+    zipFile& zip,
+    const std::string& zipFolderPath,
+    const std::string& modes)
+{
 	// recurse through all the subdirs
-	for (const std::string& childFolderPath : CFileHandler::SubDirs(folderPath, "*", modes, false)) {
-		const std::string childFolderName = FileSystem::GetFilename(childFolderPath.substr(0, childFolderPath.length() - 1));
+	for (const std::string& childFolderPath: CFileHandler::SubDirs(folderPath, "*", modes, false)) {
+		const std::string childFolderName =
+		    FileSystem::GetFilename(childFolderPath.substr(0, childFolderPath.length() - 1));
 		const std::string childZipFolderPath = zipFolderPath + childFolderName + "/";
 
 		zip_fileinfo* zipfi = GenerateZipFileInfo(childFolderPath);
 		// write a special file for the dir, so empty folders get added
-		zipOpenNewFileInZip(zip, childZipFolderPath.c_str(), zipfi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION);
+		zipOpenNewFileInZip(
+		    zip, childZipFolderPath.c_str(), zipfi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION);
 		zipWriteInFileInZip(zip, "", 0);
 		zipCloseFileInZip(zip);
 		delete zipfi;
 
-        // recurse
+		// recurse
 		RecurseZipFolder(childFolderPath, zip, childZipFolderPath, modes);
 	}
 
 	// iterate through all the files and write them
-	for (const std::string& filePath : CFileHandler::DirList(folderPath, "*", modes, false)) {
+	for (const std::string& filePath: CFileHandler::DirList(folderPath, "*", modes, false)) {
 		const std::string& fileName = FileSystem::GetFilename(filePath);
 		const std::string zipFilePath = zipFolderPath + fileName;
 
@@ -497,19 +485,24 @@ void RecurseZipFolder(const std::string& folderPath, zipFile& zip, const std::st
 		fh.LoadStringData(fileData);
 
 		zip_fileinfo* zipfi = GenerateZipFileInfo(filePath);
-		zipOpenNewFileInZip(zip, zipFilePath.c_str(), zipfi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION);
+		zipOpenNewFileInZip(
+		    zip, zipFilePath.c_str(), zipfi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_BEST_COMPRESSION);
 		zipWriteInFileInZip(zip, fileData.c_str(), fileData.length());
 		zipCloseFileInZip(zip);
 		delete zipfi;
 	}
 }
 
-int LuaZipFolder::ZipFolder(lua_State* L, const std::string& folderPath, const std::string& zipFilePath, bool includeFolder, const std::string& modes)
+int LuaZipFolder::ZipFolder(lua_State* L,
+    const std::string& folderPath,
+    const std::string& zipFilePath,
+    bool includeFolder,
+    const std::string& modes)
 {
 	zipFile zipFolderFile = zipOpen(zipFilePath.c_str(), APPEND_STATUS_CREATE);
 
 	const std::string normFolderPath = FileSystem::GetNormalizedPath(folderPath);
-	const std::string folderName = (includeFolder)? FileSystem::GetFilename(normFolderPath) + "/": "";
+	const std::string folderName = (includeFolder) ? FileSystem::GetFilename(normFolderPath) + "/" : "";
 	char buf[1024] = {'\0'};
 
 	if (zipFolderFile == nullptr) {
@@ -519,7 +512,8 @@ int LuaZipFolder::ZipFolder(lua_State* L, const std::string& folderPath, const s
 	}
 
 	if (!dataDirsAccess.InWriteDir(normFolderPath)) {
-		SNPRINTF(buf, sizeof(buf), "[%s] cannot zip \"%s\": outside writable data-directory", __func__, normFolderPath.c_str());
+		SNPRINTF(buf, sizeof(buf), "[%s] cannot zip \"%s\": outside writable data-directory", __func__,
+		    normFolderPath.c_str());
 		lua_pushstring(L, buf);
 		zipClose(zipFolderFile, nullptr);
 		return 1;

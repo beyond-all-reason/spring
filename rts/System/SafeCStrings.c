@@ -13,30 +13,31 @@
  * for example when it is too long.
  */
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-char* safe_strcpy(char* destination, size_t destinationSize, const char* source)
-{
-	if ((destination != NULL) && (destinationSize > 0)) {
-		destination[destinationSize - 1] = '\0';
-		destination = STRNCPY(destination, source, destinationSize - 1);
-	}
+char *safe_strcpy(char *destination, size_t destinationSize,
+                  const char *source) {
+  if ((destination != NULL) && (destinationSize > 0)) {
+    destination[destinationSize - 1] = '\0';
+    destination = STRNCPY(destination, source, destinationSize - 1);
+  }
 
-	return destination;
+  return destination;
 }
 
-char* safe_strcat(char* destination, size_t destinationSize, const char* source)
-{
-	if ((destination != NULL) && (destinationSize > 0)) {
-		destination[destinationSize - 1] = '\0';
-		destination = STRNCAT(destination, source, destinationSize - strlen(destination) - 1);
-	}
+char *safe_strcat(char *destination, size_t destinationSize,
+                  const char *source) {
+  if ((destination != NULL) && (destinationSize > 0)) {
+    destination[destinationSize - 1] = '\0';
+    destination =
+        STRNCAT(destination, source, destinationSize - strlen(destination) - 1);
+  }
 
-	return destination;
+  return destination;
 }
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 } // extern "C"
 #endif

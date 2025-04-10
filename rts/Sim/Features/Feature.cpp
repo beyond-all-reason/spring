@@ -1,22 +1,24 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Feature.h"
+
 #include "FeatureDef.h"
 #include "FeatureDefHandler.h"
-#include "FeatureMemPool.h"
 #include "FeatureHandler.h"
+#include "FeatureMemPool.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Map/Ground.h"
 #include "Map/MapInfo.h"
 #include "Rendering/Env/Particles/Classes/BubbleProjectile.h"
 #include "Rendering/Env/Particles/Classes/GeoThermSmokeProjectile.h"
 #include "Rendering/Env/Particles/Classes/SmokeProjectile.h"
+#include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/DamageArray.h"
 #include "Sim/Misc/GlobalSynced.h"
-#include "Sim/Misc/QuadField.h"
-#include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/LosHandler.h"
 #include "Sim/Misc/ModInfo.h"
+#include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/Utils/UnitTrapCheckUtils.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -25,57 +27,55 @@
 #include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/UnitHandler.h"
 #include "System/EventHandler.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/creg/DefTypes.h"
-#include "System/Log/ILog.h"
-
-#include "System/Misc/TracyDefs.h"
 
 
 CR_BIND_DERIVED_POOL(CFeature, CSolidObject, , featureMemPool.allocMem, featureMemPool.freeMem)
 
-CR_REG_METADATA(CFeature, (
-	CR_MEMBER(isRepairingBeforeResurrect),
-	CR_MEMBER(inUpdateQue),
-	CR_MEMBER(deleteMe),
-	CR_MEMBER(alphaFade),
+CR_REG_METADATA(CFeature,
+    (CR_MEMBER(isRepairingBeforeResurrect),
+        CR_MEMBER(inUpdateQue),
+        CR_MEMBER(deleteMe),
+        CR_MEMBER(alphaFade),
 
-	CR_MEMBER(drawAlpha),
-	CR_MEMBER(resurrectProgress),
-	CR_MEMBER(reclaimTime),
-	CR_MEMBER(reclaimLeft),
+        CR_MEMBER(drawAlpha),
+        CR_MEMBER(resurrectProgress),
+        CR_MEMBER(reclaimTime),
+        CR_MEMBER(reclaimLeft),
 
-	CR_MEMBER(defResources),
-	CR_MEMBER(resources),
+        CR_MEMBER(defResources),
+        CR_MEMBER(resources),
 
-	CR_MEMBER(lastReclaimFrame),
-	CR_MEMBER(fireTime),
-	CR_MEMBER(smokeTime),
+        CR_MEMBER(lastReclaimFrame),
+        CR_MEMBER(fireTime),
+        CR_MEMBER(smokeTime),
 
-	CR_MEMBER(def),
-	CR_MEMBER(udef),
-	CR_MEMBER(moveCtrl),
+        CR_MEMBER(def),
+        CR_MEMBER(udef),
+        CR_MEMBER(moveCtrl),
 
-	CR_MEMBER(solidOnTop),
-	CR_MEMBER(transMatrix),
-	CR_POSTLOAD(PostLoad)
-))
+        CR_MEMBER(solidOnTop),
+        CR_MEMBER(transMatrix),
+        CR_POSTLOAD(PostLoad)))
 
-CR_BIND(CFeature::MoveCtrl,)
+CR_BIND(CFeature::MoveCtrl, )
 
-CR_REG_METADATA_SUB(CFeature,MoveCtrl,(
-	CR_MEMBER(enabled),
+CR_REG_METADATA_SUB(CFeature,
+    MoveCtrl,
+    (CR_MEMBER(enabled),
 
-	CR_MEMBER(movementMask),
-	CR_MEMBER(velocityMask),
-	CR_MEMBER(impulseMask),
+        CR_MEMBER(movementMask),
+        CR_MEMBER(velocityMask),
+        CR_MEMBER(impulseMask),
 
-	CR_MEMBER(velVector),
-	CR_MEMBER(accVector)
-))
+        CR_MEMBER(velVector),
+        CR_MEMBER(accVector)))
 
-
-CFeature::CFeature(): CSolidObject()
+CFeature::CFeature()
+    : CSolidObject()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(featureMemPool.alloced(this));
@@ -83,7 +83,6 @@ CFeature::CFeature(): CSolidObject()
 	crushable = true;
 	immobile = true;
 }
-
 
 CFeature::~CFeature()
 {
@@ -98,14 +97,12 @@ CFeature::~CFeature()
 	CGeoThermSmokeProjectile::GeoThermDestroyed(this);
 }
 
-
 void CFeature::PostLoad()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.RenderFeaturePreCreated(this);
 	eventHandler.RenderFeatureCreated(this);
 }
-
 
 void CFeature::ChangeTeam(int newTeam)
 {
@@ -116,12 +113,12 @@ void CFeature::ChangeTeam(int newTeam)
 		// -1 and we remap them again (to 0) to prevent crashes
 		team = std::max(0, teamHandler.GaiaTeamID());
 		allyteam = std::max(0, teamHandler.GaiaAllyTeamID());
-	} else {
+	}
+	else {
 		team = newTeam;
 		allyteam = teamHandler.AllyTeam(newTeam);
 	}
 }
-
 
 bool CFeature::IsInLosForAllyTeam(int argAllyTeam) const
 {
@@ -132,21 +129,17 @@ bool CFeature::IsInLosForAllyTeam(int argAllyTeam) const
 	const bool isGaia = allyteam == std::max(0, teamHandler.GaiaAllyTeamID());
 
 	switch (modInfo.featureVisibility) {
-		case CModInfo::FEATURELOS_NONE:
-		default:
-			return losHandler->InLos(pos, argAllyTeam);
+	case CModInfo::FEATURELOS_NONE:
+	default: return losHandler->InLos(pos, argAllyTeam);
 
-		// these next two only make sense when Gaia is enabled
-		case CModInfo::FEATURELOS_GAIAONLY:
-			return (isGaia || losHandler->InLos(pos, argAllyTeam));
-		case CModInfo::FEATURELOS_GAIAALLIED:
-			return (isGaia || allyteam == argAllyTeam || losHandler->InLos(pos, argAllyTeam));
+	// these next two only make sense when Gaia is enabled
+	case CModInfo::FEATURELOS_GAIAONLY: return (isGaia || losHandler->InLos(pos, argAllyTeam));
+	case CModInfo::FEATURELOS_GAIAALLIED:
+		return (isGaia || allyteam == argAllyTeam || losHandler->InLos(pos, argAllyTeam));
 
-		case CModInfo::FEATURELOS_ALL:
-			return true;
+	case CModInfo::FEATURELOS_ALL: return true;
 	}
 }
-
 
 void CFeature::Initialize(const FeatureLoadParams& params)
 {
@@ -187,39 +180,40 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	// (movementMask exists mostly for trees, which depend on
 	// speed for falling animations but should never actually
 	// *move* in XZ, so their velocityMask *does* include XZ)
-	moveCtrl.SetMovementMask(mix(OnesVector, UpVector, udef == nullptr                                 ));
+	moveCtrl.SetMovementMask(mix(OnesVector, UpVector, udef == nullptr));
 	moveCtrl.SetVelocityMask(mix(OnesVector, UpVector, udef == nullptr && def->drawType < DRAWTYPE_TREE));
 
 	// set position before mid-position
-	Move(((po == nullptr)? params.pos: po->pos).cClampInMap(), false);
+	Move(((po == nullptr) ? params.pos : po->pos).cClampInMap(), false);
 	// use base-class version, AddFeature() below
 	// will already insert us in the update-queue
-	CWorldObject::SetVelocity((po == nullptr)? params.speed: po->speed);
+	CWorldObject::SetVelocity((po == nullptr) ? params.speed : po->speed);
 
 	switch (def->drawType) {
-		case DRAWTYPE_NONE: {
-		} break;
+	case DRAWTYPE_NONE: {
+	} break;
 
-		case DRAWTYPE_MODEL: {
-			if ((model = def->LoadModel()) != nullptr) {
-				SetMidAndAimPos(model->relMidPos, model->relMidPos, true);
-				SetRadiusAndHeight(model);
+	case DRAWTYPE_MODEL: {
+		if ((model = def->LoadModel()) != nullptr) {
+			SetMidAndAimPos(model->relMidPos, model->relMidPos, true);
+			SetRadiusAndHeight(model);
 
-				// only initialize the LM for modelled features
-				// (this is still never animated but allows for
-				// custom piece display-lists, etc)
-				localModel.SetModel(model);
-			} else {
-				LOG_L(L_ERROR, "[%s] couldn't load model for %s", __FUNCTION__, def->name.c_str());
-			}
-		} break;
+			// only initialize the LM for modelled features
+			// (this is still never animated but allows for
+			// custom piece display-lists, etc)
+			localModel.SetModel(model);
+		}
+		else {
+			LOG_L(L_ERROR, "[%s] couldn't load model for %s", __FUNCTION__, def->name.c_str());
+		}
+	} break;
 
-		default: {
-			// always >= DRAWTYPE_TREE here
-			// LoadFeaturesFromMap() doesn't set a scale for trees
-			SetMidAndAimPos(UpVector * TREE_RADIUS, UpVector * TREE_RADIUS, true);
-			SetRadiusAndHeight(TREE_RADIUS, TREE_RADIUS * 2.0f);
-		} break;
+	default: {
+		// always >= DRAWTYPE_TREE here
+		// LoadFeaturesFromMap() doesn't set a scale for trees
+		SetMidAndAimPos(UpVector * TREE_RADIUS, UpVector * TREE_RADIUS, true);
+		SetRadiusAndHeight(TREE_RADIUS, TREE_RADIUS * 2.0f);
+	} break;
 	}
 
 	// TODO: support custom buildee radii.
@@ -232,8 +226,8 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	collisionVolume = def->collisionVolume;
 	selectionVolume = def->selectionVolume;
 
-	collisionVolume.InitDefault(float4(radius, height,  xsize * SQUARE_SIZE, zsize * SQUARE_SIZE));
-	selectionVolume.InitDefault(float4(radius, height,  xsize * SQUARE_SIZE, zsize * SQUARE_SIZE));
+	collisionVolume.InitDefault(float4(radius, height, xsize * SQUARE_SIZE, zsize * SQUARE_SIZE));
+	selectionVolume.InitDefault(float4(radius, height, xsize * SQUARE_SIZE, zsize * SQUARE_SIZE));
 
 
 	// feature does not have an assigned ID yet
@@ -253,7 +247,6 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	eventHandler.FeatureCreated(this);
 	eventHandler.RenderFeatureCreated(this);
 }
-
 
 bool CFeature::AddBuildPower(CUnit* builder, float amount)
 {
@@ -299,7 +292,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 			if (reclaimLeft >= 1.0f) {
 				// feature can start being reclaimed again
 				isRepairingBeforeResurrect = false;
-			} else if (reclaimLeft <= 0.0f) {
+			}
+			else if (reclaimLeft <= 0.0f) {
 				// this can happen when a mod tampers the feature in AllowFeatureBuildStep
 				featureHandler.DeleteFeature(this);
 				return false;
@@ -337,9 +331,9 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	const float energyUseScaled = resourceFraction.metal * modInfo.reclaimFeatureEnergyCostFactor;
 
 	SResourceOrder order;
-	order.quantum    = false;
-	order.overflow   = builder->harvestStorage.empty();
-	order.separate   = true;
+	order.quantum = false;
+	order.overflow = builder->harvestStorage.empty();
+	order.separate = true;
 	order.use.energy = energyUseScaled;
 
 	if (reclaimLeftTemp == 0.0f) {
@@ -358,8 +352,8 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 		// Chunky reclaiming, work out how many chunk boundaries we crossed
 		const float chunkSize = 1.0f / modInfo.reclaimMethod;
 
-		const int oldChunk  = ChunkNumber(oldReclaimLeft);
-		const int newChunk  = ChunkNumber(reclaimLeft);
+		const int oldChunk = ChunkNumber(oldReclaimLeft);
+		const int newChunk = ChunkNumber(reclaimLeft);
 		const int numChunks = oldChunk - newChunk;
 
 		if (numChunks != 0) {
@@ -371,7 +365,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	if (!builder->IssueResourceOrder(&order))
 		return false;
 
-	resources  -= order.add;
+	resources -= order.add;
 	reclaimLeft = reclaimLeftTemp;
 	lastReclaimFrame = gs->frameNum;
 
@@ -384,14 +378,12 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	return true;
 }
 
-
-void CFeature::DoDamage(
-	const DamageArray& damages,
-	const float3& impulse,
-	CUnit* attacker,
-	int weaponDefID,
-	int projectileID
-) {
+void CFeature::DoDamage(const DamageArray& damages,
+    const float3& impulse,
+    CUnit* attacker,
+    int weaponDefID,
+    int projectileID)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// do nothing if already marked for deletion this frame, i.e. isDead
 	if (deleteMe)
@@ -406,7 +398,8 @@ void CFeature::DoDamage(
 	float baseDamage = damages.GetDefault();
 	float impulseMult = float((def->drawType >= DRAWTYPE_TREE) || (udef != nullptr && !udef->IsImmobileUnit()));
 
-	if (eventHandler.FeaturePreDamaged(this, attacker, baseDamage, weaponDefID, projectileID, &baseDamage, &impulseMult))
+	if (eventHandler.FeaturePreDamaged(
+	        this, attacker, baseDamage, weaponDefID, projectileID, &baseDamage, &impulseMult))
 		return;
 
 	// NOTE:
@@ -422,7 +415,8 @@ void CFeature::DoDamage(
 	eventHandler.FeatureDamaged(this, attacker, baseDamage, weaponDefID, projectileID);
 
 	if (health <= 0.0f && def->destructable) {
-		FeatureLoadParams params = {nullptr, nullptr, featureDefHandler->GetFeatureDefByID(def->deathFeatureDefID), pos, speed, -1, team, -1, heading, buildFacing, 0, 0};
+		FeatureLoadParams params = {nullptr, nullptr, featureDefHandler->GetFeatureDefByID(def->deathFeatureDefID), pos,
+		    speed, -1, team, -1, heading, buildFacing, 0, 0};
 		CFeature* deathFeature = featureHandler.CreateWreckage(params);
 
 		if (deathFeature != nullptr) {
@@ -437,9 +431,7 @@ void CFeature::DoDamage(
 	}
 }
 
-
-
-void CFeature::DependentDied(CObject *o)
+void CFeature::DependentDied(CObject* o)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (o == solidOnTop)
@@ -447,7 +439,6 @@ void CFeature::DependentDied(CObject *o)
 
 	CSolidObject::DependentDied(o);
 }
-
 
 void CFeature::SetVelocity(const float3& v)
 {
@@ -462,7 +453,6 @@ void CFeature::SetVelocity(const float3& v)
 
 	featureHandler.SetFeatureUpdateable(this);
 }
-
 
 void CFeature::ForcedMove(const float3& newPos)
 {
@@ -486,7 +476,6 @@ void CFeature::ForcedMove(const float3& newPos)
 	quadField.AddFeature(this);
 }
 
-
 void CFeature::ForcedSpin(const float3& newDir)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -502,7 +491,6 @@ void CFeature::ForcedSpin(const float3& newFrontDir, const float3& newRightDir)
 	CSolidObject::ForcedSpin(newFrontDir, newRightDir);
 	UpdateTransform(pos, true);
 }
-
 
 void CFeature::UpdateTransformAndPhysState()
 {
@@ -526,13 +514,11 @@ void CFeature::UpdateQuadFieldPosition(const float3& moveVec)
 	quadField.AddFeature(this);
 }
 
-
-bool CFeature::UpdateVelocity(
-	const float3& dragAccel,
-	const float3& gravAccel,
-	const float3& movMask,
-	const float3& velMask
-) {
+bool CFeature::UpdateVelocity(const float3& dragAccel,
+    const float3& gravAccel,
+    const float3& movMask,
+    const float3& velMask)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// apply drag and gravity to speed; leave more advanced physics (water
 	// buoyancy, etc) to Lua
@@ -547,17 +533,18 @@ bool CFeature::UpdateVelocity(
 	if (!IsInWater()) {
 		// quadratic downward acceleration if not in water
 		CWorldObject::SetVelocity(((speed * OnesVector) + gravAccel) * velMask);
-	} else {
+	}
+	else {
 		// constant downward speed otherwise, unless floating
-		CWorldObject::SetVelocity(((speed *   XZVector) + gravAccel * (1 - def->floating)) * velMask);
+		CWorldObject::SetVelocity(((speed * XZVector) + gravAccel * (1 - def->floating)) * velMask);
 	}
 
-	const float oldGroundHeight = CGround::GetHeightReal(pos        );
+	const float oldGroundHeight = CGround::GetHeightReal(pos);
 	const float newGroundHeight = CGround::GetHeightReal(pos + speed);
 
 	// adjust vertical speed so we do not sink into the ground
 	if ((pos.y + speed.y) <= newGroundHeight) {
-		speed.y  = std::min(newGroundHeight - pos.y, math::fabs(newGroundHeight - oldGroundHeight));
+		speed.y = std::min(newGroundHeight - pos.y, math::fabs(newGroundHeight - oldGroundHeight));
 		speed.y *= moveCtrl.velocityMask.y;
 	}
 
@@ -576,8 +563,10 @@ bool CFeature::UpdatePosition()
 		speed = (moveCtrl.velVector += moveCtrl.accVector);
 		if (speed.SqLength() != 0.0f)
 			UpdateQuadFieldPosition(speed);
-	} else {
-		const float3 dragAccel = GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f);
+	}
+	else {
+		const float3 dragAccel =
+		    GetDragAccelerationVec(mapInfo->atmosphere.fluidDensity, mapInfo->water.fluidDensity, 1.0f, 0.1f);
 		const float3 gravAccel = UpVector * mapInfo->map.gravity;
 
 		// horizontal movement
@@ -599,7 +588,7 @@ bool CFeature::UpdatePosition()
 	}
 
 	UpdateTransformAndPhysState(); // updates speed.w and BIT_MOVING
-	Block(); // does the check if wanted itself
+	Block();                       // does the check if wanted itself
 
 	// use an exact comparison for the y-component (gravity is small)
 	if (!pos.equals(oldPos, float3(float3::cmp_eps(), 0.0f, float3::cmp_eps()))) {
@@ -615,7 +604,6 @@ bool CFeature::UpdatePosition()
 	return (moveCtrl.enabled);
 }
 
-
 bool CFeature::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -629,10 +617,11 @@ bool CFeature::Update()
 		if (!((gs->frameNum + id) & 3) && projectileHandler.GetParticleSaturation() < 0.7f) {
 			if (pos.y < 0.0f) {
 				projMemPool.alloc<CBubbleProjectile>(nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
-					guRNG.NextVector() * 0.3f + UpVector, smokeTime / 6 + 20, 6, 0.4f, 0.5f);
-			} else {
-				projMemPool.alloc<CSmokeProjectile> (nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
-					guRNG.NextVector() * 0.3f + UpVector, smokeTime / 6 + 20, 6, 0.4f, 0.5f);
+				    guRNG.NextVector() * 0.3f + UpVector, smokeTime / 6 + 20, 6, 0.4f, 0.5f);
+			}
+			else {
+				projMemPool.alloc<CSmokeProjectile>(nullptr, midPos + guRNG.NextVector() * radius * 0.3f,
+				    guRNG.NextVector() * 0.3f + UpVector, smokeTime / 6 + 20, 6, 0.4f, 0.5f);
 			}
 		}
 	}
@@ -649,7 +638,6 @@ bool CFeature::Update()
 	return continueUpdating;
 }
 
-
 void CFeature::StartFire()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -661,7 +649,6 @@ void CFeature::StartFire()
 
 	featureHandler.SetFeatureUpdateable(this);
 }
-
 
 void CFeature::EmitGeoSmoke()
 {
@@ -709,11 +696,9 @@ void CFeature::EmitGeoSmoke()
 	projMemPool.alloc<CGeoThermSmokeProjectile>(pPos, pSpeed, 50 + guRNG.NextInt(7), this);
 }
 
-
 int CFeature::ChunkNumber(float f) { return int(math::ceil(f * modInfo.reclaimMethod)); }
 
 // note: this is not actually used by GroundBlockingObjectMap anymore, just
 // to distinguish unit and feature ID's (values >= MaxUnits() correspond to
 // features in object commands)
 int CFeature::GetBlockingMapID() const { return (id + unitHandler.MaxUnits()); }
-

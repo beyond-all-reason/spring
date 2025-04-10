@@ -5,8 +5,7 @@
 
 #include <string>
 
-class CClipboard
-{
+class CClipboard {
 public:
 	CClipboard() {}
 

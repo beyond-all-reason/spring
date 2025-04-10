@@ -84,4 +84,3 @@ if __name__ == '__main__':
 		print("Usage: %s <cob root folder>" % (sys.argv[0],))
 		exit(1)
 	main(sys.argv[1])
-

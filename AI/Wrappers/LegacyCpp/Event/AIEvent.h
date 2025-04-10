@@ -6,15 +6,13 @@
 #include "../IGlobalAI.h"
 #include "../IGlobalAICallback.h"
 
-
 namespace springLegacyAI {
 
 class CAIEvent {
 public:
+	virtual void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) = 0;
 
-	virtual void Run(IGlobalAI& ai,
-			IGlobalAICallback* globalAICallback = NULL) = 0;
-	virtual ~CAIEvent(){}
+	virtual ~CAIEvent() {}
 };
 
 } // namespace springLegacyAI

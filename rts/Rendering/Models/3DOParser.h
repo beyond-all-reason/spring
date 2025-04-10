@@ -3,51 +3,47 @@
 #ifndef SPRING_3DOPARSER_H
 #define SPRING_3DOPARSER_H
 
-#include <vector>
-#include <string>
-
 #include "3DModel.h"
 #include "IModelParser.h"
 
 #include "Rendering/Textures/3DOTextureHandler.h"
-#include "System/float3.h"
 #include "System/UnorderedSet.hpp"
+#include "System/float3.h"
 
+#include <string>
+#include <vector>
 
 namespace TA3DO {
-	typedef struct _3DObject
-	{
-		int VersionSignature;
-		int NumberOfVertices;
-		int NumberOfPrimitives;
-		int SelectionPrimitive;
-		int XFromParent;
-		int YFromParent;
-		int ZFromParent;
-		int OffsetToObjectName;
-		int Always_0;
-		int OffsetToVertexArray;
-		int OffsetToPrimitiveArray;
-		int OffsetToSiblingObject;
-		int OffsetToChildObject;
-	} _3DObject;
+typedef struct _3DObject {
+	int VersionSignature;
+	int NumberOfVertices;
+	int NumberOfPrimitives;
+	int SelectionPrimitive;
+	int XFromParent;
+	int YFromParent;
+	int ZFromParent;
+	int OffsetToObjectName;
+	int Always_0;
+	int OffsetToVertexArray;
+	int OffsetToPrimitiveArray;
+	int OffsetToSiblingObject;
+	int OffsetToChildObject;
+} _3DObject;
 
-	typedef struct _Primitive
-	{
-		int PaletteEntry;
-		int NumberOfVertexIndexes;
-		int Always_0;
-		int OffsetToVertexIndexArray;
-		int OffsetToTextureName;
-		int Unknown_1;
-		int Unknown_2;
-		int Unknown_3;
-	} _Primitive;
-};
+typedef struct _Primitive {
+	int PaletteEntry;
+	int NumberOfVertexIndexes;
+	int Always_0;
+	int OffsetToVertexIndexArray;
+	int OffsetToTextureName;
+	int Unknown_1;
+	int Unknown_2;
+	int Unknown_3;
+} _Primitive;
+}; // namespace TA3DO
 
-struct S3DOPrimitive
-{
-	std::vector<int>    indices;  ///< indices to S3DOPiece::verts
+struct S3DOPrimitive {
+	std::vector<int> indices;     ///< indices to S3DOPiece::verts
 	std::vector<float3> vnormals; ///< per-vertex normals
 
 	// the raw normal for this primitive (-v0v1.cross(v0v2))
@@ -57,16 +53,17 @@ struct S3DOPrimitive
 	C3DOTextureHandler::UnitTexture* texture = nullptr;
 };
 
-
-struct S3DOPiece: public S3DModelPiece
-{
+struct S3DOPiece : public S3DModelPiece {
 	S3DOPiece() = default;
 	S3DOPiece(const S3DOPiece&) = delete;
+
 	S3DOPiece(S3DOPiece&& p) { *this = std::move(p); }
 
-	S3DOPiece& operator = (const S3DOPiece& p) = delete;
-	S3DOPiece& operator = (S3DOPiece&& p) {
-		#if 0
+	S3DOPiece& operator=(const S3DOPiece& p) = delete;
+
+	S3DOPiece& operator=(S3DOPiece&& p)
+	{
+#if 0
 		// piece is never actually moved, just need the operator for pool
 		emitPos = p.emitPos;
 		emitDir = p.emitDir;
@@ -76,11 +73,12 @@ struct S3DOPiece: public S3DModelPiece
 
 		vertices = std::move(p.vertexAttribs);
 		indices = std::move(p.vertexIndices);
-		#endif
+#endif
 		return *this;
 	}
 
-	void Clear() override {
+	void Clear() override
+	{
 		S3DModelPiece::Clear();
 
 		verts.clear();
@@ -96,40 +94,36 @@ struct S3DOPiece: public S3DModelPiece
 	void PostProcessGeometry(uint32_t pieceIndex) override;
 
 	float3 GetEmitPos() const override { return emitPos; }
+
 	float3 GetEmitDir() const override { return emitDir; }
+
 public:
 	void SetMinMaxExtends();
 	void CalcNormals();
 
 	void GetVertices(const TA3DO::_3DObject* o, const std::vector<unsigned char>& fileBuf);
-	void GetPrimitives(
-		const S3DModel* model,
-		int pos,
-		int num,
-		int excludePrim,
-		const std::vector<unsigned char>& fileBuf,
-		const spring::unordered_set<std::string>& teamTextures
-	);
+	void GetPrimitives(const S3DModel* model,
+	    int pos,
+	    int num,
+	    int excludePrim,
+	    const std::vector<unsigned char>& fileBuf,
+	    const spring::unordered_set<std::string>& teamTextures);
 
 	bool IsBasePlate(const S3DOPrimitive* face) const;
 
-	C3DOTextureHandler::UnitTexture* GetTexture(
-		const TA3DO::_Primitive* p,
-		const std::vector<unsigned char>& fileBuf,
-		const spring::unordered_set<std::string>& teamTextures
-	) const;
+	C3DOTextureHandler::UnitTexture* GetTexture(const TA3DO::_Primitive* p,
+	    const std::vector<unsigned char>& fileBuf,
+	    const spring::unordered_set<std::string>& teamTextures) const;
 
 public:
-	std::vector<float3> verts; //FIXME
+	std::vector<float3> verts; // FIXME
 	std::vector<S3DOPrimitive> prims;
 
 	float3 emitPos;
 	float3 emitDir;
 };
 
-
-class C3DOParser: public IModelParser
-{
+class C3DOParser : public IModelParser {
 public:
 	void Init() override;
 	void Kill() override;
@@ -140,7 +134,8 @@ public:
 	S3DOPiece* LoadPiece(S3DModel* model, S3DOPiece* parent, const std::vector<uint8_t>& buf, int pos);
 
 private:
-	C3DOTextureHandler::UnitTexture* GetTexture(S3DOPiece* obj, TA3DO::_Primitive* p, const std::vector<unsigned char>& fileBuf) const;
+	C3DOTextureHandler::UnitTexture*
+	GetTexture(S3DOPiece* obj, TA3DO::_Primitive* p, const std::vector<unsigned char>& fileBuf) const;
 	static bool IsBasePlate(S3DOPiece* obj, S3DOPrimitive* face);
 
 private:

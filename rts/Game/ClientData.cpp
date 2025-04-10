@@ -1,15 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cassert>
-#include <sstream>
-
 #include "ClientData.h"
+
 #include "GameVersion.h"
+
 #include "System/Config/ConfigHandler.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Platform/Misc.h"
 #include "System/StringUtil.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <cassert>
+#include <sstream>
 
 std::vector<std::uint8_t> ClientData::GetCompressed()
 {
@@ -43,4 +44,3 @@ std::string ClientData::GetUncompressed(const std::vector<std::uint8_t>& compres
 
 	return cdata;
 }
-

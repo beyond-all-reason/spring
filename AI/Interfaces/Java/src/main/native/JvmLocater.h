@@ -30,8 +30,7 @@ const char* GetArchPath();
  * @param arch see GetArchPath(), use NULL for the default value
  * @return true, if the JVM library was found, false otherwise.
  */
-bool GetJVMPath(const char* jrePath, const char* jvmType,
-		char* jvmPath, size_t jvmPathSize, const char* arch);
+bool GetJVMPath(const char* jrePath, const char* jvmType, char* jvmPath, size_t jvmPathSize, const char* arch);
 
 /**
  * Find the path to a JRE install dir, using platform dependent means.
@@ -43,8 +42,7 @@ bool GetJVMPath(const char* jrePath, const char* jvmType,
  * @param arch see GetArchPath(), use NULL for the default value
  * @return true, if a JRE was found, false otherwise.
  */
-bool GetJREPath(char* path, size_t pathSize, const char* configFile,
-		const char* arch);
+bool GetJREPath(char* path, size_t pathSize, const char* configFile, const char* arch);
 
 #ifdef __cplusplus
 } // extern "C"

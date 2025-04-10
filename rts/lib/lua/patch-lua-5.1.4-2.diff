@@ -71,8 +71,8 @@
  ** See Copyright Notice in lua.h
  */
 @@ -45,6 +45,7 @@
- 
- 
+
+
  static int db_getfenv (lua_State *L) {
 +  luaL_checkany(L, 1);
    lua_getfenv(L, 1);
@@ -97,8 +97,8 @@
 +    return 0;  /* read fails */
 +  }
  }
- 
- 
+
+
 --- llex.c	2007/12/27 13:02:25	2.20.1.1
 +++ llex.c	2009/11/23 14:58:22	2.20.1.2
 @@ -1,5 +1,5 @@
@@ -119,7 +119,7 @@
 +  }
    return ts;
  }
- 
+
 --- loadlib.c	2008/08/06 13:29:28	1.52.1.3
 +++ loadlib.c	2009/09/09 13:17:16	1.52.1.4
 @@ -1,5 +1,5 @@
@@ -148,8 +148,8 @@
  ** See Copyright Notice in lua.h
  */
 @@ -754,6 +754,7 @@
- 
- 
+
+
  static int str_format (lua_State *L) {
 +  int top = lua_gettop(L);
    int arg = 1;
@@ -175,7 +175,7 @@
  ** See Copyright Notice in lua.h
  */
 @@ -133,6 +133,7 @@
- 
+
  void luaV_settable (lua_State *L, const TValue *t, TValue *key, StkId val) {
    int loop;
 +  TValue temp;
@@ -186,7 +186,7 @@
        callTM(L, tm, t, key, val);
        return;
      }
--    t = tm;  /* else repeat with `tm' */ 
+-    t = tm;  /* else repeat with `tm' */
 +    /* else repeat with `tm' */
 +    setobj(L, &temp, tm);  /* avoid pointing inside table (may rehash) */
 +    t = &temp;

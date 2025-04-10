@@ -14,4 +14,3 @@ docker run -it --rm ^
             -v %CCACHE_DIR%:/ccache ^
             -v %DOCKER_SCRIPTS_DIR%:/scripts ^
             bar-spring build -l %*
-

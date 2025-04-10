@@ -126,5 +126,3 @@ end
 sourcet["default"] = sourcet["until-closed"]
 
 source = socket.choose(sourcet)
-
-

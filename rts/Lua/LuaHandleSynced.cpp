@@ -2,61 +2,57 @@
 
 #include "LuaHandleSynced.h"
 
-#include "LuaInclude.h"
-
-#include "LuaUtils.h"
 #include "LuaArchive.h"
 #include "LuaCallInCheck.h"
 #include "LuaConfig.h"
-#include "LuaConstGL.h"
 #include "LuaConstCMD.h"
 #include "LuaConstCMDTYPE.h"
 #include "LuaConstCOB.h"
 #include "LuaConstEngine.h"
+#include "LuaConstGL.h"
 #include "LuaConstGame.h"
 #include "LuaConstPlatform.h"
+#include "LuaFeatureDefs.h"
+#include "LuaInclude.h"
 #include "LuaInterCall.h"
+#include "LuaMaterial.h"
+#include "LuaOpenGL.h"
+#include "LuaScream.h"
 #include "LuaSyncedCtrl.h"
 #include "LuaSyncedRead.h"
 #include "LuaSyncedTable.h"
 #include "LuaUICommand.h"
+#include "LuaUnitDefs.h"
 #include "LuaUnsyncedCtrl.h"
 #include "LuaUnsyncedRead.h"
-#include "LuaFeatureDefs.h"
-#include "LuaUnitDefs.h"
-#include "LuaWeaponDefs.h"
-#include "LuaScream.h"
-#include "LuaMaterial.h"
-#include "LuaOpenGL.h"
+#include "LuaUtils.h"
 #include "LuaVFS.h"
+#include "LuaWeaponDefs.h"
 #include "LuaZip.h"
 
 #include "Game/Game.h"
 #include "Game/WordCompletion.h"
-#include "Sim/Misc/GlobalSynced.h"
-#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/BuildInfo.h"
-#include "Sim/Units/UnitDef.h"
-#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Units/Scripts/CobInstance.h"
 #include "Sim/Units/Scripts/LuaUnitScript.h"
+#include "Sim/Units/UnitDef.h"
+#include "Sim/Units/UnitDefHandler.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/EventHandler.h"
-#include "System/creg/SerializeLuaState.h"
 #include "System/FileSystem/FileHandler.h"
-#include "System/Log/ILog.h"
-#include "System/SpringMath.h"
 #include "System/LoadLock.h"
-
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
+#include "System/creg/SerializeLuaState.h"
 
 
-LuaRulesParams::Params  CSplitLuaHandle::gameParams;
-
-
+LuaRulesParams::Params CSplitLuaHandle::gameParams;
 
 /******************************************************************************/
 /******************************************************************************/
@@ -69,15 +65,13 @@ LuaRulesParams::Params  CSplitLuaHandle::gameParams;
 //  #######  ##    ##  ######     ##    ##    ##  ######  ######## ########
 
 CUnsyncedLuaHandle::CUnsyncedLuaHandle(CSplitLuaHandle* _base, const std::string& _name, int _order)
-	: CLuaHandle(_name, _order, false, false)
-	, base(*_base)
+    : CLuaHandle(_name, _order, false, false)
+    , base(*_base)
 {
 	D.allowChanges = false;
 }
 
-
 CUnsyncedLuaHandle::~CUnsyncedLuaHandle() = default;
-
 
 bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 {
@@ -89,17 +83,22 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 	LUA_OPEN_LIB(L, luaopen_math);
 	LUA_OPEN_LIB(L, luaopen_table);
 	LUA_OPEN_LIB(L, luaopen_string);
-	//LUA_OPEN_LIB(L, luaopen_io);
-	//LUA_OPEN_LIB(L, luaopen_os);
-	//LUA_OPEN_LIB(L, luaopen_package);
-	//LUA_OPEN_LIB(L, luaopen_debug);
+	// LUA_OPEN_LIB(L, luaopen_io);
+	// LUA_OPEN_LIB(L, luaopen_os);
+	// LUA_OPEN_LIB(L, luaopen_package);
+	// LUA_OPEN_LIB(L, luaopen_debug);
 
 	// delete some dangerous functions
-	lua_pushnil(L); lua_setglobal(L, "dofile");
-	lua_pushnil(L); lua_setglobal(L, "loadfile");
-	lua_pushnil(L); lua_setglobal(L, "loadlib");
-	lua_pushnil(L); lua_setglobal(L, "loadstring"); // replaced
-	lua_pushnil(L); lua_setglobal(L, "require");
+	lua_pushnil(L);
+	lua_setglobal(L, "dofile");
+	lua_pushnil(L);
+	lua_setglobal(L, "loadfile");
+	lua_pushnil(L);
+	lua_setglobal(L, "loadlib");
+	lua_pushnil(L);
+	lua_setglobal(L, "loadstring"); // replaced
+	lua_pushnil(L);
+	lua_setglobal(L, "require");
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 
@@ -107,41 +106,56 @@ bool CUnsyncedLuaHandle::Init(std::string code, const std::string& file)
 
 	// remove Script.Kill()
 	lua_getglobal(L, "Script");
-		LuaPushNamedNil(L, "Kill");
+	LuaPushNamedNil(L, "Kill");
 	lua_pop(L, 1);
 
 	LuaPushNamedCFunc(L, "loadstring", CSplitLuaHandle::LoadStringData);
 	LuaPushNamedCFunc(L, "CallAsTeam", CSplitLuaHandle::CallAsTeam);
-	/*** @global COBSCALE integer */ 
-	LuaPushNamedNumber(L, "COBSCALE",  COBSCALE);
+	/*** @global COBSCALE integer */
+	LuaPushNamedNumber(L, "COBSCALE", COBSCALE);
 
 	// load our libraries
 	{
-		#define KILL { KillLua(); return false; }
-		if (!LuaSyncedTable::PushEntries(L)) KILL
+#define KILL          \
+	{                 \
+		KillLua();    \
+		return false; \
+	}
+		if (!LuaSyncedTable::PushEntries(L))
+			KILL
 
-		if (!AddEntriesToTable(L, "VFS",                   LuaVFS::PushUnsynced       )) KILL
-		if (!AddEntriesToTable(L, "VFS",         LuaZipFileReader::PushUnsynced       )) KILL
-		if (!AddEntriesToTable(L, "VFS",         LuaZipFileWriter::PushUnsynced       )) KILL
-		if (!AddEntriesToTable(L, "VFS",               LuaArchive::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "UnitDefs",         LuaUnitDefs::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "WeaponDefs",     LuaWeaponDefs::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "FeatureDefs",   LuaFeatureDefs::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Script",          LuaInterCall::PushEntriesUnsynced)) KILL
-		if (!AddEntriesToTable(L, "Script",             LuaScream::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Spring",         LuaSyncedRead::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Spring",       LuaUnsyncedCtrl::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Spring",       LuaUnsyncedRead::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Spring",          LuaUICommand::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "gl",                 LuaOpenGL::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "GL",                LuaConstGL::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Engine",        LuaConstEngine::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "Platform",      LuaConstPlatform::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Game",            LuaConstGame::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "CMD",              LuaConstCMD::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "CMDTYPE",      LuaConstCMDTYPE::PushEntries        )) KILL
-		if (!AddEntriesToTable(L, "LOG",                 LuaUtils::PushLogEntries     )) KILL
-		#undef KILL
+			    if (!AddEntriesToTable(L, "VFS", LuaVFS::PushUnsynced)) KILL if (!AddEntriesToTable(L, "VFS",
+			                                                                         LuaZipFileReader::PushUnsynced))
+			        KILL if (!AddEntriesToTable(L, "VFS", LuaZipFileWriter::PushUnsynced))
+			            KILL if (!AddEntriesToTable(
+			                         L, "VFS", LuaArchive::PushEntries)) KILL if (!AddEntriesToTable(L, "UnitDefs",
+			                                                                          LuaUnitDefs::PushEntries))
+			                KILL if (!AddEntriesToTable(L, "WeaponDefs",
+			                             LuaWeaponDefs::PushEntries)) KILL if (!AddEntriesToTable(L, "FeatureDefs",
+			                                                                       LuaFeatureDefs::PushEntries))
+			                    KILL if (!AddEntriesToTable(L, "Script", LuaInterCall::PushEntriesUnsynced))
+			                        KILL if (!AddEntriesToTable(L, "Script",
+			                                     LuaScream::PushEntries)) KILL if (!AddEntriesToTable(L, "Spring",
+			                                                                           LuaSyncedRead::PushEntries))
+			                            KILL if (!AddEntriesToTable(L, "Spring", LuaUnsyncedCtrl::PushEntries))
+			                                KILL if (!AddEntriesToTable(L, "Spring", LuaUnsyncedRead::PushEntries))
+			                                    KILL if (!AddEntriesToTable(L, "Spring", LuaUICommand::PushEntries))
+			                                        KILL if (!AddEntriesToTable(L, "gl", LuaOpenGL::PushEntries))
+			                                            KILL if (!AddEntriesToTable(L, "GL", LuaConstGL::PushEntries))
+			                                                KILL if (!AddEntriesToTable(
+			                                                             L, "Engine", LuaConstEngine::PushEntries))
+			                                                    KILL if (!AddEntriesToTable(L, "Platform",
+			                                                                 LuaConstPlatform::PushEntries))
+			                                                        KILL if (!AddEntriesToTable(
+			                                                                     L, "Game", LuaConstGame::PushEntries))
+			                                                            KILL if (!AddEntriesToTable(L, "CMD",
+			                                                                         LuaConstCMD::PushEntries))
+			                                                                KILL if (!AddEntriesToTable(L, "CMDTYPE",
+			                                                                             LuaConstCMDTYPE::PushEntries))
+			                                                                    KILL if (!AddEntriesToTable(L, "LOG",
+			                                                                                 LuaUtils::PushLogEntries))
+			                                                                        KILL
+#undef KILL
 	}
 
 	lua_settop(L, 0);
@@ -200,7 +214,8 @@ void CUnsyncedLuaHandle::RecvFromSynced(lua_State* srcState, int args)
 
 /*** Custom Object Rendering
  *
- * For the following calls drawMode can be one of the following, notDrawing = 0, normalDraw = 1, shadowDraw = 2, reflectionDraw = 3, refractionDraw = 4, and finally gameDeferredDraw = 5 which was added in 102.0.
+ * For the following calls drawMode can be one of the following, notDrawing = 0, normalDraw = 1, shadowDraw = 2,
+ * reflectionDraw = 3, refractionDraw = 4, and finally gameDeferredDraw = 5 which was added in 102.0.
  *
  * @section custom_object
  */
@@ -240,8 +255,6 @@ bool CUnsyncedLuaHandle::DrawUnit(const CUnit* unit)
 	return draw;
 }
 
-
-
 /*** For custom rendering of features
  *
  * @function UnsyncedCallins:DrawFeature
@@ -276,7 +289,6 @@ bool CUnsyncedLuaHandle::DrawFeature(const CFeature* feature)
 	lua_pop(L, 1);
 	return draw;
 }
-
 
 /*** For custom rendering of shields.
  *
@@ -316,7 +328,6 @@ bool CUnsyncedLuaHandle::DrawShield(const CUnit* unit, const CWeapon* weapon)
 	return draw;
 }
 
-
 /*** For custom rendering of weapon (& other) projectiles
  *
  * @function UnsyncedCallins:DrawProjectile
@@ -354,7 +365,6 @@ bool CUnsyncedLuaHandle::DrawProjectile(const CProjectile* projectile)
 	return draw;
 }
 
-
 /***
  *
  * @function UnsyncedCallins:DrawMaterial
@@ -391,7 +401,6 @@ bool CUnsyncedLuaHandle::DrawMaterial(const LuaMaterial* material)
 	return draw;
 }
 
-
 //
 // Call-Outs
 //
@@ -408,20 +417,18 @@ bool CUnsyncedLuaHandle::DrawMaterial(const LuaMaterial* material)
 //  ######     ##    ##    ##  ######  ######## ########
 
 CSyncedLuaHandle::CSyncedLuaHandle(CSplitLuaHandle* _base, const std::string& _name, int _order)
-	: CLuaHandle(_name, _order, false, true)
-	, base(*_base)
-	, origNextRef(-1)
+    : CLuaHandle(_name, _order, false, true)
+    , base(*_base)
+    , origNextRef(-1)
 {
 	D.allowChanges = true;
 }
-
 
 CSyncedLuaHandle::~CSyncedLuaHandle()
 {
 	// kill all unitscripts running in this handle
 	CLuaUnitScript::HandleFreed(this);
 }
-
 
 bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 {
@@ -440,15 +447,16 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	SPRING_LUA_OPEN_LIB(L, luaopen_math);
 	SPRING_LUA_OPEN_LIB(L, luaopen_table);
 	SPRING_LUA_OPEN_LIB(L, luaopen_string);
-	//SPRING_LUA_OPEN_LIB(L, luaopen_io);
-	//SPRING_LUA_OPEN_LIB(L, luaopen_os);
-	//SPRING_LUA_OPEN_LIB(L, luaopen_package);
-	//SPRING_LUA_OPEN_LIB(L, luaopen_debug);
+	// SPRING_LUA_OPEN_LIB(L, luaopen_io);
+	// SPRING_LUA_OPEN_LIB(L, luaopen_os);
+	// SPRING_LUA_OPEN_LIB(L, luaopen_package);
+	// SPRING_LUA_OPEN_LIB(L, luaopen_debug);
 
 	lua_getglobal(L, "next");
 	origNextRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
 	// delete/replace some dangerous functions
+	// clang-format off
 	lua_pushnil(L); lua_setglobal(L, "dofile");
 	lua_pushnil(L); lua_setglobal(L, "loadfile");
 	lua_pushnil(L); lua_setglobal(L, "loadlib");
@@ -456,8 +464,8 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	lua_pushnil(L); lua_setglobal(L, "rawequal"); //FIXME not unsafe anymore since split?
 	lua_pushnil(L); lua_setglobal(L, "rawget"); //FIXME not unsafe anymore since split?
 	lua_pushnil(L); lua_setglobal(L, "rawset"); //FIXME not unsafe anymore since split?
-//	lua_pushnil(L); lua_setglobal(L, "getfenv");
-//	lua_pushnil(L); lua_setglobal(L, "setfenv");
+	//	lua_pushnil(L); lua_setglobal(L, "getfenv");
+	//	lua_pushnil(L); lua_setglobal(L, "setfenv");
 	lua_pushnil(L); lua_setglobal(L, "newproxy"); // sync unsafe cause of __gc
 	lua_pushnil(L); lua_setglobal(L, "gcinfo");
 	lua_pushnil(L); lua_setglobal(L, "collectgarbage");
@@ -465,7 +473,7 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 	LuaPushNamedCFunc(L, "loadstring", CSplitLuaHandle::LoadStringData);
 	LuaPushNamedCFunc(L, "pairs", SyncedPairs);
-	LuaPushNamedCFunc(L, "next",  SyncedNext);
+	LuaPushNamedCFunc(L, "next", SyncedNext);
 	lua_pop(L, 1);
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
@@ -474,54 +482,55 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 
 	// adjust the math.random() and math.randomseed() calls
 	lua_getglobal(L, "math");
-		LuaPushNamedCFunc(L, "random", SyncedRandom);
-		LuaPushNamedCFunc(L, "randomseed", SyncedRandomSeed);
+	LuaPushNamedCFunc(L, "random", SyncedRandom);
+	LuaPushNamedCFunc(L, "randomseed", SyncedRandomSeed);
 	lua_pop(L, 1); // pop the global math table
 
 	lua_getglobal(L, "Script");
-		LuaPushNamedCFunc(L, "AddActionFallback",    AddSyncedActionFallback);
-		LuaPushNamedCFunc(L, "RemoveActionFallback", RemoveSyncedActionFallback);
-		LuaPushNamedCFunc(L, "GetWatchUnit",         GetWatchUnitDef);
-		LuaPushNamedCFunc(L, "SetWatchUnit",         SetWatchUnitDef);
-		LuaPushNamedCFunc(L, "GetWatchFeature",      GetWatchFeatureDef);
-		LuaPushNamedCFunc(L, "SetWatchFeature",      SetWatchFeatureDef);
-		LuaPushNamedCFunc(L, "GetWatchExplosion",    GetWatchExplosionDef);
-		LuaPushNamedCFunc(L, "SetWatchExplosion",    SetWatchExplosionDef);
-		LuaPushNamedCFunc(L, "GetWatchProjectile",   GetWatchProjectileDef);
-		LuaPushNamedCFunc(L, "SetWatchProjectile",   SetWatchProjectileDef);
-		LuaPushNamedCFunc(L, "GetWatchAllowTarget",  GetWatchAllowTargetDef);
-		LuaPushNamedCFunc(L, "SetWatchAllowTarget",  SetWatchAllowTargetDef);
-		LuaPushNamedCFunc(L, "GetWatchWeapon",       GetWatchWeaponDef);
-		LuaPushNamedCFunc(L, "SetWatchWeapon",       SetWatchWeaponDef);
+	LuaPushNamedCFunc(L, "AddActionFallback", AddSyncedActionFallback);
+	LuaPushNamedCFunc(L, "RemoveActionFallback", RemoveSyncedActionFallback);
+	LuaPushNamedCFunc(L, "GetWatchUnit", GetWatchUnitDef);
+	LuaPushNamedCFunc(L, "SetWatchUnit", SetWatchUnitDef);
+	LuaPushNamedCFunc(L, "GetWatchFeature", GetWatchFeatureDef);
+	LuaPushNamedCFunc(L, "SetWatchFeature", SetWatchFeatureDef);
+	LuaPushNamedCFunc(L, "GetWatchExplosion", GetWatchExplosionDef);
+	LuaPushNamedCFunc(L, "SetWatchExplosion", SetWatchExplosionDef);
+	LuaPushNamedCFunc(L, "GetWatchProjectile", GetWatchProjectileDef);
+	LuaPushNamedCFunc(L, "SetWatchProjectile", SetWatchProjectileDef);
+	LuaPushNamedCFunc(L, "GetWatchAllowTarget", GetWatchAllowTargetDef);
+	LuaPushNamedCFunc(L, "SetWatchAllowTarget", SetWatchAllowTargetDef);
+	LuaPushNamedCFunc(L, "GetWatchWeapon", GetWatchWeaponDef);
+	LuaPushNamedCFunc(L, "SetWatchWeapon", SetWatchWeaponDef);
 	lua_pop(L, 1);
 
 	// add the custom file loader
 	LuaPushNamedCFunc(L, "SendToUnsynced", SendToUnsynced);
-	LuaPushNamedCFunc(L, "CallAsTeam",     CSplitLuaHandle::CallAsTeam);
-	LuaPushNamedNumber(L, "COBSCALE",      COBSCALE);
+	LuaPushNamedCFunc(L, "CallAsTeam", CSplitLuaHandle::CallAsTeam);
+	LuaPushNamedNumber(L, "COBSCALE", COBSCALE);
 
 	// load our libraries  (LuaSyncedCtrl overrides some LuaUnsyncedCtrl entries)
 	{
 		#define KILL { KillLua(); return false; }
-		if (!AddEntriesToTable(L, "VFS",                   LuaVFS::PushSynced       )) KILL
-		if (!AddEntriesToTable(L, "VFS",         LuaZipFileReader::PushSynced       )) KILL
-		if (!AddEntriesToTable(L, "VFS",         LuaZipFileWriter::PushSynced       )) KILL
-		if (!AddEntriesToTable(L, "UnitDefs",         LuaUnitDefs::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "WeaponDefs",     LuaWeaponDefs::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "FeatureDefs",   LuaFeatureDefs::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Script",          LuaInterCall::PushEntriesSynced)) KILL
-		if (!AddEntriesToTable(L, "Spring",       LuaUnsyncedCtrl::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Spring",         LuaSyncedCtrl::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Spring",         LuaSyncedRead::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Spring",          LuaUICommand::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Engine",        LuaConstEngine::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "Game",            LuaConstGame::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "CMD",              LuaConstCMD::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "CMDTYPE",      LuaConstCMDTYPE::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "COB",              LuaConstCOB::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "SFX",              LuaConstSFX::PushEntries      )) KILL
-		if (!AddEntriesToTable(L, "LOG",                 LuaUtils::PushLogEntries   )) KILL
-		#undef KILL
+		if (!AddEntriesToTable(L, "VFS", LuaVFS::PushSynced)) KILL
+		if (!AddEntriesToTable(L, "VFS", LuaZipFileReader::PushSynced)) KILL
+		if (!AddEntriesToTable(L, "VFS", LuaZipFileWriter::PushSynced)) KILL
+		if (!AddEntriesToTable(L, "UnitDefs", LuaUnitDefs::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "WeaponDefs", LuaWeaponDefs::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "FeatureDefs", LuaFeatureDefs::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Script", LuaInterCall::PushEntriesSynced)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaUnsyncedCtrl::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaSyncedCtrl::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaSyncedRead::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Spring", LuaUICommand::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Engine", LuaConstEngine::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "Game", LuaConstGame::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "CMD", LuaConstCMD::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "CMDTYPE", LuaConstCMDTYPE::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "COB", LuaConstCOB::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "SFX", LuaConstSFX::PushEntries)) KILL
+		if (!AddEntriesToTable(L, "LOG", LuaUtils::PushLogEntries)) KILL
+#undef KILL
+		// clang-format on
 	}
 
 	// add code from the sub-class
@@ -542,7 +551,6 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	eventHandler.AddClient(this);
 	return true;
 }
-
 
 //
 // Call-Ins
@@ -567,7 +575,6 @@ bool CSyncedLuaHandle::SyncedActionFallback(const std::string& msg, int playerID
 	// strip the leading '/'
 	return GotChatMsg(msg.substr(1), playerID);
 }
-
 
 /*** Called when the unit reaches an unknown command in its queue (i.e. one not handled by the engine).
  *
@@ -600,7 +607,6 @@ bool CSyncedLuaHandle::CommandFallback(const CUnit* unit, const Command& cmd)
 	lua_pop(L, 1);
 	return remove; // return 'true' to remove the command
 }
-
 
 /*** Called when the command is given, before the unit's queue is altered.
  *
@@ -645,7 +651,6 @@ bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int p
 	return allow;
 }
 
-
 /*** Called just before unit is created.
  *
  * @function SyncedCallins:AllowUnitCreation
@@ -658,11 +663,9 @@ bool CSyncedLuaHandle::AllowCommand(const CUnit* unit, const Command& cmd, int p
  * @param facing FacingInteger
  * @return boolean allow, boolean dropOrder
  */
-std::pair <bool, bool> CSyncedLuaHandle::AllowUnitCreation(
-	const UnitDef* unitDef,
-	const CUnit* builder,
-	const BuildInfo* buildInfo
-) {
+std::pair<bool, bool>
+CSyncedLuaHandle::AllowUnitCreation(const UnitDef* unitDef, const CUnit* builder, const BuildInfo* buildInfo)
+{
 	LUA_CALL_IN_CHECK(L, true);
 	luaL_checkstack(L, 10, __func__);
 
@@ -682,16 +685,15 @@ std::pair <bool, bool> CSyncedLuaHandle::AllowUnitCreation(
 	}
 
 	// call the function
-	if (!RunCallIn(L, cmdStr, (buildInfo != nullptr)? 7 : 3, 2))
+	if (!RunCallIn(L, cmdStr, (buildInfo != nullptr) ? 7 : 3, 2))
 		return {true, true};
 
 	// get the results
 	const bool allow = luaL_optboolean(L, -2, true);
-	const bool  drop = luaL_optboolean(L, -1, true);
+	const bool drop = luaL_optboolean(L, -1, true);
 	lua_pop(L, 2);
 	return {allow, drop};
 }
-
 
 /*** Called just before a unit is transferred to a different team.
  *
@@ -729,7 +731,6 @@ bool CSyncedLuaHandle::AllowUnitTransfer(const CUnit* unit, int newTeam, bool ca
 	return allow;
 }
 
-
 /*** Called just before a unit progresses its build percentage.
  *
  * @function SyncedCallins:AllowUnitBuildStep
@@ -766,7 +767,6 @@ bool CSyncedLuaHandle::AllowUnitBuildStep(const CUnit* builder, const CUnit* uni
 	return allow;
 }
 
-
 /***
  *
  * @function SyncedCallins:AllowUnitCaptureStep
@@ -802,7 +802,6 @@ bool CSyncedLuaHandle::AllowUnitCaptureStep(const CUnit* builder, const CUnit* u
 	lua_pop(L, 1);
 	return allow;
 }
-
 
 /***
  *
@@ -841,7 +840,6 @@ bool CSyncedLuaHandle::AllowUnitTransport(const CUnit* transporter, const CUnit*
 	return allow;
 }
 
-
 /***
  *
  * @function SyncedCallins:AllowUnitTransportLoad
@@ -856,12 +854,11 @@ bool CSyncedLuaHandle::AllowUnitTransport(const CUnit* transporter, const CUnit*
  * @param z number
  * @return boolean whether or not the transport load is allowed
  */
-bool CSyncedLuaHandle::AllowUnitTransportLoad(
-	const CUnit* transporter,
-	const CUnit* transportee,
-	const float3& loadPos,
-	bool allowed
-) {
+bool CSyncedLuaHandle::AllowUnitTransportLoad(const CUnit* transporter,
+    const CUnit* transportee,
+    const float3& loadPos,
+    bool allowed)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, true);
 	luaL_checkstack(L, 2 + 9, __func__);
@@ -891,7 +888,6 @@ bool CSyncedLuaHandle::AllowUnitTransportLoad(
 	return allow;
 }
 
-
 /***
  *
  * @function SyncedCallins:AllowUnitTransportUnload
@@ -906,12 +902,11 @@ bool CSyncedLuaHandle::AllowUnitTransportLoad(
  * @param z number
  * @return boolean whether or not the transport unload is allowed
  */
-bool CSyncedLuaHandle::AllowUnitTransportUnload(
-	const CUnit* transporter,
-	const CUnit* transportee,
-	const float3& unloadPos,
-	bool allowed
-) {
+bool CSyncedLuaHandle::AllowUnitTransportUnload(const CUnit* transporter,
+    const CUnit* transportee,
+    const float3& unloadPos,
+    bool allowed)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, true);
 	luaL_checkstack(L, 2 + 9, __func__);
@@ -938,7 +933,6 @@ bool CSyncedLuaHandle::AllowUnitTransportUnload(
 	lua_pop(L, 1);
 	return allow;
 }
-
 
 /***
  *
@@ -974,7 +968,6 @@ bool CSyncedLuaHandle::AllowUnitCloak(const CUnit* unit, const CUnit* enemy)
 	lua_pop(L, 1);
 	return allow;
 }
-
 
 /***
  *
@@ -1019,7 +1012,6 @@ bool CSyncedLuaHandle::AllowUnitDecloak(const CUnit* unit, const CSolidObject* o
 	return allow;
 }
 
-
 /***
  *
  * @function SyncedCallins:AllowUnitKamikaze
@@ -1048,7 +1040,6 @@ bool CSyncedLuaHandle::AllowUnitKamikaze(const CUnit* unit, const CUnit* target,
 	lua_pop(L, 1);
 	return allow;
 }
-
 
 /*** Called just before feature is created.
  *
@@ -1086,16 +1077,15 @@ bool CSyncedLuaHandle::AllowFeatureCreation(const FeatureDef* featureDef, int te
 	return allow;
 }
 
-
 /*** Called just before a feature changes its build percentage.
  *
  * @function SyncedCallins:AllowFeatureBuildStep
  *
- * Note that this is also called for resurrecting features, and for refilling features with resources before resurrection.
- * On reclaim the part values are negative, and on refill and resurrect they are positive.
- * Part is the percentage the feature be built or reclaimed per frame.
- * Eg. for a 30 workertime builder, that's a build power of 1 per frame.
- * For a 50 buildtime feature reclaimed by this builder, part will be 100/-50(/1) = -2%, or -0.02 numerically.
+ * Note that this is also called for resurrecting features, and for refilling features with resources before
+ * resurrection. On reclaim the part values are negative, and on refill and resurrect they are positive. Part is the
+ * percentage the feature be built or reclaimed per frame. Eg. for a 30 workertime builder, that's a build power of 1
+ * per frame. For a 50 buildtime feature reclaimed by this builder, part will be 100/-50(/1) = -2%, or -0.02
+ * numerically.
  *
  * @param builderID integer
  * @param builderTeam integer
@@ -1131,7 +1121,6 @@ bool CSyncedLuaHandle::AllowFeatureBuildStep(const CUnit* builder, const CFeatur
 	return allow;
 }
 
-
 /*** Called when a team sets the sharing level of a resource.
  *
  * @function SyncedCallins:AllowResourceLevel
@@ -1163,7 +1152,6 @@ bool CSyncedLuaHandle::AllowResourceLevel(int teamID, const std::string& type, f
 	lua_pop(L, 1);
 	return allow;
 }
-
 
 /*** Called just before resources are transferred between players.
  *
@@ -1199,7 +1187,6 @@ bool CSyncedLuaHandle::AllowResourceTransfer(int oldTeam, int newTeam, const cha
 	return allow;
 }
 
-
 /*** Determines if this unit can be controlled directly in FPS view.
  *
  * @function SyncedCallins:AllowDirectUnitControl
@@ -1234,7 +1221,6 @@ bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
 	return allow;
 }
 
-
 /*** Called when a construction unit wants to "use his nano beams".
  *
  * @function SyncedCallins:AllowBuilderHoldFire
@@ -1242,7 +1228,7 @@ bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
  * @param unitID integer
  * @param unitDefID integer
  * @param action -1|CMD
- * 
+ *
  * One of the following:
  * 	- `-1` build,
  * 	- `CMD.REPAIR` repair,
@@ -1250,7 +1236,7 @@ bool CSyncedLuaHandle::AllowDirectUnitControl(int playerID, const CUnit* unit)
  * 	- `CMD.RESTORE` restore,
  * 	- `CMD.RESURRECT` resurrect, or
  * 	- `CMD.CAPTURE` capture.
- * 
+ *
  * @return boolean actionAllowed
  */
 bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
@@ -1277,7 +1263,6 @@ bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
 	return allow;
 }
 
-
 /*** Whether a start position should be allowed
  *
  * @function SyncedCallins:AllowStartPosition
@@ -1288,9 +1273,10 @@ bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
  *
  *     0 - player picked a position,
  *     1 - player clicked ready,
- *     2 - player pressed ready OR the game was force-started (player did not click ready, but is now forcibly readied) or
+ *     2 - player pressed ready OR the game was force-started (player did not click ready, but is now forcibly readied)
  *     3 - the player failed to load.
- *     The default 'failed to choose' start-position is the north-west point of their startbox, or (0,0,0) if they do not have a startbox.
+ * The default 'failed to choose' start-position is the north-west point of their startbox, or (0,0,0) if they do not
+ * have a startbox.
  *
  * @param playerID integer
  * @param teamID integer
@@ -1304,7 +1290,11 @@ bool CSyncedLuaHandle::AllowBuilderHoldFire(const CUnit* unit, int action)
  *
  * @return boolean allow
  */
-bool CSyncedLuaHandle::AllowStartPosition(int playerID, int teamID, unsigned char readyState, const float3& clampedPos, const float3& rawPickPos)
+bool CSyncedLuaHandle::AllowStartPosition(int playerID,
+    int teamID,
+    unsigned char readyState,
+    const float3& clampedPos,
+    const float3& rawPickPos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, true);
@@ -1335,7 +1325,6 @@ bool CSyncedLuaHandle::AllowStartPosition(int playerID, int teamID, unsigned cha
 	return allow;
 }
 
-
 /*** Enable both Spring.MoveCtrl.SetCollideStop and Spring.MoveCtrl.SetTrackGround to enable this call-in.
  *
  * @function SyncedCallins:MoveCtrlNotify
@@ -1343,9 +1332,11 @@ bool CSyncedLuaHandle::AllowStartPosition(int playerID, int teamID, unsigned cha
  * @param unitID integer
  * @param unitDefID integer
  * @param unitTeam integer
- * @param data number was supposed to indicate the type of notification but currently never has a value other than 1 ("unit hit the ground").
+ * @param data number was supposed to indicate the type of notification but currently never has a value other than 1
+ * ("unit hit the ground").
  *
- * @return boolean whether or not the unit should remain script-controlled (false) or return to engine controlled movement (true).
+ * @return boolean whether or not the unit should remain script-controlled (false) or return to engine controlled
+ * movement (true).
  */
 bool CSyncedLuaHandle::MoveCtrlNotify(const CUnit* unit, int data)
 {
@@ -1372,7 +1363,6 @@ bool CSyncedLuaHandle::MoveCtrlNotify(const CUnit* unit, int data)
 	lua_pop(L, 1);
 	return disable;
 }
-
 
 /*** Called when pre-building terrain levelling terraforms are completed (c.f. levelGround)
  *
@@ -1417,7 +1407,6 @@ bool CSyncedLuaHandle::TerraformComplete(const CUnit* unit, const CUnit* build)
 	return stop;
 }
 
-
 /***
  * Damage Controllers
  *
@@ -1455,16 +1444,15 @@ bool CSyncedLuaHandle::TerraformComplete(const CUnit* unit, const CUnit* build)
  *
  * @return number newDamage, number impulseMult
  */
-bool CSyncedLuaHandle::UnitPreDamaged(
-	const CUnit* unit,
-	const CUnit* attacker,
-	float damage,
-	int weaponDefID,
-	int projectileID,
-	bool paralyzer,
-	float* newDamage,
-	float* impulseMult
-) {
+bool CSyncedLuaHandle::UnitPreDamaged(const CUnit* unit,
+    const CUnit* attacker,
+    float damage,
+    int weaponDefID,
+    int projectileID,
+    bool paralyzer,
+    float* newDamage,
+    float* impulseMult)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	LUA_CALL_IN_CHECK(L, false);
 	luaL_checkstack(L, 2 + 2 + 10, __func__);
@@ -1483,11 +1471,13 @@ bool CSyncedLuaHandle::UnitPreDamaged(
 	lua_pushnumber(L, unit->team);
 	lua_pushnumber(L, damage);
 	lua_pushboolean(L, paralyzer);
-	//FIXME pass impulse too?
+	// FIXME pass impulse too?
 
 	if (GetHandleFullRead(L)) {
-		lua_pushnumber(L, weaponDefID); inArgCount += 1;
-		lua_pushnumber(L, projectileID); inArgCount += 1;
+		lua_pushnumber(L, weaponDefID);
+		inArgCount += 1;
+		lua_pushnumber(L, projectileID);
+		inArgCount += 1;
 
 		if (attacker != nullptr) {
 			lua_pushnumber(L, attacker->id);
@@ -1510,14 +1500,16 @@ bool CSyncedLuaHandle::UnitPreDamaged(
 
 	if (lua_isnumber(L, -2)) {
 		*newDamage = lua_tonumber(L, -2);
-	} else if (!lua_isnumber(L, -2) || lua_isnil(L, -2)) {
+	}
+	else if (!lua_isnumber(L, -2) || lua_isnil(L, -2)) {
 		// first value is obligatory, so may not be nil
 		LOG_L(L_WARNING, "%s(): 1st return-value should be a number (newDamage)", cmdStr.GetString());
 	}
 
 	if (lua_isnumber(L, -1)) {
 		*impulseMult = lua_tonumber(L, -1);
-	} else if (!lua_isnumber(L, -1) && !lua_isnil(L, -1)) {
+	}
+	else if (!lua_isnumber(L, -1) && !lua_isnil(L, -1)) {
 		// second value is optional, so nils are OK
 		LOG_L(L_WARNING, "%s(): 2nd return-value should be a number (impulseMult)", cmdStr.GetString());
 	}
@@ -1526,7 +1518,6 @@ bool CSyncedLuaHandle::UnitPreDamaged(
 	// returns true to disable engine dmg handling
 	return (*newDamage == 0.0f && *impulseMult == 0.0f);
 }
-
 
 /*** Called before damage is applied to the feature.
  *
@@ -1546,15 +1537,14 @@ bool CSyncedLuaHandle::UnitPreDamaged(
  * @return number newDamage
  * @return number impulseMult
  */
-bool CSyncedLuaHandle::FeaturePreDamaged(
-	const CFeature* feature,
-	const CUnit* attacker,
-	float damage,
-	int weaponDefID,
-	int projectileID,
-	float* newDamage,
-	float* impulseMult
-) {
+bool CSyncedLuaHandle::FeaturePreDamaged(const CFeature* feature,
+    const CUnit* attacker,
+    float damage,
+    int weaponDefID,
+    int projectileID,
+    float* newDamage,
+    float* impulseMult)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(newDamage != nullptr);
 	assert(impulseMult != nullptr);
@@ -1577,8 +1567,10 @@ bool CSyncedLuaHandle::FeaturePreDamaged(
 	lua_pushnumber(L, damage);
 
 	if (GetHandleFullRead(L)) {
-		lua_pushnumber(L, weaponDefID); inArgCount += 1;
-		lua_pushnumber(L, projectileID); inArgCount += 1;
+		lua_pushnumber(L, weaponDefID);
+		inArgCount += 1;
+		lua_pushnumber(L, projectileID);
+		inArgCount += 1;
 
 		if (attacker != nullptr) {
 			lua_pushnumber(L, attacker->id);
@@ -1594,14 +1586,16 @@ bool CSyncedLuaHandle::FeaturePreDamaged(
 
 	if (lua_isnumber(L, -2)) {
 		*newDamage = lua_tonumber(L, -2);
-	} else if (!lua_isnumber(L, -2) || lua_isnil(L, -2)) {
+	}
+	else if (!lua_isnumber(L, -2) || lua_isnil(L, -2)) {
 		// first value is obligatory, so may not be nil
 		LOG_L(L_WARNING, "%s(): 1st value returned should be a number (newDamage)", cmdStr.GetString());
 	}
 
 	if (lua_isnumber(L, -1)) {
 		*impulseMult = lua_tonumber(L, -1);
-	} else if (!lua_isnumber(L, -1) && !lua_isnil(L, -1)) {
+	}
+	else if (!lua_isnumber(L, -1) && !lua_isnil(L, -1)) {
 		// second value is optional, so nils are OK
 		LOG_L(L_WARNING, "%s(): 2nd value returned should be a number (impulseMult)", cmdStr.GetString());
 	}
@@ -1615,7 +1609,8 @@ bool CSyncedLuaHandle::FeaturePreDamaged(
  *
  * @function SyncedCallins:ShieldPreDamaged
  *
- * If the weapon is a hitscan type (BeamLaser or LightningCanon) then proID is nil and beamEmitterWeaponNum and beamEmitterUnitID are populated instead.
+ * If the weapon is a hitscan type (BeamLaser or LightningCanon) then proID is nil and beamEmitterWeaponNum and
+ * beamEmitterUnitID are populated instead.
  *
  * @param projectileID integer
  * @param projectileOwnerID integer
@@ -1633,16 +1628,15 @@ bool CSyncedLuaHandle::FeaturePreDamaged(
  *
  * @return boolean if true the gadget handles the collision event and the engine does not remove the projectile
  */
-bool CSyncedLuaHandle::ShieldPreDamaged(
-	const CProjectile* projectile,
-	const CWeapon* shieldEmitter,
-	const CUnit* shieldCarrier,
-	bool bounceProjectile,
-	const CWeapon* beamEmitter,
-	const CUnit* beamCarrier,
-	const float3& startPos,
-	const float3& hitPos
-) {
+bool CSyncedLuaHandle::ShieldPreDamaged(const CProjectile* projectile,
+    const CWeapon* shieldEmitter,
+    const CUnit* shieldCarrier,
+    bool bounceProjectile,
+    const CWeapon* beamEmitter,
+    const CUnit* beamCarrier,
+    const float3& startPos,
+    const float3& hitPos)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert((projectile != nullptr) || ((beamEmitter != nullptr) && (beamCarrier != nullptr)));
 	LUA_CALL_IN_CHECK(L, false);
@@ -1664,7 +1658,8 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
 		lua_pushboolean(L, bounceProjectile);
 		lua_pushnil(L);
 		lua_pushnil(L);
-	} else {
+	}
+	else {
 		// Beam projectiles
 		lua_pushnumber(L, -1);
 		lua_pushnumber(L, -1);
@@ -1692,7 +1687,6 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
 	return ret;
 }
 
-
 /*** Determines if this weapon can automatically generate targets itself. See also commandFire weaponDef tag.
  *
  * @function SyncedCallins:AllowWeaponTargetCheck
@@ -1702,7 +1696,9 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
  * @return boolean allowCheck
  * @return boolean ignoreCheck
  */
-int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID, unsigned int attackerWeaponNum, unsigned int attackerWeaponDefID)
+int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID,
+    unsigned int attackerWeaponNum,
+    unsigned int attackerWeaponDefID)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	int ret = -1;
@@ -1732,7 +1728,6 @@ int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID, unsigned i
 	return ret;
 }
 
-
 /*** Controls blocking of a specific target from being considered during a weapon's periodic auto-targeting sweep.
  *
  * @function SyncedCallins:AllowWeaponTarget
@@ -1742,15 +1737,15 @@ int CSyncedLuaHandle::AllowWeaponTargetCheck(unsigned int attackerID, unsigned i
  * @param attackerWeaponDefID integer
  * @param defPriority number
  * @return boolean allowed
- * @return number the new priority for this target (if you don't want to change it, return defPriority). Lower priority targets are targeted first.
+ * @return number the new priority for this target (if you don't want to change it, return defPriority). Lower priority
+ * targets are targeted first.
  */
-bool CSyncedLuaHandle::AllowWeaponTarget(
-	unsigned int attackerID,
-	unsigned int targetID,
-	unsigned int attackerWeaponNum,
-	unsigned int attackerWeaponDefID,
-	float* targetPriority
-) {
+bool CSyncedLuaHandle::AllowWeaponTarget(unsigned int attackerID,
+    unsigned int targetID,
+    unsigned int attackerWeaponNum,
+    unsigned int attackerWeaponDefID,
+    float* targetPriority)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	bool ret = true;
 
@@ -1778,7 +1773,8 @@ bool CSyncedLuaHandle::AllowWeaponTarget(
 	if (targetPriority != nullptr) {
 		// Weapon::AutoTarget
 		lua_pushnumber(L, *targetPriority);
-	} else {
+	}
+	else {
 		// {Air,Mobile}CAI::AutoGenerateTarget
 		lua_pushnil(L);
 	}
@@ -1795,8 +1791,8 @@ bool CSyncedLuaHandle::AllowWeaponTarget(
 	return ret;
 }
 
-
-/*** Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic auto-targeting sweep.
+/*** Controls blocking of a specific intercept target from being considered during an interceptor weapon's periodic
+ * auto-targeting sweep.
  *
  * @function SyncedCallins:AllowWeaponInterceptTarget
  *
@@ -1808,11 +1804,10 @@ bool CSyncedLuaHandle::AllowWeaponTarget(
  *
  * @return boolean allowed
  */
-bool CSyncedLuaHandle::AllowWeaponInterceptTarget(
-	const CUnit* interceptorUnit,
-	const CWeapon* interceptorWeapon,
-	const CProjectile* interceptorTarget
-) {
+bool CSyncedLuaHandle::AllowWeaponInterceptTarget(const CUnit* interceptorUnit,
+    const CWeapon* interceptorWeapon,
+    const CProjectile* interceptorTarget)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	bool ret = true;
 
@@ -1841,7 +1836,6 @@ bool CSyncedLuaHandle::AllowWeaponInterceptTarget(
 	return ret;
 }
 
-
 //
 // Call-Outs
 //
@@ -1849,47 +1843,47 @@ bool CSyncedLuaHandle::AllowWeaponInterceptTarget(
 int CSyncedLuaHandle::SyncedRandom(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
+#if 0
 	spring_lua_synced_rand(L);
 	return 1;
-	#endif
+#endif
 
 	switch (lua_gettop(L)) {
-		case 0: {
-			lua_pushnumber(L, gsRNG.NextFloat());
+	case 0: {
+		lua_pushnumber(L, gsRNG.NextFloat());
+		return 1;
+	} break;
+
+	case 1: {
+		if (lua_isnumber(L, 1)) {
+			const int u = lua_toint(L, 1);
+
+			if (u < 1)
+				luaL_error(L, "error: too small upper limit (%d) given to math.random(), should be >= 1 {synced}", u);
+
+			lua_pushnumber(L, 1 + gsRNG.NextInt(u));
 			return 1;
-		} break;
+		}
+	} break;
 
-		case 1: {
-			if (lua_isnumber(L, 1)) {
-				const int u = lua_toint(L, 1);
+	case 2: {
+		if (lua_isnumber(L, 1) && lua_isnumber(L, 2)) {
+			const int lower = lua_toint(L, 1);
+			const int upper = lua_toint(L, 2);
 
-				if (u < 1)
-					luaL_error(L, "error: too small upper limit (%d) given to math.random(), should be >= 1 {synced}", u);
+			if (lower > upper)
+				luaL_error(L, "Empty interval in math.random() {synced}");
 
-				lua_pushnumber(L, 1 + gsRNG.NextInt(u));
-				return 1;
-			}
-		} break;
+			const float diff = (upper - lower);
+			const float r = gsRNG.NextFloat(); // [0,1], not [0,1) ?
 
-		case 2: {
-			if (lua_isnumber(L, 1) && lua_isnumber(L, 2)) {
-				const int lower = lua_toint(L, 1);
-				const int upper = lua_toint(L, 2);
+			lua_pushnumber(L, std::clamp(lower + int(r * (diff + 1)), lower, upper));
+			return 1;
+		}
+	} break;
 
-				if (lower > upper)
-					luaL_error(L, "Empty interval in math.random() {synced}");
-
-				const float diff  = (upper - lower);
-				const float r = gsRNG.NextFloat(); // [0,1], not [0,1) ?
-
-				lua_pushnumber(L, std::clamp(lower + int(r * (diff + 1)), lower, upper));
-				return 1;
-			}
-		} break;
-
-		default: {
-		} break;
+	default: {
+	} break;
 	}
 
 	luaL_error(L, "Incorrect arguments to math.random() {synced}");
@@ -1903,16 +1897,13 @@ int CSyncedLuaHandle::SyncedRandomSeed(lua_State* L)
 	return 0;
 }
 
-
 int CSyncedLuaHandle::SyncedNext(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	constexpr int whiteList[] = {
-		LUA_TSTRING,
-		LUA_TNUMBER,
-		LUA_TBOOLEAN,
-		LUA_TNIL,
-		LUA_TTHREAD //FIXME LUA_TTHREAD is normally _not_ synced safe but LUS handler needs it atm (and uses it in a safe way)
+	    LUA_TSTRING, LUA_TNUMBER, LUA_TBOOLEAN, LUA_TNIL,
+	    LUA_TTHREAD // FIXME LUA_TTHREAD is normally _not_ synced safe but LUS handler needs it atm (and uses it in a
+	                // safe way)
 	};
 
 	const CSyncedLuaHandle* slh = GetSyncedHandle(L);
@@ -1924,7 +1915,8 @@ int CSyncedLuaHandle::SyncedNext(lua_State* L)
 
 	if (oldTop >= 2) {
 		lua_pushvalue(L, 2);
-	} else {
+	}
+	else {
 		lua_pushnil(L);
 	}
 
@@ -1938,7 +1930,8 @@ int CSyncedLuaHandle::SyncedNext(lua_State* L)
 
 		if (it == std::end(whiteList)) {
 			if (LuaUtils::PushDebugTraceback(L) > 0) {
-				lua_pushfstring(L, "Iterating a table with keys of type \"%s\" in synced context!", lua_typename(L, keyType));
+				lua_pushfstring(
+				    L, "Iterating a table with keys of type \"%s\" in synced context!", lua_typename(L, keyType));
 				lua_call(L, 1, 1);
 
 				const auto* errMsg = lua_tostring(L, -1);
@@ -1956,16 +1949,15 @@ int CSyncedLuaHandle::SyncedPairs(lua_State* L)
 	RECOIL_DETAILED_TRACY_ZONE;
 	/* copied from lbaselib.cpp */
 	luaL_checktype(L, 1, LUA_TTABLE);
-	lua_pushcfunction(L, SyncedNext);  /* return generator, */
-	lua_pushvalue(L, 1);  /* state, */
-	lua_pushnil(L);  /* and initial value */
+	lua_pushcfunction(L, SyncedNext); /* return generator, */
+	lua_pushvalue(L, 1);              /* state, */
+	lua_pushnil(L);                   /* and initial value */
 	return 3;
 }
 
-
 /***
  * Invoke `UnsyncedCallins:RecvFromSynced` callin with the given arguments.
- * 
+ *
  * @function SendToUnsynced
  * @param ... nil|boolean|number|string Arguments. Typically the first argument is the name of a function to call.
  * @see UnsyncedCallins:RecvFromSynced
@@ -1978,12 +1970,7 @@ int CSyncedLuaHandle::SendToUnsynced(lua_State* L)
 		luaL_error(L, "Incorrect arguments to SendToUnsynced()");
 	}
 
-	static const int supportedTypes =
-		  (1 << LUA_TNIL)
-		| (1 << LUA_TBOOLEAN)
-		| (1 << LUA_TNUMBER)
-		| (1 << LUA_TSTRING)
-	;
+	static const int supportedTypes = (1 << LUA_TNIL) | (1 << LUA_TBOOLEAN) | (1 << LUA_TNUMBER) | (1 << LUA_TSTRING);
 
 	for (int i = 1; i <= args; i++) {
 		const int t = (1 << lua_type(L, i));
@@ -1996,7 +1983,6 @@ int CSyncedLuaHandle::SendToUnsynced(lua_State* L)
 	ulh->RecvFromSynced(L, args);
 	return 0;
 }
-
 
 int CSyncedLuaHandle::AddSyncedActionFallback(lua_State* L)
 {
@@ -2021,11 +2007,10 @@ int CSyncedLuaHandle::AddSyncedActionFallback(lua_State* L)
 	return 1;
 }
 
-
 int CSyncedLuaHandle::RemoveSyncedActionFallback(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//TODO move to LuaHandle
+	// TODO move to LuaHandle
 	std::string cmdRaw = "/" + std::string(luaL_checkstring(L, 1));
 	std::string cmd = cmdRaw;
 
@@ -2048,54 +2033,56 @@ int CSyncedLuaHandle::RemoveSyncedActionFallback(lua_State* L)
 		cmds.erase(it);
 		wordCompletion.RemoveWord(cmdRaw);
 		lua_pushboolean(L, true);
-	} else {
+	}
+	else {
 		lua_pushboolean(L, false);
 	}
 
 	return 1;
 }
 
-
-
-#define GetWatchDef(DefType)                                                \
-	int CSyncedLuaHandle::GetWatch ## DefType ## Def(lua_State* L) {        \
-		const CSyncedLuaHandle* lhs = GetSyncedHandle(L);                   \
-		const auto& vec = lhs->watch ## DefType ## Defs;                    \
-                                                                            \
-		const uint32_t defIdx = luaL_checkint(L, 1);                        \
-                                                                            \
-		if ((defIdx == -1u) && (&vec == &lhs->watchProjectileDefs)) {       \
-			lua_pushboolean(L, vec[vec.size() - 1]);                        \
-			return 1;                                                       \
-		}                                                                   \
-                                                                            \
-		if (defIdx >= vec.size())                                           \
-			return 0;                                                       \
-                                                                            \
-		lua_pushboolean(L, vec[defIdx]);                                    \
-		return 1;                                                           \
+#define GetWatchDef(DefType)                                          \
+	int CSyncedLuaHandle::GetWatch##DefType##Def(lua_State* L)        \
+	{                                                                 \
+		const CSyncedLuaHandle* lhs = GetSyncedHandle(L);             \
+		const auto& vec = lhs->watch##DefType##Defs;                  \
+                                                                      \
+		const uint32_t defIdx = luaL_checkint(L, 1);                  \
+                                                                      \
+		if ((defIdx == -1u) && (&vec == &lhs->watchProjectileDefs)) { \
+			lua_pushboolean(L, vec[vec.size() - 1]);                  \
+			return 1;                                                 \
+		}                                                             \
+                                                                      \
+		if (defIdx >= vec.size())                                     \
+			return 0;                                                 \
+                                                                      \
+		lua_pushboolean(L, vec[defIdx]);                              \
+		return 1;                                                     \
 	}
 
-#define SetWatchDef(DefType)                                                \
-	int CSyncedLuaHandle::SetWatch ## DefType ## Def(lua_State* L) {        \
-		CSyncedLuaHandle* lhs = GetSyncedHandle(L);                         \
-		auto& vec = lhs->watch ## DefType ## Defs;                          \
-                                                                            \
-		const uint32_t defIdx = luaL_checkint(L, 1);                        \
-                                                                            \
-		if ((defIdx == -1u) && (&vec == &lhs->watchProjectileDefs)) {       \
-			vec[vec.size() - 1] = luaL_checkboolean(L, 2);                  \
-			return 0;                                                       \
-		}                                                                   \
-                                                                            \
-		if (defIdx >= vec.size())                                           \
-			return 0;                                                       \
-                                                                            \
-		vec[defIdx] = luaL_checkboolean(L, 2);                              \
-		return 0;                                                           \
+#define SetWatchDef(DefType)                                          \
+	int CSyncedLuaHandle::SetWatch##DefType##Def(lua_State* L)        \
+	{                                                                 \
+		CSyncedLuaHandle* lhs = GetSyncedHandle(L);                   \
+		auto& vec = lhs->watch##DefType##Defs;                        \
+                                                                      \
+		const uint32_t defIdx = luaL_checkint(L, 1);                  \
+                                                                      \
+		if ((defIdx == -1u) && (&vec == &lhs->watchProjectileDefs)) { \
+			vec[vec.size() - 1] = luaL_checkboolean(L, 2);            \
+			return 0;                                                 \
+		}                                                             \
+                                                                      \
+		if (defIdx >= vec.size())                                     \
+			return 0;                                                 \
+                                                                      \
+		vec[defIdx] = luaL_checkboolean(L, 2);                        \
+		return 0;                                                     \
 	}
 
-int CSyncedLuaHandle::GetWatchWeaponDef(lua_State* L) {
+int CSyncedLuaHandle::GetWatchWeaponDef(lua_State* L)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	bool watched = false;
 
@@ -2120,6 +2107,7 @@ int CSyncedLuaHandle::GetWatchWeaponDef(lua_State* L) {
 	return 1;
 }
 
+// clang-format off
 GetWatchDef(Unit)
 GetWatchDef(Feature)
 GetWatchDef(Explosion)
@@ -2131,27 +2119,27 @@ SetWatchDef(Feature)
 SetWatchDef(Explosion)
 SetWatchDef(Projectile)
 SetWatchDef(AllowTarget)
+// clang-format on
 
 #undef GetWatchDef
 #undef SetWatchDef
 
 
-/******************************************************************************/
-/******************************************************************************/
-//  ######  ##     ##    ###    ########  ######## ########
-// ##    ## ##     ##   ## ##   ##     ## ##       ##     ##
-// ##       ##     ##  ##   ##  ##     ## ##       ##     ##
-//  ######  ######### ##     ## ########  ######   ##     ##
-//       ## ##     ## ######### ##   ##   ##       ##     ##
-// ##    ## ##     ## ##     ## ##    ##  ##       ##     ##
-//  ######  ##     ## ##     ## ##     ## ######## ########
+    /******************************************************************************/
+    /******************************************************************************/
+    //  ######  ##     ##    ###    ########  ######## ########
+    // ##    ## ##     ##   ## ##   ##     ## ##       ##     ##
+    // ##       ##     ##  ##   ##  ##     ## ##       ##     ##
+    //  ######  ######### ##     ## ########  ######   ##     ##
+    //       ## ##     ## ######### ##   ##   ##       ##     ##
+    // ##    ## ##     ## ##     ## ##    ##  ##       ##     ##
+    //  ######  ##     ## ##     ## ##     ## ######## ########
 
-CSplitLuaHandle::CSplitLuaHandle(const std::string& _name, int _order)
-	: syncedLuaHandle(this, _name, _order)
-	, unsyncedLuaHandle(this, _name, _order + 1)
+    CSplitLuaHandle::CSplitLuaHandle(const std::string& _name, int _order)
+    : syncedLuaHandle(this, _name, _order)
+    , unsyncedLuaHandle(this, _name, _order + 1)
 {
 }
-
 
 CSplitLuaHandle::~CSplitLuaHandle()
 {
@@ -2160,7 +2148,6 @@ CSplitLuaHandle::~CSplitLuaHandle()
 	syncedLuaHandle.KillLua();
 	unsyncedLuaHandle.KillLua();
 }
-
 
 bool CSplitLuaHandle::InitSynced(bool dryRun)
 {
@@ -2191,7 +2178,6 @@ bool CSplitLuaHandle::InitSynced(bool dryRun)
 	return true;
 }
 
-
 bool CSplitLuaHandle::InitUnsynced()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2218,7 +2204,6 @@ bool CSplitLuaHandle::InitUnsynced()
 	return true;
 }
 
-
 bool CSplitLuaHandle::Init(bool dryRun)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2232,7 +2217,6 @@ bool CSplitLuaHandle::Init(bool dryRun)
 	return InitSynced(dryRun) && (dryRun || InitUnsynced());
 }
 
-
 bool CSplitLuaHandle::FreeUnsynced()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2244,7 +2228,6 @@ bool CSplitLuaHandle::FreeUnsynced()
 
 	return true;
 }
-
 
 bool CSplitLuaHandle::LoadUnsynced()
 {
@@ -2258,7 +2241,6 @@ bool CSplitLuaHandle::LoadUnsynced()
 
 	return InitUnsynced();
 }
-
 
 bool CSplitLuaHandle::SwapSyncedHandle(lua_State* L, lua_State* L_GC)
 {
@@ -2276,7 +2258,6 @@ bool CSplitLuaHandle::SwapSyncedHandle(lua_State* L, lua_State* L_GC)
 	eventHandler.AddClient(&syncedLuaHandle);
 	return true;
 }
-
 
 string CSplitLuaHandle::LoadFile(const std::string& filename, const std::string& modes) const
 {
@@ -2301,8 +2282,8 @@ int CSplitLuaHandle::LoadStringData(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	size_t len;
-	const char *str    = luaL_checklstring(L, 1, &len);
-	const char *chunkname = luaL_optstring(L, 2, str);
+	const char* str = luaL_checklstring(L, 1, &len);
+	const char* chunkname = luaL_optstring(L, 2, str);
 
 	if (luaL_loadbuffer(L, str, len, chunkname) != 0) {
 		lua_pushnil(L);
@@ -2313,7 +2294,8 @@ int CSplitLuaHandle::LoadStringData(lua_State* L)
 	// set the chunk's fenv to the current fenv
 	if (lua_istable(L, 3)) {
 		lua_pushvalue(L, 3);
-	} else {
+	}
+	else {
 		LuaUtils::PushCurrentFuncEnv(L, __func__);
 	}
 
@@ -2352,12 +2334,12 @@ int CSplitLuaHandle::CallAsTeam(lua_State* L)
 		luaL_error(L, "[%s] incorrect arguments", __func__);
 
 	// save the current access
-	const bool prevFullCtrl    = CLuaHandle::GetHandleFullCtrl(L);
-	const bool prevFullRead    = CLuaHandle::GetHandleFullRead(L);
-	const int prevCtrlTeam     = CLuaHandle::GetHandleCtrlTeam(L);
-	const int prevReadTeam     = CLuaHandle::GetHandleReadTeam(L);
+	const bool prevFullCtrl = CLuaHandle::GetHandleFullCtrl(L);
+	const bool prevFullRead = CLuaHandle::GetHandleFullRead(L);
+	const int prevCtrlTeam = CLuaHandle::GetHandleCtrlTeam(L);
+	const int prevReadTeam = CLuaHandle::GetHandleReadTeam(L);
 	const int prevReadAllyTeam = CLuaHandle::GetHandleReadAllyTeam(L);
-	const int prevSelectTeam   = CLuaHandle::GetHandleSelectTeam(L);
+	const int prevSelectTeam = CLuaHandle::GetHandleSelectTeam(L);
 
 	// parse the new access
 	if (lua_isnumber(L, 1)) {
@@ -2388,18 +2370,18 @@ int CSplitLuaHandle::CallAsTeam(lua_State* L)
 				luaL_error(L, "[%s] bad teamID %d", __func__, teamID);
 
 			switch (hashString(lua_tostring(L, -2))) {
-				case hashString("ctrl"): {
-					CLuaHandle::SetHandleCtrlTeam(L, teamID);
-					CLuaHandle::SetHandleFullCtrl(L, teamID == CEventClient::AllAccessTeam);
-				} break;
-				case hashString("read"): {
-					CLuaHandle::SetHandleReadTeam(L, teamID);
-					CLuaHandle::SetHandleReadAllyTeam(L, (teamID < 0) ? teamID : teamHandler.AllyTeam(teamID));
-					CLuaHandle::SetHandleFullRead(L, teamID == CEventClient::AllAccessTeam);
-				} break;
-				case hashString("select"): {
-					CLuaHandle::SetHandleSelectTeam(L, teamID);
-				} break;
+			case hashString("ctrl"): {
+				CLuaHandle::SetHandleCtrlTeam(L, teamID);
+				CLuaHandle::SetHandleFullCtrl(L, teamID == CEventClient::AllAccessTeam);
+			} break;
+			case hashString("read"): {
+				CLuaHandle::SetHandleReadTeam(L, teamID);
+				CLuaHandle::SetHandleReadAllyTeam(L, (teamID < 0) ? teamID : teamHandler.AllyTeam(teamID));
+				CLuaHandle::SetHandleFullRead(L, teamID == CEventClient::AllAccessTeam);
+			} break;
+			case hashString("select"): {
+				CLuaHandle::SetHandleSelectTeam(L, teamID);
+			} break;
 			}
 		}
 	}
@@ -2426,10 +2408,8 @@ int CSplitLuaHandle::CallAsTeam(lua_State* L)
 		lua_error(L);
 	}
 
-	return lua_gettop(L) - 1;	// the teamID/table is still on the stack
+	return lua_gettop(L) - 1; // the teamID/table is still on the stack
 }
-
-
 
 /******************************************************************************/
 /******************************************************************************/

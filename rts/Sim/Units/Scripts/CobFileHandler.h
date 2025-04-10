@@ -3,16 +3,18 @@
 #ifndef COB_FILE_HANDLER_H
 #define COB_FILE_HANDLER_H
 
-#include <deque>
-
 #include "CobFile.h"
+
 #include "System/UnorderedMap.hpp"
 
-class CCobFileHandler
-{
+#include <deque>
+
+class CCobFileHandler {
 public:
 	void Init() { cobFileHandles.reserve(256); }
-	void Kill() {
+
+	void Kill()
+	{
 		// never explicitly iterated, can simply clear
 		cobFileHandles.clear();
 		cobFileObjects.clear();
@@ -30,4 +32,3 @@ private:
 extern CCobFileHandler* cobFileHandler;
 
 #endif
-

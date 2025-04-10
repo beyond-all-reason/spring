@@ -17,16 +17,24 @@ public:
 	void MouseMove(float3 move);
 	void ScreenEdgeMove(float3 move);
 	void MouseWheelMove(float move);
+
 	void MouseWheelMove(float move, const float3& newDir) { MouseWheelMove(move); }
 
 	bool DisableTrackingByKey() { return false; }
 
 	void Update();
 	float3 GetDir() const;
+
 	float3 GetRot() const { return rot; };
 
 	void SetPos(const float3& newPos);
-	void SetRot(const float3& newRot) { rot = newRot; Update(); };
+
+	void SetRot(const float3& newRot)
+	{
+		rot = newRot;
+		Update();
+	};
+
 	void SetTrackingInfo(const float3& pos, float radius);
 	float3 SwitchFrom() const;
 	void SwitchTo(const CCameraController* oldCam, const bool showText);

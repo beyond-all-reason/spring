@@ -1,53 +1,49 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "ShieldSegmentProjectile.h"
+
 #include "Game/Camera.h"
-#include "Rendering/GlobalRendering.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/GL/RenderBuffers.h"
+#include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/TextureAtlas.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/EventHandler.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/UnorderedMap.hpp"
 
-#include "System/Misc/TracyDefs.h"
-
 
 CR_BIND(ShieldSegmentCollection, )
-CR_REG_METADATA(ShieldSegmentCollection, (
-	CR_MEMBER(shield),
-	CR_IGNORED(shieldTexture),
-	CR_IGNORED(lastAllowDrawFrame),
-	CR_IGNORED(allowDrawing),
-	CR_MEMBER(shieldSegments),
-	CR_MEMBER(color),
-	CR_MEMBER(size),
+CR_REG_METADATA(ShieldSegmentCollection,
+    (CR_MEMBER(shield),
+        CR_IGNORED(shieldTexture),
+        CR_IGNORED(lastAllowDrawFrame),
+        CR_IGNORED(allowDrawing),
+        CR_MEMBER(shieldSegments),
+        CR_MEMBER(color),
+        CR_MEMBER(size),
 
-	CR_POSTLOAD(PostLoad)
-))
+        CR_POSTLOAD(PostLoad)))
 
 
 CR_BIND_DERIVED(ShieldSegmentProjectile, CProjectile, )
 
-CR_REG_METADATA(ShieldSegmentProjectile, (
-	CR_IGNORED(collection),
-	CR_IGNORED(vertices),
-	CR_IGNORED(texCoors)
-))
+CR_REG_METADATA(ShieldSegmentProjectile, (CR_IGNORED(collection), CR_IGNORED(vertices), CR_IGNORED(texCoors)))
 
 
 static std::vector<float3> spherevertices;
-static spring::unsynced_map<const AtlasedTexture*, std::vector<float2> > spheretexcoords;
+static spring::unsynced_map<const AtlasedTexture*, std::vector<float2>> spheretexcoords;
 
-
-
-ShieldSegmentCollection& ShieldSegmentCollection::operator=(ShieldSegmentCollection&& ssc) noexcept {
-	shield = ssc.shield; ssc.shield = nullptr;
-	shieldTexture = ssc.shieldTexture; ssc.shieldTexture = nullptr;
+ShieldSegmentCollection& ShieldSegmentCollection::operator=(ShieldSegmentCollection&& ssc) noexcept
+{
+	shield = ssc.shield;
+	ssc.shield = nullptr;
+	shieldTexture = ssc.shieldTexture;
+	ssc.shieldTexture = nullptr;
 
 	lastAllowDrawFrame = ssc.lastAllowDrawFrame;
 	allowDrawing = ssc.allowDrawing;
@@ -64,7 +60,6 @@ ShieldSegmentCollection& ShieldSegmentCollection::operator=(ShieldSegmentCollect
 
 	return *this;
 }
-
 
 void ShieldSegmentCollection::Init(CPlasmaRepulser* shield_)
 {
@@ -107,8 +102,7 @@ void ShieldSegmentCollection::Kill()
 	RECOIL_DETAILED_TRACY_ZONE;
 	shield = nullptr;
 
-	for (ShieldSegmentProjectile* seg : shieldSegments)
-		seg->PreDelete();
+	for (ShieldSegmentProjectile* seg: shieldSegments) seg->PreDelete();
 
 	shieldSegments.clear();
 
@@ -117,7 +111,6 @@ void ShieldSegmentCollection::Kill()
 
 	shieldTexture = nullptr;
 }
-
 
 void ShieldSegmentCollection::PostLoad()
 {
@@ -140,7 +133,6 @@ void ShieldSegmentCollection::PostLoad()
 	}
 }
 
-
 bool ShieldSegmentCollection::UsingPerlinNoise() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -162,9 +154,10 @@ bool ShieldSegmentCollection::AllowDrawing()
 	if (shield->owner == nullptr)
 		return (allowDrawing = false);
 
-	//FIXME if Lua wants to draw the shield itself, we should draw all GL_QUADS in the `va` vertexArray first.
-	// but doing so for each shield might reduce the performance.
-	// so might use a branch-predicion? -> save last return value and if it is true draw `va` before calling eventHandler.DrawShield()
+	// FIXME if Lua wants to draw the shield itself, we should draw all GL_QUADS in the `va` vertexArray first.
+	//  but doing so for each shield might reduce the performance.
+	//  so might use a branch-predicion? -> save last return value and if it is true draw `va` before calling
+	//  eventHandler.DrawShield()
 	if (eventHandler.DrawShield(shield->owner, shield))
 		return (allowDrawing = false);
 
@@ -200,7 +193,6 @@ void ShieldSegmentCollection::UpdateColor()
 	color = SColor(mix(shieldDef->shieldBadColor, shieldDef->shieldGoodColor, lrpColor) * alpha);
 }
 
-
 float3 ShieldSegmentCollection::GetShieldDrawPos() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -209,29 +201,20 @@ float3 ShieldSegmentCollection::GetShieldDrawPos() const
 	return shield->owner->GetObjectSpaceDrawPos(shield->relWeaponMuzzlePos);
 }
 
-ShieldSegmentProjectile::ShieldSegmentProjectile(
-	ShieldSegmentCollection* collection_,
-	const WeaponDef* shieldWeaponDef,
-	const float3& shieldSegmentPos,
-	int xpart,
-	int ypart
-)
-	: CProjectile(
-		shieldSegmentPos,
-		ZeroVector,
-		collection_->GetShield()->owner,
-		false,
-		false,
-		false
-	)
-	, collection(collection_)
+ShieldSegmentProjectile::ShieldSegmentProjectile(ShieldSegmentCollection* collection_,
+    const WeaponDef* shieldWeaponDef,
+    const float3& shieldSegmentPos,
+    int xpart,
+    int ypart)
+    : CProjectile(shieldSegmentPos, ZeroVector, collection_->GetShield()->owner, false, false, false)
+    , collection(collection_)
 {
-	checkCol      = false;
-	deleteMe      = false;
+	checkCol = false;
+	deleteMe = false;
 	alwaysVisible = false;
-	useAirLos     = true;
-	drawRadius    = shieldWeaponDef->shieldRadius * 0.4f;
-	mygravity     = 0.0f;
+	useAirLos = true;
+	drawRadius = shieldWeaponDef->shieldRadius * 0.4f;
+	mygravity = 0.0f;
 
 	vertices = GetSegmentVertices(xpart, ypart);
 	texCoors = GetSegmentTexCoords(collection->GetShieldTexture(), xpart, ypart);
@@ -251,29 +234,34 @@ void ShieldSegmentProjectile::Reload(ShieldSegmentCollection* collection_, int x
 	texCoors = GetSegmentTexCoords(collection->GetShieldTexture(), xpart, ypart);
 }
 
-
 const float3* ShieldSegmentProjectile::GetSegmentVertices(const int xpart, const int ypart)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (spherevertices.empty()) {
-		spherevertices.resize(ShieldSegmentCollection::NUM_SEGMENTS_Y * ShieldSegmentCollection::NUM_SEGMENTS_X * NUM_VERTICES_Y * NUM_VERTICES_X);
+		spherevertices.resize(ShieldSegmentCollection::NUM_SEGMENTS_Y * ShieldSegmentCollection::NUM_SEGMENTS_X *
+		                      NUM_VERTICES_Y * NUM_VERTICES_X);
 
-		#define NUM_VERTICES_X_M1 (NUM_VERTICES_X - 1)
-		#define NUM_VERTICES_Y_M1 (NUM_VERTICES_Y - 1)
+#define NUM_VERTICES_X_M1 (NUM_VERTICES_X - 1)
+#define NUM_VERTICES_Y_M1 (NUM_VERTICES_Y - 1)
 
 		// add <NUM_SEGMENTS_Y * NUM_SEGMENTS_X * NUM_VERTICES_Y * NUM_VERTICES_X> vertices
 		for (int ypart_ = 0; ypart_ < ShieldSegmentCollection::NUM_SEGMENTS_Y; ++ypart_) {
 			for (int xpart_ = 0; xpart_ < ShieldSegmentCollection::NUM_SEGMENTS_X; ++xpart_) {
-				const int segmentIdx = (xpart_ + ypart_ * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
+				const int segmentIdx =
+				    (xpart_ + ypart_ * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
 
 				for (int y = 0; y < NUM_VERTICES_Y; ++y) {
-					const float yp = (y + ypart_ * NUM_VERTICES_Y_M1) / float(ShieldSegmentCollection::NUM_SEGMENTS_Y * NUM_VERTICES_Y_M1) * math::PI - math::HALFPI;
+					const float yp = (y + ypart_ * NUM_VERTICES_Y_M1) /
+					                     float(ShieldSegmentCollection::NUM_SEGMENTS_Y * NUM_VERTICES_Y_M1) * math::PI -
+					                 math::HALFPI;
 					for (int x = 0; x < NUM_VERTICES_X; ++x) {
-						const float xp = (x + xpart_ * NUM_VERTICES_X_M1) / float(ShieldSegmentCollection::NUM_SEGMENTS_X * NUM_VERTICES_X_M1) * math::TWOPI;
+						const float xp = (x + xpart_ * NUM_VERTICES_X_M1) /
+						                 float(ShieldSegmentCollection::NUM_SEGMENTS_X * NUM_VERTICES_X_M1) *
+						                 math::TWOPI;
 						const size_t vIdx = segmentIdx + y * NUM_VERTICES_X + x;
 
 						spherevertices[vIdx].x = std::sin(xp) * std::cos(yp);
-						spherevertices[vIdx].y =                std::sin(yp);
+						spherevertices[vIdx].y = std::sin(yp);
 						spherevertices[vIdx].z = std::cos(xp) * std::cos(yp);
 					}
 				}
@@ -281,33 +269,39 @@ const float3* ShieldSegmentProjectile::GetSegmentVertices(const int xpart, const
 		}
 	}
 
-	const int segmentIdx = (xpart + ypart * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
+	const int segmentIdx =
+	    (xpart + ypart * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
 	return &spherevertices[segmentIdx];
 }
 
-const float2* ShieldSegmentProjectile::GetSegmentTexCoords(const AtlasedTexture* texture, const int xpart, const int ypart)
+const float2*
+ShieldSegmentProjectile::GetSegmentTexCoords(const AtlasedTexture* texture, const int xpart, const int ypart)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto fit = spheretexcoords.find(texture);
 
 	if (fit == spheretexcoords.end()) {
 		std::vector<float2>& texcoords = spheretexcoords[texture];
-		texcoords.resize(ShieldSegmentCollection::NUM_SEGMENTS_Y * ShieldSegmentCollection::NUM_SEGMENTS_X * NUM_VERTICES_Y * NUM_VERTICES_X);
+		texcoords.resize(ShieldSegmentCollection::NUM_SEGMENTS_Y * ShieldSegmentCollection::NUM_SEGMENTS_X *
+		                 NUM_VERTICES_Y * NUM_VERTICES_X);
 
-		const float xscale = (texture == nullptr)? 0.0f: (texture->xend - texture->xstart) * 0.25f;
-		const float yscale = (texture == nullptr)? 0.0f: (texture->yend - texture->ystart) * 0.25f;
-		const float xmid   = (texture == nullptr)? 0.0f: (texture->xstart + texture->xend) * 0.5f;
-		const float ymid   = (texture == nullptr)? 0.0f: (texture->ystart + texture->yend) * 0.5f;
+		const float xscale = (texture == nullptr) ? 0.0f : (texture->xend - texture->xstart) * 0.25f;
+		const float yscale = (texture == nullptr) ? 0.0f : (texture->yend - texture->ystart) * 0.25f;
+		const float xmid = (texture == nullptr) ? 0.0f : (texture->xstart + texture->xend) * 0.5f;
+		const float ymid = (texture == nullptr) ? 0.0f : (texture->ystart + texture->yend) * 0.5f;
 
 		for (int ypart_ = 0; ypart_ < ShieldSegmentCollection::NUM_SEGMENTS_Y; ++ypart_) {
 			for (int xpart_ = 0; xpart_ < ShieldSegmentCollection::NUM_SEGMENTS_X; ++xpart_) {
-				const int segmentIdx = (xpart_ + ypart_ * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
+				const int segmentIdx =
+				    (xpart_ + ypart_ * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
 				for (int y = 0; y < NUM_VERTICES_Y; ++y) {
 					for (int x = 0; x < NUM_VERTICES_X; ++x) {
 						const size_t vIdx = segmentIdx + y * NUM_VERTICES_X + x;
 
-						texcoords[vIdx].x = (spherevertices[vIdx].x * (2 - std::fabs(spherevertices[vIdx].y))) * xscale + xmid;
-						texcoords[vIdx].y = (spherevertices[vIdx].z * (2 - std::fabs(spherevertices[vIdx].y))) * yscale + ymid;
+						texcoords[vIdx].x =
+						    (spherevertices[vIdx].x * (2 - std::fabs(spherevertices[vIdx].y))) * xscale + xmid;
+						texcoords[vIdx].y =
+						    (spherevertices[vIdx].z * (2 - std::fabs(spherevertices[vIdx].y))) * yscale + ymid;
 					}
 				}
 			}
@@ -316,7 +310,8 @@ const float2* ShieldSegmentProjectile::GetSegmentTexCoords(const AtlasedTexture*
 		fit = spheretexcoords.find(texture);
 	}
 
-	const int segmentIdx = (xpart + ypart * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
+	const int segmentIdx =
+	    (xpart + ypart * ShieldSegmentCollection::NUM_SEGMENTS_X) * (NUM_VERTICES_X * NUM_VERTICES_Y);
 	return &fit->second[segmentIdx];
 }
 
@@ -328,7 +323,6 @@ void ShieldSegmentProjectile::Update()
 
 	// use the "middle" vertex for z-ordering
 	pos = collection->GetShieldDrawPos() + vertices[(NUM_VERTICES_X * NUM_VERTICES_Y) >> 1] * collection->GetSize();
-
 }
 
 void ShieldSegmentProjectile::Draw()
@@ -351,15 +345,12 @@ void ShieldSegmentProjectile::Draw()
 	// draw all quads
 	for (int y = 0; y < (NUM_VERTICES_Y - 1); ++y) {
 		for (int x = 0; x < (NUM_VERTICES_X - 1); ++x) {
-			const int idxTL = (y    ) * NUM_VERTICES_X + x, idxTR = (y    ) * NUM_VERTICES_X + x + 1;
+			const int idxTL = (y)*NUM_VERTICES_X + x, idxTR = (y)*NUM_VERTICES_X + x + 1;
 			const int idxBL = (y + 1) * NUM_VERTICES_X + x, idxBR = (y + 1) * NUM_VERTICES_X + x + 1;
-			AddEffectsQuad(
-				{ shieldPos + vertices[idxTL] * size, texCoors[idxTL].x, texCoors[idxTL].y, color },
-				{ shieldPos + vertices[idxTR] * size, texCoors[idxTR].x, texCoors[idxTR].y, color },
-				{ shieldPos + vertices[idxBR] * size, texCoors[idxBR].x, texCoors[idxBR].y, color },
-				{ shieldPos + vertices[idxBL] * size, texCoors[idxBL].x, texCoors[idxBL].y, color }
-			);
+			AddEffectsQuad({shieldPos + vertices[idxTL] * size, texCoors[idxTL].x, texCoors[idxTL].y, color},
+			    {shieldPos + vertices[idxTR] * size, texCoors[idxTR].x, texCoors[idxTR].y, color},
+			    {shieldPos + vertices[idxBR] * size, texCoors[idxBR].x, texCoors[idxBR].y, color},
+			    {shieldPos + vertices[idxBL] * size, texCoors[idxBL].x, texCoors[idxBL].y, color});
 		}
 	}
 }
-

@@ -3,11 +3,11 @@
 #ifndef _VIRTUAL_ARCHIVE_H
 #define _VIRTUAL_ARCHIVE_H
 
-#include "IArchiveFactory.h"
 #include "IArchive.h"
+#include "IArchiveFactory.h"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 
 class CVirtualArchive;
@@ -37,10 +37,13 @@ extern CVirtualArchiveFactory* virtualArchiveFactory;
 /**
  * A file in a virtual archive
  */
-class CVirtualFile
-{
+class CVirtualFile {
 public:
-	CVirtualFile(int _fid, const std::string& _name): name(_name), fid(_fid) {}
+	CVirtualFile(int _fid, const std::string& _name)
+	    : name(_name)
+	    , fid(_fid)
+	{
+	}
 
 	void WriteZip(void* zf) const;
 
@@ -51,7 +54,6 @@ public:
 	int fid;
 };
 
-
 /**
  * An opened virtual archive, as archives get deleted after being
  * opened with IArchiveFactory::DoCreateArchive all the data in a
@@ -59,8 +61,7 @@ public:
  * Therefore an 'opened' class is created and the actual archive is
  * preserved
  */
-class CVirtualArchiveOpen : public IArchive
-{
+class CVirtualArchiveOpen : public IArchive {
 public:
 	CVirtualArchiveOpen(CVirtualArchive* archive, const std::string& fileName);
 
@@ -68,6 +69,7 @@ public:
 
 	// virtual archives are stored in memory and as such always open
 	bool IsOpen() override { return true; }
+
 	uint32_t NumFiles() const override;
 	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer) override;
 	const std::string& FileName(uint32_t fid) const override;
@@ -78,21 +80,22 @@ private:
 	CVirtualArchive* archive;
 };
 
-
 /**
  * A virtual archive
  */
-class CVirtualArchive
-{
+class CVirtualArchive {
 public:
 	CVirtualArchive(const std::string& _fileName)
-		: fileName(_fileName)
-	{}
+	    : fileName(_fileName)
+	{
+	}
 
 	CVirtualArchiveOpen* Open();
+
 	CVirtualFile* GetFilePtr(uint32_t fid) { return &files[fid]; }
 
 	uint32_t AddFile(const std::string& file);
+
 	uint32_t NumFiles() const { return (files.size()); }
 
 	bool GetFile(uint32_t fid, std::vector<std::uint8_t>& buffer);
@@ -101,6 +104,7 @@ public:
 	IArchive::SFileInfo FileInfo(uint32_t fid) const;
 
 	const std::string& GetFileName() const { return fileName; }
+
 	const spring::unordered_map<std::string, uint32_t>& GetNameIndex() const { return lcNameIndex; }
 
 	void WriteToFile();

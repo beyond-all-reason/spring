@@ -3,14 +3,12 @@
 #ifndef SPRINGFUTEX_H
 #define SPRINGFUTEX_H
 
-#include <cinttypes>
-#include <atomic>
 #include "System/Misc/SpringTime.h"
 
+#include <atomic>
+#include <cinttypes>
 
-
-class spring_futex
-{
+class spring_futex {
 private:
 	typedef std::uint32_t native_type;
 
@@ -37,28 +35,27 @@ protected:
 class recursive_futex
 {
 private:
-	typedef std::uint32_t native_type;
+    typedef std::uint32_t native_type;
 
 public:
-	typedef native_type* native_handle_type;
+    typedef native_type* native_handle_type;
 
-	recursive_futex() noexcept;
-	~recursive_futex();
+    recursive_futex() noexcept;
+    ~recursive_futex();
 
-	recursive_futex(const recursive_futex&) = delete;
-	recursive_futex& operator=(const recursive_futex&) = delete;
+    recursive_futex(const recursive_futex&) = delete;
+    recursive_futex& operator=(const recursive_futex&) = delete;
 
-	void lock();
-	bool try_lock() noexcept;
-	void unlock();
+    void lock();
+    bool try_lock() noexcept;
+    void unlock();
 
-	native_handle_type native_handle() { return &mtx; }
+    native_handle_type native_handle() { return &mtx; }
 
 protected:
-	native_type mtx;
+    native_type mtx;
 };
 */
-
 
 
 class linux_signal {

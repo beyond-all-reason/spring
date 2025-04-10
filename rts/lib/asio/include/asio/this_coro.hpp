@@ -12,34 +12,27 @@
 #define ASIO_THIS_CORO_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
-# pragma once
+#pragma once
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
-#include "asio/detail/type_traits.hpp"
-
 #include "asio/detail/push_options.hpp"
+#include "asio/detail/type_traits.hpp"
 
 namespace asio {
 namespace this_coro {
 
 /// Awaitable type that returns the executor of the current coroutine.
-struct executor_t
-{
-  constexpr executor_t()
-  {
-  }
+struct executor_t {
+	constexpr executor_t() {}
 };
 
 /// Awaitable object that returns the executor of the current coroutine.
 constexpr executor_t executor;
 
 /// Awaitable type that returns the cancellation state of the current coroutine.
-struct cancellation_state_t
-{
-  constexpr cancellation_state_t()
-  {
-  }
+struct cancellation_state_t {
+	constexpr cancellation_state_t() {}
 };
 
 /// Awaitable object that returns the cancellation state of the current
@@ -80,8 +73,7 @@ constexpr cancellation_state_t cancellation_state;
  * @note The cancellation state is shared by all coroutines in the same "thread
  * of execution" that was created using asio::co_spawn.
  */
-ASIO_NODISCARD constexpr unspecified
-reset_cancellation_state();
+ASIO_NODISCARD constexpr unspecified reset_cancellation_state();
 
 /// Returns an awaitable object that may be used to reset the cancellation state
 /// of the current coroutine.
@@ -104,9 +96,7 @@ reset_cancellation_state();
  * @note The cancellation state is shared by all coroutines in the same "thread
  * of execution" that was created using asio::co_spawn.
  */
-template <typename Filter>
-ASIO_NODISCARD constexpr unspecified
-reset_cancellation_state(Filter&& filter);
+template<typename Filter> ASIO_NODISCARD constexpr unspecified reset_cancellation_state(Filter&& filter);
 
 /// Returns an awaitable object that may be used to reset the cancellation state
 /// of the current coroutine.
@@ -131,11 +121,8 @@ reset_cancellation_state(Filter&& filter);
  * @note The cancellation state is shared by all coroutines in the same "thread
  * of execution" that was created using asio::co_spawn.
  */
-template <typename InFilter, typename OutFilter>
-ASIO_NODISCARD constexpr unspecified
-reset_cancellation_state(
-    InFilter&& in_filter,
-    OutFilter&& out_filter);
+template<typename InFilter, typename OutFilter>
+ASIO_NODISCARD constexpr unspecified reset_cancellation_state(InFilter&& in_filter, OutFilter&& out_filter);
 
 /// Returns an awaitable object that may be used to determine whether the
 /// coroutine throws if trying to suspend when it has been cancelled.
@@ -149,8 +136,7 @@ reset_cancellation_state(
  *   // ...
  * } @endcode
  */
-ASIO_NODISCARD constexpr unspecified
-throw_if_cancelled();
+ASIO_NODISCARD constexpr unspecified throw_if_cancelled();
 
 /// Returns an awaitable object that may be used to specify whether the
 /// coroutine throws if trying to suspend when it has been cancelled.
@@ -163,98 +149,73 @@ throw_if_cancelled();
  *   // ...
  * } @endcode
  */
-ASIO_NODISCARD constexpr unspecified
-throw_if_cancelled(bool value);
+ASIO_NODISCARD constexpr unspecified throw_if_cancelled(bool value);
 
 #else // defined(GENERATING_DOCUMENTATION)
 
-struct reset_cancellation_state_0_t
-{
-  constexpr reset_cancellation_state_0_t()
-  {
-  }
+struct reset_cancellation_state_0_t {
+	constexpr reset_cancellation_state_0_t() {}
 };
 
-ASIO_NODISCARD inline constexpr reset_cancellation_state_0_t
-reset_cancellation_state()
+ASIO_NODISCARD inline constexpr reset_cancellation_state_0_t reset_cancellation_state()
 {
-  return reset_cancellation_state_0_t();
+	return reset_cancellation_state_0_t();
 }
 
-template <typename Filter>
-struct reset_cancellation_state_1_t
-{
-  template <typename F>
-  explicit constexpr reset_cancellation_state_1_t(
-      F&& filt)
-    : filter(static_cast<F&&>(filt))
-  {
-  }
+template<typename Filter> struct reset_cancellation_state_1_t {
+	template<typename F>
+	explicit constexpr reset_cancellation_state_1_t(F&& filt)
+	    : filter(static_cast<F&&>(filt))
+	{
+	}
 
-  Filter filter;
+	Filter filter;
 };
 
-template <typename Filter>
-ASIO_NODISCARD inline constexpr reset_cancellation_state_1_t<
-    decay_t<Filter>>
-reset_cancellation_state(Filter&& filter)
+template<typename Filter>
+ASIO_NODISCARD inline constexpr reset_cancellation_state_1_t<decay_t<Filter>> reset_cancellation_state(Filter&& filter)
 {
-  return reset_cancellation_state_1_t<decay_t<Filter>>(
-      static_cast<Filter&&>(filter));
+	return reset_cancellation_state_1_t<decay_t<Filter>>(static_cast<Filter&&>(filter));
 }
 
-template <typename InFilter, typename OutFilter>
-struct reset_cancellation_state_2_t
-{
-  template <typename F1, typename F2>
-  constexpr reset_cancellation_state_2_t(
-      F1&& in_filt, F2&& out_filt)
-    : in_filter(static_cast<F1&&>(in_filt)),
-      out_filter(static_cast<F2&&>(out_filt))
-  {
-  }
+template<typename InFilter, typename OutFilter> struct reset_cancellation_state_2_t {
+	template<typename F1, typename F2>
+	constexpr reset_cancellation_state_2_t(F1&& in_filt, F2&& out_filt)
+	    : in_filter(static_cast<F1&&>(in_filt))
+	    , out_filter(static_cast<F2&&>(out_filt))
+	{
+	}
 
-  InFilter in_filter;
-  OutFilter out_filter;
+	InFilter in_filter;
+	OutFilter out_filter;
 };
 
-template <typename InFilter, typename OutFilter>
-ASIO_NODISCARD inline constexpr
-reset_cancellation_state_2_t<decay_t<InFilter>, decay_t<OutFilter>>
+template<typename InFilter, typename OutFilter>
+ASIO_NODISCARD inline constexpr reset_cancellation_state_2_t<decay_t<InFilter>, decay_t<OutFilter>>
 reset_cancellation_state(InFilter&& in_filter, OutFilter&& out_filter)
 {
-  return reset_cancellation_state_2_t<decay_t<InFilter>, decay_t<OutFilter>>(
-      static_cast<InFilter&&>(in_filter),
-      static_cast<OutFilter&&>(out_filter));
+	return reset_cancellation_state_2_t<decay_t<InFilter>, decay_t<OutFilter>>(
+	    static_cast<InFilter&&>(in_filter), static_cast<OutFilter&&>(out_filter));
 }
 
-struct throw_if_cancelled_0_t
-{
-  constexpr throw_if_cancelled_0_t()
-  {
-  }
+struct throw_if_cancelled_0_t {
+	constexpr throw_if_cancelled_0_t() {}
 };
 
-ASIO_NODISCARD inline constexpr throw_if_cancelled_0_t
-throw_if_cancelled()
-{
-  return throw_if_cancelled_0_t();
-}
+ASIO_NODISCARD inline constexpr throw_if_cancelled_0_t throw_if_cancelled() { return throw_if_cancelled_0_t(); }
 
-struct throw_if_cancelled_1_t
-{
-  explicit constexpr throw_if_cancelled_1_t(bool val)
-    : value(val)
-  {
-  }
+struct throw_if_cancelled_1_t {
+	explicit constexpr throw_if_cancelled_1_t(bool val)
+	    : value(val)
+	{
+	}
 
-  bool value;
+	bool value;
 };
 
-ASIO_NODISCARD inline constexpr throw_if_cancelled_1_t
-throw_if_cancelled(bool value)
+ASIO_NODISCARD inline constexpr throw_if_cancelled_1_t throw_if_cancelled(bool value)
 {
-  return throw_if_cancelled_1_t(value);
+	return throw_if_cancelled_1_t(value);
 }
 
 #endif // defined(GENERATING_DOCUMENTATION)

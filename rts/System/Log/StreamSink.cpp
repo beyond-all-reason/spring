@@ -1,18 +1,17 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "StreamSink.h"
+
 #include "Backend.h"
 
+#include <cstring>
 #include <ostream>
 #include <string>
-#include <cstring>
 
 
 static std::ostream* logStreamInt = NULL;
 
-void log_sink_stream_setLogStream(std::ostream* logStream) {
-	logStreamInt = logStream;
-}
+void log_sink_stream_setLogStream(std::ostream* logStream) { logStreamInt = logStream; }
 
 
 #ifdef __cplusplus
@@ -38,18 +37,14 @@ void log_sink_record_stream(int level, const char* section, const char* record)
 
 
 namespace {
-	/// Auto-registers the sink defined in this file before main() is called
-	struct StreamSinkRegistrator {
-		StreamSinkRegistrator() {
-			log_backend_registerSink(&log_sink_record_stream);
-		}
-		~StreamSinkRegistrator() {
-			log_backend_unregisterSink(&log_sink_record_stream);
-		}
-	} streamSinkRegistrator;
-}
+/// Auto-registers the sink defined in this file before main() is called
+struct StreamSinkRegistrator {
+	StreamSinkRegistrator() { log_backend_registerSink(&log_sink_record_stream); }
+
+	~StreamSinkRegistrator() { log_backend_unregisterSink(&log_sink_record_stream); }
+} streamSinkRegistrator;
+} // namespace
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-

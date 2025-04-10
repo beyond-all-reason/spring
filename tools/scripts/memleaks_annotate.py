@@ -3,7 +3,7 @@
 
 """Annotate memleaks.log from mmgr that have a numerical backtrace with text backtrace.
 
-Alloc.   Addr       Size       Addr       Size                         BreakOn  BreakOn              
+Alloc.   Addr       Size       Addr       Size                         BreakOn  BreakOn
 Number Reported   Reported    Actual     Actual     Unused    Method   Dealloc  Realloc Allocated by                                    Backtrace (optional)
 ------ ---------- ---------- ---------- ---------- ---------- -------- -------  ------- -----------------------------------------------------------------------------------------------------------
 012345 0x0D200530 0x00000008 0x0D2004B0 0x00000108 0x00000000 new         N        N    ??(00000)::??	 004834da 00535d62 004cef1f 004d7fba 004d8617 007c9c5e 00804a5d 0042749a 0042ef34 0041e28d"""

@@ -5,16 +5,17 @@
 
 #include "RawPacket.h"
 
-#include <string>
 #include <stdexcept>
+#include <string>
 
-
-namespace netcode
-{
+namespace netcode {
 
 class PackPacketException : public std::runtime_error {
 public:
-	PackPacketException(const std::string& what) : std::runtime_error(what) {}
+	PackPacketException(const std::string& what)
+	    : std::runtime_error(what)
+	{
+	}
 };
 
 using PackPacket = RawPacket;

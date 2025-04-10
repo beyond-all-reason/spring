@@ -3,27 +3,25 @@
 #include "TorpedoLauncher.h"
 
 #include "WeaponDef.h"
+
 #include "Map/Ground.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectileFactory.h"
-#include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
+#include "Sim/Units/UnitDef.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 
-#include "System/Misc/TracyDefs.h"
-
 CR_BIND_DERIVED(CTorpedoLauncher, CWeapon, )
-CR_REG_METADATA(CTorpedoLauncher,(
-	CR_MEMBER(tracking)
-))
+CR_REG_METADATA(CTorpedoLauncher, (CR_MEMBER(tracking)))
 
-CTorpedoLauncher::CTorpedoLauncher(CUnit* owner, const WeaponDef* def): CWeapon(owner, def)
+CTorpedoLauncher::CTorpedoLauncher(CUnit* owner, const WeaponDef* def)
+    : CWeapon(owner, def)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// null happens when loading
 	if (def != nullptr)
 		tracking = weaponDef->turnrate * def->tracks;
 }
-
 
 bool CTorpedoLauncher::TestTarget(const float3 pos, const SWeaponTarget& trg) const
 {
@@ -43,7 +41,7 @@ bool CTorpedoLauncher::TestTarget(const float3 pos, const SWeaponTarget& trg) co
 	//   able to, see #3951
 	//
 	// land- or air-based launchers cannot target anything not in water
-	if (weaponMuzzlePos.y >  0.0f &&                           !TargetInWater(pos, trg))
+	if (weaponMuzzlePos.y > 0.0f && !TargetInWater(pos, trg))
 		return false;
 	// water-based launchers cannot target anything not in water unless submissile
 	if (weaponMuzzlePos.y <= 0.0f && !weaponDef->submissile && !TargetInWater(pos, trg))
@@ -62,7 +60,8 @@ void CTorpedoLauncher::FireImpl(const bool scriptCall)
 
 	if (weaponDef->fixedLauncher) {
 		vel = weaponDir * weaponDef->startvelocity;
-	} else {
+	}
+	else {
 		dir += (UpVector * std::max(0.0f, weaponDef->trajectoryHeight));
 		vel = dir.Normalize() * weaponDef->startvelocity;
 	}
@@ -71,7 +70,7 @@ void CTorpedoLauncher::FireImpl(const bool scriptCall)
 	params.speed = vel;
 	params.pos = weaponMuzzlePos;
 	params.end = currentTargetPos;
-	params.ttl = (ttl == 0)? math::ceil(std::max(dist, range) / projectileSpeed + 25): ttl;
+	params.ttl = (ttl == 0) ? math::ceil(std::max(dist, range) / projectileSpeed + 25) : ttl;
 	params.tracking = tracking;
 
 	WeaponProjectileFactory::LoadProjectile(params);

@@ -14,7 +14,7 @@
 
 typedef int socklen_t;
 typedef SOCKET t_socket;
-typedef t_socket *p_socket;
+typedef t_socket* p_socket;
 
 #define SOCKET_INVALID (INVALID_SOCKET)
 

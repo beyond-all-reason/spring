@@ -5,27 +5,35 @@
 
 #include "LuaHandle.h"
 
-
-class CLuaMenu : public CLuaHandle
-{
+class CLuaMenu : public CLuaHandle {
 public:
 	enum QueuedAction {
 		ACTION_RELOAD = 0,
 		ACTION_DISABLE = 1,
 		ACTION_NOVALUE = -1,
 	};
+
 public:
 	void QueueAction(const QueuedAction action) { queuedAction = action; }
-	void CheckAction() {
+
+	void CheckAction()
+	{
 		switch (queuedAction) {
-		case ACTION_RELOAD : { ReloadHandler(); } break;
-		case ACTION_DISABLE: {   FreeHandler(); } break;
-		default            : {                  } break;
+		case ACTION_RELOAD: {
+			ReloadHandler();
+		} break;
+		case ACTION_DISABLE: {
+			FreeHandler();
+		} break;
+		default: {
+		} break;
 		}
 	}
 
 	static bool CanLoadHandler() { return true; }
+
 	static bool ReloadHandler() { return (FreeHandler(), LoadFreeHandler()); } // NOTE the ','
+
 	static bool LoadFreeHandler() { return (LoadHandler() || FreeHandler()); }
 
 	static bool Enable(bool enableCommand);
@@ -62,10 +70,10 @@ protected:
 	static bool RemoveSomeOpenGLFunctions(lua_State* L);
 	static bool PushGameVersion(lua_State* L);
 	void InitLuaSocket(lua_State* L);
+
 protected:
 	QueuedAction queuedAction;
 };
-
 
 extern CLuaMenu* luaMenu;
 

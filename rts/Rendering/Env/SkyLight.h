@@ -10,7 +10,8 @@ public:
 	ISkyLight();
 
 	// no need to update the specular cubemap if this returns false, etc
-	bool Update() {
+	bool Update()
+	{
 		if (cacheDir != lightDir) {
 			cacheDir = lightDir;
 			return true;
@@ -21,9 +22,11 @@ public:
 	void SetLightDir(const float4& dir) { lightDir = dir; }
 
 	const float4& GetLightDir() const { return lightDir; }
+
 	const float GetLightIntensity() const { return lightDir.w; }
 
 	const float3& GetLightDirX() const { return lightDirX; }
+
 	const float3& GetLightDirZ() const { return lightDirZ; }
 
 	float3& CalcPolarLightDir();
@@ -38,4 +41,3 @@ private:
 };
 
 #endif
-

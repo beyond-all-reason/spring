@@ -5,17 +5,18 @@
 
 #include <stdexcept>
 
-namespace netcode
-{
+namespace netcode {
 
 /**
  * @brief network_error
  * thrown when network error occurred
  */
-class network_error : public std::runtime_error
-{
+class network_error : public std::runtime_error {
 public:
-	network_error(const std::string& msg) :	std::runtime_error(msg) {}
+	network_error(const std::string& msg)
+	    : std::runtime_error(msg)
+	{
+	}
 };
 
 } // namespace netcode

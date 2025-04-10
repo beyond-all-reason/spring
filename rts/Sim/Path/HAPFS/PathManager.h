@@ -3,16 +3,16 @@
 #ifndef HAPFS_PATHMANAGER_H
 #define HAPFS_PATHMANAGER_H
 
-#include <cinttypes>
-
-#include "Sim/Misc/ModInfo.h"
-#include "Sim/Path/IPathManager.h"
 #include "IPath.h"
 #include "IPathFinder.h"
 #include "PathFinderDef.h"
 #include "Registry.h"
+
+#include "Sim/Misc/ModInfo.h"
+#include "Sim/Path/IPathManager.h"
 #include "System/UnorderedMap.hpp"
 
+#include <cinttypes>
 #include <mutex>
 
 class CSolidObject;
@@ -28,26 +28,32 @@ class PathHeatMap;
 class PathingState;
 class CPathFinder;
 
-class CPathManager: public IPathManager {
+class CPathManager : public IPathManager {
 public:
 	struct MultiPath {
-		MultiPath(): moveDef(nullptr), caller(nullptr) {}
-		MultiPath(const MoveDef* moveDef, const float3& startPos, const float3& goalPos, float goalRadius)
-			: searchResult(IPath::Error)
-			, start(startPos)
-			, peDef(startPos, goalPos, goalRadius, 3.0f, 2000)
-			, moveDef(moveDef)
-			, caller(nullptr)
-		{}
-
-		//MultiPath(const MultiPath& mp) = delete;
-		MultiPath(const MultiPath& mp) {
-			*this = mp;
+		MultiPath()
+		    : moveDef(nullptr)
+		    , caller(nullptr)
+		{
 		}
+
+		MultiPath(const MoveDef* moveDef, const float3& startPos, const float3& goalPos, float goalRadius)
+		    : searchResult(IPath::Error)
+		    , start(startPos)
+		    , peDef(startPos, goalPos, goalRadius, 3.0f, 2000)
+		    , moveDef(moveDef)
+		    , caller(nullptr)
+		{
+		}
+
+		// MultiPath(const MultiPath& mp) = delete;
+		MultiPath(const MultiPath& mp) { *this = mp; }
+
 		MultiPath(MultiPath&& mp) { *this = std::move(mp); }
 
-		//MultiPath& operator = (const MultiPath& mp) = delete;
-		MultiPath& operator = (const MultiPath& mp) {
+		// MultiPath& operator = (const MultiPath& mp) = delete;
+		MultiPath& operator=(const MultiPath& mp)
+		{
 			lowResPath = mp.lowResPath;
 			medResPath = mp.medResPath;
 			maxResPath = mp.maxResPath;
@@ -57,15 +63,17 @@ public:
 			start = mp.start;
 			finalGoal = mp.finalGoal;
 
-			peDef   = mp.peDef;
+			peDef = mp.peDef;
 			moveDef = mp.moveDef;
-			caller  = mp.caller;
+			caller = mp.caller;
 
 			updated = mp.updated;
 
 			return *this;
 		}
-		MultiPath& operator = (MultiPath&& mp) {
+
+		MultiPath& operator=(MultiPath&& mp)
+		{
 			lowResPath = std::move(mp.lowResPath);
 			medResPath = std::move(mp.medResPath);
 			maxResPath = std::move(mp.maxResPath);
@@ -75,15 +83,15 @@ public:
 			start = mp.start;
 			finalGoal = mp.finalGoal;
 
-			peDef   = mp.peDef;
+			peDef = mp.peDef;
 			moveDef = mp.moveDef;
-			caller  = mp.caller;
+			caller = mp.caller;
 
 			mp.moveDef = nullptr;
-			mp.caller  = nullptr;
+			mp.caller = nullptr;
 
 			updated = mp.updated;
-			
+
 			return *this;
 		}
 
@@ -113,6 +121,7 @@ public:
 	~CPathManager();
 
 	std::int32_t GetPathFinderType() const override { return HAPFS_TYPE; }
+
 	std::uint32_t GetPathCheckSum() const override;
 
 	std::int64_t Finalize() override;
@@ -125,27 +134,23 @@ public:
 	void UpdatePath(const CSolidObject*, unsigned int) override;
 	void DeletePath(unsigned int pathID, bool force = false) override;
 
-	float3 NextWayPoint(
-		const CSolidObject* owner,
-		unsigned int pathID,
-		unsigned int numRetries,
-		float3 callerPos,
-		float radius,
-		bool synced
-	) override;
+	float3 NextWayPoint(const CSolidObject* owner,
+	    unsigned int pathID,
+	    unsigned int numRetries,
+	    float3 callerPos,
+	    float radius,
+	    bool synced) override;
 
 	// Isn't used here due to the way waypoints get consumed and then a noPoint
 	// is returned when out of points.
 	bool CurrentWaypointIsUnreachable(unsigned int pathID) override { return false; }
 
-	unsigned int RequestPath(
-		CSolidObject* caller,
-		const MoveDef* moveDef,
-		float3 startPos,
-		float3 goalPos,
-		float goalRadius,
-		bool synced
-	) override;
+	unsigned int RequestPath(CSolidObject* caller,
+	    const MoveDef* moveDef,
+	    float3 startPos,
+	    float3 goalPos,
+	    float goalRadius,
+	    bool synced) override;
 
 	/**
 	 * Returns waypoints of the max-resolution path segments.
@@ -184,45 +189,41 @@ public:
 	const PathingState* GetLowResPS() const;
 
 	const PathFlowMap* GetPathFlowMap() const { return pathFlowMap; }
+
 	const PathHeatMap* GetPathHeatMap() const { return pathHeatMap; }
+
 	int GetPathFinderGroups() const { return pathFinderGroups; }
 
 	const spring::unordered_map<unsigned int, MultiPath>& GetPathMap() const { return pathMap; }
 
 private:
-
 	void InitStatic();
 
-	MultiPath IssuePathRequest(
-		CSolidObject* caller,
-		const MoveDef* moveDef,
-		float3 startPos,
-		float3 goalPos,
-		float goalRadius,
-		bool synced
-	);
+	MultiPath IssuePathRequest(CSolidObject* caller,
+	    const MoveDef* moveDef,
+	    float3 startPos,
+	    float3 goalPos,
+	    float goalRadius,
+	    bool synced);
 
-	MultiPath ExpandCurrentPath(
-		const CSolidObject* owner,
-		unsigned int pathID,
-		unsigned int numRetries,
-		float3 callerPos,
-		float radius,
-		bool extendMedResPath
-	);
+	MultiPath ExpandCurrentPath(const CSolidObject* owner,
+	    unsigned int pathID,
+	    unsigned int numRetries,
+	    float3 callerPos,
+	    float radius,
+	    bool extendMedResPath);
 
-	IPath::SearchResult ArrangePath(
-		MultiPath* newPath,
-		const MoveDef* moveDef,
-		const float3& startPos,
-		const float3& goalPos,
-		CSolidObject* caller
-	) const;
+	IPath::SearchResult ArrangePath(MultiPath* newPath,
+	    const MoveDef* moveDef,
+	    const float3& startPos,
+	    const float3& goalPos,
+	    CSolidObject* caller) const;
 
-	MultiPath* GetMultiPath(int pathID) {return (const_cast<MultiPath*>(GetMultiPathConst(pathID))); }
+	MultiPath* GetMultiPath(int pathID) { return (const_cast<MultiPath*>(GetMultiPathConst(pathID))); }
 
 	// Used by MT code - a copy must be taken
-	MultiPath GetMultiPathMT(int pathID) const {
+	MultiPath GetMultiPathMT(int pathID) const
+	{
 		std::lock_guard<std::mutex> lock(pathMapUpdate);
 		const auto pi = pathMap.find(pathID);
 		if (pi == pathMap.end())
@@ -231,14 +232,16 @@ private:
 	}
 
 	// Used by MT code
-	void UpdateMultiPathMT(int pathID, MultiPath& updatedPath) {
+	void UpdateMultiPathMT(int pathID, MultiPath& updatedPath)
+	{
 		std::lock_guard<std::mutex> lock(pathMapUpdate);
 		const auto pi = pathMap.find(pathID);
 		if (pi != pathMap.end())
 			pi->second = updatedPath;
 	}
 
-	const MultiPath* GetMultiPathConst(int pathID) const {
+	const MultiPath* GetMultiPathConst(int pathID) const
+	{
 		assert(!ThreadPool::inMultiThreadedSection);
 		const auto pi = pathMap.find(pathID);
 		if (pi == pathMap.end())
@@ -246,7 +249,8 @@ private:
 		return &(pi->second);
 	}
 
-	unsigned int Store(MultiPath& path) {
+	unsigned int Store(MultiPath& path)
+	{
 		unsigned int assignedId = 0;
 		{
 			std::lock_guard<std::mutex> lock(pathMapUpdate);
@@ -255,7 +259,6 @@ private:
 		}
 		return assignedId;
 	}
-
 
 	static void FinalizePath(MultiPath* path, const float3 startPos, const float3 goalPos, const bool cantGetCloser);
 
@@ -292,6 +295,6 @@ private:
 	std::vector<IPathFinder*> pathFinders;
 };
 
-}
+} // namespace HAPFS
 
 #endif

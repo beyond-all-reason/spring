@@ -1,27 +1,29 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Combiner.h"
-#include "Game/GlobalUnsynced.h"
-#include "Rendering/GlobalRendering.h"
-#include "Rendering/Shaders/ShaderHandler.h"
-#include "Rendering/Shaders/Shader.h"
-#include "Map/ReadMap.h"
-#include "System/Exceptions.h"
-#include "System/Config/ConfigHandler.h"
-#include "System/Log/ILog.h"
 
+#include "Game/GlobalUnsynced.h"
+#include "Map/ReadMap.h"
+#include "Rendering/GlobalRendering.h"
+#include "Rendering/Shaders/Shader.h"
+#include "Rendering/Shaders/ShaderHandler.h"
+#include "System/Config/ConfigHandler.h"
+#include "System/Exceptions.h"
+#include "System/Log/ILog.h"
 #include "System/Misc/TracyDefs.h"
 
 
-CONFIG(bool, HighResInfoTexture).defaultValue(true).description("Use full heightmap resolution info texture (true), or half resolution (false)");
-
+CONFIG(bool, HighResInfoTexture)
+    .defaultValue(true)
+    .description("Use full heightmap resolution info texture (true), or half resolution (false)");
 
 CInfoTextureCombiner::CInfoTextureCombiner()
-: CPboInfoTexture("info")
-, disabled(true)
+    : CPboInfoTexture("info")
+    , disabled(true)
 {
-	texSize = (configHandler->GetBool("HighResInfoTexture")) ? int2(mapDims.pwr2mapx, mapDims.pwr2mapy) : int2(mapDims.pwr2mapx >> 1, mapDims.pwr2mapy >> 1);
-	//texSize = (configHandler->GetBool("HighResInfoTexture")) ? int2(512, 512) : int2(256, 256);
+	texSize = (configHandler->GetBool("HighResInfoTexture")) ? int2(mapDims.pwr2mapx, mapDims.pwr2mapy) :
+	                                                           int2(mapDims.pwr2mapx >> 1, mapDims.pwr2mapy >> 1);
+	// texSize = (configHandler->GetBool("HighResInfoTexture")) ? int2(512, 512) : int2(256, 256);
 	texChannels = 4;
 
 	glGenTextures(1, &texture);
@@ -47,9 +49,10 @@ CInfoTextureCombiner::CInfoTextureCombiner()
 	if (FBO::IsSupported()) {
 		fbo.Bind();
 		fbo.AttachTexture(texture);
-		/*bool status =*/ fbo.CheckStatus("CInfoTextureCombiner");
+		/*bool status =*/fbo.CheckStatus("CInfoTextureCombiner");
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		if (fbo.IsValid()) glClear(GL_COLOR_BUFFER_BIT);
+		if (fbo.IsValid())
+			glClear(GL_COLOR_BUFFER_BIT);
 		FBO::Unbind();
 
 		// create mipmaps
@@ -70,7 +73,6 @@ CInfoTextureCombiner::~CInfoTextureCombiner()
 	shaderHandler->ReleaseProgramObject("[CInfoTextureCombiner]", "CInfoTextureCombiner");
 }
 
-
 void CInfoTextureCombiner::SwitchMode(const std::string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -84,16 +86,25 @@ void CInfoTextureCombiner::SwitchMode(const std::string& name)
 	// WTF? fully reloaded from disk on every switch?
 	// TODO: allow "info:myluainfotex"
 	switch (hashString(name.c_str())) {
-		case hashString("los"   ): { disabled = !CreateShader("shaders/GLSL/infoLOS.lua"   , true, float4(0.5f, 0.5f, 0.5f, 1.0f)); } break;
-		case hashString("metal" ): { disabled = !CreateShader("shaders/GLSL/infoMetal.lua" , true, float4(0.0f, 0.0f, 0.0f, 1.0f)); } break;
-		case hashString("height"): { disabled = !CreateShader("shaders/GLSL/infoHeight.lua"                                      ); } break;
-		case hashString("path"  ): { disabled = !CreateShader("shaders/GLSL/infoPath.lua"                                        ); } break;
-		default                  : { disabled = !CreateShader(name                                                               ); } break;
+	case hashString("los"): {
+		disabled = !CreateShader("shaders/GLSL/infoLOS.lua", true, float4(0.5f, 0.5f, 0.5f, 1.0f));
+	} break;
+	case hashString("metal"): {
+		disabled = !CreateShader("shaders/GLSL/infoMetal.lua", true, float4(0.0f, 0.0f, 0.0f, 1.0f));
+	} break;
+	case hashString("height"): {
+		disabled = !CreateShader("shaders/GLSL/infoHeight.lua");
+	} break;
+	case hashString("path"): {
+		disabled = !CreateShader("shaders/GLSL/infoPath.lua");
+	} break;
+	default: {
+		disabled = !CreateShader(name);
+	} break;
 	}
 
 	curMode = (disabled) ? "" : name;
 }
-
 
 bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool clear, const float4 clearColor)
 {
@@ -102,7 +113,8 @@ bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool 
 		// clear
 		fbo.Bind();
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-		if (fbo.IsValid()) glClear(GL_COLOR_BUFFER_BIT);
+		if (fbo.IsValid())
+			glClear(GL_COLOR_BUFFER_BIT);
 		FBO::Unbind();
 
 		// create mipmaps
@@ -117,14 +129,13 @@ bool CInfoTextureCombiner::CreateShader(const std::string& filename, const bool 
 	return shader->LoadFromLua(filename);
 }
 
-
 void CInfoTextureCombiner::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	shader->Enable();
 	fbo.Bind();
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
-	glViewport(0,0, texSize.x, texSize.y);
+	glViewport(0, 0, texSize.x, texSize.y);
 	glEnable(GL_BLEND);
 
 	shader->BindTextures();
@@ -134,10 +145,14 @@ void CInfoTextureCombiner::Update()
 	const float isy = 2.0f * (mapDims.mapy / float(mapDims.pwr2mapy)) - 1.0f;
 
 	glBegin(GL_QUADS);
-		glTexCoord2f(0.f, 0.f); glVertex2f(-1.f, -1.f);
-		glTexCoord2f(0.f, 1.f); glVertex2f(-1.f, +isy);
-		glTexCoord2f(1.f, 1.f); glVertex2f(+isx, +isy);
-		glTexCoord2f(1.f, 0.f); glVertex2f(+isx, -1.f);
+	glTexCoord2f(0.f, 0.f);
+	glVertex2f(-1.f, -1.f);
+	glTexCoord2f(0.f, 1.f);
+	glVertex2f(-1.f, +isy);
+	glTexCoord2f(1.f, 1.f);
+	glVertex2f(+isx, +isy);
+	glTexCoord2f(1.f, 0.f);
+	glVertex2f(+isx, -1.f);
 	glEnd();
 
 	globalRendering->LoadViewport();

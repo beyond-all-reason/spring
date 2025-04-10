@@ -53,4 +53,4 @@ But there are also **drawbacks**:
 * you cannot jump to any specific time, either in a replay or e.g. to rejoin an ongoing game at its current state.
 The gamestate at any simulation frame has to be simulated from the previous frame, and that frame has to be simulated from the one before it, beginning all the way back at game start.
 * you also have to simulate the whole game state including enemy units, so maphack is possible.
-* making sure desync doesn't happen takes a huge effort. 
+* making sure desync doesn't happen takes a huge effort.

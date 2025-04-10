@@ -218,7 +218,7 @@ local function GetTeamColor(teamID)
     return color
   end
   local r,g,b = Spring.GetTeamColor(teamID)
-  
+
   color = { r, g, b }
   teamColors[teamID] = color
   return color

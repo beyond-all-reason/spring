@@ -10,27 +10,30 @@
 
 #include "creg_cond.h"
 
-namespace creg
-{
-	class ObjectInstanceType : public IType
+namespace creg {
+class ObjectInstanceType : public IType {
+public:
+	ObjectInstanceType(Class* objc, size_t size)
+	    : IType(size)
+	    , objectClass(objc)
 	{
-	public:
-		ObjectInstanceType(Class* objc, size_t size) : IType(size), objectClass(objc) {}
-		~ObjectInstanceType() {}
-		void Serialize(ISerializer* s, void* instance);
-		std::string GetName() const;
+	}
 
-		Class* objectClass;
-	};
+	~ObjectInstanceType() {}
 
-	class StringType : public DynamicArrayType<std::string>
-	{
-	public:
-		StringType() { }
-		std::string GetName() const;
-	};
+	void Serialize(ISerializer* s, void* instance);
+	std::string GetName() const;
 
-}
+	Class* objectClass;
+};
+
+class StringType : public DynamicArrayType<std::string> {
+public:
+	StringType() {}
+
+	std::string GetName() const;
+};
+
+} // namespace creg
 
 #endif
-

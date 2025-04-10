@@ -103,7 +103,7 @@ local function CreateFontFiles(fontName)
   if (not inData) then
     return false
   end
-  
+
   print('CreateFontFiles = ' .. fullName .. ', ' .. size)
 
   return
@@ -113,12 +113,12 @@ local function CreateFontFiles(fontName)
       minChar = 0,
       maxChar = 255,
     --[[
-      texWidth = 
-      outlineMode = 
-      outlineRadius = 
-      outlineWeight = 
-      padding = 
-      spacing = 
+      texWidth =
+      outlineMode =
+      outlineRadius =
+      outlineWeight =
+      padding =
+      spacing =
       debug =
     --]]
     })
@@ -181,7 +181,7 @@ local function MakeOutlineDisplayLists(fontSpecs)
     local tyn = gi.ymax / th
     local txp = gi.xmax / tw
     local typ = gi.ymin / th
-    
+
     local list = glCreateList(function ()
       glTranslate(gi.initDist, 0, 0)
 

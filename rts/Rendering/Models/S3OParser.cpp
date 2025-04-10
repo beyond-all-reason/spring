@@ -1,27 +1,28 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <cctype>
-#include <stdexcept>
-
 #include "S3OParser.h"
+
 #include "s3o.h"
+
 #include "Game/GlobalUnsynced.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/Textures/S3OTextureHandler.h"
 #include "Sim/Misc/CollisionVolume.h"
 #include "System/Exceptions.h"
+#include "System/FileSystem/FileHandler.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/Platform/byteorder.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
-#include "System/Log/ILog.h"
-#include "System/FileSystem/FileHandler.h"
-#include "System/Platform/byteorder.h"
 
-#include "System/Misc/TracyDefs.h"
-
-
+#include <cctype>
+#include <stdexcept>
 
 void CS3OParser::Init() { numPoolPieces = 0; }
-void CS3OParser::Kill() {
+
+void CS3OParser::Kill()
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	LOG_L(L_INFO, "[S3OParser::%s] allocated %u pieces", __func__, numPoolPieces);
 
@@ -46,7 +47,8 @@ void CS3OParser::Load(S3DModel& model, const std::string& name)
 	if (!file.IsBuffered()) {
 		fileBuf.resize(file.FileSize(), 0);
 		file.Read(fileBuf.data(), fileBuf.size());
-	} else {
+	}
+	else {
 		fileBuf = std::move(file.GetBuffer());
 	}
 
@@ -60,8 +62,8 @@ void CS3OParser::Load(S3DModel& model, const std::string& name)
 	model.name = name;
 	model.type = MODELTYPE_S3O;
 	model.numPieces = 0;
-	model.texs[0] = (header.texture1 == 0)? "" : (char*) &fileBuf[header.texture1];
-	model.texs[1] = (header.texture2 == 0)? "" : (char*) &fileBuf[header.texture2];
+	model.texs[0] = (header.texture1 == 0) ? "" : (char*)&fileBuf[header.texture1];
+	model.texs[1] = (header.texture2 == 0) ? "" : (char*)&fileBuf[header.texture2];
 	model.mins = DEF_MIN_SIZE;
 	model.maxs = DEF_MAX_SIZE;
 
@@ -70,11 +72,10 @@ void CS3OParser::Load(S3DModel& model, const std::string& name)
 	model.FlattenPieceTree(LoadPiece(&model, nullptr, fileBuf, header.rootPiece));
 
 	// set after the extrema are known
-	model.radius = (header.radius <= 0.01f)? model.CalcDrawRadius(): header.radius;
-	model.height = (header.height <= 0.01f)? model.CalcDrawHeight(): header.height;
+	model.radius = (header.radius <= 0.01f) ? model.CalcDrawRadius() : header.radius;
+	model.height = (header.height <= 0.01f) ? model.CalcDrawHeight() : header.height;
 	model.relMidPos = float3(header.midx, header.midy, header.midz);
 }
-
 
 SS3OPiece* CS3OParser::AllocPiece()
 {
@@ -104,11 +105,12 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 	model->numPieces++;
 
 	// retrieve piece data
-	Piece* fp = reinterpret_cast<Piece*>(&buf[offset]); fp->swap();
+	Piece* fp = reinterpret_cast<Piece*>(&buf[offset]);
+	fp->swap();
 
-	// (fp->xxxCount > 0) check rationale: apparently widely used s3o tools have a bug when fp->xxx might point outside of buffer
-	// this bug only manifests itself when launching spring in debug build with bounds checking (MSVC does it by default)
-	// Since s3o assets with such bugs is uncountable, let's workaround it in the code.
+	// (fp->xxxCount > 0) check rationale: apparently widely used s3o tools have a bug when fp->xxx might point outside
+	// of buffer this bug only manifests itself when launching spring in debug build with bounds checking (MSVC does it
+	// by default) Since s3o assets with such bugs is uncountable, let's workaround it in the code.
 	Vertex* vertexList = fp->numVertices > 0 ? reinterpret_cast<Vertex*>(&buf[fp->vertices]) : nullptr;
 	const int* indexList = fp->vertexTableSize > 0 ? reinterpret_cast<int*>(&buf[fp->vertexTable]) : nullptr;
 	const int* childList = fp->numchildren > 0 ? reinterpret_cast<int*>(&buf[fp->children]) : nullptr;
@@ -120,7 +122,7 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 	piece->offset.y = fp->yoffset;
 	piece->offset.z = fp->zoffset;
 	piece->primType = fp->primitiveType;
-	piece->name = (char*) &buf[fp->name];
+	piece->name = (char*)&buf[fp->name];
 	piece->parent = parent;
 	piece->SetParentModel(model);
 
@@ -136,7 +138,8 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 
 		if (sv.normal.CheckNaNs()) {
 			sv.normal.SafeANormalize();
-		} else {
+		}
+		else {
 			sv.normal = ZeroVector;
 		}
 
@@ -154,7 +157,7 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 
 	// post process the piece
 	{
-		piece->goffset = piece->offset + ((parent != NULL)? parent->goffset: ZeroVector);
+		piece->goffset = piece->offset + ((parent != NULL) ? parent->goffset : ZeroVector);
 
 		piece->Trianglize();
 		piece->SetVertexTangents();
@@ -163,7 +166,8 @@ SS3OPiece* CS3OParser::LoadPiece(S3DModel* model, SS3OPiece* parent, std::vector
 		model->mins = float3::min(piece->goffset + piece->mins, model->mins);
 		model->maxs = float3::max(piece->goffset + piece->maxs, model->maxs);
 
-		piece->SetCollisionVolume(CollisionVolume('b', 'z', piece->maxs - piece->mins, (piece->maxs + piece->mins) * 0.5f));
+		piece->SetCollisionVolume(
+		    CollisionVolume('b', 'z', piece->maxs - piece->mins, (piece->maxs + piece->mins) * 0.5f));
 	}
 
 	// load children pieces
@@ -187,66 +191,64 @@ void SS3OPiece::SetMinMaxExtends()
 	}
 }
 
-
 void SS3OPiece::Trianglize()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (primType) {
-		case S3O_PRIMTYPE_TRIANGLES: {
-		} break;
-		case S3O_PRIMTYPE_TRIANGLE_STRIP: {
-			if (indices.size() < 3) {
-				primType = S3O_PRIMTYPE_TRIANGLES;
-				indices.clear();
-				return;
-			}
-
-			decltype(indices) newIndices;
-			newIndices.resize(indices.size() * 3); // each index (can) create a new triangle
-
-			for (size_t i = 0; (i + 2) < indices.size(); ++i) {
-				// indices can contain end-of-strip markers (-1U)
-				if (indices[i + 0] == -1 || indices[i + 1] == -1 || indices[i + 2] == -1)
-					continue;
-
-				newIndices.push_back(indices[i + 0]);
-				newIndices.push_back(indices[i + 1]);
-				newIndices.push_back(indices[i + 2]);
-			}
-
+	case S3O_PRIMTYPE_TRIANGLES: {
+	} break;
+	case S3O_PRIMTYPE_TRIANGLE_STRIP: {
+		if (indices.size() < 3) {
 			primType = S3O_PRIMTYPE_TRIANGLES;
-			indices.swap(newIndices);
-		} break;
-		case S3O_PRIMTYPE_QUADS: {
-			if (indices.size() % 4 != 0) {
-				primType = S3O_PRIMTYPE_TRIANGLES;
-				indices.clear();
-				return;
-			}
+			indices.clear();
+			return;
+		}
 
-			decltype(indices) newIndices;
-			const size_t oldCount = indices.size();
-			newIndices.resize(oldCount + oldCount / 2); // 4 indices become 6
+		decltype(indices) newIndices;
+		newIndices.resize(indices.size() * 3); // each index (can) create a new triangle
 
-			for (size_t i = 0, j = 0; i < indices.size(); i += 4) {
-				newIndices[j++] = indices[i + 0];
-				newIndices[j++] = indices[i + 1];
-				newIndices[j++] = indices[i + 2];
+		for (size_t i = 0; (i + 2) < indices.size(); ++i) {
+			// indices can contain end-of-strip markers (-1U)
+			if (indices[i + 0] == -1 || indices[i + 1] == -1 || indices[i + 2] == -1)
+				continue;
 
-				newIndices[j++] = indices[i + 0];
-				newIndices[j++] = indices[i + 2];
-				newIndices[j++] = indices[i + 3];
-			}
+			newIndices.push_back(indices[i + 0]);
+			newIndices.push_back(indices[i + 1]);
+			newIndices.push_back(indices[i + 2]);
+		}
 
+		primType = S3O_PRIMTYPE_TRIANGLES;
+		indices.swap(newIndices);
+	} break;
+	case S3O_PRIMTYPE_QUADS: {
+		if (indices.size() % 4 != 0) {
 			primType = S3O_PRIMTYPE_TRIANGLES;
-			indices.swap(newIndices);
-		} break;
+			indices.clear();
+			return;
+		}
 
-		default: {
-		} break;
+		decltype(indices) newIndices;
+		const size_t oldCount = indices.size();
+		newIndices.resize(oldCount + oldCount / 2); // 4 indices become 6
+
+		for (size_t i = 0, j = 0; i < indices.size(); i += 4) {
+			newIndices[j++] = indices[i + 0];
+			newIndices[j++] = indices[i + 1];
+			newIndices[j++] = indices[i + 2];
+
+			newIndices[j++] = indices[i + 0];
+			newIndices[j++] = indices[i + 2];
+			newIndices[j++] = indices[i + 3];
+		}
+
+		primType = S3O_PRIMTYPE_TRIANGLES;
+		indices.swap(newIndices);
+	} break;
+
+	default: {
+	} break;
 	}
 }
-
 
 void SS3OPiece::SetVertexTangents()
 {
@@ -257,9 +259,15 @@ void SS3OPiece::SetVertexTangents()
 	unsigned int stride = 0;
 
 	switch (primType) {
-		case S3O_PRIMTYPE_TRIANGLES     : { stride = 3; } break;
-		case S3O_PRIMTYPE_TRIANGLE_STRIP: { stride = 1; } break;
-		case S3O_PRIMTYPE_QUADS         : {     return; } break;
+	case S3O_PRIMTYPE_TRIANGLES: {
+		stride = 3;
+	} break;
+	case S3O_PRIMTYPE_TRIANGLE_STRIP: {
+		stride = 1;
+	} break;
+	case S3O_PRIMTYPE_QUADS: {
+		return;
+	} break;
 	}
 
 	// set the triangle-level S- and T-tangents
@@ -269,14 +277,15 @@ void SS3OPiece::SetVertexTangents()
 	for (unsigned int i = 0, n = indices.size() - 2 * (stride == 1); i < n; i += stride) {
 		const bool flipWinding = ((primType == S3O_PRIMTYPE_TRIANGLE_STRIP) && ((i & 1) == 1));
 
-		const int v0idx = indices[i                      ];
-		const int v1idx = indices[i + (flipWinding? 2: 1)];
-		const int v2idx = indices[i + (flipWinding? 1: 2)];
+		const int v0idx = indices[i];
+		const int v1idx = indices[i + (flipWinding ? 2 : 1)];
+		const int v2idx = indices[i + (flipWinding ? 1 : 2)];
 
 		if (v1idx == -1 || v2idx == -1) {
 			// not a valid triangle, skip
 			// to start of next tri-strip
-			i += 3; continue;
+			i += 3;
+			continue;
 		}
 
 		SVertexData& v0 = vertices[v0idx];
@@ -303,7 +312,7 @@ void SS3OPiece::SetVertexTangents()
 
 		// note: not necessarily orthogonal to each other
 		// or to vertex normal, only to the triangle plane
-		const float3 sdir = ( p10 * tc20.y - p20 * tc10.y) * r;
+		const float3 sdir = (p10 * tc20.y - p20 * tc10.y) * r;
 		const float3 tdir = (-p10 * tc20.x + p20 * tc10.x) * r;
 
 		v0.sTangent += sdir;
@@ -321,18 +330,19 @@ void SS3OPiece::SetVertexTangents()
 		float3& T = vertices[i].sTangent;
 		float3& B = vertices[i].tTangent; // bi
 
-		N.AssertNaNs(); N.SafeANormalize();
+		N.AssertNaNs();
+		N.SafeANormalize();
 		T.AssertNaNs();
 		B.AssertNaNs();
 
-		//const float bitangentAngle = B.dot(N.cross(T)); // dot(B,B')
-		//const float handednessSign = Sign(bitangentAngle);
+		// const float bitangentAngle = B.dot(N.cross(T)); // dot(B,B')
+		// const float handednessSign = Sign(bitangentAngle);
 
-		T = (T - N * N.dot(T));// *handednessSign;
+		T = (T - N * N.dot(T)); // *handednessSign;
 		T.SafeANormalize();
 
 		B = (B - N * N.dot(B) - T * T.dot(N));
-		//B = N.cross(T); //probably better
+		// B = N.cross(T); //probably better
 		B.SafeANormalize();
 	}
 }

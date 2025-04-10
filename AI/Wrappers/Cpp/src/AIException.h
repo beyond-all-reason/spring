@@ -3,8 +3,8 @@
 #ifndef _CPPWRAPPER_AI_EXCEPTION_H
 #define _CPPWRAPPER_AI_EXCEPTION_H
 
-#include <string>
 #include <exception>
+#include <string>
 
 namespace springai {
 
@@ -12,7 +12,6 @@ namespace springai {
  * Common base interface for AI related Exceptions.
  */
 class AIException : public std::exception {
-
 	const int errorNumber;
 	const std::string message;
 
@@ -31,6 +30,6 @@ public:
 	virtual const char* what() const throw();
 }; // class AIException
 
-}  // namespace springai
+} // namespace springai
 
 #endif // _CPPWRAPPER_AI_EXCEPTION_H

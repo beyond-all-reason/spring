@@ -3,18 +3,19 @@
 #ifndef LUA_CONTEXT_DATA_H
 #define LUA_CONTEXT_DATA_H
 
+#include "LuaMemPool.h"
+
 #include "Lua/LuaAllocState.h"
 #include "Lua/LuaGarbageCollectCtrl.h"
-#include "LuaMemPool.h"
 #if (!defined(UNITSYNC) && !defined(DEDICATED))
-#include "LuaShaders.h"
-#include "LuaTextures.h"
 #include "LuaAtlasTextures.h"
+#include "LuaDisplayLists.h"
 #include "LuaFBOs.h"
 #include "LuaRBOs.h"
-#include "LuaVBO.h"
+#include "LuaShaders.h"
+#include "LuaTextures.h"
 #include "LuaVAO.h"
-#include "LuaDisplayLists.h"
+#include "LuaVBO.h"
 #endif
 
 #include "System/EventClient.h"
@@ -28,33 +29,30 @@ class LuaParser;
 struct luaContextData {
 public:
 	luaContextData(bool sharedPool, bool stateOwned)
-	: owner(nullptr)
-	, luamutex(nullptr)
-	, memPool(LuaMemPool::AcquirePtr(sharedPool, stateOwned))
-	, parser(nullptr)
+	    : owner(nullptr)
+	    , luamutex(nullptr)
+	    , memPool(LuaMemPool::AcquirePtr(sharedPool, stateOwned))
+	    , parser(nullptr)
+	    , synced(false)
+	    , allowChanges(false)
+	    , drawingEnabled(false)
+	    , running(0)
+	    , fullCtrl(false)
+	    , fullRead(false)
+	    , ctrlTeam(CEventClient::NoAccessTeam)
+	    , readTeam(0)
+	    , readAllyTeam(0)
+	    , selectTeam(CEventClient::NoAccessTeam)
+	    , allocState{{0}, {0}, {0}, {0}}
+	{
+	}
 
-	, synced(false)
-	, allowChanges(false)
-	, drawingEnabled(false)
-
-	, running(0)
-
-	, fullCtrl(false)
-	, fullRead(false)
-
-	, ctrlTeam(CEventClient::NoAccessTeam)
-	, readTeam(0)
-	, readAllyTeam(0)
-	, selectTeam(CEventClient::NoAccessTeam)
-
-	, allocState{{0}, {0}, {0}, {0}}
-	{}
-
-	~luaContextData() {
+	~luaContextData()
+	{
 		// raw cast; LuaHandle is not a known type here
 		// ownerless LCD's are common and uninteresting
 		if (owner != nullptr)
-			memPool->LogStats((((CEventClient*) owner)->GetName()).c_str(), synced? "synced": "unsynced");
+			memPool->LogStats((((CEventClient*)owner)->GetName()).c_str(), synced ? "synced" : "unsynced");
 
 		LuaMemPool::ReleasePtr(memPool, owner);
 	}
@@ -62,18 +60,18 @@ public:
 	luaContextData(const luaContextData& lcd) = delete;
 	luaContextData(luaContextData&& lcd) = delete;
 
-	luaContextData& operator = (const luaContextData& lcd) = delete;
-	luaContextData& operator = (luaContextData&& lcd) = delete;
+	luaContextData& operator=(const luaContextData& lcd) = delete;
+	luaContextData& operator=(luaContextData&& lcd) = delete;
 
-
-	void Clear() {
-		#if (!defined(UNITSYNC) && !defined(DEDICATED))
+	void Clear()
+	{
+#if (!defined(UNITSYNC) && !defined(DEDICATED))
 		shaders.Clear();
 		textures.Clear();
 		fbos.Clear();
 		rbos.Clear();
 		displayLists.Clear();
-		#endif
+#endif
 	}
 
 public:

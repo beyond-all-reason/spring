@@ -3,20 +3,20 @@
 #ifndef _AI_AI_H
 #define _AI_AI_H
 
-#include <memory>
-
 #include "IGlobalAI.h"
 #include "IGlobalAICallback.h"
+
+#include <memory>
 
 namespace springLegacyAI {
 
 class IGlobalAI;
 class IGlobalAICallback;
 
-
 class CAIAI {
 public:
 	CAIAI(IGlobalAI* gAI) { ai.reset(gAI); }
+
 	~CAIAI() { ai.reset(); }
 
 	/**

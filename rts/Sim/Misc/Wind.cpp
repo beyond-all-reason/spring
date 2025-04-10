@@ -2,38 +2,37 @@
 
 
 #include "Wind.h"
+
 #include "GlobalSynced.h"
+
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
-#include "Sim/Misc/ModInfo.h"
 #include "System/ContainerUtil.h"
-#include "System/SpringMath.h"
-
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 CR_BIND(EnvResourceHandler, )
 
-CR_REG_METADATA(EnvResourceHandler, (
-	CR_MEMBER(curTidalStrength),
-	CR_MEMBER(curWindStrength),
-	CR_MEMBER(minWindStrength),
-	CR_MEMBER(maxWindStrength),
+CR_REG_METADATA(EnvResourceHandler,
+    (CR_MEMBER(curTidalStrength),
+        CR_MEMBER(curWindStrength),
+        CR_MEMBER(minWindStrength),
+        CR_MEMBER(maxWindStrength),
 
-	CR_MEMBER(curWindVec),
-	CR_MEMBER(curWindDir),
+        CR_MEMBER(curWindVec),
+        CR_MEMBER(curWindDir),
 
-	CR_MEMBER(newWindVec),
-	CR_MEMBER(oldWindVec),
+        CR_MEMBER(newWindVec),
+        CR_MEMBER(oldWindVec),
 
-	CR_MEMBER(windDirTimer),
+        CR_MEMBER(windDirTimer),
 
-	CR_MEMBER(allGeneratorIDs),
-	CR_MEMBER(newGeneratorIDs)
-))
+        CR_MEMBER(allGeneratorIDs),
+        CR_MEMBER(newGeneratorIDs)))
 
 
 EnvResourceHandler envResHandler;
-
 
 void EnvResourceHandler::ResetState()
 {
@@ -75,20 +74,19 @@ void EnvResourceHandler::LoadWind(float minStrength, float maxStrength)
 	oldWindVec = curWindVec;
 }
 
-
-bool EnvResourceHandler::AddGenerator(CUnit* u) {
+bool EnvResourceHandler::AddGenerator(CUnit* u)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// duplicates should never happen, no need to check
 	return (spring::VectorInsertUnique(newGeneratorIDs, u->id));
 }
 
-bool EnvResourceHandler::DelGenerator(CUnit* u) {
+bool EnvResourceHandler::DelGenerator(CUnit* u)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	// id is never present in both
 	return (spring::VectorErase(newGeneratorIDs, u->id) || spring::VectorErase(allGeneratorIDs, u->id));
 }
-
-
 
 void EnvResourceHandler::Update()
 {
@@ -127,13 +125,13 @@ void EnvResourceHandler::Update()
 
 	if (const auto& wcrp = modInfo.windChangeReportPeriod; wcrp > 0 && gs->frameNum % wcrp == 0) {
 		// update generators every modInfo.windChangeReportPeriod frames
-		for (auto unitID : allGeneratorIDs) {
+		for (auto unitID: allGeneratorIDs) {
 			unitHandler.GetUnit(unitID)->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
 		}
 	}
 
 	// needs to be done immediately to rotate the generator according to the wind direction correctly
-	for (auto unitID : newGeneratorIDs) {
+	for (auto unitID: newGeneratorIDs) {
 		// make newly added generators point in direction of wind
 		unitHandler.GetUnit(unitID)->UpdateWind(curWindDir.x, curWindDir.z, curWindStrength);
 		allGeneratorIDs.push_back(unitID);
@@ -142,4 +140,3 @@ void EnvResourceHandler::Update()
 
 	windDirTimer = (windDirTimer + 1) % (WIND_UPDATE_RATE + 1);
 }
-

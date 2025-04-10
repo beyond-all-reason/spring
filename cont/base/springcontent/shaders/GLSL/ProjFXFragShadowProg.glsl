@@ -26,7 +26,7 @@ void main() {
 
 	vec4 color = vec4(mix(c0, c1, vBF));
 	color *= vCol;
-	
+
 	color.rgb = mix(vec3(dot(color.rgb, LUMA)), color.rgb, shadowColorMode);
 
 	if (AlphaDiscard(color.a))

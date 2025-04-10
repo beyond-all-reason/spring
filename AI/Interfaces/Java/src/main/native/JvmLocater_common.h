@@ -9,15 +9,15 @@ extern "C" {
 
 #include "JvmLocater.h"
 
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h> // for CHAR_BIT
-
-#include "CUtils/Util.h"
 #include "CUtils/SimpleLog.h"
+#include "CUtils/Util.h"
+
+#include <limits.h> // for CHAR_BIT
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define MAXPATHLEN 2048
 #define JRE_PATH_PROPERTY "jre.path"
@@ -28,8 +28,7 @@ bool FileExists(const char* filePath);
 
 bool GetJREPathFromEnvVars(char* path, size_t pathSize, const char* arch);
 
-bool GetJREPath(char* path, size_t pathSize, const char* configFile,
-		const char* arch);
+bool GetJREPath(char* path, size_t pathSize, const char* configFile, const char* arch);
 
 #ifdef __cplusplus
 } // extern "C"

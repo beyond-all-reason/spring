@@ -1,22 +1,20 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Misc/RectangleOverlapHandler.h"
+
 #include "System/Log/ILog.h"
+
 #include <vector>
+
+#include <catch_amalgamated.hpp>
 #include <stdlib.h>
 #include <time.h>
 
-#include <catch_amalgamated.hpp>
-
-static inline float randf()
-{
-	return rand() / float(RAND_MAX);
-}
+static inline float randf() { return rand() / float(RAND_MAX); }
 
 static const int testRuns = 1000;
 static const int size = 100;
 static const int count_rects = 15;
-
 
 int Test(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 {
@@ -25,22 +23,24 @@ int Test(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 
 	//! create random rectangles
 	ro.clear();
-	for (int i=0; i<count_rects; ++i) {
-		SRectangle r(0,0,0,0);
-		r.x1 = randf() * (size-1);
-		r.z1 = randf() * (size-1);
-		r.x2 = randf() * (size-1);
-		r.z2 = randf() * (size-1);
-		if (r.x1 > r.x2) std::swap(r.x1, r.x2);
-		if (r.z1 > r.z2) std::swap(r.z1, r.z2);
+	for (int i = 0; i < count_rects; ++i) {
+		SRectangle r(0, 0, 0, 0);
+		r.x1 = randf() * (size - 1);
+		r.z1 = randf() * (size - 1);
+		r.x2 = randf() * (size - 1);
+		r.z2 = randf() * (size - 1);
+		if (r.x1 > r.x2)
+			std::swap(r.x1, r.x2);
+		if (r.z1 > r.z2)
+			std::swap(r.z1, r.z2);
 		ro.push_back(r);
 	}
 
 	//! fill testMap with original areas
 	for (CRectangleOverlapHandler::iterator it = ro.begin(); it != ro.end(); ++it) {
 		const SRectangle& rect = *it;
-		for (int z=rect.z1; z<rect.z2; ++z) { //FIXME <=
-			for (int x=rect.x1; x<rect.x2; ++x) { //FIXME <=
+		for (int z = rect.z1; z < rect.z2; ++z) {     // FIXME <=
+			for (int x = rect.x1; x < rect.x2; ++x) { // FIXME <=
 				testMap[z * size + x] = 1;
 			}
 		}
@@ -52,8 +52,8 @@ int Test(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 	//! fill testMap with optimized
 	for (CRectangleOverlapHandler::iterator it = ro.begin(); it != ro.end(); ++it) {
 		const SRectangle& rect = *it;
-		for (int z=rect.z1; z<rect.z2; ++z) { //FIXME <=
-			for (int x=rect.x1; x<rect.x2; ++x) { //FIXME <=
+		for (int z = rect.z1; z < rect.z2; ++z) {     // FIXME <=
+			for (int x = rect.x1; x < rect.x2; ++x) { // FIXME <=
 				testMap[z * size + x] -= 1;
 			}
 		}
@@ -61,8 +61,8 @@ int Test(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 
 	//! check if we have overlapping or missing areas
 	int sum = 0;
-	for (int y=0; y<size; ++y) {
-		for (int x=0; x<size; ++x) {
+	for (int y = 0; y < size; ++y) {
+		for (int x = 0; x < size; ++x) {
 			sum += testMap[y * size + x];
 		}
 	}
@@ -73,30 +73,27 @@ int Test(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 	return sum;
 }
 
-
 static inline bool TestArea(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 {
-	for (int i=0; i<testRuns; ++i) {
+	for (int i = 0; i < testRuns; ++i) {
 		if (Test(testMap, ro) > 0)
 			return false;
 	}
 	return true;
 }
 
-
 static inline bool TestOverlapping(std::vector<int>& testMap, CRectangleOverlapHandler& ro)
 {
-	for (int i=0; i<testRuns; ++i) {
+	for (int i = 0; i < testRuns; ++i) {
 		if (Test(testMap, ro) < 0)
 			return false;
 	}
 	return true;
 }
 
-
 TEST_CASE("RectangleOverlapHandler")
 {
-	srand( time(NULL) );
+	srand(time(NULL));
 
 	std::vector<int> testMap(size * size, 0);
 	CRectangleOverlapHandler ro;

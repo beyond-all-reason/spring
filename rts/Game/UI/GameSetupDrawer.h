@@ -4,11 +4,10 @@
 #define GAME_SETUP_DRAWER
 
 #include "InputReceiver.h"
+
 #include "System/Misc/SpringTime.h"
 
-
-class GameSetupDrawer : public CInputReceiver
-{
+class GameSetupDrawer : public CInputReceiver {
 public:
 	static void Enable();
 	static void Disable();

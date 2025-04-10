@@ -1,18 +1,18 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <algorithm> // std::min
-#include <cstdint> // std::uint8_t
-#include <cstring> // std::mem{cpy,set}
-#include <new>
-
 #include "LuaMemPool.h"
-#include "System/MainDefines.h"
-#include "System/SafeUtil.h"
+
 #include "System/Log/ILog.h"
+#include "System/MainDefines.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/SafeUtil.h"
 #include "System/Threading/SpringThreading.h"
 #include "lib/fmt/printf.h"
 
-#include "System/Misc/TracyDefs.h"
+#include <algorithm> // std::min
+#include <cstdint>   // std::uint8_t
+#include <cstring>   // std::mem{cpy,set}
+#include <new>
 
 // global, affects all pool instances
 bool LuaMemPool::enabled = false;
@@ -25,10 +25,10 @@ static std::vector<size_t> gIndcs;
 static std::atomic<size_t> gCount = {0};
 static spring::mutex gMutex;
 
-
 size_t LuaMemPool::GetPoolCount() { return (gCount.load()); }
 
 LuaMemPool* LuaMemPool::GetSharedPtr() { return gSharedPool; }
+
 LuaMemPool* LuaMemPool::AcquirePtr(bool shared, bool owned)
 {
 	LuaMemPool* p = GetSharedPtr();
@@ -40,7 +40,8 @@ LuaMemPool* LuaMemPool::AcquirePtr(bool shared, bool owned)
 
 		if (gIndcs.empty()) {
 			gPools.push_back(p = new LuaMemPool(gPools.size()));
-		} else {
+		}
+		else {
 			p = gPools[gIndcs.back()];
 			gIndcs.pop_back();
 		}
@@ -74,7 +75,12 @@ void LuaMemPool::ReleasePtr(LuaMemPool* p, const CLuaHandle* o)
 }
 
 void LuaMemPool::FreeShared() { gSharedPool->Clear(); }
-void LuaMemPool::InitStatic(bool enable) { gSharedPool = new (gSharedPoolMem.data()) LuaMemPool(LuaMemPool::enabled = enable); }
+
+void LuaMemPool::InitStatic(bool enable)
+{
+	gSharedPool = new (gSharedPoolMem.data()) LuaMemPool(LuaMemPool::enabled = enable);
+}
+
 void LuaMemPool::KillStatic()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -88,10 +94,14 @@ void LuaMemPool::KillStatic()
 	spring::SafeDestruct(gSharedPool);
 }
 
+LuaMemPool::LuaMemPool(bool isEnabled)
+    : LuaMemPool(size_t(-1))
+{
+	assert(isEnabled == LuaMemPool::enabled);
+}
 
-
-LuaMemPool::LuaMemPool(bool isEnabled): LuaMemPool(size_t(-1)) { assert(isEnabled == LuaMemPool::enabled); }
-LuaMemPool::LuaMemPool(size_t lmpIndex): globalIndex(lmpIndex)
+LuaMemPool::LuaMemPool(size_t lmpIndex)
+    : globalIndex(lmpIndex)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaMemPool::enabled)
@@ -103,7 +113,7 @@ LuaMemPool::LuaMemPool(size_t lmpIndex): globalIndex(lmpIndex)
 void LuaMemPool::Clear()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//allocStats = {};
+	// allocStats = {};
 }
 
 void* LuaMemPool::Alloc(size_t size)
@@ -120,16 +130,18 @@ void* LuaMemPool::Alloc(size_t size)
 
 	auto t0 = spring_now();
 	auto* ptr = luaMemPoolImpl->allocMem(size);
-	
+
 	if (size > NUM_BUCKETS * BUCKET_STEP) {
 		allocStats[STAT_NAE] += 1 * (size > 0);
 		allocStats[STAT_NBE] += size;
 		allocStats[STAT_NTE] += (spring_now() - t0).toMicroSecsi();
-	} else if (luaMemPoolImpl->isAllocInternal(ptr)) {
+	}
+	else if (luaMemPoolImpl->isAllocInternal(ptr)) {
 		allocStats[STAT_NAI] += 1 * (size > 0);
 		allocStats[STAT_NBI] += size;
 		allocStats[STAT_NTI] += (spring_now() - t0).toMicroSecsi();
-	} else {
+	}
+	else {
 		allocStats[STAT_NAF] += 1 * (size > 0);
 		allocStats[STAT_NBF] += size;
 		allocStats[STAT_NTF] += (spring_now() - t0).toMicroSecsi();
@@ -197,30 +209,21 @@ void LuaMemPool::LogStats(const char* handle, const char* lctype)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	static constexpr auto one = uint64_t(1);
-	const float intPerc = 100.0f * static_cast<float>(allocStats[STAT_NAI]) / static_cast<float>(std::max(allocStats[STAT_NAI] + allocStats[STAT_NAF] + allocStats[STAT_NAE], one));
-	const float avgAllocTimeI = static_cast<float>(allocStats[STAT_NTI]) / static_cast<float>(std::max(allocStats[STAT_NAI], one));
-	const float avgAllocTimeF = static_cast<float>(allocStats[STAT_NTF]) / static_cast<float>(std::max(allocStats[STAT_NAF], one));
-	const float avgAllocTimeE = static_cast<float>(allocStats[STAT_NTE]) / static_cast<float>(std::max(allocStats[STAT_NAE], one));
-	std::string msg = fmt::sprintf(
-		"[LuaMemPool::%s][handle=%s (%s)] index=%u numAllocs{int+, int-, ext, int_p}={%u, %u, %u, %.1f} allocedSize{int+, int-, ext}={%u, %u, %u}, avgAllocTime{int+, int-, ext}={%.4f, %.4f, %.4f}, cumAllocTime={int+, int-, ext}={%u, %u, %u}",
-		__func__,
-		handle,
-		lctype,
-		globalIndex,
-		allocStats[STAT_NAI],
-		allocStats[STAT_NAF],
-		allocStats[STAT_NAE],
-		intPerc,
-		allocStats[STAT_NBI],
-		allocStats[STAT_NBF],
-		allocStats[STAT_NBE],
-		avgAllocTimeI,
-		avgAllocTimeF,
-		avgAllocTimeE,
-		allocStats[STAT_NTI],
-		allocStats[STAT_NTF],
-		allocStats[STAT_NTE]
-	);
+	const float intPerc =
+	    100.0f * static_cast<float>(allocStats[STAT_NAI]) /
+	    static_cast<float>(std::max(allocStats[STAT_NAI] + allocStats[STAT_NAF] + allocStats[STAT_NAE], one));
+	const float avgAllocTimeI =
+	    static_cast<float>(allocStats[STAT_NTI]) / static_cast<float>(std::max(allocStats[STAT_NAI], one));
+	const float avgAllocTimeF =
+	    static_cast<float>(allocStats[STAT_NTF]) / static_cast<float>(std::max(allocStats[STAT_NAF], one));
+	const float avgAllocTimeE =
+	    static_cast<float>(allocStats[STAT_NTE]) / static_cast<float>(std::max(allocStats[STAT_NAE], one));
+	std::string msg = fmt::sprintf("[LuaMemPool::%s][handle=%s (%s)] index=%u numAllocs{int+, int-, ext, int_p}={%u, "
+	                               "%u, %u, %.1f} allocedSize{int+, int-, ext}={%u, %u, %u}, avgAllocTime{int+, int-, "
+	                               "ext}={%.4f, %.4f, %.4f}, cumAllocTime={int+, int-, ext}={%u, %u, %u}",
+	    __func__, handle, lctype, globalIndex, allocStats[STAT_NAI], allocStats[STAT_NAF], allocStats[STAT_NAE],
+	    intPerc, allocStats[STAT_NBI], allocStats[STAT_NBF], allocStats[STAT_NBE], avgAllocTimeI, avgAllocTimeF,
+	    avgAllocTimeE, allocStats[STAT_NTI], allocStats[STAT_NTF], allocStats[STAT_NTE]);
 	LOG("%s", msg.c_str());
 	allocStats = {};
 }

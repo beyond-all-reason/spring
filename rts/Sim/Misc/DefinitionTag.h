@@ -5,20 +5,19 @@
 #ifndef DEFINTION_TAG_H
 #define DEFINTION_TAG_H
 
-#include <cassert>
+#include "Lua/LuaParser.h"
 #include "System/Misc/NonCopyable.h"
+#include "System/SpringMath.h"
+#include "System/TypeToStr.h"
+#include "System/UnorderedMap.hpp"
+#include "System/float3.h"
 
 #include <array>
-#include <vector>
+#include <cassert>
 #include <sstream>
 #include <string>
 #include <string_view>
-
-#include "Lua/LuaParser.h"
-#include "System/float3.h"
-#include "System/SpringMath.h"
-#include "System/UnorderedMap.hpp"
-#include "System/TypeToStr.h"
+#include <vector>
 
 // table placeholder (used for LuaTables)
 // example usage: DUMMYTAG(Defs, DefClass, table, customParams)
@@ -28,20 +27,16 @@ struct table {};
 class DefType;
 
 namespace {
-	static inline std::ostream& operator<<(std::ostream& os, const float3& point)
-	{
-		return os << "[ " <<  point.x << ", " <<  point.y << ", " <<  point.z << " ]";
-	}
-
-	static inline std::ostream& operator<<(std::ostream& os, const table& t)
-	{
-		return os << "\"\"";
-	}
+static inline std::ostream& operator<<(std::ostream& os, const float3& point)
+{
+	return os << "[ " << point.x << ", " << point.y << ", " << point.z << " ]";
 }
+
+static inline std::ostream& operator<<(std::ostream& os, const table& t) { return os << "\"\""; }
+} // namespace
 
 // must be included after "std::ostream& operator<<" definitions for LLVM/Clang compilation
 #include "System/StringConvertibleOptionalValue.h"
-
 
 /**
  * @brief Untyped definition tag meta data.
@@ -49,8 +44,7 @@ namespace {
  * That is, meta data of a type that does not depend on the declared type
  * of the definition tag.
  */
-class DefTagMetaData : public spring::noncopyable
-{
+class DefTagMetaData : public spring::noncopyable {
 public:
 	typedef TypedStringConvertibleOptionalValue<std::string> OptionalString;
 	typedef TypedStringConvertibleOptionalValue<int> OptionalInt;
@@ -70,20 +64,26 @@ public:
 	virtual const StringConvertibleOptionalValue& GetScaleValue() const = 0;
 
 	/// @brief returns the tag name that is read from the LuaTable.
-	std::string GetKey() const {
-		return (externalName.IsSet()) ? externalName.ToString() : key;
-	}
+	std::string GetKey() const { return (externalName.IsSet()) ? externalName.ToString() : key; }
 
 	const OptionalString& GetDeclarationFile() const { return declarationFile; }
-	const OptionalInt&    GetDeclarationLine() const { return declarationLine; }
+
+	const OptionalInt& GetDeclarationLine() const { return declarationLine; }
+
 	const OptionalString& GetTagFunctionStr() const { return tagFunctionStr; }
+
 	const OptionalString& GetScaleValueStr() const { return scaleValueStr; }
+
 	const OptionalString& GetDescription() const { return description; }
+
 	const OptionalString& GetFallbackName() const { return fallbackName; }
+
 	const OptionalString& GetExternalName() const { return externalName; }
-	         std::string  GetInternalName() const { return key; }
+
+	std::string GetInternalName() const { return key; }
 
 	const std::string GetTypeName() const { return typeName; }
+
 protected:
 	const char* key;
 	std::string typeName;
@@ -98,28 +98,29 @@ protected:
 	template<typename F> friend class DefTagBuilder;
 };
 
-
 /**
  * @brief Typed definition tag meta data.
  *
  * That is, meta data of the same type as the declared type
  * of the definition tag.
  */
-template<typename T>
-class DefTagTypedMetaData : public DefTagMetaData
-{
+template<typename T> class DefTagTypedMetaData : public DefTagMetaData {
 public:
-	DefTagTypedMetaData(const char* k) { key = k; typeName = std::string(spring::TypeToStr<T>()); }
+	DefTagTypedMetaData(const char* k)
+	{
+		key = k;
+		typeName = std::string(spring::TypeToStr<T>());
+	}
 
 private:
-	template<typename T1, typename T2>
-	static T1 scale(T1 v, T2 a) { return v * a; }
+	template<typename T1, typename T2> static T1 scale(T1 v, T2 a) { return v * a; }
 
 	// does not make sense for strings
 	static const std::string& scale(const std::string& v, float a) { return v; }
 
 public:
-	T GetData(const LuaTable& lt) const {
+	T GetData(const LuaTable& lt) const
+	{
 		T defValue = defaultValue.Get();
 		if (fallbackName.IsSet())
 			defValue = lt.Get(fallbackName.Get(), defValue);
@@ -140,9 +141,12 @@ public:
 	}
 
 	const StringConvertibleOptionalValue& GetDefaultValue() const { return defaultValue; }
+
 	const StringConvertibleOptionalValue& GetMinimumValue() const { return minimumValue; }
+
 	const StringConvertibleOptionalValue& GetMaximumValue() const { return maximumValue; }
-	const StringConvertibleOptionalValue& GetScaleValue()   const { return scaleValue; }
+
+	const StringConvertibleOptionalValue& GetScaleValue() const { return scaleValue; }
 
 protected:
 	TypedStringConvertibleOptionalValue<T> defaultValue;
@@ -155,9 +159,6 @@ protected:
 
 	template<typename F> friend class DefTagBuilder;
 };
-
-
-
 
 /**
  * @brief Fluent interface to customize meta data of deftag
@@ -173,13 +174,16 @@ protected:
  * DEFTAG(Defs, DefClass, float, exampleDefTagName, exampleCppVarName);
  * DEFTAG(Defs, DefClass, float, exampleDefTagName2, subclass.exampleCppVarName[0]);
  */
-template<typename T>
-class DefTagBuilder
-{
+template<typename T> class DefTagBuilder {
 public:
-	DefTagBuilder(DefType* dt, DefTagTypedMetaData<T>* d) : def(dt), data(d) {}
+	DefTagBuilder(DefType* dt, DefTagTypedMetaData<T>* d)
+	    : def(dt)
+	    , data(d)
+	{
+	}
 
 	const DefTagMetaData* GetData() const { return data; }
+
 	operator T() const { return data->GetData(); }
 
 	// Finalizes all the customizations of the metadata for this deftag.
@@ -189,10 +193,11 @@ public:
 	// AddTag().
 	void AddTag();
 
-#define MAKE_CHAIN_METHOD(property, type) \
-	DefTagBuilder&& property(type const& x) && { \
-		data->property = x; \
-		return std::move(*this); \
+#define MAKE_CHAIN_METHOD(property, type)       \
+	DefTagBuilder&& property(type const & x) && \
+	{                                           \
+		data->property = x;                     \
+		return std::move(*this);                \
 	}
 
 	typedef T (*TagFunc)(T x);
@@ -229,7 +234,6 @@ private:
 	bool addTagCalled = false;
 };
 
-
 /**
  * @brief Storage object for DefTagBuilder after all cusomtizations.
  *
@@ -238,15 +242,10 @@ private:
  * DefType::AddTagMetaData to see all changes to DefTagTypedMetaData done by the
  * DefTagBuilder.
  */
-class BuiltDefTag
-{
+class BuiltDefTag {
 public:
-	template <typename T>
-	BuiltDefTag(DefTagBuilder<T>&& builder) {
-		builder.AddTag();
-	}
+	template<typename T> BuiltDefTag(DefTagBuilder<T>&& builder) { builder.AddTag(); }
 };
-
 
 /**
  * @brief Definition tag declaration
@@ -255,11 +254,12 @@ public:
  * DefTagBuilder in a global map of meta data as it is assigned to
  * an instance of this class.
  */
-class DefType
-{
+class DefType {
 public:
 	DefType(const char* name);
-	~DefType() {
+
+	~DefType()
+	{
 		for (unsigned int i = 0; i < tagMetaDataCnt; i++) {
 			tagMetaData[i]->~DefTagMetaData();
 		}
@@ -267,22 +267,26 @@ public:
 
 	const char* GetName() const { return name; }
 
-	template<typename T> DefTagBuilder<T> AllocateTag(const char* name) {
+	template<typename T> DefTagBuilder<T> AllocateTag(const char* name)
+	{
 		DefTagTypedMetaData<T>* meta = AllocTagMetaData<T>(name);
 		return DefTagBuilder<T>(this, meta);
 	}
 
-	template<typename T> T GetTag(const std::string& name) {
+	template<typename T> T GetTag(const std::string& name)
+	{
 		const DefTagMetaData* meta = GetMetaDataByInternalKey(name);
-	#ifdef DEBUG
+#ifdef DEBUG
 		assert(meta != nullptr);
 		CheckType(meta, spring::TypeToStr<T>());
-	#endif
+#endif
 		return static_cast<const DefTagTypedMetaData<T>*>(meta)->GetData(*luaTable);
 	}
 
 	typedef void (*DefInitializer)(void*);
-	void AddInitializer(DefInitializer init) {
+
+	void AddInitializer(DefInitializer init)
+	{
 		assert(defInitFuncCnt < defInitFuncs.size());
 
 		if (defInitFuncCnt >= defInitFuncs.size())
@@ -316,16 +320,18 @@ private:
 	const LuaTable* luaTable = nullptr;
 
 private:
-	static std::vector<const DefType*>& GetTypes() {
+	static std::vector<const DefType*>& GetTypes()
+	{
 		static std::vector<const DefType*> tagtypes;
 		return tagtypes;
 	}
 
-	template<typename T> DefTagTypedMetaData<T>* AllocTagMetaData(const char* name) {
+	template<typename T> DefTagTypedMetaData<T>* AllocTagMetaData(const char* name)
+	{
 		DefTagTypedMetaData<T>* tmd = nullptr;
 
 		if ((metaDataMemIdx + sizeof(DefTagTypedMetaData<T>)) > metaDataMem.size()) {
-			throw (std::bad_alloc());
+			throw(std::bad_alloc());
 			return tmd;
 		}
 
@@ -333,6 +339,7 @@ private:
 		metaDataMemIdx += sizeof(DefTagTypedMetaData<T>);
 		return tmd;
 	}
+
 	void AddTagMetaData(const DefTagMetaData* data);
 
 	const DefTagMetaData* GetMetaDataByInternalKey(const std::string& key);
@@ -343,61 +350,51 @@ private:
 	template<typename F> friend class DefTagBuilder;
 };
 
-
 // N.B. Must be defined in the header in order to instantiate definition
 // templates.
-template <typename T>
-void DefTagBuilder<T>::AddTag() {
+template<typename T> void DefTagBuilder<T>::AddTag()
+{
 	assert(!addTagCalled);
 	addTagCalled = true;
 	def->AddTagMetaData(data);
 }
 
-
 /**
  * @brief Macro Helpers
  * @see DefTagBuilder
  */
-#define CONCAT_IMPL( x, y ) x##y
-#define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
+#define CONCAT_IMPL(x, y) x##y
+#define MACRO_CONCAT(x, y) CONCAT_IMPL(x, y)
 
-#define GETSECONDARG( x, y, ... ) y
+#define GETSECONDARG(x, y, ...) y
 
-#define DEFTAG_CNTER(Defs, DefClass, T, name, varname) \
-	struct MACRO_CONCAT(do_once_,name) { \
-		MACRO_CONCAT(do_once_,name)() { \
-			Defs.AddInitializer(&MACRO_CONCAT(do_once_,name)::Initializer); \
-		} \
-		static void Initializer(void* instance) { \
-			T& staticCheckType = static_cast<DefClass*>(instance)->varname; \
-			staticCheckType = Defs.GetTag<T>(#name); \
-		} \
-	} static MACRO_CONCAT(do_once_,name); \
-	static BuiltDefTag deftag_##Defs##name = Defs. \
-			AllocateTag<T>(#name)
+#define DEFTAG_CNTER(Defs, DefClass, T, name, varname)                                                      \
+	struct MACRO_CONCAT(do_once_, name) {                                                                   \
+		MACRO_CONCAT(do_once_, name)() { Defs.AddInitializer(&MACRO_CONCAT(do_once_, name)::Initializer); } \
+		static void Initializer(void* instance)                                                             \
+		{                                                                                                   \
+			T& staticCheckType = static_cast<DefClass*>(instance)->varname;                                 \
+			staticCheckType = Defs.GetTag<T>(#name);                                                        \
+		}                                                                                                   \
+	} static MACRO_CONCAT(do_once_, name);                                                                  \
+	static BuiltDefTag deftag_##Defs##name = Defs.AllocateTag<T>(#name)
 
-#define tagFunction(fname) \
-	tagFunctionPtr(&tagFnc_##fname).tagFunctionStr(tagFncStr_##fname)
+#define tagFunction(fname) tagFunctionPtr(&tagFnc_##fname).tagFunctionStr(tagFncStr_##fname)
 
-#define scaleValue(v) \
-	scaleValue(v).scaleValueStr(#v)
+#define scaleValue(v) scaleValue(v).scaleValueStr(#v)
 
 
 /**
  * @brief Macros to start the method chain used to declare a deftag.
  * @see DefTagBuilder
  */
-#define DEFTAG(Defs, DefClass, T, name, ...) \
-	DEFTAG_CNTER(Defs, DefClass, T, name, GETSECONDARG(unused ,##__VA_ARGS__, name))
+#define DEFTAG(Defs, DefClass, T, name, ...)                                         \
+	DEFTAG_CNTER(Defs, DefClass, T, name, GETSECONDARG(unused, ##__VA_ARGS__, name))
 
-#define DUMMYTAG(Defs, T, name) \
-	static BuiltDefTag MACRO_CONCAT(deftag_,__LINE__) = Defs. \
-			AllocateTag<T>(#name)
+#define DUMMYTAG(Defs, T, name) static BuiltDefTag MACRO_CONCAT(deftag_, __LINE__) = Defs.AllocateTag<T>(#name)
 
-#define TAGFUNCTION(name, T, function) \
-	static T tagFnc_##name(T x) { \
-		return function; \
-	} \
+#define TAGFUNCTION(name, T, function)                     \
+	static T tagFnc_##name(T x) { return function; }       \
 	static const std::string tagFncStr_##name = #function;
 
 

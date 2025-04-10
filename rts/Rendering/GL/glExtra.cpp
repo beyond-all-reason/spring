@@ -2,36 +2,36 @@
 
 
 #include "glExtra.h"
+
 #include "RenderBuffers.h"
 #include "VertexArray.h"
 
-#include "Map/Ground.h"
 #include "Game/Camera.h"
+#include "Map/Ground.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDef.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/SpringMath.h"
 #include "System/Threading/ThreadPool.h"
-
-#include "System/Misc/TracyDefs.h"
-
 
 /**
  *  Draws a trigonometric circle in 'resolution' steps.
  */
 namespace {
-	template<typename Func>
-	void glSurfaceCircleImpl(const float3& center, float radius, const SColor& col, uint32_t res, Func&& func)
-	{
-		for (uint32_t i = 0; i < res; ++i) {
-			const float radians = math::TWOPI * (float)i / (float)res;
-			float3 pos;
-			pos.x = center.x + (fastmath::sin(radians) * radius);
-			pos.z = center.z + (fastmath::cos(radians) * radius);
-			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
-			func(std::forward<float3>(pos), col);
-		}
+template<typename Func>
+void glSurfaceCircleImpl(const float3& center, float radius, const SColor& col, uint32_t res, Func&& func)
+{
+	for (uint32_t i = 0; i < res; ++i) {
+		const float radians = math::TWOPI * (float)i / (float)res;
+		float3 pos;
+		pos.x = center.x + (fastmath::sin(radians) * radius);
+		pos.z = center.z + (fastmath::cos(radians) * radius);
+		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
+		func(std::forward<float3>(pos), col);
 	}
 }
+} // namespace
+
 void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint32_t res)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -41,9 +41,7 @@ void glSurfaceCircle(const float3& center, float radius, const SColor& col, uint
 	rb.AssertSubmission();
 	auto& sh = rb.GetShader();
 
-	const auto addFunc = [&rb](auto&& pos, const auto& col) {
-		rb.AddVertex({ std::forward<float3>(pos) });
-	};
+	const auto addFunc = [&rb](auto&& pos, const auto& col) { rb.AddVertex({std::forward<float3>(pos)}); };
 
 	glSurfaceCircleImpl(center, radius, col, res, addFunc);
 
@@ -60,9 +58,7 @@ void glSurfaceCircleLua(const float3& center, float radius, const SColor& col, u
 	CVertexArray* va = GetVertexArray();
 	va->Initialize();
 
-	const auto addFunc = [va](auto&& pos, const auto& col) {
-		va->AddVertexC(pos, col);
-	};
+	const auto addFunc = [va](auto&& pos, const auto& col) { va->AddVertexC(pos, col); };
 
 	glSurfaceCircleImpl(center, radius, col, res, addFunc);
 
@@ -70,80 +66,92 @@ void glSurfaceCircleLua(const float3& center, float radius, const SColor& col, u
 }
 
 static constexpr float (*weaponRangeFuncs[])(const CWeapon*, const WeaponDef*, float, float) = {
-	CWeapon::GetStaticRange2D,
-	CWeapon::GetLiveRange2D,
+    CWeapon::GetStaticRange2D,
+    CWeapon::GetLiveRange2D,
 };
 
 namespace {
-	std::vector<VA_TYPE_0> glBallisticCircleImpl(const CWeapon* weapon, const WeaponDef* weaponDef, uint32_t resolution, const float3& center, const float3& params)
-	{
-		static constexpr int resDiv = 50;
+std::vector<VA_TYPE_0> glBallisticCircleImpl(const CWeapon* weapon,
+    const WeaponDef* weaponDef,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
+{
+	static constexpr int resDiv = 50;
 
-		std::vector<VA_TYPE_0> vertices;
-		vertices.resize(resolution);
+	std::vector<VA_TYPE_0> vertices;
+	vertices.resize(resolution);
 
-		const float radius = params.x;
-		const float slope = params.y;
+	const float radius = params.x;
+	const float slope = params.y;
 
-		const float wdHeightMod = weaponDef->heightmod;
-		const float wdProjGravity = mix(params.z, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
+	const float wdHeightMod = weaponDef->heightmod;
+	const float wdProjGravity = mix(params.z, -weaponDef->myGravity, weaponDef->myGravity != 0.0f);
 
-		for_mt(0, resolution, [&](const int i) {
-			const float radians = math::TWOPI * (float)i / (float)resolution;
+	for_mt(0, resolution, [&](const int i) {
+		const float radians = math::TWOPI * (float)i / (float)resolution;
 
-			const float sinR = fastmath::sin(radians);
-			const float cosR = fastmath::cos(radians);
+		const float sinR = fastmath::sin(radians);
+		const float cosR = fastmath::cos(radians);
 
-			float maxWeaponRange = radius;
+		float maxWeaponRange = radius;
 
-			float3 pos;
-			pos.x = center.x + (sinR * maxWeaponRange);
-			pos.z = center.z + (cosR * maxWeaponRange);
-			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
+		float3 pos;
+		pos.x = center.x + (sinR * maxWeaponRange);
+		pos.z = center.z + (cosR * maxWeaponRange);
+		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false);
 
-			float posHeightDelta = (pos.y - center.y) * 0.5f;
-			float posWeaponRange = weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta* wdHeightMod, wdProjGravity);
-			float rangeIncrement = (maxWeaponRange -= (posHeightDelta * slope)) * 0.5f;
-			float ydiff = 0.0f;
+		float posHeightDelta = (pos.y - center.y) * 0.5f;
+		float posWeaponRange =
+		    weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta * wdHeightMod, wdProjGravity);
+		float rangeIncrement = (maxWeaponRange -= (posHeightDelta * slope)) * 0.5f;
+		float ydiff = 0.0f;
 
-			// "binary search" for the maximum positional range per angle, accounting for terrain height
-			for (int j = 0; j < resDiv && (std::fabs(posWeaponRange - maxWeaponRange) + ydiff) >(0.01f * maxWeaponRange); j++) {
-				if (posWeaponRange > maxWeaponRange) {
-					maxWeaponRange += rangeIncrement;
-				}
-				else {
-					// overshot, reduce step-size
-					maxWeaponRange -= rangeIncrement;
-					rangeIncrement *= 0.5f;
-				}
-
-				pos.x = center.x + (sinR * maxWeaponRange);
-				pos.z = center.z + (cosR * maxWeaponRange);
-
-				const float newY = CGround::GetHeightAboveWater(pos.x, pos.z, false);
-				ydiff = std::fabs(pos.y - newY);
-				pos.y = newY;
-
-				posHeightDelta = pos.y - center.y;
-				posWeaponRange = weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta* wdHeightMod, wdProjGravity);
+		// "binary search" for the maximum positional range per angle, accounting for terrain height
+		for (int j = 0; j < resDiv && (std::fabs(posWeaponRange - maxWeaponRange) + ydiff) > (0.01f * maxWeaponRange);
+		    j++) {
+			if (posWeaponRange > maxWeaponRange) {
+				maxWeaponRange += rangeIncrement;
+			}
+			else {
+				// overshot, reduce step-size
+				maxWeaponRange -= rangeIncrement;
+				rangeIncrement *= 0.5f;
 			}
 
-			pos.x = center.x + (sinR * posWeaponRange);
-			pos.z = center.z + (cosR * posWeaponRange);
-			pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
+			pos.x = center.x + (sinR * maxWeaponRange);
+			pos.z = center.z + (cosR * maxWeaponRange);
 
-			vertices[i].pos = std::move(pos);
-		});
+			const float newY = CGround::GetHeightAboveWater(pos.x, pos.z, false);
+			ydiff = std::fabs(pos.y - newY);
+			pos.y = newY;
 
-		return vertices;
-	}
+			posHeightDelta = pos.y - center.y;
+			posWeaponRange =
+			    weaponRangeFuncs[weapon != nullptr](weapon, weaponDef, posHeightDelta * wdHeightMod, wdProjGravity);
+		}
+
+		pos.x = center.x + (sinR * posWeaponRange);
+		pos.z = center.z + (cosR * posWeaponRange);
+		pos.y = CGround::GetHeightAboveWater(pos.x, pos.z, false) + 5.0f;
+
+		vertices[i].pos = std::move(pos);
+	});
+
+	return vertices;
 }
+} // namespace
 
 /*
  *  Draws a trigonometric circle in 'resolution' steps, with a slope modifier
  */
 
-void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+void glBallisticCircle(const CWeapon* weapon,
+    const WeaponDef* weaponDef,
+    const SColor& color,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float4 fColor = color;
@@ -163,7 +171,12 @@ void glBallisticCircle(const CWeapon* weapon, const WeaponDef* weaponDef, const 
 	sh.Disable();
 }
 
-void glBallisticCircleLua(const CWeapon* weapon, const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+void glBallisticCircleLua(const CWeapon* weapon,
+    const WeaponDef* weaponDef,
+    const SColor& color,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CVertexArray* va = GetVertexArray();
@@ -173,36 +186,49 @@ void glBallisticCircleLua(const CWeapon* weapon, const WeaponDef* weaponDef, con
 	auto vertices = glBallisticCircleImpl(weapon, weaponDef, resolution, center, params);
 	auto* vaVertices = va->GetTypedVertexArray<VA_TYPE_C>(resolution);
 
-	for (auto&& vert : vertices) {
-		*vaVertices = VA_TYPE_C {
-			std::forward<float3>(vert.pos),
-			color
-		};
+	for (auto&& vert: vertices) {
+		*vaVertices = VA_TYPE_C{std::forward<float3>(vert.pos), color};
 		vaVertices++;
 	}
 
 	va->DrawArrayC(GL_LINE_LOOP);
 }
 
-void glBallisticCircle(const CWeapon* weapon     , const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+void glBallisticCircle(const CWeapon* weapon,
+    const SColor& color,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircle(weapon, weapon->weaponDef, color, resolution, center, params);
 }
 
-void glBallisticCircle(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+void glBallisticCircle(const WeaponDef* weaponDef,
+    const SColor& color,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircle(nullptr, weaponDef, color, resolution, center, params);
 }
 
-void glBallisticCircleLua(const CWeapon* weapon, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+void glBallisticCircleLua(const CWeapon* weapon,
+    const SColor& color,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircleLua(weapon, weapon->weaponDef, color, resolution, center, params);
 }
 
-void glBallisticCircleLua(const WeaponDef* weaponDef, const SColor& color, uint32_t resolution, const float3& center, const float3& params)
+void glBallisticCircleLua(const WeaponDef* weaponDef,
+    const SColor& color,
+    uint32_t resolution,
+    const float3& center,
+    const float3& params)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	glBallisticCircleLua(nullptr, weaponDef, color, resolution, center, params);
@@ -219,11 +245,11 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		glEnable(GL_STENCIL_TEST);
-		glStencilMask(0x1);
-		glStencilFunc(GL_ALWAYS, 0, 0x1);
-		glStencilOp(GL_KEEP, GL_INCR, GL_KEEP);
-		drawFunc(data); // draw
+	glEnable(GL_STENCIL_TEST);
+	glStencilMask(0x1);
+	glStencilFunc(GL_ALWAYS, 0, 0x1);
+	glStencilOp(GL_KEEP, GL_INCR, GL_KEEP);
+	drawFunc(data); // draw
 
 	glDisable(GL_DEPTH_TEST);
 
@@ -235,7 +261,7 @@ void glDrawVolume(DrawVolumeFunc drawFunc, const void* data)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 
-	drawFunc(data);   // draw
+	drawFunc(data); // draw
 
 	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_STENCIL_TEST);
@@ -272,10 +298,11 @@ void GL::Shapes::Kill()
 
 Shader::IProgramObject* GL::Shapes::GetShader()
 {
-	if unlikely(!shader) {
+	if unlikely (!shader) {
 		shader = shaderHandler->CreateProgramObject("[GL::Shapes]", "Default");
 		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ShapesVertProg.glsl", "", GL_VERTEX_SHADER));
-		shader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/ShapesFragProg.glsl", "", GL_FRAGMENT_SHADER));
+		shader->AttachShaderObject(
+		    shaderHandler->CreateShaderObject("GLSL/ShapesFragProg.glsl", "", GL_FRAGMENT_SHADER));
 		shader->BindAttribLocation("vertexPos", 0);
 		shader->Link();
 
@@ -372,25 +399,25 @@ void GL::Shapes::DrawWireBox()
 #ifndef HEADLESS
 	if (wireBoxIdx == size_t(-1)) {
 		const std::vector<float3> BOX_VERTS = {
-			// bottom-face, ccw
-			float3{-0.5f, -0.5f,  0.5f},
-			float3{ 0.5f, -0.5f,  0.5f},
-			float3{ 0.5f, -0.5f, -0.5f},
-			float3{-0.5f, -0.5f, -0.5f},
-			// top-face, ccw
-			float3{-0.5f,  0.5f,  0.5f},
-			float3{ 0.5f,  0.5f,  0.5f},
-			float3{ 0.5f,  0.5f, -0.5f},
-			float3{-0.5f,  0.5f, -0.5f}
-		};
+		    // bottom-face, ccw
+		    float3{-0.5f, -0.5f, 0.5f },
+            float3{0.5f,  -0.5f, 0.5f },
+            float3{0.5f,  -0.5f, -0.5f},
+		    float3{-0.5f, -0.5f, -0.5f},
+		    // top-face, ccw
+		    float3{-0.5f, 0.5f,  0.5f },
+            float3{0.5f,  0.5f,  0.5f },
+            float3{0.5f,  0.5f,  -0.5f},
+            float3{-0.5f, 0.5f,  -0.5f}
+        };
 
 		const std::vector<uint32_t> BOX_INDCS = {
-			0, 1, 1, 2, 2, 3, 3, 0, // bottom
-			4, 5, 5, 6, 6, 7, 7, 4, // top
-			0, 1, 1, 5, 5, 4, 4, 0, // front
-			1, 2, 2, 6, 6, 5, 5, 1, // right
-			2, 3, 3, 7, 7, 6, 6, 2, // back
-			3, 0, 0, 4, 4, 7, 7, 3  // left
+		    0, 1, 1, 2, 2, 3, 3, 0, // bottom
+		    4, 5, 5, 6, 6, 7, 7, 4, // top
+		    0, 1, 1, 5, 5, 4, 4, 0, // front
+		    1, 2, 2, 6, 6, 5, 5, 1, // right
+		    2, 3, 3, 7, 7, 6, 6, 2, // back
+		    3, 0, 0, 4, 4, 7, 7, 3  // left
 		};
 
 		wireBoxIdx = CreateGLObjects(BOX_VERTS, BOX_INDCS);
@@ -429,15 +456,10 @@ void GL::Shapes::DisableAttribs()
 	glVertexAttribDivisor(0, 0);
 }
 
-size_t GL::Shapes::CreateGLObjects(
-	const std::vector<float3>& verts,
-	const std::vector<uint32_t>& indcs
-) {
-	auto& [vao, vertVBO, indxVBO] = allObjects.emplace_back(
-		VAO{ },
-		VBO{ GL_ARRAY_BUFFER, false },
-		VBO{ GL_ELEMENT_ARRAY_BUFFER, false }
-	);
+size_t GL::Shapes::CreateGLObjects(const std::vector<float3>& verts, const std::vector<uint32_t>& indcs)
+{
+	auto& [vao, vertVBO, indxVBO] =
+	    allObjects.emplace_back(VAO{}, VBO{GL_ARRAY_BUFFER, false}, VBO{GL_ELEMENT_ARRAY_BUFFER, false});
 
 	vao.Bind();
 
@@ -460,13 +482,15 @@ size_t GL::Shapes::CreateGLObjects(
 
 auto GL::Shapes::CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> decltype(solidSpheresMap)::iterator
 {
-	std::vector<float3  > verts; verts.resize ((numRows + 1) * numCols);
-	std::vector<uint32_t> indcs; indcs.reserve((numCols + 1) * 3 * 2 + (numRows - 2) * numCols * 6);
+	std::vector<float3> verts;
+	verts.resize((numRows + 1) * numCols);
+	std::vector<uint32_t> indcs;
+	indcs.reserve((numCols + 1) * 3 * 2 + (numRows - 2) * numCols * 6);
 
 	for (uint32_t row = 0; row <= numRows; row++) {
 		for (uint32_t col = 0; col < numCols; col++) {
 			const float a = (col * (math::TWOPI / numCols));
-			const float b = (row * (math::PI    / numRows));
+			const float b = (row * (math::PI / numRows));
 
 			float3& v = verts[row * numCols + col];
 
@@ -514,16 +538,15 @@ auto GL::Shapes::CreateSolidSphere(uint32_t numRows, uint32_t numCols) -> declty
 		}
 	}
 
-	return solidSpheresMap.emplace(
-		std::make_tuple(numRows, numCols),
-		CreateGLObjects(verts, indcs)
-	).first;
+	return solidSpheresMap.emplace(std::make_tuple(numRows, numCols), CreateGLObjects(verts, indcs)).first;
 }
 
 auto GL::Shapes::CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltype(wireSpheresMap)::iterator
 {
-	std::vector<float3  > verts; verts.resize((numRows + 1)* numCols);
-	std::vector<uint32_t> indcs; indcs.reserve((numCols + 1) * 6 * 2 + (numRows - 2) * numCols * 8);
+	std::vector<float3> verts;
+	verts.resize((numRows + 1) * numCols);
+	std::vector<uint32_t> indcs;
+	indcs.reserve((numCols + 1) * 6 * 2 + (numRows - 2) * numCols * 8);
 
 	for (uint32_t row = 0; row <= numRows; row++) {
 		for (uint32_t col = 0; col < numCols; col++) {
@@ -590,19 +613,18 @@ auto GL::Shapes::CreateWireSphere(uint32_t numRows, uint32_t numCols) -> decltyp
 		}
 	}
 
-	return wireSpheresMap.emplace(
-		std::make_tuple(numRows, numCols),
-		CreateGLObjects(verts, indcs)
-	).first;
+	return wireSpheresMap.emplace(std::make_tuple(numRows, numCols), CreateGLObjects(verts, indcs)).first;
 }
 
 auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersMap)::iterator
 {
-	std::vector<float3  > verts; verts.resize(2 + numDivs * 2);
-	std::vector<uint32_t> indcs; indcs.reserve(numDivs * 2);
+	std::vector<float3> verts;
+	verts.resize(2 + numDivs * 2);
+	std::vector<uint32_t> indcs;
+	indcs.reserve(numDivs * 2);
 
 	// front end-cap
-	verts[0] = float3{ 0.0f, 0.0f, 0.0f };
+	verts[0] = float3{0.0f, 0.0f, 0.0f};
 	for (unsigned int n = 0; n < numDivs; n++) {
 		const unsigned int i = 2 + (n + 0) % numDivs;
 		const unsigned int j = 2 + (n + 1) % numDivs;
@@ -622,7 +644,7 @@ auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersM
 	}
 
 	// back end-cap
-	verts[1] = float3{ 0.0f, 0.0f, 1.0f };
+	verts[1] = float3{0.0f, 0.0f, 1.0f};
 	for (unsigned int n = 0; n < numDivs; n++) {
 		const unsigned int i = 2 + (n + 0) % numDivs;
 		const unsigned int j = 2 + (n + 1) % numDivs;
@@ -661,13 +683,9 @@ auto GL::Shapes::CreateWireCylinder(uint32_t numDivs) -> decltype(wireCylindersM
 		indcs.push_back(i0);
 	}
 
-	return wireCylindersMap.emplace(
-		numDivs,
-		CreateGLObjects(verts, indcs)
-	).first;
+	return wireCylindersMap.emplace(numDivs, CreateGLObjects(verts, indcs)).first;
 }
 
-
 namespace GL {
-	Shapes shapes;
+Shapes shapes;
 }

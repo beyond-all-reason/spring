@@ -19,8 +19,7 @@ class CGroup;
 class CUnit;
 class CSkirmishAIWrapper;
 
-class CAICheats
-{
+class CAICheats {
 	CSkirmishAIWrapper* ai = nullptr;
 
 	// utility methods
@@ -30,7 +29,11 @@ class CAICheats
 
 public:
 	CAICheats() = default;
-	CAICheats(CSkirmishAIWrapper* w): ai(w) {}
+
+	CAICheats(CSkirmishAIWrapper* w)
+	    : ai(w)
+	{
+	}
 
 	void SetMyIncomeMultiplier(float incomeMultiplier);
 

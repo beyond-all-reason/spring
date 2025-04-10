@@ -3,18 +3,22 @@
 #ifndef SELECTION_KEY_HANDLER_H
 #define SELECTION_KEY_HANDLER_H
 
-#include <vector>
-
 #include "InputReceiver.h"
 
+#include <vector>
+
 class CUnit;
+
 class CSelectionKeyHandler : public CInputReceiver {
 public:
-	void Init() {
+	void Init()
+	{
 		numDoSelects = 0;
 		selectNumber = 0;
 	}
+
 	void Kill() { selection.clear(); }
+
 	void DoSelection(std::string selectString);
 
 private:

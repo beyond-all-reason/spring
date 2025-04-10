@@ -45,34 +45,33 @@ http://www.jalix.org/ressources/graphics/3DS/_unofficials/3ds-unofficial.txt */
 #ifndef AI_SMOOTHINGGROUPS_H_INC
 #define AI_SMOOTHINGGROUPS_H_INC
 
+#include <vector>
+
 #include <assimp/vector3.h>
 #include <stdint.h>
-#include <vector>
 
 // ---------------------------------------------------------------------------
 /** Helper structure representing a face with smoothing groups assigned */
-struct FaceWithSmoothingGroup
-{
-    FaceWithSmoothingGroup()
-        : mIndices(),
-        iSmoothGroup(0)
-    {
-        // in debug builds set all indices to a common magic value
+struct FaceWithSmoothingGroup {
+	FaceWithSmoothingGroup()
+	    : mIndices()
+	    , iSmoothGroup(0)
+	{
+		// in debug builds set all indices to a common magic value
 #ifdef ASSIMP_BUILD_DEBUG
-        this->mIndices[0] = 0xffffffff;
-        this->mIndices[1] = 0xffffffff;
-        this->mIndices[2] = 0xffffffff;
+		this->mIndices[0] = 0xffffffff;
+		this->mIndices[1] = 0xffffffff;
+		this->mIndices[2] = 0xffffffff;
 #endif
-    }
+	}
 
+	//! Indices. .3ds is using uint16. However, after
+	//! an unique vertex set has been generated,
+	//! individual index values might exceed 2^16
+	uint32_t mIndices[3];
 
-    //! Indices. .3ds is using uint16. However, after
-    //! an unique vertex set has been generated,
-    //! individual index values might exceed 2^16
-    uint32_t mIndices[3];
-
-    //! specifies to which smoothing group the face belongs to
-    uint32_t iSmoothGroup;
+	//! specifies to which smoothing group the face belongs to
+	uint32_t iSmoothGroup;
 };
 
 // ---------------------------------------------------------------------------
@@ -83,24 +82,21 @@ struct FaceWithSmoothingGroup
     but as they add extra members and need to be copied by value we
     need to use a template here.
     */
-template <class T>
-struct MeshWithSmoothingGroups
-{
-    //! Vertex positions
-    std::vector<aiVector3D> mPositions;
+template<class T> struct MeshWithSmoothingGroups {
+	//! Vertex positions
+	std::vector<aiVector3D> mPositions;
 
-    //! Face lists
-    std::vector<T> mFaces;
+	//! Face lists
+	std::vector<T> mFaces;
 
-    //! List of normal vectors
-    std::vector<aiVector3D> mNormals;
+	//! List of normal vectors
+	std::vector<aiVector3D> mNormals;
 };
 
 // ---------------------------------------------------------------------------
 /** Computes normal vectors for the mesh
  */
-template <class T>
-void ComputeNormalsWithSmoothingsGroups(MeshWithSmoothingGroups<T>& sMesh);
+template<class T> void ComputeNormalsWithSmoothingsGroups(MeshWithSmoothingGroups<T>& sMesh);
 
 
 // include implementations

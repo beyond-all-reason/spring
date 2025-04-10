@@ -12,4 +12,3 @@ set -e
 #sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
 
 #sudo apt-get update -qq
-

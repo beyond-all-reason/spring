@@ -3,10 +3,11 @@
 #ifndef SOLID_OBJECT_DEF_H
 #define SOLID_OBJECT_DEF_H
 
-#include <string>
-
 #include "Sim/Misc/CollisionVolume.h"
 #include "Sim/Misc/Resource.h"
+
+#include <string>
+
 #include <System/creg/STL_Map.h>
 
 struct S3DModel;
@@ -14,7 +15,6 @@ class LuaTable;
 
 struct SolidObjectDecalDef {
 public:
-
 	SolidObjectDecalDef();
 	void Parse(const LuaTable&);
 
@@ -29,7 +29,7 @@ public:
 	float groundDecalDecaySpeed;
 
 	bool leaveTrackDecals;
-	//int trackDecalType;
+	// int trackDecalType;
 	float trackDecalWidth;
 	float trackDecalOffset;
 	float trackDecalStrength;
@@ -38,9 +38,9 @@ public:
 
 struct SolidObjectDef {
 public:
-
 	SolidObjectDef();
-	virtual ~SolidObjectDef() { }
+
+	virtual ~SolidObjectDef() {}
 
 	S3DModel* LoadModel() const;
 	void PreloadModel() const;
@@ -84,4 +84,3 @@ public:
 };
 
 #endif
-

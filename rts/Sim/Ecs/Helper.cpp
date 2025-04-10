@@ -3,17 +3,12 @@
 // #undef NDEBUG
 
 #include "Helper.h"
+
 #include "Registry.h"
 #include "SaveLoadUtils.h"
 
-void Sim::ClearRegistry() {
-    Sim::registry.clear();
-}
+void Sim::ClearRegistry() { Sim::registry.clear(); }
 
-void Sim::LoadComponents(std::stringstream &iss) {
-    saveLoadUtils.LoadComponents(iss);
-}
+void Sim::LoadComponents(std::stringstream& iss) { saveLoadUtils.LoadComponents(iss); }
 
-void Sim::SaveComponents(std::stringstream &oss) {
-    saveLoadUtils.SaveComponents(oss);
-}
+void Sim::SaveComponents(std::stringstream& oss) { saveLoadUtils.SaveComponents(oss); }

@@ -8,21 +8,21 @@
  * It also manages reading and caching of the actual .cob files.
  */
 
-#include <vector>
-
 #include "CobThread.h"
-#include "System/creg/creg_cond.h"
-#include "System/creg/STL_Queue.h"
-#include "System/creg/STL_Map.h"
+
 #include "System/Cpp11Compat.hpp"
+#include "System/creg/STL_Map.h"
+#include "System/creg/STL_Queue.h"
+#include "System/creg/creg_cond.h"
+
+#include <vector>
 
 class CCobThread;
 class CCobInstance;
 class CCobFile;
 class CCobFileHandler;
 
-class CCobEngine
-{
+class CCobEngine {
 	CR_DECLARE_STRUCT(CCobEngine)
 
 public:
@@ -35,13 +35,15 @@ public:
 
 	struct CCobThreadComp {
 	public:
-		bool operator() (const SleepingThread& a, const SleepingThread& b) const {
+		bool operator()(const SleepingThread& a, const SleepingThread& b) const
+		{
 			return a.wt > b.wt || (a.wt == b.wt && a.id > b.id);
 		}
 	};
 
 public:
-	void Init() {
+	void Init()
+	{
 		threadInstances.reserve(2048);
 		tickAddedThreads.reserve(128);
 
@@ -55,7 +57,9 @@ public:
 		currentTime = 0;
 		threadCounter = 0;
 	}
-	void Kill() {
+
+	void Kill()
+	{
 		// threadInstances is never explicitly iterated in the actual code,
 		// but iterated during sync dumps, so clean it with clear_unordered_map
 		spring::clear_unordered_map(threadInstances);
@@ -72,8 +76,8 @@ public:
 	void Tick(int deltaTime);
 	void ShowScriptError(const std::string& msg);
 
-
-	CCobThread* GetThread(int threadID) {
+	CCobThread* GetThread(int threadID)
+	{
 		const auto it = threadInstances.find(threadID);
 
 		if (it == threadInstances.end())
@@ -84,24 +88,33 @@ public:
 
 	bool RemoveThread(int threadID);
 	int AddThread(CCobThread&& thread);
+
 	int GenThreadID() { return (threadCounter++); }
 
 	void QueueAddThread(CCobThread&& thread) { tickAddedThreads.emplace_back(std::move(thread)); }
+
 	void QueueRemoveThread(int threadID) { tickRemovedThreads.emplace_back(threadID); }
+
 	void ProcessQueuedThreads();
 
 	void ScheduleThread(const CCobThread* thread);
 	void SanityCheckThreads(const CCobInstance* owner);
 
 	const auto& GetThreadInstances() const { return threadInstances; }
-//	const auto& GetTickAddedThreads() const { return tickAddedThreads; }
-//	const auto& GetTickRemovedThreads() const { return tickRemovedThreads; }
-//	const auto& GetRunningThreadIDs() const { return runningThreadIDs; }
+
+	//	const auto& GetTickAddedThreads() const { return tickAddedThreads; }
+	//	const auto& GetTickRemovedThreads() const { return tickRemovedThreads; }
+	//	const auto& GetRunningThreadIDs() const { return runningThreadIDs; }
 	const auto& GetWaitingThreadIDs() const { return waitingThreadIDs; }
+
 	const auto& GetSleepingThreadIDs() const { return sleepingThreadIDs; }
-	const auto  GetCurrTime() const { return currentTime; }
-	const auto  GetThreadCounter() const { return threadCounter; }
-	const auto  GetCurrCounter() const { return threadCounter; }
+
+	const auto GetCurrTime() const { return currentTime; }
+
+	const auto GetThreadCounter() const { return threadCounter; }
+
+	const auto GetCurrCounter() const { return threadCounter; }
+
 private:
 	void TickThread(CCobThread* thread);
 
@@ -128,7 +141,6 @@ private:
 	int currentTime = 0;
 	int threadCounter = 0;
 };
-
 
 extern CCobEngine* cobEngine;
 

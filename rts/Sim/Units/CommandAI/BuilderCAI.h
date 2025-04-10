@@ -4,6 +4,7 @@
 #define _BUILDER_CAI_H_
 
 #include "MobileCAI.h"
+
 #include "Sim/Units/BuildInfo.h"
 #include "System/Misc/BitwiseEnum.h"
 #include "System/UnorderedSet.hpp"
@@ -18,9 +19,7 @@ class CWorldObject;
 struct Command;
 struct UnitDef;
 
-
-class CBuilderCAI : public CMobileCAI
-{
+class CBuilderCAI : public CMobileCAI {
 public:
 	CR_DECLARE(CBuilderCAI)
 	CBuilderCAI(CUnit* owner);
@@ -60,13 +59,14 @@ public:
 
 private:
 	enum ReclaimOptions {
-		REC_NORESCHECK = 1<<0,
-		REC_UNITS      = 1<<1,
-		REC_NONREZ     = 1<<2,
-		REC_ENEMY      = 1<<3,
-		REC_ENEMYONLY  = 1<<4,
-		REC_SPECIAL    = 1<<5
+		REC_NORESCHECK = 1 << 0,
+		REC_UNITS = 1 << 1,
+		REC_NONREZ = 1 << 2,
+		REC_ENEMY = 1 << 3,
+		REC_ENEMYONLY = 1 << 4,
+		REC_SPECIAL = 1 << 5
 	};
+
 	typedef Bitwise::BitwiseEnum<ReclaimOptions> ReclaimOption;
 
 private:
@@ -85,7 +85,8 @@ private:
 	/**
 	 * @param builtOnly skips units that are under construction
 	 */
-	bool FindRepairTargetAndRepair(const float3& pos, float radius, unsigned char options, bool attackEnemy, bool builtOnly);
+	bool
+	FindRepairTargetAndRepair(const float3& pos, float radius, unsigned char options, bool attackEnemy, bool builtOnly);
 	/**
 	 * @param pos         position where to search for units to capture
 	 * @param radius      radius in which are searched units to capture
@@ -94,13 +95,19 @@ private:
 	 */
 	bool FindCaptureTargetAndCapture(const float3& pos, float radius, unsigned char options, bool healthyOnly);
 
-	int FindReclaimTarget(const float3& pos, float radius, unsigned char cmdopt, ReclaimOption recoptions, float bestStartDist = 1.0e30f) const;
+	int FindReclaimTarget(const float3& pos,
+	    float radius,
+	    unsigned char cmdopt,
+	    ReclaimOption recoptions,
+	    float bestStartDist = 1.0e30f) const;
 
 	bool MoveInBuildRange(const CWorldObject* obj, const bool checkMoveTypeForFailed = false);
 	bool MoveInBuildRange(const float3& pos, float radius, const bool checkMoveTypeForFailed = false);
 
 	bool IsBuildPosBlocked(const BuildInfo& bi, const CUnit** nanoFrame) const;
-	bool IsBuildPosBlocked(const BuildInfo& bi) const {
+
+	bool IsBuildPosBlocked(const BuildInfo& bi) const
+	{
 		const CUnit* u = nullptr;
 		return IsBuildPosBlocked(build, &u);
 	}
@@ -110,18 +117,19 @@ private:
 	/// add a command to reclaim a feature that is blocking our build-site
 	void ReclaimFeature(CFeature* f);
 
-	inline float f3Dist(const float3& a, const float3& b) const {
-		return range3D ? a.distance(b) : a.distance2D(b);
-	}
-	inline float f3SqDist(const float3& a, const float3& b) const {
+	inline float f3Dist(const float3& a, const float3& b) const { return range3D ? a.distance(b) : a.distance2D(b); }
+
+	inline float f3SqDist(const float3& a, const float3& b) const
+	{
 		return range3D ? a.SqDistance(b) : a.SqDistance2D(b);
 	}
-	//inline float f3Len(const float3& a) const {
+
+	// inline float f3Len(const float3& a) const {
 	//	return range3D ? a.Length() : a.Length2D();
-	//}
-	//inline float f3SqLen(const float3& a) const {
+	// }
+	// inline float f3SqLen(const float3& a) const {
 	//	return range3D ? a.SqLength() : a.SqLength2D();
-	//}
+	// }
 
 	float GetBuildOptionRadius(const UnitDef* unitdef, int cmdId);
 

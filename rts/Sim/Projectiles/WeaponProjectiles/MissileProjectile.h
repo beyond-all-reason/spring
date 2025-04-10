@@ -8,15 +8,14 @@
 class CUnit;
 class CSmokeTrailProjectile;
 
-
-class CMissileProjectile : public CWeaponProjectile
-{
+class CMissileProjectile : public CWeaponProjectile {
 	CR_DECLARE_DERIVED(CMissileProjectile)
 protected:
 	void UpdateGroundBounce() override;
+
 public:
 	// creg only
-	CMissileProjectile() { }
+	CMissileProjectile() {}
 
 	CMissileProjectile(const ProjectileParams& params);
 
@@ -62,6 +61,7 @@ private:
 	float3 oldSmoke;
 	float3 oldDir;
 	CSmokeTrailProjectile* smokeTrail;
+
 private:
 	inline float GetSmokeSize() const;
 	inline float GetSmokeColor() const;

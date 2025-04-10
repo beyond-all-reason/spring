@@ -3,11 +3,11 @@
 #ifndef MOD_INFO_H
 #define MOD_INFO_H
 
-#include <string>
 #include "Sim/Path/PFSTypes.h"
 
-class CModInfo
-{
+#include <string>
+
+class CModInfo {
 public:
 	CModInfo() { ResetState(); }
 
@@ -41,15 +41,15 @@ public:
 	std::string description;
 
 	// Movement behaviour
-	bool allowAircraftToLeaveMap;    //< determines if gunships are allowed to leave map boundaries
-	bool allowAircraftToHitGround;   //< determines if aircraft (both types) can collide with terrain
-	bool allowPushingEnemyUnits;     //< determines if enemy (ground-)units can be pushed during collisions
-	bool allowCrushingAlliedUnits;   //< determines if allied (ground-)units can be crushed during collisions
-	bool allowUnitCollisionDamage;   //< determines if units take damage from (skidding) collisions
-	bool allowUnitCollisionOverlap;  //< determines if unit footprints are allowed to semi-overlap during collisions
-	bool allowSepAxisCollisionTest;  //< determines if (ground-)units perform collision-testing via the SAT
-	bool allowGroundUnitGravity;     //< determines if (ground-)units experience gravity during regular movement
-	bool allowHoverUnitStrafing;     //< determines if (hover-)units carry their momentum sideways when turning
+	bool allowAircraftToLeaveMap;   //< determines if gunships are allowed to leave map boundaries
+	bool allowAircraftToHitGround;  //< determines if aircraft (both types) can collide with terrain
+	bool allowPushingEnemyUnits;    //< determines if enemy (ground-)units can be pushed during collisions
+	bool allowCrushingAlliedUnits;  //< determines if allied (ground-)units can be crushed during collisions
+	bool allowUnitCollisionDamage;  //< determines if units take damage from (skidding) collisions
+	bool allowUnitCollisionOverlap; //< determines if unit footprints are allowed to semi-overlap during collisions
+	bool allowSepAxisCollisionTest; //< determines if (ground-)units perform collision-testing via the SAT
+	bool allowGroundUnitGravity;    //< determines if (ground-)units experience gravity during regular movement
+	bool allowHoverUnitStrafing;    //< determines if (hover-)units carry their momentum sideways when turning
 
 	// relative to a unit's maxspeed (default: inf)
 	float maxCollisionPushMultiplier;
@@ -129,11 +129,14 @@ public:
 
 
 	// Transportation behaviour
-	/// If false, every unit using a tank or kbot movedef gets `cantBeTransported = true` override in its unit def. Defaults to true.
+	/// If false, every unit using a tank or kbot movedef gets `cantBeTransported = true` override in its unit def.
+	/// Defaults to true.
 	bool transportGround;
-	/// If false, every unit using a hovercraft movedef gets `cantBeTransported = true` override in its unit def. Defaults to false.
+	/// If false, every unit using a hovercraft movedef gets `cantBeTransported = true` override in its unit def.
+	/// Defaults to false.
 	bool transportHover;
-	/// If false, every unit using a ship movedef gets `cantBeTransported = true` override in its unit def. Defaults to false.
+	/// If false, every unit using a ship movedef gets `cantBeTransported = true` override in its unit def. Defaults to
+	/// false.
 	bool transportShip;
 	/// If false, every aircraft gets `cantBeTransported = true` override in its unit def. Defaults to false.
 	bool transportAir;
@@ -171,7 +174,6 @@ public:
 	bool decloakRequiresLineOfSight;
 	/// should _all_ allyteams share the same jammermap
 	bool separateJammers;
-
 
 	enum {
 		FEATURELOS_NONE = 0,
@@ -243,4 +245,3 @@ public:
 extern CModInfo modInfo;
 
 #endif // MOD_INFO_H
-

@@ -4,26 +4,24 @@
 #define FIRE_PROJECTILE_H
 
 #include "Projectile.h"
+
 #include <deque>
 
-
-class CFireProjectile : public CProjectile
-{
+class CFireProjectile : public CProjectile {
 	CR_DECLARE_DERIVED(CFireProjectile)
 	CR_DECLARE_SUB(SubParticle)
 public:
-	CFireProjectile(
-		const float3& pos,
-		const float3& spd,
-		CUnit* owner,
-		int emitTtl,
-		int particleTtl,
-		float emitRadius,
-		float particleSize
-	);
+	CFireProjectile(const float3& pos,
+	    const float3& spd,
+	    CUnit* owner,
+	    int emitTtl,
+	    int particleTtl,
+	    float emitRadius,
+	    float particleSize);
 
 	void Draw() override;
 	void Update() override;
+
 	void StopFire() { ttl = 0; }
 
 	int GetProjectilesCount() const override;
@@ -52,8 +50,7 @@ public:
 	std::deque<SubParticle> subParticles2;
 
 private:
-	CFireProjectile() { }
-
+	CFireProjectile() {}
 };
 
 #endif // FIRE_PROJECTILE_H

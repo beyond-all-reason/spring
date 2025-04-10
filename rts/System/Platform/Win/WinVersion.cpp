@@ -1,10 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cassert>
-#include <sstream>
-#include <string>
 #include <codecvt>
 #include <locale> // std::wstring_convert
+#include <sstream>
+#include <string>
 
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x500
@@ -87,9 +87,9 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 //   Windows XP               :  5.1
 //   Windows 2000             :  5.0
 //
-typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO); // GetNativeSystemInfo
-typedef LONG (WINAPI *PRTLGV)(OSVERSIONINFOW*); // RtlGetVersion
-typedef BOOL (WINAPI *PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD); // GetProductInfo
+typedef void(WINAPI* PGNSI)(LPSYSTEM_INFO);                     // GetNativeSystemInfo
+typedef LONG(WINAPI* PRTLGV)(OSVERSIONINFOW*);                  // RtlGetVersion
+typedef BOOL(WINAPI* PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD); // GetProductInfo
 
 std::string windows::GetDisplayString(bool getName, bool getVersion, bool getExtra)
 {
@@ -106,9 +106,9 @@ std::string windows::GetDisplayString(bool getName, bool getVersion, bool getExt
 
 	// use kernel call, GetVersionEx is deprecated in 8.1
 	// and what it returns depends on application manifest
-	PRTLGV pRTLGV = (PRTLGV) GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")), "RtlGetVersion");
+	PRTLGV pRTLGV = (PRTLGV)GetProcAddress(GetModuleHandle(TEXT("ntdll.dll")), "RtlGetVersion");
 
-	if (pRTLGV == nullptr || !NT_SUCCESS(pRTLGV((OSVERSIONINFOW*) &osvi)))
+	if (pRTLGV == nullptr || !NT_SUCCESS(pRTLGV((OSVERSIONINFOW*)&osvi)))
 		return "error getting Windows version";
 
 	// RtlGetVersion exists since Windows 2000, which is ancient
@@ -116,7 +116,7 @@ std::string windows::GetDisplayString(bool getName, bool getVersion, bool getExt
 
 
 	// call GetNativeSystemInfo if supported for wProcessorArchitecture, GetSystemInfo otherwise
-	PGNSI pGNSI = (PGNSI) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo");
+	PGNSI pGNSI = (PGNSI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo");
 
 	if (pGNSI != nullptr)
 		pGNSI(&si);
@@ -130,155 +130,226 @@ std::string windows::GetDisplayString(bool getName, bool getVersion, bool getExt
 		oss << "Windows ";
 
 	switch (osvi.dwMajorVersion) {
-		case 10: {
-			if (getName) {
-				switch (osvi.dwMinorVersion) {
-					case  0: { oss << ((osvi.wProductType == VER_NT_WORKSTATION)? "10": "Server 2016"); } break;
-					default: {                                                                          } break;
-				}
-			}
-
-			if (getVersion) {
-				     if (osvi.dwBuildNumber >= 18267) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?   "TBA Insider Update": ""); } // 19H1
-				else if (osvi.dwBuildNumber >= 17763) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?  "October 2018 Update": ""); } // Redstone 5
-				else if (osvi.dwBuildNumber >= 17134) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?    "April 2018 Update": ""); } // Redstone 4
-				else if (osvi.dwBuildNumber >= 16299) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)? "Fall Creators Update": ""); } // Redstone 3
-				else if (osvi.dwBuildNumber >= 15063) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?      "Creators Update": ""); } // Redstone 2
-				else if (osvi.dwBuildNumber >= 14393) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?   "Anniversary Update": ""); } // Redstone 1
-				else if (osvi.dwBuildNumber >= 10586) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?      "November Update": ""); } // Threshold 2
-				else if (osvi.dwBuildNumber >= 10240) { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?      "Initial Release": ""); } // Threshold 1
-				else                                  { oss << ((osvi.wProductType == VER_NT_WORKSTATION)?      "Preview Release": ""); }
-			}
-		} break;
-
-		case 6: {
-			if (getName) {
-				switch (osvi.dwMinorVersion) {
-					case  3: { oss << ((osvi.wProductType == VER_NT_WORKSTATION)? "8.1"  : "Server 2012 R2"); } break;
-					case  2: { oss << ((osvi.wProductType == VER_NT_WORKSTATION)? "8"    : "Server 2012"   ); } break;
-					case  1: { oss << ((osvi.wProductType == VER_NT_WORKSTATION)? "7"    : "Server 2008 R2"); } break;
-					case  0: { oss << ((osvi.wProductType == VER_NT_WORKSTATION)? "Vista": "Server 2008"   ); } break;
-					default: {                                                                                } break;
-				}
-			}
-
-			if (getVersion) {
-				PGPI pGPI = (PGPI) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetProductInfo");
-				pGPI(6, 0, 0, 0, &dwType);
-
-				// FIXME: these might not apply to 6.2 and 6.3
-				switch (dwType) {
-					case PRODUCT_ULTIMATE                    : { oss << "Ultimate Edition"                            ; } break;
-					case PRODUCT_HOME_PREMIUM                : { oss << "Home Premium Edition"                        ; } break;
-					case PRODUCT_HOME_BASIC                  : { oss << "Home Basic Edition"                          ; } break;
-					case PRODUCT_ENTERPRISE                  : { oss << "Enterprise Edition"                          ; } break;
-					case PRODUCT_BUSINESS                    : { oss << "Business Edition"                            ; } break;
-					case PRODUCT_STARTER                     : { oss << "Starter Edition"                             ; } break;
-					case PRODUCT_CLUSTER_SERVER              : { oss << "Cluster Server Edition"                      ; } break;
-					case PRODUCT_DATACENTER_SERVER           : { oss << "Datacenter Edition"                          ; } break;
-					case PRODUCT_DATACENTER_SERVER_CORE      : { oss << "Datacenter Edition (core installation)"      ; } break;
-					case PRODUCT_ENTERPRISE_SERVER           : { oss << "Enterprise Edition"                          ; } break;
-					case PRODUCT_ENTERPRISE_SERVER_CORE      : { oss << "Enterprise Edition (core installation)"      ; } break;
-					case PRODUCT_ENTERPRISE_SERVER_IA64      : { oss << "Enterprise Edition for Itanium-based Systems"; } break;
-					case PRODUCT_SMALLBUSINESS_SERVER        : { oss << "Small Business Server"                       ; } break;
-					// undocumented?
-					// case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM: { oss << "Small Business Server Premium Edition"       ; } break;
-					case PRODUCT_STANDARD_SERVER             : { oss << "Standard Edition"                            ; } break;
-					case PRODUCT_STANDARD_SERVER_CORE        : { oss << "Standard Edition (core installation)"        ; } break;
-					case PRODUCT_WEB_SERVER                  : { oss << "Web Server Edition"                          ; } break;
-					default                                  : {                                                        } break;
-				}
-
-				switch (si.wProcessorArchitecture) {
-					case PROCESSOR_ARCHITECTURE_AMD64: { oss << ", 64-bit"; } break;
-					case PROCESSOR_ARCHITECTURE_INTEL: { oss << ", 32-bit"; } break;
-					default                          : {                    } break;
-				}
-			}
-		} break;
-
-		case 5: {
+	case 10: {
+		if (getName) {
 			switch (osvi.dwMinorVersion) {
-				// Server 2003 or XP 64-bit
-				case 2: {
-					if (getName) {
-						if (GetSystemMetrics(SM_SERVERR2))
-							oss << "Server 2003 R2";
-						else if (osvi.wSuiteMask == VER_SUITE_STORAGE_SERVER)
-							oss << "Storage Server 2003";
-						else if (osvi.wProductType == VER_NT_WORKSTATION && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-							oss << "XP Professional x64 Edition";
+			case 0: {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "10" : "Server 2016");
+			} break;
+			default: {
+			} break;
+			}
+		}
+
+		if (getVersion) {
+			if (osvi.dwBuildNumber >= 18267) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "TBA Insider Update" : "");
+			} // 19H1
+			else if (osvi.dwBuildNumber >= 17763) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "October 2018 Update" : "");
+			} // Redstone 5
+			else if (osvi.dwBuildNumber >= 17134) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "April 2018 Update" : "");
+			} // Redstone 4
+			else if (osvi.dwBuildNumber >= 16299) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "Fall Creators Update" : "");
+			} // Redstone 3
+			else if (osvi.dwBuildNumber >= 15063) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "Creators Update" : "");
+			} // Redstone 2
+			else if (osvi.dwBuildNumber >= 14393) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "Anniversary Update" : "");
+			} // Redstone 1
+			else if (osvi.dwBuildNumber >= 10586) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "November Update" : "");
+			} // Threshold 2
+			else if (osvi.dwBuildNumber >= 10240) {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "Initial Release" : "");
+			} // Threshold 1
+			else {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "Preview Release" : "");
+			}
+		}
+	} break;
+
+	case 6: {
+		if (getName) {
+			switch (osvi.dwMinorVersion) {
+			case 3: {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "8.1" : "Server 2012 R2");
+			} break;
+			case 2: {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "8" : "Server 2012");
+			} break;
+			case 1: {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "7" : "Server 2008 R2");
+			} break;
+			case 0: {
+				oss << ((osvi.wProductType == VER_NT_WORKSTATION) ? "Vista" : "Server 2008");
+			} break;
+			default: {
+			} break;
+			}
+		}
+
+		if (getVersion) {
+			PGPI pGPI = (PGPI)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetProductInfo");
+			pGPI(6, 0, 0, 0, &dwType);
+
+			// FIXME: these might not apply to 6.2 and 6.3
+			switch (dwType) {
+			case PRODUCT_ULTIMATE: {
+				oss << "Ultimate Edition";
+			} break;
+			case PRODUCT_HOME_PREMIUM: {
+				oss << "Home Premium Edition";
+			} break;
+			case PRODUCT_HOME_BASIC: {
+				oss << "Home Basic Edition";
+			} break;
+			case PRODUCT_ENTERPRISE: {
+				oss << "Enterprise Edition";
+			} break;
+			case PRODUCT_BUSINESS: {
+				oss << "Business Edition";
+			} break;
+			case PRODUCT_STARTER: {
+				oss << "Starter Edition";
+			} break;
+			case PRODUCT_CLUSTER_SERVER: {
+				oss << "Cluster Server Edition";
+			} break;
+			case PRODUCT_DATACENTER_SERVER: {
+				oss << "Datacenter Edition";
+			} break;
+			case PRODUCT_DATACENTER_SERVER_CORE: {
+				oss << "Datacenter Edition (core installation)";
+			} break;
+			case PRODUCT_ENTERPRISE_SERVER: {
+				oss << "Enterprise Edition";
+			} break;
+			case PRODUCT_ENTERPRISE_SERVER_CORE: {
+				oss << "Enterprise Edition (core installation)";
+			} break;
+			case PRODUCT_ENTERPRISE_SERVER_IA64: {
+				oss << "Enterprise Edition for Itanium-based Systems";
+			} break;
+			case PRODUCT_SMALLBUSINESS_SERVER: {
+				oss << "Small Business Server";
+			} break;
+			// undocumented?
+			// case PRODUCT_SMALLBUSINESS_SERVER_PREMIUM: { oss << "Small Business Server Premium Edition"       ; }
+			// break;
+			case PRODUCT_STANDARD_SERVER: {
+				oss << "Standard Edition";
+			} break;
+			case PRODUCT_STANDARD_SERVER_CORE: {
+				oss << "Standard Edition (core installation)";
+			} break;
+			case PRODUCT_WEB_SERVER: {
+				oss << "Web Server Edition";
+			} break;
+			default: {
+			} break;
+			}
+
+			switch (si.wProcessorArchitecture) {
+			case PROCESSOR_ARCHITECTURE_AMD64: {
+				oss << ", 64-bit";
+			} break;
+			case PROCESSOR_ARCHITECTURE_INTEL: {
+				oss << ", 32-bit";
+			} break;
+			default: {
+			} break;
+			}
+		}
+	} break;
+
+	case 5: {
+		switch (osvi.dwMinorVersion) {
+		// Server 2003 or XP 64-bit
+		case 2: {
+			if (getName) {
+				if (GetSystemMetrics(SM_SERVERR2))
+					oss << "Server 2003 R2";
+				else if (osvi.wSuiteMask == VER_SUITE_STORAGE_SERVER)
+					oss << "Storage Server 2003";
+				else if (osvi.wProductType == VER_NT_WORKSTATION &&
+				         si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+					oss << "XP Professional x64 Edition";
+				else
+					oss << "Server 2003";
+			}
+
+			if (getVersion) {
+				// test for the server type
+				if (osvi.wProductType != VER_NT_WORKSTATION) {
+					switch (si.wProcessorArchitecture) {
+					case PROCESSOR_ARCHITECTURE_IA64: {
+						if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
+							oss << "Datacenter Edition for Itanium-based Systems";
+						else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
+							oss << "Enterprise Edition for Itanium-based Systems";
+					} break;
+					case PROCESSOR_ARCHITECTURE_AMD64: {
+						if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
+							oss << "Datacenter x64 Edition";
+						else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
+							oss << "Enterprise x64 Edition";
 						else
-							oss << "Server 2003";
+							oss << "Standard x64 Edition";
+					} break;
+					default: {
+						if (osvi.wSuiteMask & VER_SUITE_COMPUTE_SERVER)
+							oss << "Compute Cluster Edition";
+						else if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
+							oss << "Datacenter Edition";
+						else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
+							oss << "Enterprise Edition";
+						else if (osvi.wSuiteMask & VER_SUITE_BLADE)
+							oss << "Web Edition";
+						else
+							oss << "Standard Edition";
+					} break;
 					}
-
-					if (getVersion) {
-						// test for the server type
-						if (osvi.wProductType != VER_NT_WORKSTATION) {
-							switch (si.wProcessorArchitecture) {
-								case PROCESSOR_ARCHITECTURE_IA64: {
-									if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
-										oss << "Datacenter Edition for Itanium-based Systems";
-									else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
-										oss << "Enterprise Edition for Itanium-based Systems";
-								} break;
-								case PROCESSOR_ARCHITECTURE_AMD64: {
-									if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
-										oss << "Datacenter x64 Edition";
-									else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
-										oss << "Enterprise x64 Edition";
-									else
-										oss << "Standard x64 Edition";
-								} break;
-								default: {
-									if (osvi.wSuiteMask & VER_SUITE_COMPUTE_SERVER)
-										oss << "Compute Cluster Edition";
-									else if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
-										oss << "Datacenter Edition";
-									else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
-										oss << "Enterprise Edition" ;
-									else if (osvi.wSuiteMask & VER_SUITE_BLADE)
-										oss << "Web Edition";
-									else
-										oss << "Standard Edition";
-								} break;
-							}
-						}
-					}
-				} break;
-
-				// XP
-				case 1: {
-					if (getName)
-						oss << "XP";
-
-					if (getVersion)
-						oss << ((osvi.wSuiteMask & VER_SUITE_PERSONAL)? "Home Edition": "Professional");
-				} break;
-
-				// 2000
-				case 0: {
-					if (getName)
-						oss << "2000";
-
-					if (getVersion) {
-						if (osvi.wProductType == VER_NT_WORKSTATION) {
-							oss << "Professional";
-						} else {
-							if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
-								oss << "Datacenter Server";
-							else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
-								oss << "Advanced Server";
-							else
-								oss << "Server";
-						}
-					}
-				} break;
-
-				default: {
-				} break;
+				}
 			}
 		} break;
+
+		// XP
+		case 1: {
+			if (getName)
+				oss << "XP";
+
+			if (getVersion)
+				oss << ((osvi.wSuiteMask & VER_SUITE_PERSONAL) ? "Home Edition" : "Professional");
+		} break;
+
+		// 2000
+		case 0: {
+			if (getName)
+				oss << "2000";
+
+			if (getVersion) {
+				if (osvi.wProductType == VER_NT_WORKSTATION) {
+					oss << "Professional";
+				}
+				else {
+					if (osvi.wSuiteMask & VER_SUITE_DATACENTER)
+						oss << "Datacenter Server";
+					else if (osvi.wSuiteMask & VER_SUITE_ENTERPRISE)
+						oss << "Advanced Server";
+					else
+						oss << "Server";
+				}
+			}
+		} break;
+
+		default: {
+		} break;
+		}
+	} break;
 	}
 
 	if (getExtra) {
@@ -303,7 +374,6 @@ std::string windows::GetDisplayString(bool getName, bool getVersion, bool getExt
 	return oss.str();
 }
 
-
 // this tries to read info about the CPU and available memory
 std::string windows::GetHardwareString()
 {
@@ -314,15 +384,18 @@ std::string windows::GetHardwareString()
 	DWORD regType = REG_SZ;
 	HKEY regkey;
 
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Hardware\\Description\\System\\CentralProcessor\\0", 0, KEY_READ, &regkey) == ERROR_SUCCESS) {
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Hardware\\Description\\System\\CentralProcessor\\0", 0, KEY_READ, &regkey) ==
+	    ERROR_SUCCESS) {
 		if (RegQueryValueEx(regkey, "ProcessorNameString", 0, &regType, regbuf, &regLength) == ERROR_SUCCESS) {
 			oss << regbuf << "; ";
-		} else {
+		}
+		else {
 			oss << "cannot read processor data; ";
 		}
 
 		RegCloseKey(regkey);
-	} else {
+	}
+	else {
 		oss << "cannot open key with processor data; ";
 	}
 

@@ -1,47 +1,41 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <array>
-#include "System/float3.h"
-#include "System/float4.h"
-#include "System/SpringMath.h"
-#include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 #include "System/Misc/SpringTime.h"
+#include "System/SpringMath.h"
+#include "System/TimeProfiler.h"
+#include "System/float3.h"
+#include "System/float4.h"
+
+#include <array>
 
 #include <catch_amalgamated.hpp>
 
 InitSpringTime ist;
 
+static inline float randf() { return rand() / float(RAND_MAX); }
 
-static inline float randf() {
-	return rand() / float(RAND_MAX);
-}
-static inline float RandFloat(const float min, const float max) {
-	return min + (max - min) * randf();
-}
-
+static inline float RandFloat(const float min, const float max) { return min + (max - min) * randf(); }
 
 static inline bool equals_legacy(const float3& f1, const float3& f2)
 {
-	return math::fabs(f1.x - f2.x) <= float3::cmp_eps() * math::fabs(f1.x)
-		&& math::fabs(f1.y - f2.y) <= float3::cmp_eps() * math::fabs(f1.y)
-		&& math::fabs(f1.z - f2.z) <= float3::cmp_eps() * math::fabs(f1.z);
+	return math::fabs(f1.x - f2.x) <= float3::cmp_eps() * math::fabs(f1.x) &&
+	       math::fabs(f1.y - f2.y) <= float3::cmp_eps() * math::fabs(f1.y) &&
+	       math::fabs(f1.z - f2.z) <= float3::cmp_eps() * math::fabs(f1.z);
 }
-
 
 static inline bool equals_new(const float3& f1, const float3& f2)
 {
-	return (epscmp(f1.x, f2.x, float3::cmp_eps()) && epscmp(f1.y, f2.y, float3::cmp_eps()) && epscmp(f1.z, f2.z, float3::cmp_eps()));
+	return (epscmp(f1.x, f2.x, float3::cmp_eps()) && epscmp(f1.y, f2.y, float3::cmp_eps()) &&
+	        epscmp(f1.z, f2.z, float3::cmp_eps()));
 }
-
 
 static inline bool epscmp2(const float& f) { return (f <= (float3::cmp_eps() * f)); }
+
 static inline bool equals_distance(const float3& f1, const float3& f2)
 {
-	return ((f1.x == f2.x) && (f1.y == f2.y) && (f1.z == f2.z))
-		|| epscmp2(f1.SqDistance(f2));
+	return ((f1.x == f2.x) && (f1.y == f2.y) && (f1.z == f2.z)) || epscmp2(f1.SqDistance(f2));
 }
-
 
 static inline bool equals_sse(const float3& f1, const float3& f2)
 {
@@ -50,6 +44,7 @@ static inline bool equals_sse(const float3& f1, const float3& f2)
 		__m128 sse;
 		float f[4];
 	};
+
 	static_assert(sizeof(__m128) == 4 * sizeof(float));
 	f4 eq;
 	__m128 m1 = _mm_set_ps(f1[0], f1[1], f1[2], 0.f);
@@ -73,8 +68,6 @@ static inline bool equals_sse(const float3& f1, const float3& f2)
 	return ((eq.f[0] != 0) && (eq.f[1] != 0) && (eq.f[2] != 0));
 }
 
-
-
 TEST_CASE("Float3")
 {
 	CHECK(offsetof(float3, x) == 0);
@@ -84,10 +77,10 @@ TEST_CASE("Float3")
 
 TEST_CASE("Float34_comparison")
 {
-	const float nearZero = float3::cmp_eps()*0.1f;
+	const float nearZero = float3::cmp_eps() * 0.1f;
 	const float nearOne = 1.0f + nearZero;
 	const float big = 100000.0f;
-	const float nearBig = big + big*nearZero;
+	const float nearBig = big + big * nearZero;
 
 	const float3 f3_Zero(ZeroVector);
 	const float3 f3_NearZero(nearZero, nearZero, nearZero);
@@ -119,10 +112,9 @@ TEST_CASE("Float34_comparison")
 	CHECK(f4_Big == f4_NearBig);
 }
 
-
 TEST_CASE("Float34_comparison_Performance")
 {
-	srand( 0 );
+	srand(0);
 	std::array<float3, 100> v;
 	for (float3& f: v) {
 		f.x = RandFloat(0.f, 5000.f);
@@ -131,9 +123,9 @@ TEST_CASE("Float34_comparison_Performance")
 	}
 	auto w = v;
 	auto u = v;
-	for (int i=0; i<u.size(); ++i) {
+	for (int i = 0; i < u.size(); ++i) {
 		if (i % 2 == 0)
-			u[i+1] = u[i];
+			u[i + 1] = u[i];
 	}
 
 	const std::int64_t iterations = 100000000;
@@ -142,19 +134,19 @@ TEST_CASE("Float34_comparison_Performance")
 	LOG("float3:");
 	{
 		ScopedOnceTimer foo(" float::operator==() (  0% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[0] ^= (v[j % v.size()] == v[(j+1) % v.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[0] ^= (v[j % v.size()] == v[(j + 1) % v.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() ( 50% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[0] ^= (u[j % u.size()] == u[(j+1) % u.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[0] ^= (u[j % u.size()] == u[(j + 1) % u.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() (100% equality)");
-		for (auto j=iterations; j>0; --j) {
+		for (auto j = iterations; j > 0; --j) {
 			b[0] ^= (v[j % v.size()] == w[j % v.size()]) * j;
 		}
 	}
@@ -162,19 +154,19 @@ TEST_CASE("Float34_comparison_Performance")
 	LOG("legacy:");
 	{
 		ScopedOnceTimer foo(" float::operator==() (  0% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[1] ^= equals_legacy(v[j % v.size()], v[(j+1) % v.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[1] ^= equals_legacy(v[j % v.size()], v[(j + 1) % v.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() ( 50% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[1] ^= equals_legacy(u[j % u.size()], u[(j+1) % u.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[1] ^= equals_legacy(u[j % u.size()], u[(j + 1) % u.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() (100% equality)");
-		for (auto j=iterations; j>0; --j) {
+		for (auto j = iterations; j > 0; --j) {
 			b[1] ^= equals_legacy(v[j % v.size()], w[j % v.size()]) * j;
 		}
 	}
@@ -182,19 +174,19 @@ TEST_CASE("Float34_comparison_Performance")
 	LOG("new (inlined):");
 	{
 		ScopedOnceTimer foo(" float::operator==() (  0% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[2] ^= equals_new(v[j % v.size()], v[(j+1) % v.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[2] ^= equals_new(v[j % v.size()], v[(j + 1) % v.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() ( 50% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[2] ^= equals_new(u[j % u.size()], u[(j+1) % u.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[2] ^= equals_new(u[j % u.size()], u[(j + 1) % u.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() (100% equality)");
-		for (auto j=iterations; j>0; --j) {
+		for (auto j = iterations; j > 0; --j) {
 			b[2] ^= equals_new(v[j % v.size()], w[j % v.size()]) * j;
 		}
 	}
@@ -202,19 +194,19 @@ TEST_CASE("Float34_comparison_Performance")
 	LOG("new (SSE impl):");
 	{
 		ScopedOnceTimer foo(" float::operator==() (  0% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[3] ^= equals_sse(v[j % v.size()], v[(j+1) % v.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[3] ^= equals_sse(v[j % v.size()], v[(j + 1) % v.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() ( 50% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[3] ^= equals_sse(u[j % u.size()], u[(j+1) % u.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[3] ^= equals_sse(u[j % u.size()], u[(j + 1) % u.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() (100% equality)");
-		for (auto j=iterations; j>0; --j) {
+		for (auto j = iterations; j > 0; --j) {
 			b[3] ^= equals_sse(v[j % v.size()], w[j % v.size()]) * j;
 		}
 	}
@@ -222,19 +214,19 @@ TEST_CASE("Float34_comparison_Performance")
 	LOG("distance:");
 	{
 		ScopedOnceTimer foo(" float::operator==() (  0% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[4] ^= equals_distance(v[j % v.size()], v[(j+1) % v.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[4] ^= equals_distance(v[j % v.size()], v[(j + 1) % v.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() ( 50% equality)");
-		for (auto j=iterations; j>0; --j) {
-			b[4] ^= equals_distance(u[j % u.size()], u[(j+1) % u.size()]) * j;
+		for (auto j = iterations; j > 0; --j) {
+			b[4] ^= equals_distance(u[j % u.size()], u[(j + 1) % u.size()]) * j;
 		}
 	}
 	{
 		ScopedOnceTimer foo(" float::operator==() (100% equality)");
-		for (auto j=iterations; j>0; --j) {
+		for (auto j = iterations; j > 0; --j) {
 			b[4] ^= equals_distance(v[j % v.size()], w[j % v.size()]) * j;
 		}
 	}

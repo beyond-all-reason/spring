@@ -3,22 +3,20 @@
 #ifndef MUSIC_STREAM_H
 #define MUSIC_STREAM_H
 
-#include "System/Misc/SpringTime.h"
-#include "System/Sound/OpenAL/OggDecoder.h"
-#include "System/Sound/OpenAL/Mp3Decoder.h"
 #include "System/FileSystem/FileHandler.h"
-
-#include <al.h>
-#include <ogg/ogg.h>
-#include <vorbis/vorbisfile.h>
+#include "System/Misc/SpringTime.h"
+#include "System/Sound/OpenAL/Mp3Decoder.h"
+#include "System/Sound/OpenAL/OggDecoder.h"
 
 #include <array>
 #include <string>
 #include <variant>
 
+#include <al.h>
+#include <ogg/ogg.h>
+#include <vorbis/vorbisfile.h>
 
-class MusicStream
-{
+class MusicStream {
 public:
 	MusicStream();
 	~MusicStream();
@@ -34,10 +32,13 @@ public:
 	void Update();
 
 	float GetPlayTime() const { return (msecsPlayed.toSecsf()); }
+
 	float GetTotalTime() const { return totalTime; }
 
 	bool TogglePause();
+
 	bool Valid() const { return source != 0; }
+
 	bool IsFinished() { return !Valid() || (GetPlayTime() >= GetTotalTime()); }
 
 private:
@@ -70,7 +71,7 @@ private:
 	spring_time lastTick;
 	float totalTime;
 
-	std::variant <OggDecoder, Mp3Decoder> decoder;
+	std::variant<OggDecoder, Mp3Decoder> decoder;
 	CFileHandler fileBuffer;
 };
 

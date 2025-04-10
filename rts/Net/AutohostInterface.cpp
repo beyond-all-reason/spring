@@ -6,9 +6,9 @@
 #include "System/Log/ILog.h"
 #include "System/Net/Socket.h"
 
+#include <cinttypes>
 #include <cstring>
 #include <vector>
-#include <cinttypes>
 
 
 #define LOG_SECTION_AUTOHOST_INTERFACE "AutohostInterface"
@@ -16,10 +16,9 @@ LOG_REGISTER_SECTION_GLOBAL(LOG_SECTION_AUTOHOST_INTERFACE)
 
 // use the specific section for all LOG*() calls in this source file
 #ifdef LOG_SECTION_CURRENT
-	#undef LOG_SECTION_CURRENT
+#undef LOG_SECTION_CURRENT
 #endif
 #define LOG_SECTION_CURRENT LOG_SECTION_AUTOHOST_INTERFACE
-
 
 namespace {
 
@@ -33,8 +32,7 @@ namespace {
  * char[] are *not* delimited in any way e.g. by '\0', so they can be used only
  * as a last element of the UDP packet.
  */
-enum EVENT
-{
+enum EVENT {
 	/**
 	 * Server has started
 	 *
@@ -157,27 +155,32 @@ enum EVENT
 	 */
 	GAME_TEAMSTAT = NETMSG_TEAMSTAT, // should be 60
 };
-}
+} // namespace
 
 using namespace asio;
 
-AutohostInterface::AutohostInterface(const std::string& remoteIP, int remotePort, const std::string& localIP, int localPort)
-		: autohost(netcode::netservice)
-		, initialized(false)
+AutohostInterface::AutohostInterface(const std::string& remoteIP,
+    int remotePort,
+    const std::string& localIP,
+    int localPort)
+    : autohost(netcode::netservice)
+    , initialized(false)
 {
 	std::string errorMsg = AutohostInterface::TryBindSocket(autohost, remoteIP, remotePort, localIP, localPort);
 
 	if (errorMsg.empty()) {
 		initialized = true;
-	} else {
+	}
+	else {
 		LOG_L(L_ERROR, "Failed to open socket: %s", errorMsg.c_str());
 	}
 }
 
-std::string AutohostInterface::TryBindSocket(
-			asio::ip::udp::socket& socket,
-			const std::string& remoteIP, int remotePort,
-			const std::string& localIP, int localPort)
+std::string AutohostInterface::TryBindSocket(asio::ip::udp::socket& socket,
+    const std::string& remoteIP,
+    int remotePort,
+    const std::string& localIP,
+    int localPort)
 {
 	std::string errorMsg;
 
@@ -202,26 +205,30 @@ std::string AutohostInterface::TryBindSocket(
 			// use the "any" address as local "from"
 			if (remoteAddr.is_v6()) {
 				localAddr = ip::address_v6::any();
-			} else {
+			}
+			else {
 				socket.close();
 				socket.open(ip::udp::v4());
 
 				localAddr = ip::address_v4::any();
 			}
-		} else {
+		}
+		else {
 			localAddr = netcode::WrapIP(localIP, &err);
 
 			if (err)
 				throw std::runtime_error("Failed to parse local IP " + localIP + ": " + err.message());
 
 			if (localAddr.is_v6() != remoteAddr.is_v6())
-				throw std::runtime_error("Local IP " + localAddr.to_string() + " and remote IP " + remoteAddr.to_string() + " are IP v4/v6 mixed");
+				throw std::runtime_error("Local IP " + localAddr.to_string() + " and remote IP " +
+				                         remoteAddr.to_string() + " are IP v4/v6 mixed");
 		}
 
 		socket.bind(ip::udp::endpoint(localAddr, localPort));
 		socket.non_blocking(true);
 		socket.connect(ip::udp::endpoint(remoteAddr, remotePort));
-	} catch (const std::runtime_error& ex) {
+	}
+	catch (const std::runtime_error& ex) {
 		// also includes asio::system_error, inherits from runtime_error
 		socket.close();
 		errorMsg = ex.what();
@@ -232,7 +239,6 @@ std::string AutohostInterface::TryBindSocket(
 
 	return errorMsg;
 }
-
 
 void AutohostInterface::SendStart()
 {
@@ -253,11 +259,10 @@ void AutohostInterface::SendStartPlaying(const unsigned char* gameID, const std:
 	if (demoName.size() > std::numeric_limits<std::uint32_t>::max() - 30)
 		throw std::runtime_error("Path to demofile too long.");
 
-	const std::uint32_t msgsize =
-			1                                            // SERVER_STARTPLAYING
-			+ sizeof(std::uint32_t)                    // msgsize
-			+ 16 * sizeof(std::uint8_t)                // gameID
-			+ demoName.size();                           // is 0, if demo recording is off!
+	const std::uint32_t msgsize = 1                           // SERVER_STARTPLAYING
+	                              + sizeof(std::uint32_t)     // msgsize
+	                              + 16 * sizeof(std::uint8_t) // gameID
+	                              + demoName.size();          // is 0, if demo recording is off!
 
 	std::vector<std::uint8_t> buffer(msgsize);
 	unsigned int pos = 0;
@@ -366,7 +371,7 @@ void AutohostInterface::Warning(const std::string& message)
 void AutohostInterface::SendLuaMsg(const std::uint8_t* msg, size_t msgSize)
 {
 	if (autohost.is_open()) {
-		std::vector<std::uint8_t> buffer(msgSize+1);
+		std::vector<std::uint8_t> buffer(msgSize + 1);
 		buffer[0] = GAME_LUAMSG;
 		std::copy(msg, msg + msgSize, buffer.begin() + 1);
 
@@ -390,8 +395,8 @@ std::string AutohostInterface::GetChatMessage()
 		size_t bytes_avail = 0;
 
 		if ((bytes_avail = autohost.available()) > 0) {
-			std::vector<std::uint8_t> buffer(bytes_avail+1, 0);
-			/*const size_t bytesReceived = */autohost.receive(asio::buffer(buffer));
+			std::vector<std::uint8_t> buffer(bytes_avail + 1, 0);
+			/*const size_t bytesReceived = */ autohost.receive(asio::buffer(buffer));
 			return std::string((char*)(&buffer[0]));
 		}
 	}
@@ -404,11 +409,10 @@ void AutohostInterface::Send(asio::mutable_buffers_1 buffer)
 	if (autohost.is_open()) {
 		try {
 			autohost.send(buffer);
-		} catch (asio::system_error& e) {
+		}
+		catch (asio::system_error& e) {
 			autohost.close();
-			LOG_L(L_ERROR,
-					"Failed to send buffer; the autohost may not be reachable: %s",
-					e.what());
+			LOG_L(L_ERROR, "Failed to send buffer; the autohost may not be reachable: %s", e.what());
 		}
 	}
 }

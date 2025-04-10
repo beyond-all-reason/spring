@@ -5,6 +5,4 @@
 
 #include "math_private.h"
 
-float __expf(float x) {
-    return __ieee754_expf(x);
-}
+float __expf(float x) { return __ieee754_expf(x); }

@@ -3,29 +3,25 @@
 
 #include "LuaFBOs.h"
 
-#include "LuaInclude.h"
-
 #include "LuaHandle.h"
 #include "LuaHashString.h"
-#include "LuaUtils.h"
-
+#include "LuaInclude.h"
 #include "LuaOpenGL.h"
 #include "LuaRBOs.h"
 #include "LuaTextures.h"
+#include "LuaUtils.h"
 
-#include "System/Log/ILog.h"
-#include "System/Exceptions.h"
-#include "fmt/format.h"
-
-#include "System/Misc/TracyDefs.h"
 #include "Rendering/GL/FBO.h"
 #include "Rendering/GlobalRendering.h"
-
+#include "System/Exceptions.h"
+#include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
+#include "fmt/format.h"
 
 /******************************************************************************
  * FBO
  * @see rts/Lua/LuaFBOs.cpp
-******************************************************************************/
+ ******************************************************************************/
 
 LuaFBOs::~LuaFBOs()
 {
@@ -34,7 +30,6 @@ LuaFBOs::~LuaFBOs()
 		glDeleteFramebuffersEXT(1, &fbo->id);
 	}
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -59,18 +54,16 @@ bool LuaFBOs::PushEntries(lua_State* L)
 	return true;
 }
 
-
 bool LuaFBOs::CreateMetatable(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	luaL_newmetatable(L, "FBO");
-	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
-	HSTR_PUSH_CFUNC(L, "__index",     meta_index);
-	HSTR_PUSH_CFUNC(L, "__newindex",  meta_newindex);
+	HSTR_PUSH_CFUNC(L, "__gc", meta_gc);
+	HSTR_PUSH_CFUNC(L, "__index", meta_index);
+	HSTR_PUSH_CFUNC(L, "__newindex", meta_newindex);
 	lua_pop(L, 1);
 	return true;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -79,11 +72,12 @@ inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaOpenGL::IsDrawingEnabled(L)) {
-		luaL_error(L, "%s(): OpenGL calls can only be used in Draw() "
-		              "call-ins, or while creating display lists", caller);
+		luaL_error(L,
+		    "%s(): OpenGL calls can only be used in Draw() "
+		    "call-ins, or while creating display lists",
+		    caller);
 	}
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -92,10 +86,17 @@ static GLenum GetBindingEnum(GLenum target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (target) {
-		case GL_FRAMEBUFFER_EXT:      { return GL_FRAMEBUFFER_BINDING_EXT;      }
-		case GL_DRAW_FRAMEBUFFER_EXT: { return GL_DRAW_FRAMEBUFFER_BINDING_EXT; }
-		case GL_READ_FRAMEBUFFER_EXT: { return GL_READ_FRAMEBUFFER_BINDING_EXT; }
-		default: {}
+	case GL_FRAMEBUFFER_EXT: {
+		return GL_FRAMEBUFFER_BINDING_EXT;
+	}
+	case GL_DRAW_FRAMEBUFFER_EXT: {
+		return GL_DRAW_FRAMEBUFFER_BINDING_EXT;
+	}
+	case GL_READ_FRAMEBUFFER_EXT: {
+		return GL_READ_FRAMEBUFFER_BINDING_EXT;
+	}
+	default: {
+	}
 	}
 
 	return 0;
@@ -105,16 +106,16 @@ static GLenum GetBindingEnum(GLenum target)
  * @alias Attachment
  * | "depth"
  * | "stencil"
- * | "color0" 
- * | "color1" 
- * | "color2" 
- * | "color3" 
- * | "color4" 
- * | "color5" 
- * | "color6" 
- * | "color7" 
- * | "color8" 
- * | "color9" 
+ * | "color0"
+ * | "color1"
+ * | "color2"
+ * | "color3"
+ * | "color4"
+ * | "color5"
+ * | "color6"
+ * | "color7"
+ * | "color8"
+ * | "color9"
  * | "color10"
  * | "color11"
  * | "color12"
@@ -122,35 +123,71 @@ static GLenum GetBindingEnum(GLenum target)
  * | "color14"
  * | "color15"
  */
- 
+
 static GLenum ParseAttachment(const std::string& name)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(name.c_str())) {
-		case hashString(  "depth"): { return GL_DEPTH_ATTACHMENT  ; } break;
-		case hashString("stencil"): { return GL_STENCIL_ATTACHMENT; } break;
-		case hashString("color0" ): { return GL_COLOR_ATTACHMENT0 ; } break;
-		case hashString("color1" ): { return GL_COLOR_ATTACHMENT1 ; } break;
-		case hashString("color2" ): { return GL_COLOR_ATTACHMENT2 ; } break;
-		case hashString("color3" ): { return GL_COLOR_ATTACHMENT3 ; } break;
-		case hashString("color4" ): { return GL_COLOR_ATTACHMENT4 ; } break;
-		case hashString("color5" ): { return GL_COLOR_ATTACHMENT5 ; } break;
-		case hashString("color6" ): { return GL_COLOR_ATTACHMENT6 ; } break;
-		case hashString("color7" ): { return GL_COLOR_ATTACHMENT7 ; } break;
-		case hashString("color8" ): { return GL_COLOR_ATTACHMENT8 ; } break;
-		case hashString("color9" ): { return GL_COLOR_ATTACHMENT9 ; } break;
-		case hashString("color10"): { return GL_COLOR_ATTACHMENT10; } break;
-		case hashString("color11"): { return GL_COLOR_ATTACHMENT11; } break;
-		case hashString("color12"): { return GL_COLOR_ATTACHMENT12; } break;
-		case hashString("color13"): { return GL_COLOR_ATTACHMENT13; } break;
-		case hashString("color14"): { return GL_COLOR_ATTACHMENT14; } break;
-		case hashString("color15"): { return GL_COLOR_ATTACHMENT15; } break;
-		default                   : {                               } break;
+	case hashString("depth"): {
+		return GL_DEPTH_ATTACHMENT;
+	} break;
+	case hashString("stencil"): {
+		return GL_STENCIL_ATTACHMENT;
+	} break;
+	case hashString("color0"): {
+		return GL_COLOR_ATTACHMENT0;
+	} break;
+	case hashString("color1"): {
+		return GL_COLOR_ATTACHMENT1;
+	} break;
+	case hashString("color2"): {
+		return GL_COLOR_ATTACHMENT2;
+	} break;
+	case hashString("color3"): {
+		return GL_COLOR_ATTACHMENT3;
+	} break;
+	case hashString("color4"): {
+		return GL_COLOR_ATTACHMENT4;
+	} break;
+	case hashString("color5"): {
+		return GL_COLOR_ATTACHMENT5;
+	} break;
+	case hashString("color6"): {
+		return GL_COLOR_ATTACHMENT6;
+	} break;
+	case hashString("color7"): {
+		return GL_COLOR_ATTACHMENT7;
+	} break;
+	case hashString("color8"): {
+		return GL_COLOR_ATTACHMENT8;
+	} break;
+	case hashString("color9"): {
+		return GL_COLOR_ATTACHMENT9;
+	} break;
+	case hashString("color10"): {
+		return GL_COLOR_ATTACHMENT10;
+	} break;
+	case hashString("color11"): {
+		return GL_COLOR_ATTACHMENT11;
+	} break;
+	case hashString("color12"): {
+		return GL_COLOR_ATTACHMENT12;
+	} break;
+	case hashString("color13"): {
+		return GL_COLOR_ATTACHMENT13;
+	} break;
+	case hashString("color14"): {
+		return GL_COLOR_ATTACHMENT14;
+	} break;
+	case hashString("color15"): {
+		return GL_COLOR_ATTACHMENT15;
+	} break;
+	default: {
+	} break;
 	}
 
 	return 0;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -161,22 +198,20 @@ const LuaFBOs::LuaFBO* LuaFBOs::GetLuaFBO(lua_State* L, int index)
 	return static_cast<LuaFBO*>(LuaUtils::GetUserData(L, index, "FBO"));
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
 void LuaFBOs::LuaFBO::Init(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	index  = -1u;
-	id     = 0;
+	index = -1u;
+	id = 0;
 	target = GL_FRAMEBUFFER_EXT;
 	luaRef = LUA_NOREF;
 	xsize = 0;
 	ysize = 0;
 	zsize = 0;
 }
-
 
 void LuaFBOs::LuaFBO::Free(lua_State* L)
 {
@@ -204,7 +239,6 @@ void LuaFBOs::LuaFBO::Free(lua_State* L)
 	}
 }
 
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -215,7 +249,6 @@ int LuaFBOs::meta_gc(lua_State* L)
 	fbo->Free(L);
 	return 0;
 }
-
 
 int LuaFBOs::meta_index(lua_State* L)
 {
@@ -231,7 +264,6 @@ int LuaFBOs::meta_index(lua_State* L)
 	lua_rawget(L, -2);
 	return 1;
 }
-
 
 int LuaFBOs::meta_newindex(lua_State* L)
 {
@@ -270,7 +302,7 @@ int LuaFBOs::meta_newindex(lua_State* L)
 			glBindFramebufferEXT(fbo->target, currentFBO);
 		}
 		else if (key == "target") {
-			return 0;// fbo->target = (GLenum)luaL_checkint(L, 3);
+			return 0; // fbo->target = (GLenum)luaL_checkint(L, 3);
 		}
 	}
 
@@ -282,20 +314,17 @@ int LuaFBOs::meta_newindex(lua_State* L)
 	return 0;
 }
 
-
-
 /******************************************************************************/
 /******************************************************************************/
 
-bool LuaFBOs::AttachObject(
-	const char* funcName,
-	lua_State* L,
-	int index,
-	LuaFBO* fbo,
-	GLenum attachID,
-	GLenum attachTarget,
-	GLenum attachLevel
-) {
+bool LuaFBOs::AttachObject(const char* funcName,
+    lua_State* L,
+    int index,
+    LuaFBO* fbo,
+    GLenum attachID,
+    GLenum attachTarget,
+    GLenum attachLevel)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua_isnil(L, index)) {
 		// nil object
@@ -341,48 +370,41 @@ bool LuaFBOs::AttachObject(
 
 	fbo->xsize = rbo->xsize;
 	fbo->ysize = rbo->ysize;
-	fbo->zsize = 0; //RBO can't be 3D or CUBE_MAP
+	fbo->zsize = 0; // RBO can't be 3D or CUBE_MAP
 	return true;
 }
 
-void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLenum texTarget, GLuint texId, GLenum attachID, GLenum attachLevel)
+void LuaFBOs::AttachObjectTexTarget(const char* funcName,
+    GLenum fboTarget,
+    GLenum texTarget,
+    GLuint texId,
+    GLenum attachID,
+    GLenum attachLevel)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	//  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, tex.target, texID, 0);
-	switch (texTarget)
-	{
-	case GL_TEXTURE_1D:
-		glFramebufferTexture1DEXT(fboTarget, attachID, texTarget, texId, attachLevel);
-		break;
-	case GL_TEXTURE_2D:
-		glFramebufferTexture2DEXT(fboTarget, attachID, texTarget, texId, attachLevel);
-		break;
-	case GL_TEXTURE_2D_MULTISAMPLE:
-		glFramebufferTexture2DEXT(fboTarget, attachID, texTarget, texId, 0);
-		break;
+	switch (texTarget) {
+	case GL_TEXTURE_1D: glFramebufferTexture1DEXT(fboTarget, attachID, texTarget, texId, attachLevel); break;
+	case GL_TEXTURE_2D: glFramebufferTexture2DEXT(fboTarget, attachID, texTarget, texId, attachLevel); break;
+	case GL_TEXTURE_2D_MULTISAMPLE: glFramebufferTexture2DEXT(fboTarget, attachID, texTarget, texId, 0); break;
 	case GL_TEXTURE_2D_ARRAY: [[fallthrough]];
 	case GL_TEXTURE_CUBE_MAP: [[fallthrough]];
 	case GL_TEXTURE_3D: {
 		if (!GLAD_GL_VERSION_3_2) {
-			throw opengl_error(fmt::format("[LuaFBO::{}] Using of the attachment target {} requires OpenGL >= 3.2", funcName, texTarget));
+			throw opengl_error(fmt::format(
+			    "[LuaFBO::{}] Using of the attachment target {} requires OpenGL >= 3.2", funcName, texTarget));
 		}
 
-		glFramebufferTexture(fboTarget, attachID, texId, attachLevel); //attach the whole texture
+		glFramebufferTexture(fboTarget, attachID, texId, attachLevel); // attach the whole texture
 	} break;
 	default: {
 		throw opengl_error(fmt::format("[LuaFBO::{}] Incorrect texture attach target {}", funcName, texTarget));
 	} break;
-
 	}
 }
 
-
-bool LuaFBOs::ApplyAttachment(
-	lua_State* L,
-	int index,
-	LuaFBO* fbo,
-	const GLenum attachID
-) {
+bool LuaFBOs::ApplyAttachment(lua_State* L, int index, LuaFBO* fbo, const GLenum attachID)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (attachID == 0)
 		return false;
@@ -393,7 +415,7 @@ bool LuaFBOs::ApplyAttachment(
 	const int table = (index < 0) ? index : (lua_gettop(L) + index + 1);
 
 	GLenum target = 0;
-	GLint  level  = 0;
+	GLint level = 0;
 
 	lua_rawgeti(L, table, 2);
 	if (lua_isnumber(L, -1))
@@ -412,7 +434,6 @@ bool LuaFBOs::ApplyAttachment(
 	return success;
 }
 
-
 bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -430,7 +451,6 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 
 	return false;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/
@@ -475,22 +495,22 @@ int LuaFBOs::CreateFBO(lua_State* L)
 	fbo.Init(L);
 
 	const int table = 1;
-/*
-	if (lua_istable(L, table)) {
-		lua_getfield(L, table, "target");
-		if (lua_isnumber(L, -1)) {
-			fbo.target = (GLenum)lua_toint(L, -1);
-		} else {
-			lua_pop(L, 1);
-		}
-	}
-*/
+	/*
+	    if (lua_istable(L, table)) {
+	        lua_getfield(L, table, "target");
+	        if (lua_isnumber(L, -1)) {
+	            fbo.target = (GLenum)lua_toint(L, -1);
+	        } else {
+	            lua_pop(L, 1);
+	        }
+	    }
+	*/
 	const GLenum bindTarget = GetBindingEnum(fbo.target);
 	if (bindTarget == 0)
 		return 0;
 
 	// maintain a lua table to hold RBO references
- 	lua_newtable(L);
+	lua_newtable(L);
 	fbo.luaRef = luaL_ref(L, LUA_REGISTRYINDEX);
 	if (fbo.luaRef == LUA_NOREF)
 		return 0;
@@ -538,10 +558,9 @@ int LuaFBOs::CreateFBO(lua_State* L)
 	return 1;
 }
 
-
 /***
  * This doesn't delete the attached objects!
- * 
+ *
  * @function gl.DeleteFBO
  * @param fbo FBO
  */
@@ -555,7 +574,6 @@ int LuaFBOs::DeleteFBO(lua_State* L)
 	fbo->Free(L);
 	return 0;
 }
-
 
 /***
  * @function gl.IsValidFBO
@@ -615,7 +633,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CheckDrawingEnabled(L, __func__);
-	
+
 	const auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
 
 	if (fbo->id == 0)
@@ -648,8 +666,10 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 	glPushAttrib(GL_VIEWPORT_BIT);
 	glViewport(0, 0, fbo->xsize, fbo->ysize);
 	if (identities) {
+		// clang-format off
 		glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
 		glMatrixMode(GL_MODELVIEW);  glPushMatrix(); glLoadIdentity();
+		// clang-format on
 	}
 
 	GLint currentFBO = 0;
@@ -660,8 +680,10 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 
 	glBindFramebufferEXT(target, currentFBO);
 	if (identities) {
+		// clang-format off
 		glMatrixMode(GL_PROJECTION); glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);  glPopMatrix();
+		// clang-format on
 	}
 	glPopAttrib();
 
@@ -673,10 +695,9 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 	return 0;
 }
 
-
 /***
  * Bind default or specified via rawFboId numeric id of FBO
- * 
+ *
  * @function gl.RawBindFBO
  * @param fbo nil
  * @param target GL? (Default: `GL_FRAMEBUFFER_EXT`)
@@ -692,14 +713,14 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 int LuaFBOs::RawBindFBO(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//CheckDrawingEnabled(L, __func__);
+	// CheckDrawingEnabled(L, __func__);
 
 	if (lua_isnil(L, 1)) {
 		// revert to default or specified FB
-		glBindFramebufferEXT((GLenum) luaL_optinteger(L, 2, GL_FRAMEBUFFER_EXT), luaL_optinteger(L, 3, 0));
+		glBindFramebufferEXT((GLenum)luaL_optinteger(L, 2, GL_FRAMEBUFFER_EXT), luaL_optinteger(L, 3, 0));
 		return 0;
 	}
-		
+
 	const auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
 
 	if (fbo->id == 0)
@@ -707,12 +728,11 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 
 	GLint currentFBO = 0;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &currentFBO);
-	glBindFramebufferEXT((GLenum) luaL_optinteger(L, 2, fbo->target), fbo->id);
+	glBindFramebufferEXT((GLenum)luaL_optinteger(L, 2, fbo->target), fbo->id);
 
 	lua_pushnumber(L, currentFBO);
 	return 1;
 }
-
 
 /******************************************************************************/
 
@@ -763,12 +783,12 @@ int LuaFBOs::BlitFBO(lua_State* L)
 		const GLbitfield mask = (GLbitfield)luaL_optint(L, 9, GL_COLOR_BUFFER_BIT);
 		const GLenum filter = (GLenum)luaL_optint(L, 10, GL_NEAREST);
 
-		glBlitFramebufferEXT(x0Src, y0Src, x1Src, y1Src,  x0Dst, y0Dst, x1Dst, y1Dst,  mask, filter);
+		glBlitFramebufferEXT(x0Src, y0Src, x1Src, y1Src, x0Dst, y0Dst, x1Dst, y1Dst, mask, filter);
 		return 0;
 	}
 
-	const auto* fboSrc = (lua_isnil(L, 1))? nullptr: static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
-	const auto* fboDst = (lua_isnil(L, 6))? nullptr: static_cast<LuaFBO*>(luaL_checkudata(L, 6, "FBO"));
+	const auto* fboSrc = (lua_isnil(L, 1)) ? nullptr : static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
+	const auto* fboDst = (lua_isnil(L, 6)) ? nullptr : static_cast<LuaFBO*>(luaL_checkudata(L, 6, "FBO"));
 
 	// if passed a non-nil arg, userdatum buffer must always be valid
 	// otherwise the default framebuffer is substituted as its target
@@ -793,31 +813,31 @@ int LuaFBOs::BlitFBO(lua_State* L)
 	GLint currentFBO;
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &currentFBO);
 
-	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, (fboSrc == nullptr)? 0: fboSrc->id);
-	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, (fboDst == nullptr)? 0: fboDst->id);
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, (fboSrc == nullptr) ? 0 : fboSrc->id);
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, (fboDst == nullptr) ? 0 : fboDst->id);
 
-	glBlitFramebufferEXT(x0Src, y0Src, x1Src, y1Src,  x0Dst, y0Dst, x1Dst, y1Dst,  mask, filter);
+	glBlitFramebufferEXT(x0Src, y0Src, x1Src, y1Src, x0Dst, y0Dst, x1Dst, y1Dst, mask, filter);
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
 	return 0;
 }
 
-
 namespace Impl {
-	template<class Type, auto glClearBufferFuncPtr>
-	static inline void ClearBuffer(lua_State* L, int startIdx, GLenum bufferType, GLint drawBuffer) {
-		Type values[4];
-		values[0] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 0, 0));
-		values[1] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 1, 0));
-		values[2] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 2, 0));
-		values[3] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 3, 0));
-		(*glClearBufferFuncPtr)(bufferType, drawBuffer, values);
-	}
+template<class Type, auto glClearBufferFuncPtr>
+static inline void ClearBuffer(lua_State* L, int startIdx, GLenum bufferType, GLint drawBuffer)
+{
+	Type values[4];
+	values[0] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 0, 0));
+	values[1] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 1, 0));
+	values[2] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 2, 0));
+	values[3] = spring::SafeCast<Type>(luaL_optnumber(L, startIdx + 3, 0));
+	(*glClearBufferFuncPtr)(bufferType, drawBuffer, values);
 }
+} // namespace Impl
 
 /*** needs `Platform.glVersionNum >= 30`
  * Clears the "attachment" of the currently bound FBO type "target" with "clearValues"
- * 
+ *
  * @function gl.ClearAttachmentFBO
  * @param target number? (Default: `GL.FRAMEBUFFER`)
  * @param attachment GL|Attachment (e.g. `"color0"` or `GL.COLOR_ATTACHMENT0`)
@@ -844,17 +864,14 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 
 	GLenum target = luaL_optint(L, nextArg++, GL_FRAMEBUFFER);
 	GLenum queryType = 0;
-	switch (target)
-	{
-		case GL_READ_FRAMEBUFFER:
-			queryType = GL_READ_FRAMEBUFFER_BINDING;
-			break;
-		case GL_DRAW_FRAMEBUFFER: [[fallthrough]];
-		case GL_FRAMEBUFFER:
-			queryType = GL_DRAW_FRAMEBUFFER_BINDING;
-			break;
-		default:
-			return ReportErrorAndReturn(fmt::format("invalid target type({}) Only GL.READ_FRAMEBUFFER|GL.DRAW_FRAMEBUFFER|GL.FRAMEBUFFER are accepted", target).c_str());
+	switch (target) {
+	case GL_READ_FRAMEBUFFER: queryType = GL_READ_FRAMEBUFFER_BINDING; break;
+	case GL_DRAW_FRAMEBUFFER: [[fallthrough]];
+	case GL_FRAMEBUFFER: queryType = GL_DRAW_FRAMEBUFFER_BINDING; break;
+	default:
+		return ReportErrorAndReturn(fmt::format(
+		    "invalid target type({}) Only GL.READ_FRAMEBUFFER|GL.DRAW_FRAMEBUFFER|GL.FRAMEBUFFER are accepted", target)
+		        .c_str());
 	}
 
 	GLint fboID = 0;
@@ -868,6 +885,7 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	GLenum attachment = 0;
 	GLenum drawBuffer = 0;
 
+	// clang-format off
 	if (lua_isstring(L, nextArg)) {
 		const char* attachmentStr = luaL_checkstring(L, nextArg++);
 		switch (hashString(attachmentStr)) {
@@ -889,8 +907,8 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 			case hashString("color15"): { bufferType = GL_COLOR;   attachment = GL_COLOR_ATTACHMENT15; drawBuffer = 15; } break;
 			case hashString("depth"): { bufferType = GL_DEPTH;   attachment = GL_DEPTH_ATTACHMENT;   drawBuffer = 0; } break;
 			case hashString("stencil"): { bufferType = GL_STENCIL; attachment = GL_STENCIL_ATTACHMENT; drawBuffer = 0; } break;
-			default:
-				return ReportErrorAndReturn(fmt::format("invalid attachment string ({})", attachmentStr).c_str());
+		default:
+			return ReportErrorAndReturn(fmt::format("invalid attachment string ({})", attachmentStr).c_str());
 		}
 	}
 	else if (lua_isnumber(L, nextArg)) {
@@ -913,10 +931,11 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 			case GL_COLOR_ATTACHMENT15: { bufferType = GL_COLOR; drawBuffer = 15; } break;
 			case GL_DEPTH_ATTACHMENT: { bufferType = GL_DEPTH; drawBuffer = 0; } break;
 			case GL_STENCIL_ATTACHMENT: { bufferType = GL_STENCIL; drawBuffer = 0; } break;
-			default:
-				return ReportErrorAndReturn(fmt::format("invalid attachment type ({})", attachment).c_str());
+		default:
+			return ReportErrorAndReturn(fmt::format("invalid attachment type ({})", attachment).c_str());
 		}
 	}
+	// clang-format on
 
 	GLint attachmentType = GL_NONE;
 	glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &attachmentType);
@@ -932,21 +951,16 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	GLint componentType = 0;
 	glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE, &componentType);
 
-	switch (componentType)
-	{
-		case GL_INT:
-			Impl::ClearBuffer<GLint, &glClearBufferiv>(L, nextArg, bufferType, drawBuffer);
-			break;
-		case GL_UNSIGNED_INT:
-			Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, nextArg, bufferType, drawBuffer);
-			break;
-		case GL_SIGNED_NORMALIZED: [[fallthrough]];   // is this considered a fixed point value?
-		case GL_UNSIGNED_NORMALIZED: [[fallthrough]]; // is this considered a fixed point value?
-		case GL_FLOAT:
-			Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, nextArg, bufferType, drawBuffer);
-			break;
-		default:
-			return ReportErrorAndReturn(fmt::format("invalid attachment component type ({}), means the attachment is invalid", componentType).c_str());
+	switch (componentType) {
+	case GL_INT: Impl::ClearBuffer<GLint, &glClearBufferiv>(L, nextArg, bufferType, drawBuffer); break;
+	case GL_UNSIGNED_INT: Impl::ClearBuffer<GLuint, &glClearBufferuiv>(L, nextArg, bufferType, drawBuffer); break;
+	case GL_SIGNED_NORMALIZED: [[fallthrough]];   // is this considered a fixed point value?
+	case GL_UNSIGNED_NORMALIZED: [[fallthrough]]; // is this considered a fixed point value?
+	case GL_FLOAT: Impl::ClearBuffer<GLfloat, &glClearBufferfv>(L, nextArg, bufferType, drawBuffer); break;
+	default:
+		return ReportErrorAndReturn(
+		    fmt::format("invalid attachment component type ({}), means the attachment is invalid", componentType)
+		        .c_str());
 	}
 
 	assert(glGetError() == GL_NO_ERROR);
@@ -954,7 +968,6 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	lua_pushboolean(L, true);
 	return 1;
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

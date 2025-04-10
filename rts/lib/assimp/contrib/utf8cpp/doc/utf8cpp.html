@@ -28,7 +28,7 @@
       color: green;
     }
     code {
-      font-weight: bold; 
+      font-weight: bold;
     }
     ul.toc {
       list-style-type: none;
@@ -101,7 +101,7 @@
       strings. The original C++ Standard (known as C++98 or C++03) is Unicode agnostic.
       C++11 provides some support for Unicode on core language and library level:
       u8, u, and U character and string literals, char16_t and char32_t character types,
-      u16string and u32string library classes, and codecvt support for conversions 
+      u16string and u32string library classes, and codecvt support for conversions
       between Unicode encoding forms.
       In the meantime, developers use third party libraries like ICU, OS specific capabilities, or simply
       roll out their own solutions.
@@ -128,7 +128,7 @@
       Introductionary Sample
     </h3>
     <p>
-      To illustrate the use of the library, let's start with a small but complete program 
+      To illustrate the use of the library, let's start with a small but complete program
       that opens a file containing UTF-8 encoded text, reads it line by line, checks each line
       for invalid UTF-8 byte sequences, and converts it to UTF-16 encoding and back to UTF-8:
     </p>
@@ -181,14 +181,14 @@
         utf8::utf8to16(line.begin(), end_it, back_inserter(utf16line));
 
         <span class="comment">// And back to utf-8</span>
-        string utf8line; 
+        string utf8line;
         utf8::utf16to8(utf16line.begin(), utf16line.end(), back_inserter(utf8line));
 
         <span class="comment">// Confirm that the conversion went OK:</span>
         <span class="keyword">if</span> (utf8line != string(line.begin(), end_it))
             cout &lt;&lt; <span class=
 "literal">"Error in UTF-16 conversion at line: "</span> &lt;&lt; line_count &lt;&lt; <span
- class="literal">"\n"</span>;        
+ class="literal">"\n"</span>;
 
         line_count++;
     }
@@ -209,7 +209,7 @@
 Here is a function that checks whether the content of a file is valid UTF-8 encoded text without
 reading the content into the memory:
 </p>
-<pre>    
+<pre>
 <span class="keyword">bool</span> valid_utf8_file(i<span class="keyword">const char</span>* file_name)
 {
     ifstream ifs(file_name);
@@ -224,11 +224,11 @@ reading the content into the memory:
 </pre>
 <p>
 Because the function <code>utf8::is_valid()</code> works with input iterators, we were able
-to pass an <code>istreambuf_iterator</code> to it and read the content of the file directly 
+to pass an <code>istreambuf_iterator</code> to it and read the content of the file directly
 without loading it to the memory first.</p>
 <p>
 Note that other functions that take input iterator arguments can be used in a similar way. For
-instance, to read the content of a UTF-8 encoded text file and convert the text to UTF-16, just 
+instance, to read the content of a UTF-8 encoded text file and convert the text to UTF-16, just
 do something like:
 </p>
 <pre>
@@ -237,7 +237,7 @@ do something like:
     <h3 id="fixinvalid">Ensure that a string contains valid UTF-8 text</h3>
 <p>
 If we have some text that "probably" contains UTF-8 encoded text and we want to
-replace any invalid UTF-8 sequence with a replacement character, something like 
+replace any invalid UTF-8 sequence with a replacement character, something like
 the following function may be used:
 </p>
 <pre>
@@ -248,7 +248,7 @@ the following function may be used:
     str = temp;
 }
 </pre>
-<p>The function will replace any invalid UTF-8 sequence with a Unicode replacement character. 
+<p>The function will replace any invalid UTF-8 sequence with a Unicode replacement character.
 There is an overloaded function that enables the caller to supply their own replacement character.
 </p>
     <h2 id="reference">
@@ -271,7 +271,7 @@ There is an overloaded function that enables the caller to supply their own repl
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator&gt;
 octet_iterator append(uint32_t cp, octet_iterator result);
-   
+
 </pre>
     <p>
 	  <code>octet_iterator</code>: an output iterator.<br>
@@ -321,9 +321,9 @@ assert (u[<span class="literal">0</span>] == <span class=
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 uint32_t next(octet_iterator&amp; it, octet_iterator end);
-   
+
 </pre>
     <p>
 	  <code>octet_iterator</code>: an input iterator.<br>
@@ -362,13 +362,13 @@ assert (w == twochars + <span class="literal">3</span>);
     </p>
     <p>
       Given the iterator to the beginning of the UTF-8 sequence, it returns the code
-      point for the following sequence without changing the value of the iterator. 
+      point for the following sequence without changing the value of the iterator.
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 uint32_t peek_next(octet_iterator it, octet_iterator end);
-   
+
 </pre>
     <p>
 	  <code>octet_iterator</code>: an input iterator.<br>
@@ -408,9 +408,9 @@ assert (w == twochars);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 uint32_t prior(octet_iterator&amp; it, octet_iterator start);
-   
+
 </pre>
     <p>
 	  <code>octet_iterator</code>: a bidirectional iterator.<br>
@@ -436,14 +436,14 @@ uint32_t prior(octet_iterator&amp; it, octet_iterator start);
 assert (cp == <span class="literal">0x65e5</span>);
 assert (w == twochars);
 </pre>
-    <p> 
+    <p>
       This function has two purposes: one is two iterate backwards through a UTF-8
       encoded string. Note that it is usually a better idea to iterate forward instead,
       since <code>utf8::next</code> is faster. The second purpose is to find a beginning
       of a UTF-8 sequence if we have a random position within a string. Note that in that
       case <code>utf8::prior</code> may not detect an invalid UTF-8 sequence in some scenarios:
       for instance if there are superfluous trail octets, it will just skip them.
-    </p> 
+    </p>
     <p>
       <code>it</code> will typically point to the beginning of
       a code point, and <code>start</code> will point to the
@@ -471,9 +471,9 @@ assert (w == twochars);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 uint32_t previous(octet_iterator&amp; it, octet_iterator pass_start);
-   
+
 </pre>
     <p>
 	  <code>octet_iterator</code>: a random access iterator.<br>
@@ -504,7 +504,7 @@ assert (w == twochars);
       <code>utf8::previous</code> is deprecated, and <code>utf8::prior</code> should
       be used instead, although the existing code can continue using this function.
       The problem is the parameter <code>pass_start</code> that points to the position
-      just before the beginning of the sequence. Standard containers don't have the 
+      just before the beginning of the sequence. Standard containers don't have the
       concept of "pass start" and the function can not be used with their iterators.
     </p>
     <p>
@@ -531,10 +531,10 @@ assert (w == twochars);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator, typename distance_type&gt; 
+"keyword">typename</span> octet_iterator, typename distance_type&gt;
 <span class=
 "keyword">void</span> advance (octet_iterator&amp; it, distance_type n, octet_iterator end);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an input iterator.<br>
@@ -578,10 +578,10 @@ assert (w == twochars + <span class="literal">5</span>);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 <span class=
 "keyword">typename</span> std::iterator_traits&lt;octet_iterator&gt;::difference_type distance (octet_iterator first, octet_iterator last);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an input iterator.<br>
@@ -627,7 +627,7 @@ assert (dist == <span class="literal">2</span>);
 "keyword">typename</span> u16bit_iterator, <span class=
 "keyword">typename</span> octet_iterator&gt;
 octet_iterator utf16to8 (u16bit_iterator start, u16bit_iterator end, octet_iterator result);
-   
+
 </pre>
     <p>
       <code>u16bit_iterator</code>: an input iterator.<br>
@@ -652,7 +652,7 @@ octet_iterator utf16to8 (u16bit_iterator start, u16bit_iterator end, octet_itera
 vector&lt;<span class="keyword">unsigned char</span>&gt; utf8result;
 utf16to8(utf16string, utf16string + <span class=
 "literal">5</span>, back_inserter(utf8result));
-assert (utf8result.size() == <span class="literal">10</span>);    
+assert (utf8result.size() == <span class="literal">10</span>);
 </pre>
     <p>
       In case of invalid UTF-16 sequence, a <code>utf8::invalid_utf16</code> exception is
@@ -671,7 +671,7 @@ assert (utf8result.size() == <span class="literal">10</span>);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> u16bit_iterator, typename octet_iterator&gt;
 u16bit_iterator utf8to16 (octet_iterator start, octet_iterator end, u16bit_iterator result);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an input iterator.<br>
@@ -717,7 +717,7 @@ assert (utf16result[<span class="literal">3</span>] == <span class=
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator, typename u32bit_iterator&gt;
 octet_iterator utf32to8 (u32bit_iterator start, u32bit_iterator end, octet_iterator result);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an output iterator.<br>
@@ -761,7 +761,7 @@ assert (utf8result.size() == <span class="literal">9</span>);
 "keyword">typename</span> octet_iterator, <span class=
 "keyword">typename</span> u32bit_iterator&gt;
 u32bit_iterator utf8to32 (octet_iterator start, octet_iterator end, u32bit_iterator result);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an input iterator.<br>
@@ -802,7 +802,7 @@ assert (utf32result.size() == <span class="literal">2</span>);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 octet_iterator find_invalid(octet_iterator start, octet_iterator end);
 </pre>
     <p>
@@ -842,9 +842,9 @@ assert (invalid == utf_invalid + <span class="literal">5</span>);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 <span class="keyword">bool</span> is_valid(octet_iterator start, octet_iterator end);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an input iterator.<br>
@@ -855,7 +855,7 @@ assert (invalid == utf_invalid + <span class="literal">5</span>);
        <span class="return_value">Return value</span>: <code>true</code> if the sequence
       is a valid UTF-8 string; <code>false</code> if not.
     </p>
-    Example of use: 
+    Example of use:
 <pre>
 <span class="keyword">char</span> utf_invalid[] = <span class=
 "literal">"\xe6\x97\xa5\xd1\x88\xfa"</span>;
@@ -886,7 +886,7 @@ output_iterator replace_invalid(octet_iterator start, octet_iterator end, output
 "keyword">typename</span> octet_iterator, <span class=
 "keyword">typename</span> output_iterator&gt;
 output_iterator replace_invalid(octet_iterator start, octet_iterator end, output_iterator out);
-   
+
 </pre>
     <p>
       <code>octet_iterator</code>: an input iterator.<br>
@@ -938,7 +938,7 @@ assert (std::equal(replace_invalid_result.begin(), replace_invalid_result.end(),
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 <span class="keyword">bool</span> starts_with_bom (octet_iterator it, octet_iterator end);
 </pre>
     <p>
@@ -975,7 +975,7 @@ assert (bbom == <span class="literal">true</span>);
     </p>
 <pre>
 <span class="keyword">template</span> &lt;<span class=
-"keyword">typename</span> octet_iterator&gt; 
+"keyword">typename</span> octet_iterator&gt;
 <span class="keyword">bool</span> is_bom (octet_iterator it); <span class="comment"> // Deprecated</span>
 </pre>
     <p>
@@ -1000,7 +1000,7 @@ assert (bbom == <span class="literal">true</span>);
       encoded text.
     </p>
     <p>
-      If a sequence is 
+      If a sequence is
       shorter than three bytes, an invalid iterator will be dereferenced. Therefore, this function is deprecated
       in favor of <code>starts_with_bom()</code>that takes the end of sequence as an argument.
     </p>
@@ -1029,7 +1029,7 @@ assert (bbom == <span class="literal">true</span>);
   cerr &lt;&lt; utfcpp_ex.what();
 }
 </pre>
-    
+
     <h4>utf8::invalid_code_point
     </h4>
     <p class="version">
@@ -1041,7 +1041,7 @@ assert (bbom == <span class="literal">true</span>);
 
 <pre>
 <span class="keyword">class</span> invalid_code_point : <span class="keyword">public</span> exception {
-<span class="keyword">public</span>: 
+<span class="keyword">public</span>:
     uint32_t code_point() <span class="keyword">const</span>;
 };
 
@@ -1062,13 +1062,13 @@ assert (bbom == <span class="literal">true</span>);
 
 <pre>
 <span class="keyword">class</span> invalid_utf8 : <span class="keyword">public</span> exception {
-<span class="keyword">public</span>: 
+<span class="keyword">public</span>:
     uint8_t utf8_octet() <span class="keyword">const</span>;
 };
 </pre>
 
     <p>
-    Member function <code>utf8_octet()</code> can be used to determine the beginning of the byte 
+    Member function <code>utf8_octet()</code> can be used to determine the beginning of the byte
     sequence that caused the exception to be thrown.
     </p>
 </pre>
@@ -1084,13 +1084,13 @@ assert (bbom == <span class="literal">true</span>);
 
 <pre>
 <span class="keyword">class</span> invalid_utf16 : <span class="keyword">public</span> exception {
-<span class="keyword">public</span>: 
+<span class="keyword">public</span>:
     uint16_t utf16_word() <span class="keyword">const</span>;
 };
 </pre>
 
     <p>
-    Member function <code>utf16_word()</code> can be used to determine the UTF-16 code unit 
+    Member function <code>utf16_word()</code> can be used to determine the UTF-16 code unit
     that caused the exception to be thrown.
     </p>
     <h4>utf8::not_enough_room
@@ -1120,17 +1120,17 @@ assert (bbom == <span class="literal">true</span>);
 <span class="keyword">template</span> &lt;<span class="keyword">typename</span> octet_iterator&gt;
 <span class="keyword">class</span> iterator;
 </pre>
-    
+
     <h5>Member functions</h5>
       <dl>
       <dt><code>iterator();</code> <dd> the deafult constructor; the underlying <code>octet_iterator</code> is
       constructed with its default constructor.
-      <dt><code><span class="keyword">explicit</span> iterator (const octet_iterator&amp; octet_it, 
+      <dt><code><span class="keyword">explicit</span> iterator (const octet_iterator&amp; octet_it,
                          const octet_iterator&amp; range_start,
-                         const octet_iterator&amp; range_end);</code> <dd> a constructor 
+                         const octet_iterator&amp; range_end);</code> <dd> a constructor
       that initializes the underlying <code>octet_iterator</code> with <code>octet_it</code>
       and sets the range in which the iterator is considered valid.
-      <dt><code>octet_iterator base () <span class="keyword">const</span>;</code> <dd> returns the 
+      <dt><code>octet_iterator base () <span class="keyword">const</span>;</code> <dd> returns the
       underlying <code>octet_iterator</code>.
       <dt><code>uint32_t operator * () <span class="keyword">const</span>;</code> <dd> decodes the utf-8 sequence
       the underlying <code>octet_iterator</code> is pointing to and returns the code point.
@@ -1162,7 +1162,7 @@ assert (*(++it) == <span class="literal">0x65e5</span>);
 assert ((*it++) == <span class="literal">0x65e5</span>);
 assert (*it == <span class="literal">0x0448</span>);
 assert (it != it2);
-utf8::iterator&lt;<span class="keyword">char</span>*&gt; endit (threechars + <span class="literal">9</span>, threechars, threechars + <span class="literal">9</span>);  
+utf8::iterator&lt;<span class="keyword">char</span>*&gt; endit (threechars + <span class="literal">9</span>, threechars, threechars + <span class="literal">9</span>);
 assert (++it == endit);
 assert (*(--it) == <span class="literal">0x0448</span>);
 assert ((*it--) == <span class="literal">0x0448</span>);
@@ -1172,8 +1172,8 @@ assert (*it == <span class="literal">0x10346</span>);
 </pre>
       <p>
       The purpose of <code>utf8::iterator</code> adapter is to enable easy iteration as well as the use of STL
-      algorithms with UTF-8 encoded strings. Increment and decrement operators are implemented in terms of 
-      <code>utf8::next()</code> and <code>utf8::prior()</code> functions. 
+      algorithms with UTF-8 encoded strings. Increment and decrement operators are implemented in terms of
+      <code>utf8::next()</code> and <code>utf8::prior()</code> functions.
       </p>
       <p>
       Note that <code>utf8::iterator</code> adapter is a checked iterator. It operates on the range specified in
@@ -1202,7 +1202,7 @@ utf8::iterator i (s.begin(), s.begin(), s.end());
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator&gt;
 octet_iterator append(uint32_t cp, octet_iterator result);
-   
+
 </pre>
     <p>
       <code>cp</code>: A 32 bit integer representing a code point to append to the
@@ -1247,7 +1247,7 @@ assert (u[<span class="literal">0</span>] == <span class=
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator&gt;
 uint32_t next(octet_iterator&amp; it);
-   
+
 </pre>
     <p>
       <code>it</code>: a reference to an iterator pointing to the beginning of an UTF-8
@@ -1284,7 +1284,7 @@ assert (w == twochars + <span class="literal">3</span>);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator&gt;
 uint32_t peek_next(octet_iterator it);
-   
+
 </pre>
     <p>
       <code>it</code>: an iterator pointing to the beginning of an UTF-8
@@ -1322,7 +1322,7 @@ assert (w == twochars);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator&gt;
 uint32_t prior(octet_iterator&amp; it);
-   
+
 </pre>
     <p>
       <code>it</code>: a reference pointing to an octet within a UTF-8 encoded string.
@@ -1361,7 +1361,7 @@ assert (w == twochars);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator&gt;
 uint32_t previous(octet_iterator&amp; it);
-   
+
 </pre>
     <p>
       <code>it</code>: a reference pointing to an octet within a UTF-8 encoded string.
@@ -1405,7 +1405,7 @@ assert (w == twochars);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator, typename distance_type&gt;
 <span class="keyword">void</span> advance (octet_iterator&amp; it, distance_type n);
-   
+
 </pre>
     <p>
       <code>it</code>: a reference to an iterator pointing to the beginning of an UTF-8
@@ -1484,7 +1484,7 @@ assert (dist == <span class="literal">2</span>);
 "keyword">typename</span> u16bit_iterator, <span class=
 "keyword">typename</span> octet_iterator&gt;
 octet_iterator utf16to8 (u16bit_iterator start, u16bit_iterator end, octet_iterator result);
-   
+
 </pre>
     <p>
       <code>start</code>: an iterator pointing to the beginning of the UTF-16 encoded
@@ -1507,7 +1507,7 @@ octet_iterator utf16to8 (u16bit_iterator start, u16bit_iterator end, octet_itera
 vector&lt;<span class="keyword">unsigned char</span>&gt; utf8result;
 unchecked::utf16to8(utf16string, utf16string + <span class=
 "literal">5</span>, back_inserter(utf8result));
-assert (utf8result.size() == <span class="literal">10</span>);    
+assert (utf8result.size() == <span class="literal">10</span>);
 </pre>
     <p>
       This is a faster but less safe version of <code>utf8::utf16to8</code>. It does not
@@ -1526,7 +1526,7 @@ assert (utf8result.size() == <span class="literal">10</span>);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> u16bit_iterator, typename octet_iterator&gt;
 u16bit_iterator utf8to16 (octet_iterator start, octet_iterator end, u16bit_iterator result);
-   
+
 </pre>
     <p>
       <code>start</code>: an iterator pointing to the beginning of the UTF-8 encoded
@@ -1570,7 +1570,7 @@ assert (utf16result[<span class="literal">3</span>] == <span class=
 "keyword">typename</span> octet_iterator, <span class=
 "keyword">typename</span> u32bit_iterator&gt;
 octet_iterator utf32to8 (u32bit_iterator start, u32bit_iterator end, octet_iterator result);
-   
+
 </pre>
     <p>
       <code>start</code>: an iterator pointing to the beginning of the UTF-32 encoded
@@ -1611,7 +1611,7 @@ assert (utf8result.size() == <span class="literal">9</span>);
 <span class="keyword">template</span> &lt;<span class=
 "keyword">typename</span> octet_iterator, typename u32bit_iterator&gt;
 u32bit_iterator utf8to32 (octet_iterator start, octet_iterator end, u32bit_iterator result);
-   
+
 </pre>
     <p>
       <code>start</code>: an iterator pointing to the beginning of the UTF-8 encoded
@@ -1655,15 +1655,15 @@ assert (utf32result.size() == <span class="literal">2</span>);
 <span class="keyword">template</span> &lt;<span class="keyword">typename</span> octet_iterator&gt;
 <span class="keyword">class</span> iterator;
 </pre>
-    
+
     <h5>Member functions</h5>
       <dl>
       <dt><code>iterator();</code> <dd> the deafult constructor; the underlying <code>octet_iterator</code> is
       constructed with its default constructor.
-      <dt><code><span class="keyword">explicit</span> iterator (const octet_iterator&amp; octet_it); 
-                         </code> <dd> a constructor 
+      <dt><code><span class="keyword">explicit</span> iterator (const octet_iterator&amp; octet_it);
+                         </code> <dd> a constructor
       that initializes the underlying <code>octet_iterator</code> with <code>octet_it</code>
-      <dt><code>octet_iterator base () <span class="keyword">const</span>;</code> <dd> returns the 
+      <dt><code>octet_iterator base () <span class="keyword">const</span>;</code> <dd> returns the
       underlying <code>octet_iterator</code>.
       <dt><code>uint32_t operator * () <span class="keyword">const</span>;</code> <dd> decodes the utf-8 sequence
       the underlying <code>octet_iterator</code> is pointing to and returns the code point.
@@ -1695,7 +1695,7 @@ assert (*(++un_it) == <span class="literal">0x65e5</span>);
 assert ((*un_it++) == <span class="literal">0x65e5</span>);
 assert (*un_it == <span class="literal">0x0448</span>);
 assert (un_it != un_it2);
-utf8::::unchecked::iterator&lt;<span class="keyword">char</span>*&gt; un_endit (threechars + <span class="literal">9</span>);  
+utf8::::unchecked::iterator&lt;<span class="keyword">char</span>*&gt; un_endit (threechars + <span class="literal">9</span>);
 assert (++un_it == un_endit);
 assert (*(--un_it) == <span class="literal">0x0448</span>);
 assert ((*un_it--) == <span class="literal">0x0448</span>);
@@ -1752,7 +1752,7 @@ assert (*un_it == <span class="literal">0x10346</span>);
       </li>
       <li>
         C++11 language and library features. Still far from complete, and not widely
-        supported by compiler vendors. 
+        supported by compiler vendors.
       </li>
       <li>
         <a href=

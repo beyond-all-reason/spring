@@ -41,17 +41,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /** @file  Win32DebugLogStream.h
-*  @brief Implementation of Win32DebugLogStream
-*/
+ *  @brief Implementation of Win32DebugLogStream
+ */
 #ifndef AI_WIN32DEBUGLOGSTREAM_H_INC
 #define AI_WIN32DEBUGLOGSTREAM_H_INC
 
 #ifdef _WIN32
 
-#include <assimp/LogStream.hpp>
 #include "windows.h"
 
-namespace Assimp    {
+#include <assimp/LogStream.hpp>
+
+namespace Assimp {
 
 // ---------------------------------------------------------------------------
 /** @class  Win32DebugLogStream
@@ -59,36 +60,33 @@ namespace Assimp    {
  */
 class Win32DebugLogStream : public LogStream {
 public:
-    /** @brief  Default constructor */
-    Win32DebugLogStream();
+	/** @brief  Default constructor */
+	Win32DebugLogStream();
 
-    /** @brief  Destructor  */
-    ~Win32DebugLogStream();
+	/** @brief  Destructor  */
+	~Win32DebugLogStream();
 
-    /** @brief  Writer  */
-    void write(const char* messgae);
+	/** @brief  Writer  */
+	void write(const char* messgae);
 };
 
 // ---------------------------------------------------------------------------
-inline 
-Win32DebugLogStream::Win32DebugLogStream(){ 
-    // empty
+inline Win32DebugLogStream::Win32DebugLogStream()
+{
+	// empty
 }
 
 // ---------------------------------------------------------------------------
-inline 
-Win32DebugLogStream::~Win32DebugLogStream(){
-    // empty
+inline Win32DebugLogStream::~Win32DebugLogStream()
+{
+	// empty
 }
 
 // ---------------------------------------------------------------------------
-inline 
-void Win32DebugLogStream::write(const char* message) {
-    ::OutputDebugStringA( message);
-}
+inline void Win32DebugLogStream::write(const char* message) { ::OutputDebugStringA(message); }
 
 // ---------------------------------------------------------------------------
-}   // Namespace Assimp
+} // Namespace Assimp
 
 #endif // ! _WIN32
 #endif // guard

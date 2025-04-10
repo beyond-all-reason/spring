@@ -1,4 +1,4 @@
-# smmalloc 
+# smmalloc
 [![Actions Status](https://github.com/SergeyMakeev/smmalloc/workflows/build/badge.svg)](https://github.com/SergeyMakeev/smmalloc/actions) [![Build status](https://ci.appveyor.com/api/projects/status/8c3oqiywaa8firfy?svg=true)](https://ci.appveyor.com/project/SergeyMakeev/smmalloc/) [![codecov](https://codecov.io/gh/SergeyMakeev/smmalloc/branch/master/graph/badge.svg?token=DKANC80IO5)](https://codecov.io/gh/SergeyMakeev/smmalloc) ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## About
@@ -22,7 +22,7 @@ This is a proxy allocator means that smmalloc handles only specific allocation s
 
 ## Performance
 
-Here is an example of performance comparison for several different allocators.  
+Here is an example of performance comparison for several different allocators.
 Platform: Windows 10, Intel Core i7-2600
 
 Threads | #1 | #2 | #3 | #4 | #5
@@ -39,11 +39,11 @@ dlmalloc | 106304079 | 0 | 0 | 0 | 0
 ![Performance comparison](https://raw.githubusercontent.com/SergeyMakeev/smmalloc/master/Images/i7_results.png)
 
 
-Here is an example of performance comparison for several different allocators.  
+Here is an example of performance comparison for several different allocators.
 Platform: Playstation 4
 
 Threads | #1 | #2 | #3 | #4
---- | --- | --- | --- |--- 
+--- | --- | --- | --- |---
 mspace | 4741379 | 956729 | 457264 | 366920
 crt | 4444444 | 853385 | 419009 | 332095
 ltalloc | 28571429 | 25290698 | 19248174 | 14683637
@@ -56,19 +56,19 @@ dlmalloc | 35483871 | 0 | 0 | 0
 
 ## Usage
 
-**_sm_allocator_create** - create allocator instance  
-**_sm_allocator_destroy** - destroy allocator instance  
-**_sm_allocator_thread_cache_create** - create thread cache for current thread  
-**_sm_allocator_thread_cache_destroy** - destroy thread cache for current thread  
-**_sm_malloc** - allocate aligned memory block  
-**_sm_free** - free memory block  
-**_sm_realloc** - reallocate memory block  
-**_sm_msize** - get usable memory size  
+**_sm_allocator_create** - create allocator instance
+**_sm_allocator_destroy** - destroy allocator instance
+**_sm_allocator_thread_cache_create** - create thread cache for current thread
+**_sm_allocator_thread_cache_destroy** - destroy thread cache for current thread
+**_sm_malloc** - allocate aligned memory block
+**_sm_free** - free memory block
+**_sm_realloc** - reallocate memory block
+**_sm_msize** - get usable memory size
 
 Tiny code example
 ```cpp
 
-// create allocator to handle 16, 32, 48 and 64 allocations (4 buckets, 16Mb each) 
+// create allocator to handle 16, 32, 48 and 64 allocations (4 buckets, 16Mb each)
 sm_allocator space = _sm_allocator_create(4, (16 * 1024 * 1024));
 
 // allocate 19 bytes with 16 bytes alignment

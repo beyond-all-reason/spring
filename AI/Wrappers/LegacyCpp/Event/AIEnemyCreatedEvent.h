@@ -5,17 +5,18 @@
 
 #include "AIEvent.h"
 
-
 namespace springLegacyAI {
 
 class CAIEnemyCreatedEvent : public CAIEvent {
 public:
-	CAIEnemyCreatedEvent(const SEnemyCreatedEvent& event) : event(event) {}
+	CAIEnemyCreatedEvent(const SEnemyCreatedEvent& event)
+	    : event(event)
+	{
+	}
+
 	~CAIEnemyCreatedEvent() {}
 
-	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) {
-		ai.EnemyCreated(event.enemy);
-	}
+	void Run(IGlobalAI& ai, IGlobalAICallback* globalAICallback = NULL) { ai.EnemyCreated(event.enemy); }
 
 private:
 	SEnemyCreatedEvent event;

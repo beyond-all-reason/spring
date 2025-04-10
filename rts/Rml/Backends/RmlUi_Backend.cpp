@@ -29,22 +29,24 @@
  *
  */
 
-#include <RmlUi/Core.h>
-#include <RmlUi/Core/Profiling.h>
-#include <RmlUi/Debugger.h>
-#include <SDL.h>
-#include <functional>
-#include <ranges>
-#include <tracy/Tracy.hpp>
+#include "RmlUi_Backend.h"
 
-#include "System/Log/ILog.h"
 #include "Lua/LuaUI.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rml/Components/ElementLuaTexture.h"
 #include "Rml/RmlInputReceiver.h"
-#include "Rml/SolLua/RmlSolLua.h"
-#include "RmlUi_Backend.h"
 #include "Rml/SVG/SVGPlugin.h"
+#include "Rml/SolLua/RmlSolLua.h"
+#include "System/Log/ILog.h"
+
+#include <functional>
+#include <ranges>
+
+#include <RmlUi/Core.h>
+#include <RmlUi/Core/Profiling.h>
+#include <RmlUi/Debugger.h>
+#include <SDL.h>
+#include <tracy/Tracy.hpp>
 
 #ifndef HEADLESS
 #include "RmlUi_Renderer_GL3_Recoil.h"
@@ -52,10 +54,11 @@
 #include "RmlUi_Renderer_Headless.h"
 #endif
 
-#include "RmlUi_SystemInterface.h"
-#include "RmlUi_VFSFileInterface.h"
 #include "System/Input/InputHandler.h"
 #include "System/Log/ILog.h"
+
+#include "RmlUi_SystemInterface.h"
+#include "RmlUi_VFSFileInterface.h"
 
 #define RML_DEBUG_HOST_CONTEXT_NAME "__debug_host_context__"
 
@@ -69,25 +72,15 @@ struct lua_State;
   Listens for Rml Create/Destroy Context events
  */
 class BackendState : public Rml::Plugin {
-
 public:
-	int GetEventClasses() override
-	{
-		return EVT_BASIC;
-	}
+	int GetEventClasses() override { return EVT_BASIC; }
 
-	void OnInitialise() override{};
-	void OnShutdown() override{};
+	void OnInitialise() override {};
+	void OnShutdown() override {};
 
-	void OnContextCreate(Rml::Context* context) override
-	{
-		RmlGui::OnContextCreate(context);
-	};
+	void OnContextCreate(Rml::Context* context) override { RmlGui::OnContextCreate(context); };
 
-	void OnContextDestroy(Rml::Context* context) override
-	{
-		RmlGui::OnContextDestroy(context);
-	}
+	void OnContextDestroy(Rml::Context* context) override { RmlGui::OnContextDestroy(context); }
 
 	RmlSystemInterface system_interface;
 #ifndef HEADLESS
@@ -119,17 +112,14 @@ public:
 
 static Rml::UniquePtr<BackendState> state;
 
-bool RmlInitialized()
-{
-	return state && state->initialized;
-}
+bool RmlInitialized() { return state && state->initialized; }
 
 bool RmlGui::Initialize()
 {
 	LOG_L(L_INFO, "[RmlUi::%s] Beginning RmlUi Initialization", __func__);
 	state = Rml::MakeUnique<BackendState>();
 
-	if (!((bool) state->render_interface)) {
+	if (!((bool)state->render_interface)) {
 		state.reset();
 		LOG_L(L_ERROR, "[RmlGui::%s] Could not initialize render interface.", __func__);
 		return false;
@@ -166,7 +156,8 @@ bool RmlGui::InitializeLua(lua_State* lua_state)
 {
 	if (!RmlInitialized()) {
 		RmlGui::Initialize();
-	} else if (state->ls != nullptr) {
+	}
+	else if (state->ls != nullptr) {
 		return false;
 	}
 
@@ -256,15 +247,9 @@ void RmlGui::SetDebugContext(Rml::Context* context)
 	Rml::Debugger::SetVisible(context != nullptr);
 }
 
-Rml::SystemInterface* RmlGui::GetSystemInterface()
-{
-	return &state->system_interface;
-}
+Rml::SystemInterface* RmlGui::GetSystemInterface() { return &state->system_interface; }
 
-Rml::RenderInterface* RmlGui::GetRenderInterface()
-{
-	return &state->render_interface;
-}
+Rml::RenderInterface* RmlGui::GetRenderInterface() { return &state->render_interface; }
 
 bool RmlGui::IsMouseInteractingWith()
 {
@@ -283,7 +268,8 @@ const std::string& RmlGui::GetMouseCursor()
 	return state->system_interface.GetMouseCursor();
 }
 
-void RmlGui::SetMouseCursorAlias(std::string from, std::string to) {
+void RmlGui::SetMouseCursorAlias(std::string from, std::string to)
+{
 	if (!RmlInitialized()) {
 		return;
 	}
@@ -301,9 +287,10 @@ CInputReceiver* RmlGui::GetInputReceiver()
 void RmlGui::OnContextCreate(Rml::Context* context)
 {
 	context->SetDimensions({state->winX, state->winY});
-	if likely(state->debug_host_context || context->GetName() != RML_DEBUG_HOST_CONTEXT_NAME) {
+	if likely (state->debug_host_context || context->GetName() != RML_DEBUG_HOST_CONTEXT_NAME) {
 		state->contexts.push_back(context);
-	} else {
+	}
+	else {
 		state->contexts.insert(state->contexts.begin(), context);
 	}
 }
@@ -322,7 +309,8 @@ Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
 	Rml::Context* context = Rml::GetContext(name);
 	if (context == nullptr) {
 		context = Rml::CreateContext(name, {0, 0});
-	} else {
+	}
+	else {
 		// can happen if name reused on the same frame
 		state->contexts_to_remove.erase(context);
 	}
@@ -330,7 +318,8 @@ Rml::Context* RmlGui::GetOrCreateContext(const std::string& name)
 	return context;
 }
 
-Rml::Context* RmlGui::GetContext(const std::string& name) {
+Rml::Context* RmlGui::GetContext(const std::string& name)
+{
 	if (!RmlInitialized()) {
 		return nullptr;
 	}
@@ -342,7 +331,8 @@ Rml::Context* RmlGui::GetContext(const std::string& name) {
 	return nullptr;
 }
 
-void RmlGui::MarkContextForRemoval(Rml::Context *context) {
+void RmlGui::MarkContextForRemoval(Rml::Context* context)
+{
 	if (!RmlInitialized() || context == nullptr) {
 		return;
 	}
@@ -357,7 +347,7 @@ void RmlGui::Update()
 		return;
 	}
 #ifndef HEADLESS
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		context->Update();
 	}
 
@@ -372,8 +362,8 @@ void RmlGui::Update()
 		state->clicked_context = nullptr;
 	}
 
-	if unlikely(!state->contexts_to_remove.empty()) {
-		for (const auto& context : state->contexts_to_remove) {
+	if unlikely (!state->contexts_to_remove.empty()) {
+		for (const auto& context: state->contexts_to_remove) {
 			Rml::RemoveContext(context->GetName());
 		}
 		state->contexts_to_remove.clear();
@@ -401,10 +391,7 @@ void RmlGui::RenderFrame()
 #endif
 }
 
-void RmlGui::BeginFrame()
-{
-	state->render_interface.BeginFrame();
-}
+void RmlGui::BeginFrame() { state->render_interface.BeginFrame(); }
 
 void RmlGui::PresentFrame()
 {
@@ -421,9 +408,10 @@ bool RmlGui::ProcessMouseMove(int x, int y, int dx, int dy, int button)
 		return false;
 	}
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		result |= !RmlSDLRecoil::EventMouseMove(context, x, y);
-		if (result) break;
+		if (result)
+			break;
 	}
 	state->inputReceiver.setActive(result);
 	return result;
@@ -439,7 +427,7 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 	}
 
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		bool handled = false;
 
 		if (!result) {
@@ -452,7 +440,8 @@ bool RmlGui::ProcessMousePress(int x, int y, int button)
 			if (el) {
 				el->Blur();
 			}
-		} else if (state->debug_host_context && state->debug_host_context != context) {
+		}
+		else if (state->debug_host_context && state->debug_host_context != context) {
 			state->clicked_context = context;
 		}
 	}
@@ -470,9 +459,10 @@ bool RmlGui::ProcessMouseRelease(int x, int y, int button)
 		return false;
 	}
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		result |= !RmlSDLRecoil::EventMouseRelease(context, x, y, button);
-		if (result) break;
+		if (result)
+			break;
 	}
 	state->inputReceiver.setActive(result);
 	return result;
@@ -487,9 +477,10 @@ bool RmlGui::ProcessMouseWheel(float delta)
 		return false;
 	}
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		result |= !RmlSDLRecoil::EventMouseWheel(context, delta);
-		if (result) break;
+		if (result)
+			break;
 	}
 	state->inputReceiver.setActive(result);
 	return result;
@@ -504,10 +495,11 @@ bool RmlGui::ProcessKeyPressed(int keyCode, int scanCode, bool isRepeat)
 		return false;
 	}
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		auto kc = RmlSDLRecoil::ConvertKey(keyCode);
 		result |= !RmlSDLRecoil::EventKeyDown(context, kc);
-		if (result) break;
+		if (result)
+			break;
 	}
 	return result;
 }
@@ -518,9 +510,10 @@ bool RmlGui::ProcessKeyReleased(int keyCode, int scanCode)
 		return false;
 	}
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		result |= !RmlSDLRecoil::EventKeyUp(context, RmlSDLRecoil::ConvertKey(keyCode));
-		if (result) break;
+		if (result)
+			break;
 	}
 	return result;
 }
@@ -531,9 +524,10 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 		return false;
 	}
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		result |= !RmlSDLRecoil::EventTextInput(context, text);
-		if (result) break;
+		if (result)
+			break;
 	}
 	return result;
 }
@@ -541,28 +535,26 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 {
 	switch (event.type) {
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEWHEEL:
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-		case SDL_TEXTINPUT:
-			return true;  // handled elsewhere
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEWHEEL:
+	case SDL_KEYDOWN:
+	case SDL_KEYUP:
+	case SDL_TEXTINPUT: return true; // handled elsewhere
 
-		case SDL_WINDOWEVENT: {
-			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-				auto x = event.window.data1;
-				auto y = event.window.data2;
+	case SDL_WINDOWEVENT: {
+		if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+			auto x = event.window.data1;
+			auto y = event.window.data2;
 
-				state->render_interface.SetViewport(x, y);
-				state->winX = x;
-				state->winY = y;
-			}
-		} break;
+			state->render_interface.SetViewport(x, y);
+			state->winX = x;
+			state->winY = y;
+		}
+	} break;
 
-		default:
-			break;
+	default: break;
 	}
 
 	return RmlSDLRecoil::InputEventHandler(context, event);
@@ -575,9 +567,10 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 	}
 
 	bool result = false;
-	for (const auto& context : state->contexts) {
+	for (const auto& context: state->contexts) {
 		result |= !processContextEvent(context, event);
-		if (result) break;
+		if (result)
+			break;
 	}
 
 	return result;
@@ -585,10 +578,9 @@ bool RmlGui::ProcessEvent(const SDL_Event& event)
 
 lua_State* RmlGui::GetLuaState()
 {
-    if (!RmlInitialized())
-    {
-        return nullptr;
-    }
+	if (!RmlInitialized()) {
+		return nullptr;
+	}
 
-    return state->ls;
+	return state->ls;
 }

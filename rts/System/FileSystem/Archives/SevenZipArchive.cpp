@@ -2,6 +2,13 @@
 
 #include "SevenZipArchive.h"
 
+#include "System/CRC.h"
+#include "System/Log/ILog.h"
+#include "System/Platform/Misc.h"
+#include "System/StringUtil.h"
+#include "System/Threading/ThreadPool.h"
+#include "System/TimeUtil.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -9,13 +16,6 @@
 
 #include <7zAlloc.h>
 #include <7zCrc.h>
-
-#include "System/CRC.h"
-#include "System/StringUtil.h"
-#include "System/Platform/Misc.h"
-#include "System/Threading/ThreadPool.h"
-#include "System/Log/ILog.h"
-#include "System/TimeUtil.h"
 
 static Byte kUtf8Limits[5] = {0xC0, 0xE0, 0xF0, 0xF8, 0xFC};
 
@@ -94,38 +94,30 @@ IArchive* CSevenZipArchiveFactory::DoCreateArchive(const std::string& filePath) 
 	return new CSevenZipArchive(filePath);
 }
 
-
 static inline const char* GetErrorStr(int err)
 {
 	switch (err) {
-		case SZ_OK:
-			return "OK";
-		case SZ_ERROR_FAIL:
-			return "Extracting failed";
-		case SZ_ERROR_CRC:
-			return "CRC error (archive corrupted?)";
-		case SZ_ERROR_INPUT_EOF:
-			return "Unexpected end of file (truncated?)";
-		case SZ_ERROR_MEM:
-			return "Out of memory";
-		case SZ_ERROR_UNSUPPORTED:
-			return "Unsupported archive";
-		case SZ_ERROR_NO_ARCHIVE:
-			return "Archive not found";
+	case SZ_OK: return "OK";
+	case SZ_ERROR_FAIL: return "Extracting failed";
+	case SZ_ERROR_CRC: return "CRC error (archive corrupted?)";
+	case SZ_ERROR_INPUT_EOF: return "Unexpected end of file (truncated?)";
+	case SZ_ERROR_MEM: return "Out of memory";
+	case SZ_ERROR_UNSUPPORTED: return "Unsupported archive";
+	case SZ_ERROR_NO_ARCHIVE: return "Archive not found";
 	}
 
 	return "Unknown error";
 }
 
 CSevenZipArchive::CSevenZipArchive(const std::string& name)
-	: CBufferedArchive(name)
-	, allocImp({SzAlloc, SzFree})
-	, allocTempImp({SzAllocTemp, SzFreeTemp})
+    : CBufferedArchive(name)
+    , allocImp({SzAlloc, SzFree})
+    , allocTempImp({SzAllocTemp, SzFreeTemp})
 {
 	static_assert(ThreadPool::MAX_THREADS <= CSevenZipArchive::MAX_THREADS, "MAX_THREADS mismatch");
 	static_assert(sizeof(decltype(afi)::ValueType) * 8 >= ThreadPool::MAX_THREADS);
 
-	std::scoped_lock lck(archiveLock); //not needed?
+	std::scoped_lock lck(archiveLock); // not needed?
 
 	CRC::InitTable();
 
@@ -147,11 +139,10 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 			continue;
 		}
 
-		const auto& fd = fileEntries.emplace_back(
-			i, //fp
-			SzArEx_GetFileSize(&db, i), // size
-			static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(db.MTime.Vals[i].Low, db.MTime.Vals[i].High)), // modtime
-			std::move(fileName.value()) // origName
+		const auto& fd = fileEntries.emplace_back(i,                                                         // fp
+		    SzArEx_GetFileSize(&db, i),                                                                      // size
+		    static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(db.MTime.Vals[i].Low, db.MTime.Vals[i].High)), // modtime
+		    std::move(fileName.value())                                                                      // origName
 		);
 
 		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size() - 1);
@@ -162,19 +153,21 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 	// for truly non-solid archive each call to SzArEx_Extract() extracts one file,
 	// can MT as calls to SzArEx_Extract() are relatively inexpensive
 	// Now there is a grey area 7z approach with blocks of certain fixed size.
-	// It's not clear how to get the block size information, so we will use another heuristic to consider the archive solid
-	considerSolid = (db.db.NumFolders == 1) || (fileEntries.size() > db.db.NumFolders && db.db.NumFolders < ThreadPool::GetNumThreads());
+	// It's not clear how to get the block size information, so we will use another heuristic to consider the archive
+	// solid
+	considerSolid = (db.db.NumFolders == 1) ||
+	                (fileEntries.size() > db.db.NumFolders && db.db.NumFolders < ThreadPool::GetNumThreads());
 
-	parallelAccessNum = !CheckForSolid() ? ThreadPool::GetNumThreads() : 1; // allow parallel access, but only for non-solid archives
+	parallelAccessNum =
+	    !CheckForSolid() ? ThreadPool::GetNumThreads() : 1; // allow parallel access, but only for non-solid archives
 	sem = std::make_unique<decltype(sem)::element_type>(parallelAccessNum);
 	const auto maxBitMask = (1u << parallelAccessNum) - 1;
 	afi.SetMaxBitsMask(maxBitMask);
 }
 
-
 CSevenZipArchive::~CSevenZipArchive()
 {
-	std::scoped_lock lck(archiveLock); //not needed?
+	std::scoped_lock lck(archiveLock); // not needed?
 
 	for (size_t i = 0; i < ThreadPool::GetNumThreads(); ++i) {
 		if (!perThreadData[i])
@@ -186,7 +179,7 @@ CSevenZipArchive::~CSevenZipArchive()
 		File_Close(&perThreadData[i]->archiveStream.file);
 	}
 
-	for (auto& data : perThreadData) {
+	for (auto& data: perThreadData) {
 		if (!data)
 			continue;
 
@@ -210,16 +203,18 @@ int CSevenZipArchive::GetFileImpl(uint32_t fid, std::vector<std::uint8_t>& buffe
 	if (!perThreadData[tnum])
 		OpenArchive(tnum);
 
-	auto& db            = perThreadData[tnum]->db;
-	auto& lookStream    = perThreadData[tnum]->lookStream;
-	auto& outBuffer     = perThreadData[tnum]->outBuffer;
-	auto& blockIndex    = perThreadData[tnum]->blockIndex;
+	auto& db = perThreadData[tnum]->db;
+	auto& lookStream = perThreadData[tnum]->lookStream;
+	auto& outBuffer = perThreadData[tnum]->outBuffer;
+	auto& blockIndex = perThreadData[tnum]->blockIndex;
 	auto& outBufferSize = perThreadData[tnum]->outBufferSize;
 
 	size_t offset = 0;
 	size_t outSizeProcessed = 0;
 
-	if (auto res = SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer, &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp); res != SZ_OK) {
+	if (auto res = SzArEx_Extract(&db, &lookStream.vt, fileEntries[fid].fp, &blockIndex, &outBuffer, &outBufferSize,
+	        &offset, &outSizeProcessed, &allocImp, &allocTempImp);
+	    res != SZ_OK) {
 		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s", __func__, archiveFile.c_str(), GetErrorStr(res));
 		return 0;
 	}
@@ -248,12 +243,7 @@ IArchive::SFileInfo CSevenZipArchive::FileInfo(uint32_t fid) const
 {
 	assert(IsFileId(fid));
 	const auto& fe = fileEntries[fid];
-	return IArchive::SFileInfo{
-		.fileName = fe.origName,
-		.specialFileName = "",
-		.size = fe.size,
-		.modTime = fe.modTime
-	};
+	return IArchive::SFileInfo{.fileName = fe.origName, .specialFileName = "", .size = fe.size, .modTime = fe.modTime};
 }
 
 void CSevenZipArchive::OpenArchive(int tnum)
@@ -263,7 +253,8 @@ void CSevenZipArchive::OpenArchive(int tnum)
 
 	const WRes wres = InFile_Open(&archiveStream.file, archiveFile.c_str());
 	if (wres) {
-		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s (%i)", __func__, archiveFile.c_str(), Platform::GetLastErrorAsString(wres).c_str(), (int)wres);
+		LOG_L(L_ERROR, "[%s] error opening \"%s\": %s (%i)", __func__, archiveFile.c_str(),
+		    Platform::GetLastErrorAsString(wres).c_str(), (int)wres);
 		return;
 	}
 

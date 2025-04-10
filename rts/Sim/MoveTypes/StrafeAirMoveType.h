@@ -10,21 +10,20 @@ struct float4;
 /**
  * Air movement type definition
  */
-class CStrafeAirMoveType: public AAirMoveType
-{
+class CStrafeAirMoveType : public AAirMoveType {
 	CR_DECLARE_DERIVED(CStrafeAirMoveType)
 	CR_DECLARE_SUB(DrawLine)
 
 public:
 	enum {
 		MANEUVER_FLY_STRAIGHT = 0,
-		MANEUVER_IMMELMAN     = 1,
+		MANEUVER_IMMELMAN = 1,
 		MANEUVER_IMMELMAN_INV = 2,
 	};
 
 	CStrafeAirMoveType(CUnit* owner);
 
-	void* GetPreallocContainer() { return owner; }  // creg
+	void* GetPreallocContainer() { return owner; } // creg
 
 	bool Update() override;
 	void SlowUpdate() override;
@@ -45,6 +44,7 @@ public:
 	float BrakingDistance(float speed, float rate) const override;
 
 	void KeepPointingTo(float3 pos, float distance, bool aggressive) override {}
+
 	void StartMoving(float3 pos, float goalRadius) override;
 	void StartMoving(float3 pos, float goalRadius, float speed) override;
 	void StopMoving(bool callScript = false, bool hardStop = false, bool cancelRaw = false) override;

@@ -41,11 +41,11 @@ IF    (MINGW)
 				OUTPUT
 					"${fileOut}"
 				DEPENDS
-					"${fileIn}" 
+					"${fileIn}"
 				COMMAND
 					"${WINDRES_BIN}"
 						"-I${dirIn}"
-						"-i${fileIn}" 
+						"-i${fileIn}"
 						"-o" "${fileOut}"
 						"-v"
 				)

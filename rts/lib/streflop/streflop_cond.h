@@ -15,110 +15,108 @@
 
 // these need to be known in FastMath.h and SpringMath.h which both include us
 #ifdef __GNUC__
-	#define _const __attribute__((const))
-	#define _pure __attribute__((pure))
-	#define _warn_unused_result __attribute__((warn_unused_result))
+#define _const __attribute__((const))
+#define _pure __attribute__((pure))
+#define _warn_unused_result __attribute__((warn_unused_result))
 #else
-	#define _const
-	#define _pure
-	#define _warn_unused_result
+#define _const
+#define _pure
+#define _warn_unused_result
 #endif
-
 
 
 #if STREFLOP_ENABLED
 #include "streflop.h"
 
 namespace math {
-	using namespace streflop;
+using namespace streflop;
 }
 
 #else
 #include <cmath>
 
 namespace streflop {
-	typedef float Simple;
-	typedef double Double;
-	template<typename T> void streflop_init() {}
-};
+typedef float Simple;
+typedef double Double;
 
+template<typename T> void streflop_init() {}
+}; // namespace streflop
 
 
 #ifdef __APPLE__
 // macosx's cmath doesn't include c++11's std::hypot yet (tested 2013)
 namespace std {
-	template<typename T> T hypot(T x, T y);
+template<typename T> T hypot(T x, T y);
 };
 #endif
 
 
-
 namespace math {
-	using std::fabs;
+using std::fabs;
 
-	// see FastMath NOTE below
-	// using std::sqrt;
+// see FastMath NOTE below
+// using std::sqrt;
 
-	using std::sin;
-	using std::cos;
+using std::cos;
+using std::sin;
 
-	using std::sinh;
-	using std::cosh;
-	using std::tan;
-	using std::tanh;
-	using std::asin;
-	using std::acos;
-	using std::atan;
-	using std::atan2;
+using std::acos;
+using std::asin;
+using std::atan;
+using std::atan2;
+using std::cosh;
+using std::sinh;
+using std::tan;
+using std::tanh;
 
-	using std::ceil;
-	using std::floor;
-	using std::fmod;
-	using std::hypot;
-	using std::pow;
-	using std::log;
-	using std::log2;
-	using std::log10;
-	using std::exp;
-	using std::frexp;
-	using std::ldexp;
-	using std::round;
-	using std::erf;
+using std::ceil;
+using std::erf;
+using std::exp;
+using std::floor;
+using std::fmod;
+using std::frexp;
+using std::hypot;
+using std::ldexp;
+using std::log;
+using std::log10;
+using std::log2;
+using std::pow;
+using std::round;
 
-	// these are in streflop:: but not in std::, FastMath adds sqrtf
-	// static inline float sqrtf(float x) { return std::sqrt(x); }
-	static inline float cosf(float x) { return std::cos(x); }
-	static inline float sinf(float x) { return std::sin(x); }
-	static inline float tanf(float x) { return std::tan(x); }
-	static inline float acosf(float x) { return std::acos(x); }
-	static inline float fabsf(float x) { return std::fabs(x); }
+// these are in streflop:: but not in std::, FastMath adds sqrtf
+// static inline float sqrtf(float x) { return std::sqrt(x); }
+static inline float cosf(float x) { return std::cos(x); }
 
+static inline float sinf(float x) { return std::sin(x); }
+
+static inline float tanf(float x) { return std::tan(x); }
+
+static inline float acosf(float x) { return std::acos(x); }
+
+static inline float fabsf(float x) { return std::fabs(x); }
 
 // the following are C99 functions -> not supported by VS C
 #if !defined(_MSC_VER) || _MSC_VER < 1500
-	using std::isnan;
-	using std::isinf;
-	using std::isfinite;
+using std::isfinite;
+using std::isinf;
+using std::isnan;
 #else
 }
 
 #include <limits>
 namespace math {
-	template<typename T> inline bool isnan(T value) {
-		return value != value;
-	}
-	// requires include <limits>
-	template<typename T> inline bool isinf(T value) {
-		return std::numeric_limits<T>::has_infinity && value == std::numeric_limits<T>::infinity();
-	}
-	// requires include <limits>
-	template<typename T> inline bool isfinite(T value) {
-		return !isinf<T>(value);
-	}
-#endif
+template<typename T> inline bool isnan(T value) { return value != value; }
+
+// requires include <limits>
+template<typename T> inline bool isinf(T value)
+{
+	return std::numeric_limits<T>::has_infinity && value == std::numeric_limits<T>::infinity();
 }
 
-
+// requires include <limits>
+template<typename T> inline bool isfinite(T value) { return !isinf<T>(value); }
+#endif
+} // namespace math
 
 // NOTE:
 //   for non-streflop builds we replace std::sqrt by fastmath::sqrt_sse in math::
@@ -127,23 +125,21 @@ namespace math {
 #include "System/FastMath.h"
 
 
-
 #ifdef __APPLE__
 #include <algorithm>
 
 namespace std {
-	template<typename T>
-	T hypot(T x, T y) {
-		x = std::abs(x);
-		y = std::abs(y);
-		auto t = std::min(x, y);
-		     x = std::max(x, y);
-		t = t / x;
-		return x * math::sqrtf(1.0f + t*t);
-	}
+template<typename T> T hypot(T x, T y)
+{
+	x = std::abs(x);
+	y = std::abs(y);
+	auto t = std::min(x, y);
+	x = std::max(x, y);
+	t = t / x;
+	return x * math::sqrtf(1.0f + t * t);
 }
+} // namespace std
 #endif
-
 
 
 #endif // STREFLOP_ENABLED

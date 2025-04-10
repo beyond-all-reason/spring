@@ -4,42 +4,74 @@
 
 #include <cstring> //memset
 
-#ifndef   NO_SOUND
+#ifndef NO_SOUND
 #include "OpenAL/Sound.h"
 #endif // NO_SOUND
-#include "Null/NullSound.h"
-
-#include "SoundLog.h"
-#include "System/Config/ConfigHandler.h"
-
 #include "ISoundChannels.h"
+#include "SoundLog.h"
+
 #include "Null/NullAudioChannel.h"
+#include "Null/NullSound.h"
+#include "System/Config/ConfigHandler.h"
 #ifndef NO_SOUND
 #include "OpenAL/AudioChannel.h"
 #endif
 
-#include "System/TimeProfiler.h"
 #include "System/SafeUtil.h"
+#include "System/TimeProfiler.h"
 
 CONFIG(bool, Sound).defaultValue(true).description("Enables (OpenAL) or disables sound.");
 
-CONFIG(bool, UseEFX     ).defaultValue( true).safemodeValue(false);
-CONFIG(bool, UseSDLAudio).defaultValue( true).safemodeValue(false).headlessValue(0).description("If enabled, OpenAL-soft only renders audio into a SDL buffer and playback is done by the SDL audio layer, i.e. SDL handles the hardware");
+CONFIG(bool, UseEFX).defaultValue(true).safemodeValue(false);
+CONFIG(bool, UseSDLAudio)
+    .defaultValue(true)
+    .safemodeValue(false)
+    .headlessValue(0)
+    .description("If enabled, OpenAL-soft only renders audio into a SDL buffer and playback is done by the SDL audio "
+                 "layer, i.e. SDL handles the hardware");
 
 // defined here so spring-headless contains them, too (default & headless should contain the same set of configtags!)
-CONFIG(int, MaxSounds).defaultValue(128).headlessValue(1).minimumValue(1).description("Maximum sounds played in parallel.");
-CONFIG(int, PitchAdjust).defaultValue(0).description("Adjusts sound pitch proportional to [if set to 1, the square root of] game speed. Set to 2 for linear scaling.");
+CONFIG(int, MaxSounds)
+    .defaultValue(128)
+    .headlessValue(1)
+    .minimumValue(1)
+    .description("Maximum sounds played in parallel.");
+CONFIG(int, PitchAdjust)
+    .defaultValue(0)
+    .description("Adjusts sound pitch proportional to [if set to 1, the square root of] game speed. Set to 2 for "
+                 "linear scaling.");
 
 CONFIG(int, snd_volmaster).defaultValue(60).minimumValue(0).maximumValue(200).description("Master sound volume.");
-CONFIG(int, snd_volgeneral).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"general\" sound channel.");
-CONFIG(int, snd_volunitreply).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"unit reply\" sound channel.");
-CONFIG(int, snd_volbattle).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"battle\" sound channel.");
-CONFIG(int, snd_volui).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"ui\" sound channel.");
-CONFIG(int, snd_volmusic).defaultValue(100).minimumValue(0).maximumValue(200).description("Volume for \"music\" sound channel.");
+CONFIG(int, snd_volgeneral)
+    .defaultValue(100)
+    .minimumValue(0)
+    .maximumValue(200)
+    .description("Volume for \"general\" sound channel.");
+CONFIG(int, snd_volunitreply)
+    .defaultValue(100)
+    .minimumValue(0)
+    .maximumValue(200)
+    .description("Volume for \"unit reply\" sound channel.");
+CONFIG(int, snd_volbattle)
+    .defaultValue(100)
+    .minimumValue(0)
+    .maximumValue(200)
+    .description("Volume for \"battle\" sound channel.");
+CONFIG(int, snd_volui)
+    .defaultValue(100)
+    .minimumValue(0)
+    .maximumValue(200)
+    .description("Volume for \"ui\" sound channel.");
+CONFIG(int, snd_volmusic)
+    .defaultValue(100)
+    .minimumValue(0)
+    .maximumValue(200)
+    .description("Volume for \"music\" sound channel.");
 CONFIG(float, snd_airAbsorption).defaultValue(0.1f);
 
-CONFIG(std::string, snd_device).defaultValue("").description("Sets the used output device. See \"Available Devices\" section in infolog.txt.");
-
+CONFIG(std::string, snd_device)
+    .defaultValue("")
+    .description("Sets the used output device. See \"Available Devices\" section in infolog.txt.");
 
 
 #ifndef NO_SOUND
@@ -56,10 +88,10 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 {
 #ifndef NO_SOUND
 	if (!IsNullAudio() && !forceNullSound) {
-		Channels::BGMusic       = new (audioChannelMem[0]) AudioChannel();
-		Channels::General       = new (audioChannelMem[1]) AudioChannel();
-		Channels::Battle        = new (audioChannelMem[2]) AudioChannel();
-		Channels::UnitReply     = new (audioChannelMem[3]) AudioChannel();
+		Channels::BGMusic = new (audioChannelMem[0]) AudioChannel();
+		Channels::General = new (audioChannelMem[1]) AudioChannel();
+		Channels::Battle = new (audioChannelMem[2]) AudioChannel();
+		Channels::UnitReply = new (audioChannelMem[3]) AudioChannel();
 		Channels::UserInterface = new (audioChannelMem[4]) AudioChannel();
 
 		if (!reload) {
@@ -86,7 +118,8 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 				spring_sleep(spring_msecs(100));
 			}
 		}
-	} else
+	}
+	else
 #endif // NO_SOUND
 	{
 		if (!reload) {
@@ -94,10 +127,10 @@ void ISound::Initialize(bool reload, bool forceNullSound)
 			singleton = new NullSound();
 		}
 
-		Channels::BGMusic       = new (audioChannelMem[0]) NullAudioChannel();
-		Channels::General       = new (audioChannelMem[1]) NullAudioChannel();
-		Channels::Battle        = new (audioChannelMem[2]) NullAudioChannel();
-		Channels::UnitReply     = new (audioChannelMem[3]) NullAudioChannel();
+		Channels::BGMusic = new (audioChannelMem[0]) NullAudioChannel();
+		Channels::General = new (audioChannelMem[1]) NullAudioChannel();
+		Channels::Battle = new (audioChannelMem[2]) NullAudioChannel();
+		Channels::UnitReply = new (audioChannelMem[3]) NullAudioChannel();
 		Channels::UserInterface = new (audioChannelMem[4]) NullAudioChannel();
 	}
 }
@@ -124,12 +157,7 @@ void ISound::Shutdown(bool reload)
 	std::memset(audioChannelMem[4], 0, sizeof(audioChannelMem[4]));
 }
 
-
-bool ISound::IsNullAudio()
-{
-	return !configHandler->GetBool("Sound");
-}
-
+bool ISound::IsNullAudio() { return !configHandler->GetBool("Sound"); }
 
 bool ISound::ChangeOutput(bool forceNullSound)
 {
@@ -146,8 +174,4 @@ bool ISound::ChangeOutput(bool forceNullSound)
 	return (IsNullAudio() || forceNullSound);
 }
 
-bool ISound::LoadSoundDefs(LuaParser* defsParser)
-{
-	return (singleton->LoadSoundDefsImpl(defsParser));
-}
-
+bool ISound::LoadSoundDefs(LuaParser* defsParser) { return (singleton->LoadSoundDefsImpl(defsParser)); }

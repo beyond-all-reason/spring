@@ -2,46 +2,39 @@
 
 #include "SkirmishAILibrary.h"
 
-#include "ExternalAI/SkirmishAIHandler.h"
 #include "ExternalAI/AIInterfaceKey.h"
+#include "ExternalAI/SkirmishAIHandler.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "System/Log/ILog.h"
 
 #include <string>
 
-
-CSkirmishAILibrary::CSkirmishAILibrary(
-	const SSkirmishAILibrary& ai,
-	const SkirmishAIKey& key
-):
-	aiLib(ai),
-	aiKey(key)
+CSkirmishAILibrary::CSkirmishAILibrary(const SSkirmishAILibrary& ai, const SkirmishAIKey& key)
+    : aiLib(ai)
+    , aiKey(key)
 {
 	if (aiLib.handleEvent != nullptr)
 		return;
 
 	const char* fmt = "AI-library %s-%s (using interface %s-%s) has no handleEvent function";
 	const char* ksn = (aiKey.GetShortName()).c_str();
-	const char* kv  = (aiKey.GetVersion()).c_str();
+	const char* kv = (aiKey.GetVersion()).c_str();
 	const char* isn = (aiKey.GetInterface().GetShortName()).c_str();
-	const char* iv  = (aiKey.GetInterface().GetVersion()).c_str();
+	const char* iv = (aiKey.GetInterface().GetVersion()).c_str();
 
 	LOG_L(L_ERROR, fmt, ksn, kv, isn, iv);
 }
 
-
-
-LevelOfSupport CSkirmishAILibrary::GetLevelOfSupportFor(
-	const std::string& engineVersionString,
-	const int engineVersionNumber,
-	const AIInterfaceKey& interfaceKey
-) const {
+LevelOfSupport CSkirmishAILibrary::GetLevelOfSupportFor(const std::string& engineVersionString,
+    const int engineVersionNumber,
+    const AIInterfaceKey& interfaceKey) const
+{
 	if (aiLib.getLevelOfSupportFor != nullptr) {
 		const char* ksn = aiKey.GetShortName().c_str();
-		const char* kv  = aiKey.GetVersion().c_str();
-		const char* ev  = engineVersionString.c_str();
+		const char* kv = aiKey.GetVersion().c_str();
+		const char* ev = engineVersionString.c_str();
 		const char* isn = interfaceKey.GetShortName().c_str();
-		const char* iv  = interfaceKey.GetVersion().c_str();
+		const char* iv = interfaceKey.GetVersion().c_str();
 
 		return aiLib.getLevelOfSupportFor(ksn, kv, ev, engineVersionNumber, isn, iv);
 	}
@@ -102,4 +95,3 @@ int CSkirmishAILibrary::HandleEvent(int skirmishAIId, int topic, const void* dat
 
 	return ret;
 }
-

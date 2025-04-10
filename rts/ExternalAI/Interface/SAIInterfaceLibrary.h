@@ -10,7 +10,7 @@
  */
 #if !defined BUILDING_SKIRMISH_AI
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -20,7 +20,7 @@ extern "C" {
  * This property is set by the engine, not read from any file.
  * example: "/home/john/spring/AI/Interfaces/C/0.1"
  */
-#define AI_INTERFACE_PROPERTY_DATA_DIR               "dataDir"
+#define AI_INTERFACE_PROPERTY_DATA_DIR "dataDir"
 
 /**
  * [string]
@@ -28,50 +28,50 @@ extern "C" {
  * This property is set by the engine, not read from any file.
  * example: "/home/john/spring/AI/Interfaces/C/common"
  */
-#define AI_INTERFACE_PROPERTY_DATA_DIR_COMMON        "dataDirCommon"
+#define AI_INTERFACE_PROPERTY_DATA_DIR_COMMON "dataDirCommon"
 
 /**
  * [string: [a-zA-Z0-9_.]*]
  * example: "C"
  */
-#define AI_INTERFACE_PROPERTY_SHORT_NAME             "shortName"
+#define AI_INTERFACE_PROPERTY_SHORT_NAME "shortName"
 
 /**
  * [string: [a-zA-Z0-9_.]*]
  * example: "0.1"
  */
-#define AI_INTERFACE_PROPERTY_VERSION                "version"
+#define AI_INTERFACE_PROPERTY_VERSION "version"
 
 /**
  * [string]
  * example: "C/C++"
  */
-#define AI_INTERFACE_PROPERTY_NAME                   "name"
+#define AI_INTERFACE_PROPERTY_NAME "name"
 
 /**
  * [string]
  * example: "supports loading native AIs written in C and/or C++"
  */
-#define AI_INTERFACE_PROPERTY_DESCRIPTION            "description"
+#define AI_INTERFACE_PROPERTY_DESCRIPTION "description"
 
 /**
  * [string]
  * example: "https://springrts.com/wiki/AIInterface:C"
  */
-#define AI_INTERFACE_PROPERTY_URL                    "url"
+#define AI_INTERFACE_PROPERTY_URL "url"
 
 /**
  * [string]
  * example: "C, C++"
  */
-#define AI_INTERFACE_PROPERTY_SUPPORTED_LANGUAGES    "supportedLanguages"
+#define AI_INTERFACE_PROPERTY_SUPPORTED_LANGUAGES "supportedLanguages"
 
 /**
  * [int]
  * The engine version number the AI Interface was compiled for,
  * though it may work with newer or older engine versions too.
  */
-#define AI_INTERFACE_PROPERTY_ENGINE_VERSION         "engineVersion"
+#define AI_INTERFACE_PROPERTY_ENGINE_VERSION "engineVersion"
 
 /**
  * [bool]
@@ -80,7 +80,7 @@ extern "C" {
  * through AIInfo.lua files.
  * example: "0", "1", "false", "true"
  */
-#define AI_INTERFACE_PROPERTY_SUPPORTS_LOOKUP    "supportsLookup"
+#define AI_INTERFACE_PROPERTY_SUPPORTS_LOOKUP "supportsLookup"
 
 /*
  * Everything following is (code wise) only interesting for the engine,
@@ -89,9 +89,9 @@ extern "C" {
 #if !defined BUILDING_AI
 
 #include "System/ExportDefines.h"
-//#include "ELevelOfSupport.h"
+// #include "ELevelOfSupport.h"
 
-//enum ELevelOfSupport;
+// enum ELevelOfSupport;
 struct SSkirmishAILibrary;
 struct SStaticGlobalData;
 
@@ -115,7 +115,6 @@ struct SStaticGlobalData;
  * always called through this struct.
  */
 struct SAIInterfaceLibrary {
-
 	// static AI interface library functions
 
 	/**
@@ -133,8 +132,7 @@ struct SAIInterfaceLibrary {
 	 * @return     0: ok
 	 *          != 0: error
 	 */
-	int (CALLING_CONV *initStatic)(int interfaceId,
-			const struct SAIInterfaceCallback* const);
+	int(CALLING_CONV* initStatic)(int interfaceId, const struct SAIInterfaceCallback* const);
 
 	/**
 	 * This function is called right right before the library is unloaded.
@@ -149,16 +147,16 @@ struct SAIInterfaceLibrary {
 	 * @return     0: ok
 	 *          != 0: error
 	 */
-	int (CALLING_CONV *releaseStatic)();
+	int(CALLING_CONV* releaseStatic)();
 
-//	/**
-//	 * Level of Support for a specific engine version.
-//	 *
-//	 * [optional]
-//	 * An AI Interface not exporting this function is still valid.
-//	 */
-//	enum LevelOfSupport (CALLING_CONV *getLevelOfSupportFor)(
-//			const char* engineVersionString, int engineVersionNumber);
+	//	/**
+	//	 * Level of Support for a specific engine version.
+	//	 *
+	//	 * [optional]
+	//	 * An AI Interface not exporting this function is still valid.
+	//	 */
+	//	enum LevelOfSupport (CALLING_CONV *getLevelOfSupportFor)(
+	//			const char* engineVersionString, int engineVersionNumber);
 
 
 	// skirmish AI methods
@@ -169,9 +167,8 @@ struct SAIInterfaceLibrary {
 	 * @return     0: ok
 	 *          != 0: error
 	 */
-	const struct SSkirmishAILibrary* (CALLING_CONV *loadSkirmishAILibrary)(
-			const char* const shortName,
-			const char* const version);
+	const struct SSkirmishAILibrary*(
+	    CALLING_CONV* loadSkirmishAILibrary)(const char* const shortName, const char* const version);
 
 	/**
 	 * Unloads the specified Skirmish AI.
@@ -179,9 +176,7 @@ struct SAIInterfaceLibrary {
 	 * @return     0: ok
 	 *          != 0: error
 	 */
-	int (CALLING_CONV *unloadSkirmishAILibrary)(
-			const char* const shortName,
-			const char* const version);
+	int(CALLING_CONV* unloadSkirmishAILibrary)(const char* const shortName, const char* const version);
 
 	/**
 	 * Unloads all Skirmish AI libraries currently loaded by this interface.
@@ -189,7 +184,7 @@ struct SAIInterfaceLibrary {
 	 * @return     0: ok
 	 *          != 0: error
 	 */
-	int (CALLING_CONV *unloadAllSkirmishAILibraries)();
+	int(CALLING_CONV* unloadAllSkirmishAILibraries)();
 
 	/**
 	 * Dynamic Skirmish AI library lookup system entry method.
@@ -205,7 +200,7 @@ struct SAIInterfaceLibrary {
 	 * @return the number of Skirmish AI libraries available through this
 	 *   interface through the dynamic lookup system
 	 */
-	int (CALLING_CONV *listSkirmishAILibraries)(int interfaceId);
+	int(CALLING_CONV* listSkirmishAILibraries)(int interfaceId);
 
 	/**
 	 * Returns the number of info key-value pairs for a certain Skirmish AI
@@ -220,8 +215,7 @@ struct SAIInterfaceLibrary {
 	 * @return the number of info key-value pairs for a certain Skirmish AI
 	 *   library.
 	 */
-	int (CALLING_CONV *listSkirmishAILibraryInfos)(int interfaceId,
-			int aiIndex);
+	int(CALLING_CONV* listSkirmishAILibraryInfos)(int interfaceId, int aiIndex);
 	/**
 	 * Returns the key of an info item for a certain Skirmish AI library.
 	 *
@@ -232,8 +226,7 @@ struct SAIInterfaceLibrary {
 	 * @see listSkirmishAILibraryInfoValue
 	 * @return the key of an info item for a certain Skirmish AI library.
 	 */
-	const char* (CALLING_CONV *listSkirmishAILibraryInfoKey)(int interfaceId,
-			int aiIndex, int infoIndex);
+	const char*(CALLING_CONV* listSkirmishAILibraryInfoKey)(int interfaceId, int aiIndex, int infoIndex);
 	/**
 	 * Returns the value of an info item for a certain Skirmish AI library.
 	 *
@@ -244,8 +237,7 @@ struct SAIInterfaceLibrary {
 	 * @see listSkirmishAILibraryInfoKey
 	 * @return the value of an info item for a certain Skirmish AI library.
 	 */
-	const char* (CALLING_CONV *listSkirmishAILibraryInfoValue)(int interfaceId,
-			int aiIndex, int infoIndex);
+	const char*(CALLING_CONV* listSkirmishAILibraryInfoValue)(int interfaceId, int aiIndex, int infoIndex);
 
 	/**
 	 * Returns a string consisting of Lua code, that returns an options table.
@@ -257,13 +249,12 @@ struct SAIInterfaceLibrary {
 	 * @return NULL for no options, otherwise
 	 *   a string consisting of Lua code that returns an options table
 	 */
-	const char* (CALLING_CONV *listSkirmishAILibraryOptions)(int interfaceId,
-			int aiIndex);
+	const char*(CALLING_CONV* listSkirmishAILibraryOptions)(int interfaceId, int aiIndex);
 };
 
 #endif // !defined BUILDING_AI
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 } // extern "C"
 #endif
 

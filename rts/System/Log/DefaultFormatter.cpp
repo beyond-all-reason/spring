@@ -7,14 +7,15 @@
  * timestamp.
  */
 
-#include "LogUtil.h"
 #include "Level.h"
+#include "LogUtil.h"
 #include "Section.h"
+
 #include "System/MainDefines.h"
 #include "System/SafeCStrings.h"
 
-#include <cstdio>
 #include <cstdarg>
+#include <cstdio>
 #include <cstring>
 
 
@@ -37,7 +38,7 @@ static inline bool printf_append(log_record_t* log, va_list arguments)
 
 	// printf will move the internal pointer of va_list so we need to make a copy
 	va_list arguments_;
-	va_copy(arguments_, arguments); 
+	va_copy(arguments_, arguments);
 	const int writtenChars = VSNPRINTF(&log->msg[bufferPos], bufferSize - bufferPos, log->fmt, arguments_);
 	va_end(arguments_);
 
@@ -47,10 +48,10 @@ static inline bool printf_append(log_record_t* log, va_list arguments)
 	return (size_t(writtenChars) < (bufferSize - bufferPos));
 }
 
-
 // *******************************************************************************************
 
-static void log_formatter_createPrefix(log_record_t* log) {
+static void log_formatter_createPrefix(log_record_t* log)
+{
 	char* bufEndPtr = &log->msg[0];
 
 	if (!LOG_SECTION_IS_DEFAULT(log->sec)) {
@@ -63,7 +64,6 @@ static void log_formatter_createPrefix(log_record_t* log) {
 		bufEndPtr = STRCAT_T(bufEndPtr, sizeof(log->msg), ": ");
 	}
 }
-
 
 // *******************************************************************************************
 
@@ -89,4 +89,3 @@ void log_formatter_format(log_record_t* log, va_list arguments)
 #ifdef __cplusplus
 } // extern "C"
 #endif
-

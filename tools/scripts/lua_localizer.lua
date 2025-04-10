@@ -81,7 +81,7 @@ for key, subs in pairs(subTable) do
 
   text = string.gsub(text, '(' .. key .. '%.%a[%a%d_]*)(.)', Substitute)
 end
-  
+
 
 -- sort the entries for printing, and find the max string length
 local maxLen = 0

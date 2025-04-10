@@ -2,42 +2,41 @@
 
 #include "SoundItem.h"
 
-#include <algorithm>
-#include <sstream>
-#include <stdexcept>
-#include <cfloat>
-
 #include "SoundBuffer.h"
+
 #include "System/GlobalRNG.h"
 
-namespace
+#include <algorithm>
+#include <cfloat>
+#include <sstream>
+#include <stdexcept>
+
+namespace {
+CGlobalUnsyncedRNG randnum; // no need for strong randomness here, so default seed is ok
+
+template<typename T>
+inline bool MapEntryValExtract(const spring::unordered_map<std::string, std::string>& map, const std::string& key, T& t)
 {
-	CGlobalUnsyncedRNG randnum; // no need for strong randomness here, so default seed is ok
-
-	template <typename T>
-	inline bool MapEntryValExtract(const spring::unordered_map<std::string, std::string>& map, const std::string& key, T& t)
-	{
-		auto it = map.find(key);
-		if (it != map.end()) {
-			std::istringstream stream(it->second);
-			stream >> t;
-			return true;
-		}
-
-		return false;
+	auto it = map.find(key);
+	if (it != map.end()) {
+		std::istringstream stream(it->second);
+		stream >> t;
+		return true;
 	}
 
-	template <typename T>
-	void FitInIntervall(const T& lower, T& val, const T& upper)
-	{
-		val = std::max(std::min(val, upper), lower);
-	}
+	return false;
 }
 
+template<typename T> void FitInIntervall(const T& lower, T& val, const T& upper)
+{
+	val = std::max(std::min(val, upper), lower);
+}
+} // namespace
+
 SoundItem::SoundItem(size_t itemID, size_t bufferID, const spring::unordered_map<std::string, std::string>& items)
-	: soundItemID(itemID)
-	, soundBufferID(bufferID)
-	, maxDist(FLT_MAX)
+    : soundItemID(itemID)
+    , soundBufferID(bufferID)
+    , maxDist(FLT_MAX)
 {
 	if (!MapEntryValExtract(items, "name", name))
 		name = (SoundBuffer::GetById(bufferID)).GetFilename();
@@ -92,4 +91,3 @@ float SoundItem::GetPitch() const
 
 	return pitch * (1.0f + tpitch);
 }
-

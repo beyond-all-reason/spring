@@ -1,17 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "Metal.h"
+
 #include "Map/MetalMap.h"
 #include "Map/ReadMap.h"
-
 #include "System/Misc/TracyDefs.h"
 
-
-
 CMetalTexture::CMetalTexture()
-: CPboInfoTexture("metal")
-, CEventClient("[CMetalTexture]", 271990, false)
-, metalMapChanged(true)
+    : CPboInfoTexture("metal")
+    , CEventClient("[CMetalTexture]", 271990, false)
+    , metalMapChanged(true)
 {
 	eventHandler.AddClient(this);
 	texSize = int2(mapDims.hmapx, mapDims.hmapy);
@@ -28,25 +26,24 @@ CMetalTexture::CMetalTexture()
 
 void CMetalTexture::Update()
 {
-	#include "System/Misc/TracyDefs.h"
+#include "System/Misc/TracyDefs.h"
 	assert(metalMap.GetSizeX() == texSize.x && metalMap.GetSizeZ() == texSize.y);
 
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texSize.x, texSize.y, GL_RED, GL_UNSIGNED_BYTE, metalMap.GetDistributionMap());
+	glTexSubImage2D(
+	    GL_TEXTURE_2D, 0, 0, 0, texSize.x, texSize.y, GL_RED, GL_UNSIGNED_BYTE, metalMap.GetDistributionMap());
 
 	metalMapChanged = false;
 }
 
-
 void CMetalTexture::MetalMapChanged(const int x, const int z)
 {
-	#include "System/Misc/TracyDefs.h"
+#include "System/Misc/TracyDefs.h"
 	metalMapChanged = true;
 }
 
-
 bool CMetalTexture::IsUpdateNeeded()
 {
-	#include "System/Misc/TracyDefs.h"
+#include "System/Misc/TracyDefs.h"
 	return metalMapChanged;
 }

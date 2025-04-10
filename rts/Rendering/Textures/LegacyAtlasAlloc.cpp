@@ -1,32 +1,38 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "LegacyAtlasAlloc.h"
-#include <algorithm>
-#include <vector>
-#include <list>
-#include <set>
-#include <bit>
 
 #include "System/Misc/TracyDefs.h"
+
+#include <algorithm>
+#include <bit>
+#include <list>
+#include <set>
+#include <vector>
 
 inline bool CLegacyAtlasAlloc::CompareTex(const SAtlasEntry* tex1, const SAtlasEntry* tex2)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// sort by large to small
 
-	if (tex1->size.y > tex2->size.y) return true;
-	if (tex2->size.y > tex1->size.y) return false;
+	if (tex1->size.y > tex2->size.y)
+		return true;
+	if (tex2->size.y > tex1->size.y)
+		return false;
 
-	if (tex1->size.x > tex2->size.x) return true;
-	if (tex2->size.x > tex1->size.x) return false;
+	if (tex1->size.x > tex2->size.x)
+		return true;
+	if (tex2->size.x > tex1->size.x)
+		return false;
 
 	// silly but will help stabilizing the placement on reload
-	if (tex1->name > tex2->name) return true;
-	if (tex2->name > tex1->name) return false;
+	if (tex1->name > tex2->name)
+		return true;
+	if (tex2->name > tex1->name)
+		return false;
 
 	return false;
 }
-
 
 bool CLegacyAtlasAlloc::IncreaseSize()
 {
@@ -40,7 +46,8 @@ bool CLegacyAtlasAlloc::IncreaseSize()
 			atlasSize.x *= 2;
 			return true;
 		}
-	} else {
+	}
+	else {
 		if ((atlasSize.x * 2) <= maxsize.x) {
 			atlasSize.x *= 2;
 			return true;
@@ -54,7 +61,6 @@ bool CLegacyAtlasAlloc::IncreaseSize()
 	return false;
 }
 
-
 bool CLegacyAtlasAlloc::Allocate()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -62,11 +68,11 @@ bool CLegacyAtlasAlloc::Allocate()
 	memtextures.reserve(entries.size());
 
 	std::set<std::string> sortedNames;
-	for (auto& entry : entries) {
+	for (auto& entry: entries) {
 		sortedNames.insert(entry.first);
 	}
 
-	for (auto& name : sortedNames) {
+	for (auto& name: sortedNames) {
 		memtextures.push_back(&entries[name]);
 	}
 
@@ -166,8 +172,5 @@ bool CLegacyAtlasAlloc::Allocate()
 int CLegacyAtlasAlloc::GetNumTexLevels() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return std::min(
-		std::bit_width(static_cast<uint32_t>(GetMinDim())),
-		numLevels
-	);
+	return std::min(std::bit_width(static_cast<uint32_t>(GetMinDim())), numLevels);
 }

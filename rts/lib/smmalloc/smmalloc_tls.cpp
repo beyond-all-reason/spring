@@ -22,10 +22,10 @@
 #include "smmalloc.h"
 
 thread_local sm::internal::TlsPoolBucket tlsCacheBuckets[SMM_MAX_BUCKET_COUNT];
+
 // sm::internal::TlsPoolBucket tlsCacheBuckets[SMM_MAX_BUCKET_COUNT];
 
-namespace sm
-{
+namespace sm {
 
 sm::internal::TlsPoolBucket* GetTlsBucket(size_t index) { return &tlsCacheBuckets[index]; }
 

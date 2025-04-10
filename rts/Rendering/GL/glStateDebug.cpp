@@ -4,28 +4,28 @@
 
 #define NO_GL_WRAP
 
-#include <string>
-
 #include "glStateDebug.h"
 
 #include "System/Log/ILog.h"
+#include "System/Misc/TracyDefs.h"
 #include "System/Platform/Threading.h"
 #include "System/UnorderedMap.hpp"
 #include "System/UnorderedSet.hpp"
 
-#include "System/Misc/TracyDefs.h"
+#include <string>
 
 static spring::unordered_map<std::string, std::string> lastSet;
 static spring::unordered_set<std::string> errorsSet;
 
 template<typename T, typename F>
-static void VERIFYGL(F func, GLenum pname, T defaultValue, std::string pstr, std::string area) {
+static void VERIFYGL(F func, GLenum pname, T defaultValue, std::string pstr, std::string area)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (errorsSet.find(area + pstr) == errorsSet.end()) {
 		T _temp;
 		func(pname, &_temp);
 		if (_temp != defaultValue) {
-			LOG_L(L_ERROR, "%s was not set correctly when %s: %f", pstr.c_str(), area.c_str(), (float) _temp);
+			LOG_L(L_ERROR, "%s was not set correctly when %s: %f", pstr.c_str(), area.c_str(), (float)_temp);
 			LOG_L(L_ERROR, "last time set here: %s", lastSet[pstr].c_str());
 			errorsSet.insert(area + pstr);
 		}
@@ -33,13 +33,15 @@ static void VERIFYGL(F func, GLenum pname, T defaultValue, std::string pstr, std
 }
 
 template<typename T, typename F>
-static void VERIFYGL2(F func, GLenum pname, T default0, T default1, std::string pstr, std::string area) {
+static void VERIFYGL2(F func, GLenum pname, T default0, T default1, std::string pstr, std::string area)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (errorsSet.find(area + pstr) == errorsSet.end()) {
 		T _temp[4];
 		func(pname, _temp);
 		if (_temp[0] != default0 || _temp[1] != default1) {
-			LOG_L(L_ERROR, "%s was not set correctly when %s: %f %f", pstr.c_str(), area.c_str(), (float) _temp[0], (float) _temp[1]);
+			LOG_L(L_ERROR, "%s was not set correctly when %s: %f %f", pstr.c_str(), area.c_str(), (float)_temp[0],
+			    (float)_temp[1]);
 			LOG_L(L_ERROR, "last time set here: %s", lastSet[pstr].c_str());
 			errorsSet.insert(area + pstr);
 		}
@@ -47,27 +49,35 @@ static void VERIFYGL2(F func, GLenum pname, T default0, T default1, std::string 
 }
 
 template<typename T, typename F>
-static void VERIFYGL4(F func, GLenum pname, T default0, T default1, T default2, T default3, std::string pstr, std::string area) {
+static void
+VERIFYGL4(F func, GLenum pname, T default0, T default1, T default2, T default3, std::string pstr, std::string area)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (errorsSet.find(area + pstr) == errorsSet.end()) {
 		T _temp[4];
 		func(pname, _temp);
 		if (_temp[0] != default0 || _temp[1] != default1 || _temp[2] != default2 || _temp[3] != default3) {
-			LOG_L(L_ERROR, "%s was not set correctly when %s: %f %f %f %f", pstr.c_str(), area.c_str(), (float) _temp[0], (float) _temp[1], (float) _temp[2], (float) _temp[3]);
+			LOG_L(L_ERROR, "%s was not set correctly when %s: %f %f %f %f", pstr.c_str(), area.c_str(), (float)_temp[0],
+			    (float)_temp[1], (float)_temp[2], (float)_temp[3]);
 			LOG_L(L_ERROR, "last time set here: %s", lastSet[pstr].c_str());
 			errorsSet.insert(area + pstr);
 		}
 	}
 }
-	
-#define VERIFYGLBOOL(pname, defaultValue, area) VERIFYGL(glGetBooleanv, pname, (GLboolean) defaultValue, #pname, area)
-#define VERIFYGLBOOL4(pname, default0, default1, default2, default3, area) VERIFYGL4(glGetBooleanv, pname, (GLboolean) default0, (GLboolean) default1, (GLboolean) default2, (GLboolean) default3, #pname, area)
 
-#define VERIFYGLFLOAT(pname, defaultValue, area) VERIFYGL(glGetFloatv, pname, (GLfloat) defaultValue, #pname, area)
-#define VERIFYGLFLOAT4(pname, default0, default1, default2, default3, area) VERIFYGL4(glGetFloatv, pname, (GLfloat) default0, (GLfloat) default1, (GLfloat) default2, (GLfloat) default3, #pname, area)
+#define VERIFYGLBOOL(pname, defaultValue, area) VERIFYGL(glGetBooleanv, pname, (GLboolean)defaultValue, #pname, area)
+#define VERIFYGLBOOL4(pname, default0, default1, default2, default3, area)                         \
+	VERIFYGL4(glGetBooleanv, pname, (GLboolean)default0, (GLboolean)default1, (GLboolean)default2, \
+	    (GLboolean)default3, #pname, area)
 
-#define VERIFYGLINT(pname, defaultValue, area) VERIFYGL(glGetIntegerv, pname, (GLint) defaultValue, #pname, area)
-#define VERIFYGLINT2(pname, default0, default1, area) VERIFYGL2(glGetIntegerv, pname, (GLint) default0, (GLint) default1, #pname, area)
+#define VERIFYGLFLOAT(pname, defaultValue, area) VERIFYGL(glGetFloatv, pname, (GLfloat)defaultValue, #pname, area)
+#define VERIFYGLFLOAT4(pname, default0, default1, default2, default3, area)                                           \
+	VERIFYGL4(                                                                                                        \
+	    glGetFloatv, pname, (GLfloat)default0, (GLfloat)default1, (GLfloat)default2, (GLfloat)default3, #pname, area)
+
+#define VERIFYGLINT(pname, defaultValue, area) VERIFYGL(glGetIntegerv, pname, (GLint)defaultValue, #pname, area)
+#define VERIFYGLINT2(pname, default0, default1, area)                               \
+	VERIFYGL2(glGetIntegerv, pname, (GLint)default0, (GLint)default1, #pname, area)
 
 void _wrap_glEnable(GLenum pname, std::string pstr, std::string location)
 {
@@ -129,7 +139,7 @@ void _wrap_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, st
 	glColor4f(red, green, blue, alpha);
 }
 
-void _wrap_glColor4fv(const GLfloat *v, std::string location)
+void _wrap_glColor4fv(const GLfloat* v, std::string location)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (Threading::IsMainThread())
@@ -146,7 +156,6 @@ void _wrap_glDepthMask(GLboolean flag, std::string location)
 
 	glDepthMask(flag);
 }
-
 
 void _wrap_glDepthFunc(GLenum func, std::string location)
 {
@@ -166,11 +175,12 @@ void _wrap_glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean
 	glColorMask(red, green, blue, alpha);
 }
 
-void CGLStateChecker::VerifyState(std::string area) {
+void CGLStateChecker::VerifyState(std::string area)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (Threading::IsMainThread()) {
 		std::string _area = area + " " + id;
-		//VERIFYGLBOOL(GL_CULL_FACE, GL_FALSE)
+		// VERIFYGLBOOL(GL_CULL_FACE, GL_FALSE)
 		VERIFYGLBOOL(GL_ALPHA_TEST, GL_FALSE, _area);
 		VERIFYGLBOOL(GL_LIGHTING, GL_FALSE, _area);
 		VERIFYGLBOOL(GL_SCISSOR_TEST, GL_FALSE, _area);
@@ -205,7 +215,8 @@ void CGLStateChecker::VerifyState(std::string area) {
 	}
 }
 
-CGLStateChecker::CGLStateChecker(std::string id) : id(id)
+CGLStateChecker::CGLStateChecker(std::string id)
+    : id(id)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	VerifyState("entering");
@@ -217,4 +228,4 @@ CGLStateChecker::~CGLStateChecker()
 	VerifyState("exiting");
 }
 
-#endif //DEBUG_GLSTATE
+#endif // DEBUG_GLSTATE

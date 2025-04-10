@@ -36,8 +36,6 @@ Version 1.2: corrected switch statements associated with "extraBytesToRead"
 Version 1.3: Updated UTF-8 legality check;
 	updated to use UNI_MAX_LEGAL_UTF32 in UTF-32 conversions
 	Updated UTF-8 legality tests in harness.c
- 
+
 
 Last update: October 19, 2004
-
-

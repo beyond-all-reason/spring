@@ -15,13 +15,11 @@ void CConsoleHistory::Init()
 	ResetPosition();
 }
 
-
 void CConsoleHistory::ResetPosition()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	pos = lines.size();
 }
-
 
 bool CConsoleHistory::AddLine(const std::string& msg)
 {
@@ -30,13 +28,13 @@ bool CConsoleHistory::AddLine(const std::string& msg)
 
 	if ((msg.find_first_of("aAsS") == 0) && (msg[1] == ':')) {
 		message = msg.substr(2);
-	} else {
+	}
+	else {
 		message = msg;
 	}
 
 	return AddLineRaw(message);
 }
-
 
 bool CConsoleHistory::AddLineRaw(const std::string& msg)
 {
@@ -52,7 +50,8 @@ bool CConsoleHistory::AddLineRaw(const std::string& msg)
 	if (lines.size() >= MAX_LINES) {
 		if (pos != 0) {
 			lines.pop_front();
-		} else {
+		}
+		else {
 			lines.pop_front();
 			pos = 0;
 		}
@@ -62,7 +61,6 @@ bool CConsoleHistory::AddLineRaw(const std::string& msg)
 	return true;
 }
 
-
 std::string CConsoleHistory::NextLine(const std::string& current)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -70,9 +68,10 @@ std::string CConsoleHistory::NextLine(const std::string& current)
 	std::string message;
 
 	if ((current.find_first_of("aAsS") == 0) && (current[1] == ':')) {
-		prefix  = current.substr(0, 2);
+		prefix = current.substr(0, 2);
 		message = current.substr(2);
-	} else {
+	}
+	else {
 		message = current;
 	}
 
@@ -85,7 +84,8 @@ std::string CConsoleHistory::NextLine(const std::string& current)
 	if (lines[pos] != message) {
 		if (pos != lines.size() - 1) {
 			AddLineRaw(message);
-		} else {
+		}
+		else {
 			if (AddLineRaw(message)) {
 				pos = lines.size();
 				return prefix;
@@ -98,7 +98,6 @@ std::string CConsoleHistory::NextLine(const std::string& current)
 
 	return prefix + lines[pos];
 }
-
 
 std::string CConsoleHistory::PrevLine(const std::string& current)
 {

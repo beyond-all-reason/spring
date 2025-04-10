@@ -3,17 +3,17 @@
 #ifndef LUA_FBOS_H
 #define LUA_FBOS_H
 
-#include <vector>
-#include <string>
-
 #include "Rendering/GL/myGL.h"
 
-struct lua_State;
+#include <string>
+#include <vector>
 
+struct lua_State;
 
 class LuaFBOs {
 public:
 	LuaFBOs() { fbos.reserve(8); }
+
 	~LuaFBOs();
 
 	void Clear() { fbos.clear(); }
@@ -35,29 +35,28 @@ public:
 
 public:
 	static bool PushEntries(lua_State* L);
+
 public:
-	static void AttachObjectTexTarget(
-		const char* funcName,
-		GLenum fboTarget,
-		GLenum texTarget,
-		GLuint texId,
-		GLenum attachID,
-		GLenum attachLevel
-	);
+	static void AttachObjectTexTarget(const char* funcName,
+	    GLenum fboTarget,
+	    GLenum texTarget,
+	    GLuint texId,
+	    GLenum attachID,
+	    GLenum attachLevel);
+
 private:
 	std::vector<LuaFBO*> fbos;
 
 private: // helpers
 	static bool CreateMetatable(lua_State* L);
-	static bool AttachObject(
-		const char* funcName,
-		lua_State* L, int index,
-		LuaFBO* fbo, GLenum attachID,
-		GLenum attachTarget = 0,
-		GLenum attachLevel  = 0
-	);
-	static bool ApplyAttachment(lua_State* L, int index,
-	                            LuaFBO* fbo, GLenum attachID);
+	static bool AttachObject(const char* funcName,
+	    lua_State* L,
+	    int index,
+	    LuaFBO* fbo,
+	    GLenum attachID,
+	    GLenum attachTarget = 0,
+	    GLenum attachLevel = 0);
+	static bool ApplyAttachment(lua_State* L, int index, LuaFBO* fbo, GLenum attachID);
 	static bool ApplyDrawBuffers(lua_State* L, int index);
 
 private: // metatable methods

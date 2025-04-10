@@ -6,24 +6,22 @@
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 #include "Lua/LuaSyncedRead.h"
 #endif
-#include "System/float3.h"
-#include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/FileSystem.h"
+#include "System/Misc/TracyDefs.h"
+#include "System/StringUtil.h"
+#include "System/float3.h"
 
 #include <cassert>
 #include <cctype>
 
-#include "System/Misc/TracyDefs.h"
-
 static const char* mapInfos[] = {"maphelper/mapinfo.lua", "mapinfo.lua"};
-static const char* vfsModes   = SPRING_VFS_MAP_BASE;
-
+static const char* vfsModes = SPRING_VFS_MAP_BASE;
 
 std::string MapParser::GetMapConfigName(const std::string& mapFileName)
 {
 	const std::string directory = FileSystem::GetDirectory(mapFileName);
-	const std::string filename  = FileSystem::GetBasename(mapFileName);
+	const std::string filename = FileSystem::GetBasename(mapFileName);
 	const std::string extension = FileSystem::GetExtension(mapFileName);
 
 	if (extension == "smf")
@@ -32,9 +30,9 @@ std::string MapParser::GetMapConfigName(const std::string& mapFileName)
 	return mapFileName;
 }
 
-
 // check if map supplies its own info, otherwise rely on basecontent
-MapParser::MapParser(const std::string& mapFileName): parser(mapInfos[CFileHandler::FileExists(mapInfos[1], vfsModes)], vfsModes, vfsModes)
+MapParser::MapParser(const std::string& mapFileName)
+    : parser(mapInfos[CFileHandler::FileExists(mapInfos[1], vfsModes)], vfsModes, vfsModes)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	parser.GetTable("Map");
@@ -58,7 +56,6 @@ MapParser::MapParser(const std::string& mapFileName): parser(mapInfos[CFileHandl
 	errorLog = parser.GetErrorLog();
 }
 
-
 bool MapParser::GetStartPos(int team, float3& pos)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -69,10 +66,10 @@ bool MapParser::GetStartPos(int team, float3& pos)
 		return false;
 	}
 
-	const LuaTable&  rootTable = parser.GetRoot();
-	const LuaTable& teamsTable =  rootTable.SubTable("teams");
-	const LuaTable&  teamTable = teamsTable.SubTable(team);
-	const LuaTable&   posTable =  teamTable.SubTable("startPos");
+	const LuaTable& rootTable = parser.GetRoot();
+	const LuaTable& teamsTable = rootTable.SubTable("teams");
+	const LuaTable& teamTable = teamsTable.SubTable(team);
+	const LuaTable& posTable = teamTable.SubTable("startPos");
 
 	if (!posTable.IsValid()) {
 		errorLog = "[MapParser] start-position for team " + IntToString(team) + " not defined in the map's config";
@@ -83,4 +80,3 @@ bool MapParser::GetStartPos(int team, float3& pos)
 	pos.z = posTable.GetFloat("z", pos.z);
 	return true;
 }
-
