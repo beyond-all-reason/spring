@@ -1051,6 +1051,53 @@ int CGameHelper::GetYardMapIndex(int buildFacing, const int2& yardPos, const int
 	return yardX + yardXR * yardZ;
 }
 
+bool CGameHelper::YardmapsOverlap(const BuildInfo& bi1, const BuildInfo& bi2)
+{
+	if (!bi1.def || !bi2.def)
+		return false;
+
+	if (bi1.def->yardmap.empty() || bi2.def->yardmap.empty())
+		return false;
+
+	int x1_bi1 = (bi1.pos.x - (bi1.GetXSize() * SQUARE_SIZE / 2)) / SQUARE_SIZE;
+	int z1_bi1 = (bi1.pos.z - (bi1.GetZSize() * SQUARE_SIZE / 2)) / SQUARE_SIZE;
+	int x2_bi1 = x1_bi1 + bi1.GetXSize();
+	int z2_bi1 = z1_bi1 + bi1.GetZSize();
+
+	int x1_bi2 = (bi2.pos.x - (bi2.GetXSize() * SQUARE_SIZE / 2)) / SQUARE_SIZE;
+	int z1_bi2 = (bi2.pos.z - (bi2.GetZSize() * SQUARE_SIZE / 2)) / SQUARE_SIZE;
+	int x2_bi2 = x1_bi2 + bi2.GetXSize();
+	int z2_bi2 = z1_bi2 + bi2.GetZSize();
+
+	int overlap_x1 = std::max(x1_bi1, x1_bi2);
+	int overlap_z1 = std::max(z1_bi1, z1_bi2);
+	int overlap_x2 = std::min(x2_bi1, x2_bi2);
+	int overlap_z2 = std::min(z2_bi1, z2_bi2);
+
+	// not overlaping bounding-rects
+	if (overlap_x1 >= overlap_x2 || overlap_z1 >= overlap_z2)
+		return false;
+
+	const int2 xrange_bi1(x1_bi1, x2_bi1);
+	const int2 zrange_bi1(z1_bi1, z2_bi1);
+	const int2 xrange_bi2(x1_bi2, x2_bi2);
+	const int2 zrange_bi2(z1_bi2, z2_bi2);
+
+	// Check each square for overlapping
+	for (int z = overlap_z1; z < overlap_z2; ++z) {
+		for (int x = overlap_x1; x < overlap_x2; ++x) {
+			int idx1 = GetYardMapIndex(bi1.buildFacing, int2(x, z), xrange_bi1, zrange_bi1);
+			int idx2 = GetYardMapIndex(bi2.buildFacing, int2(x, z), xrange_bi2, zrange_bi2);
+
+			if (idx1 < 0 || idx1 >= bi1.def->yardmap.size() || idx2 < 0 || idx2 >= bi2.def->yardmap.size())
+				continue;
+
+			if (bi1.def->yardmap[idx1] != YardmapStates::YARDMAP_OPEN && bi2.def->yardmap[idx2] != YardmapStates::YARDMAP_OPEN)
+				return true;
+		}
+	}
+	return false;
+}
 
 struct SearchOffset {
 	int dx, dy;
@@ -1360,8 +1407,8 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 				if (sqrPos.IsInBounds())
 					sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, gu->myAllyTeam, synced);
 
+				// test if build-position overlaps a queued build command
 				if (sqrStatus != BUILDSQUARE_BLOCKED) {
-					// test if build-position overlaps a queued command
 					for (const Command& c: *commands) {
 						const BuildInfo bc(c);
 
@@ -1371,9 +1418,29 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 						const int cmdDistX = std::max(bc.pos.x - sqrPos.x - SQUARE_SIZE, sqrPos.x - bc.pos.x) * 2;
 						const int cmdDistZ = std::max(bc.pos.z - sqrPos.z - SQUARE_SIZE, sqrPos.z - bc.pos.z) * 2;
 
+						// bounding-rects overflap
 						if (cmdDistX < cmdSizeX && cmdDistZ < cmdSizeZ) {
-							sqrStatus = BUILDSQUARE_BLOCKED;
-							break;
+							const UnitDef* queuedDef = bc.def;
+
+							if (queuedDef == nullptr || queuedDef->yardmap.empty())
+								continue;
+
+							const int queuedX1 = int(bc.pos.x / SQUARE_SIZE) - (bc.GetXSize() >> 1);
+							const int queuedZ1 = int(bc.pos.z / SQUARE_SIZE) - (bc.GetZSize() >> 1);
+							const int queuedX2 = queuedX1 + bc.GetXSize();
+							const int queuedZ2 = queuedZ1 + bc.GetZSize();
+
+							// rotated yardmap index
+							const int2 yardPos(x, z);
+							const int2 xrange(queuedX1, queuedX2);
+							const int2 zrange(queuedZ1, queuedZ2);
+							const int ymIdx = CGameHelper::GetYardMapIndex(bc.buildFacing, yardPos, xrange, zrange);
+
+							// Check if the yardmap cell is blocked
+							if (ymIdx >= 0 && ymIdx < queuedDef->yardmap.size() && queuedDef->yardmap[ymIdx] != YardmapStates::YARDMAP_OPEN) {
+								sqrStatus = BUILDSQUARE_BLOCKED;
+								break;
+							}
 						}
 					}
 				}
