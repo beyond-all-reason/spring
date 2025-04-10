@@ -371,7 +371,7 @@ void CMouseHandler::MousePress(int x, int y, int button)
 				if (activeReceiver == nullptr)
 					activeReceiver = recv;
 
-				break;
+				return;
 			}
 		}
 
