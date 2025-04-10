@@ -219,6 +219,7 @@ CR_REG_METADATA(CGame, (
 	CR_IGNORED(curScanCodeChain),
 	CR_IGNORED(worldDrawer),
 	CR_IGNORED(saveFileHandler),
+	CR_IGNORED(gameInputReceiver),
 
 	// Post Load
 	CR_POSTLOAD(PostLoad)
@@ -1189,6 +1190,11 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 	}
 
 	return 0;
+}
+
+CInputReceiver* CGame::GetInputReceiver()
+{
+	return &gameInputReceiver;
 }
 
 bool CGame::MousePress(int x, int y, int button)
