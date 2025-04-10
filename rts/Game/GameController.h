@@ -8,6 +8,8 @@
 #include "ConsoleHistory.h"
 #include "GameControllerTextInput.h"
 
+class CInputReceiver;
+
 class CGameController
 {
 public:
@@ -23,6 +25,7 @@ public:
 	virtual void ResizeEvent() {}
 	virtual bool MousePress(int x, int y, int button) { return 0; }
 	virtual bool MouseRelease(int x, int y, int button) { return 0; }
+	virtual CInputReceiver* GetInputReceiver() { return nullptr; }
 };
 
 extern CGameController* activeController;
