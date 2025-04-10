@@ -3595,6 +3595,7 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 /***
  *
  * @function Spring.GetMouseButtonState
+ * @param button integer
  * @return boolean pressed
  */
 int LuaUnsyncedRead::GetMouseButtonState(lua_State* L)
