@@ -195,8 +195,11 @@ void CProjectileDrawer::Init() {
 		ParseAtlasTextures(false, mapResGroundFXTexturesTable, blockedTexNames, groundFXAtlas);
 	}
 
-	if (!textureAtlas->Finalize())
+	if (!textureAtlas->Finalize()) {
+#ifndef HEADLESS
 		LOG_L(L_ERROR, "Could not finalize projectile-texture atlas. Use fewer/smaller textures.");
+#endif
+	}
 
 
 	flaretex        = &textureAtlas->GetTexture("flare");
