@@ -700,7 +700,7 @@ bool CMiniMap::MousePress(int x, int y, int button)
 		}
 	}
 	else if (inMap) {
-		if ((fullProxy && (button == SDL_BUTTON_MIDDLE) && !mouse->locked) || (!fullProxy && (button == SDL_BUTTON_RIGHT))) {
+		if ((fullProxy && (button == SDL_BUTTON_MIDDLE)) || (!fullProxy && (button == SDL_BUTTON_RIGHT))) {
 			MoveView(x, y);
 
 			if (maximized) {
