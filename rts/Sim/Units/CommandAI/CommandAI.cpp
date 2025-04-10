@@ -1230,10 +1230,13 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 	int lastIndex = queue.size() - 1;
 
 	if (c.GetOpts() & ALT_KEY) {
-		if (c.GetNumParams() >= 1)
-			firstIndex = std::max<int>(c.GetParam(0)-1, firstIndex);
+		if (c.GetNumParams() >= 1) {
+			firstIndex = std::max<int>(c.GetParam(0) - 1, 0);
+		}
 		if (c.GetNumParams() >= 2)
-			lastIndex = std::min<int>(c.GetParam(1)-1, lastIndex);
+			lastIndex = std::clamp<int>(c.GetParam(1) - 1, 0, queue.size() - 1);
+		if (lastIndex < firstIndex || firstIndex >= queue.size())
+			return std::nullopt;
 	} else if (c.GetNumParams() >= 1) {
 		const auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
 		if (!firstTagIndex)
@@ -1247,10 +1250,10 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 		}
 
 		firstIndex = *firstTagIndex;
-	}
 
-	if (lastIndex < firstIndex)
-		std::swap(lastIndex, firstIndex);
+		if (lastIndex < firstIndex)
+			std::swap(lastIndex, firstIndex);
+	}
 
 	return std::make_pair(firstIndex, lastIndex);
 }
