@@ -164,175 +164,103 @@ void CModInfo::Init(const std::string& modFileName)
 
 	const LuaTable& root = parser.GetRoot();
 
-	{
-		// system
-		const LuaTable& system = root.SubTable("system");
+	auto Get = [&root] (auto &var, const std::optional <std::string> & flatName, const std::optional <std::string> & legacyName) {
+		assert(legacyName || flatName);
+		if (legacyName)
+			var = root.Get(*legacyName, var);
+		if (flatName)
+			var = root.Get(  *flatName, var);
+	};
 
-		pathFinderSystem = system.GetInt("pathFinderSystem", pathFinderSystem);
-		pfRawDistMult = system.GetFloat("pathFinderRawDistMult", pfRawDistMult);
-		pfUpdateRateScale = system.GetFloat("pathFinderUpdateRateScale", pfUpdateRateScale);
-		pfRepathDelayInFrames = system.GetInt("pfRepathDelayInFrames", pfRepathDelayInFrames);
-		pfRepathMaxRateInFrames = system.GetInt("pfRepathMaxRateInFrames", pfRepathMaxRateInFrames);
-		pfRawMoveSpeedThreshold = system.GetFloat("pfRawMoveSpeedThreshold", pfRawMoveSpeedThreshold);
-		qtMaxNodesSearched = system.GetInt("qtMaxNodesSearched", qtMaxNodesSearched);
-		qtRefreshPathMinDist = system.GetFloat("qtRefreshPathMinDist", qtRefreshPathMinDist);
-		qtMaxNodesSearchedRelativeToMapOpenNodes = system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes);
-		qtLowerQualityPaths = system.GetBool("qtLowerQualityPaths", qtLowerQualityPaths);
+	// Some values have a unit conversion going on.
+	int LuaAllocLimitMB = SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u; // NB the limit doesnt apply to parsing modrules itself
+	float constructionDecayTimeSeconds = float(constructionDecayTime) / GAME_SPEED;
+	bool isReclaimContinuous = (root.GetInt("reclaim.reclaimMethod", reclaimMethod) == 0);
+	bool isUnitReclaimContinuous = (root.GetInt("reclaim.unitMethod", reclaimUnitMethod) == 0);
 
-		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
-		smoothMeshResDivider = system.GetInt("smoothMeshResDivider", smoothMeshResDivider);
-		smoothMeshSmoothRadius = system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius);
+	//      C++ name                          Lua name                       legacy Lua name in a pointless subtable
+	Get (debrisDamage                  , "debrisDamage"                 , std::nullopt                                      );
+	Get (allowEnginePlayerlist         , "allowEnginePlayerlist"        , std::nullopt                                      );
+	Get (paralyzeDeclineRate           , "paralyzeDeclineRate"          ,         "paralyze.paralyzeDeclineRate"            );
+	Get (paralyzeOnMaxHealth           , "paralyzeOnMaxHealth"          ,         "paralyze.paralyzeOnMaxHealth"            );
+	Get (targetableTransportedUnits    , "targetableTransportedUnits"   , "transportability.targetableTransportedUnits"     );
+	Get (fireAtKilled                  , "fireAtKilled"                 ,       "fireAtDead.fireAtKilled"                   );
+	Get (fireAtCrashing                , "fireAtCrashing"               ,       "fireAtDead.fireAtCrashing"                 );
+	Get (featureVisibility             , "featureVisibility"            ,       "featureLOS.featureVisibility"              );
+	Get (unitExpMultiplier             , "unitExpGainMult"              ,       "experience.experienceMult"                 );
+	Get (unitExpPowerScale             , "unitExpPowerScale"            ,       "experience.powerScale"                     );
+	Get (unitExpHealthScale            , "unitExpHealthScale"           ,       "experience.healthScale"                    );
+	Get (unitExpReloadScale            , "unitExpReloadScale"           ,       "experience.reloadScale"                    );
+	Get (unitExpGrade                  , "unitExpCallinRate"            ,       "experience.grade"                          );
+	Get (separateJammers               , "separateJammers"              ,          "sensors.separateJammers"                );
+	Get (requireSonarUnderWater        , "requireSonarUnderWater"       ,          "sensors.requireSonarUnderWater"         );
+	Get (decloakRequiresLineOfSight    , "decloakRequiresLineOfSight"   ,          "sensors.decloakRequiresLineOfSight"     );
+	Get (alwaysVisibleOverridesCloaked , "alwaysVisibleOverridesCloaked",          "sensors.alwaysVisibleOverridesCloaked"  );
+	Get (  losMipLevel                 , "losMipLevel"                  ,          "sensors.los.losMipLevel"                );
+	Get (  airMipLevel                 , "airMipLevel"                  ,          "sensors.los.airMipLevel"                );
+	Get (radarMipLevel                 , "radarMipLevel"                ,          "sensors.los.radarMipLevel"              );
+	Get (LuaAllocLimitMB               , "LuaAllocLimitMB"              ,           "system.luaAllocLimit"                  );
+	Get (allowTake                     , "allowTake"                    ,           "system.allowTake"                      );
+	Get (enableSmoothMesh              , "enableSmoothMesh"             ,           "system.enableSmoothMesh"               );
+	Get (allowAircraftToLeaveMap       , "allowAirPlanesToLeaveMap"     ,         "movement.allowAirPlanesToLeaveMap"       );
+	Get (allowAircraftToHitGround      , "allowAircraftToHitGround"     ,         "movement.allowAircraftToHitGround"       );
+	Get (allowPushingEnemyUnits        , "allowPushingEnemyUnits"       ,         "movement.allowPushingEnemyUnits"         );
+	Get (allowCrushingAlliedUnits      , "allowCrushingAlliedUnits"     ,         "movement.allowCrushingAlliedUnits"       );
+	Get (allowUnitCollisionDamage      , "allowUnitCollisionDamage"     ,         "movement.allowUnitCollisionDamage"       );
+	Get (allowUnitCollisionOverlap     , "allowUnitCollisionOverlap"    ,         "movement.allowUnitCollisionOverlap"      );
+	Get (allowGroundUnitGravity        , "allowGroundUnitGravity"       ,         "movement.allowGroundUnitGravity"         );
+	Get (allowHoverUnitStrafing        , "allowHoverUnitStrafing"       ,         "movement.allowHoverUnitStrafing"         );
+	Get (allowSepAxisCollisionTest     , "preciseCollisionChecks"       ,         "movement.allowSepAxisCollisionTest"      );
+	Get (maxCollisionPushMultiplier    , "maxCollisionPushMultiplier"   ,         "movement.maxCollisionPushMultiplier"     );
+	Get (unitQuadPositionUpdateRate    , "unitQuadPositionUpdateRate"   ,         "movement.unitQuadPositionUpdateRate"     );
+	Get (pfUpdateRateScale             , "pathFinderUpdateRateScale"    ,         "movement.pathFinderUpdateRateScale"      );
+	Get (pfRawDistMult                 , "pathFinderRawDistMult"        ,         "movement.pathFinderRawDistMult"          );
+	Get (qtLowerQualityPaths           , "qtpfsLowerQualityPaths"       ,         "movement.qtLowerQualityPaths"            );
+	Get (pfRepathDelayInFrames         , "repathDelayInFrames"          ,           "system.pfRepathDelayInFrames"          );
+	Get (pfRepathMaxRateInFrames       , "repathMaxRateInFrames"        ,           "system.pfRepathMaxRateInFrames"        );
+	Get (pfRawMoveSpeedThreshold       , "rawMoveSpeedThreshold"        ,           "system.pfRawMoveSpeedThreshold"        );
+	Get (qtMaxNodesSearched            , "qtpfsMaxNodesSearched"        ,           "system.qtMaxNodesSearched"             );
+	Get (qtRefreshPathMinDist          , "qtpfsRefreshPathMinDist"      ,           "system.qtRefreshPathMinDist"           );
+	Get (quadFieldQuadSizeInElmos      , "qtpfsQuadSizeElmos"           ,           "system.quadFieldQuadSizeInElmos"       );
+	Get (reclaimAllowEnemies           , "allowReclaimLiveEnemies"      ,          "reclaim.allowEnemies"                   );
+	Get (reclaimAllowAllies            , "allowReclaimLiveAllies"       ,          "reclaim.allowAllies"                    );
+	Get (reclaimUnitDrainHealth        , "reclaimUnitDrainHealth"       ,          "reclaim.unitDrainHealth"                );
+	Get (multiReclaim                  , "multiReclaim"                 ,          "reclaim.multiReclaim"                   );
+	Get (constructionDecay             , "constructionDecayEnabled"     ,     "construction.constructionDecay"              );
+	Get (constructionDecaySpeed        , "constructionDecaySpeed"       ,     "construction.constructionDecaySpeed"         );
+	Get (constructionDecayTimeSeconds  , "constructionDecayTime"        ,     "construction.constructionDecayTime"          );
+	Get (windChangeReportPeriod        , "windChangeReportPeriod"       ,             "misc.windChangeReportPeriod"         );
+	Get (isReclaimContinuous           , "isReclaimContinuous"          , std::nullopt /* cf reclaim.reclaimMethod above */ );
+	Get (isUnitReclaimContinuous       , "isUnitReclaimContinuous"      , std::nullopt /* cf reclaim.unitMethod    above */ );
 
-		quadFieldQuadSizeInElmos = system.GetInt("quadFieldQuadSizeInElmos", quadFieldQuadSizeInElmos);
+	// should be a string
+	Get (pathFinderSystem              , std::nullopt                   ,           "system.pathFinderSystem"               );
 
-		// Specify in megabytes: 1 << 20 = (1024 * 1024)
-		SLuaAllocLimit::MAX_ALLOC_BYTES = static_cast<decltype(SLuaAllocLimit::MAX_ALLOC_BYTES)>(system.GetInt("LuaAllocLimit", SLuaAllocLimit::MAX_ALLOC_BYTES >> 20u)) << 20u;
+	// legacy-only until resource generalisation work is complete
+	Get (        repairEnergyCostFactor, std::nullopt                   ,           "repair.energyCostFactor"               );
+	Get (     resurrectEnergyCostFactor, std::nullopt                   ,        "resurrect.energyCostFactor"               );
+	Get (       captureEnergyCostFactor, std::nullopt                   ,          "capture.energyCostFactor"               );
+	Get (reclaimFeatureEnergyCostFactor, std::nullopt                   ,          "reclaim.featureEnergyCostFactor"        );
+	Get (   reclaimUnitEnergyCostFactor, std::nullopt                   ,          "reclaim.unitEnergyCostFactor"           );
+	Get (   reclaimUnitEfficiency      , std::nullopt                   ,          "reclaim.unitEfficiency"                 );
 
-		allowTake = system.GetBool("allowTake", allowTake);
-		allowEnginePlayerlist = system.GetBool("allowEnginePlayerlist", allowEnginePlayerlist);
-	}
+	// defs post-processing. Legacy-only, use unitdefs_post.lua instead
+	Get (flankingBonusModeDefault      , std::nullopt                   ,    "flankingBonus.defaultMode"                    );
+	Get (flankingBonusMaxDefault       , std::nullopt                   ,    "flankingBonus.defaultMax"                     );
+	Get (flankingBonusMinDefault       , std::nullopt                   ,    "flankingBonus.defaultMin "                    );
+	Get (transportAir                  , std::nullopt                   , "transportability.transportAir"                   );
+	Get (transportShip                 , std::nullopt                   , "transportability.transportShip"                  );
+	Get (transportHover                , std::nullopt                   , "transportability.transportHover"                 );
+	Get (transportGround               , std::nullopt                   , "transportability.transportGround"                );
 
-	{
-		// movement
-		const LuaTable& movementTbl = root.SubTable("movement");
+	Get(groundUnitCollisionAvoidanceUpdateRate  , "groundUnitCollisionAvoidanceUpdateRate"     , "movement.groundUnitCollisionAvoidanceUpdateRate"   );
+	Get(qtMaxNodesSearchedRelativeToMapOpenNodes, "qtpfsMaxNodesSearchedRelativeToMapOpenNodes",   "system.qtMaxNodesSearchedRelativeToMapOpenNodes" );
 
-		allowAircraftToLeaveMap = movementTbl.GetBool("allowAirPlanesToLeaveMap", allowAircraftToLeaveMap);
-		allowAircraftToHitGround = movementTbl.GetBool("allowAircraftToHitGround", allowAircraftToHitGround);
-		allowPushingEnemyUnits = movementTbl.GetBool("allowPushingEnemyUnits", allowPushingEnemyUnits);
-		allowCrushingAlliedUnits = movementTbl.GetBool("allowCrushingAlliedUnits", allowCrushingAlliedUnits);
-		allowUnitCollisionDamage = movementTbl.GetBool("allowUnitCollisionDamage", allowUnitCollisionDamage);
-		allowUnitCollisionOverlap = movementTbl.GetBool("allowUnitCollisionOverlap", allowUnitCollisionOverlap);
-		allowSepAxisCollisionTest = movementTbl.GetBool("allowSepAxisCollisionTest", allowSepAxisCollisionTest);
-		allowGroundUnitGravity = movementTbl.GetBool("allowGroundUnitGravity", allowGroundUnitGravity);
-		allowHoverUnitStrafing = movementTbl.GetBool("allowHoverUnitStrafing", allowHoverUnitStrafing);
-		maxCollisionPushMultiplier = movementTbl.GetFloat("maxCollisionPushMultiplier", maxCollisionPushMultiplier);
-		unitQuadPositionUpdateRate = movementTbl.GetInt("unitQuadPositionUpdateRate",  unitQuadPositionUpdateRate);
-		groundUnitCollisionAvoidanceUpdateRate = movementTbl.GetInt("groundUnitCollisionAvoidanceUpdateRate",  groundUnitCollisionAvoidanceUpdateRate);
-
-	}
-
-	{
-		// construction
-		const LuaTable& constructionTbl = root.SubTable("construction");
-
-		constructionDecay = constructionTbl.GetBool("constructionDecay", constructionDecay);
-		constructionDecayTime = (int)(constructionTbl.GetFloat("constructionDecayTime", (float)constructionDecayTime / GAME_SPEED) * GAME_SPEED);
-		constructionDecaySpeed = constructionTbl.GetFloat("constructionDecaySpeed", constructionDecaySpeed);
-		insertBuiltUnitMoveCommand = constructionTbl.GetBool("insertBuiltUnitMoveCommand", insertBuiltUnitMoveCommand);
-	}
-
-	{
-		const LuaTable& damageTbl = root.SubTable("damage");
-
-		debrisDamage = damageTbl.GetFloat("debris", debrisDamage);
-	}
-	{
-		// reclaim
-		const LuaTable& reclaimTbl = root.SubTable("reclaim");
-
-		multiReclaim  = reclaimTbl.GetInt("multiReclaim",  multiReclaim);
-		reclaimMethod = reclaimTbl.GetInt("reclaimMethod", reclaimMethod);
-		reclaimUnitMethod = reclaimTbl.GetInt("unitMethod", reclaimUnitMethod);
-		reclaimUnitEnergyCostFactor = reclaimTbl.GetFloat("unitEnergyCostFactor", reclaimUnitEnergyCostFactor);
-		reclaimUnitEfficiency = reclaimTbl.GetFloat("unitEfficiency", reclaimUnitEfficiency);
-		reclaimFeatureEnergyCostFactor = reclaimTbl.GetFloat("featureEnergyCostFactor", reclaimFeatureEnergyCostFactor);
-		reclaimUnitDrainHealth = reclaimTbl.GetBool("unitDrainHealth", reclaimUnitDrainHealth);
-		reclaimAllowEnemies = reclaimTbl.GetBool("allowEnemies", reclaimAllowEnemies);
-		reclaimAllowAllies = reclaimTbl.GetBool("allowAllies", reclaimAllowAllies);
-	}
-
-	{
-		// repair
-		const LuaTable& repairTbl = root.SubTable("repair");
-		repairEnergyCostFactor = repairTbl.GetFloat("energyCostFactor", repairEnergyCostFactor);
-	}
-
-	{
-		// resurrect
-		const LuaTable& resurrectTbl = root.SubTable("resurrect");
-		resurrectEnergyCostFactor  = resurrectTbl.GetFloat("energyCostFactor", resurrectEnergyCostFactor);
-	}
-
-	{
-		// capture
-		const LuaTable& captureTbl = root.SubTable("capture");
-		captureEnergyCostFactor = captureTbl.GetFloat("energyCostFactor", captureEnergyCostFactor);
-	}
-
-	{
-		// paralyze
-		const LuaTable& paralyzeTbl = root.SubTable("paralyze");
-		paralyzeDeclineRate = paralyzeTbl.GetFloat("paralyzeDeclineRate", paralyzeDeclineRate);
-		paralyzeOnMaxHealth = paralyzeTbl.GetBool("paralyzeOnMaxHealth", paralyzeOnMaxHealth);
-	}
-
-	{
-		// fire-at-dead-units
-		const LuaTable& fireAtDeadTbl = root.SubTable("fireAtDead");
-
-		fireAtKilled   = fireAtDeadTbl.GetBool("fireAtKilled", fireAtKilled);
-		fireAtCrashing = fireAtDeadTbl.GetBool("fireAtCrashing", fireAtCrashing);
-	}
-
-	{
-		// transportability
-		const LuaTable& transportTbl = root.SubTable("transportability");
-
-		transportAir    = transportTbl.GetBool("transportAir",    transportAir   );
-		transportShip   = transportTbl.GetBool("transportShip",   transportShip  );
-		transportHover  = transportTbl.GetBool("transportHover",  transportHover );
-		transportGround = transportTbl.GetBool("transportGround", transportGround);
-
-		targetableTransportedUnits = transportTbl.GetBool("targetableTransportedUnits", targetableTransportedUnits);
-	}
-
-	{
-		// experience
-		const LuaTable& experienceTbl = root.SubTable("experience");
-
-		unitExpMultiplier  = experienceTbl.GetFloat( "experienceMult", unitExpMultiplier);
-		unitExpPowerScale  = experienceTbl.GetFloat(     "powerScale", unitExpPowerScale);
-		unitExpHealthScale = experienceTbl.GetFloat(    "healthScale", unitExpHealthScale);
-		unitExpReloadScale = experienceTbl.GetFloat(    "reloadScale", unitExpReloadScale);
-		unitExpGrade       = experienceTbl.GetFloat("experienceGrade", unitExpGrade);
-	}
-
-	{
-		// flanking bonus
-		const LuaTable& flankingBonusTbl = root.SubTable("flankingBonus");
-		flankingBonusModeDefault = flankingBonusTbl.GetInt("defaultMode", flankingBonusModeDefault);
-		flankingBonusMaxDefault = flankingBonusTbl.GetFloat("defaultMax", flankingBonusMaxDefault);
-		flankingBonusMinDefault = flankingBonusTbl.GetFloat("defaultMin", flankingBonusMinDefault);
-	}
-
-	{
-		// feature visibility
-		const LuaTable& featureLOS = root.SubTable("featureLOS");
-
-		featureVisibility = featureLOS.GetInt("featureVisibility", featureVisibility);
-	}
-
-	{
-		// sensors, line-of-sight
-		const LuaTable& sensors = root.SubTable("sensors");
-		const LuaTable& los = sensors.SubTable("los");
-
-		requireSonarUnderWater = sensors.GetBool("requireSonarUnderWater", requireSonarUnderWater);
-		alwaysVisibleOverridesCloaked = sensors.GetBool("alwaysVisibleOverridesCloaked", alwaysVisibleOverridesCloaked);
-		decloakRequiresLineOfSight = sensors.GetBool("decloakRequiresLineOfSight", decloakRequiresLineOfSight);
-		separateJammers = sensors.GetBool("separateJammers", separateJammers);
-
-		losMipLevel = los.GetInt("losMipLevel", losMipLevel);
-		airMipLevel = los.GetInt("airMipLevel", airMipLevel);
-		radarMipLevel = los.GetInt("radarMipLevel", radarMipLevel);
-
-	}
-	{
-		//misc
-		const LuaTable& misc = root.SubTable("misc");
-
-		windChangeReportPeriod = static_cast<int>(math::roundf(misc.GetFloat("windChangeReportPeriod", static_cast<float>(windChangeReportPeriod) / GAME_SPEED) * GAME_SPEED));
-	}
+	// basic post processing
+	SLuaAllocLimit::MAX_ALLOC_BYTES = LuaAllocLimitMB << 20u;
+	constructionDecayTime = constructionDecayTimeSeconds * GAME_SPEED;
+	reclaimMethod = isReclaimContinuous ? 0 : 1;
+	reclaimUnitMethod = isUnitReclaimContinuous ? 0 : 1;
 
 	// Hard checks
 	static constexpr int MAX_HEIGHT_BASED_MIP_LEVEL = CReadMap::numHeightMipMaps - 1;
