@@ -342,6 +342,9 @@ void CMouseHandler::MousePress(int x, int y, int button)
 		return;
 	}
 
+	if (button == SDL_BUTTON_MIDDLE && locked)
+		return;
+
 	if (luaInputReceiver->MousePress(x, y, button)) {
 		if (activeReceiver == nullptr)
 			activeReceiver = luaInputReceiver;
