@@ -33,6 +33,10 @@ void CUnitDefHandler::Init(LuaParser* defsParser)
 	RECOIL_DETAILED_TRACY_ZONE;
 	noCost = false;
 
+	/***
+	 * A table of unit defs keyed by name. These define the units that will be in the game.
+	 * @alias InputUnitDefs table<string, InputUnitDef>
+	 */
 	const LuaTable& rootTable = defsParser->GetRoot().SubTable("UnitDefs");
 
 	if (!rootTable.IsValid())

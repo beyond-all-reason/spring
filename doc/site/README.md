@@ -21,7 +21,7 @@ Have [emmylua_doc_cli](https://github.com/CppCXY/emmylua-analyzer-rust/tree/main
 
 ```bash
 rm -rf rts/Lua/library/generated &&
-lua-doc-extractor rts/Lua/*.cpp --dest rts/Lua/library/generated &&
+lua-doc-extractor "rts/**/*.cpp" --dest rts/Lua/library/generated &&
 emmylua_doc_cli \
   -i rts/Lua/library/ \
   -o doc/site/lua-api \
