@@ -1291,8 +1291,10 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 	if (c.GetOpts() & META_KEY) {
 		const auto limits = GetRemoveLimitsFromOptions(c, *queue);
-		if (!limits)
+		if (!limits) {
+			eventHandler.UnitCmdDone(owner, c);
 			return;
+		}
 		const auto [firstIndex, lastIndex] = *limits;
 		int nElements = lastIndex - firstIndex + 1;
 
