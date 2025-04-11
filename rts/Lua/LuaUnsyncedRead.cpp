@@ -3618,10 +3618,12 @@ int LuaUnsyncedRead::GetMouseButtonsPressed(lua_State* L)
 	for (int i = 1; i <= numArgs ; ++i) {
 		int button = luaL_checkint(L, i);
 
-		if ((button <= 0) || (button > NUM_BUTTONS))
+		if (button <= 0)
 			luaL_error(L, "%d: bad button index", button);
-
-		lua_pushboolean(L, mouse->buttons[button].pressed);
+		if (button > NUM_BUTTONS)
+			lua_pushboolean(L, false);
+		else
+			lua_pushboolean(L, mouse->buttons[button].pressed);
 	}
 
 	return numArgs;
