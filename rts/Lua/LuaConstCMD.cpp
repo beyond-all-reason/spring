@@ -115,7 +115,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * - `meta` Range/filter switch.
 	 * - `alt` Tag/Index or Tag/Id switch, depending on `meta`.
 	 * - `ctrl` Alternative queue selection.
-	 *   - For factories alternative queue is the factory command queue, default queue is the newUnitCommands queue.
+	 *   - For factories alternative queue is the factory command queue, default queue is the rally queue.
 	 *   - For other units no effect.
 	 *
 	 * ## Callins
