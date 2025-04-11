@@ -134,7 +134,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, 2, {'meta', 'ctrl', 'alt'})
 	 * ```
 	 *
-	 * Delete from 1st to 2th:
+	 * Delete from 1st to 2nd:
 	 * ```lua
 	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {1, 20}, {'meta', 'ctrl', 'alt'})
 	 * ```
@@ -144,6 +144,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {startTag, endTag}, {'meta', 'ctrl'})
 	 * ```
 	 * @see Spring.GiveOrderToUnit
+	 * @see Callins:UnitCmdDone
 	 */
 	PUSH_CMD(REMOVE);
 	/*** @field CMD.WAIT 5 */
