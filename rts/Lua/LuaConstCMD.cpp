@@ -118,11 +118,11 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 *   - For factories alternative queue is the factory command queue, default queue is the newUnitCommands queue.
 	 *   - For other units no effect.
 	 *
-	 * ## Callins:
+	 * ## Callins
 	 *
 	 *  - UnitCmdDone: Run when the command is finished.
 	 *
-	 * ## Examples:
+	 * ## Examples
 	 *
 	 * Delete everything:
 	 * ```lua
@@ -204,11 +204,11 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 *
 	 * - `modInfo.targetableTransportedUnits`: Controls whether transported units are targetable.
 	 *
-	 * ## Callins:
+	 * ## Callins
 	 *
 	 *  - UnitCmdDone: Run when the command is finished.
 	 *
-	 * ## Examples:
+	 * ## Examples
 	 *
 	 * Attack unit with id `targetID`.
 	 * ```lua
@@ -225,6 +225,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * Spring.GiveOrderToUnit(unitID, CMD.ATTACK, {1000,100,1000})
 	 * ```
 	 * @see Spring.GiveOrderToUnit
+	 * @see Callins:UnitCmdDone
 	 */
 	PUSH_CMD(ATTACK);
 	/*** @field CMD.AREA_ATTACK 21 */
