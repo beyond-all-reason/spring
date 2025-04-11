@@ -1212,6 +1212,49 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
+const std::optional<int> CCommandAI::FindTagIndex(const CCommandQueue& queue, unsigned int tag) const
+{
+	int i = 0;
+	for (const auto& qc: queue) {
+		if (qc.GetTag() == tag)
+			return i;
+		++i;
+	}
+	return std::nullopt;
+}
+
+
+const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const
+{
+	int firstIndex = 0;
+	int lastIndex = queue.size() - 1;
+
+	if (c.GetOpts() & ALT_KEY) {
+		if (c.GetNumParams() >= 1)
+			firstIndex = std::max<int>(c.GetParam(0) - 1, 0);
+		if (c.GetNumParams() >= 2)
+			lastIndex = std::clamp<int>(c.GetParam(1) - 1, 0, queue.size() - 1);
+	} else if (c.GetNumParams() >= 1) {
+		const auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
+		if (!firstTagIndex)
+			return std::nullopt;
+
+		if (c.GetNumParams() >= 2) {
+			const auto lastTagIndex = FindTagIndex(queue, c.GetParam(1));
+			if (!lastTagIndex)
+				return std::nullopt;
+			lastIndex = *lastTagIndex;
+		}
+
+		firstIndex = *firstTagIndex;
+	}
+
+	if (lastIndex < firstIndex || firstIndex >= queue.size())
+		return std::nullopt;
+
+	return std::make_pair(firstIndex, lastIndex);
+}
+
 
 void CCommandAI::ExecuteRemove(const Command& c)
 {
@@ -1219,13 +1262,9 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	CCommandQueue* queue = &commandQue;
 	CFactoryCAI* facCAI = dynamic_cast<CFactoryCAI*>(this);
 
-	// if false, remove commands by tag
-	const bool removeByID = (c.GetOpts() & ALT_KEY);
 	// disable repeating during the removals
 	const bool prevRepeat = repeatOrders;
 
-	// erase commands by a list of command types
-	bool active = false;
 	bool facBuildQueue = false;
 
 	if (facCAI) {
@@ -1238,10 +1277,57 @@ void CCommandAI::ExecuteRemove(const Command& c)
 		}
 	}
 
-	if ((c.GetNumParams() <= 0) || (queue->size() <= 0))
+	if (queue->empty())
 		return;
 
 	repeatOrders = false;
+
+	if (c.GetOpts() & META_KEY) {
+		// erase range by tag or (with ALT) index
+		const auto limits = GetRemoveLimitsFromOptions(c, *queue);
+		if (!limits) {
+			eventHandler.UnitCmdDone(owner, c);
+			return;
+		}
+		const auto [firstIndex, lastIndex] = *limits;
+		int nElements = lastIndex - firstIndex + 1;
+
+		CCommandQueue::iterator ci = queue->begin() + lastIndex;
+		while (nElements > 0) {
+			--nElements;
+			const Command& qc = *ci;
+			if (qc.GetID() == CMD_WAIT)
+				waitCommandsAI.RemoveWaitCommand(owner, qc);
+
+			if (facBuildQueue) {
+				// only true when ci == queue->begin(), does pop_front()
+				// via CFAI::ExecuteStop. otherwise converts to CMD_STOP.
+				if (facCAI->RemoveBuildCommand(ci))
+					break;
+			}
+
+			if (!facCAI && (ci == queue->begin())) {
+				FinishCommand();
+				break;
+			}
+
+			queue->erase(ci);
+			// iterator may have been invalidated
+			ci = queue->begin() + firstIndex + nElements - 1;
+		}
+		repeatOrders = prevRepeat;
+		eventHandler.UnitCmdDone(owner, c);
+		return;
+	}
+
+	if (c.GetNumParams() <= 0)
+		return;
+
+	// erase commands by a list of command types
+	// if false, remove commands by tag
+	const bool removeByID = (c.GetOpts() & ALT_KEY);
+
+	bool active = false;
 
 	for (unsigned int p = 0; p < c.GetNumParams(); p++) {
 		const int removeValue = c.GetParam(p); // tag or id
@@ -1299,6 +1385,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	}
 
 	repeatOrders = prevRepeat;
+	eventHandler.UnitCmdDone(owner, c);
 }
 
 
