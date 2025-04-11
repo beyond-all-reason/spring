@@ -239,6 +239,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetGatherMode);
 	REGISTER_LUA_CFUNC(GetActivePage);
 
+	REGISTER_LUA_CFUNC(GetMouseButtonsPressed);
 	REGISTER_LUA_CFUNC(GetMouseState);
 	REGISTER_LUA_CFUNC(GetMouseCursor);
 	REGISTER_LUA_CFUNC(GetMouseStartPosition);
@@ -3594,21 +3595,32 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 
 /***
  *
- * @function Spring.GetMouseButtonState
- * @param button integer
- * @return boolean pressed
+ * @function Spring.GetMouseButtonsPressed
+ * @param button1 integer? Index of the first button.
+ * @param ... integer Indices for more buttons.
+ * @return boolean ... Pressed status for the buttons.
  */
-int LuaUnsyncedRead::GetMouseButtonState(lua_State* L)
+int LuaUnsyncedRead::GetMouseButtonsPressed(lua_State* L)
 {
-	assert(mouse != nullptr);
+	int numArgs = lua_gettop(L);
 
-	const int button = luaL_checkint(L, 1);
+	if (numArgs == 0) {
+		for (int i = 0; i < NUM_BUTTONS ; ++i)
+			lua_pushboolean(L, mouse->buttons[i].pressed);
 
-	if ((button <= 0) || (button > NUM_BUTTONS))
-		return 0;
+		return NUM_BUTTONS;
+	}
 
-	lua_pushboolean(L, mouse->buttons[button].pressed);
-	return 1;
+	for (int i = 1; i <= numArgs ; ++i) {
+		int button = luaL_checkint(L, i);
+
+		if ((button <= 0) || (button > NUM_BUTTONS))
+			luaL_error(L, "%d: bad button index", button);
+
+		lua_pushboolean(L, mouse->buttons[button].pressed);
+	}
+
+	return numArgs;
 }
 
 
