@@ -31,3 +31,7 @@ Use shaders as a replacement.
 * the `/debugGL` option now takes an optional numerical argument, 0-15.
 0 and 1 control the whole debug view without touching anything else (i.e. work as before).
 Otherwise values 2-15 are treated as a bitmask: 8 controls stacktraces, 4 report groups, 2 the whole debug enabled/disabled state, 1 ignored.
+
+### Unsynced commands
+
+* `group` command `add` no longer selects entire group after execution.
