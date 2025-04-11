@@ -1337,7 +1337,7 @@ CCommandQueue::const_iterator CCommandAI::GetCancelQueued(const Command& c, cons
 					const BuildInfo bc1(c);
 					const BuildInfo bc2(c2);
 
-					// check yardsmaps for overlap instead of bounding-boxes
+					// check yardmaps for overlap instead of bounding-boxes
 					if (CGameHelper::YardmapsOverlap(bc1, bc2))
 						return ci;
 				} else {
@@ -1433,9 +1433,9 @@ std::vector<Command> CCommandAI::GetOverlapQueued(const Command& c, const CComma
 					// NOTE: uses a BuildInfo structure, but <t> can be ANY command
 					BuildInfo tbi;
 					if (tbi.Parse(t)) {
-						// check yardsmaps for overlap instead of bounding-boxs
+						// check yardmaps for overlap instead of bounding-boxes
 						if (CGameHelper::YardmapsOverlap(cbi, tbi))
-						    v.push_back(t);
+							v.push_back(t);
 					} else {
 						if ((cbi.pos - tbi.pos).SqLength2D() >= (COMMAND_CANCEL_DIST * COMMAND_CANCEL_DIST))
 							continue;

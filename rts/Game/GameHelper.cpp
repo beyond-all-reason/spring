@@ -1074,7 +1074,7 @@ bool CGameHelper::YardmapsOverlap(const BuildInfo& bi1, const BuildInfo& bi2)
 	int overlap_x2 = std::min(x2_bi1, x2_bi2);
 	int overlap_z2 = std::min(z2_bi1, z2_bi2);
 
-	// not overlaping bounding-rects
+	// not overlapping bounding-rects
 	if (overlap_x1 >= overlap_x2 || overlap_z1 >= overlap_z2)
 		return false;
 
@@ -1418,7 +1418,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 						const int cmdDistX = std::max(bc.pos.x - sqrPos.x - SQUARE_SIZE, sqrPos.x - bc.pos.x) * 2;
 						const int cmdDistZ = std::max(bc.pos.z - sqrPos.z - SQUARE_SIZE, sqrPos.z - bc.pos.z) * 2;
 
-						// bounding-rects overflap
+						// bounding-rects overlap
 						if (cmdDistX < cmdSizeX && cmdDistZ < cmdSizeZ) {
 							const UnitDef* queuedDef = bc.def;
 
