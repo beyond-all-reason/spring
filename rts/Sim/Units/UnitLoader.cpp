@@ -121,13 +121,13 @@ void CUnitLoader::ParseAndExecuteGiveUnitsCommand(const std::vector<std::string>
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (args.size() < 2) {
-		LOG_L(L_WARNING, "[%s] not enough arguments (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")", __FUNCTION__);
+		LOG_L(L_WARNING, "[%s] not enough arguments (\"/give [amount] <objectName | 'all'> [team] [@x,y,z]\")", __FUNCTION__);
 		return;
 	}
 
 	float3 pos;
-	if (sscanf(args[args.size() - 1].c_str(), "@%f, %f, %f", &pos.x, &pos.y, &pos.z) != 3) {
-		LOG_L(L_WARNING, "[%s] invalid position argument (\"/give [amount] <objectName | 'all'> [team] [@x, y, z]\")", __FUNCTION__);
+	if (sscanf(args[args.size() - 1].c_str(), "@%f,%f,%f", &pos.x, &pos.y, &pos.z) != 3) {
+		LOG_L(L_WARNING, "[%s] invalid position argument (\"/give [amount] <objectName | 'all'> [team] [@x,y,z]\")", __FUNCTION__);
 		return;
 	}
 
