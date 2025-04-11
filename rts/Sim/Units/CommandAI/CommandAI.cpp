@@ -1262,8 +1262,6 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	CCommandQueue* queue = &commandQue;
 	CFactoryCAI* facCAI = dynamic_cast<CFactoryCAI*>(this);
 
-	// if false, remove commands by tag
-	const bool removeByID = (c.GetOpts() & ALT_KEY);
 	// disable repeating during the removals
 	const bool prevRepeat = repeatOrders;
 
@@ -1327,6 +1325,9 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 	if (c.GetNumParams() <= 0)
 		return;
+
+	// if false, remove commands by tag
+	const bool removeByID = (c.GetOpts() & ALT_KEY);
 
 	for (unsigned int p = 0; p < c.GetNumParams(); p++) {
 		const int removeValue = c.GetParam(p); // tag or id
