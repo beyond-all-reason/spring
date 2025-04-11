@@ -109,7 +109,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * - `params` {start, end}. both are optional and if not set default to queue limits.
 	 *   - Start and end will be clamped to the biggest queue intersection.
 	 *   - For example `{2,100}` is be processed as `{2,5}` (or `{2}`) in a queue with 5 items).
-	 * - With `alt`, start and end are indexes, without ALT, they're tags.
+	 * - With `alt`, start and end are indexes, without `alt`, they're tags.
 	 *
 	 * ## Command Options
 	 * - `meta` Range/filter switch.
