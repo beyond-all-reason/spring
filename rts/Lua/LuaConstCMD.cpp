@@ -11,6 +11,15 @@
 
 /***
  * Command constants.
+ *
+ * Table defining Command related constants.
+ *
+ * - Contains a mix of special constants like command options or move states, and the
+ *   master list of command IDs.
+ * - Also supports integer keys, and those perform reverse mapping of command IDs.
+ *
+ * @see Spring.GiveOrderToUnit
+ * @see Spring.GiveOrderToUnitArray
  * @enum CMD
  */
 
@@ -60,11 +69,81 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 
 #define PUSH_CMD(cmd) LuaInsertDualMapPair(L, #cmd, CMD_ ## cmd);
 
-	/*** @field CMD.STOP 0 */
+	/***
+	 * @field CMD.STOP 0
+	 *
+	 * Stop the current action.
+	 *
+	 * For factories, this will cancel the new unit orders queue.
+	 * For units, this will cancel the current command and queue.
+	 *
+	 * Accepts no parameters.
+	 *
+	 * *Note:* If `shift` option is used it will be a noop in the queue.
+	 */
 	PUSH_CMD(STOP);
 	/*** @field CMD.INSERT 1 */
 	PUSH_CMD(INSERT);
-	/*** @field CMD.REMOVE 2 */
+
+	/***
+	 * @field CMD.REMOVE 2
+	 *
+	 * Remove commands from a unit's queue.
+	 *
+	 * The behaviour can be modified with the following options:
+	 *
+	 * ## Modes of operation
+	 *
+	 * ### Filter by id or tag
+	 *
+	 * Removes all commands matching ids or tags from a provided array.
+	 *
+	 * - `params` {id1, id2 ...} or {tag1, tag2, ...} an array of ids or tags to look for, unless META is used too.
+	 * - With `alt`, remove by id, otherwise remove by tag.
+	 *
+	 * ### Remove by range
+	 *
+	 * Removes all commands in a given range, indexed by position in the queue, or command tag.
+	 *
+	 * - `params` {start, end}. both are optional and if not set default to queue limits.
+	 *   - Start and end will be clamped to the biggest queue intersection.
+	 *   - For example `{2,100}` is be processed as `{2,5}` (or `{2}`) in a queue with 5 items).
+	 * - With `alt`, start and end are indexes, without ALT, they're tags.
+	 *
+	 * ## Command Options
+	 * - `meta` Range/filter switch.
+	 * - `alt` Tag/Index or Tag/Id switch, depending on `meta`.
+	 * - `ctrl` Alternative queue selection.
+	 *   - For factories alternative queue is the factory command queue, default queue is the newUnitCommands queue.
+	 *   - For other units no effect.
+	 *
+	 * ## Callins:
+	 *
+	 *  - UnitCmdDone: Run when the command is finished.
+	 *
+	 * ## Examples:
+	 *
+	 * Delete everything:
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, nil, {'meta', 'ctrl'})
+	 * ```
+	 *
+	 * Delete all but the 1st element:
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, 2, {'meta', 'ctrl', 'alt'})
+	 * ```
+	 *
+	 * Delete from 1st to 2th:
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {1, 20}, {'meta', 'ctrl', 'alt'})
+	 * ```
+	 *
+	 * Delete from position of `startTag`, to `endTag`.
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {startTag, endTag}, {'meta', 'ctrl'})
+	 * ```
+	 * @see Spring.GiveOrderToUnit
+	 */
 	PUSH_CMD(REMOVE);
 	/*** @field CMD.WAIT 5 */
 	PUSH_CMD(WAIT);
@@ -82,7 +161,70 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	PUSH_CMD(PATROL);
 	/*** @field CMD.FIGHT 16 */
 	PUSH_CMD(FIGHT);
-	/*** @field CMD.ATTACK 20 */
+
+	/***
+	 * @field CMD.ATTACK 20
+	 *
+	 * Attack command. Gives an order to attack some target(s).
+	 *
+	 * The command has different modes of operation, depending on the number
+	 * of parameters and options used.
+	 *
+	 * ## Modes of operation
+	 *
+	 * ### Attack single target
+	 *
+	 * - `params` {unitID/featureID}: Attack a unit or feature.
+	 *
+	 * The command will end once the target is dead or not valid any more.
+	 *
+	 * ### Area attack
+	 *
+	 * Will create a number of `single target` actions by finding targets in a circle.
+	 *
+	 * **Note:** this is different than CMD.AREA_ATTACK, since this initially finds the targets
+	 * but then doesn't consider the area any more.
+	 *
+	 * - `params` {r,x,y,z} when radius is greater than 0.
+	 *   - r: radius
+	 *   - x,y,z: map position
+	 *
+	 * ### Ground attack
+	 *
+	 * - `params` {0,x,y,z} or {x,y,z}
+	 *   - x,y,z: map position
+	 *
+	 * ## Command Options
+	 *
+	 * - `alt` Also target stunned targets. Without this stunned targets will be skipped.
+	 * - `meta` Override `manualFire`, and `noAutoTarget` weapon behaviours.
+	 *
+	 * ## Other modifiers
+	 *
+	 * - `modInfo.targetableTransportedUnits`: Controls whether transported units are targetable.
+	 *
+	 * ## Callins:
+	 *
+	 *  - UnitCmdDone: Run when the command is finished.
+	 *
+	 * ## Examples:
+	 *
+	 * Attack unit with id `targetID`.
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.ATTACK, targetID)
+	 * ```
+	 *
+	 * Area attack:
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.ATTACK, {100, 1000,100,1000})
+	 * ```
+	 *
+	 * Ground attack:
+	 * ```lua
+	 * Spring.GiveOrderToUnit(unitID, CMD.ATTACK, {1000,100,1000})
+	 * ```
+	 * @see Spring.GiveOrderToUnit
+	 */
 	PUSH_CMD(ATTACK);
 	/*** @field CMD.AREA_ATTACK 21 */
 	PUSH_CMD(AREA_ATTACK);
