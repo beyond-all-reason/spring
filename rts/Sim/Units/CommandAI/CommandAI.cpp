@@ -1266,7 +1266,6 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	const bool prevRepeat = repeatOrders;
 
 	// erase commands by a list of command types
-	bool active = false;
 	bool facBuildQueue = false;
 
 	if (facCAI) {
@@ -1324,6 +1323,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	if (c.GetNumParams() <= 0)
 		return;
 
+	bool active = false;
 	// if false, remove commands by tag
 	const bool removeByID = (c.GetOpts() & ALT_KEY);
 
