@@ -1297,16 +1297,14 @@ void CCommandAI::ExecuteRemove(const Command& c)
 		while (nElements > 0) {
 			--nElements;
 			const Command& qc = *ci;
-			if (qc.GetID() == CMD_WAIT) {
+			if (qc.GetID() == CMD_WAIT)
 				waitCommandsAI.RemoveWaitCommand(owner, qc);
-			}
 
 			if (facBuildQueue) {
 				// only true when ci == queue->begin(), does pop_front()
 				// via CFAI::ExecuteStop. otherwise converts to CMD_STOP.
-				if (facCAI->RemoveBuildCommand(ci)) {
+				if (facCAI->RemoveBuildCommand(ci))
 					break;
-				}
 			}
 
 			if (!facCAI && (ci == queue->begin())) {
