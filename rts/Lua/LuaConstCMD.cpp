@@ -192,7 +192,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 *
 	 * ### Attack single target
 	 *
-	 * - `params` {unitID/featureID}: Attack a unit or feature.
+	 * - `params` {unitID}: Attack a unit
 	 *
 	 * The command will end once the target is dead or not valid any more.
 	 *
