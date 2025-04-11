@@ -203,13 +203,13 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * **Note:** this is different than CMD.AREA_ATTACK, since this initially finds the targets
 	 * but then doesn't consider the area any more.
 	 *
-	 * - `params` {r,x,y,z} when radius is greater than 0.
+	 * - `params` {x,y,z,r} when radius is greater than 0.
 	 *   - r: radius
 	 *   - x,y,z: map position
 	 *
 	 * ### Ground attack
 	 *
-	 * - `params` {0,x,y,z} or {x,y,z}
+	 * - `params` {x,y,z,0} or {x,y,z}
 	 *   - x,y,z: map position
 	 *
 	 * ## Command Options
