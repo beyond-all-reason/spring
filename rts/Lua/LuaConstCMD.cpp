@@ -15,27 +15,13 @@
  * Table defining Command related constants.
  *
  * - Contains a mix of special constants like command options or move states, and the
- *   master list of command IDs.
+ *   list of engine command IDs.
  * - Also supports integer keys, and those perform reverse mapping of command IDs.
  *
- * The table can be extended by games through lua, in order to define custom
- * commands.
- *
- * To extend, do:
- *
- * ```LUA
- * local MY_CUSTOM_COMMAND = 57600 -- avoid conflicts
- * CMD['MY_CUSTOM_COMMAND'] = MY_CUSTOM_COMMAND
- * CMD[MY_CUSTOM_COMMAND] = 'MY_CUSTOM_COMMAND'
- * ```
- *
- * For now there is no mechanism to avoid id conflicts, so you will have
- * to be careful. Also you should put this code in a place where both
- * Synced, Unsynced, and all lua environments can import it, otherwise
- * it won't be available everywhere.
- *
  * @see Spring.GiveOrderToUnit
- * @see Spring.GiveOrderToUnitArray
+ * @see Spring.GiveOrderArrayToUnitArray
+ * @see Spring.GetUnitCurrentCommand
+ * @see Callins:AllowCommand
  * @enum CMD
  */
 
