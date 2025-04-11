@@ -3026,8 +3026,8 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 
 	if (isGame) {
 		int i = 1;
-		lua_createtable(L, 0, game->lastActionList.size());
-		for (const Action& action: game->lastActionList) {
+		lua_createtable(L, 0, game->GetLastActionList().size());
+		for (const Action& action: game->GetLastActionList()) {
 			lua_createtable(L, 0, 3); {
 				LuaPushNamedString(L, "command",   action.command);
 				LuaPushNamedString(L, "extra",     action.extra);
@@ -3087,8 +3087,8 @@ bool CLuaHandle::KeyRelease(int keyCode, int scanCode)
 
 	if (isGame) {
 		int i = 1;
-		lua_createtable(L, 0, game->lastActionList.size());
-		for (const Action& action: game->lastActionList) {
+		lua_createtable(L, 0, game->GetLastActionList().size());
+		for (const Action& action: game->GetLastActionList()) {
 			lua_createtable(L, 0, 3); {
 				LuaPushNamedString(L, "command",   action.command);
 				LuaPushNamedString(L, "extra",     action.extra);

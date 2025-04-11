@@ -1885,7 +1885,7 @@ bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 		}
 	}
 
-	const ActionList& al = game->lastActionList;
+	const ActionList& al = game->GetLastActionList();
 	for (int ali = 0; ali < (int)al.size(); ++ali) {
 		const int actionIndex = (ali + tmpActionOffset) % (int)al.size(); //????
 		const Action& action = al[actionIndex];
