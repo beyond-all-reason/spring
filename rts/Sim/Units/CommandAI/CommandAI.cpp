@@ -1265,7 +1265,6 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	// disable repeating during the removals
 	const bool prevRepeat = repeatOrders;
 
-	// erase commands by a list of command types
 	bool facBuildQueue = false;
 
 	if (facCAI) {
@@ -1284,6 +1283,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	repeatOrders = false;
 
 	if (c.GetOpts() & META_KEY) {
+		// erase range by tag or (with ALT) index
 		const auto limits = GetRemoveLimitsFromOptions(c, *queue);
 		if (!limits) {
 			eventHandler.UnitCmdDone(owner, c);
@@ -1323,9 +1323,11 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	if (c.GetNumParams() <= 0)
 		return;
 
-	bool active = false;
+	// erase commands by a list of command types
 	// if false, remove commands by tag
 	const bool removeByID = (c.GetOpts() & ALT_KEY);
+
+	bool active = false;
 
 	for (unsigned int p = 0; p < c.GetNumParams(); p++) {
 		const int removeValue = c.GetParam(p); // tag or id
