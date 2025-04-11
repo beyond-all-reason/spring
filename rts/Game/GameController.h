@@ -21,6 +21,8 @@ public:
 	virtual int TextInput(const std::string& utf8Text) { return 0; }
 	virtual int TextEditing(const std::string& utf8Text, unsigned int start, unsigned int length) { return 0; }
 	virtual void ResizeEvent() {}
+	virtual bool MousePress(int x, int y, int button) { return 0; }
+	virtual bool MouseRelease(int x, int y, int button) { return 0; }
 };
 
 extern CGameController* activeController;
