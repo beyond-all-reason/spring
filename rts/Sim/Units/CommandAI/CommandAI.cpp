@@ -1304,8 +1304,8 @@ void CCommandAI::ExecuteRemove(const Command& c)
 			}
 
 			if (facBuildQueue) {
-				// if ci == queue->begin() and !queue->empty(), this pop_front()'s
-				// via CFAI::ExecuteStop; otherwise only modifies *ci (not <queue>)
+				// only true when ci == queue->begin(), does pop_front()
+				// via CFAI::ExecuteStop. otherwise converts to CMD_STOP.
 				if (facCAI->RemoveBuildCommand(ci)) {
 					break;
 				}
