@@ -18,6 +18,9 @@ CallInsList = {
 	"ActiveCommandChanged",
 	"CameraRotationChanged",
 	"CameraPositionChanged",
+	"MiniMapRotationChanged",
+	"MiniMapStateChanged",
+	"MiniMapGeometryChanged",
 	"CommandNotify",
 
 	"KeyMapChanged",

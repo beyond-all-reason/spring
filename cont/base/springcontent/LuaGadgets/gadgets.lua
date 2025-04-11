@@ -1862,6 +1862,24 @@ function gadgetHandler:CameraPositionChanged(posx, posy, posz)
   end
 end
 
+function gadgetHandler:MiniMapRotationChanged(newRot, oldRot)
+  for _,g in r_ipairs(self.MiniMapRotationChangedList) do
+    g:MiniMapRotationChanged(newRot, oldRot)
+  end
+end
+
+function gadgetHandler:MiniMapStateChanged(isMinimized, isMaximized)
+  for _,g in r_ipairs(self.MiniMapStateChangedList) do
+    g:MiniMapStateChanged(isMinimized, isMaximized)
+  end
+end
+
+function gadgetHandler:MiniMapGeometryChanged(newPosX, newPosY, newDimX, newDimY, oldPosX, oldPosY, oldDimX, oldDimY)
+  for _,g in r_ipairs(self.MiniMapGeometryChangedList) do
+    g:MiniMapGeometryChanged(newPosX, newPosY, newDimX, newDimY, oldPosX, oldPosY, oldDimX, oldDimY)
+  end
+end
+
 function gadgetHandler:CommandNotify(id, params, options)
   for _,g in r_ipairs(self.CommandNotifyList) do
     if (g:CommandNotify(id, params, options)) then
