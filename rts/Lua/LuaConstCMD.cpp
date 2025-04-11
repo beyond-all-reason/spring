@@ -99,9 +99,9 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 *
 	 * ### Filter by id or tag
 	 *
-	 * Removes all commands matching ids or tags from a provided array.
+	 * Removes any command with an id or tag included in params.
 	 *
-	 * - `params` {id1, id2 ...} or {tag1, tag2, ...} an array of ids or tags to look for, unless META is used too.
+	 * - `params` {id1, id2 ...} or {tag1, tag2, ...} an array of ids or tags to look for.
 	 * - With `alt`, remove by id, otherwise remove by tag.
 	 *
 	 * ### Remove by range
