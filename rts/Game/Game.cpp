@@ -2199,8 +2199,8 @@ bool CGame::ProcessCommandText(const std::string& command) {
 
 bool CGame::ProcessAction(const Action& action, bool isRepeat)
 {
-	if (ActionPressed(action, isRepeat))
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (ActionPressed(action, isRepeat))
 		return true;
 
 	// maybe a widget is interested?
