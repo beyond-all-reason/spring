@@ -79,7 +79,8 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 *
 	 * Accepts no parameters.
 	 *
-	 * *Note:* If `shift` option is used it will be a noop in the queue.
+	 * *Note:* This is actually a noop, but clears the queue when `shift` isn't used since
+	 * that's the standard behaviour when `shift` isn't used for all actions.
 	 */
 	PUSH_CMD(STOP);
 	/*** @field CMD.INSERT 1 */
