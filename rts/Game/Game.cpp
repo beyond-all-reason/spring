@@ -1208,7 +1208,7 @@ bool CGame::MousePress(int x, int y, int button)
 
 	// try our list of actions
 	for (const Action& action: lastActionList) {
-		if (ActionPressed(keyCode, scanCode, action, isRepeat)) {
+		if (ActionPressed(action, isRepeat)) {
 			return true;
 		}
 	}
