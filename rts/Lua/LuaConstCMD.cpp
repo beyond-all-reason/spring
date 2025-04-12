@@ -141,7 +141,6 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	 * ```
 	 *
 	 * @see Spring.GiveOrderToUnit
-	 * @see Callins:UnitCmdDone
 	 */
 	PUSH_CMD(REMOVE);
 	/*** @field CMD.WAIT 5 */
