@@ -379,6 +379,9 @@ void CUnitHandler::SlowUpdateUnits()
 			CUnit* unit = activeUnits[i];
 
 			unit->SanityCheck();
+			if (unit->unitDef->IsImmobileUnit()) {
+				unit->moveType->UpdateCollisionMap();
+			}
 			unit->SlowUpdate();
 			unit->SlowUpdateWeapons();
 			unit->SanityCheck();
@@ -414,7 +417,9 @@ void CUnitHandler::UpdateUnits()
 
 		unit->SanityCheck();
 		unit->Update();
-		unit->moveType->UpdateCollisionMap();
+		if (!unit->unitDef->IsImmobileUnit()) {
+			unit->moveType->UpdateCollisionMap();
+		}
 		// unsynced; done on-demand when drawing unit
 		// unit->UpdateLocalModel();
 		unit->SanityCheck();
