@@ -1,0 +1,45 @@
+name: Check Lua library
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'rts/Lua/**'
+  push:
+    branches:
+      - master
+    paths:
+      - 'rts/Lua/**'
+jobs:
+  cehck-library:
+    name: Check library
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Lua CPP files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: rts/Lua
+
+      - name: Generate Lua library
+        run: |
+          npm install -g lua-doc-extractor@3.1
+          lua-doc-extractor rts/Lua/*.cpp \
+            --dest rts/Lua/library/generated \
+            --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }} \
+            --error
+
+      - name: Install dra
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/devmatteini/dra/refs/heads/main/install.sh | bash -s -- --to ./dra
+
+      - name: Install Lua Language Server
+        run: |
+          ./dra download \
+            --select "lua-language-server-{tag}-linux-x64.tar.gz" \
+            LuaLS/lua-language-server \
+            --output lls.tar.gz
+          mkdir lls
+          tar -xvzf lls.tar.gz -C lls
+
+      - name: Check 
+        run: |
+          ./lls/bin/lua-language-server --check rts/Lua/library
