@@ -1412,7 +1412,6 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	}
 
 	repeatOrders = prevRepeat;
-	eventHandler.UnitCmdDone(owner, c);
 }
 
 
