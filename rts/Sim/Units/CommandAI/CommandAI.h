@@ -106,6 +106,7 @@ public:
 
 	void ExecuteInsert(const Command& c, bool fromSynced = true);
 	void ExecuteRemove(const Command& c);
+	void ExecuteRemoveRange(const Command& c);
 	const std::optional<std::pair<int, int>> GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const;
 	const std::optional<int> FindTagIndex(const CCommandQueue& queue, unsigned int tag) const;
 

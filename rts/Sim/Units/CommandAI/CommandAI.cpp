@@ -991,6 +991,10 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 			ExecuteRemove(c);
 			return;
 		}
+		case CMD_REMOVE_RANGE: {
+			ExecuteRemoveRange(c);
+			return;
+		}
 	}
 
 	// flush the queue for immediate commands
@@ -1230,11 +1234,6 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 	int lastIndex = queue.size() - 1;
 
 	if (c.GetOpts() & ALT_KEY) {
-		if (c.GetNumParams() >= 1)
-			firstIndex = std::max<int>(c.GetParam(0) - 1, 0);
-		if (c.GetNumParams() >= 2)
-			lastIndex = std::clamp<int>(c.GetParam(1) - 1, 0, queue.size() - 1);
-	} else if (c.GetNumParams() >= 1) {
 		const auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
 		if (!firstTagIndex)
 			return std::nullopt;
@@ -1247,6 +1246,11 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 		}
 
 		firstIndex = *firstTagIndex;
+	} else if (c.GetNumParams() >= 1) {
+		if (c.GetNumParams() >= 1)
+			firstIndex = std::max<int>(c.GetParam(0) - 1, 0);
+		if (c.GetNumParams() >= 2)
+			lastIndex = std::clamp<int>(c.GetParam(1) - 1, 0, queue.size() - 1);
 	}
 
 	if (lastIndex < firstIndex || firstIndex >= queue.size())
@@ -1256,7 +1260,7 @@ const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(
 }
 
 
-void CCommandAI::ExecuteRemove(const Command& c)
+void CCommandAI::ExecuteRemoveRange(const Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandQueue* queue = &commandQue;
@@ -1282,46 +1286,69 @@ void CCommandAI::ExecuteRemove(const Command& c)
 
 	repeatOrders = false;
 
-	if (c.GetOpts() & META_KEY) {
-		// erase range by tag or (with ALT) index
-		const auto limits = GetRemoveLimitsFromOptions(c, *queue);
-		if (!limits) {
-			eventHandler.UnitCmdDone(owner, c);
-			return;
-		}
-		const auto [firstIndex, lastIndex] = *limits;
-		int nElements = lastIndex - firstIndex + 1;
-
-		CCommandQueue::iterator ci = queue->begin() + lastIndex;
-		while (nElements > 0) {
-			--nElements;
-			const Command& qc = *ci;
-			if (qc.GetID() == CMD_WAIT)
-				waitCommandsAI.RemoveWaitCommand(owner, qc);
-
-			if (facBuildQueue) {
-				// only true when ci == queue->begin(), does pop_front()
-				// via CFAI::ExecuteStop. otherwise converts to CMD_STOP.
-				if (facCAI->RemoveBuildCommand(ci))
-					break;
-			}
-
-			if (!facCAI && (ci == queue->begin())) {
-				FinishCommand();
-				break;
-			}
-
-			queue->erase(ci);
-			// iterator may have been invalidated
-			ci = queue->begin() + firstIndex + nElements - 1;
-		}
-		repeatOrders = prevRepeat;
+	// erase range by tag or (with ALT) index
+	const auto limits = GetRemoveLimitsFromOptions(c, *queue);
+	if (!limits) {
 		eventHandler.UnitCmdDone(owner, c);
 		return;
 	}
+	const auto [firstIndex, lastIndex] = *limits;
+	int nElements = lastIndex - firstIndex + 1;
 
-	if (c.GetNumParams() <= 0)
+	CCommandQueue::iterator ci = queue->begin() + lastIndex;
+	while (nElements > 0) {
+		--nElements;
+		const Command& qc = *ci;
+		if (qc.GetID() == CMD_WAIT)
+			waitCommandsAI.RemoveWaitCommand(owner, qc);
+
+		if (facBuildQueue) {
+			// only true when ci == queue->begin(), does pop_front()
+			// via CFAI::ExecuteStop. otherwise converts to CMD_STOP.
+			if (facCAI->RemoveBuildCommand(ci))
+				break;
+		}
+
+		if (!facCAI && (ci == queue->begin())) {
+			FinishCommand();
+			break;
+		}
+
+		queue->erase(ci);
+		// iterator may have been invalidated
+		ci = queue->begin() + firstIndex + nElements - 1;
+	}
+
+	repeatOrders = prevRepeat;
+	eventHandler.UnitCmdDone(owner, c);
+}
+
+
+void CCommandAI::ExecuteRemove(const Command& c)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	CCommandQueue* queue = &commandQue;
+	CFactoryCAI* facCAI = dynamic_cast<CFactoryCAI*>(this);
+
+	// disable repeating during the removals
+	const bool prevRepeat = repeatOrders;
+
+	bool facBuildQueue = false;
+
+	if (facCAI) {
+		if (c.GetOpts() & CONTROL_KEY) {
+			// keep using the build-order queue
+			facBuildQueue = true;
+		} else {
+			// use the command-queue for new units
+			queue = &facCAI->newUnitCommands;
+		}
+	}
+
+	if (queue->empty() || c.GetNumParams() <= 0)
 		return;
+
+	repeatOrders = false;
 
 	// erase commands by a list of command types
 	// if false, remove commands by tag
