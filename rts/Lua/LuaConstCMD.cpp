@@ -74,15 +74,14 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	/***
 	 * @field CMD.STOP 0
 	 *
-	 * Stop the current action.
+	 * Stop the current action and clear the unit's command queue.
 	 *
 	 * For factories, this will cancel the new unit orders queue.
 	 * For units, this will cancel the current command and queue.
 	 *
 	 * Accepts no parameters.
 	 *
-	 * *Note:* This is actually a noop, but clears the queue when `shift` isn't used since
-	 * that's the standard behaviour when `shift` isn't used for all actions.
+	 * It won't do anything if used with `CMD.INSERT`, or the `shift` option.
 	 */
 	PUSH_CMD(STOP);
 	/*** @field CMD.INSERT 1 */
