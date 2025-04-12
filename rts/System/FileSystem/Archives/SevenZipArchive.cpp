@@ -150,7 +150,7 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 		const auto& fd = fileEntries.emplace_back(
 			i, //fp
 			SzArEx_GetFileSize(&db, i), // size
-			static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(db.MTime.Vals[i].Low, db.MTime.Vals[i].High)), // modtime
+			db.MTime.Vals ? static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(db.MTime.Vals[i].Low, db.MTime.Vals[i].High)) : 0, // modtime
 			std::move(fileName.value()) // origName
 		);
 
