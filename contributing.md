@@ -28,3 +28,7 @@
 * **rhys-vdw** aka duke_of_gloat - documentation tooling
 * **saurtron** - fonts, perf, misc
 * **sprunk** - gamedev capabilities (incl. API), misc
+
+### Less active but knowledgeable people you could try reach if nobody above can deal with it
+* **ChrisFloofyKitsune** - rmlUI
+* **loveridge** - rmlUI, misc
