@@ -3833,11 +3833,21 @@ private:
 } // namespace (unnamed)
 
 
+bool UnsyncedGameCommands::ActionPressed(const Action& action, bool isRepeat)
+{
+	const IUnsyncedActionExecutor* executor = GetActionExecutor(action.command);
+
+	if (executor != nullptr) {
+		// an executor for that action was found
+		if (executor->ExecuteAction(UnsyncedAction(action, isRepeat)))
+			return true;
+	}
+
+	return false;
+}
 
 
-
-// TODO CGame stuff in UnsyncedGameCommands: refactor (or move)
-bool CGame::ActionReleased(const Action& action)
+bool UnsyncedGameCommands::ActionReleased(const Action& action)
 {
 	switch (hashString(action.command.c_str())) {
 		case hashString("drawinmap"): {
