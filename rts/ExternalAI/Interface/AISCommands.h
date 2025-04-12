@@ -445,6 +445,7 @@ struct SRestartPathDrawerCommand {
 	bool sameColor;
 }; //$ COMMAND_DRAWER_PATH_RESTART Map_Drawer_PathDrawer_restart
 
+// clang-format off
 /**
  * @brief Creates a cubic Bezier spline figure
  * Creates a cubic Bezier spline figure from pos1 to pos4,
@@ -472,8 +473,7 @@ struct SCreateSplineFigureDrawerCommand {
 	int figureGroupId;
 	/// the new group
 	int ret_newFigureGroupId;
-}; //$ COMMAND_DRAWER_FIGURE_CREATE_SPLINE Map_Drawer_Figure_drawSpline REF:figureGroupId->FigureGroup
-   //REF:ret_newFigureGroupId->FigureGroup
+}; //$ COMMAND_DRAWER_FIGURE_CREATE_SPLINE Map_Drawer_Figure_drawSpline REF:figureGroupId->FigureGroup REF:ret_newFigureGroupId->FigureGroup
 
 /**
  * @brief Creates a straight line
@@ -498,8 +498,8 @@ struct SCreateLineFigureDrawerCommand {
 	int figureGroupId;
 	/// the new group
 	int ret_newFigureGroupId;
-}; //$ COMMAND_DRAWER_FIGURE_CREATE_LINE Map_Drawer_Figure_drawLine REF:figureGroupId->FigureGroup
-   //REF:ret_newFigureGroupId->FigureGroup
+}; //$ COMMAND_DRAWER_FIGURE_CREATE_LINE Map_Drawer_Figure_drawLine REF:figureGroupId->FigureGroup REF:ret_newFigureGroupId->FigureGroup
+// clang-format on
 
 /**
  * Sets the color used to draw all lines of figures in a figure group.
@@ -791,13 +791,13 @@ struct SAttackAreaUnitCommand {
 	float radius;
 }; //$ COMMAND_UNIT_ATTACK_AREA Unit_attackArea
 
-// struct SAttackAreaUnitCommand {
+//struct SAttackAreaUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-// };
+//};
 
 struct SGuardUnitCommand {
 	int unitId;
@@ -817,13 +817,14 @@ struct SGuardUnitCommand {
 	int toGuardUnitId;
 }; //$ COMMAND_UNIT_GUARD Unit_guard REF:toGuardUnitId->Unit
 
-// struct SGroupSelectUnitCommand {
+
+//struct SGroupSelectUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-// };
+//};
 
 struct SGroupAddUnitCommand {
 	int unitId;
@@ -933,13 +934,13 @@ struct SSetBaseUnitCommand {
 	float* basePos_posF3;
 }; //$ COMMAND_UNIT_SET_BASE Unit_setBase
 
-// struct SInternalUnitCommand {
+//struct SInternalUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-// };
+//};
 
 struct SSelfDestroyUnitCommand {
 	int unitId;
@@ -1340,13 +1341,13 @@ struct SSetAutoRepairLevelUnitCommand {
 	int autoRepairLevel;
 }; //$ COMMAND_UNIT_SET_AUTO_REPAIR_LEVEL Unit_setAutoRepairLevel
 
-// struct SAttackLoopbackUnitCommand {
+//struct SAttackLoopbackUnitCommand {
 //	int unitId;
 //	int groupId;
 //	/// see enum UnitCommandOptions
 //	short options;
 //	int timeOut;
-// };
+//};
 
 /**
  * Set what a unit should do when it is idle.
@@ -1422,6 +1423,7 @@ struct SPauseCommand {
 	const char* reason;
 }; //$ COMMAND_PAUSE Game_setPause
 
+
 struct SSetPositionGraphDrawerDebugCommand {
 	float x;
 	float y;
@@ -1452,6 +1454,7 @@ struct SSetLabelLineGraphDrawerDebugCommand {
 	int lineId;
 	const char* label;
 }; //$ COMMAND_DEBUG_DRAWER_GRAPH_LINE_SET_LABEL Debug_GraphDrawer_GraphLine_setLabel
+
 
 struct SAddOverlayTextureDrawerDebugCommand {
 	int ret_overlayTextureId;
@@ -1491,12 +1494,14 @@ struct SSetLabelOverlayTextureDrawerDebugCommand {
 }; //$ COMMAND_DEBUG_DRAWER_OVERLAYTEXTURE_SET_LABEL Debug_OverlayTexture_setLabel
 
 
-#ifdef __cplusplus
-} // extern "C"
+
+#ifdef	__cplusplus
+}	// extern "C"
 #endif
 
 
-#ifdef __cplusplus
+
+#ifdef	__cplusplus
 struct Command;
 
 
@@ -1523,7 +1528,8 @@ int extractAICommandTopic(const Command* internalUnitCmd, int maxUnits);
  */
 bool newCommand(void* sUnitCommandData, int sCommandId, int maxUnits, Command* c);
 
-#endif // __cplusplus
+#endif	// __cplusplus
 
 
-#endif // AI_S_COMMANDS_H
+
+#endif	// AI_S_COMMANDS_H
