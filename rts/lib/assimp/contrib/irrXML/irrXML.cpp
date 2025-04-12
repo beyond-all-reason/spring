@@ -9,10 +9,6 @@
 #include "irrXML.h"
 
 #include "CXMLReaderImpl.h"
-#include "irrArray.h"
-#include "irrString.h"
-
-#include "./../../code/fast_atof.h"
 
 namespace irr {
 namespace io {

@@ -14,8 +14,10 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #ifdef USE_FONTCONFIG
-#include <fontconfig/fcfreetype.h>
+// clang-format off
 #include <fontconfig/fontconfig.h>
+#include <fontconfig/fcfreetype.h>
+// clang-format on
 #endif
 #endif // HEADLESS
 

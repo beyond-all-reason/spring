@@ -10,8 +10,11 @@
 #ifndef XSIMD_BASE_CONSTANT_HPP
 #define XSIMD_BASE_CONSTANT_HPP
 
+#include "xsimd_utils.hpp"
+
 namespace xsimd {
 template<class X> class simd_base;
+template<class X> struct simd_batch_traits;
 
 template<class T, bool... Values> struct batch_bool_constant {
 	static constexpr std::size_t size = sizeof...(Values);

@@ -24,6 +24,8 @@ TileFileHeader for details.
 #ifndef SMF_MAPFORMAT_H
 #define SMF_MAPFORMAT_H
 
+#include <cstddef>
+
 /// Size in bytes of a single tile in the .smt
 static constexpr size_t SMALL_TILE_SIZE = (512 >> 0) + (512 >> 2) + (512 >> 4) + (512 >> 6);
 

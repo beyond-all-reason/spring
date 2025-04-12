@@ -3,6 +3,8 @@
 #ifndef OBJECT_DEPENDENCE_TYPES_H
 #define OBJECT_DEPENDENCE_TYPES_H
 
+#include <cstdint>
+
 // The reason to have different dependence types is that an object may simultaneously have more than one kind of
 // dependence to another object. Without dependence types, the dependencies would therefore need to be duplicated
 // (stored as lists or vectors instead of maps or sets). This would also make deleting the death dependence somewhat

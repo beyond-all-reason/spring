@@ -12,6 +12,8 @@
 * RCS ID: $Id: select.h,v 1.7 2004/06/16 01:02:07 diego Exp $
 \*=========================================================================*/
 
+class lua_State;
+
 int select_open(lua_State* L);
 
 #endif /* SELECT_H */

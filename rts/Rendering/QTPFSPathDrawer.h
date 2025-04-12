@@ -6,6 +6,7 @@
 #include "IPathDrawer.h"
 
 #include "Rendering/GL/RenderBuffersFwd.h"
+#include "Sim/Path/QTPFS/Node.h"
 
 #include <vector>
 
@@ -14,7 +15,6 @@ struct MoveDef;
 namespace QTPFS {
 class PathManager;
 
-struct QTNode;
 struct IPath;
 struct NodeLayer;
 struct PathSearch;

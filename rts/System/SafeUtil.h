@@ -5,6 +5,8 @@
 
 #include <cstring>
 #include <limits>
+#include <memory>
+#include <type_traits>
 
 namespace spring {
 template<class T> inline void SafeDestruct(T*& p)

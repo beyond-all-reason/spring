@@ -12,6 +12,7 @@
 #define XSIMD_SCALAR_HPP
 
 #include <cmath>
+#include <complex>
 #include <limits>
 
 #include "xsimd_common_math.hpp"

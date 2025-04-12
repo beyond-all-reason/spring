@@ -51,8 +51,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "matrix3x3.h"
 #include "matrix4x4.h"
 
-#include "lib/streflop/streflop_cond.h"
-
 #include <algorithm>
 #include <limits>
 

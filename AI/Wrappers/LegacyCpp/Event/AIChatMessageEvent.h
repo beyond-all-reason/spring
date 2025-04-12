@@ -4,6 +4,7 @@
 #define _AI_CHAT_MESSAGE_EVENT_H
 
 #include "AIEvent.h"
+#include "AISEvents.h"
 
 namespace springLegacyAI {
 

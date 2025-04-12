@@ -47,6 +47,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef AI_IMPORTER_DESC_H_INC
 #define AI_IMPORTER_DESC_H_INC
 
+#include "defs.h"
+
 /** Mixed set of flags for #aiImporterDesc, indicating some features
  *  common to many importers*/
 enum aiImporterFlags {

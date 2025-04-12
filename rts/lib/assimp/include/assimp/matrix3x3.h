@@ -53,6 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 template<typename T> class aiMatrix4x4t;
 template<typename T> class aiVector2t;
+template<typename T> class aiVector3t;
 
 // ---------------------------------------------------------------------------
 /** @brief Represents a row-major 3x3 matrix
