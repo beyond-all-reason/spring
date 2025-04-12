@@ -170,8 +170,6 @@ CR_REG_METADATA(CGame, (
 	CR_IGNORED(lastUnsyncedUpdateTime),
 	CR_IGNORED(skipLastDrawTime),
 
-	CR_IGNORED(lastActionList), //IGNORED?
-
 	CR_IGNORED(updateDeltaSeconds),
 	CR_MEMBER(totalGameTime),
 
@@ -212,10 +210,9 @@ CR_REG_METADATA(CGame, (
 	CR_MEMBER(luaGCControl),
 
 	CR_IGNORED(jobDispatcher),
-	CR_IGNORED(curKeyCodeChain),
-	CR_IGNORED(curScanCodeChain),
 	CR_IGNORED(worldDrawer),
 	CR_IGNORED(saveFileHandler),
+	CR_IGNORED(gameInputReceiver),
 
 	// Post Load
 	CR_POSTLOAD(PostLoad)
@@ -1103,89 +1100,21 @@ void CGame::ResizeEvent()
 	}
 }
 
-
 int CGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (!gameOver && !isRepeat)
-		playerHandler.Player(gu->myPlayerNum)->currentStats.keyPresses++;
-
-	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
-	const CKeySet ks(scanCode, CKeySet::KSScanCode);
-
-	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
-	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
-
-	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
-
-	if (RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat))
-		return 0;
-
-	if (gameTextInput.ConsumePressedKey(keyCode, scanCode, lastActionList))
-		return 0;
-
-	if (luaInputReceiver->KeyPressed(keyCode, scanCode, isRepeat))
-		return 0;
-
-
-	// try the input receivers
-	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
-		if (recv != nullptr && recv->KeyPressed(keyCode, scanCode, isRepeat))
-			return 0;
-	}
-
-	// try our list of actions
-	for (const Action& action: lastActionList) {
-		if (ActionPressed(action, isRepeat)) {
-			return 0;
-		}
-	}
-
-	// maybe a widget is interested?
-	if (luaUI != nullptr) {
-		for (const Action& action: lastActionList) {
-			luaUI->GotChatMsg(action.rawline, false);
-		}
-	}
-
-	if (luaMenu != nullptr) {
-		for (const Action& action: lastActionList) {
-			luaMenu->GotChatMsg(action.rawline, false);
-		}
-	}
-
+	gameInputReceiver.KeyPressed(keyCode, scanCode, isRepeat);
 	return 0;
 }
 
-
 int CGame::KeyReleased(int keyCode, int scanCode)
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (RmlGui::ProcessKeyReleased(keyCode, scanCode))
-		return 0;
-
-	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
-		return 0;
-
-	// update actionlist for lua consumer
-	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
-
-	if (luaInputReceiver->KeyReleased(keyCode, scanCode))
-		return 0;
-
-	// try the input receivers
-	for (CInputReceiver* recv: CInputReceiver::GetReceivers()) {
-		if (recv != nullptr && recv->KeyReleased(keyCode, scanCode)) {
-			return 0;
-		}
-	}
-
-	for (const Action& action: lastActionList) {
-		if (ActionReleased(action))
-			return 0;
-	}
-
+	gameInputReceiver.KeyReleased(keyCode, scanCode);
 	return 0;
+}
+
+CInputReceiver* CGame::GetInputReceiver()
+{
+	return &gameInputReceiver;
 }
 
 int CGame::KeyMapChanged()
@@ -2249,4 +2178,9 @@ bool CGame::ActionPressed(const Action& action, bool isRepeat)
 	}
 
 	return (gameCommandConsole.ExecuteAction(action));
+}
+
+const ActionList& CGame::GetLastActionList()
+{
+	return gameInputReceiver.lastActionList;
 }
