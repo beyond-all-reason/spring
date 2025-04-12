@@ -91,58 +91,55 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	/***
 	 * @field CMD.REMOVE 2
 	 *
-	 * Remove commands from a unit's queue.
-	 *
-	 * The behaviour can be modified with the following options:
+	 * Remove all commands from a unit's queue matching specific cmdIDs or tags.
 	 *
 	 * ## Modes of operation
 	 *
-	 * ### Filter by id or tag
+	 * ### Filter by tag
 	 *
-	 * Removes any command with an id or tag included in params.
+	 * Removes any command with a tag matching those included in params.
 	 *
-	 * - `params` {id1, id2 ...} or {tag1, tag2, ...} an array of ids or tags to look for.
-	 * - With `alt`, remove by id, otherwise remove by tag.
+	 * - `params` {tag1, tag2 ...} an array of tags to look for.
 	 *
-	 * ### Remove by range
+	 * This is the default mode of operation.
 	 *
-	 * Removes all commands with index in range [start, end], indexed by position in the queue, or command tag.
+	 * ### Filter by id
 	 *
-	 * - `params` {start, end}. both are optional and if not set default to queue limits.
-	 * - With `alt`, start and end are indexes, without `alt`, they're tags.
+	 * Removes any command with a `command id` matching those included in params.
+	 *
+	 * - `params` {id1, id2 ...} or {tag1, tag2, ...} an array of ids tags to look for.
+	 *
+	 * To use this mode you need to pass the `alt` option.
 	 *
 	 * ## Command Options
-	 * - `meta` Range/filter switch.
-	 * - `alt` Tag/Index or Tag/Id switch, depending on `meta`.
+	 *
+	 * - `alt` Tag/Id switch
 	 * - `ctrl` Alternative queue selection.
 	 *   - For factories alternative queue is the factory command queue, default queue is the rally queue.
 	 *   - For other units no effect.
 	 *
-	 * ## Callins
-	 *
-	 *  - UnitCmdDone: Run when the command is finished.
-	 *
 	 * ## Examples
 	 *
-	 * Delete everything:
+	 * Delete all attack orders from unit, or factory rally queue if factory:
 	 * ```lua
-	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, nil, {'meta', 'ctrl'})
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, CMD.ATTACK)
 	 * ```
 	 *
-	 * Delete all but the 1st element:
+	 * Delete all attack and fight orders from unit, or factory rally queue if factory:
 	 * ```lua
-	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, 2, {'meta', 'ctrl', 'alt'})
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {CMD.ATTACK, CMD.FIGHT}, CMD.OPT_ALT)
 	 * ```
 	 *
-	 * Delete from 1st to 20th:
+	 * Delete commands with specific tags:
 	 * ```lua
-	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {1, 20}, {'meta', 'ctrl', 'alt'})
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {tag1, tag2, tag3})
 	 * ```
 	 *
-	 * Delete from position of `startTag`, to `endTag`.
+	 * Delete all commands to build units with UnitDef ids unitDefId1 and unitDefId2 from factory queue:
 	 * ```lua
-	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {startTag, endTag}, {'meta', 'ctrl'})
+	 * Spring.GiveOrderToUnit(unitID, CMD.REMOVE, {-unitDefId1, -unitDefId2}, CMD.OPT_ALT + CMD.OPT_CTRL)
 	 * ```
+	 *
 	 * @see Spring.GiveOrderToUnit
 	 * @see Callins:UnitCmdDone
 	 */
