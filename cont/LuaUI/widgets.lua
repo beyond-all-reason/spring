@@ -1145,6 +1145,33 @@ end
 
 
 function widgetHandler:GotChatMsg(command)
+  if (command == 'tweakgui') then
+    self.tweakKeys = {}
+    self.tweakMode = true
+    Spring.Log(section, LOG.INFO, "LuaUI TweakMode: ON")
+    return true
+  elseif (command == 'reconf') then
+    self:SendConfigData()
+    return true
+  elseif (command == 'selector') then
+    if (self:SelectorActive()) then
+      return true  -- there can only be one
+    end
+    local sw = self:LoadWidget(LUAUI_DIRNAME .. SELECTOR_BASENAME)
+    self:InsertWidget(sw)
+    self:RaiseWidget(sw)
+    return true
+  elseif (string.find(command, 'togglewidget') == 1) then
+    self:ToggleWidget(string.sub(command, 14))
+    return true
+  elseif (string.find(command, 'enablewidget') == 1) then
+    self:EnableWidget(string.sub(command, 14))
+    return true
+  elseif (string.find(command, 'disablewidget') == 1) then
+    self:DisableWidget(string.sub(command, 15))
+    return true
+  end
+
   if (self.actionHandler:TextAction(command)) then
     return true
   end
