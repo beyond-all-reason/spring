@@ -3597,8 +3597,7 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
  *
  * @function Spring.GetMouseButtonsPressed
  *
- * Get pressed status for all buttons, or optionally pass a list of
- * button indices to get the pressed status for.
+ * Get pressed status for specific buttons.
  *
  * @param button1 integer? Index of the first button.
  * @param ... integer Indices for more buttons.
@@ -3609,10 +3608,7 @@ int LuaUnsyncedRead::GetMouseButtonsPressed(lua_State* L)
 	int numArgs = lua_gettop(L);
 
 	if (numArgs == 0) {
-		for (int i = 0; i < NUM_BUTTONS ; ++i)
-			lua_pushboolean(L, mouse->buttons[i].pressed);
-
-		return NUM_BUTTONS;
+		luaL_error(L, "Need to pass some button indexes.");
 	}
 
 	for (int i = 1; i <= numArgs ; ++i) {
