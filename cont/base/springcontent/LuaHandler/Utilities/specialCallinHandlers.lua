@@ -28,7 +28,7 @@ function hHookFuncs.Shutdown()
 end
 
 
-function hHookFuncs.ConfigureLayout(command)
+function hHookFuncs.GotChatMsg(command, playerID)
 	if (command == 'reconf') then
 		handler:SendConfigData()
 		return true

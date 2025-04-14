@@ -284,6 +284,7 @@ bool CLuaUI::LoadCFunctions(lua_State* L)
 
 /***
  * @function UI:ConfigureLayout
+ * @deprecated
  */
 bool CLuaUI::ConfigureLayout(const string& command)
 {
@@ -292,6 +293,12 @@ bool CLuaUI::ConfigureLayout(const string& command)
 	static const LuaHashString cmdStr(__func__);
 	if (!cmdStr.GetGlobalFunc(L))
 		return false; // the call is not defined
+
+	static bool deprecatedMsgDone = false;
+	if (!deprecatedMsgDone) {
+		LOG_L(L_DEPRECATED, "ConfigureLayout callin is deprecated! Please use GotChatMsg(cmd, playerID) instead.");
+		deprecatedMsgDone = true;
+	}
 
 	lua_pushsstring(L, command);
 
