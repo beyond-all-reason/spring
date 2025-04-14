@@ -3599,7 +3599,7 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
  *
  * Get pressed status for specific buttons.
  *
- * @param button1 integer? Index of the first button.
+ * @param button1 integer Index of the first button.
  * @param ... integer Indices for more buttons.
  * @return boolean ... Pressed status for the buttons.
  */
