@@ -1469,7 +1469,7 @@ int LuaUtils::ParseLogLevel(lua_State* L, int index)
  * Logs a message to the logfile/console.
  * 
  * @function Spring.Log
- * @param section string
+ * @param section string Sets an arbitrary section. Level filtering can be applied per-section
  * @param logLevel (LogLevel|LOG)? (Default: `"notice"`)
  * @param ... string messages
  */
