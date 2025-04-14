@@ -1216,37 +1216,13 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	SlowUpdate();
 }
 
-const std::optional<int> CCommandAI::FindTagIndex(const CCommandQueue& queue, unsigned int tag) const
-{
-	int i = 0;
-	for (const auto& qc: queue) {
-		if (qc.GetTag() == tag)
-			return i;
-		++i;
-	}
-	return std::nullopt;
-}
-
 
 const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const
 {
 	int firstIndex = 0;
 	int lastIndex = queue.size() - 1;
 
-	if (c.GetOpts() & ALT_KEY) {
-		const auto firstTagIndex = FindTagIndex(queue, c.GetParam(0));
-		if (!firstTagIndex)
-			return std::nullopt;
-
-		if (c.GetNumParams() >= 2) {
-			const auto lastTagIndex = FindTagIndex(queue, c.GetParam(1));
-			if (!lastTagIndex)
-				return std::nullopt;
-			lastIndex = *lastTagIndex;
-		}
-
-		firstIndex = *firstTagIndex;
-	} else if (c.GetNumParams() >= 1) {
+	if (c.GetNumParams() >= 1) {
 		if (c.GetNumParams() >= 1)
 			firstIndex = std::max<int>(c.GetParam(0) - 1, 0);
 		if (c.GetNumParams() >= 2)
@@ -1286,7 +1262,7 @@ void CCommandAI::ExecuteRemoveRange(const Command& c)
 
 	repeatOrders = false;
 
-	// erase range by index or (with ALT) tag
+	// erase range by index
 	const auto limits = GetRemoveLimitsFromOptions(c, *queue);
 	if (!limits) {
 		eventHandler.UnitCmdDone(owner, c);
