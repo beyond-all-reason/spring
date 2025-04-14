@@ -1286,7 +1286,7 @@ void CCommandAI::ExecuteRemoveRange(const Command& c)
 
 	repeatOrders = false;
 
-	// erase range by tag or (with ALT) index
+	// erase range by index or (with ALT) tag
 	const auto limits = GetRemoveLimitsFromOptions(c, *queue);
 	if (!limits) {
 		eventHandler.UnitCmdDone(owner, c);
