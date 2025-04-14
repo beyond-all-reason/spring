@@ -3605,14 +3605,14 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
  */
 int LuaUnsyncedRead::GetMouseButtonsPressed(lua_State* L)
 {
-	int numArgs = lua_gettop(L);
+	const int numArgs = lua_gettop(L);
 
 	if (numArgs == 0) {
 		luaL_error(L, "Need to pass some button indexes.");
 	}
 
 	for (int i = 1; i <= numArgs ; ++i) {
-		int button = luaL_checkint(L, i);
+		const int button = luaL_checkint(L, i);
 
 		if (button <= 0)
 			luaL_error(L, "%d: bad button index", button);
