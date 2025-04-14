@@ -284,6 +284,7 @@ bool CLuaUI::LoadCFunctions(lua_State* L)
 
 /***
  * @function UI:ConfigureLayout
+ * @deprecated
  */
 bool CLuaUI::ConfigureLayout(const string& command)
 {
