@@ -297,6 +297,7 @@ bool CLuaUI::ConfigureLayout(const string& command)
 	static bool deprecatedMsgDone = false;
 	if (!deprecatedMsgDone) {
 		LOG_L(L_DEPRECATED, "ConfigureLayout callin is deprecated! Please use GotChatMsg(cmd, playerID) instead.");
+		deprecatedMsgDone = true;
 	}
 
 	lua_pushsstring(L, command);
