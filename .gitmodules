@@ -30,3 +30,6 @@
 [submodule "rts/lib/lunasvg"]
 	path = rts/lib/lunasvg
 	url = https://github.com/sammycage/lunasvg.git
+[submodule "rts/lib/fastgltf"]
+	path = rts/lib/fastgltf
+	url = https://github.com/spnda/fastgltf

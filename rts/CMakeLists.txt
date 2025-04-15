@@ -84,7 +84,7 @@ endif (UNIX AND NOT MINGW)
 find_package_static(ZLIB 1.2.7 REQUIRED)
 list(APPEND engineCommonLibraries DevIL::IL)
 list(APPEND engineCommonLibraries 7zip prd::jsoncpp ${SPRING_MINIZIP_LIBRARY} ZLIB::ZLIB Tracy::TracyClient)
-list(APPEND engineCommonLibraries lua luasocket archives assimp
+list(APPEND engineCommonLibraries lua luasocket archives assimp fastgltf
 	gflags_nothreads_static)
 if(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 	list(APPEND engineCommonLibraries execinfo)
@@ -148,6 +148,7 @@ make_global_var(engineSources
 		${sources_engine_ExternalAI}
 	)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include) #FIXME: hack for rts/Rendering/Models/IModelParser.cpp
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/fastgltf/include)
 
 ### Add headers for generated project files (e.g. Code::Blocks)
 file(GLOB_RECURSE engineHeaders "*.h" "*.hpp" "*.inl")

@@ -49,7 +49,7 @@ struct SVertexData {
 	SVertexData() {
 		pos = float3{};
 		normal = UpVector;
-		sTangent = float3{};
+		sTangent = RgtVector;
 		tTangent = float3{};
 		texCoords[0] = float2{};
 		texCoords[1] = float2{};
@@ -219,6 +219,10 @@ public:
 	const std::vector<SVertexData>& GetVerticesVec() const { return vertices; }
 	const std::vector<uint32_t>& GetIndicesVec() const { return indices; }
 	const std::vector<uint32_t>& GetShatterIndicesVec() const { return shatterIndices; }
+
+	std::vector<SVertexData>& GetVerticesVec() { return vertices; }
+	std::vector<uint32_t>& GetIndicesVec() { return indices; }
+	std::vector<uint32_t>& GetShatterIndicesVec() { return shatterIndices; }
 private:
 	void CreateShatterPiecesVariation(int num);
 public:

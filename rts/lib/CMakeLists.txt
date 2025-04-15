@@ -1,4 +1,3 @@
-
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/rts)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/rts/lib)
 
@@ -64,6 +63,11 @@ endforeach()
 
 ADD_SUBDIRECTORY(assimp)
 target_compile_definitions(assimp PRIVATE -DASSIMP_BUILD_NO_OWN_ZLIB)
+
+# fastgltf
+set(FASTGLTF_COMPILE_AS_CPP20 ON CACHE BOOL "forced on by Recoil build env" FORCE)
+set(FASTGLTF_USE_64BIT_FLOAT OFF CACHE BOOL "forced on by Recoil build env" FORCE)
+ADD_SUBDIRECTORY(fastgltf)
 
 ADD_SUBDIRECTORY(squish)
 ADD_SUBDIRECTORY(rg-etc1)

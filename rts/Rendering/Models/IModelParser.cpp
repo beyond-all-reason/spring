@@ -8,6 +8,7 @@
 #include "3DOParser.h"
 #include "S3OParser.h"
 #include "AssParser.h"
+#include "GLTFParser.h"
 #include "3DModelVAO.h"
 #include "ModelsLock.h"
 #include "Game/GlobalUnsynced.h"
@@ -33,7 +34,7 @@ CModelLoader modelLoader;
 static C3DOParser g3DOParser;
 static CS3OParser gS3OParser;
 static CAssParser gAssParser;
-
+static CGLTFParser gGLTFParser;
 
 static bool CheckAssimpWhitelist(const char* aiExt) {
 	constexpr std::array<const char*, 5> whitelist = {
@@ -55,6 +56,8 @@ static void RegisterModelFormats(CModelLoader::ParsersType& parsers) {
 	// file-extension should be lowercase
 	parsers.emplace_back("3do", &g3DOParser);
 	parsers.emplace_back("s3o", &gS3OParser);
+	parsers.emplace_back("gltf", &gGLTFParser);
+	parsers.emplace_back("glb", &gGLTFParser);
 
 	std::string extension;
 	std::string extensions;

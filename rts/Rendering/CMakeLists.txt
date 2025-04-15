@@ -94,6 +94,7 @@ set(sources_engine_Rendering
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/3DOParser.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/AssIO.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/AssParser.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Models/GLTFParser.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/IModelParser.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/S3OParser.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Models/ModelsMemStorageDefs.cpp"
