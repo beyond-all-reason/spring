@@ -682,7 +682,7 @@ private:
 
 class MouseStateActionExecutor : public IUnsyncedActionExecutor {
 public:
-	MouseStateActionExecutor() : IUnsyncedActionExecutor("mousestate", "Toggles mousestate") {}
+	MouseStateActionExecutor() : IUnsyncedActionExecutor("MouseState", "Toggles mousestate") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		// TODO: false for backwards compatibility
@@ -1828,7 +1828,7 @@ public:
 
 class GameInfoCloseActionExecutor : public IUnsyncedActionExecutor {
 public:
-	GameInfoCloseActionExecutor() : IUnsyncedActionExecutor("gameinfoclose", "Closes game info") {}
+	GameInfoCloseActionExecutor() : IUnsyncedActionExecutor("GameInfoClose", "Closes game info") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		// TODO: false for backwards compatibility
