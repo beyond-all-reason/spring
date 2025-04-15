@@ -614,7 +614,8 @@ public:
 
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
 		inMapDrawer->SetDrawMode(false);
-		return true;
+		// TODO: false for backwards compatibility
+		return false;
 	}
 };
 
@@ -665,8 +666,8 @@ public:
 
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
 		mouse->MouseRelease(mouse->lastx, mouse->lasty, button);
-
-		return true;
+		// TODO: false for backwards compatibility
+		return false;
 	}
 
 private:
@@ -678,10 +679,14 @@ class MouseStateActionExecutor : public IUnsyncedActionExecutor {
 public:
 	MouseStateActionExecutor() : IUnsyncedActionExecutor("mousestate", "Toggles mousestate") {}
 
-	bool Execute(const UnsyncedAction& action) const final { return true; }
+	bool Execute(const UnsyncedAction& action) const final {
+		// TODO: false for backwards compatibility
+		return false;
+	}
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
 		mouse->ToggleMiddleClickScroll();
-		return true;
+		// TODO: false for backwards compatibility
+		return false;
 	}
 };
 
@@ -748,6 +753,7 @@ public:
 
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
 		camera->SetMovState(moveStateIdx, false);
+		// TODO: maybe should return false for backwards compatibility
 		return halt;
 	}
 
@@ -1819,12 +1825,16 @@ class GameInfoCloseActionExecutor : public IUnsyncedActionExecutor {
 public:
 	GameInfoCloseActionExecutor() : IUnsyncedActionExecutor("gameinfoclose", "Closes game info") {}
 
-	bool Execute(const UnsyncedAction& action) const final { return true; }
+	bool Execute(const UnsyncedAction& action) const final {
+		// TODO: false for backwards compatibility
+		return false;
+	}
 
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
 		if (CGameInfo::IsActive()) {
+			// TODO: handled in release, and return false for backwards compatibility
 			CGameInfo::Disable();
-			return true;
+			return false;
 		}
 		return false;
 	}
