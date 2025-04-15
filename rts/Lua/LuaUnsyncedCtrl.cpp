@@ -3354,8 +3354,10 @@ static bool CanGiveOrders(const lua_State* L)
  */
 int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
 {
-	if (!CanGiveOrders(L))
+	if (!CanGiveOrders(L)) {
+		lua_pushboolean(L, false);
 		return 1;
+	}
 
 	selectedUnitsHandler.GiveCommand(LuaUtils::ParseCommand(L, __func__, 1));
 
