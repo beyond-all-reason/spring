@@ -3289,7 +3289,7 @@ static bool CanGiveOrders(const lua_State* L)
  * @param params CreateCommandParams Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return nil|true
+ * @return boolean
  */
 int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
 {
@@ -3312,7 +3312,7 @@ int LuaUnsyncedCtrl::GiveOrder(lua_State* L)
  * @param params CreateCommandParams? Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return nil|true
+ * @return boolean
  */
 int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
 {
@@ -3346,7 +3346,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnit(lua_State* L)
  * @param params CreateCommandParams? Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return nil|true
+ * @return boolean orderGiven
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 {
@@ -3380,7 +3380,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  * @param params CreateCommandParams? Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return nil|true
+ * @return boolean ordersGiven
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 {
