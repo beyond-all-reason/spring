@@ -665,6 +665,11 @@ public:
 	}
 
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
+		if (button == 4 || button == 5) {
+			// HACK   somehow weird things happen when MouseRelease is called for button 4 and 5.
+			// Note that SYS_WMEVENT on windows also only sends MousePress events for these buttons.
+			return false;
+		}
 		mouse->MouseRelease(mouse->lastx, mouse->lasty, button);
 		// TODO: false for backwards compatibility
 		return false;
