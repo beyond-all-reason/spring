@@ -13,6 +13,7 @@
 #include "MouseCursor.h"
 
 static const int NUM_BUTTONS = 10;
+static const int ACTION_BUTTON_MIN = 2;
 
 class CInputReceiver;
 class CCameraController;

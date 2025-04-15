@@ -4,6 +4,7 @@
 #include <SDL_keycode.h>
 
 #include "KeyCodes.h"
+#include "Game/UI/MouseHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Platform/SDL1_keysym.h"
 #include "System/StringUtil.h"
@@ -159,6 +160,10 @@ void CKeyCodes::Reset()
 	//AddPair("euro", SDLK_EURO);       // Some european keyboards
 	//AddPair("undo", SDLK_UNDO);       // Atari keyboard has Undo
 
+	for (int i = ACTION_BUTTON_MIN; i <= NUM_BUTTONS; i++) {
+		AddPair("mouse" + IntToString(i), CKeyCodes::GetMouseButtonSymbol(i));
+	}
+
 	std::sort(nameToCode.begin(), nameToCode.end(), namePred);
 	std::sort(codeToName.begin(), codeToName.end(), codePred);
 	std::sort(printableCodes.begin(), printableCodes.end());
@@ -175,6 +180,14 @@ void CKeyCodes::Reset()
 
 	std::copy(nameToCode.begin(), nameToCode.end(), defaultNameToCode.begin());
 	std::copy(codeToName.begin(), codeToName.end(), defaultCodeToName.begin());
+}
+
+
+int CKeyCodes::GetMouseButtonSymbol(int button)
+{
+	// magic number here chosen so it won't conflict with SDL or unicode reserved values.
+	// choosing a private part of unicode range.
+	return 0xE000+button;
 }
 
 
