@@ -3911,7 +3911,7 @@ bool UnsyncedGameCommands::ActionReleased(const Action& action)
 			return true;
 	}
 
-	return false; // prior implementation always returned false - I don't know why, but we'll maintain behaviour until we have reason to change it.
+	return false;
 }
 
 
