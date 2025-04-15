@@ -293,7 +293,7 @@ class CLuaHandle : public CEventClient
 		void Shutdown();
 		bool GotChatMsg(const std::string& msg, int playerID);
 		bool RecvLuaMsg(const std::string& msg, int playerID);
-
+		bool ExecuteCode(std::string&& code);
 	public: // custom call-in  (inter-script calls)
 		bool HasXCall(const std::string& funcName) const { return HasCallIn(L, funcName); }
 		int XCall(lua_State* srcState, const char* funcName);

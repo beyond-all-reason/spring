@@ -66,8 +66,9 @@ class LuaUtils {
 			int errFuncIdx;
 		};
 
-		class LuaStackDumper {
+		class LuaPrinterJSON {
 		public:
+			static bool PrintStackItem(lua_State* L, int idx, int parseDepth = 1);
 			static void PrintStack(lua_State* L, int parseDepth = 1);
 		private:
 			static void ParseLuaItem(lua_State* L, int i, bool asKey, int parseDepth);
@@ -103,6 +104,8 @@ class LuaUtils {
 		static int Backup(std::vector<DataDump> &backup, lua_State* src, int count);
 		static int Restore(const std::vector<DataDump> &backup, lua_State* dst);
 #endif
+		// Execute arbitrary Lua code in L and print the result
+		static bool ExecuteCodeAndPrint(lua_State* L, std::string&& code);
 
 		// Copies lua data between 2 lua_States
 		static int CopyData(lua_State* dst, lua_State* src, int count);

@@ -2788,14 +2788,16 @@ public:
 class LuaUIActionExecutor : public IUnsyncedActionExecutor {
 public:
 	LuaUIActionExecutor() : IUnsyncedActionExecutor("LuaUI",
-			"Allows one to reload or disable LuaUI, or alternatively to send"
+			"Allows one to enable, reload or disable LuaUI,"
+			" execute an arbitrary Lua code, or alternatively to send"
 			" a chat message to LuaUI") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
 		if (guihandler == nullptr)
 			return false;
 
-		const std::string& command = action.GetArgs();
+		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
+		const std::string& command = !args.empty() ? args.at(0) : "";
 
 		if (command == "reload" || command == "enable") {
 			guihandler->EnableLuaUI(command == "enable");
@@ -2803,6 +2805,10 @@ public:
 		}
 		if (command == "disable") {
 			guihandler->DisableLuaUI();
+			return true;
+		}
+		if (command == "execute" && args.size() > 1) {
+			luaUI->ExecuteCode(fmt::format("{}", fmt::join(args.begin() + 1, args.end(), " ")));
 			return true;
 		}
 		if (luaUI != nullptr) {
