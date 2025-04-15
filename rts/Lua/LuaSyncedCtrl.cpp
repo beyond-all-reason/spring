@@ -5697,9 +5697,16 @@ int LuaSyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 
 /***
  * @function Spring.GiveOrderArrayToUnitArray
- * @param unitArray number[] containing unitIDs
- * @param commands Command[]
- * @return nil
+ * @param unitIDs integer[] Array of unit IDs.
+ * @param commands CreateCommand[]
+ * @param pairwise boolean? (Default: `false`) When `false`, assign all commands to each unit.
+ *
+ * When `true`, assign commands according to index between units and cmds arrays.
+ *
+ * If `len(unitArray) < len(cmdArray)` only the first `len(unitArray)` commands
+ * will be assigned, and vice-versa.
+ *
+ * @return integer count The number of commands applied.
  */
 int LuaSyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 {
