@@ -1822,8 +1822,11 @@ public:
 	bool Execute(const UnsyncedAction& action) const final { return true; }
 
 	bool ExecuteRelease(const UnsyncedAction& action) const final {
-		CGameInfo::Disable();
-		return true;
+		if (CGameInfo::IsActive()) {
+			CGameInfo::Disable();
+			return true;
+		}
+		return false;
 	}
 };
 
