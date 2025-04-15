@@ -38,6 +38,9 @@
  * Fortunately, the Spring Lua system automatically provides access to mod and
  * base files via the VFS module.
  *
+ * As an additional caveat, synced Lua cannot use the `os` and `io` modules,
+ * so using VFS is mandatory there to have any file access at all.
+ *
  * The VFS module doesn't simply open archives though. What it does is map
  * your game files, game dependencies and Spring content onto a virtual file
  * tree. All archives start from the 'roots' of the tree and share the same
@@ -82,11 +85,19 @@
  * however, each archive loaded overrides any archives loaded before it. The
  * standard order of loading (from first to last) is:
  * 
- *  1. The main `Spring/` game directory.
- *  2. The automatic dependencies `springcontent.sdz` and `maphelper.sdz`.
- *  3. Dependencies listed in your `modinfo.lua` (or `modinfo.tdf`), in the order listed.
- *  4. Your mod archive.
- * 
+ *  1. The automatic dependencies `springcontent.sdz` and `maphelper.sdz`.
+ *  2. Dependencies listed in your `modinfo.lua` (or `modinfo.tdf`), in the order listed.
+ * Note that they are loaded fully and recursively, i.e. all the deeper dependencies of the 1st base-level dependency are
+ * loaded before the 2nd base-level dependency. This breaks the usual "loaded later overrides loaded earlier" priority if
+ * a dependency comes from multiple places, since only the first time an archive is loaded counts.
+ *  3. Your mod archive.
+ *
+ * Loose files (not within any archive) in the engine dir are also visible
+ * as if under the VFS root if loading under the `VFS.RAW` mode, though you
+ * can also use full FS path (i.e. `C:/.../Spring/foo/bar.txt` is visible
+ * both as that and as just `foo/bar.txt`). Note that `VFS.RAW` is only
+ * accessible to unsynced Lua, all synced states are limited to loaded archives.
+ *
  * ## Paths
  * 
  * Spring's VFS is **lowercase only**. Also it is **strongly** recommended to
@@ -138,8 +149,6 @@ bool LuaVFS::PushCommon(lua_State* L)
 
 	/*** @field VFS.RAW "r" Only select uncompressed files. */
 	HSTR_PUSH_CSTRING(L, "RAW",       SPRING_VFS_RAW);
-	/*** @field VFS.RAW "M" */
-	HSTR_PUSH_CSTRING(L, "MOD",       SPRING_VFS_MOD);
 	/*** @field VFS.GAME "M" */
 	HSTR_PUSH_CSTRING(L, "GAME",      SPRING_VFS_MOD); // synonym to MOD
 	/*** @field VFS.MAP "m" */
@@ -152,8 +161,14 @@ bool LuaVFS::PushCommon(lua_State* L)
 	HSTR_PUSH_CSTRING(L, "ZIP",       SPRING_VFS_ZIP);
 	/*** @field VFS.RAW_FIRST "rMmeb" Try uncompressed files first, then compressed. */
 	HSTR_PUSH_CSTRING(L, "RAW_FIRST", SPRING_VFS_RAW_FIRST);
-	/*** @field VFS.RAW_FIRST "Mmebr" Try compressed files first, then uncompressed. */
+	/*** @field VFS.ZIP_FIRST "Mmebr" Try compressed files first, then uncompressed. */
 	HSTR_PUSH_CSTRING(L, "ZIP_FIRST", SPRING_VFS_ZIP_FIRST);
+
+	/***
+	 * @deprecated
+	 * @field VFS.MOD "M" Older spelling for `VFS.GAME`
+	 */
+	HSTR_PUSH_CSTRING(L, "MOD",       SPRING_VFS_MOD);
 	/***
 	 * @deprecated
 	 * @field VFS.RAW_ONLY "r"
@@ -259,7 +274,7 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
 
 
 /***
- * Loads and compiles lua code from a file in the VFS.
+ * Loads and runs lua code from a file in the VFS.
  * 
  * @function VFS.Include
  * 
@@ -274,16 +289,16 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * Path to file, lowercase only. Use linux style path separators, e.g.
  * `"foo/bar.txt"`.
  * 
- * @param environment table? (Default: `_G`)
+ * @param environment table? (Default: the current function environment)
  * 
  * The environment arg sets the global environment (see generic lua refs). In
- * almost all cases, this should be left `nil` to preserve Spring default.
+ * almost all cases, this should be left `nil` to preserve the current env.
  *  
  * If the provided, any non-local variables and functions defined in
- * `filename.lua` are then accessable via env or `_G`. Vise-versa, any variables
+ * `filename.lua` are then accessable via env. Vise-versa, any variables
  * defined in env prior to passing to `VFS.Include` are available to code in the
  * included file. Code running in `filename.lua` will see the contents of env in
- * place of the normal `_G` environment.
+ * place of the normal global environment.
  * 
  * @param mode string?
  * 
@@ -382,7 +397,7 @@ int LuaVFS::UnsyncInclude(lua_State* L)
  * @function VFS.LoadFile
  * 
  * Returns file contents as a string. Unlike `VFS.Include` the file will not be
- * executed.
+ * executed. This lets you pre-process the code. Use `loadstring` afterwards.
  *
  * @param filename string
  * 
@@ -435,7 +450,7 @@ int LuaVFS::UnsyncLoadFile(lua_State* L)
  * Example usage:
  * 
  * ```lua
- * if VFS.FileExists("maps/Castles.sdz") then
+ * if VFS.FileExists("mapconfig/custom_lava_config.lua", VFS.MAP) then
  *   # ...
  * end
  * ```

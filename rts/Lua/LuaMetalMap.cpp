@@ -33,8 +33,8 @@ bool LuaMetalMap::PushCtrlEntries(lua_State* L)
 
 /***
  * @function Spring.GetMetalMapSize
- * @return integer x X coordinate in worldspace/16.
- * @return integer y Y coordinate in worldspace/16.
+ * @return integer x X coordinate in worldspace / `Game.metalMapSquareSize`.
+ * @return integer z Z coordinate in worldspace / `Game.metalMapSquareSize`.
  */
 int LuaMetalMap::GetMetalMapSize(lua_State* L)
 {
@@ -47,8 +47,8 @@ int LuaMetalMap::GetMetalMapSize(lua_State* L)
 /***
  * Returns the amount of metal on a single square.
  * @function Spring.GetMetalAmount
- * @param x integer X coordinate in worldspace/16.
- * @param y integer Y coordinate in worldspace/16.
+ * @param x integer X coordinate in worldspace / `Game.metalMapSquareSize`.
+ * @param z integer Z coordinate in worldspace / `Game.metalMapSquareSize`.
  * @return number amount
  */
 int LuaMetalMap::GetMetalAmount(lua_State* L)
@@ -64,8 +64,8 @@ int LuaMetalMap::GetMetalAmount(lua_State* L)
 /***
  * Sets the amount of metal on a single square.
  * @function Spring.SetMetalAmount
- * @param x integer X cooridnate in worldspace/16.
- * @param z integer Y coordinate in worldspace/16.
+ * @param x integer X coordinate in worldspace / `Game.metalMapSquareSize`.
+ * @param z integer Z coordinate in worldspace / `Game.metalMapSquareSize`.
  * @param metalAmount number must be between 0 and 255*maxMetal (with maxMetal from the .smd or mapinfo.lua).
  * @return nil
  */
@@ -82,9 +82,9 @@ int LuaMetalMap::SetMetalAmount(lua_State* L)
 
 /***
  * @function Spring.GetMetalExtraction
- * @param x integer X coordinate in worldspace/16.
- * @param y integer Y coordinate in worldspace/16.
- * @return integer extraction
+ * @param x integer X coordinate in worldspace / `Game.metalMapSquareSize`.
+ * @param z integer Z coordinate in worldspace / `Game.metalMapSquareSize`.
+ * @return number extraction
  */
 int LuaMetalMap::GetMetalExtraction(lua_State* L)
 {

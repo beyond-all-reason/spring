@@ -2327,10 +2327,11 @@ int CSplitLuaHandle::LoadStringData(lua_State* L)
  * @class CallAsTeamOptions
  * @field ctrl integer Ctrl team ID.
  * @field read integer Read team ID.
- * @field select integer Read team ID.
+ * @field select integer Select team ID.
  */
 
-/***
+/*** Calls a function from given team's PoV. In particular this makes callouts obey that team's visibility rules.
+ *
  * @function CallAsTeam
  * @param teamID integer Team ID.
  * @param func fun(...) The function to call.
