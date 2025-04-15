@@ -3380,7 +3380,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnitMap(lua_State* L)
  * @param params CreateCommandParams? Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return boolean ordersGiven
+ * @return boolean ordersGiven `true` if any orders were sent, otherwise `false`.
  */
 int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 {
@@ -3409,7 +3409,7 @@ int LuaUnsyncedCtrl::GiveOrderToUnitArray(lua_State* L)
  * @function Spring.GiveOrderArrayToUnit
  * @param unitID integer Unit ID.
  * @param commands CreateCommand[]
- * @return boolean ordersGiven
+ * @return boolean ordersGiven `true` if any orders were sent, otherwise `false`.
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
 {
@@ -3443,7 +3443,7 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
  * @function Spring.GiveOrderArrayToUnitMap
  * @param unitMap table<integer, any> A table with unit IDs as keys.
  * @param commands CreateCommand[]
- * @return boolean ordersGiven
+ * @return boolean ordersGiven `true` if any orders were sent, otherwise `false`.
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 {
@@ -3483,7 +3483,7 @@ int LuaUnsyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
  * If `len(unitArray) < len(cmdArray)` only the first `len(unitArray)` commands
  * will be assigned, and vice-versa.
  *
- * @return boolean success `true` if any orders were sent, otherwise `false`.
+ * @return boolean ordersGiven `true` if any orders were sent, otherwise `false`.
  */
 int LuaUnsyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 {
