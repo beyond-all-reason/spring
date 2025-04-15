@@ -74,7 +74,7 @@
 typedef unsigned char FT_Byte;
 #endif
 
-typedef std::pair<std::string, int> SizedFontKey;
+using SizedFontKey = std::pair<std::string, int>;
 
 static spring::unordered_map<SizedFontKey, std::weak_ptr<FontFace>> fontFaceCache;
 static spring::unordered_map<std::string, std::weak_ptr<FontFileBytes>> fontMemCache;
