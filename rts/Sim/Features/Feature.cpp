@@ -470,7 +470,7 @@ void CFeature::ForcedMove(const float3& newPos)
 	// remove from managers
 	quadField.RemoveFeature(this);
 
-	const float3 oldPos = pos;
+	preFrameTra = Transform{ CQuaternion::MakeFrom(GetTransformMatrix(true)), pos };
 
 	UnBlock();
 	Move(newPos - pos, true);
@@ -480,7 +480,7 @@ void CFeature::ForcedMove(const float3& newPos)
 	// (features are only Update()'d when in the FH queue)
 	UpdateTransformAndPhysState();
 
-	eventHandler.FeatureMoved(this, oldPos);
+	eventHandler.FeatureMoved(this, preFrameTra.t);
 
 	// insert into managers
 	quadField.AddFeature(this);
@@ -568,7 +568,7 @@ bool CFeature::UpdateVelocity(
 bool CFeature::UpdatePosition()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float3 oldPos = pos;
+	preFrameTra = Transform{ CQuaternion::MakeFrom(GetTransformMatrix(true)), pos };
 	// const float4 oldSpd = speed;
 
 	if (moveCtrl.enabled) {
@@ -602,8 +602,8 @@ bool CFeature::UpdatePosition()
 	Block(); // does the check if wanted itself
 
 	// use an exact comparison for the y-component (gravity is small)
-	if (!pos.equals(oldPos, float3(float3::cmp_eps(), 0.0f, float3::cmp_eps()))) {
-		eventHandler.FeatureMoved(this, oldPos);
+	if (!pos.equals(preFrameTra.t, float3(float3::cmp_eps(), 0.0f, float3::cmp_eps()))) {
+		eventHandler.FeatureMoved(this, preFrameTra.t);
 		return true;
 	}
 

@@ -377,6 +377,8 @@ using StaticMemPoolT = StaticMemPool<N, sizeof(TypesMem<T...>), alignof(TypesMem
 template <typename T>
 class StablePosAllocator {
 public:
+	using Type = T;
+public:
 	static constexpr bool reportWork = false;
 	template<typename ...Args>
 	static void myLog(Args&&... args) {

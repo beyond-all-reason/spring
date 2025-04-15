@@ -1014,7 +1014,7 @@ namespace {
 		if (o == nullptr)
 			luaL_error(L, "gl.%s() Invalid %s id (%d)", func, &spring::TypeToCStr<T>()[1], id);
 
-		ModelUniformData& uni = modelsUniformsStorage.GetObjUniformsArray(o);
+		ModelUniformData& uni = modelUniformsStorage.GetObjUniformsArray(o);
 
 		std::array<float, ModelUniformData::MAX_MODEL_UD_UNIFORMS> floatArray = {0};
 		int size = LuaUtils::ParseFloatArray(L, 2, floatArray.data(), ModelUniformData::MAX_MODEL_UD_UNIFORMS);
