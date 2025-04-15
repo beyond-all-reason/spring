@@ -3894,7 +3894,8 @@ bool UnsyncedGameCommands::ActionReleased(const Action& action)
 
 	if (executor != nullptr) {
 		// an executor for that action was found
-		executor->ExecuteActionRelease(UnsyncedAction(action, false));
+		if (executor->ExecuteActionRelease(UnsyncedAction(action, false)))
+			return true;
 	}
 
 	return false; // prior implementation always returned false - I don't know why, but we'll maintain behaviour until we have reason to change it.
