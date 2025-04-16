@@ -31,7 +31,9 @@
 #ifndef RMLUI_BACKENDS_RENDERER_GL3_RECOIL_H
 #define RMLUI_BACKENDS_RENDERER_GL3_RECOIL_H
 
+#include "System/TemplateUtils.hpp"
 #include "Rendering/Shaders/Shader.h"
+#include "Rendering/GL/SubState.h"
 
 #include <RmlUi/Core/RenderInterface.h>
 #include <RmlUi/Core/Types.h>
@@ -50,6 +52,30 @@ namespace Shader
 	struct IShaderObject;
 	struct IProgramObject;
 }
+
+struct StateGL {
+	static auto GetSubState(int w, int h) {
+		using namespace GL::State;
+		return GL::SubState(
+			Viewport(0, 0, w, h),
+			ClearStencil(0),
+			ClearColor(0.0f, 0.0f, 0.0f, 0.0f),
+			Culling(false),
+			ScissorTest(false),
+			Scissor(0, 0, w, h),
+			Blending(true),
+			BlendEquation(GL_FUNC_ADD),
+			BlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA),
+			FrameBufferSRBG(false),
+			StencilTest(true),
+			StencilFunc(GL_ALWAYS, 1, GLuint(-1)),
+			StencilMask(GLuint(-1)),
+			StencilOp(GL_KEEP, GL_KEEP, GL_KEEP)
+		);
+	}
+};
+//using StateGLReturnType = std::invoke_result_t<decltype(StateGL::GetSubState), int, int>;
+using StateGLReturnType = spring::return_type_t<decltype(&StateGL::GetSubState)>;
 
 class RenderInterface_GL3_Recoil : public Rml::RenderInterface
 {
@@ -190,42 +216,7 @@ private:
 
 	RenderLayerStack render_layers;
 
-	struct GLStateBackup {
-		bool enable_cull_face;
-		bool enable_blend;
-		bool enable_stencil_test;
-		bool enable_scissor_test;
-		bool enable_depth_test;
-
-		int viewport[4];
-		int scissor[4];
-
-		int active_texture;
-
-		int stencil_clear_value;
-		float color_clear_value[4];
-		unsigned char color_writemask[4];
-
-		int blend_equation_rgb;
-		int blend_equation_alpha;
-		int blend_src_rgb;
-		int blend_dst_rgb;
-		int blend_src_alpha;
-		int blend_dst_alpha;
-
-		struct Stencil {
-			int func;
-			int ref;
-			int value_mask;
-			int writemask;
-			int fail;
-			int pass_depth_fail;
-			int pass_depth_pass;
-		};
-		Stencil stencil_front;
-		Stencil stencil_back;
-	};
-	GLStateBackup glstate_backup = {};
+	std::unique_ptr<StateGLReturnType> glSubState;
 };
 
 #endif
