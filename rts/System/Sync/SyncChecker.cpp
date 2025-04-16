@@ -16,7 +16,7 @@ int CSyncChecker::inSyncedCode;
 unsigned CSyncChecker::currentIndex = 0;
 unsigned CSyncChecker::logs[MAX_SYNC_HISTORY];
 
-static void CSyncChecker::LogSync()
+void CSyncChecker::LogHistory()
 {
 	logs[currentIndex++] = g_checksum;
 	if (currentIndex == MAX_SYNC_HISTORY) {

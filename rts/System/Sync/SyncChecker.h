@@ -34,7 +34,7 @@ class CSyncChecker {
 		static void NewFrame() {
 			g_checksum = 0xfade1eaf;
 			#ifdef SYNC_HISTORY
-			LogSync();
+			LogHistory();
 			#endif // SYNC_HISTORY
 		}
 		static void debugSyncCheckThreading();
@@ -49,11 +49,10 @@ class CSyncChecker {
 			//LOG("[Sync::Checker] chksum=%u\n", g_checksum);
 
 			#ifdef SYNC_HISTORY
-			LogSync();
+			LogHistory();
 			#endif // SYNC_HISTORY
 		}
 		#ifdef SYNC_HISTORY
-		static void LogSync();
 		static std::pair<unsigned, unsigned*> GetHistory() { return std::make_pair(currentIndex, logs); };
 		#endif // SYNC_HISTORY
 
@@ -75,6 +74,8 @@ class CSyncChecker {
 		/**
 		 * Sync hash logs
 		 */
+		static void LogHistory();
+
 		static unsigned currentIndex;
 		static unsigned logs[MAX_SYNC_HISTORY];
 #endif // SYNC_HISTORY
