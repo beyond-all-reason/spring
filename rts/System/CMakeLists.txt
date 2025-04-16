@@ -54,6 +54,7 @@ make_global_var(sources_engine_System_common
 		"${CMAKE_CURRENT_SOURCE_DIR}/SpringApp.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/StartScriptGen.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Sync/DumpState.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Sync/DumpHistory.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Sync/FPUCheck.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Sync/Logger.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Sync/SHA512.cpp"
