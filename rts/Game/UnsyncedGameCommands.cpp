@@ -611,6 +611,12 @@ public:
 		inMapDrawer->SetDrawMode(true);
 		return true;
 	}
+
+	bool ExecuteRelease(const UnsyncedAction& action) const final {
+		inMapDrawer->SetDrawMode(false);
+		// TODO: false for backwards compatibility (needs in depth review before changing)
+		return false;
+	}
 };
 
 
@@ -658,9 +664,37 @@ public:
 		return true;
 	}
 
+	bool ExecuteRelease(const UnsyncedAction& action) const final {
+		if (button == 4 || button == 5) {
+			// HACK   somehow weird things happen when MouseRelease is called for button 4 and 5.
+			// Note that SYS_WMEVENT on windows also only sends MousePress events for these buttons.
+			return false;
+		}
+		mouse->MouseRelease(mouse->lastx, mouse->lasty, button);
+		// TODO: false for backwards compatibility (needs in depth review)
+		return false;
+	}
+
 private:
 	int button;
 };
+
+
+class MouseStateActionExecutor : public IUnsyncedActionExecutor {
+public:
+	MouseStateActionExecutor() : IUnsyncedActionExecutor("MouseState", "Toggles mousestate") {}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		// TODO: false for backwards compatibility (needs in depth review)
+		return false;
+	}
+	bool ExecuteRelease(const UnsyncedAction& action) const final {
+		mouse->ToggleMiddleClickScroll();
+		// TODO: false for backwards compatibility (needs in depth review)
+		return false;
+	}
+};
+
 
 class MouseCancelSelectionRectangleActionExecutor : public IUnsyncedActionExecutor {
 public:
@@ -720,6 +754,12 @@ public:
 		camera->SetMovState(moveStateIdx, true);
 
 		return halt;
+	}
+
+	bool ExecuteRelease(const UnsyncedAction& action) const final {
+		camera->SetMovState(moveStateIdx, false);
+		// TODO: false for backwards compatibility (needs in depth review)
+		return false;
 	}
 
 private:
@@ -1782,6 +1822,27 @@ public:
 		}
 
 		return true;
+	}
+};
+
+
+class GameInfoCloseActionExecutor : public IUnsyncedActionExecutor {
+public:
+	GameInfoCloseActionExecutor() : IUnsyncedActionExecutor("GameInfoClose", "Closes game info") {}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		// TODO: false for backwards compatibility (may or may not make sense to keep it, probably not)
+		return false;
+	}
+
+	bool ExecuteRelease(const UnsyncedAction& action) const final {
+		if (CGameInfo::IsActive()) {
+			// TODO: handled in release, and return false for backwards compatibility
+			// (needs in depth review)
+			CGameInfo::Disable();
+			return false;
+		}
+		return false;
 	}
 };
 
@@ -3833,82 +3894,27 @@ private:
 } // namespace (unnamed)
 
 
-
-
-
-// TODO CGame stuff in UnsyncedGameCommands: refactor (or move)
-bool CGame::ActionReleased(const Action& action)
+bool UnsyncedGameCommands::ActionPressed(const Action& action, bool isRepeat)
 {
-	switch (hashString(action.command.c_str())) {
-		case hashString("drawinmap"): {
-			inMapDrawer->SetDrawMode(false);
-		} break;
+	const IUnsyncedActionExecutor* executor = GetActionExecutor(action.command);
 
-		case hashString("moveforward"): {
-			camera->SetMovState(CCamera::MOVE_STATE_FWD, false);
-		} break;
-		case hashString("moveback"): {
-			camera->SetMovState(CCamera::MOVE_STATE_BCK, false);
-		} break;
-		case hashString("moveleft"): {
-			camera->SetMovState(CCamera::MOVE_STATE_LFT, false);
-		} break;
-		case hashString("moveright"): {
-			camera->SetMovState(CCamera::MOVE_STATE_RGT, false);
-		} break;
-		case hashString("moveup"): {
-			camera->SetMovState(CCamera::MOVE_STATE_UP, false);
-		} break;
-		case hashString("movedown"): {
-			camera->SetMovState(CCamera::MOVE_STATE_DWN, false);
-		} break;
+	if (executor != nullptr) {
+		// an executor for that action was found
+		if (executor->ExecuteAction(UnsyncedAction(action, isRepeat)))
+			return true;
+	}
 
-		case hashString("movefast"): {
-			camera->SetMovState(CCamera::MOVE_STATE_FST, false);
-		} break;
-		case hashString("moveslow"): {
-			camera->SetMovState(CCamera::MOVE_STATE_SLW, false);
-		} break;
-		case hashString("movetilt"): {
-			camera->SetMovState(CCamera::MOVE_STATE_TLT, false);
-		} break;
-		case hashString("movereset"): {
-			camera->SetMovState(CCamera::MOVE_STATE_RST, false);
-		} break;
-		case hashString("moverotate"): {
-			camera->SetMovState(CCamera::MOVE_STATE_RTT, false);
-		} break;
+	return false;
+}
 
-		case hashString("mouse1"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 1);
-		} break;
-		case hashString("mouse2"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 2);
-		} break;
-		case hashString("mouse3"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 3);
-		} break;
+bool UnsyncedGameCommands::ActionReleased(const Action& action)
+{
+	const IUnsyncedActionExecutor* executor = GetActionExecutor(action.command);
 
-		#if 0
-		// HACK   somehow weird things happen when MouseRelease is called for button 4 and 5.
-		// Note that SYS_WMEVENT on windows also only sends MousePress events for these buttons.
-		case hashString("mouse4"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 4);
-		} break;
-		case hashString("mouse5"): {
-			mouse->MouseRelease(mouse->lastx, mouse->lasty, 5);
-		} break;
-		#endif
-
-		case hashString("mousestate"): {
-			mouse->ToggleMiddleClickScroll();
-		} break;
-		case hashString("gameinfoclose"): {
-			CGameInfo::Disable();
-		} break;
-
-		default: {
-		} break;
+	if (executor != nullptr) {
+		// an executor for that action was found
+		if (executor->ExecuteActionRelease(UnsyncedAction(action, false)))
+			return true;
 	}
 
 	return false;
@@ -3961,6 +3967,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_TLT, "Tilt"  , false));
 	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RST, "Reset" , false));
 	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RTT, "Rotate", false));
+	AddActionExecutor(AllocActionExecutor<MouseStateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(true));
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(false));
 	AddActionExecutor(AllocActionExecutor<AIControlActionExecutor>());
@@ -4011,6 +4018,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<NetMsgSmoothingActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SpeedControlActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<GameInfoActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<GameInfoCloseActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<HideInterfaceActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<HardwareCursorActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<FullscreenActionExecutor>());

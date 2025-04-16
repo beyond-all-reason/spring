@@ -2234,13 +2234,8 @@ void CGame::ActionReceived(const Action& action, int playerID)
 bool CGame::ActionPressed(const Action& action, bool isRepeat)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const IUnsyncedActionExecutor* executor = unsyncedGameCommands->GetActionExecutor(action.command);
-
-	if (executor != nullptr) {
-		// an executor for that action was found
-		if (executor->ExecuteAction(UnsyncedAction(action, isRepeat)))
-			return true;
-	}
+	if (unsyncedGameCommands->ActionPressed(action, isRepeat))
+		return true;
 
 	if (CGameServer::IsServerCommand(action.command)) {
 		CommandMessage pckt(action, gu->myPlayerNum);
@@ -2249,4 +2244,9 @@ bool CGame::ActionPressed(const Action& action, bool isRepeat)
 	}
 
 	return (gameCommandConsole.ExecuteAction(action));
+}
+
+bool CGame::ActionReleased(const Action& action)
+{
+	return unsyncedGameCommands->ActionReleased(action);
 }
