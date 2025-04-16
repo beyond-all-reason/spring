@@ -50,6 +50,7 @@ public:
 	virtual bool CanWeaponAutoTarget(const CWeapon* weapon) const { return true; }
 	virtual int GetDefaultCmd(const CUnit* pointed, const CFeature* feature);
 	virtual void SlowUpdate();
+	virtual void Update() {};
 	virtual void GiveCommandReal(const Command& c, bool fromSynced = true);
 	virtual void FinishCommand();
 
