@@ -34,9 +34,9 @@ void DumpHistory(int dumpId, bool serverRequest)
 	name += IntToString(dumpId);
 	name += "-[";
 	name += IntToString(gs->frameNum);
-	name += "].txt";
+	name += "].bin";
 
-	file.open(name.c_str(), std::ios::out);
+	file.open(name.c_str(), std::ios::out|std::ios::binary);
 
 	if (file.is_open()) {
 		unsigned version = 0;
