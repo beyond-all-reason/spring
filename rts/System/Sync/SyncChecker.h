@@ -53,7 +53,7 @@ class CSyncChecker {
 			#endif // SYNC_HISTORY
 		}
 		#ifdef SYNC_HISTORY
-		static std::pair<unsigned, unsigned*> GetHistory() { return std::make_pair(currentIndex, logs); };
+		static std::pair<unsigned, unsigned*> GetHistory() { return std::make_pair(nextHistoryIndex, logs); };
 		#endif // SYNC_HISTORY
 
 	private:
@@ -76,7 +76,7 @@ class CSyncChecker {
 		 */
 		static void LogHistory();
 
-		static unsigned currentIndex;
+		static unsigned nextHistoryIndex;
 		static unsigned logs[MAX_SYNC_HISTORY];
 #endif // SYNC_HISTORY
 };
