@@ -26,8 +26,11 @@
 #include "UnsyncedGameCommands.h"
 #include "Game/Players/Player.h"
 #include "Game/Players/PlayerHandler.h"
+#include "Game/UI/KeyCodes.h"
+#include "Game/UI/KeySet.h"
 #include "Game/UI/PlayerRoster.h"
 #include "Game/UI/PlayerRosterDrawer.h"
+#include "Game/UI/ScanCodes.h"
 #include "Game/UI/UnitTracker.h"
 #include "ExternalAI/AILibraryManager.h"
 #include "ExternalAI/EngineOutHandler.h"
@@ -1186,6 +1189,63 @@ int CGame::KeyReleased(int keyCode, int scanCode)
 	}
 
 	return 0;
+}
+
+bool CGame::MousePress(int x, int y, int button)
+{
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
+	const CKeySet ks(scanCode, CKeySet::KSScanCode);
+	bool isRepeat = false;
+
+	const auto now = spring_gettime();
+	curKeyCodeChain.push_back(kc, now, isRepeat);
+	curScanCodeChain.push_back(ks, now, isRepeat);
+
+	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+
+	// try our list of actions
+	for (const Action& action: lastActionList) {
+		if (ActionPressed(action, isRepeat)) {
+			return true;
+		}
+	}
+
+	// maybe a widget is interested?
+	// allowing all listeners to process for backwards compatibility.
+	bool handled = false;
+
+	if (luaUI != nullptr) {
+		for (const Action& action: lastActionList) {
+			handled |= luaUI->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	if (luaMenu != nullptr) {
+		for (const Action& action: lastActionList) {
+			handled |= luaMenu->GotChatMsg(action.rawline, false);
+		}
+	}
+
+	return handled;
+}
+
+bool CGame::MouseRelease(int x, int y, int button)
+{
+	int keyCode = CKeyCodes::GetMouseButtonSymbol(button);
+	int scanCode = CScanCodes::GetMouseButtonSymbol(button);
+
+	// update actionlist for lua consumer
+	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
+	for (const Action& action: lastActionList) {
+		if (ActionReleased(action))
+			return true;
+	}
+
+	return false;
 }
 
 int CGame::KeyMapChanged()

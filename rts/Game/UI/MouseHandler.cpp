@@ -371,10 +371,18 @@ void CMouseHandler::MousePress(int x, int y, int button)
 				if (activeReceiver == nullptr)
 					activeReceiver = recv;
 
-				break;
+				return;
 			}
 		}
 
+	}
+
+	if (button >= ACTION_BUTTON_MIN && activeController != nullptr && activeController->MousePress(x, y, button)) {
+		return;
+	}
+
+	if (game != nullptr && !game->hideInterface) {
+		// skip guihandler in this case
 		return;
 	}
 
@@ -513,6 +521,10 @@ void CMouseHandler::MouseRelease(int x, int y, int button)
 		if (!buttons[SDL_BUTTON_LEFT].pressed && !buttons[SDL_BUTTON_MIDDLE].pressed && !buttons[SDL_BUTTON_RIGHT].pressed)
 			activeReceiver = nullptr;
 
+		return;
+	}
+
+	if (button >= ACTION_BUTTON_MIN && activeController != nullptr && activeController->MouseRelease(x, y, button)) {
 		return;
 	}
 
