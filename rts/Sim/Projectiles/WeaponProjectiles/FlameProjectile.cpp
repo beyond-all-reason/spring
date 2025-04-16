@@ -33,8 +33,8 @@ CFlameProjectile::CFlameProjectile(const ProjectileParams& params): CWeaponProje
 	projectileType = WEAPON_FLAME_PROJECTILE;
 
 	if (weaponDef != nullptr) {
-		SetRadiusAndHeight(weaponDef->size * weaponDef->collisionSize, 0.0f);
-
+		SetRadiusAndHeight(weaponDef->collisionSize, 0.0f);
+		
 		drawRadius = weaponDef->size;
 		physLife = 1.0f / weaponDef->duration;
 	}
@@ -62,10 +62,7 @@ void CFlameProjectile::Update()
 	}
 
 	UpdateInterception();
-
-	radius = radius + weaponDef->sizeGrowth;
-	sqRadius = radius * radius;
-	drawRadius = radius * weaponDef->collisionSize;
+	drawRadius += weaponDef->sizeGrowth;
 
 	curTime = std::min(curTime + invttl, 1.0f);
 	checkCol &= (curTime <= physLife);
