@@ -53,14 +53,7 @@ class CSyncChecker {
 			#endif // SYNC_HISTORY
 		}
 		#ifdef SYNC_HISTORY
-		static void LogSync() {
-			logs[currentIndex++] = g_checksum;
-			if (currentIndex == MAX_SYNC_HISTORY) {
-				currentIndex = 0;
-				//LOG("[Sync::Checker] HISTORY chksum=%u\n", g_checksum);
-				printf("[Sync::Checker] HISTORY\n");
-			}
-		}
+		static void LogSync();
 		static std::pair<unsigned, unsigned*> GetHistory() { return std::make_pair(currentIndex, logs); };
 		#endif // SYNC_HISTORY
 

@@ -15,6 +15,16 @@ int CSyncChecker::inSyncedCode;
 #ifdef SYNC_HISTORY
 unsigned CSyncChecker::currentIndex = 0;
 unsigned CSyncChecker::logs[MAX_SYNC_HISTORY];
+
+static void CSyncChecker::LogSync()
+{
+	logs[currentIndex++] = g_checksum;
+	if (currentIndex == MAX_SYNC_HISTORY) {
+		currentIndex = 0;
+		//LOG("[Sync::Checker] HISTORY chksum=%u\n", g_checksum);
+		printf("[Sync::Checker] HISTORY\n");
+	}
+}
 #endif // SYNC_HISTORY
 
 void CSyncChecker::debugSyncCheckThreading()
