@@ -79,7 +79,9 @@ void DumpHistory(int dumpId, bool serverRequest)
 	file.open(name.c_str(), std::ios::out);
 
 	if (file.is_open()) {
+		unsigned version = 0;
 		LOG("[%s] starting dump-file \"%s\"", __func__, name.c_str());
+		file.write((char *)&version, sizeof(unsigned));
 		file.write((char *)game->gameID, sizeof(unsigned char)*16);
 		file.write((char *)data, sizeof(unsigned)*MAX_SYNC_HISTORY);
 		LOG("[%s] finished dump-file \"%s\"", __func__, name.c_str());
