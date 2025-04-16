@@ -392,6 +392,27 @@ extern void log_frontend_cleanup();
 #define LOG_CLEANUP() \
 	_LOG_CLEANUP()
 
+/**
+ * Helper methods to deprecate functions.
+ */
+#define LOG_DEPRECATED(fmt, ...) \
+	{ \
+		static bool deprecatedMsgDone = false; \
+		if (!deprecatedMsgDone) { \
+			LOG_L(L_DEPRECATED, fmt, ##__VA_ARGS__); \
+			deprecatedMsgDone = true; \
+		} \
+	}
+
+#define LOG_DEPRECATED_S(section, fmt, ...) \
+	{ \
+		static bool deprecatedMsgDone = false; \
+		if (!deprecatedMsgDone) { \
+			LOG_L(section, L_DEPRECATED, fmt, ##__VA_ARGS__); \
+			deprecatedMsgDone = true; \
+		} \
+	}
+
 ///@}
 
 ////////////////////////////////////////////////////////////////////////////////
