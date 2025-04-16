@@ -19,8 +19,8 @@ void DumpHistory(int dumpId, bool serverRequest)
 #ifdef SYNC_HISTORY
 	auto history = CSyncChecker::GetHistory();
 
-	auto index = history.first;
-	auto data = history.second;
+	unsigned nextIndex = history.first;
+	unsigned* data = history.second;
 
 	std::fstream file;
 
@@ -41,9 +41,14 @@ void DumpHistory(int dumpId, bool serverRequest)
 	if (file.is_open()) {
 		unsigned version = 0;
 		LOG("[%s] starting dump-file \"%s\"", __func__, name.c_str());
+
 		file.write((char *)&version, sizeof(unsigned));
 		file.write((char *)game->gameID, sizeof(unsigned char)*16);
-		file.write((char *)data, sizeof(unsigned)*MAX_SYNC_HISTORY);
+
+		file.write((char *)&data[nextIndex], sizeof(unsigned)*(MAX_SYNC_HISTORY-nextIndex));
+		if (index > 0)
+			file.write((char *)data, sizeof(unsigned)*nextIndex);
+
 		LOG("[%s] finished dump-file \"%s\"", __func__, name.c_str());
 	}
 
