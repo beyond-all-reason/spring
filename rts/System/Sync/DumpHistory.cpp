@@ -21,7 +21,7 @@ void DumpHistory(int dumpId, int frameNum, bool serverRequest)
 		LOG("[%s] request for history beyond history limit (%d)", __func__, gs->frameNum);
 		return;
 	}
-	auto history = CSyncChecker::GetFrameHistory(frameNum);
+	auto history = CSyncChecker::GetFrameHistory(gs->frameNum - frameNum);
 
 	unsigned startIndex = std::get<0>(history);
 	unsigned endIndex = std::get<1>(history);

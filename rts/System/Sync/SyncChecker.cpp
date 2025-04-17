@@ -23,7 +23,7 @@ unsigned CSyncChecker::logFrames[MAX_SYNC_HISTORY_FRAMES];
 void CSyncChecker::NewGameFrame()
 {
 	logFrames[nextFrameIndex++] = nextHistoryIndex;
-	if (nextFrameIndex == 1000)
+	if (nextFrameIndex == MAX_SYNC_HISTORY_FRAMES)
 		nextFrameIndex = 0;
 }
 
@@ -36,8 +36,8 @@ void CSyncChecker::LogHistory()
 
 std::tuple<unsigned, unsigned, unsigned*> CSyncChecker::GetFrameHistory(unsigned rewindFrames)
 {
-	unsigned endFrameIndex = nextFrameIndex - rewindFrames;
-	unsigned startFrameIndex = endFrameIndex - 1;
+	int endFrameIndex = nextFrameIndex - rewindFrames;
+	int startFrameIndex = endFrameIndex - 1;
 
 	if (endFrameIndex < 0)
 		endFrameIndex = MAX_SYNC_HISTORY_FRAMES + endFrameIndex;
