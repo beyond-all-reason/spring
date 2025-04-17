@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - 'rts/Lua/**'
+      - 'rts/**.cpp'
 jobs:
   generate-library:
     if: github.repository == 'beyond-all-reason/spring' || github.event_name == 'workflow_dispatch'
@@ -28,7 +28,7 @@ jobs:
         working-directory: recoil
         run: |
           npm install -g lua-doc-extractor@3
-          lua-doc-extractor rts/Lua/*.cpp \
+          lua-doc-extractor "rts/**/*.cpp" \
             --dest rts/Lua/library/generated \
             --repo https://github.com/${{ github.repository }}/blob/${{ github.sha }}
 

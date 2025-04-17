@@ -367,6 +367,16 @@ void CGame::Load(const std::string& mapFileName)
 	auto& globalQuit = gu->globalQuit;
 	bool  forcedQuit = false;
 
+	/***
+	 * The table of defs to be returned from `gamedata/defs.lua`.
+	 * 
+	 * @class InputDefs
+	 * @field UnitDefs InputUnitDefs
+	 * @field FeatureDefs table<string, table>
+	 * @field WeaponDefs table<string, table>
+	 * @field ArmorDefs table<string, table>
+	 * @field MoveDefs table<string, table>
+	 */
 	LuaParser baseDefsParser("gamedata/defs.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP, {true}, {false});
 	LuaParser nullDefsParser("return {UnitDefs = {}, FeatureDefs = {}, WeaponDefs = {}, ArmorDefs = {}, MoveDefs = {}}", SPRING_VFS_ZIP, 0, {true}, {true});
 
