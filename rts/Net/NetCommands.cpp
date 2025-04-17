@@ -1573,7 +1573,10 @@ void CGame::ClientReadNet()
 				ZoneScopedN("Net::GamestateDump");
 				LOG("Collecting current game state information.");
 				int dumpId = DumpState(gs->frameNum, gs->frameNum, 1, true, true);
-				DumpHistory(dumpId, true);
+				if (dataLength >= 5) {
+					uint32_t* desyncFrame = (uint32_t*)&inbuf[1];
+					DumpHistory(dumpId, *desyncFrame, true);
+				}
 				break;
 			}
 

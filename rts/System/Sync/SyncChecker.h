@@ -10,6 +10,7 @@
 #include <assert.h>
 
 #define MAX_SYNC_HISTORY 2500000 // 10MB, ~= 10 seconds of typical midgame
+#define MAX_SYNC_HISTORY_FRAMES 1000
 
 /**
  * @brief sync checker class
@@ -53,7 +54,9 @@ class CSyncChecker {
 			#endif // SYNC_HISTORY
 		}
 		#ifdef SYNC_HISTORY
+		static std::tuple<unsigned, unsigned, unsigned*> GetFrameHistory(unsigned rewindFrames);
 		static std::pair<unsigned, unsigned*> GetHistory() { return std::make_pair(nextHistoryIndex, logs); };
+		static void NewGameFrame();
 		#endif // SYNC_HISTORY
 
 	private:
@@ -77,7 +80,9 @@ class CSyncChecker {
 		static void LogHistory();
 
 		static unsigned nextHistoryIndex;
+		static unsigned nextFrameIndex;
 		static unsigned logs[MAX_SYNC_HISTORY];
+		static unsigned logFrames[MAX_SYNC_HISTORY_FRAMES];
 #endif // SYNC_HISTORY
 };
 

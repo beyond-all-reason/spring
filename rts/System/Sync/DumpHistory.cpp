@@ -13,19 +13,36 @@
 #include "System/Log/ILog.h"
 
 
-void DumpHistory(int dumpId, bool serverRequest)
+void DumpHistory(int dumpId, int frameNum, bool serverRequest)
 {
 	
 #ifdef SYNC_HISTORY
-	auto history = CSyncChecker::GetHistory();
+	if (frameNum < gs->frameNum - MAX_SYNC_HISTORY_FRAMES) {
+		LOG("[%s] request for history beyond history limit (%d)", __func__, gs->frameNum);
+		return;
+	}
+	auto history = CSyncChecker::GetFrameHistory(frameNum);
 
-	unsigned nextIndex = history.first;
-	unsigned* data = history.second;
+	unsigned startIndex = std::get<0>(history);
+	unsigned endIndex = std::get<1>(history);
+	unsigned* data = std::get<2>(history);
+
+	unsigned firstRangeSize;
+	unsigned secondRangeSize = 0;
+	if (endIndex > startIndex) {
+		firstRangeSize = endIndex - startIndex;
+	} else {
+		firstRangeSize = MAX_SYNC_HISTORY - startIndex;
+		secondRangeSize = endIndex + 1;
+	}
+
 
 	std::fstream file;
 
 	if (!gs->cheatEnabled && !serverRequest)
 		return;
+
+	unsigned rewindFrames = gs->frameNum - frameNum - 1;
 
 	LOG("[%s] dumping history (for %d)", __func__, gs->frameNum);
 
@@ -44,10 +61,11 @@ void DumpHistory(int dumpId, bool serverRequest)
 
 		file.write((char *)&version, sizeof(unsigned));
 		file.write((char *)game->gameID, sizeof(unsigned char)*16);
+		// gu->myPlayerNum
 
-		file.write((char *)&data[nextIndex], sizeof(unsigned)*(MAX_SYNC_HISTORY-nextIndex));
-		if (nextIndex > 0)
-			file.write((char *)data, sizeof(unsigned)*nextIndex);
+		file.write((char *)&data[startIndex], sizeof(unsigned)*firstRangeSize);
+		if (secondRangeSize > 0)
+			file.write((char *)data, sizeof(unsigned)*secondRangeSize);
 
 		LOG("[%s] finished dump-file \"%s\"", __func__, name.c_str());
 	}
