@@ -3,9 +3,6 @@
 #ifndef DUMPHISTORY_H
 #define DUMPHISTORY_H
 
-#include <optional>
-
 extern void DumpHistory(int dumpId, bool serverRequest);
-//extern void DumpHistory(unsigned index, unsigned *data, bool serverRequest);
 
 #endif /* DUMPHISTORY_H */
