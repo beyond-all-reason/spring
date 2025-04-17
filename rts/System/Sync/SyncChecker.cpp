@@ -4,7 +4,6 @@
 #ifdef SYNCCHECK
 
 #include "SyncChecker.h"
-#include "Sim/Misc/GlobalSynced.h"
 
 // This cannot be included in the header file (SyncChecker.h) because include conflicts will occur.
 #include "System/Threading/ThreadPool.h"
