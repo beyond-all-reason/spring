@@ -107,6 +107,7 @@
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/DumpState.h"
+#include "System/Sync/DumpHistory.h"
 
 #include <SDL_events.h>
 #include <SDL_video.h>
@@ -3610,7 +3611,10 @@ public:
 		std::vector<std::string> args = CSimpleParser::Tokenize(action.GetArgs());
 
 		switch (args.size()) {
-			case 1: { DumpState(StringToInt(args[0]), StringToInt(args[0]),                    1,                 false); } break;
+			case 1: {
+					int dumpId = DumpState(StringToInt(args[0]), StringToInt(args[0]), 1, false);
+					DumpHistory(dumpId, false);
+				} break;
 			case 2: { DumpState(StringToInt(args[0]), StringToInt(args[1]),                    1,                 false); } break;
 			case 3: { DumpState(StringToInt(args[0]), StringToInt(args[1]), StringToInt(args[2]),                 false); } break;
 			case 4: { DumpState(StringToInt(args[0]), StringToInt(args[1]), StringToInt(args[2]), StringToBool(args[3])); } break;

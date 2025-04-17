@@ -12,6 +12,19 @@
 unsigned CSyncChecker::g_checksum;
 int CSyncChecker::inSyncedCode;
 
+#ifdef SYNC_HISTORY
+
+unsigned CSyncChecker::nextHistoryIndex = 0;
+unsigned CSyncChecker::logs[MAX_SYNC_HISTORY];
+
+void CSyncChecker::LogHistory()
+{
+	logs[nextHistoryIndex++] = g_checksum;
+	if (nextHistoryIndex == MAX_SYNC_HISTORY)
+		nextHistoryIndex = 0;
+}
+
+#endif // SYNC_HISTORY
 
 void CSyncChecker::debugSyncCheckThreading()
 {

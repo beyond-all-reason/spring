@@ -37,6 +37,7 @@
 #include "System/Net/UnpackPacket.h"
 #include "System/Sound/ISound.h"
 #include "System/Sync/DumpState.h"
+#include "System/Sync/DumpHistory.h"
 
 #include "System/Misc/TracyDefs.h"
 
@@ -1571,7 +1572,8 @@ void CGame::ClientReadNet()
 			case NETMSG_GAMESTATE_DUMP: {
 				ZoneScopedN("Net::GamestateDump");
 				LOG("Collecting current game state information.");
-				DumpState(gs->frameNum, gs->frameNum, 1, true, true);
+				int dumpId = DumpState(gs->frameNum, gs->frameNum, 1, true, true);
+				DumpHistory(dumpId, true);
 				break;
 			}
 

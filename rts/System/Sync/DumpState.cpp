@@ -110,7 +110,7 @@ namespace {
 }
 
 
-void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::optional<bool> outputFloats, bool serverRequest)
+int DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::optional<bool> outputFloats, bool serverRequest)
 {
 	if (outputFloats.has_value())
 		onlyHash = !outputFloats.value();
@@ -122,12 +122,13 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 
 	const int oldMinFrameNum = gMinFrameNum;
 	const int oldMaxFrameNum = gMaxFrameNum;
+	int dumpId = 0;
 
 	if (!gs->cheatEnabled && !serverRequest)
-		return;
+		return dumpId;
 	// check if the range is valid
 	if (newMaxFrameNum < newMinFrameNum)
-		return;
+		return dumpId;
 
 	// adjust the bounds if the new values are valid
 	if (newMinFrameNum >= 0) gMinFrameNum = newMinFrameNum;
@@ -142,9 +143,11 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 			file.close();
 		}
 
+		dumpId = guRNG.NextInt();
+
 		std::string name = (gameServer != nullptr)? "Server": "Client";
 		name += "GameState-";
-		name += IntToString(guRNG.NextInt());
+		name += IntToString(dumpId);
 		name += "-[";
 		name += IntToString(gMinFrameNum);
 		name += "-";
@@ -168,14 +171,14 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	}
 
 	if (file.bad() || !file.is_open())
-		return;
+		return dumpId;
 	// check if the CURRENT frame lies within the bounds
 	if (gs->frameNum < gMinFrameNum)
-		return;
+		return dumpId;
 	if (gs->frameNum > gMaxFrameNum)
-		return;
+		return dumpId;
 	if ((gs->frameNum % gFramePeriod) != 0)
-		return;
+		return dumpId;
 
 	// we only care about the synced projectile data here
 	const std::vector<CUnit*>& activeUnits = unitHandler.GetActiveUnits();
@@ -656,6 +659,7 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 	gMinFrameNum = -1;
 	gMaxFrameNum = -1;
 	gFramePeriod =  1;
+	return dumpId;
 }
 
 void DumpRNG(int newMinFrameNum, int newMaxFrameNum)
