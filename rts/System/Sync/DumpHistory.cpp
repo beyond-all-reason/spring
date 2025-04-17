@@ -17,6 +17,9 @@ void DumpHistory(int dumpId, int frameNum, bool serverRequest)
 {
 	
 #ifdef SYNC_HISTORY
+	if (!gs->cheatEnabled && !serverRequest)
+		return;
+
 	if (frameNum < gs->frameNum - MAX_SYNC_HISTORY_FRAMES) {
 		LOG("[%s] request for history beyond history limit (%d)", __func__, gs->frameNum);
 		return;
@@ -38,9 +41,6 @@ void DumpHistory(int dumpId, int frameNum, bool serverRequest)
 
 
 	std::fstream file;
-
-	if (!gs->cheatEnabled && !serverRequest)
-		return;
 
 	unsigned rewindFrames = gs->frameNum - frameNum - 1;
 
