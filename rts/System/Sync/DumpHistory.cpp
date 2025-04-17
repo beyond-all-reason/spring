@@ -46,7 +46,7 @@ void DumpHistory(int dumpId, bool serverRequest)
 		file.write((char *)game->gameID, sizeof(unsigned char)*16);
 
 		file.write((char *)&data[nextIndex], sizeof(unsigned)*(MAX_SYNC_HISTORY-nextIndex));
-		if (index > 0)
+		if (nextIndex > 0)
 			file.write((char *)data, sizeof(unsigned)*nextIndex);
 
 		LOG("[%s] finished dump-file \"%s\"", __func__, name.c_str());
