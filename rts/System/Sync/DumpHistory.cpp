@@ -42,8 +42,6 @@ void DumpHistory(int dumpId, int frameNum, bool serverRequest)
 
 	std::fstream file;
 
-	unsigned rewindFrames = gs->frameNum - frameNum - 1;
-
 	LOG("[%s] dumping history (for %d)", __func__, gs->frameNum);
 
 	std::string name = (gameServer != nullptr)? "Server": "Client";
