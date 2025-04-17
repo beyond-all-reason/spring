@@ -1,0 +1,38 @@
+- term: Allyteam
+  definition: >
+    What most people would naturally call a team is called an “allyteam” in
+    Recoil terminology.
+  url: >
+    {% link articles/team-terminology.markdown %}#allyteam-vs-team
+- term: Team
+  definition: A team is generally controlled by a player or an AI.
+  url: >
+    {% link articles/team-terminology.markdown %}#team-vs-player
+- term: Spectator
+  definition: Spectators are players not controlling any team.
+  url: >
+    {% link articles/team-terminology.markdown %}#regular-player-vs-spectator
+- term: AI
+  definition: >
+    An AI fulfils a similar role to a player, being there to control a team.
+  url: >
+    {% link articles/team-terminology.markdown %}#player-vs-ai
+- term: Lua AI
+  definition: >
+    A Lua AI generally has two components: a piece of game mechanics, and the
+    AI instance itself which is just a handle to tell game mechanics which teams
+    are legal to control.
+  url: >
+    {% link articles/team-terminology.markdown %}#lua-ai-vs-skirmish-ai
+- term: Skirmish AI
+  definition: >
+    A “skirmish” AI is hosted by one of the players and generally acts very
+    similar to a player.
+  url: >
+    {% link articles/team-terminology.markdown %}#lua-ai-vs-skirmish-ai
+- term: Gaia
+  definition: >
+    Gaia is a special team that is always present, uncontrolled, and is always
+    in its own allyteam.
+  url: >
+    {% link articles/team-terminology.markdown %}#gaia

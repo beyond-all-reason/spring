@@ -1,0 +1,116 @@
+{
+   "atm" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Atm",
+      "description" : "Gives 1000 metal and 1000 energy to the issuing player's team"
+   },
+   "cheat" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Cheat",
+      "description" : "Enables/Disables cheating, which is required for a lot of other commands to be usable"
+   },
+   "destroy" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Destroy",
+      "description" : "Destroys one or multiple units by unit-ID, instantly"
+   },
+   "desync" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Desync",
+      "description" : "Allows creating an artificial desync of the local client with the rest of the participating hosts"
+   },
+   "devlua" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "DevLua",
+      "description" : "Enables/Disables Lua dev-mode (can cause desyncs if enabled)"
+   },
+   "editdefs" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "EditDefs",
+      "description" : "Allows/Disallows editing of unit-, feature- and weapon-defs through Lua"
+   },
+   "give" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Give",
+      "description" : "Places one or multiple units of a single or multiple types on the map, instantly; by default belonging to your own team"
+   },
+   "globallos" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "GlobalLOS",
+      "description" : "Enables/Disables global line-of-sight, which makes the whole map permanently visible to everyone or to a specific allyteam"
+   },
+   "godmode" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "GodMode",
+      "description" : "Enables/Disables god-mode, which allows all players (even spectators) to control all units (even during replays, which will DESYNC them)"
+   },
+   "luagaia" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaGaia",
+      "description" : "Allows reloading or disabling LuaGaia, and to send a chat message to LuaGaia scripts"
+   },
+   "luarules" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "LuaRules",
+      "description" : "Allows reloading or disabling LuaRules, and to send a chat message to LuaRules scripts"
+   },
+   "nocost" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "NoCost",
+      "description" : "Enables/Disables everything-for-free, which allows everyone to build everything for zero resource costs"
+   },
+   "nohelp" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "NoHelp",
+      "description" : "Enables/Disables widgets (LuaUI control)"
+   },
+   "nospecdraw" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "NoSpecDraw",
+      "description" : "Allows/Disallows spectators to draw on the map"
+   },
+   "nospectatorchat" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "NoSpectatorChat",
+      "description" : "Enables/Disables spectators to use the chat"
+   },
+   "reloadcegs" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "ReloadCEGs",
+      "description" : "Reloads CEG scripts"
+   },
+   "reloadcob" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "ReloadCOB",
+      "description" : "Reloads COB scripts"
+   },
+   "skip" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Skip",
+      "description" : "Fast-forwards to a given frame, or stops fast-forwarding"
+   },
+   "take" : {
+      "arguments" : {},
+      "cheatRequired" : false,
+      "command" : "Take",
+      "description" : "Transfers all units of allied teams without any active players to the team of the issuing player"
+   }
+}
