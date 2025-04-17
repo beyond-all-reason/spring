@@ -521,6 +521,10 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 				FcPatternGetString( origPattern, FC_FAMILY , 0, &family );
 			}
+
+			if (family != nullptr)
+				FcPatternAddString(pattern, FC_FAMILY, family);
+
 		}
 
 		FcPatternAddInteger(pattern, FC_WEIGHT, weight);
@@ -529,9 +533,6 @@ static std::shared_ptr<FontFace> GetFontForCharacters(const std::vector<char32_t
 
 		if (pixelSize > 0.0)
 			FcPatternAddDouble(pattern, FC_PIXEL_SIZE, pixelSize);
-
-		if (family)
-			FcPatternAddString(pattern, FC_FAMILY, family);
 	}
 
 	FcDefaultSubstitute(pattern);
