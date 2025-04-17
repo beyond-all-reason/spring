@@ -143,6 +143,7 @@ class LuaUnsyncedRead {
 		static int GetGameSpeed(lua_State* L);
 		static int GetGameState(lua_State* L);
 
+		static int GetMouseButtonsPressed(lua_State* L);
 		static int GetMouseState(lua_State* L);
 		static int GetMouseCursor(lua_State* L);
 		static int GetMouseStartPosition(lua_State* L);
