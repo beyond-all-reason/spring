@@ -1970,6 +1970,54 @@ void CGame::SendNetChat(std::string message, int destination)
 	clientNet->Send(buf.Pack());
 }
 
+void CGame::SendPublicNetChat(std::string message)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (message.empty())
+		return;
+
+	// Call the core function directly with the specific destination constant.
+	// This bypasses the prefix checking logic inside SendNetChat because destination != -1.
+	SendNetChat(message, ChatMessage::TO_EVERYONE);
+}
+
+void CGame::SendAllyNetChat(std::string message)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (message.empty())
+		return;
+
+	// Call the core function directly with the specific destination constant.
+	SendNetChat(message, ChatMessage::TO_ALLIES);
+}
+
+void CGame::SendSpectatorNetChat(std::string message)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (message.empty())
+		return;
+
+	// Call the core function directly with the specific destination constant.
+	SendNetChat(message, ChatMessage::TO_SPECTATORS);
+}
+
+void CGame::SendPrivateNetChat(std::string message, int playerID)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (message.empty())
+		return;
+
+	// Validate playerID - should not be negative for a private message.
+	// Negative values are used for special destinations.
+	if (playerID < 0) {
+		LOG_L(L_WARNING, "[CGame::SendPrivateNetChat] Attempted to send private message with invalid playerID: %d", playerID);
+		return; // Don't send
+	}
+
+	// Call the core function with the specific playerID as the destination.
+	SendNetChat(message, playerID);
+}
+//end
 
 void CGame::HandleChatMsg(const ChatMessage& msg)
 {

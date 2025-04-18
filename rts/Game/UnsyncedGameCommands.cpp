@@ -497,12 +497,34 @@ public:
 			"Say something in (public) chat") {}
 
 	bool Execute(const UnsyncedAction& action) const final {
-		game->SendNetChat(action.GetArgs());
+		game->SendPublicNetChat(action.GetArgs());
 		return true;
 	}
 };
 
+class SayAllyActionExecutor : public IUnsyncedActionExecutor {
+public:
+	SayAllyActionExecutor() : IUnsyncedActionExecutor("SayAlly", 
+			"Say something in ally chat") {} // Lua command: SayAlly
 
+	bool Execute(const UnsyncedAction& action) const final {
+		// Call the specific ally chat function
+		game->SendAllyNetChat(action.GetArgs());
+		return true;
+	}
+};
+
+class SaySpectatorActionExecutor : public IUnsyncedActionExecutor {
+public:
+	SaySpectatorActionExecutor() : IUnsyncedActionExecutor("SaySpectators", 
+			"Say something in spectator chat") {} // Lua command: SaySpectators
+
+	bool Execute(const UnsyncedAction& action) const final {
+		// Call the specific spectator chat function
+		game->SendSpectatorNetChat(action.GetArgs());
+		return true;
+	}
+};
 
 class SayPrivateActionExecutor : public IUnsyncedActionExecutor {
 public:
@@ -521,7 +543,7 @@ public:
 
 		if (playerID >= 0) {
 			std::string message = (args.size() == 2) ? std::move(args[1]) : "";
-			game->SendNetChat(std::move(message), playerID);
+			game->SendPrivateNetChat(std::move(message), playerID);
 		} else {
 			LOG_L(L_WARNING, "/w: Player not found: %s", args[0].c_str());
 		}
@@ -555,7 +577,7 @@ public:
 
 		if (playerID >= 0) {
 			std::string message = (args.size() == 2) ? std::move(args[1]) : "";
-			game->SendNetChat(std::move(message), playerID);
+			game->SendPrivateNetChat(std::move(message), playerID);
 		} else {
 			LOG_L(L_WARNING, "Player-ID invalid: %i", playerID);
 		}
@@ -3942,6 +3964,9 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<UnitDrawerTypeActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<FeatureDrawerTypeActionExecutor>()); // [maint]
 	AddActionExecutor(AllocActionExecutor<SayActionExecutor>());
+
+	AddActionExecutor(AllocActionExecutor<SayAllyActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<SaySpectatorActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateByPlayerIDActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<EchoActionExecutor>());
