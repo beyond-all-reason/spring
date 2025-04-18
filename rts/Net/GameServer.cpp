@@ -734,7 +734,7 @@ void CGameServer::CheckSync()
 				if (!desyncHasOccurred) {
 					if (globalConfig.dumpGameStateOnDesync) {
 						LOG("Desync detected. Requesting all clients to collect game state information.");
-						Broadcast(CBaseNetProtocol::Get().SendGameStateDump());
+						Broadcast(CBaseNetProtocol::Get().SendGameStateDump(syncErrorFrame));
 					}
 					desyncHasOccurred = true;
 				}

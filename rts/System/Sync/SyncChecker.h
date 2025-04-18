@@ -9,6 +9,9 @@
 
 #include <assert.h>
 
+#define MAX_SYNC_HISTORY 2500000 // 10MB, ~= 10 seconds of typical midgame
+#define MAX_SYNC_HISTORY_FRAMES 1000
+
 /**
  * @brief sync checker class
  *
@@ -29,7 +32,12 @@ class CSyncChecker {
 		 * Keeps a running checksum over all assignments to synced variables.
 		 */
 		static unsigned GetChecksum() { return g_checksum; }
-		static void NewFrame() { g_checksum = 0xfade1eaf; }
+		static void NewFrame() {
+			g_checksum = 0xfade1eaf;
+			#ifdef SYNC_HISTORY
+			LogHistory();
+			#endif // SYNC_HISTORY
+		}
 		static void debugSyncCheckThreading();
 		static void Sync(const void* p, unsigned size) {
 #ifdef DEBUG_SYNC_MT_CHECK
@@ -40,7 +48,16 @@ class CSyncChecker {
 			// simple xor is not enough to detect multiple zeroes, e.g.
 			g_checksum = spring::LiteHash(p, size, g_checksum);
 			//LOG("[Sync::Checker] chksum=%u\n", g_checksum);
+
+			#ifdef SYNC_HISTORY
+			LogHistory();
+			#endif // SYNC_HISTORY
 		}
+		#ifdef SYNC_HISTORY
+		static std::tuple<unsigned, unsigned, unsigned*> GetFrameHistory(unsigned rewindFrames);
+		static std::pair<unsigned, unsigned*> GetHistory() { return std::make_pair(nextHistoryIndex, logs); };
+		static void NewGameFrame();
+		#endif // SYNC_HISTORY
 
 	private:
 
@@ -55,6 +72,18 @@ class CSyncChecker {
 		 * Whether one thread (doesn't have to current thread!!!) is currently processing a SimFrame.
 		 */
 		static int inSyncedCode;
+
+#ifdef SYNC_HISTORY
+		/**
+		 * Sync hash logs
+		 */
+		static void LogHistory();
+
+		static unsigned nextHistoryIndex;
+		static unsigned nextFrameIndex;
+		static unsigned logs[MAX_SYNC_HISTORY];
+		static unsigned logFrames[MAX_SYNC_HISTORY_FRAMES];
+#endif // SYNC_HISTORY
 };
 
 #endif // SYNCDEBUG
