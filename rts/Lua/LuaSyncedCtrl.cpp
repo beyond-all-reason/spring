@@ -5525,12 +5525,12 @@ int LuaSyncedCtrl::GiveOrderToUnit(lua_State* L)
  * Give order to multiple units, specified by table keys.
  * 
  * @function Spring.GiveOrderToUnitMap
- * @param unitMap table<number,table> A table with unit IDs as keys.
+ * @param unitMap table<integer, any> A table with unit IDs as keys.
  * @param cmdID CMD|integer The command ID.
  * @param params CreateCommandParams? Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return number unitsOrdered
+ * @return integer unitsOrdered The number of units ordered.
  */
 int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 {
@@ -5569,12 +5569,12 @@ int LuaSyncedCtrl::GiveOrderToUnitMap(lua_State* L)
 /***
  *
  * @function Spring.GiveOrderToUnitArray
- * @param unitIDs number[]
+ * @param unitIDs integer[] An array of unit IDs.
  * @param cmdID CMD|integer The command ID.
  * @param params CreateCommandParams? Parameters for the given command.
  * @param options CreateCommandOptions?
  * @param timeout integer?
- * @return number unitsOrdered
+ * @return integer unitsOrdered The number of units ordered.
  */
 int LuaSyncedCtrl::GiveOrderToUnitArray(lua_State* L)
 {
@@ -5657,7 +5657,7 @@ int LuaSyncedCtrl::GiveOrderArrayToUnit(lua_State* L)
  * @function Spring.GiveOrderArrayToUnitMap
  * @param unitMap table<integer, any> A table with unit IDs as keys.
  * @param commands CreateCommand[]
- * @return number unitsOrdered
+ * @return integer unitsOrdered The number of units ordered.
  */
 int LuaSyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 {
@@ -5697,9 +5697,16 @@ int LuaSyncedCtrl::GiveOrderArrayToUnitMap(lua_State* L)
 
 /***
  * @function Spring.GiveOrderArrayToUnitArray
- * @param unitArray number[] containing unitIDs
- * @param commands Command[]
- * @return nil
+ * @param unitIDs integer[] Array of unit IDs.
+ * @param commands CreateCommand[]
+ * @param pairwise boolean? (Default: `false`) When `false`, assign all commands to each unit.
+ *
+ * When `true`, assign commands according to index between units and cmds arrays.
+ *
+ * If `len(unitArray) < len(cmdArray)` only the first `len(unitArray)` commands
+ * will be assigned, and vice-versa.
+ *
+ * @return integer unitsOrdered The number of units ordered.
  */
 int LuaSyncedCtrl::GiveOrderArrayToUnitArray(lua_State* L)
 {
