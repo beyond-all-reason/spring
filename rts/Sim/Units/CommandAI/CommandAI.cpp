@@ -991,6 +991,10 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 			ExecuteRemove(c);
 			return;
 		}
+		case CMD_REMOVE_RANGE: {
+			ExecuteRemoveRange(c);
+			return;
+		}
 	}
 
 	// flush the queue for immediate commands
@@ -1210,6 +1214,89 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 		return;
 
 	SlowUpdate();
+}
+
+
+const std::optional<std::pair<int, int>> CCommandAI::GetRemoveLimitsFromOptions(const Command& c, const CCommandQueue& queue) const
+{
+	int firstIndex = 0;
+	int lastIndex = queue.size() - 1;
+
+	if (c.GetNumParams() >= 1) {
+		if (c.GetNumParams() >= 1)
+			firstIndex = std::max<int>(c.GetParam(0) - 1, 0);
+		if (c.GetNumParams() >= 2)
+			lastIndex = std::clamp<int>(c.GetParam(1) - 1, 0, queue.size() - 1);
+	}
+
+	if (lastIndex < firstIndex || firstIndex >= queue.size())
+		return std::nullopt;
+
+	return std::make_pair(firstIndex, lastIndex);
+}
+
+
+void CCommandAI::ExecuteRemoveRange(const Command& c)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	CCommandQueue* queue = &commandQue;
+	CFactoryCAI* facCAI = dynamic_cast<CFactoryCAI*>(this);
+
+	// disable repeating during the removals
+	const bool prevRepeat = repeatOrders;
+
+	bool facBuildQueue = false;
+
+	if (facCAI) {
+		if (c.GetOpts() & CONTROL_KEY) {
+			// keep using the build-order queue
+			facBuildQueue = true;
+		} else {
+			// use the command-queue for new units
+			queue = &facCAI->newUnitCommands;
+		}
+	}
+
+	if (queue->empty())
+		return;
+
+	repeatOrders = false;
+
+	// erase range by index
+	const auto limits = GetRemoveLimitsFromOptions(c, *queue);
+	if (!limits) {
+		eventHandler.UnitCmdDone(owner, c);
+		return;
+	}
+	const auto [firstIndex, lastIndex] = *limits;
+	int nElements = lastIndex - firstIndex + 1;
+
+	CCommandQueue::iterator ci = queue->begin() + lastIndex;
+	while (nElements > 0) {
+		--nElements;
+		const Command& qc = *ci;
+		if (qc.GetID() == CMD_WAIT)
+			waitCommandsAI.RemoveWaitCommand(owner, qc);
+
+		if (facBuildQueue) {
+			// only true when ci == queue->begin(), does pop_front()
+			// via CFAI::ExecuteStop. otherwise converts to CMD_STOP.
+			if (facCAI->RemoveBuildCommand(ci))
+				break;
+		}
+
+		if (!facCAI && (ci == queue->begin())) {
+			FinishCommand();
+			break;
+		}
+
+		queue->erase(ci);
+		// iterator may have been invalidated
+		ci = queue->begin() + firstIndex + nElements - 1;
+	}
+
+	repeatOrders = prevRepeat;
+	eventHandler.UnitCmdDone(owner, c);
 }
 
 

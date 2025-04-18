@@ -174,7 +174,7 @@ void CFactoryCAI::GiveCommandReal(const Command& c, bool fromSynced)
 			return;
 		}
 
-		if (cmdID == CMD_INSERT || cmdID == CMD_REMOVE) {
+		if (cmdID == CMD_INSERT || cmdID == CMD_REMOVE || cmdID == CMD_REMOVE_RANGE) {
 			CCommandAI::GiveAllowedCommand(c);
 			return;
 		}

@@ -142,6 +142,8 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	LuaInsertDualMapPair(L, "LOOPBACKATTACK", CMD_ATTACK); // backward compatibility (TODO: find a way to print a warning when used!)
 	/*** @field CMD.IDLEMODE 145  */
 	PUSH_CMD(IDLEMODE);
+	/*** @field CMD.REMOVE_RANGE 155 */
+	PUSH_CMD(REMOVE_RANGE);
 
 	return true;
 }
