@@ -3,6 +3,7 @@
 
 #include <SDL_scancode.h>
 
+#include "Game/UI/KeyBindings.h"
 #include "ScanCodes.h"
 #include "System/Log/ILog.h"
 #include "System/StringUtil.h"
@@ -27,19 +28,45 @@ int CScanCodes::GetNormalizedSymbol(int sym)
 }
 
 
+unsigned char CScanCodes::ToModifier(const int code)
+{
+	switch (code) {
+		case SDL_SCANCODE_LALT:
+		case SDL_SCANCODE_RALT:
+			return CKeySet::KS_ALT;
+		case SDL_SCANCODE_LCTRL:
+		case SDL_SCANCODE_RCTRL:
+			return CKeySet::KS_CTRL;
+		case SDL_SCANCODE_LSHIFT:
+		case SDL_SCANCODE_RSHIFT:
+			return CKeySet::KS_SHIFT;
+		case SDL_SCANCODE_LGUI:
+		case SDL_SCANCODE_RGUI:
+			if (keyBindings.GetFakeMetaKey() <= 0) {
+				return CKeySet::KS_META;
+			}
+	}
+
+	return 0;
+}
+
+
 bool CScanCodes::IsModifier(int code) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (code) {
 		case SDL_SCANCODE_LALT:
 		case SDL_SCANCODE_LCTRL:
-		case SDL_SCANCODE_LGUI:
 		case SDL_SCANCODE_LSHIFT:
 		case SDL_SCANCODE_RALT:
 		case SDL_SCANCODE_RCTRL:
-		case SDL_SCANCODE_RGUI:
 		case SDL_SCANCODE_RSHIFT:
 			return true;
+		case SDL_SCANCODE_LGUI:
+		case SDL_SCANCODE_RGUI:
+			if (keyBindings.GetFakeMetaKey() <= 0) {
+				return true;
+			}
 	}
 	return false;
 }

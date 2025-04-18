@@ -25,6 +25,7 @@ class CKeySet {
 		void Reset();
 		void SetAnyBit();
 		void ClearModifiers();
+		void SanitizeModifiers();
 		bool Parse(const std::string& token, bool showerror = true);
 
 		std::string GetString(bool useDefaultKeysym) const;
@@ -47,7 +48,6 @@ class CKeySet {
 		bool Shift()   const { return !!(modifiers & KS_SHIFT); }
 		bool AnyMod()  const { return !!(modifiers & KS_ANYMOD); }
 
-		bool IsPureModifier() const;
 		bool IsModifier() const;
 		bool IsKeyCode() const;
 		IKeys* GetKeys() const;
@@ -63,7 +63,23 @@ class CKeySet {
 
 		bool fit(const CKeySet& ks) const
 		{
-			return (type == ks.type) && (key == ks.key) && ((modifiers == ks.modifiers) || AnyMod() || ks.AnyMod());
+			if (type != ks.type || key != ks.key)
+				return false;
+
+			// If any of either keyset being checked has the any bit set we have to check
+			// that all bits in the any keyset match on the other one. E.g.:
+			//
+			//   shift+ctrl fits any+ctrl (ctrl is present on the first ks)
+			//   alt+shift does not fit any+ctrl (ctrl is not present on the first ks)
+			if (ks.AnyMod()) {
+				return ((ks.modifiers & ~KS_ANYMOD) & modifiers) == (ks.modifiers & ~KS_ANYMOD);
+			}
+			else if (AnyMod()) {
+				return ((modifiers & ~KS_ANYMOD) & ks.modifiers) == (modifiers & ~KS_ANYMOD);
+			}
+			else {
+				return modifiers == ks.modifiers;
+			}
 		}
 
 		bool operator==(const CKeySet& ks) const

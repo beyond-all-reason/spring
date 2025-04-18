@@ -39,21 +39,14 @@ void CKeySet::ClearModifiers()
 void CKeySet::SetAnyBit()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	ClearModifiers();
 	modifiers |= KS_ANYMOD;
 }
 
 
-bool CKeySet::IsPureModifier() const
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	return (keyCodes.IsModifier(Key()) || (Key() == keyBindings.GetFakeMetaKey()));
-}
-
 bool CKeySet::IsModifier() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return GetKeys()->IsModifier(key);
+	return key == CKeyCodes::NONE && modifiers > 0;
 }
 
 bool CKeySet::IsKeyCode() const
@@ -81,6 +74,24 @@ CKeySet::CKeySet(int k, unsigned char mods, CKeySetType keyType)
 	type = keyType;
 	key = k;
 	modifiers = mods;
+
+	SanitizeModifiers();
+}
+
+
+void CKeySet::SanitizeModifiers() {
+	if (!GetKeys()->IsModifier(key)) {
+		return;
+	}
+
+	// Disambiguate pure modifier keysets
+	// (mod)Alt+(key)ctrl == (mod)Ctrl+(key)alt -> (mod)Alt+(mod)Ctrl+(key)none
+	// This optimizes matching keysets that are combination of multiple pure
+	// modifiers
+	unsigned char modifier = IsKeyCode() ? CKeyCodes::ToModifier(key) : CScanCodes::ToModifier(key);
+	modifiers |= modifier;
+
+	key = CKeyCodes::NONE;
 }
 
 
@@ -198,21 +209,17 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 			if (showerror) LOG_L(L_ERROR, "KeySet: Bad hex value: %s", s.c_str());
 			return false;
 		}
-	} else if (((key = keyCodes.GetCode(s)) > 0)) {
-		type = KSKeyCode;
 	} else if (((key = scanCodes.GetCode(s)) > 0)) {
 		type = KSScanCode;
+	} else if (((key = keyCodes.GetCode(s)) > 0) || key == CKeyCodes::NONE) {
+		type = KSKeyCode;
 	} else {
 		Reset();
 		if (showerror) LOG_L(L_ERROR, "KeySet: Bad keysym: %s", s.c_str());
 		return false;
 	}
 
-	if (IsModifier())
-		modifiers |= KS_ANYMOD;
-
-	if (AnyMod())
-		ClearModifiers();
+	SanitizeModifiers();
 	
 	return true;
 }
@@ -232,7 +239,7 @@ void CTimedKeyChain::push_back(const CKeySet& ks, const spring_time t, const boo
 	if (!empty() && times.back() < dropTime)
 		clear();
 
-	// append repeating keystrokes only wjen they differ from the last
+	// append repeating keystrokes only when they differ from the last
 	if (isRepeat && (!empty() && ks == back()))
 		return;
 
@@ -241,7 +248,7 @@ void CTimedKeyChain::push_back(const CKeySet& ks, const spring_time t, const boo
 	// this should now match "c,alt+b", so we need to get rid of the redundant Alt+alt .
 	// Still we want to support "Alt+alt,Alt+alt" (double click alt), so only override e.g. the last in chain
 	// when the new keypress is _not_ a modifier.
-	if (!empty() && !ks.IsPureModifier() && back().IsPureModifier() && (back().Mod() == ks.Mod())) {
+	if (!empty() && !ks.IsModifier() && back().IsModifier() && (back().Mod() == ks.Mod())) {
 		times.back() = t;
 		back() = ks;
 		return;
