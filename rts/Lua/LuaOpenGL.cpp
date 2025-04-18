@@ -79,6 +79,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 #include "System/Matrix44f.h"
+#include "System/StringUtil.h"
 
 CONFIG(bool, LuaShaders).defaultValue(true).headlessValue(false).safemodeValue(false);
 CONFIG(int, DeprecatedGLWarnLevel).defaultValue(0).headlessValue(0).safemodeValue(0);
@@ -4051,7 +4052,7 @@ int LuaOpenGL::Texture(lua_State* L)
 
 	LuaMatTexture tex;
 
-	const std::string imgName = lua_tostring(L, nextArg);
+	const std::string imgName = StringToLower(lua_tostring(L, nextArg));
 	if (LuaOpenGLUtils::ParseTextureImage(L, tex, imgName)) {
 		lua_pushboolean(L, true);
 
