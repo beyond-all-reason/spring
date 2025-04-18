@@ -337,12 +337,104 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 void CUnitHandler::UpdateUnitLosStates()
 {
-	ZoneScopedC(tracy::Color::Goldenrod);
-	for (CUnit* unit: activeUnits) {
-		for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
-			unit->UpdateLosStatus(at);
-		}
-	}
+    SCOPED_TIMER("Sim::Unit::LosUpdate"); // I don't know why it's wasn't profiled earlier
+
+    // Structure to hold data for deferred event processing
+    struct LosUpdateData {
+        CUnit* unit;
+        int allyTeam;
+        unsigned short diffBits; // Store the changed bits
+    };
+
+    // Use a temporary vector of vectors (one per thread) to store deferred updates.
+    // This avoids locking during the parallel phase.
+    std::vector<std::vector<LosUpdateData>> deferredLosUpdates(ThreadPool::GetMaxThreads());
+    // Ensure inner vectors are cleared (important if reusing across frames, though here it's stack-local effectively)
+for (auto& innerVec : deferredLosUpdates) {
+        innerVec.clear();
+    }
+
+
+    // Parallel loop over active units
+    {
+        ZoneScopedN("Parallel LOS Calculation"); // Tracy zone for the parallel part
+        for_mt(0, activeUnits.size(), [&](const int i) {
+            CUnit* unit = activeUnits[i];
+            const int tid = ThreadPool::GetThreadNum(); // Get thread ID for thread-local storage
+            auto& threadDeferredUpdates = deferredLosUpdates[tid];
+
+            // Optional: Reserve space if many ally teams are expected, reduces reallocations
+            // threadDeferredUpdates.reserve(teamHandler.ActiveAllyTeams());
+
+            for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
+                const unsigned short currStatus = unit->losStatus[at];
+
+                // Optimization: Skip if all changes are masked by Lua or cheats
+                if ((currStatus & LOS_ALL_MASK_BITS) == LOS_ALL_MASK_BITS) {
+                    continue;
+                }
+
+                // Calculate the new LOS status based on current game state
+                const unsigned short newStatus = unit->CalcLosStatus(at);
+                // Determine which bits actually changed
+                const unsigned short diffBits = (currStatus ^ newStatus);
+
+                // Update the unit's LOS status directly.
+                // This *should* be safe because for_mt partitions the work based on unit index,
+                // meaning no two threads write to the same unit *instance* concurrently.
+                // Reads from shared losHandler maps are safe.
+                unit->losStatus[at] = newStatus;
+
+                if (diffBits != 0) {
+                    // Store data needed for deferred event handling in the thread's vector
+                    threadDeferredUpdates.push_back({unit, at, diffBits});
+                }
+            }
+        });
+    } // End of parallel section
+
+
+    // Serial processing of deferred events (outside the parallel loop, in the main sim thread)
+    {
+        ZoneScopedN("Deferred Event Processing"); // Tracy zone for the serial part
+        for (const auto& threadUpdates : deferredLosUpdates) {
+            for (const auto& updateData : threadUpdates) {
+                CUnit* unit = updateData.unit;
+                const int at = updateData.allyTeam;
+                const unsigned short diffBits = updateData.diffBits;
+                // Read the final state written by the worker thread
+                const unsigned short newStatus = unit->losStatus[at];
+
+                // Check specific bits and fire corresponding events
+                // These calls happen serially, avoiding Lua state conflicts.
+                if (diffBits & LOS_INLOS) {
+                    if (newStatus & LOS_INLOS) {
+                        eventHandler.UnitEnteredLos(unit, at);
+                        // eoh->UnitEnteredLos(*unit, at); // If eoh needs events, defer/handle similarly
+                    } else {
+                        eventHandler.UnitLeftLos(unit, at);
+                        // eoh->UnitLeftLos(*unit, at);
+                    }
+                }
+
+                if (diffBits & LOS_INRADAR) {
+                    if (newStatus & LOS_INRADAR) {
+                        eventHandler.UnitEnteredRadar(unit, at);
+                        // eoh->UnitEnteredRadar(*unit, at);
+                    } else {
+                        eventHandler.UnitLeftRadar(unit, at);
+                        // eoh->UnitLeftRadar(*unit, at);
+                    }
+                }
+
+                // Note: PREVLOS and CONTRADAR bits are implicitly updated by CalcLosStatus
+                // based on the changes in INLOS and INRADAR. The original SetLosStatus
+                // logic handled this update implicitly after the event calls. Since we
+                // update losStatus[at] directly in the parallel section now, these bits
+                // are already correct when we process events here.
+            }
+        }
+    } // End of serial event processing
 }
 
 
