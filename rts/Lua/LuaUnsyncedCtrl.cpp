@@ -15,6 +15,7 @@
 
 #include "ExternalAI/EngineOutHandler.h"
 #include "ExternalAI/SkirmishAIHandler.h"
+#include "Game/Game.h"
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/Camera/CameraController.h"
@@ -130,6 +131,13 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SendMessageToTeam);
 	REGISTER_LUA_CFUNC(SendMessageToAllyTeam);
 	REGISTER_LUA_CFUNC(SendMessageToSpectators);
+
+	// *** New chat functions***
+	REGISTER_LUA_CFUNC(SendPublicChat);     // Registers LuaUnsyncedCtrl::SendPublicChat as Spring.SendPublicChat
+	REGISTER_LUA_CFUNC(SendAllyChat);       // Registers LuaUnsyncedCtrl::SendAllyChat as Spring.SendAllyChat
+	REGISTER_LUA_CFUNC(SendSpectatorChat); // Registers LuaUnsyncedCtrl::SendSpectatorsChat as Spring.SendSpectatorsChat
+	REGISTER_LUA_CFUNC(SendPrivateChat);    // Registers LuaUnsyncedCtrl::SendPrivateChat as Spring.SendPrivateChat
+	// *** End of new chat functions ***
 
 	REGISTER_LUA_CFUNC(LoadSoundDef);
 	REGISTER_LUA_CFUNC(PlaySoundFile);
@@ -561,11 +569,81 @@ static string ParseMessage(lua_State* L, const string& msg)
 }
 
 
+/******************************************************************************
+ * Chat Messages
+ * @section chatmessages
+******************************************************************************/
+
+/*** Sends a chat message to everyone (players).
+ *
+ * @function Spring.SendPublicChat
+ * @param message string
+ * @return nil
+ */
+int LuaUnsyncedCtrl::SendPublicChat(lua_State* L) {
+	// Check arguments: Expects 1 string argument
+	if (lua_gettop(L) != 1 || !lua_isstring(L, 1)) {
+		return luaL_error(L, "Incorrect arguments to Spring.SendPublicChat(message string)");
+	}
+
+	game->SendPublicNetChat(luaL_checksstring(L, 1));
+	return 0; // Return 0 results to Lua
+}
+
+/*** Sends a chat message to the sender's ally team.
+ *
+ * @function Spring.SendAllyChat
+ * @param message string
+ * @return nil
+ */
+int LuaUnsyncedCtrl::SendAllyChat(lua_State* L) {
+	if (lua_gettop(L) != 1 || !lua_isstring(L, 1)) {
+		return luaL_error(L, "Incorrect arguments to Spring.SendAllyChat(message string)");
+	}
+
+	game->SendAllyNetChat(luaL_checksstring(L, 1));
+	return 0;
+}
+
+/*** Sends a chat message to spectators.
+ *
+ * @function Spring.SendSpectatorsChat
+ * @param message string
+ * @return nil
+ */
+int LuaUnsyncedCtrl::SendSpectatorChat(lua_State* L) {
+	if (lua_gettop(L) != 1 || !lua_isstring(L, 1)) {
+		return luaL_error(L, "Incorrect arguments to Spring.SendSpectatorsChat(message string)");
+	}
+
+	game->SendSpectatorNetChat(luaL_checksstring(L, 1));
+	return 0;
+}
+
+/*** Sends a private chat message to a specific player ID.
+ *
+ * @function Spring.SendPrivateChat
+ * @param playerID integer
+ * @param message string
+ * @return nil
+ */
+int LuaUnsyncedCtrl::SendPrivateChat(lua_State* L) {
+	// Check arguments: Expects 1 number (playerID) and 1 string (message)
+	if (lua_gettop(L) != 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2)) {
+		return luaL_error(L, "Incorrect arguments to Spring.SendPrivateChat(playerID number, message string)");
+	}
+
+	// Use lua_tointeger if available and appropriate for player IDs
+	int playerID = static_cast<int>(lua_tonumber(L, 2)); // Or lua_tointeger(L, 1)
+	// Call the CGame function we created earlier
+	game->SendPrivateNetChat(luaL_checksstring(L, 1), playerID);
+	return 0;
+}
+
 static void PrintMessage(lua_State* L, const string& msg)
 {
 	LOG("%s", ParseMessage(L, msg).c_str());
 }
-
 
 /******************************************************************************
  * Messages

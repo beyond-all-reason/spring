@@ -87,6 +87,11 @@ public:
 
 	/// Send a message to other players (allows prefixed messages with e.g. "a:...")
 	void SendNetChat(std::string message, int destination = -1);
+	
+	void SendPublicNetChat(std::string message);
+	void SendAllyNetChat(std::string message);
+	void SendSpectatorNetChat(std::string message);
+	void SendPrivateNetChat(std::string message, int playerID);
 
 	bool ProcessCommandText(int keyCode, int scanCode, const std::string& command);
 	bool ProcessAction(const Action& action, int keyCode = -1, int scanCode = -1, bool isRepeat = false);
