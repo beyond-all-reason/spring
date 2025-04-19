@@ -322,6 +322,14 @@ void CFactory::StopBuild()
 	curBuildDef = nullptr;
 }
 
+bool CFactory::IsCurrentBuildeeMatchingBuildQueueFront(const CCommandQueue& buildQueue) const
+{
+	if (curBuild == nullptr || buildQueue.empty())
+		return false;
+
+	return curBuild->unitDef->id == -buildQueue.front().GetID();
+}
+
 void CFactory::DependentDied(CObject* o)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
