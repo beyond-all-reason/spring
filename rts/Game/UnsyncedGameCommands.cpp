@@ -1261,7 +1261,7 @@ public:
 			{"select <n>", "Select group <n>"},
 			{"focus <n>", "Focus camera on group <n>"},
 			{"set <n>", "Set current selected units as group <n>"},
-			{"add <n>", "Add current selected units to group <n>"},
+			{"add <n>", "Add current selected units to group <n> (does not change selection)"},
 			{"unset", "Deassign control group for currently selected units"},
 			{"selectadd <n>", "Add members from group <n> to currently selected units"},
 			{"selectclear <n>", "Remove members from group <n> from currently selected units"},
