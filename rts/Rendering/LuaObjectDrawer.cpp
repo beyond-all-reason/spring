@@ -28,7 +28,7 @@
 #define USE_OBJECT_RENDERING_BUCKETS
 
 // applies to both units and features
-CONFIG(bool, AllowDeferredModelRendering).defaultValue(false).safemodeValue(false).description("Allows the rendering of model deferred buffers.");
+CONFIG(bool, AllowDeferredModelRendering).defaultValue(true).safemodeValue(false).description("Allows the rendering of model deferred buffers.");
 CONFIG(bool, AllowDeferredModelBufferClear).defaultValue(false).safemodeValue(false);
 CONFIG(bool, AllowDrawModelPostDeferredEvents).defaultValue(true).description("Enable Draw{Units,Features}PostDeferred Lua callins.");
 CONFIG(bool, AllowMultiSampledFrameBuffers).defaultValue(false).description("Enable FBOs that can have multisampled anti-aliasing.");;
