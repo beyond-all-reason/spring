@@ -92,6 +92,12 @@ public:
 		const int2& zrange
 	);
 
+	///< check if yardmaps overlap, used to block overlapping builds
+	static bool YardmapsOverlap(
+		const BuildInfo& bi1,
+		const BuildInfo& bi2
+	);
+
 	///< test whether a blocked map square has a build override
 	static bool TestBlockSquareForBuildOnly(
 		const CSolidObject *blockingObject,

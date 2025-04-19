@@ -10,6 +10,7 @@
 #include "Game/GlobalUnsynced.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/WaitCommandsAI.h"
+#include "Game/GameHelper.h"
 #include "Map/Ground.h"
 #include "Map/MapDamage.h"
 #include "Sim/Features/Feature.h"
@@ -1336,13 +1337,9 @@ CCommandQueue::const_iterator CCommandAI::GetCancelQueued(const Command& c, cons
 					const BuildInfo bc1(c);
 					const BuildInfo bc2(c2);
 
-					if (bc1.def == nullptr) continue;
-					if (bc2.def == nullptr) continue;
-
-					if (math::fabs(bc1.pos.x - bc2.pos.x) * 2 <= std::max(bc1.GetXSize(), bc2.GetXSize()) * SQUARE_SIZE &&
-					    math::fabs(bc1.pos.z - bc2.pos.z) * 2 <= std::max(bc1.GetZSize(), bc2.GetZSize()) * SQUARE_SIZE) {
+					// check yardmaps for overlap instead of bounding-boxes
+					if (CGameHelper::YardmapsOverlap(bc1, bc2))
 						return ci;
-					}
 				} else {
 					// assume c and c2 are positional commands
 					const float3& c1p = c.GetPos(0);
@@ -1436,20 +1433,9 @@ std::vector<Command> CCommandAI::GetOverlapQueued(const Command& c, const CComma
 					// NOTE: uses a BuildInfo structure, but <t> can be ANY command
 					BuildInfo tbi;
 					if (tbi.Parse(t)) {
-						const float dist2X = 2.0f * math::fabs(cbi.pos.x - tbi.pos.x);
-						const float dist2Z = 2.0f * math::fabs(cbi.pos.z - tbi.pos.z);
-						const float addSizeX = SQUARE_SIZE * (cbi.GetXSize() + tbi.GetXSize());
-						const float addSizeZ = SQUARE_SIZE * (cbi.GetZSize() + tbi.GetZSize());
-						const float maxSizeX = SQUARE_SIZE * std::max(cbi.GetXSize(), tbi.GetXSize());
-						const float maxSizeZ = SQUARE_SIZE * std::max(cbi.GetZSize(), tbi.GetZSize());
-
-						if (cbi.def == NULL) continue;
-						if (tbi.def == NULL) continue;
-
-						if (((dist2X > maxSizeX) || (dist2Z > maxSizeZ)) &&
-						    ((dist2X < addSizeX) && (dist2Z < addSizeZ))) {
+						// check yardmaps for overlap instead of bounding-boxes
+						if (CGameHelper::YardmapsOverlap(cbi, tbi))
 							v.push_back(t);
-						}
 					} else {
 						if ((cbi.pos - tbi.pos).SqLength2D() >= (COMMAND_CANCEL_DIST * COMMAND_CANCEL_DIST))
 							continue;
