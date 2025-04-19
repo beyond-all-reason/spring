@@ -1,0 +1,151 @@
+site_name: Docs
+theme:
+  name: material
+  font:
+    text: Roboto
+    code: Roboto Mono
+  search: true
+  features:
+    - quick-links
+    - navigation
+    - search
+    - toc
+    - fullscreen
+    - bookmarks
+    - tabs
+    - code
+    - edit-on-github
+    - language-selector
+    - code
+    - cover
+    - footer
+    - social-share
+    - theme-switcher
+nav:
+  - Home: index.md
+  
+  - Types:
+    - alias Attachment : types/Attachment.md
+    - alias BuildOrderBlockedStatus : types/BuildOrderBlockedStatus.md
+    - alias CameraMode : types/CameraMode.md
+    - alias CameraName : types/CameraName.md
+    - alias CommandOptionBit : types/CommandOptionBit.md
+    - alias CommandOptionName : types/CommandOptionName.md
+    - alias CreateCommandOptions : types/CreateCommandOptions.md
+    - alias CreateCommandParams : types/CreateCommandParams.md
+    - alias Facing : types/Facing.md
+    - alias FacingInteger : types/FacingInteger.md
+    - alias GenericMoveTypeBooleanKey : types/GenericMoveTypeBooleanKey.md
+    - alias GenericMoveTypeNumberKey : types/GenericMoveTypeNumberKey.md
+    - alias HashType : types/HashType.md
+    - alias Heading : types/Heading.md
+    - alias LogLevel : types/LogLevel.md
+    - alias MatrixName : types/MatrixName.md
+    - alias ModType : types/ModType.md
+    - alias ResourceName : types/ResourceName.md
+    - alias ResourceUsage : types/ResourceUsage.md
+    - alias SoundChannel : types/SoundChannel.md
+    - alias StorageName : types/StorageName.md
+    - alias TargetType : types/TargetType.md
+    - alias UniformArrayType : types/UniformArrayType.md
+    - alias float2 : types/float2.md
+    - alias float3 : types/float3.md
+    - alias float4 : types/float4.md
+    - class AIInfo : types/AIInfo.md
+    - class ActiveUniform : types/ActiveUniform.md
+    - class ArchiveInfo : types/ArchiveInfo.md
+    - class AtmosphereParams : types/AtmosphereParams.md
+    - class CallAsTeamOptions : types/CallAsTeamOptions.md
+    - class Callins : types/Callins.md
+    - class CameraState : types/CameraState.md
+    - class CameraVectors : types/CameraVectors.md
+    - class Command : types/Command.md
+    - class CommandDescription : types/CommandDescription.md
+    - class CommandOptions : types/CommandOptions.md
+    - class Configuration : types/Configuration.md
+    - class ControlPoint : types/ControlPoint.md
+    - class CreateCommand : types/CreateCommand.md
+    - class CreateRBOData : types/CreateRBOData.md
+    - class ExplosionParams : types/ExplosionParams.md
+    - class FBO : types/FBO.md
+    - class FBODescription : types/FBODescription.md
+    - class FeatureSupport : types/FeatureSupport.md
+    - class GenericMoveType : types/GenericMoveType.md
+    - class GroundMoveType : types/GroundMoveType.md
+    - class HoverAirMoveType : types/HoverAirMoveType.md
+    - class Intro : types/Intro.md
+    - class KeyBinding : types/KeyBinding.md
+    - class KeyModifiers : types/KeyModifiers.md
+    - class LightParams : types/LightParams.md
+    - class MapRenderingParams : types/MapRenderingParams.md
+    - class Material : types/Material.md
+    - class Matrix4x4 : types/Matrix4x4.md
+    - class Menu : types/Menu.md
+    - class MoveCtrl : types/MoveCtrl.md
+    - class PieceInfo : types/PieceInfo.md
+    - class Plane : types/Plane.md
+    - class ProjectileParams : types/ProjectileParams.md
+    - class RBO : types/RBO.md
+    - class ResourceCost : types/ResourceCost.md
+    - class Roster : types/Roster.md
+    - class RulesParams : types/RulesParams.md
+    - class RulesSyncedCallins : types/RulesSyncedCallins.md
+    - class RulesUnsyncedCallins : types/RulesUnsyncedCallins.md
+    - class SaveImageOptions : types/SaveImageOptions.md
+    - class SetUnitHealthAmounts : types/SetUnitHealthAmounts.md
+    - class ShaderParams : types/ShaderParams.md
+    - class SideSpec : types/SideSpec.md
+    - class SoundDeviceSpec : types/SoundDeviceSpec.md
+    - class StrafeAirMoveType : types/StrafeAirMoveType.md
+    - class SyncedCallins : types/SyncedCallins.md
+    - class TeamStats : types/TeamStats.md
+    - class TextColorCode : types/TextColorCode.md
+    - class Texture : types/Texture.md
+    - class TextureInfo : types/TextureInfo.md
+    - class UI : types/UI.md
+    - class UniformParam : types/UniformParam.md
+    - class UnitDefDimensions : types/UnitDefDimensions.md
+    - class UnitState : types/UnitState.md
+    - class UnsyncedCallins : types/UnsyncedCallins.md
+    - class VAO : types/VAO.md
+    - class VBO : types/VBO.md
+    - class VBOAttributeDef : types/VBOAttributeDef.md
+    - class VertexData : types/VertexData.md
+    - class WaterParams : types/WaterParams.md
+    - class WeaponDamages : types/WeaponDamages.md
+    - class WeaponState : types/WeaponState.md
+    - class losAccess : types/losAccess.md
+    - class rgb : types/rgb.md
+    - class rgba : types/rgba.md
+    - class xy : types/xy.md
+    - class xyz : types/xyz.md
+    - class xyzw : types/xyzw.md
+    - class xz : types/xz.md
+    - enum CMD : types/CMD.md
+    - enum CMDTYPE : types/CMDTYPE.md
+    - enum COB : types/COB.md
+    - enum GL : types/GL.md
+    - enum LOG : types/LOG.md
+    - enum SFX : types/SFX.md
+    
+  
+  
+  
+  - Globals:
+    - COBSCALE : globals/COBSCALE.md
+    - CallAsTeam : globals/CallAsTeam.md
+    - Engine : globals/Engine.md
+    - Game : globals/Game.md
+    - Platform : globals/Platform.md
+    - SYNCED : globals/SYNCED.md
+    - Script : globals/Script.md
+    - SendToUnsynced : globals/SendToUnsynced.md
+    - SetWMCaption : globals/SetWMCaption.md
+    - Spring : globals/Spring.md
+    - VFS : globals/VFS.md
+    - gl : globals/gl.md
+    - tracy : globals/tracy.md
+    
+  
+extra:
+  footer: ""

@@ -3,7 +3,7 @@
       "arguments" : {},
       "cheatRequired" : true,
       "command" : "Atm",
-      "description" : "Gives 1000 metal and 1000 energy to the issuing player's team"
+      "description" : "Gives the specified amount (default 1000) of each resource to the issuing player's team"
    },
    "cheat" : {
       "arguments" : {},
@@ -15,7 +15,7 @@
       "arguments" : {},
       "cheatRequired" : true,
       "command" : "Destroy",
-      "description" : "Destroys one or multiple units by unit-ID, instantly"
+      "description" : "Destroys one or multiple units by unitID immediately"
    },
    "desync" : {
       "arguments" : {},
@@ -100,6 +100,12 @@
       "cheatRequired" : true,
       "command" : "ReloadCOB",
       "description" : "Reloads COB scripts"
+   },
+   "remove" : {
+      "arguments" : {},
+      "cheatRequired" : true,
+      "command" : "Remove",
+      "description" : "Removes one or multiple units by unitID immediately, bypassing death sequence"
    },
    "skip" : {
       "arguments" : {},
