@@ -343,7 +343,7 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));
-	isSubmersible = (isSubmarine || (followGround && depth > height));
+	isSubmersible = (isSubmarine || (followGround && depth > height) || (waterline > 0 && maxWaterDepth > waterline));
 	allowDirectionalPathing = moveDefTable.GetBool("allowDirectionalPathing", allowDirectionalPathing);
 	preferShortestPath = moveDefTable.GetBool("preferShortestPath", preferShortestPath);
 }
