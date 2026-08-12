@@ -86,26 +86,34 @@ TEST_CASE("Queued build overlap follows yardmaps like successive construction")
 	SECTION("diagonally interlocking solars are compatible") {
 		UnitDef secondSolarDef;
 		const auto secondSolar = MakeBuildInfo({6, 6}, {10, 10}, FACING_SOUTH, &secondSolarDef, solarYardMap);
-		CHECK_FALSE(QueuedBuildOverlap::Test(firstSolar, secondSolar));
-		CHECK_FALSE(QueuedBuildOverlap::Test(secondSolar, firstSolar));
+		CHECK(QueuedBuildOverlap::Test(firstSolar, secondSolar) == QueuedBuildOverlap::Result::NONE);
+		CHECK(QueuedBuildOverlap::Test(secondSolar, firstSolar) == QueuedBuildOverlap::Result::NONE);
+		CHECK(QueuedBuildOverlap::Test(firstSolar, secondSolar, false) == QueuedBuildOverlap::Result::OVERLAP);
+		CHECK(QueuedBuildOverlap::Test(secondSolar, firstSolar, false) == QueuedBuildOverlap::Result::OVERLAP);
 	}
 
 	SECTION("occupied yardmap cells still conflict") {
 		UnitDef samePositionDef;
 		const auto samePosition = MakeBuildInfo({0, 0}, {10, 10}, FACING_SOUTH, &samePositionDef, solarYardMap);
-		CHECK(QueuedBuildOverlap::Test(firstSolar, samePosition));
+		CHECK(QueuedBuildOverlap::Test(firstSolar, samePosition) == QueuedBuildOverlap::Result::CANCEL);
+	}
+
+	SECTION("outer occupied-cell conflicts overlap without cancelling") {
+		UnitDef outerOverlapDef;
+		const auto outerOverlap = MakeBuildInfo({6, 0}, {10, 10}, FACING_SOUTH, &outerOverlapDef, solarYardMap);
+		CHECK(QueuedBuildOverlap::Test(firstSolar, outerOverlap) == QueuedBuildOverlap::Result::OVERLAP);
 	}
 
 	SECTION("non-overlapping footprints are compatible") {
 		UnitDef distantSolarDef;
 		const auto distantSolar = MakeBuildInfo({10, 10}, {10, 10}, FACING_SOUTH, &distantSolarDef, solarYardMap);
-		CHECK_FALSE(QueuedBuildOverlap::Test(firstSolar, distantSolar));
+		CHECK(QueuedBuildOverlap::Test(firstSolar, distantSolar) == QueuedBuildOverlap::Result::NONE);
 	}
 
 	SECTION("missing blocker yardmap keeps rectangular fallback") {
 		UnitDef noYardMapDef;
 		const auto noYardMap = MakeBuildInfo({0, 0}, {10, 10}, FACING_SOUTH, &noYardMapDef, {});
-		CHECK(QueuedBuildOverlap::Test(noYardMap, firstSolar));
+		CHECK(QueuedBuildOverlap::Test(noYardMap, firstSolar) == QueuedBuildOverlap::Result::CANCEL);
 	}
 }
 
@@ -118,8 +126,8 @@ TEST_CASE("Queued build overlap is directional")
 	const auto buildOnlyFootprint = MakeBuildInfo({0, 0}, {1, 1}, FACING_SOUTH, &buildOnlyDef, buildOnly);
 	const auto blockedFootprint = MakeBuildInfo({0, 0}, {1, 1}, FACING_SOUTH, &blockedDef, blocked);
 
-	CHECK_FALSE(QueuedBuildOverlap::Test(buildOnlyFootprint, blockedFootprint));
-	CHECK(QueuedBuildOverlap::Test(blockedFootprint, buildOnlyFootprint));
+	CHECK(QueuedBuildOverlap::Test(buildOnlyFootprint, blockedFootprint) == QueuedBuildOverlap::Result::NONE);
+	CHECK(QueuedBuildOverlap::Test(blockedFootprint, buildOnlyFootprint) == QueuedBuildOverlap::Result::CANCEL);
 }
 
 TEST_CASE("Queued build yardmap index handles every facing")

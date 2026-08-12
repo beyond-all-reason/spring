@@ -1023,10 +1023,10 @@ int CGameHelper::GetYardMapIndex(int buildFacing, const int2& yardPos, const int
 	return QueuedBuildOverlap::GetYardMapIndex(buildFacing, yardPos, xrange, zrange);
 }
 
-bool CGameHelper::TestQueuedBuildOverlap(const BuildInfo& queuedBuild, const BuildInfo& buildInfo)
+QueuedBuildOverlap::Result CGameHelper::TestQueuedBuildOverlap(const BuildInfo& queuedBuild, const BuildInfo& buildInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return QueuedBuildOverlap::Test(queuedBuild, buildInfo);
+	return QueuedBuildOverlap::Test(queuedBuild, buildInfo, modInfo.useYardmapsForQueuedBuildOverlap);
 }
 
 

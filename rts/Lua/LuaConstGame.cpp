@@ -74,6 +74,7 @@
  * @field fireAtKilled integer
  * @field fireAtCrashing integer
  * @field constructionDecay boolean
+ * @field useYardmapsForQueuedBuildOverlap boolean
  * @field reclaimAllowEnemies boolean
  * @field reclaimAllowAllies boolean
  * @field constructionDecayTime integer
@@ -193,6 +194,7 @@ bool LuaConstGame::PushEntries(lua_State* L)
 		LuaPushNamedBool  (L, "constructionDecay"     , modInfo.constructionDecay);
 		LuaPushNamedNumber(L, "constructionDecayTime" , modInfo.constructionDecayTime);
 		LuaPushNamedNumber(L, "constructionDecaySpeed", modInfo.constructionDecaySpeed);
+		LuaPushNamedBool  (L, "useYardmapsForQueuedBuildOverlap", modInfo.useYardmapsForQueuedBuildOverlap);
 
 		LuaPushNamedNumber(L, "multiReclaim"                  , modInfo.multiReclaim);
 		LuaPushNamedNumber(L, "reclaimMethod"                 , modInfo.reclaimMethod);
@@ -344,4 +346,3 @@ bool LuaConstGame::PushEntries(lua_State* L)
 
 	return true;
 }
-

@@ -8,6 +8,7 @@
 #include "Sim/Units/BuildInfo.h"
 #include "Sim/Units/UnitDef.h"
 #include "System/Misc/TracyDefs.h"
+#include "System/SpringMath.h"
 
 namespace QueuedBuildOverlap {
 
@@ -50,12 +51,12 @@ bool IsInsideCancellationRectangle(const BuildInfo& earlier, const BuildInfo& pr
 	);
 }
 
-bool Test(const BuildInfo& earlier, const BuildInfo& proposed)
+Result Test(const BuildInfo& earlier, const BuildInfo& proposed, bool useYardmaps)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
 	if (earlier.def == nullptr || proposed.def == nullptr)
-		return false;
+		return Result::NONE;
 
 	const int2 earlierSize = {earlier.GetXSize(), earlier.GetZSize()};
 	const int2 proposedSize = {proposed.GetXSize(), proposed.GetZSize()};
@@ -75,13 +76,17 @@ bool Test(const BuildInfo& earlier, const BuildInfo& proposed)
 	const int overlapZ2 = std::min(earlierMaxs.y, proposedMaxs.y);
 
 	if (overlapX1 >= overlapX2 || overlapZ1 >= overlapZ2)
-		return false;
+		return Result::NONE;
+
+	const Result overlapResult = IsInsideCancellationRectangle(earlier, proposed) ? Result::CANCEL : Result::OVERLAP;
+	if (!useYardmaps)
+		return overlapResult;
 
 	const size_t earlierYardMapSize = earlier.def->xsize * earlier.def->zsize;
 	const size_t proposedYardMapSize = proposed.def->xsize * proposed.def->zsize;
 
 	if (earlier.def->yardmap.size() != earlierYardMapSize)
-		return true;
+		return overlapResult;
 
 	const int2 earlierXRange = {earlierMins.x, earlierMaxs.x};
 	const int2 earlierZRange = {earlierMins.y, earlierMaxs.y};
@@ -103,7 +108,7 @@ bool Test(const BuildInfo& earlier, const BuildInfo& proposed)
 
 			if (earlierStatus & (YardmapStates::YARDMAP_EXITONLY | YardmapStates::YARDMAP_UNBUILDABLE)) {
 				if (proposedStatus > YardmapStates::YARDMAP_STACKABLE)
-					return true;
+					return overlapResult;
 				continue;
 			}
 
@@ -114,11 +119,11 @@ bool Test(const BuildInfo& earlier, const BuildInfo& proposed)
 			if (earlierStatus == YardmapStates::YARDMAP_BUILDONLY)
 				continue;
 
-			return true;
+			return overlapResult;
 		}
 	}
 
-	return false;
+	return Result::NONE;
 }
 
 } // namespace QueuedBuildOverlap
