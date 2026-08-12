@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _COMMAND_COLORS_H
-#define _COMMAND_COLORS_H
+#pragma once
 
 #include <string>
 #include "System/UnorderedMap.hpp"
@@ -75,6 +74,7 @@ public:
 	// the colors
 	const float* unitBox;
 	const float* buildBox;
+	const float* buildBoxCancel;
 	const float* allyBuildBox;
 	const float* mouseBox;
 
@@ -154,6 +154,7 @@ private:
 
 		unitBoxIndex,
 		buildBoxIndex,
+		buildBoxCancelIndex,
 		allyBuildBoxIndex,
 		mouseBoxIndex,
 
@@ -197,6 +198,3 @@ private:
 
 
 extern CCommandColors cmdColors;
-
-
-#endif // _COMMAND_COLORS_H

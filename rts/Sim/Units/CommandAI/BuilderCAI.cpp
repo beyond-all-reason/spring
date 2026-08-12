@@ -213,6 +213,12 @@ CBuilderCAI::CBuilderCAI(CUnit* owner):
 	unitHandler.AddBuilderCAI(this);
 }
 
+
+bool CBuilderCAI::HasCurrentBuild() const
+{
+	return (ownerBuilder != nullptr && ownerBuilder->curBuild != nullptr);
+}
+
 CBuilderCAI::~CBuilderCAI()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -1747,4 +1753,3 @@ void CBuilderCAI::BuggerOff(const float3& pos, float radius) {
 
 	CMobileCAI::BuggerOff(pos, radius);
 }
-
