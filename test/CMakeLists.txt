@@ -460,6 +460,18 @@ endif()
 	add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
 
 ################################################################################
+### QueuedBuildOverlap
+	set(test_name QueuedBuildOverlap)
+	set(test_src
+			"${CMAKE_CURRENT_SOURCE_DIR}/engine/Sim/Misc/testQueuedBuildOverlap.cpp"
+			"${ENGINE_SOURCE_DIR}/Sim/Units/QueuedBuildOverlap.cpp"
+			${test_Common_sources}
+		)
+
+	set(test_libs "")
+	add_spring_test(${test_name} "${test_src}" "${test_libs}" "-DNOT_USING_CREG -DNOT_USING_STREFLOP -DBUILDING_AI")
+
+################################################################################
 ### Ellipsoid
 	set(test_name Ellipsoid)
 	set(test_src

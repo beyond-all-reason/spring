@@ -31,6 +31,7 @@
 #include "Sim/Units/CommandAI/MobileCAI.h"
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Units/BuildInfo.h"
+#include "Sim/Units/QueuedBuildOverlap.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -1019,35 +1020,13 @@ float4 CGameHelper::BuildPosToRect(const float3& midPoint, int facing, int xsize
 int CGameHelper::GetYardMapIndex(int buildFacing, const int2& yardPos, const int2& xrange, const int2& zrange)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	int yardX = yardPos.x - xrange.x;
-	int yardZ = yardPos.y - zrange.x;
-	int yardXR = xrange.y - xrange.x;
-	int yardZR = zrange.y - zrange.x;
+	return QueuedBuildOverlap::GetYardMapIndex(buildFacing, yardPos, xrange, zrange);
+}
 
-	switch (buildFacing) {
-		default: {
-			// FACING_SOUTH don't need to do any remapping
-		} break;
-
-		case FacingMap::FACING_NORTH: {
-			yardX = yardXR - yardX - 1; //mirror yardX
-			yardZ = yardZR - yardZ - 1; //mirror yardZ
-		} break;
-
-		case FacingMap::FACING_EAST: {
-			yardZ = yardZR - yardZ - 1; //mirror yardZ
-			std::swap(yardX , yardZ );  //swap yard{X,Z}
-			std::swap(yardXR, yardZR);  //swap yard{XR,ZR}
-		} break;
-
-		case FacingMap::FACING_WEST: {
-			yardX = yardXR - yardX - 1; //mirror yardX
-			std::swap(yardX , yardZ );  //swap yard{X,Z}
-			std::swap(yardXR, yardZR);  //swap yard{XR,ZR}
-		} break;
-	}
-
-	return yardX + yardXR * yardZ;
+bool CGameHelper::TestQueuedBuildOverlap(const BuildInfo& queuedBuild, const BuildInfo& buildInfo)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	return QueuedBuildOverlap::Test(queuedBuild, buildInfo);
 }
 
 

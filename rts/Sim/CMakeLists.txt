@@ -105,6 +105,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Projectiles/WeaponProjectiles/WeaponProjectile.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Projectiles/WeaponProjectiles/WeaponProjectileFactory.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/BuildInfo.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Units/QueuedBuildOverlap.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/CommandAI/AirCAI.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/CommandAI/BuilderCAI.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/CommandAI/Command.cpp"
