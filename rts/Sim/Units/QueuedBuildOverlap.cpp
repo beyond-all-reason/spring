@@ -51,6 +51,147 @@ bool IsInsideCancellationRectangle(const BuildInfo& earlier, const BuildInfo& pr
 	);
 }
 
+namespace {
+
+class CellOverlapTest {
+public:
+	CellOverlapTest(const BuildInfo& earlier, const BuildInfo& proposed, bool useYardmaps)
+		: earlier(earlier)
+		, proposed(proposed)
+		, earlierSize{earlier.GetXSize(), earlier.GetZSize()}
+		, proposedSize{proposed.GetXSize(), proposed.GetZSize()}
+		, earlierMins{
+			int(earlier.pos.x / SQUARE_SIZE) - (earlierSize.x >> 1),
+			int(earlier.pos.z / SQUARE_SIZE) - (earlierSize.y >> 1),
+		}
+		, proposedMins{
+			int(proposed.pos.x / SQUARE_SIZE) - (proposedSize.x >> 1),
+			int(proposed.pos.z / SQUARE_SIZE) - (proposedSize.y >> 1),
+		}
+		, earlierMaxs(earlierMins + earlierSize)
+		, proposedMaxs(proposedMins + proposedSize)
+		, overlapMins{std::max(earlierMins.x, proposedMins.x), std::max(earlierMins.y, proposedMins.y)}
+		, overlapMaxs{std::min(earlierMaxs.x, proposedMaxs.x), std::min(earlierMaxs.y, proposedMaxs.y)}
+		, earlierXRange{earlierMins.x, earlierMaxs.x}
+		, earlierZRange{earlierMins.y, earlierMaxs.y}
+		, proposedXRange{proposedMins.x, proposedMaxs.x}
+		, proposedZRange{proposedMins.y, proposedMaxs.y}
+		, rectangularFallback(
+			!useYardmaps || earlier.def->yardmap.size() != static_cast<size_t>(earlier.def->xsize * earlier.def->zsize)
+		)
+		, proposedHasYardMap(
+			proposed.def->yardmap.size() == static_cast<size_t>(proposed.def->xsize * proposed.def->zsize)
+		)
+	{}
+
+	bool HasFootprintOverlap() const { return (overlapMins.x < overlapMaxs.x && overlapMins.y < overlapMaxs.y); }
+	bool UsesRectangularFallback() const { return rectangularFallback; }
+
+	bool BlocksCell(const int2& mapSquare) const
+	{
+		if (rectangularFallback)
+			return true;
+
+		const int earlierIndex = GetYardMapIndex(earlier.buildFacing, mapSquare, earlierXRange, earlierZRange);
+		const YardMapStatus earlierStatus = earlier.def->yardmap[earlierIndex];
+
+		YardMapStatus proposedStatus = YardmapStates::YARDMAP_BLOCKED;
+		if (proposedHasYardMap) {
+			const int proposedIndex = GetYardMapIndex(proposed.buildFacing, mapSquare, proposedXRange, proposedZRange);
+			proposedStatus = proposed.def->yardmap[proposedIndex];
+		}
+
+		if (earlierStatus & (YardmapStates::YARDMAP_EXITONLY | YardmapStates::YARDMAP_UNBUILDABLE))
+			return (proposedStatus > YardmapStates::YARDMAP_STACKABLE);
+		if ((earlierStatus & YardmapStates::YARDMAP_BLOCKED) == 0)
+			return false;
+		if (proposedStatus <= YardmapStates::YARDMAP_GEOSTACKABLE)
+			return false;
+		if (earlierStatus == YardmapStates::YARDMAP_BUILDONLY)
+			return false;
+
+		return true;
+	}
+
+	int GetProposedCellIndex(const int2& mapSquare) const
+	{
+		return (mapSquare.y - proposedMins.y) * proposedSize.x + mapSquare.x - proposedMins.x;
+	}
+
+	const int2& GetOverlapMins() const { return overlapMins; }
+	const int2& GetOverlapMaxs() const { return overlapMaxs; }
+	int GetProposedCellCount() const { return proposedSize.x * proposedSize.y; }
+
+private:
+	const BuildInfo& earlier;
+	const BuildInfo& proposed;
+	const int2 earlierSize;
+	const int2 proposedSize;
+	const int2 earlierMins;
+	const int2 proposedMins;
+	const int2 earlierMaxs;
+	const int2 proposedMaxs;
+	const int2 overlapMins;
+	const int2 overlapMaxs;
+	const int2 earlierXRange;
+	const int2 earlierZRange;
+	const int2 proposedXRange;
+	const int2 proposedZRange;
+	const bool rectangularFallback;
+	const bool proposedHasYardMap;
+};
+
+} // namespace
+
+bool AddBlockedCells(
+	const BuildInfo& earlier,
+	const BuildInfo& proposed,
+	bool useYardmaps,
+	std::vector<uint8_t>& blockedCells,
+	size_t& openCellCount
+)
+{
+	if (earlier.def == nullptr || proposed.def == nullptr)
+		return false;
+
+	const CellOverlapTest overlapTest(earlier, proposed, useYardmaps);
+	const size_t proposedCellCount = overlapTest.GetProposedCellCount();
+	if (blockedCells.size() != proposedCellCount) {
+		blockedCells.assign(proposedCellCount, false);
+		openCellCount = proposedCellCount;
+	}
+	if (openCellCount == 0)
+		return true;
+	if (!overlapTest.HasFootprintOverlap())
+		return false;
+
+	const int2& overlapMins = overlapTest.GetOverlapMins();
+	const int2& overlapMaxs = overlapTest.GetOverlapMaxs();
+	const bool emptyMask = (openCellCount == proposedCellCount);
+	for (int z = overlapMins.y; z < overlapMaxs.y; ++z) {
+		if (overlapTest.UsesRectangularFallback() && emptyMask) {
+			const int firstIndex = overlapTest.GetProposedCellIndex({overlapMins.x, z});
+			const int rowCellCount = overlapMaxs.x - overlapMins.x;
+			std::fill_n(blockedCells.begin() + firstIndex, rowCellCount, true);
+			openCellCount -= rowCellCount;
+			continue;
+		}
+
+		for (int x = overlapMins.x; x < overlapMaxs.x; ++x) {
+			const int2 mapSquare = {x, z};
+			uint8_t& blockedCell = blockedCells[overlapTest.GetProposedCellIndex(mapSquare)];
+			if (blockedCell || !overlapTest.BlocksCell(mapSquare))
+				continue;
+
+			blockedCell = true;
+			if (--openCellCount == 0)
+				return true;
+		}
+	}
+
+	return (openCellCount == 0);
+}
+
 Result Test(const BuildInfo& earlier, const BuildInfo& proposed, bool useYardmaps)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -58,68 +199,20 @@ Result Test(const BuildInfo& earlier, const BuildInfo& proposed, bool useYardmap
 	if (earlier.def == nullptr || proposed.def == nullptr)
 		return Result::NONE;
 
-	const int2 earlierSize = {earlier.GetXSize(), earlier.GetZSize()};
-	const int2 proposedSize = {proposed.GetXSize(), proposed.GetZSize()};
-	const int2 earlierMins = {
-		int(earlier.pos.x / SQUARE_SIZE) - (earlierSize.x >> 1),
-		int(earlier.pos.z / SQUARE_SIZE) - (earlierSize.y >> 1),
-	};
-	const int2 proposedMins = {
-		int(proposed.pos.x / SQUARE_SIZE) - (proposedSize.x >> 1),
-		int(proposed.pos.z / SQUARE_SIZE) - (proposedSize.y >> 1),
-	};
-	const int2 earlierMaxs = earlierMins + earlierSize;
-	const int2 proposedMaxs = proposedMins + proposedSize;
-	const int overlapX1 = std::max(earlierMins.x, proposedMins.x);
-	const int overlapX2 = std::min(earlierMaxs.x, proposedMaxs.x);
-	const int overlapZ1 = std::max(earlierMins.y, proposedMins.y);
-	const int overlapZ2 = std::min(earlierMaxs.y, proposedMaxs.y);
-
-	if (overlapX1 >= overlapX2 || overlapZ1 >= overlapZ2)
+	const CellOverlapTest overlapTest(earlier, proposed, useYardmaps);
+	if (!overlapTest.HasFootprintOverlap())
 		return Result::NONE;
 
 	const Result overlapResult = IsInsideCancellationRectangle(earlier, proposed) ? Result::CANCEL : Result::OVERLAP;
-	if (!useYardmaps)
+	if (overlapTest.UsesRectangularFallback())
 		return overlapResult;
 
-	const size_t earlierYardMapSize = earlier.def->xsize * earlier.def->zsize;
-	const size_t proposedYardMapSize = proposed.def->xsize * proposed.def->zsize;
-
-	if (earlier.def->yardmap.size() != earlierYardMapSize)
-		return overlapResult;
-
-	const int2 earlierXRange = {earlierMins.x, earlierMaxs.x};
-	const int2 earlierZRange = {earlierMins.y, earlierMaxs.y};
-	const int2 proposedXRange = {proposedMins.x, proposedMaxs.x};
-	const int2 proposedZRange = {proposedMins.y, proposedMaxs.y};
-	const bool proposedHasYardMap = proposed.def->yardmap.size() == proposedYardMapSize;
-
-	for (int z = overlapZ1; z < overlapZ2; ++z) {
-		for (int x = overlapX1; x < overlapX2; ++x) {
-			const int2 yardPos = {x, z};
-			const int earlierIndex = GetYardMapIndex(earlier.buildFacing, yardPos, earlierXRange, earlierZRange);
-			const YardMapStatus earlierStatus = earlier.def->yardmap[earlierIndex];
-
-			YardMapStatus proposedStatus = YardmapStates::YARDMAP_BLOCKED;
-			if (proposedHasYardMap) {
-				const int proposedIndex = GetYardMapIndex(proposed.buildFacing, yardPos, proposedXRange, proposedZRange);
-				proposedStatus = proposed.def->yardmap[proposedIndex];
-			}
-
-			if (earlierStatus & (YardmapStates::YARDMAP_EXITONLY | YardmapStates::YARDMAP_UNBUILDABLE)) {
-				if (proposedStatus > YardmapStates::YARDMAP_STACKABLE)
-					return overlapResult;
-				continue;
-			}
-
-			if ((earlierStatus & YardmapStates::YARDMAP_BLOCKED) == 0)
-				continue;
-			if (proposedStatus <= YardmapStates::YARDMAP_GEOSTACKABLE)
-				continue;
-			if (earlierStatus == YardmapStates::YARDMAP_BUILDONLY)
-				continue;
-
-			return overlapResult;
+	const int2& overlapMins = overlapTest.GetOverlapMins();
+	const int2& overlapMaxs = overlapTest.GetOverlapMaxs();
+	for (int z = overlapMins.y; z < overlapMaxs.y; ++z) {
+		for (int x = overlapMins.x; x < overlapMaxs.x; ++x) {
+			if (overlapTest.BlocksCell({x, z}))
+				return overlapResult;
 		}
 	}
 

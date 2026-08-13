@@ -2,6 +2,7 @@
 
 #include <catch_amalgamated.hpp>
 
+#include <algorithm>
 #include <string_view>
 #include <vector>
 
@@ -96,6 +97,18 @@ TEST_CASE("Queued build overlap follows yardmaps like successive construction")
 		UnitDef samePositionDef;
 		const auto samePosition = MakeBuildInfo({0, 0}, {10, 10}, FACING_SOUTH, &samePositionDef, solarYardMap);
 		CHECK(QueuedBuildOverlap::Test(firstSolar, samePosition) == QueuedBuildOverlap::Result::CANCEL);
+
+		std::vector<uint8_t> blockedCells;
+		size_t openCellCount = 0;
+		QueuedBuildOverlap::AddBlockedCells(firstSolar, samePosition, true, blockedCells, openCellCount);
+		CHECK_FALSE(blockedCells[0]);
+		CHECK(blockedCells[4]);
+
+		std::fill(blockedCells.begin(), blockedCells.end(), false);
+		openCellCount = blockedCells.size();
+		CHECK(QueuedBuildOverlap::AddBlockedCells(firstSolar, samePosition, false, blockedCells, openCellCount));
+		CHECK(blockedCells[0]);
+		CHECK(openCellCount == 0);
 	}
 
 	SECTION("outer occupied-cell conflicts overlap without cancelling") {
@@ -114,6 +127,23 @@ TEST_CASE("Queued build overlap follows yardmaps like successive construction")
 		UnitDef noYardMapDef;
 		const auto noYardMap = MakeBuildInfo({0, 0}, {10, 10}, FACING_SOUTH, &noYardMapDef, {});
 		CHECK(QueuedBuildOverlap::Test(noYardMap, firstSolar) == QueuedBuildOverlap::Result::CANCEL);
+	}
+
+	SECTION("rectangular blockers accumulate and report a full mask") {
+		UnitDef proposedDef;
+		UnitDef leftDef;
+		UnitDef rightDef;
+		const auto proposed = MakeBuildInfo({0, 0}, {4, 2}, FACING_SOUTH, &proposedDef, {});
+		const auto left = MakeBuildInfo({0, 0}, {2, 2}, FACING_SOUTH, &leftDef, {});
+		const auto right = MakeBuildInfo({2, 0}, {2, 2}, FACING_SOUTH, &rightDef, {});
+
+		std::vector<uint8_t> blockedCells;
+		size_t openCellCount = 0;
+		CHECK_FALSE(QueuedBuildOverlap::AddBlockedCells(left, proposed, true, blockedCells, openCellCount));
+		CHECK(openCellCount == 4);
+		CHECK(QueuedBuildOverlap::AddBlockedCells(right, proposed, true, blockedCells, openCellCount));
+		CHECK(openCellCount == 0);
+		CHECK(std::ranges::all_of(blockedCells, [](uint8_t blocked) { return blocked; }));
 	}
 }
 

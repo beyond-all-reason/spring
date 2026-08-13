@@ -219,6 +219,31 @@ bool CBuilderCAI::HasCurrentBuild() const
 	return (ownerBuilder != nullptr && ownerBuilder->curBuild != nullptr);
 }
 
+bool CBuilderCAI::GetCurrentBuildCommandTag(unsigned int& commandTag) const
+{
+	if (!HasCurrentBuild())
+		return false;
+
+	const CUnit* currentBuild = ownerBuilder->curBuild;
+
+	for (const Command& queuedCommand: commandQue) {
+		BuildInfo queuedBuild;
+		if (!queuedBuild.Parse(queuedCommand))
+			continue;
+		if (queuedBuild.def != currentBuild->unitDef)
+			continue;
+		if (queuedBuild.buildFacing != currentBuild->buildFacing)
+			continue;
+		if (CSolidObject::GetMapPosStatic(queuedBuild.pos, queuedBuild.GetXSize(), queuedBuild.GetZSize()) != currentBuild->mapPos)
+			continue;
+
+		commandTag = queuedCommand.GetTag();
+		return true;
+	}
+
+	return false;
+}
+
 CBuilderCAI::~CBuilderCAI()
 {
 	RECOIL_DETAILED_TRACY_ZONE;

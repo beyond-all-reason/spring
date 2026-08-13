@@ -2498,6 +2498,7 @@ static void DrawQueuedBuildSquares(const CancelledBuildCommandTags& cancelledCom
 	if (!drawOnShift && !activeBuildCommand)
 		return;
 
+	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LINE_BIT | GL_POLYGON_BIT);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -2524,11 +2525,7 @@ static void DrawQueuedBuildSquares(const CancelledBuildCommandTags& cancelledCom
 		commandDrawer->DrawQuedBuildingSquares(builderCAI, cancelled, cmdColors.buildBoxCancel);
 	}
 
-	glLineWidth(1.0f);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_TEXTURE_2D);
+	glPopAttrib();
 }
 
 static void FillRowOfBuildPos(const BuildInfo& startInfo, float x, float z, float xstep, float zstep, int n, int facing, bool nocancel, std::vector<BuildInfo>& ret)
@@ -3906,30 +3903,31 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 						glSurfaceCircle(buildPos, wd->coverageRange, { cmdColors.rangeInterceptorOn }, 40);
 					}
 
-					if (GetQueueKeystate()) {
-						buildCommands.clear();
+					buildCommands.clear();
+					const bool queueingBuild = GetQueueKeystate();
+					const Command c = bi.CreateCommand();
 
-						const Command c = bi.CreateCommand();
+					for (const int unitID: selectedUnitsHandler.selectedUnits) {
+						const CUnit* su = unitHandler.GetUnit(unitID);
+						const CCommandAI* cai = su->commandAI;
+						const CBuilderCAI* builderCAI = dynamic_cast<const CBuilderCAI*>(cai);
+						const std::vector<Command> overlapCommands = cai->GetOverlapQueued(c);
+						unsigned int activeBuildCommandTag = 0;
+						const bool hasActiveBuildCommand =
+							builderCAI != nullptr && builderCAI->GetCurrentBuildCommandTag(activeBuildCommandTag);
 
-						for (const int unitID: selectedUnitsHandler.selectedUnits) {
-							const CUnit* su = unitHandler.GetUnit(unitID);
-							const CCommandAI* cai = su->commandAI;
-							const CBuilderCAI* builderCAI = dynamic_cast<const CBuilderCAI*>(cai);
-							const std::vector<Command> overlapCommands = cai->GetOverlapQueued(c);
+						for (const Command& cmd: overlapCommands) {
+							if (hasActiveBuildCommand && cmd.GetTag() == activeBuildCommandTag)
+								continue;
 
-							for (const Command& cmd: overlapCommands) {
+							// Queue obstruction affects shifted placement, while clicking an
+							// existing command can cancel it without Shift.
+							if (queueingBuild)
 								buildCommands.push_back(cmd);
 
-								const bool activeBuild =
-									builderCAI != nullptr && builderCAI->HasCurrentBuild() &&
-									!cai->commandQue.empty() && cmd.GetTag() == cai->commandQue.front().GetTag();
-								if (activeBuild)
-									continue;
-
-								const BuildInfo queuedBuild(cmd);
-								if (QueuedBuildOverlap::IsInsideCancellationRectangle(queuedBuild, bi))
-									cancelledBuildCommandTags[unitID].insert(cmd.GetTag());
-							}
+							const BuildInfo queuedBuild(cmd);
+							if (QueuedBuildOverlap::IsInsideCancellationRectangle(queuedBuild, bi))
+								cancelledBuildCommandTags[unitID].insert(cmd.GetTag());
 						}
 					}
 
