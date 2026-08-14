@@ -386,35 +386,39 @@ void CGame::Load(const std::string& mapFileName)
 		defsParser = &nullDefsParser;
 		defsParser->Execute();
 
-		// we can not (yet) do a clean early exit here because the dtor assumes
-		// all loading stages proceeded normally; just force automatic shutdown
+		// Skip later loading stages, which depend on the failed stage.
+		// Cleanup routines must tolerate components that were never initialized.
 		forcedQuit = true;
 	}
 
-	try {
-		LOG("[Game::%s][2] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
+	if (!forcedQuit) {
+		try {
+			LOG("[Game::%s][2] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
-		PreLoadSimulation(defsParser);
-		Watchdog::ClearTimer(WDT_LOAD);
-		PreLoadRendering();
-		Watchdog::ClearTimer(WDT_LOAD);
-	} catch (const content_error& e) {
-		contentErrors.emplace_back(e.what());
-		LOG_L(L_ERROR, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
-		forcedQuit = true;
+			PreLoadSimulation(defsParser);
+			Watchdog::ClearTimer(WDT_LOAD);
+			PreLoadRendering();
+			Watchdog::ClearTimer(WDT_LOAD);
+		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][2] forced quit with exception \"%s\"", __func__, e.what());
+			forcedQuit = true;
+		}
 	}
 
-	try {
-		LOG("[Game::%s][3] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
+	if (!forcedQuit) {
+		try {
+			LOG("[Game::%s][3] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
-		PostLoadSimulation(defsParser);
-		Watchdog::ClearTimer(WDT_LOAD);
-		PostLoadRendering();
-		Watchdog::ClearTimer(WDT_LOAD);
-	} catch (const content_error& e) {
-		contentErrors.emplace_back(e.what());
-		LOG_L(L_ERROR, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
-		forcedQuit = true;
+			PostLoadSimulation(defsParser);
+			Watchdog::ClearTimer(WDT_LOAD);
+			PostLoadRendering();
+			Watchdog::ClearTimer(WDT_LOAD);
+		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][3] forced quit with exception \"%s\"", __func__, e.what());
+			forcedQuit = true;
+		}
 	}
 	if (!forcedQuit) {
 		try {
@@ -455,50 +459,52 @@ void CGame::Load(const std::string& mapFileName)
 		}
 	}
 
-	try {
-		LOG("[Game::%s][7] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
+	if (!forcedQuit) {
+		try {
+			LOG("[Game::%s][7] globalQuit=%d forcedQuit=%d", __func__, globalQuit.load(), forcedQuit);
 
-		if (!globalQuit && saveFileHandler != nullptr) {
-			loadscreen->SetLoadMessage("Loading Saved Game");
-			{
-				auto lock = CLoadLock::GetUniqueLock();
-				saveFileHandler->LoadGame();
+			if (!globalQuit && saveFileHandler != nullptr) {
+				loadscreen->SetLoadMessage("Loading Saved Game");
+				{
+					auto lock = CLoadLock::GetUniqueLock();
+					saveFileHandler->LoadGame();
+					Watchdog::ClearTimer(WDT_LOAD);
+				}
+				LoadLua(false, true);
 				Watchdog::ClearTimer(WDT_LOAD);
+			} else {
+				ENTER_SYNCED_CODE();
+				{
+					auto lock = CLoadLock::GetUniqueLock();
+					eventHandler.GamePreload();
+					Watchdog::ClearTimer(WDT_LOAD);
+					eventHandler.CollectGarbage(true);
+					Watchdog::ClearTimer(WDT_LOAD);
+				}
+				LEAVE_SYNCED_CODE();
 			}
-			LoadLua(false, true);
-			Watchdog::ClearTimer(WDT_LOAD);
-		} else {
-			ENTER_SYNCED_CODE();
+			// Update height bounds and pathing after pregame or a saved game load.
 			{
-				auto lock = CLoadLock::GetUniqueLock();
-				eventHandler.GamePreload();
+				ENTER_SYNCED_CODE();
+				//needed in case pre-game terraform changed the map
+				readMap->UpdateHeightBounds();
 				Watchdog::ClearTimer(WDT_LOAD);
-				eventHandler.CollectGarbage(true);
+				pathManager->PostFinalizeRefresh();
 				Watchdog::ClearTimer(WDT_LOAD);
+				LEAVE_SYNCED_CODE();
 			}
-			LEAVE_SYNCED_CODE();
-		}
-		// Update height bounds and pathing after pregame or a saved game load.
-		{
-			ENTER_SYNCED_CODE();
-			//needed in case pre-game terraform changed the map
-			readMap->UpdateHeightBounds();
-			Watchdog::ClearTimer(WDT_LOAD);
-			pathManager->PostFinalizeRefresh();
-			Watchdog::ClearTimer(WDT_LOAD);
-			LEAVE_SYNCED_CODE();
-		}
 
-		{
-			char msgBuf[512];
+			{
+				char msgBuf[512];
 
-			SNPRINTF(msgBuf, sizeof(msgBuf), "[Game::%s][lua{Rules,Gaia}={%p,%p}][locale=\"%s\"]", __func__, luaRules, luaGaia, setlocale(LC_ALL, nullptr));
-			CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
+				SNPRINTF(msgBuf, sizeof(msgBuf), "[Game::%s][lua{Rules,Gaia}={%p,%p}][locale=\"%s\"]", __func__, luaRules, luaGaia, setlocale(LC_ALL, nullptr));
+				CLIENT_NETLOG(gu->myPlayerNum, LOG_LEVEL_INFO, msgBuf);
+			}
+		} catch (const content_error& e) {
+			contentErrors.emplace_back(e.what());
+			LOG_L(L_ERROR, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
+			forcedQuit = true;
 		}
-	} catch (const content_error& e) {
-		contentErrors.emplace_back(e.what());
-		LOG_L(L_ERROR, "[Game::%s][7] forced quit with exception \"%s\"", __func__, e.what());
-		forcedQuit = true;
 	}
 
 	if (!forcedQuit) {
