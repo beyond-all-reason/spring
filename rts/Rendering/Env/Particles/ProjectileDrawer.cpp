@@ -174,6 +174,9 @@ void CProjectileDrawer::InitStatic() {
 }
 void CProjectileDrawer::KillStatic(bool reload) {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (projectileDrawer == nullptr)
+		return;
+
 	projectileDrawer->Kill();
 
 	if (reload)
