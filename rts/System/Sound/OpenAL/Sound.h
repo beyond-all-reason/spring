@@ -66,7 +66,7 @@ public:
 	bool SoundThreadQuit() const override { return soundThreadQuit; }
 	bool CanLoadSoundDefs() const override { return canLoadDefs; }
 
-	bool LoadSoundDefsImpl(LuaParser* defsParser) override;
+	bool LoadSoundDefsImpl(const LuaTable& soundDefs, const std::string& fileName) override;
 	const float3& GetListenerPos() const override { return myPos; }
 
 	ALCdevice* GetCurrentDevice() { return curDevice; }

@@ -181,7 +181,7 @@ void CExplosionGeneratorHandler::Init()
 	aliasParser = nullptr;
 	explTblRoot = nullptr;
 
-	ParseExplosionTables();
+	ParseExplosionTables(true);
 }
 
 void CExplosionGeneratorHandler::Kill()
@@ -205,7 +205,7 @@ void CExplosionGeneratorHandler::Kill()
 	expGenIdentNameMap.clear(); // never iterated
 }
 
-void CExplosionGeneratorHandler::ParseExplosionTables()
+void CExplosionGeneratorHandler::ParseExplosionTables(bool fatalErrors)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	static_assert(sizeof(LuaParser) <= sizeof(exploParserMem), "");
@@ -219,18 +219,28 @@ void CExplosionGeneratorHandler::ParseExplosionTables()
 	aliasParser = new (aliasParserMem) LuaParser("gamedata/explosion_alias.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
 	explTblRoot = nullptr;
 
-	if (!aliasParser->Execute()) {
+	if (fatalErrors) {
+		if (!aliasParser->Execute())
+			throw content_error("Failed to load gamedata/explosion_alias.lua: " + aliasParser->GetErrorLog());
+	} else if (!aliasParser->Execute()) {
 		LOG_L(L_ERROR, "[%s] failed to parse explosion aliases: %s", __func__, (aliasParser->GetErrorLog()).c_str());
-	} else {
+	}
+
+	if (aliasParser->IsValid()) {
 		const LuaTable& aliasRoot = aliasParser->GetRoot();
 
 		projectileClasses.Clear();
 		projectileClasses.Load(aliasRoot.SubTable("projectiles"));
 	}
 
-	if (!exploParser->Execute()) {
+	if (fatalErrors) {
+		if (!exploParser->Execute())
+			throw content_error("Failed to load gamedata/explosions.lua: " + exploParser->GetErrorLog());
+	} else if (!exploParser->Execute()) {
 		LOG_L(L_ERROR, "[%s] failed to parse explosions: %s", __func__, (exploParser->GetErrorLog()).c_str());
-	} else {
+	}
+
+	if (exploParser->IsValid()) {
 		explTblRoot = new (explTblRootMem) LuaTable(exploParser->GetRoot());
 	}
 }
@@ -238,7 +248,7 @@ void CExplosionGeneratorHandler::ParseExplosionTables()
 void CExplosionGeneratorHandler::ReloadGenerators(const std::string& tag) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// re-parse the projectile and generator tables
-	ParseExplosionTables();
+	ParseExplosionTables(false);
 
 	const char* preFmt = "[%s][generatorID=%u] reloading CEG \"%s\"";
 	const char* pstFmt = "[%s][generatorID=%u] failed to reload CEG \"%s\"";

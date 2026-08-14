@@ -203,7 +203,8 @@ void CProjectileDrawer::Init() {
 	LuaParser resourcesParser("gamedata/resources.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
 	LuaParser mapResParser("gamedata/resources_map.lua", SPRING_VFS_MAP_BASE, SPRING_VFS_ZIP);
 
-	resourcesParser.Execute();
+	if (!resourcesParser.Execute())
+		throw content_error("Failed to load gamedata/resources.lua: " + resourcesParser.GetErrorLog());
 
 	const LuaTable& resTable = resourcesParser.GetRoot();
 	const LuaTable& resGraphicsTable = resTable.SubTable("graphics");

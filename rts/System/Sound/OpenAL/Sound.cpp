@@ -889,24 +889,13 @@ void CSound::PrintDebugInfo()
 	LOG_L(L_DEBUG, "# SoundItems: %i", (int)soundItems.size());
 }
 
-bool CSound::LoadSoundDefsImpl(LuaParser* defsParser)
+bool CSound::LoadSoundDefsImpl(const LuaTable& soundDefs, const std::string& fileName)
 {
 	// can be called from LuaUnsyncedCtrl too
 	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 
-	defsParser->Execute();
-
-	const std::string& fileName = defsParser->fileName;
-	const std::string& errorLog = defsParser->GetErrorLog();
-
-	if (!defsParser->IsValid()) {
-		LOG_L(L_WARNING, "[%s] could not load %s: %s", __func__, fileName.c_str(), errorLog.c_str());
-		return false;
-	}
-
 	{
-		const LuaTable& soundRoot = defsParser->GetRoot();
-		const LuaTable& soundItemTable = soundRoot.SubTable("SoundItems");
+		const LuaTable& soundItemTable = soundDefs.SubTable("SoundItems");
 
 		if (!soundItemTable.IsValid()) {
 			LOG_L(L_WARNING, "[%s] could not parse SoundItems table in %s", __func__, fileName.c_str());

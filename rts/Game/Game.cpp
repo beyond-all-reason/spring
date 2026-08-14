@@ -638,7 +638,14 @@ void CGame::LoadDefs(LuaParser* defsParser)
 		soundDefsParser.AddFunc("GetMapOptions", LuaSyncedRead::GetMapOptions);
 		soundDefsParser.EndTable();
 
-		sound->LoadSoundDefs(&soundDefsParser);
+		if (!soundDefsParser.Execute())
+			throw content_error("Failed to load gamedata/sounds.lua: " + soundDefsParser.GetErrorLog());
+
+		const LuaTable soundDefs = soundDefsParser.GetRoot();
+		if (!soundDefs.SubTable("SoundItems").IsValid())
+			throw content_error("Failed to load gamedata/sounds.lua: missing SoundItems table");
+
+		sound->LoadSoundDefs(soundDefs, soundDefsParser.fileName);
 		chatSound = sound->GetDefSoundId("IncomingChat");
 	}
 

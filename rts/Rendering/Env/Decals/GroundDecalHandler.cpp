@@ -269,9 +269,8 @@ void CGroundDecalHandler::AddTexturesFromTable()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LuaParser resourcesParser("gamedata/resources.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
-	if (!resourcesParser.Execute()) {
-		LOG_L(L_ERROR, "Failed to load resources: %s", resourcesParser.GetErrorLog().c_str());
-	}
+	if (!resourcesParser.Execute())
+		throw content_error("Failed to load gamedata/resources.lua: " + resourcesParser.GetErrorLog());
 
 	const std::string ERR_MSG_SCAR1 = "Error loading a ground scar texture";
 

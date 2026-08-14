@@ -8,7 +8,7 @@
 #include <vector>
 
 class float3;
-class LuaParser;
+class LuaTable;
 class CSoundSource;
 class SoundItem;
 
@@ -67,7 +67,7 @@ public:
 	virtual bool SoundThreadQuit() const = 0;
 	virtual bool CanLoadSoundDefs() const = 0;
 
-	bool LoadSoundDefs(LuaParser* defsParser);
+	bool LoadSoundDefs(const LuaTable& soundDefs, const std::string& fileName);
 
 	virtual const float3& GetListenerPos() const = 0;
 
@@ -77,7 +77,7 @@ public:
 	unsigned numAbortedPlays = 0;
 
 private:
-	virtual bool LoadSoundDefsImpl(LuaParser* defsParser) = 0;
+	virtual bool LoadSoundDefsImpl(const LuaTable& soundDefs, const std::string& fileName) = 0;
 	static bool IsNullAudio();
 };
 

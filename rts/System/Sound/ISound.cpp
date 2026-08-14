@@ -146,8 +146,7 @@ bool ISound::ChangeOutput(bool forceNullSound)
 	return (IsNullAudio() || forceNullSound);
 }
 
-bool ISound::LoadSoundDefs(LuaParser* defsParser)
+bool ISound::LoadSoundDefs(const LuaTable& soundDefs, const std::string& fileName)
 {
-	return (singleton->LoadSoundDefsImpl(defsParser));
+	return (singleton->LoadSoundDefsImpl(soundDefs, fileName));
 }
-
