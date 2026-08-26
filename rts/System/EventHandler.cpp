@@ -5,6 +5,10 @@
 #include "Game/GameHelper.h"
 #include "Lua/LuaCallInCheck.h"
 #include "Lua/LuaOpenGL.h"  // FIXME -- should be moved
+#include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/UnitDef.h"
+#include "Sim/Weapons/Weapon.h"
+#include "Sim/Weapons/WeaponDef.h"
 
 #include "System/Config/ConfigHandler.h"
 #include "System/Platform/Threading.h"
@@ -40,6 +44,7 @@ void CEventHandler::ResetState()
 	eventMap.reserve(64);
 	handles.clear();
 	handles.reserve(16);
+	unitWeaponBurstEndEvents.clear();
 
 	SetupEvents();
 }
@@ -559,7 +564,56 @@ void CEventHandler::GameFrame(int gameFrame)
 void CEventHandler::GameFramePost(int gameFrame)
 {
 	ZoneScoped;
+	DispatchUnitWeaponBurstEndEvents();
 	ITERATE_EVENTCLIENTLIST(GameFramePost, gameFrame);
+}
+
+void CEventHandler::UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon)
+{
+	if (listUnitWeaponBurstEnd.empty())
+		return;
+
+	const CCommandQueue& commandQueue = unit->commandAI->commandQue;
+	const bool hasCommand = !commandQueue.empty();
+	const Command* command = hasCommand ? &commandQueue.front() : nullptr;
+
+	unitWeaponBurstEndEvents.push_back({
+		.unitID = unit->id,
+		.unitDefID = unit->unitDef->id,
+		.unitTeam = unit->team,
+		.weaponNum = weapon->weaponNum,
+		.weaponDefID = weapon->weaponDef->id,
+		.hasCommand = hasCommand,
+		.commandID = hasCommand ? command->GetID() : 0,
+		.commandTag = hasCommand ? command->GetTag() : 0,
+	});
+}
+
+void CEventHandler::DispatchUnitWeaponBurstEndEvents()
+{
+	const size_t eventCount = unitWeaponBurstEndEvents.size();
+
+	for (size_t eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
+		// Copy before invoking clients: a callback can indirectly queue another event.
+		const UnitWeaponBurstEndEvent event = unitWeaponBurstEndEvents[eventIndex];
+		IterateEventClientList(
+			listUnitWeaponBurstEnd,
+			&CEventClient::UnitWeaponBurstEnd,
+			event.unitID,
+			event.unitDefID,
+			event.unitTeam,
+			event.weaponNum,
+			event.weaponDefID,
+			event.hasCommand,
+			event.commandID,
+			event.commandTag
+		);
+	}
+
+	unitWeaponBurstEndEvents.erase(
+		unitWeaponBurstEndEvents.begin(),
+		unitWeaponBurstEndEvents.begin() + eventCount
+	);
 }
 
 void CEventHandler::GameProgress(int gameFrame)

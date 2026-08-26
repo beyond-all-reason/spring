@@ -566,6 +566,7 @@ void CWeapon::UpdateSalvo()
 
 				// Special case needed here if the last shot of the salvo has been cancelled.
 				if (salvoLeft == 0) {
+					eventHandler.UnitWeaponBurstEnd(owner, this);
 					owner->script->EndBurst(weaponNum);
 
 					const bool searchForNewTarget = (currentTarget == owner->curTarget);
@@ -601,6 +602,9 @@ void CWeapon::UpdateSalvo()
 		owner->script->WorldRockUnit((-wantedDir).SafeNormalize2D());
 
 	const bool searchForNewTarget = (salvoLeft == 0) && (currentTarget == owner->curTarget);
+	if (salvoLeft == 0)
+		eventHandler.UnitWeaponBurstEnd(owner, this);
+
 	owner->commandAI->WeaponFired(this, searchForNewTarget);
 
 	if (salvoLeft == 0)

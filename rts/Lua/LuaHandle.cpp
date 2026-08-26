@@ -2358,6 +2358,65 @@ void CLuaHandle::StockpileChanged(const CUnit* unit,
 }
 
 
+/*** Called after a weapon burst ends and the rest of the simulation frame has completed.
+ *
+ * The command ID and tag are snapshots taken when the burst ended, before the
+ * command AI processed the final shot. They are `nil` if the unit had no command.
+ * The referenced unit or command may no longer exist when this deferred call-in runs.
+ *
+ * @function Callins:UnitWeaponBurstEnd
+ *
+ * @param unitID integer
+ * @param unitDefID integer
+ * @param unitTeam integer
+ * @param weaponNum integer
+ * @param weaponDefID integer
+ * @param commandID integer?
+ * @param commandTag integer?
+ *
+ * @see Script.SetWatchWeaponBurst
+ */
+void CLuaHandle::UnitWeaponBurstEnd(
+	int unitID,
+	int unitDefID,
+	int unitTeam,
+	int weaponNum,
+	int weaponDefID,
+	bool hasCommand,
+	int commandID,
+	unsigned int commandTag)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (weaponDefID < 0 || static_cast<size_t>(weaponDefID) >= watchWeaponBurstDefs.size())
+		return;
+	if (!watchWeaponBurstDefs[weaponDefID])
+		return;
+
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 9, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unitID);
+	lua_pushnumber(L, unitDefID);
+	lua_pushnumber(L, unitTeam);
+	lua_pushnumber(L, weaponNum + LUA_WEAPON_BASE_INDEX);
+	lua_pushnumber(L, weaponDefID);
+
+	if (hasCommand) {
+		lua_pushnumber(L, commandID);
+		lua_pushnumber(L, commandTag);
+	} else {
+		lua_pushnil(L);
+		lua_pushnil(L);
+	}
+
+	RunCallIn(L, cmdStr, 7, 0);
+}
+
+
 
 /*** Receives messages from unsynced sent via `Spring.SendLuaRulesMsg` or `Spring.SendLuaUIMsg`.
  *

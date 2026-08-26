@@ -143,6 +143,7 @@ class CEventHandler
 
 		void StockpileChanged(const CUnit* unit,
 		                      const CWeapon* weapon, int oldCount);
+		void UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon);
 
 		bool CommandFallback(const CUnit* unit, const Command& cmd);
 		bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua);
@@ -360,6 +361,18 @@ class CEventHandler
 		                EventClientList* list, int props);
 		void ListInsert(EventClientList& ciList, CEventClient* ec);
 		void ListRemove(EventClientList& ciList, CEventClient* ec);
+		void DispatchUnitWeaponBurstEndEvents();
+
+		struct UnitWeaponBurstEndEvent {
+			int unitID;
+			int unitDefID;
+			int unitTeam;
+			int weaponNum;
+			int weaponDefID;
+			bool hasCommand;
+			int commandID;
+			unsigned int commandTag;
+		};
 
 	private:
 		CEventClient* mouseOwner;
@@ -368,6 +381,7 @@ class CEventHandler
 		EventMap eventMap;
 
 		EventClientList handles;
+		std::vector<UnitWeaponBurstEndEvent> unitWeaponBurstEndEvents;
 
 	#define SETUP_EVENT(name, props) EventClientList list ## name;
 	#define SETUP_UNMANAGED_EVENT(name, props)

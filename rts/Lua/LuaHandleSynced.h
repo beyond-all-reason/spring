@@ -167,12 +167,15 @@ class CSyncedLuaHandle : public CLuaHandle
 		static int SetWatchProjectileDef(lua_State* L);
 		static int GetWatchAllowTargetDef(lua_State* L);
 		static int SetWatchAllowTargetDef(lua_State* L);
+		static int GetWatchWeaponBurstDef(lua_State* L);
+		static int SetWatchWeaponBurstDef(lua_State* L);
 
 		static int GetWatchWeaponDef(lua_State* L);
 		static int SetWatchWeaponDef(lua_State* L) {
 			SetWatchExplosionDef(L);
 			SetWatchProjectileDef(L);
 			SetWatchAllowTargetDef(L);
+			SetWatchWeaponBurstDef(L);
 			return 0;
 		}
 };

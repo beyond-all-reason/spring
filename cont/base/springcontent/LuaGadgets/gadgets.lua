@@ -1685,6 +1685,14 @@ function gadgetHandler:StockpileChanged(unitID, unitDefID, unitTeam,
   end
 end
 
+function gadgetHandler:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam,
+                                          weaponNum, weaponDefID, commandID, commandTag)
+  for _,g in r_ipairs(self.UnitWeaponBurstEndList) do
+    g:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam,
+                         weaponNum, weaponDefID, commandID, commandTag)
+  end
+end
+
 function gadgetHandler:UnitHarvestStorageFull(unitID, unitDefID, unitTeam)
   for _,g in r_ipairs(self.UnitHarvestStorageFullList) do
     g:UnitHarvestStorageFull(unitID, unitDefID, unitTeam)
