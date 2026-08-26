@@ -1685,11 +1685,9 @@ function gadgetHandler:StockpileChanged(unitID, unitDefID, unitTeam,
   end
 end
 
-function gadgetHandler:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam,
-                                          weaponNum, weaponDefID, commandID, commandTag)
+function gadgetHandler:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam, weaponNum)
   for _,g in r_ipairs(self.UnitWeaponBurstEndList) do
-    g:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam,
-                         weaponNum, weaponDefID, commandID, commandTag)
+    g:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam, weaponNum)
   end
 end
 

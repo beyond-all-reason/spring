@@ -195,15 +195,7 @@ class CLuaHandle : public CEventClient
 
 		void StockpileChanged(const CUnit* owner,
 		                      const CWeapon* weapon, int oldCount) override;
-		void UnitWeaponBurstEnd(
-			int unitID,
-			int unitDefID,
-			int unitTeam,
-			int weaponNum,
-			int weaponDefID,
-			bool hasCommand,
-			int commandID,
-			unsigned int commandTag) override;
+		void UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon) override;
 
 		void Save(zipFile archive) override;
 
