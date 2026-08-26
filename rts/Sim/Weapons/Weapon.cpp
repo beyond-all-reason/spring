@@ -566,8 +566,7 @@ void CWeapon::UpdateSalvo()
 
 				// Special case needed here if the last shot of the salvo has been cancelled.
 				if (salvoLeft == 0) {
-					owner->script->EndBurst(weaponNum);
-					eventHandler.UnitWeaponBurstEnd(owner, this);
+					owner->EndBurst(this);
 
 					const bool searchForNewTarget = (currentTarget == owner->curTarget);
 					owner->commandAI->WeaponFired(this, searchForNewTarget, false);
@@ -605,8 +604,7 @@ void CWeapon::UpdateSalvo()
 	owner->commandAI->WeaponFired(this, searchForNewTarget);
 
 	if (salvoLeft == 0) {
-		owner->script->EndBurst(weaponNum);
-		eventHandler.UnitWeaponBurstEnd(owner, this);
+		owner->EndBurst(this);
 	}
 }
 

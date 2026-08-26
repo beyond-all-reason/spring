@@ -184,6 +184,7 @@ public:
 
 	void UpdateWeapons();
 	void UpdateWeaponVectors();
+	void EndBurst(const CWeapon* weapon);
 
 	void SlowUpdateWeapons();
 	void SlowUpdateKamikaze(bool scanForTargets);
