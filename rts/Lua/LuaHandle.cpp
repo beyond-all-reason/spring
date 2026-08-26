@@ -2358,6 +2358,43 @@ void CLuaHandle::StockpileChanged(const CUnit* unit,
 }
 
 
+/*** Called immediately when a weapon burst starts.
+ *
+ * @function Callins:UnitWeaponBurstStart
+ *
+ * @param unitID integer
+ * @param unitDefID integer
+ * @param unitTeam integer
+ * @param weaponNum integer
+ *
+ * @see Script.SetWatchWeaponBurst
+ */
+void CLuaHandle::UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int weaponDefID = weapon->weaponDef->id;
+
+	if (weaponDefID < 0 || static_cast<size_t>(weaponDefID) >= watchWeaponBurstDefs.size())
+		return;
+	if (!watchWeaponBurstDefs[weaponDefID])
+		return;
+
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 6, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, weapon->weaponNum + LUA_WEAPON_BASE_INDEX);
+
+	RunCallIn(L, cmdStr, 4, 0);
+}
+
+
 /*** Called immediately when a weapon burst ends.
  *
  * @function Callins:UnitWeaponBurstEnd

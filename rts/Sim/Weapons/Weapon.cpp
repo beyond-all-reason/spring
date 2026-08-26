@@ -508,7 +508,7 @@ void CWeapon::UpdateFire()
 
 	owner->lastMuzzleFlameSize = muzzleFlareSize;
 	owner->lastMuzzleFlameDir = wantedDir;
-	owner->script->FireWeapon(weaponNum);
+	owner->StartBurst(this);
 }
 
 

@@ -717,6 +717,13 @@ void CUnit::UpdateWeapons()
 }
 
 
+void CUnit::StartBurst(const CWeapon* weapon)
+{
+	script->FireWeapon(weapon->weaponNum);
+	eventHandler.UnitWeaponBurstStart(this, weapon);
+}
+
+
 void CUnit::EndBurst(const CWeapon* weapon)
 {
 	script->EndBurst(weapon->weaponNum);

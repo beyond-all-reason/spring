@@ -205,6 +205,7 @@ class CEventClient
 
 		virtual void StockpileChanged(const CUnit* unit,
 		                              const CWeapon* weapon, int oldCount) {}
+		virtual void UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon) {}
 		virtual void UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon) {}
 
 		virtual bool Explosion(int weaponID, const WeaponDef* weaponDef, const CExplosionParams& params) { return false; }

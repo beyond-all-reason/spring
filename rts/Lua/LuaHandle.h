@@ -195,6 +195,7 @@ class CLuaHandle : public CEventClient
 
 		void StockpileChanged(const CUnit* owner,
 		                      const CWeapon* weapon, int oldCount) override;
+		void UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon) override;
 		void UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon) override;
 
 		void Save(zipFile archive) override;
@@ -375,7 +376,7 @@ class CLuaHandle : public CEventClient
 		std::vector<bool> watchUnitDefs;        // callin masks for Unit*Collision, UnitMoveFailed
 		std::vector<bool> watchFeatureDefs;     // callin masks for UnitFeatureCollision
 		std::vector<bool> watchProjectileDefs;  // callin masks for Projectile*
-		std::vector<bool> watchWeaponBurstDefs; // callin masks for UnitWeaponBurstEnd
+		std::vector<bool> watchWeaponBurstDefs; // callin masks for UnitWeaponBurstStart, UnitWeaponBurstEnd
 		std::vector<bool> watchExplosionDefs;   // callin masks for Explosion
 		std::vector<bool> watchAllowTargetDefs; // callin masks for AllowWeapon*Target*
 

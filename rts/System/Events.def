@@ -93,6 +93,7 @@
 	SETUP_EVENT(Explosion, MANAGED_BIT | CONTROL_BIT)
 
 	SETUP_EVENT(StockpileChanged, MANAGED_BIT)
+	SETUP_EVENT(UnitWeaponBurstStart, MANAGED_BIT)
 	SETUP_EVENT(UnitWeaponBurstEnd, MANAGED_BIT)
 
 	// unsynced call-ins

@@ -2268,12 +2268,12 @@ GetWatchDef(Unsynced, Explosion)
 GetWatchDef(Synced, Projectile)
 
 
-/*** Query whether burst-end callins are registered for a weaponDefID.
+/*** Query whether burst callins are registered for a weaponDefID.
  *
  * @function Script.GetWatchWeaponBurst
  *
  * @param weaponDefID integer
- * @return boolean watched `true` if burst-end callins are registered, otherwise `false`.
+ * @return boolean watched `true` if burst callins are registered, otherwise `false`.
  *
  * @see Script.SetWatchWeaponBurst
  */
@@ -2379,7 +2379,7 @@ SetWatchDef(Unsynced, Explosion)
 SetWatchDef(Synced, Projectile)
 
 
-/*** Register or deregister weaponDefID for `UnitWeaponBurstEnd`.
+/*** Register or deregister weaponDefID for `UnitWeaponBurstStart` and `UnitWeaponBurstEnd`.
  *
  * @function Script.SetWatchWeaponBurst
  *
@@ -2387,6 +2387,7 @@ SetWatchDef(Synced, Projectile)
  * @param watch boolean Whether to register or deregister.
  *
  * @see Script.GetWatchWeaponBurst
+ * @see Callins:UnitWeaponBurstStart
  * @see Callins:UnitWeaponBurstEnd
  */
 
