@@ -2360,6 +2360,11 @@ void CLuaHandle::StockpileChanged(const CUnit* unit,
 
 /*** Called immediately when a weapon burst starts.
  *
+ * This marks initialization of the engine burst state and can run before the first shot
+ * when the weapon has a windup. It does not guarantee a matching
+ * `UnitWeaponBurstEnd`: for example, the unit can be destroyed or Lua can modify the
+ * weapon state before the burst completes.
+ *
  * @function Callins:UnitWeaponBurstStart
  *
  * @param unitID integer
