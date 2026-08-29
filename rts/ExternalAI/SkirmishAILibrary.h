@@ -34,6 +34,7 @@ public:
 	bool Init(int skirmishAIId, const SSkirmishAICallback* c_callback) const;
 	bool Release(int skirmishAIId) const;
 	int HandleEvent(int skirmishAIId, int topic, const void* data) const;
+	int HandleIntent(int skirmishAIId, int topic, const void* data) const;
 
 private:
 	SSkirmishAILibrary aiLib;

@@ -103,3 +103,23 @@ int CSkirmishAILibrary::HandleEvent(int skirmishAIId, int topic, const void* dat
 	return ret;
 }
 
+int CSkirmishAILibrary::HandleIntent(int skirmishAIId, int topic, const void* data) const
+{
+	if (aiLib.handleIntent == nullptr)
+		return 0;
+
+	skirmishAIHandler.SetCurrentAIID(skirmishAIId);
+	const int ret = aiLib.handleIntent(skirmishAIId, topic, data);
+	skirmishAIHandler.SetCurrentAIID(MAX_AIS);
+
+	if (ret == 0)
+		return ret;
+
+	// intent handling failed!
+	const int teamId = skirmishAIHandler.GetSkirmishAI(skirmishAIId)->team;
+	const char* errorStr = "AI for team %d (ID: %d) failed handling intent with topic %d, error: %d";
+
+	LOG_L(L_WARNING, errorStr, teamId, skirmishAIId, topic, ret);
+
+	return ret;
+}

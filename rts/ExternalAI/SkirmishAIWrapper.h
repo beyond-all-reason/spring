@@ -5,11 +5,15 @@
 
 #include "SkirmishAIKey.h"
 
+#include <variant>
+
 class CSkirmishAILibrary;
 struct SSkirmishAICallback;
 
 struct Command;
 class float3;
+
+using VariantWrapper = std::variant<int, float, std::string>;
 
 
 /**
@@ -78,6 +82,16 @@ public:
 	void CommandFinished(int unitId, int commandId, int commandTopicId);
 	void SeismicPing(int allyTeam, int unitId, const float3& pos, float strength);
 
+	void Intent(int topic, int objId, int value);
+	void Intent(int topic, int objId, float value);
+	void Intent(int topic, int objId, const std::vector<int>& data);
+	void Intent(int topic, int objId, const std::vector<float>& data);
+	void Intent(int topic, int objId, const std::vector<char>& data);
+	void Intent(int topic, int objId, const std::vector<VariantWrapper>& data);
+	void Intent(int topic, int objId, const std::vector<int>& keys, const std::vector<int>& values);
+	void Intent(int topic, int objId, const std::vector<int>& keys, const std::vector<float>& values);
+	void Intent(int topic, int objId, const std::vector<int>& keys, const std::vector<VariantWrapper>& values);
+
 	int GetSkirmishAIID() const { return skirmishAIId; }
 	int GetTeamId() const { return teamId; }
 
@@ -110,6 +124,7 @@ private:
 	 * CAUTION: takes C AI Interface events, not engine C++ ones!
 	 */
 	int HandleEvent(int topic, const void* data) const;
+	int HandleIntent(int topic, const void* data) const;
 
 	uint32_t GetTimerNameHash() const { return *reinterpret_cast<const uint32_t*>(&timerName[0]); }
 

@@ -11,6 +11,7 @@
 
 #include "Interface/AISEvents.h"
 #include "Interface/AISCommands.h"
+#include "Interface/AISIntents.h"
 #include "Interface/SSkirmishAILibrary.h"
 
 #include "Sim/Units/Unit.h"
@@ -453,6 +454,77 @@ void CSkirmishAIWrapper::SeismicPing(
 	HandleEvent(EVENT_SEISMIC_PING, &evtData);
 }
 
+void CSkirmishAIWrapper::Intent(int topic, int objId, int value) {
+	const SIntIntent intent = {topic, objId, value};
+	HandleIntent(INTENT_INT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, float value) {
+	const SFloatIntent intent = {topic, objId, value};
+	HandleIntent(INTENT_FLOAT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<int>& data) {
+	const SArrayIntIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
+	HandleIntent(INTENT_FLOAT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<float>& data) {
+	const SArrayFloatIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
+	HandleIntent(INTENT_ARRAY_FLOAT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<char>& data) {
+	const SArrayCharIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
+	HandleIntent(INTENT_ARRAY_CHAR, &intent);
+}
+
+SVariant ConvertToC(const VariantWrapper& var) {
+	if (std::holds_alternative<int>(var)) {
+		return SVariant(std::get<int>(var));
+	} else if (std::holds_alternative<float>(var)) {
+		return SVariant(std::get<float>(var));
+	} else if (std::holds_alternative<std::string>(var)) {
+		return SVariant(std::get<std::string>(var).c_str());
+	}
+	return SVariant();
+}
+void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<VariantWrapper>& data) {
+	std::vector<SVariant> cData;
+	cData.reserve(data.size());
+	for (auto var : data) {
+		cData.push_back(ConvertToC(var));
+	}
+	const SArrayVariantIntent intent = {topic, objId, (unsigned int)cData.size(), cData.data()};
+	HandleIntent(INTENT_DICT_VARIANT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId,
+	const std::vector<int>& keys, const std::vector<int>& values)
+{
+	const SDictIntIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), values.data()};
+	HandleIntent(INTENT_DICT_INT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId,
+	const std::vector<int>& keys, const std::vector<float>& values)
+{
+	const SDictFloatIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), values.data()};
+	HandleIntent(INTENT_DICT_FLOAT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId,
+	const std::vector<int>& keys, const std::vector<VariantWrapper>& values)
+{
+	std::vector<SVariant> cValues;
+	cValues.reserve(values.size());
+	for (auto var : values) {
+		cValues.push_back(ConvertToC(var));
+	}
+	const SDictVariantIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), cValues.data()};
+	HandleIntent(INTENT_DICT_VARIANT, &intent);
+}
+
 
 int CSkirmishAIWrapper::HandleEvent(int topic, const void* data) const {
 	ScopedTimer timer(GetTimerNameHash());
@@ -464,3 +536,12 @@ int CSkirmishAIWrapper::HandleEvent(int topic, const void* data) const {
 	return 0;
 }
 
+
+int CSkirmishAIWrapper::HandleIntent(int topic, const void* data) const {
+	ScopedTimer timer(GetTimerNameHash());
+
+	if (!blockEvents)
+		return library->HandleIntent(skirmishAIId, topic, data);
+
+	return 0;
+}

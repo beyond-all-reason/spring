@@ -202,6 +202,9 @@ class LuaUnsyncedCtrl {
 		static int ForceTesselationUpdate(lua_State* L);
 
 		static int SendSkirmishAIMessage(lua_State* L);
+		static int AIIntentFloat(lua_State* L);
+		static int AIIntentArray(lua_State* L);
+		static int AIIntentDict(lua_State* L);
 
 		static int SetLogSectionFilterLevel(lua_State* L);
 

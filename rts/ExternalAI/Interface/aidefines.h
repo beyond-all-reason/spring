@@ -43,6 +43,7 @@
 	+ sizeof(struct SAIInterfaceCallback) \
 	+ AIINTERFACE_EVENTS_ABI_VERSION \
 	+ AIINTERFACE_COMMANDS_ABI_VERSION \
+	+ AIINTERFACE_INTENTS_ABI_VERSION \
 	+ __archBits__   * 10000 \
 	+ sizeof(int)    * 1001 \
 	+ sizeof(char)   * 1002 \

@@ -214,6 +214,22 @@ struct SSkirmishAILibrary {
 	 */
 	int (CALLING_CONV *handleEvent)(int skirmishAIId, int topicId,
 			const void* data);
+
+	/**
+	 * Through this function, the AI receives events from the engine.
+	 * For details about events that may arrive here, see file AISEvents.h.
+	 *
+	 * @param skirmishAIId  the AI instance the event is addressed to
+	 * @param topicId       unique identifier of a message
+	 *                      (see INTENT_* defines in AIIntents.h)
+	 * @param data          an topic specific struct, which contains the data
+	 *                      associatedwith the event
+	 *                      (see structs in AIIntents.h)
+	 * @return     0: ok
+	 *          != 0: error
+	 */
+	int (CALLING_CONV *handleIntent)(int skirmishAIId, int topicId,
+			const void* data);
 };
 
 #ifdef __cplusplus

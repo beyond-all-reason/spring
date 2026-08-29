@@ -175,6 +175,7 @@ SSkirmishAILibrary CAIInterfaceLibrary::EmptyInterfaceLib()
 	sLibEmpty.init = nullptr;
 	sLibEmpty.release = nullptr;
 	sLibEmpty.handleEvent = handleEvent_empty;
+	sLibEmpty.handleIntent = nullptr;
 
 	return sLibEmpty;
 }
