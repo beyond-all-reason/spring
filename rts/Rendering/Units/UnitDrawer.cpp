@@ -1625,6 +1625,7 @@ bool CUnitDrawerGLSL::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std:
 
 	struct BuildCache {
 		uint64_t key;
+		int unitDefID;
 		int createFrame;
 		bool canBuild;
 		std::vector<uint8_t> statuses;
@@ -1658,8 +1659,14 @@ bool CUnitDrawerGLSL::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std:
 
 	bool canBuild;
 
-	const auto it = std::find_if(buildCache.begin(), buildCache.end(), [hashKey](const BuildCache& bc) {
-		return bc.key == hashKey;
+	// A hash collision may reuse incorrect statuses. Verify the UnitDef separately
+	// to prevent an OOB read from a mismatched footprint; collisions within the
+	// same UnitDef may still render incorrect status data.
+	const auto it = std::find_if(buildCache.begin(), buildCache.end(), [hashKey, &buildInfo](const BuildCache& bc) {
+		return (
+			bc.key == hashKey &&
+			bc.unitDefID == buildInfo.def->id
+		);
 	});
 	if (it != buildCache.end()) {
 		statuses = it->statuses;
@@ -1678,6 +1685,7 @@ bool CUnitDrawerGLSL::ShowUnitBuildSquare(const BuildInfo& buildInfo, const std:
 		auto& buildCacheItem = buildCache.back();
 
 		buildCacheItem.key = hashKey;
+		buildCacheItem.unitDefID = buildInfo.def->id;
 		buildCacheItem.canBuild = canBuild;
 		buildCacheItem.createFrame = gs->frameNum;
 		buildCacheItem.statuses = statuses;
