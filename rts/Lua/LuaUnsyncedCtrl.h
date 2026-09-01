@@ -205,6 +205,7 @@ class LuaUnsyncedCtrl {
 		static int AIIntentFloat(lua_State* L);
 		static int AIIntentArray(lua_State* L);
 		static int AIIntentDict(lua_State* L);
+		static int AIIntentUnitDefs(lua_State* L);
 
 		static int SetLogSectionFilterLevel(lua_State* L);
 

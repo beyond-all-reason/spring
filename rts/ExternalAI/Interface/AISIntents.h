@@ -34,8 +34,9 @@ enum IntentTopic {
 	INTENT_DICT_INT                    =  7,
 	INTENT_DICT_FLOAT                  =  8,
 	INTENT_DICT_VARIANT                =  9,
+	INTENT_ALL_IN                      = 10,
 };
-const int NUM_INTENTS = 10;
+const int NUM_INTENTS = 11;
 
 
 #define AIINTERFACE_INTENTS_ABI_VERSION     ( \
@@ -48,6 +49,7 @@ const int NUM_INTENTS = 10;
 		+ sizeof(struct SDictIntIntent) \
 		+ sizeof(struct SDictFloatIntent) \
 		+ sizeof(struct SDictVariantIntent) \
+		+ sizeof(struct SIntent) \
 		)
 
 /**
@@ -157,6 +159,23 @@ struct SDictVariantIntent {
 	unsigned int size;
 	const int* keys;
 	const SVariant* values;
+};
+
+/**
+ * All-in-one struct.
+ * Receiver must know which fields to use
+ * according to topic.
+ * Sent by a Lua widget or unsynced gadget.
+ */
+struct SIntent {
+	int topic;
+	int objId;
+	int iValue;
+	float fValue;
+	unsigned int sizeKeys;
+	unsigned int sizeValues;
+	const int* keys;
+	const float* values;
 };
 
 #ifdef	__cplusplus

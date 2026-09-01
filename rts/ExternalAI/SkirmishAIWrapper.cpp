@@ -457,6 +457,17 @@ void CSkirmishAIWrapper::SeismicPing(
 void CSkirmishAIWrapper::Intent(int topic, int objId, int value) {
 	const SIntIntent intent = {topic, objId, value};
 	HandleIntent(INTENT_INT, &intent);
+	// const SIntent intent = {
+	// 	.topic = topic,
+	// 	.objId = objId,
+	// 	.iVal = value,
+	// 	.fVal = 0.f,
+	// 	.sizeKeys = 0,
+	// 	.sizeValues = 0,
+	// 	.keys = nullptr,
+	// 	.values = nullptr
+	// };
+	// HandleIntent(INTENT_ALL_IN, &intent);
 }
 
 void CSkirmishAIWrapper::Intent(int topic, int objId, float value) {
@@ -466,7 +477,7 @@ void CSkirmishAIWrapper::Intent(int topic, int objId, float value) {
 
 void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<int>& data) {
 	const SArrayIntIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
-	HandleIntent(INTENT_FLOAT, &intent);
+	HandleIntent(INTENT_ARRAY_INT, &intent);
 }
 
 void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<float>& data) {

@@ -312,6 +312,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(AIIntentFloat);
 	REGISTER_LUA_CFUNC(AIIntentArray);
 	REGISTER_LUA_CFUNC(AIIntentDict);
+	REGISTER_LUA_CFUNC(AIIntentUnitDefs);
 
 	REGISTER_LUA_CFUNC(SetLogSectionFilterLevel);
 
@@ -4425,8 +4426,8 @@ int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
 /*** @function Spring.AIIntentFloat
  * @param teamID number
  * @param topic number
- * @param objID number
- * @param value number|boolean
+ * @param objID number?
+ * @param value number?|boolean?
  * @return nil
  */
 int LuaUnsyncedCtrl::AIIntentFloat(lua_State* L) {
@@ -4434,9 +4435,9 @@ int LuaUnsyncedCtrl::AIIntentFloat(lua_State* L) {
 		return 0;
 
 	const int teamID = luaL_checkint(L, 1);
-	const int topic = luaL_checkint(L, 2);
-	const int objID = luaL_checkint(L, 3);
-	const float value = lua_isboolean(L, 4) ? lua_toboolean(L, 4) : luaL_checkfloat(L, 4);
+	const int topic = lua_israwnumber(L, 2) ? lua_toint(L, 2) : -1;
+	const int objID = lua_israwnumber(L, 3) ? lua_toint(L, 3) : -1;
+	const float value = lua_isnoneornil(L, 4) ? 0.f : lua_isboolean(L, 4) ? lua_toboolean(L, 4) : luaL_checkfloat(L, 4);
 
 	eoh->Intent(teamID, topic, objID, value);
 
@@ -4520,6 +4521,66 @@ int LuaUnsyncedCtrl::AIIntentDict(lua_State* L) {
 	}
 
 	eoh->Intent(teamID, topic, objID, keys, values);
+
+	return 0;
+}
+
+/*** @function Spring.AIIntentUnitDefs
+ * @param teamID number
+ * @param topic number
+ * @param objID number
+ * @param unitDefToValue table
+ * @return nil
+ */
+int LuaUnsyncedCtrl::AIIntentUnitDefs(lua_State* L) {
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int aiTeam = luaL_checkint(L, 1);
+	const int topic = luaL_checkint(L, 2);
+	const int waveId = luaL_checkint(L, 3);
+
+	luaL_checktype(L, 4, LUA_TTABLE);
+
+	std::vector<int> unitDefs;
+	std::vector<float> weights;
+
+	for (lua_pushnil(L); lua_next(L, 4) != 0; lua_pop(L, 1)) {
+
+		const UnitDef* unitDef = nullptr;
+
+		if (lua_israwstring(L, LUA_TABLE_KEY_INDEX)) {
+			unitDef = unitDefHandler->GetUnitDefByName(lua_tostring(L, LUA_TABLE_KEY_INDEX));
+		} else if (lua_israwnumber(L, LUA_TABLE_KEY_INDEX)) {
+			unitDef = unitDefHandler->GetUnitDefByID(lua_toint(L, LUA_TABLE_KEY_INDEX));
+		} else {
+			luaL_error(L, "[%s()] incorrect unitDef type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		if (unitDef == nullptr) {
+			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX)) {
+				luaL_error(L, "[%s()]: bad unitDef name: %s", __func__, lua_tostring(L, LUA_TABLE_KEY_INDEX));
+			} else {
+				luaL_error(L, "[%s()]: bad unitDef ID: %d", __func__, lua_toint(L, LUA_TABLE_KEY_INDEX));
+			}
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		if (!lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			luaL_error(L, "[%s()] incorrect weight type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		const float weight = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		unitDefs.push_back(unitDef->id);
+		weights.push_back(weight);
+	}
+
+	eoh->Intent(aiTeam, topic, waveId, unitDefs, weights);
 
 	return 0;
 }
