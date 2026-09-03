@@ -207,7 +207,7 @@ struct SSkirmishAILibrary {
 	 * @param topicId       unique identifier of a message
 	 *                      (see EVENT_* defines in AISEvents.h)
 	 * @param data          an topic specific struct, which contains the data
-	 *                      associatedwith the event
+	 *                      associated with the event
 	 *                      (see S*Event structs in AISEvents.h)
 	 * @return     0: ok
 	 *          != 0: error
@@ -216,15 +216,15 @@ struct SSkirmishAILibrary {
 			const void* data);
 
 	/**
-	 * Through this function, the AI receives events from the engine.
-	 * For details about events that may arrive here, see file AISEvents.h.
+	 * Through this function, the AI receives intents from the game.
+	 * For details about intents that may arrive here, see file AISIntents.h.
 	 *
-	 * @param skirmishAIId  the AI instance the event is addressed to
+	 * @param skirmishAIId  the AI instance the intent is addressed to
 	 * @param topicId       unique identifier of a message
-	 *                      (see INTENT_* defines in AIIntents.h)
+	 *                      (see INTENT_* defines in AISIntents.h)
 	 * @param data          an topic specific struct, which contains the data
-	 *                      associatedwith the event
-	 *                      (see structs in AIIntents.h)
+	 *                      associated with the intent
+	 *                      (see S*Intent structs in AISIntents.h)
 	 * @return     0: ok
 	 *          != 0: error
 	 */

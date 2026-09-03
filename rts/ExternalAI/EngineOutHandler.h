@@ -84,11 +84,8 @@ public:
 	void Intent(int teamId, int topic, int objId, float value);
 	void Intent(int teamId, int topic, int objId, const std::vector<int>& data);
 	void Intent(int teamId, int topic, int objId, const std::vector<float>& data);
-	void Intent(int teamId, int topic, int objId, const std::vector<char>& data);
-	void Intent(int teamId, int topic, int objId, const std::vector<VariantWrapper>& data);
 	void Intent(int teamId, int topic, int objId, const std::vector<int>& keys, const std::vector<int>& values);
 	void Intent(int teamId, int topic, int objId, const std::vector<int>& keys, const std::vector<float>& values);
-	void Intent(int teamId, int topic, int objId, const std::vector<int>& keys, const std::vector<VariantWrapper>& values);
 
 
 	// Skirmish AI stuff

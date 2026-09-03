@@ -29,27 +29,19 @@ enum IntentTopic {
 	INTENT_FLOAT                       =  2,
 	INTENT_ARRAY_INT                   =  3,
 	INTENT_ARRAY_FLOAT                 =  4,
-	INTENT_ARRAY_CHAR                  =  5,
-	INTENT_ARRAY_VARIANT               =  6,
-	INTENT_DICT_INT                    =  7,
-	INTENT_DICT_FLOAT                  =  8,
-	INTENT_DICT_VARIANT                =  9,
-	INTENT_ALL_IN                      = 10,
+	INTENT_DICT_INT                    =  5,
+	INTENT_DICT_FLOAT                  =  6,
 };
-const int NUM_INTENTS = 11;
+const int NUM_INTENTS = 7;
 
 
 #define AIINTERFACE_INTENTS_ABI_VERSION     ( \
 		  sizeof(struct SIntIntent) \
 		+ sizeof(struct SFloatIntent) \
-		+ sizeof(struct SArrayCharIntent) \
 		+ sizeof(struct SArrayIntIntent) \
 		+ sizeof(struct SArrayFloatIntent) \
-		+ sizeof(struct SArrayVariantIntent) \
 		+ sizeof(struct SDictIntIntent) \
 		+ sizeof(struct SDictFloatIntent) \
-		+ sizeof(struct SDictVariantIntent) \
-		+ sizeof(struct SIntent) \
 		)
 
 /**
@@ -68,16 +60,6 @@ struct SFloatIntent {
 	int topic;
 	int objId;
 	float value;
-};
-
-/**
- * Sent by a Lua widget or unsynced gadget.
- */
-struct SArrayCharIntent {
-	int topic;
-	int objId;
-	unsigned int size;
-	const char* data;
 };
 
 /**
@@ -118,62 +100,6 @@ struct SDictFloatIntent {
 	int topic;
 	int objId;
 	unsigned int size;
-	const int* keys;
-	const float* values;
-};
-
-enum EValueType {
-	TYPE_ERROR,
-	TYPE_INT,
-	TYPE_FLOAT,
-	TYPE_STRING,
-};
-struct SVariant {
-	enum EValueType type;
-	union UValue {
-		int i_val;
-		float f_val;
-		const char* s_val;
-	} data;
-
-	SVariant() : type(TYPE_ERROR) {}
-	SVariant(int val) : type(TYPE_INT), data(UValue{.i_val = val}) {}
-	SVariant(float val) : type(TYPE_FLOAT), data(UValue{.f_val = val}) {}
-	SVariant(const char* val) : type(TYPE_STRING), data(UValue{.s_val = val}) {}
-};
-/**
- * Sent by a Lua widget or unsynced gadget.
- */
-struct SArrayVariantIntent {
-	int topic;
-	int objId;
-	unsigned int size;
-	const SVariant* data;
-};
-/**
- * Sent by a Lua widget or unsynced gadget.
- */
-struct SDictVariantIntent {
-	int topic;
-	int objId;
-	unsigned int size;
-	const int* keys;
-	const SVariant* values;
-};
-
-/**
- * All-in-one struct.
- * Receiver must know which fields to use
- * according to topic.
- * Sent by a Lua widget or unsynced gadget.
- */
-struct SIntent {
-	int topic;
-	int objId;
-	int iValue;
-	float fValue;
-	unsigned int sizeKeys;
-	unsigned int sizeValues;
 	const int* keys;
 	const float* values;
 };

@@ -539,16 +539,6 @@ void CEngineOutHandler::Intent(int teamId, int topic, int objId, const std::vect
 	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, data), teamId);
 }
 
-void CEngineOutHandler::Intent(int teamId, int topic, int objId, const std::vector<char>& data) {
-	AI_SCOPED_TIMER();
-	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, data), teamId);
-}
-
-void CEngineOutHandler::Intent(int teamId, int topic, int objId, const std::vector<VariantWrapper>& data) {
-	AI_SCOPED_TIMER();
-	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, data), teamId);
-}
-
 void CEngineOutHandler::Intent(int teamId, int topic, int objId,
 	const std::vector<int>& keys, const std::vector<int>& values)
 {
@@ -558,13 +548,6 @@ void CEngineOutHandler::Intent(int teamId, int topic, int objId,
 
 void CEngineOutHandler::Intent(int teamId, int topic, int objId,
 	const std::vector<int>& keys, const std::vector<float>& values)
-{
-	AI_SCOPED_TIMER();
-	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, keys, values), teamId);
-}
-
-void CEngineOutHandler::Intent(int teamId, int topic, int objId,
-	const std::vector<int>& keys, const std::vector<VariantWrapper>& values)
 {
 	AI_SCOPED_TIMER();
 	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, keys, values), teamId);

@@ -457,17 +457,6 @@ void CSkirmishAIWrapper::SeismicPing(
 void CSkirmishAIWrapper::Intent(int topic, int objId, int value) {
 	const SIntIntent intent = {topic, objId, value};
 	HandleIntent(INTENT_INT, &intent);
-	// const SIntent intent = {
-	// 	.topic = topic,
-	// 	.objId = objId,
-	// 	.iVal = value,
-	// 	.fVal = 0.f,
-	// 	.sizeKeys = 0,
-	// 	.sizeValues = 0,
-	// 	.keys = nullptr,
-	// 	.values = nullptr
-	// };
-	// HandleIntent(INTENT_ALL_IN, &intent);
 }
 
 void CSkirmishAIWrapper::Intent(int topic, int objId, float value) {
@@ -485,31 +474,6 @@ void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<float>& 
 	HandleIntent(INTENT_ARRAY_FLOAT, &intent);
 }
 
-void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<char>& data) {
-	const SArrayCharIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
-	HandleIntent(INTENT_ARRAY_CHAR, &intent);
-}
-
-SVariant ConvertToC(const VariantWrapper& var) {
-	if (std::holds_alternative<int>(var)) {
-		return SVariant(std::get<int>(var));
-	} else if (std::holds_alternative<float>(var)) {
-		return SVariant(std::get<float>(var));
-	} else if (std::holds_alternative<std::string>(var)) {
-		return SVariant(std::get<std::string>(var).c_str());
-	}
-	return SVariant();
-}
-void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<VariantWrapper>& data) {
-	std::vector<SVariant> cData;
-	cData.reserve(data.size());
-	for (auto var : data) {
-		cData.push_back(ConvertToC(var));
-	}
-	const SArrayVariantIntent intent = {topic, objId, (unsigned int)cData.size(), cData.data()};
-	HandleIntent(INTENT_DICT_VARIANT, &intent);
-}
-
 void CSkirmishAIWrapper::Intent(int topic, int objId,
 	const std::vector<int>& keys, const std::vector<int>& values)
 {
@@ -522,18 +486,6 @@ void CSkirmishAIWrapper::Intent(int topic, int objId,
 {
 	const SDictFloatIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), values.data()};
 	HandleIntent(INTENT_DICT_FLOAT, &intent);
-}
-
-void CSkirmishAIWrapper::Intent(int topic, int objId,
-	const std::vector<int>& keys, const std::vector<VariantWrapper>& values)
-{
-	std::vector<SVariant> cValues;
-	cValues.reserve(values.size());
-	for (auto var : values) {
-		cValues.push_back(ConvertToC(var));
-	}
-	const SDictVariantIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), cValues.data()};
-	HandleIntent(INTENT_DICT_VARIANT, &intent);
 }
 
 

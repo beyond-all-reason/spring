@@ -309,10 +309,10 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ForceTesselationUpdate);
 
 	REGISTER_LUA_CFUNC(SendSkirmishAIMessage);
-	REGISTER_LUA_CFUNC(AIIntentFloat);
-	REGISTER_LUA_CFUNC(AIIntentArray);
-	REGISTER_LUA_CFUNC(AIIntentDict);
-	REGISTER_LUA_CFUNC(AIIntentUnitDefs);
+	REGISTER_LUA_CFUNC(AiIntentFloat);
+	REGISTER_LUA_CFUNC(AiIntentArray);
+	REGISTER_LUA_CFUNC(AiIntentDict);
+	REGISTER_LUA_CFUNC(AiIntentUnitDefs);
 
 	REGISTER_LUA_CFUNC(SetLogSectionFilterLevel);
 
@@ -4423,14 +4423,14 @@ int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
 	return 2;
 }
 
-/*** @function Spring.AIIntentFloat
+/*** @function Spring.AiIntentFloat
  * @param teamID number
  * @param topic number
  * @param objID number?
  * @param value number?|boolean?
  * @return nil
  */
-int LuaUnsyncedCtrl::AIIntentFloat(lua_State* L) {
+int LuaUnsyncedCtrl::AiIntentFloat(lua_State* L) {
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
@@ -4444,14 +4444,14 @@ int LuaUnsyncedCtrl::AIIntentFloat(lua_State* L) {
 	return 0;
 }
 
-/*** @function Spring.AIIntentArray
+/*** @function Spring.AiIntentArray
  * @param teamID number
  * @param topic number
  * @param objID number
  * @param values table
  * @return nil
  */
-int LuaUnsyncedCtrl::AIIntentArray(lua_State* L) {
+int LuaUnsyncedCtrl::AiIntentArray(lua_State* L) {
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
@@ -4480,14 +4480,14 @@ int LuaUnsyncedCtrl::AIIntentArray(lua_State* L) {
 	return 0;
 }
 
-/*** @function Spring.AIIntentDict
+/*** @function Spring.AiIntentDict
  * @param teamID number
  * @param topic number
  * @param objID number
  * @param keyValues table
  * @return nil
  */
-int LuaUnsyncedCtrl::AIIntentDict(lua_State* L) {
+int LuaUnsyncedCtrl::AiIntentDict(lua_State* L) {
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
@@ -4525,14 +4525,14 @@ int LuaUnsyncedCtrl::AIIntentDict(lua_State* L) {
 	return 0;
 }
 
-/*** @function Spring.AIIntentUnitDefs
+/*** @function Spring.AiIntentUnitDefs
  * @param teamID number
  * @param topic number
  * @param objID number
  * @param unitDefToValue table
  * @return nil
  */
-int LuaUnsyncedCtrl::AIIntentUnitDefs(lua_State* L) {
+int LuaUnsyncedCtrl::AiIntentUnitDefs(lua_State* L) {
 	if (CLuaHandle::GetHandleSynced(L))
 		return 0;
 
