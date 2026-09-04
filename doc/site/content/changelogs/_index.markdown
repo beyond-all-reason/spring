@@ -7,6 +7,15 @@ title = "Running changelog"
 
 This is the bleeding-edge changelog since version 2026.07, for **pre-release 2026.08**.
 
+# Caveats
+These are the entries which may require special attention when migrating:
+* Cannon, MissileLauncher and StarburstLauncher weapons no longer test line of fire from
+the current muzzle position before aiming. Like every other weapon type they now use the
+`AimFromWeapon` piece, or the new `aimFromEstimate` unit def tag when the unit provides one.
+* `Spring.GetUnitWeaponTryTarget(unitID, weaponNum, x, y, z)` used to test position (0, 0, 0)
+regardless of the given coordinates and therefore always returned `false`. It now tests the
+given position.
+
 # Fixes
 * Line-of-fire and other synced ground traces (`TraceRay`, `CWeapon::HaveFreeLineOfFire`,
 `Spring.GetUnitWeaponHaveFreeLineOfFire`) no longer report a free line when the ray starts
@@ -34,3 +43,14 @@ use it for turning the turret and keep arc checks on `heading`. LUS scripts get 
 an optional fourth argument, `AimWeapon(weaponNum, heading, pitch, launchHeading)`
 (radians); COB scripts via `get WEAPON_LAUNCH_HEADING(weaponNum)` (141, COB angle
 units). Existing scripts need no change.
+
+# Weapons
+* Added the `aimFromEstimate` tag to unit def weapon entries. It describes where the muzzle
+ends up once the script has aimed, so line-of-fire tests that run before the turret has
+turned (target selection and target re-validation) trace from the predicted muzzle instead of
+the `AimFromWeapon` piece. The value is a list of 7 numbers
+`{pivotX, pivotY, pivotZ, lateral, forward, barrelForward, barrelUp}` in unit space (yaw pivot,
+offsets turning with yaw only, offsets turning with yaw and pitch). Weapons that alternate
+between barrels use one estimate for the mean muzzle. Units without the tag behave as before.
+* Added `Spring.GetUnitWeaponAimFromPos(unitID, weaponNum, x, y, z) -> posX, posY, posZ, isEstimate`
+returning the position a weapon's pre-aim line-of-fire test towards the given target is traced from.

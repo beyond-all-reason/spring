@@ -162,6 +162,7 @@ class LuaSyncedRead {
 		static int GetUnitWeaponTestTarget(lua_State* L);
 		static int GetUnitWeaponTestRange(lua_State* L);
 		static int GetUnitWeaponHaveFreeLineOfFire(lua_State* L);
+		static int GetUnitWeaponAimFromPos(lua_State* L);
 		static int GetUnitWeaponCanFire(lua_State* L);
 		static int GetUnitWeaponTarget(lua_State* L);
 		static int GetUnitTravel(lua_State* L);

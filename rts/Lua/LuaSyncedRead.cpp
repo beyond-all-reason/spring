@@ -266,6 +266,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetUnitWeaponTestTarget);
 	REGISTER_LUA_CFUNC(GetUnitWeaponTestRange);
 	REGISTER_LUA_CFUNC(GetUnitWeaponHaveFreeLineOfFire);
+	REGISTER_LUA_CFUNC(GetUnitWeaponAimFromPos);
 	REGISTER_LUA_CFUNC(GetUnitWeaponCanFire);
 	REGISTER_LUA_CFUNC(GetUnitWeaponTarget);
 	REGISTER_LUA_CFUNC(GetUnitTravel);
@@ -5503,7 +5504,8 @@ int LuaSyncedRead::GetUnitWeaponTryTarget(lua_State* L)
 			return 0;
 	}
 
-	lua_pushboolean(L, weapon->TryTarget(SWeaponTarget(enemy, pos, true)));
+	// SWeaponTarget(unit, pos) discards <pos> when <unit> is null, so build the position target explicitly
+	lua_pushboolean(L, weapon->TryTarget((enemy != nullptr) ? SWeaponTarget(enemy, true) : SWeaponTarget(pos, true)));
 	return 1;
 }
 
@@ -5667,7 +5669,7 @@ int LuaSyncedRead::GetUnitWeaponHaveFreeLineOfFire(lua_State* L)
 	const CWeapon* weapon = unit->weapons[weaponNum];
 	const CUnit* enemy = nullptr;
 
-	float3 srcPos = weapon->GetAimFromPos();
+	float3 srcPos;
 	float3 tgtPos;
 
 	const auto ParsePos = [&L](int idx, int cnt, float* pos) {
@@ -5678,11 +5680,12 @@ int LuaSyncedRead::GetUnitWeaponHaveFreeLineOfFire(lua_State* L)
 
 	switch (lua_gettop(L)) {
 		case 3: {
-			// [3] := targetID
+			// [3] := targetID, source is what the engine itself would test from
 			if ((enemy = ParseUnit(L, __func__, 3)) == nullptr)
 				return 0;
 
 			tgtPos = weapon->GetUnitLeadTargetPos(enemy);
+			srcPos = weapon->GetAimFromPos(tgtPos);
 		} break;
 		case 5: {
 			// [3,4,5] := srcPos
@@ -5711,6 +5714,46 @@ int LuaSyncedRead::GetUnitWeaponHaveFreeLineOfFire(lua_State* L)
 
 	lua_pushboolean(L, weapon->HaveFreeLineOfFire(srcPos, tgtPos, SWeaponTarget(enemy, tgtPos, true)));
 	return 1;
+}
+
+/***
+ * Position a weapon's line-of-fire test towards a target would be traced from
+ * before the weapon has aimed: the estimated post-aim muzzle position when the
+ * unit def provides `aimFromEstimate` for this weapon, otherwise the AimFromWeapon
+ * piece position.
+ *
+ * @function Spring.GetUnitWeaponAimFromPos
+ * @param unitID integer
+ * @param weaponNum integer
+ * @param tgtPosX number
+ * @param tgtPosY number
+ * @param tgtPosZ number
+ * @return number? posX
+ * @return number posY
+ * @return number posZ
+ * @return boolean isEstimate whether the position came from `aimFromEstimate`
+ */
+int LuaSyncedRead::GetUnitWeaponAimFromPos(lua_State* L)
+{
+	const CUnit* unit = ParseAllyUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	const size_t weaponNum = luaL_checkint(L, 2) - LUA_WEAPON_BASE_INDEX;
+
+	if (weaponNum >= unit->weapons.size())
+		return 0;
+
+	const CWeapon* weapon = unit->weapons[weaponNum];
+	const float3 tgtPos(luaL_checkfloat(L, 3), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5));
+	const float3 srcPos = weapon->GetAimFromPos(tgtPos);
+
+	lua_pushnumber(L, srcPos.x);
+	lua_pushnumber(L, srcPos.y);
+	lua_pushnumber(L, srcPos.z);
+	lua_pushboolean(L, weapon->HasAimFromEstimate());
+	return 4;
 }
 
 /***
