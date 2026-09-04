@@ -1027,12 +1027,18 @@ bool CWeapon::TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool pre
 	if (!trg.isAutoTarget && !TestRange(tgtPos, trg))
 		return false;
 
+	const float3 srcPos = GetAimFromPos(tgtPos, preFire);
+
 	// no LOF if aim-position is below ground (not in HFLOF, is overridden)
-	if (preFire && (weaponMuzzlePos.y < CGround::GetHeightReal(weaponMuzzlePos.x, weaponMuzzlePos.z)))
+	// before aiming this only applies to the predicted muzzle: like the real
+	// muzzle it ends up inside the terrain when the unit stands against a
+	// cliff, whereas the AimFromWeapon piece may legitimately sit below the
+	// surface inside the hull of a unit on a slope
+	if ((preFire || HasAimFromEstimate()) && (srcPos.y < CGround::GetHeightReal(srcPos.x, srcPos.z)))
 		return false;
 
 	// TODO: add a forcedUserTarget (forced-fire mode enabled with CTRL e.g.) and skip the tests below
-	return (HaveFreeLineOfFire(GetAimFromPos(tgtPos, preFire), tgtPos, trg));
+	return (HaveFreeLineOfFire(srcPos, tgtPos, trg));
 }
 
 float CWeapon::GetShapedWeaponRange(const float3& dir, float maxLength) const
