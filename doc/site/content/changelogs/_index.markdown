@@ -20,3 +20,8 @@ ray origin against the interpolated terrain height instead of the corner vertex 
 heightmap square. Next to a steep cliff that vertex could sit far above an origin that was
 well clear of the ground, so the whole ground trace was skipped. A ray that starts exactly
 on the surface is no longer treated as underground.
+* The heading passed to `AimWeapon` is now derived from the horizontal part of the
+shot direction. Since 2026.02 it was the unit-frame azimuth of the full launch vector,
+which for steep (high-trajectory) shots on tilted ground swung by tens of degrees, so
+scripts with a yaw arc check rejected targets the engine considered in arc and the
+unit never fired (e.g. a Wolverine stopping on a slope during a ground attack).

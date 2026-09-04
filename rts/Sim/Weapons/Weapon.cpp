@@ -407,12 +407,28 @@ bool CWeapon::CallAimingScript(bool waitForAim)
 	lastRequestedDir = wantedDir;
 	lastAimedFrame = gs->frameNum;
 
-	// transform wantedDir into unit's local coordinate frame so that
-	// heading and pitch are relative to the unit's current orientation,
-	// correctly handling units on sloped terrain
-	const float localX = wantedDir.dot(owner->rightdir);
+	// heading and pitch are given in the unit's frame so that turrets on sloped
+	// terrain aim correctly; the heading is derived from the horizontal part of
+	// the shot direction only. For a steep launch (high-trajectory cannons) the
+	// horizontal part of wantedDir is small and the hull's tilt would otherwise
+	// dominate the yaw, swinging it tens of degrees away from the target azimuth
+	// that CheckTargetAngleConstraint and the scripts' own arc checks reason
+	// about; the script then rejects a target the engine considers in arc and
+	// the unit never fires
+	float3 flatDir = wantedDir;
+	flatDir.y = 0.0f;
+
+	if (flatDir.SqLength() < 1e-6f) {
+		// shooting straight up or down, fall back to the target's azimuth
+		flatDir = currentTargetPos - aimFromPos;
+		flatDir.y = 0.0f;
+	}
+	if (flatDir.SqLength() < 1e-6f)
+		flatDir = owner->frontdir;
+
+	const float localX = flatDir.dot(owner->rightdir);
+	const float localZ = flatDir.dot(owner->frontdir);
 	const float localY = wantedDir.dot(owner->updir);
-	const float localZ = wantedDir.dot(owner->frontdir);
 
 	const float heading = GetHeadingFromVectorF(localX, localZ);
 	const float pitch = math::asin(std::clamp(localY, -1.0f, 1.0f));
