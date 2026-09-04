@@ -207,6 +207,7 @@ public:
 	float3 mainDir;                         // main aiming-direction of weapon
 	float3 wantedDir;                       // norm(currentTargetPos - weaponMuzzlePos)
 	float3 lastRequestedDir;                // last angle we called the script with
+	float launchHeading;                    // unit-frame heading of wantedDir at the last AimWeapon callin (radians, script convention)
 
 	float3 salvoError;                      // error vector for the whole salvo
 	float3 errorVector;

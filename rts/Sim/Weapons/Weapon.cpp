@@ -102,6 +102,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(mainDir),
 	CR_MEMBER(wantedDir),
 	CR_MEMBER(lastRequestedDir),
+	CR_MEMBER(launchHeading),
 	CR_MEMBER(salvoError),
 	CR_MEMBER(errorVector),
 	CR_MEMBER(errorVectorAdd),
@@ -188,6 +189,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	mainDir(FwdVector),
 	wantedDir(UpVector),
 	lastRequestedDir(-UpVector),
+	launchHeading(0.0f),
 	salvoError(ZeroVector),
 	errorVector(ZeroVector),
 	errorVectorAdd(ZeroVector),
@@ -433,10 +435,17 @@ bool CWeapon::CallAimingScript(bool waitForAim)
 	const float heading = GetHeadingFromVectorF(localX, localZ);
 	const float pitch = math::asin(std::clamp(localY, -1.0f, 1.0f));
 
+	// the unit-frame heading of the full shot direction is the exact turret yaw
+	// that points the barrel along the shot on tilted ground, but it is not
+	// usable for arc checks (see above); offer it to scripts as an optional
+	// extra value, the fourth AimWeapon argument for LUS and the
+	// WEAPON_LAUNCH_HEADING getter for COB, and keep <heading> the azimuth
+	launchHeading = ClampRadPi(-GetHeadingFromVectorF(wantedDir.dot(owner->rightdir), wantedDir.dot(owner->frontdir)));
+
 	// for COB, this sets <angleGood> to AimWeapon's return value when finished
 	// for LUS, there exists a callout to set the <angleGood> member directly
 	// FIXME: convert CSolidObject::heading to radians too.
-	owner->script->AimWeapon(weaponNum, ClampRadPi(-heading), pitch);
+	owner->script->AimWeapon(weaponNum, ClampRadPi(-heading), pitch, launchHeading);
 	return true;
 }
 

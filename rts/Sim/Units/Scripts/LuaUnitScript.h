@@ -64,6 +64,7 @@ protected:
 	void Call(int fn, float arg1);
 	void Call(int fn, float arg1, float arg2);
 	void Call(int fn, float arg1, float arg2, float arg3);
+	void Call(int fn, float arg1, float arg2, float arg3, float arg4);
 
 	void RawPushFunction(int functionId);
 	void PushFunction(int id);
@@ -125,7 +126,7 @@ public:
 
 	// weapon callins
 	int   QueryWeapon(int weaponNum) override;
-	void  AimWeapon(int weaponNum, float heading, float pitch) override;
+	void  AimWeapon(int weaponNum, float heading, float pitch, float launchHeading) override;
 	void  AimShieldWeapon(CPlasmaRepulser* weapon) override;
 	int   AimFromWeapon(int weaponNum) override;
 	void  Shot(int weaponNum) override;

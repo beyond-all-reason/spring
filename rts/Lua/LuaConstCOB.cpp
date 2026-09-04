@@ -184,6 +184,8 @@ bool LuaConstCOB::PushEntries(lua_State* L)
 	PUSH_COB(PIECE_HEADING);
 	/*** @field COB.PIECE_PITCH integer */
 	PUSH_COB(PIECE_PITCH);
+	/*** @field COB.WEAPON_LAUNCH_HEADING integer */
+	PUSH_COB(WEAPON_LAUNCH_HEADING);
 
 	// NOTE: shared variables use codes [1024 - 5119]
 
