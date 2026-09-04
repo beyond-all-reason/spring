@@ -73,6 +73,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(doTargetGroundPos),
 	CR_MEMBER(noAutoTarget),
 	CR_MEMBER(alreadyWarnedAboutMissingPieces),
+	CR_MEMBER(hasAimFromEstimate),
 
 	CR_MEMBER(badTargetCategory),
 	CR_MEMBER(onlyTargetCategory),
@@ -160,6 +161,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	doTargetGroundPos(false),
 	noAutoTarget(false),
 	alreadyWarnedAboutMissingPieces(false),
+	hasAimFromEstimate(false),
 
 	badTargetCategory(0),
 	onlyTargetCategory(0xffffffff),
@@ -305,6 +307,36 @@ void CWeapon::UpdateWantedDir()
 	} else {
 		wantedDir = owner->frontdir;
 	}
+}
+
+float3 CWeapon::GetWantedDirFor(const float3& targetVec) const
+{
+	float3 dir = targetVec;
+	return dir.SafeNormalize();
+}
+
+
+float3 CWeapon::EstimateMuzzlePos(const float3& tgtPos) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	assert(HasAimFromEstimate());
+	const AimFromEstimate& estimate = owner->unitDef->GetWeapon(weaponNum).aimFromEstimate;
+
+	// the direction the aiming script would be asked for, in the unit's frame
+	const float3 worldDir = GetWantedDirFor(tgtPos - owner->GetObjectSpacePos(estimate.pivot));
+	const float3 localDir(worldDir.dot(owner->rightdir), worldDir.dot(owner->updir), worldDir.dot(owner->frontdir));
+
+	return owner->GetObjectSpacePos(estimate.Eval(localDir));
+}
+
+float3 CWeapon::GetAimFromPos(const float3& tgtPos, bool useMuzzle) const
+{
+	if (useMuzzle)
+		return weaponMuzzlePos;
+	if (HasAimFromEstimate())
+		return EstimateMuzzlePos(tgtPos);
+
+	return aimFromPos;
 }
 
 
@@ -975,7 +1007,7 @@ bool CWeapon::TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool pre
 		return false;
 
 	// TODO: add a forcedUserTarget (forced-fire mode enabled with CTRL e.g.) and skip the tests below
-	return (HaveFreeLineOfFire(GetAimFromPos(preFire), tgtPos, trg));
+	return (HaveFreeLineOfFire(GetAimFromPos(tgtPos, preFire), tgtPos, trg));
 }
 
 float CWeapon::GetShapedWeaponRange(const float3& dir, float maxLength) const
