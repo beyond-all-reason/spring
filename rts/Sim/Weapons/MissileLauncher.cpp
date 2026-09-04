@@ -226,6 +226,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tg
 	const bool scanForAllies = ((avoidFlags & Collision::NOFRIENDLIES) == 0);
 	const bool scanForNeutrals = ((avoidFlags & Collision::NONEUTRALS) == 0);
 	const bool scanForFeatures = ((avoidFlags & Collision::NOFEATURES) == 0);
+	const bool skipMobileAllies = ((avoidFlags & Collision::NOMOBILEFRIENDLIES) != 0);
 	for (const int quadIdx : *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
 
@@ -235,6 +236,8 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tg
 				if (u == owner)
 					continue;
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+					continue;
+				if (skipMobileAllies && !u->immobile)
 					continue;
 
 				// chord check here

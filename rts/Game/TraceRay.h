@@ -23,6 +23,10 @@ namespace Collision {
 		NONONTARGETS = 1 << 5, // ignored by raytraces; not added to avoidFlags
 		NOGROUND     = 1 << 6,
 		NOCLOAKED    = 1 << 7,
+		// skip allied units that are able to move out of the way (mobile units); allied
+		// structures are still scanned; only set by callers that want to know whether a
+		// line of fire is blocked by something static, never part of a weapon's avoidFlags
+		NOMOBILEFRIENDLIES = 1 << 8,
 		NOUNITS      = NOENEMIES | NOFRIENDLIES | NONEUTRALS
 	};
 }

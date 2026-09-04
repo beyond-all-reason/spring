@@ -34,6 +34,16 @@ shot direction. Since 2026.06 it was the unit-frame azimuth of the full launch v
 which for steep (high-trajectory) shots on tilted ground swung by tens of degrees, so
 scripts with a yaw arc check rejected targets the engine considered in arc and the
 unit never fired (e.g. a Wolverine stopping on a slope during a ground attack).
+* Mobile units that are inside weapon range of their attack target but have no firing
+solution because terrain, a feature or an allied structure blocks the line of fire now keep
+closing in on the target (down to 20% of their range) instead of standing there and never
+firing. Units blocked only by allied mobile units stop and wait for them to move instead of
+walking on to the target, so a group does not creep forward unit by unit. `stopToAttack`
+units always wait; a unit whose approach fails (unreachable goal) waits and retries every
+10 seconds.
+* The pre-aim line-of-fire test rejects targets when the predicted muzzle (`aimFromEstimate`)
+is below the terrain, as the fire-time test already does for the real muzzle. A unit standing
+against a cliff no longer believes it can shoot through it.
 
 # Additions
 * `AimWeapon` additionally receives the unit-frame heading of the full shot direction,

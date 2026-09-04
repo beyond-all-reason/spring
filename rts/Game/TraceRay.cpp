@@ -220,6 +220,7 @@ float TraceRay(
 	const bool scanForNeutrals = ((traceFlags & Collision::NONEUTRALS  ) == 0);
 	const bool scanForGround   = ((traceFlags & Collision::NOGROUND    ) == 0);
 	const bool scanForCloaked  = ((traceFlags & Collision::NOCLOAKED   ) == 0);
+	const bool skipMobileAllies = ((traceFlags & Collision::NOMOBILEFRIENDLIES) != 0);
 
 	const bool scanForAnyUnits = scanForEnemies || scanForAllies || scanForNeutrals || scanForCloaked;
 
@@ -282,7 +283,7 @@ float TraceRay(
 
 					bool doHitTest = false;
 
-					doHitTest |= (scanForAllies   && u->allyteam == owner->allyteam);
+					doHitTest |= (scanForAllies   && u->allyteam == owner->allyteam && !(skipMobileAllies && !u->immobile));
 					doHitTest |= (scanForEnemies  && u->allyteam != owner->allyteam);
 					doHitTest |= (scanForNeutrals && u->IsNeutral());
 					doHitTest |= (scanForCloaked  && u->IsCloaked());
@@ -545,6 +546,7 @@ bool TestCone(
 	const bool scanForAllies   = ((traceFlags & Collision::NOFRIENDLIES) == 0);
 	const bool scanForNeutrals = ((traceFlags & Collision::NONEUTRALS  ) == 0);
 	const bool scanForFeatures = ((traceFlags & Collision::NOFEATURES  ) == 0);
+	const bool skipMobileAllies = ((traceFlags & Collision::NOMOBILEFRIENDLIES) != 0);
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
@@ -554,6 +556,8 @@ bool TestCone(
 				if (u == owner)
 					continue;
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+					continue;
+				if (skipMobileAllies && !u->immobile)
 					continue;
 
 				if (TestConeHelper(from, dir, length, spread, u))
@@ -612,6 +616,7 @@ bool TestTrajectoryCone(
 	const bool scanForAllies   = ((traceFlags & Collision::NOFRIENDLIES) == 0);
 	const bool scanForNeutrals = ((traceFlags & Collision::NONEUTRALS  ) == 0);
 	const bool scanForFeatures = ((traceFlags & Collision::NOFEATURES  ) == 0);
+	const bool skipMobileAllies = ((traceFlags & Collision::NOMOBILEFRIENDLIES) != 0);
 
 	for (const int quadIdx: *qfQuery.quads) {
 		const CQuadField::Quad& quad = quadField.GetQuad(quadIdx);
@@ -622,6 +627,8 @@ bool TestTrajectoryCone(
 				if (u == owner)
 					continue;
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
+					continue;
+				if (skipMobileAllies && !u->immobile)
 					continue;
 
 				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, u))

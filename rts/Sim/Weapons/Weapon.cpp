@@ -1221,7 +1221,7 @@ bool CWeapon::TryTarget(const SWeaponTarget& trg) const {
 }
 
 
-bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire)
+bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, unsigned int extraAvoidFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tempTargetPos = GetUnitLeadTargetPos(unit);
@@ -1238,15 +1238,15 @@ bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFir
 	// if the aimToTgt is (close to) degenerate then enemyHeading value makes no sense,
 	// use the owner's heading instead
 	if unlikely(aimToTgt.SqLength2D() < 1.0f) {
-		return TryTargetHeading(owner->heading - weaponHeading, trg);
+		return TryTargetHeading(owner->heading - weaponHeading, trg, extraAvoidFlags);
 	}
 
 	const short enemyHeading = GetHeadingFromVector(aimToTgt.x, aimToTgt.z);
-	return TryTargetHeading(enemyHeading - weaponHeading, trg);
+	return TryTargetHeading(enemyHeading - weaponHeading, trg, extraAvoidFlags);
 }
 
 
-bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
+bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire, unsigned int extraAvoidFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	AdjustTargetPosToWater(pos, true);
@@ -1255,25 +1255,28 @@ bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
 	SWeaponTarget trg(pos, userTarget);
 	trg.isManualFire = manualFire;
 
-	return TryTargetHeading(enemyHeading - weaponHeading, trg);
+	return TryTargetHeading(enemyHeading - weaponHeading, trg, extraAvoidFlags);
 }
 
 
-bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg)
+bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg, unsigned int extraAvoidFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tempfrontdir(owner->frontdir);
 	const float3 temprightdir(owner->rightdir);
 	const short tempHeading = owner->heading;
+	const unsigned int tempAvoidFlags = avoidFlags;
 
 	owner->heading = heading;
 	owner->frontdir = GetVectorFromHeading(owner->heading);
 	owner->rightdir = owner->frontdir.cross(owner->updir);
 	auto wvs = SaveWeaponVectors();
 	UpdateWeaponVectors();
+	avoidFlags |= extraAvoidFlags;
 
 	const bool val = TryTarget(trg);
 
+	avoidFlags = tempAvoidFlags;
 	owner->frontdir = tempfrontdir;
 	owner->rightdir = temprightdir;
 	owner->heading = tempHeading;

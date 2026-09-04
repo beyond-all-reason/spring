@@ -74,9 +74,16 @@ public:
 	virtual bool CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const;
 
 	bool TryTarget(const SWeaponTarget& trg) const;
-	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire);
-	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire);
-	bool TryTargetHeading(short heading, const SWeaponTarget& trg);
+	/**
+	 * test the target as if the owner had turned to face it
+	 *
+	 * <extraAvoidFlags> are added to the weapon's avoidFlags for this test only; the
+	 * CommandAI passes Collision::NOMOBILEFRIENDLIES to find out whether a failing
+	 * line of fire is blocked by something that will not move out of the way
+	 */
+	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, unsigned int extraAvoidFlags = 0);
+	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire, unsigned int extraAvoidFlags = 0);
+	bool TryTargetHeading(short heading, const SWeaponTarget& trg, unsigned int extraAvoidFlags = 0);
 
 	bool WantOwnerRotation() const { return onlyForward; }
 public:
