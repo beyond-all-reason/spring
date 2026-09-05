@@ -1138,7 +1138,8 @@ bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		const float tgtDst = tgtPos.SqDistance(srcPos + tgtDir * gndDst);
 
 		// true iff ground does not block the ray of length <length> from <srcPos> along <tgtDir>
-		if ((gndDst > 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
+		// (a distance of 0 means <srcPos> itself is underground; -1 is not possible since length > 0)
+		if ((gndDst >= 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
 			return false;
 
 		unit = nullptr;

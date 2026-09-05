@@ -77,6 +77,12 @@ bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 
 	const float xzTargetDist = targetVec.LengthNormalize();
 
+	// a source below the terrain (e.g. a muzzle inside a cliff) blocks the shot at its origin;
+	// TrajectoryGroundCol reports this as distance 0 too, but against GetApproximateHeight, which
+	// on rough ground can lie above a source that is clear of the interpolated surface
+	if ((avoidFlags & Collision::NOGROUND) == 0 && srcPos.y < CGround::GetHeightReal(srcPos))
+		return false;
+
 	// linear parabolic coefficient is the ratio of vertical velocity to horizontal velocity, with slight adjustment due to acceleration being applied in discrete steps.
 	// quadratic parabolic coefficient is the ratio of gravity to (horizontal velocity)^2
 	const float projectileSpeedHorizontal = std::max(0.001f,projectileSpeed * launchDir.Length2D()); //ensure projectileSpeedHorizontal cannot be zero
