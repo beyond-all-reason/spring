@@ -156,9 +156,10 @@ CUnitDrawerData::CUnitDrawerData(bool& mtModelDrawer_)
 	iconFadeVanish = configHandler->GetFloat("UnitIconFadeVanish");
 	useScreenIcons = configHandler->GetBool("UnitIconsAsUI");
 	iconHideWithUI = configHandler->GetBool("UnitIconsHideWithUI");
+	sortUnitIconsByDepth = configHandler->GetBool("UnitIconsSortedByDepth");
 	ghostIconDimming = configHandler->GetFloat("UnitGhostIconsDimming");
 
-	configHandler->NotifyOnChange(this, {"UnitGhostIconsDimming"});
+	configHandler->NotifyOnChange(this, {"UnitGhostIconsDimming", "UnitIconsSortedByDepth"});
 
 	unitDefImages.clear();
 	unitDefImages.resize(unitDefHandler->NumUnitDefs() + 1);
@@ -207,6 +208,7 @@ CUnitDrawerData::~CUnitDrawerData()
 void CUnitDrawerData::ConfigNotify(const std::string& key, const std::string& value)
 {
 	ghostIconDimming = configHandler->GetFloat("UnitGhostIconsDimming");
+	sortUnitIconsByDepth = configHandler->GetBool("UnitIconsSortedByDepth");
 }
 
 void CUnitDrawerData::Update()

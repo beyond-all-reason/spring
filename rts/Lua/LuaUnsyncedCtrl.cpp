@@ -2498,6 +2498,7 @@ int LuaUnsyncedCtrl::SetFeatureSelectionVolumeData(lua_State* L)
  * @param v0 number?
  * @param u1 number?
  * @param v1 number?
+ * @param drawOrder number? (Default: 0) Sort priority for icon drawing; icons with higher values are drawn on top of lower ones.
  *
  * @return boolean added
  */
@@ -2520,7 +2521,9 @@ int LuaUnsyncedCtrl::AddUnitIcon(lua_State* L)
 	const float  u1 = luaL_optnumber(L, 8, 1.0f);
 	const float  v1 = luaL_optnumber(L, 9, 1.0f);
 
-	lua_pushboolean(L, icon::iconHandler.AddIcon(1, iconName, texName, size, dist, radAdjust, u0, v0, u1, v1));
+	const float  drawOrder = luaL_optnumber(L, 10, 0.0f);
+
+	lua_pushboolean(L, icon::iconHandler.AddIcon(1, iconName, texName, size, dist, radAdjust, u0, v0, u1, v1, drawOrder));
 	return 1;
 }
 
