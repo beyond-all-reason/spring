@@ -48,6 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AI_QUATERNION_INL_INC
 
 #ifdef __cplusplus
+#include <cmath>
 #include "quaternion.h"
 
 #include "lib/streflop/streflop_cond.h"

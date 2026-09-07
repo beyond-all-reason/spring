@@ -471,7 +471,7 @@ int LuaFonts::SubmitBuffered(lua_State* L)
  * @param maxHeight number? Defaults to an engine-defined maximum height.
  * @param size number? Defaults to the font's point size.
  * @return string wrappedText
- * @return number lineCount
+ * @return integer lineCount
  */
 int LuaFonts::WrapText(lua_State* L)
 {
@@ -516,7 +516,7 @@ int LuaFonts::GetTextWidth(lua_State* L)
  * @param text string
  * @return number height
  * @return number descender
- * @return number lines
+ * @return integer lines
  */
 int LuaFonts::GetTextHeight(lua_State* L)
 {

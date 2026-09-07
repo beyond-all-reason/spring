@@ -1905,7 +1905,19 @@ void CMiniMap::DrawUnitIcons() const
 	glTranslatef(0.0f, +1.0f, 0.0f);
 	glScalef(+1.0f / (mapDims.mapx * SQUARE_SIZE), -1.0f / (mapDims.mapy * SQUARE_SIZE), 1.0f);
 
-	unitDrawer->DrawUnitMiniMapIcons();
+	MiniMapIconDrawParams params;
+	params.iconSizeX = unitSizeX;
+	params.iconSizeY = unitSizeY;
+	params.rotation = rotation;
+	params.viewAllyTeam = gu->myAllyTeam;
+	params.fullView = gu->spectatingFullView;
+	params.useIcons = useIcons;
+	params.useSimpleColors = simpleColors;
+	params.myColor = SColor(myColor[0], myColor[1], myColor[2], myColor[3]);
+	params.allyColor = SColor(allyColor[0], allyColor[1], allyColor[2], allyColor[3]);
+	params.enemyColor = SColor(enemyColor[0], enemyColor[1], enemyColor[2], enemyColor[3]);
+
+	unitDrawer->DrawUnitMiniMapIcons(params);
 
 	glDisable(GL_TEXTURE_2D); //maybe later stages need it
 

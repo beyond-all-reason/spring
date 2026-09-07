@@ -17,6 +17,7 @@
 #include <memory>
 #include <numeric>
 #include <cinttypes>
+#include <ranges>
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #elif defined(_WIN32)
 	#include <windows.h>

@@ -36,13 +36,13 @@
 /*** Game specific information
  *
  * @table Game
- * @field maxUnits number
- * @field maxTeams number
- * @field maxPlayers number
- * @field squareSize number Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
- * @field metalMapSquareSize number The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
- * @field gameSpeed number Number of simulation gameframes per second
- * @field startPosType number
+ * @field maxUnits integer
+ * @field maxTeams integer
+ * @field maxPlayers integer
+ * @field squareSize integer Divide Game.mapSizeX or Game.mapSizeZ by this to get engine's "mapDims" coordinates. The resolution of height, yard and type maps.
+ * @field metalMapSquareSize integer The resolution of metalmap (for use in API such as Spring.GetMetalAmount etc.)
+ * @field gameSpeed integer Number of simulation gameframes per second
+ * @field startPosType integer
  * @field ghostedBuildings boolean
  * @field mapChecksum string
  * @field modChecksum string
@@ -50,10 +50,10 @@
  * @field mapName string
  * @field mapDescription string = string Game.mapHumanName
  * @field mapHardness number
- * @field mapX number
- * @field mapY number
- * @field mapSizeX number in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
- * @field mapSizeZ number in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+ * @field mapX integer
+ * @field mapY integer
+ * @field mapSizeX integer in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
+ * @field mapSizeZ integer in worldspace/opengl coords. Divide by Game.squareSize to get engine's "mapDims" coordinates
  * @field gravity number
  * @field tidal number
  * @field windMin number
@@ -67,20 +67,20 @@
  * @field gameMutator string
  * @field gameDesc string
  * @field requireSonarUnderWater boolean
- * @field transportAir number
- * @field transportShip number
- * @field transportHover number
- * @field transportGround number
- * @field fireAtKilled number
- * @field fireAtCrashing number
+ * @field transportAir integer
+ * @field transportShip integer
+ * @field transportHover integer
+ * @field transportGround integer
+ * @field fireAtKilled integer
+ * @field fireAtCrashing integer
  * @field constructionDecay boolean
  * @field reclaimAllowEnemies boolean
  * @field reclaimAllowAllies boolean
- * @field constructionDecayTime number
+ * @field constructionDecayTime integer
  * @field constructionDecaySpeed number
- * @field multiReclaim number
- * @field reclaimMethod number
- * @field reclaimUnitMethod number
+ * @field multiReclaim integer
+ * @field reclaimMethod integer
+ * @field reclaimUnitMethod integer
  * @field reclaimUnitEnergyCostFactor number
  * @field reclaimUnitEfficiency number
  * @field reclaimFeatureEnergyCostFactor number

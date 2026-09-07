@@ -404,7 +404,6 @@ void CGameServer::SkipTo(int targetFrameNum)
 {
 	const bool wasPaused = isPaused;
 
-	if (!gameHasStarted) { return; }
 	if (serverFrameNum >= targetFrameNum) { return; }
 	if (demoReader == nullptr) { return; }
 
@@ -412,13 +411,16 @@ void CGameServer::SkipTo(int targetFrameNum)
 	CommandMessage endMsg("skip end", SERVER_PLAYER);
 	Broadcast(std::shared_ptr<const netcode::RawPacket>(startMsg.Pack()));
 
+	if (!gameHasStarted)
+		StartGame(true); // this skips the countdown
+
 	// fast-read and send demo data
 	//
 	// note that we must maintain <modGameTime> ourselves
 	// since we do we NOT go through ::Update when skipping
 	while (SendDemoData(targetFrameNum)) {
 		gameTime = GetDemoTime();
-		modGameTime = demoReader->GetModGameTime() + 0.001f;
+		modGameTime = demoReader->GetNextDemoReadTime() + 0.001f;
 
 		if (udpListener == nullptr) { continue; }
 		if ((serverFrameNum % 20) != 0) { continue; }

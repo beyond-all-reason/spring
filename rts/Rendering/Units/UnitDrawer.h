@@ -19,6 +19,29 @@ struct SolidObjectDef;
 
 namespace Shader { struct IProgramObject; }
 
+// viewer and style state for one unit-icon minimap pass; built by CMiniMap from its
+// own settings and by gl.DrawMiniMapIcons from its arguments. Icons are emitted as
+// quads in map-space elmo coordinates (XZ), transformed by the current GL matrices.
+struct MiniMapIconDrawParams {
+	float iconSizeX = 1.0f;                  // base icon half-size in elmos, scaled per icon
+	float iconSizeY = 1.0f;
+	int rotation = 0;                        // CMiniMap::RotationOptions
+	int viewAllyTeam = 0;                    // perspective the icons are selected/positioned for
+	bool fullView = false;                   // godmode: true positions, everything visible
+	bool useIcons = true;                    // false = draw every unit as the default radar dot
+	bool useSimpleColors = false;            // use the three fixed colors instead of team colors
+	// draw the LOCAL player's selected units white; other players' selections are not
+	// known engine-side, so callers rendering another perspective disable this and
+	// overlay that viewer's selection themselves
+	bool highlightSelected = true;
+	SColor myColor = SColor(0, 255, 0, 255);
+	SColor allyColor = SColor(0, 255, 255, 255);
+	SColor enemyColor = SColor(255, 0, 0, 255);
+	// map-space cull rect (elmos); defaults draw everything
+	float cullMinX = -1e9f, cullMinZ = -1e9f;
+	float cullMaxX = 1e9f, cullMaxZ = 1e9f;
+};
+
 class CUnitDrawer : public CModelDrawerBase<CUnitDrawerData, CUnitDrawer>
 {
 public:
@@ -69,7 +92,7 @@ public:
 	virtual void DrawIndividualDefAlpha(const SolidObjectDef* objectDef, int teamID, bool rawState, bool toScreen = false) const = 0;
 
 	// Icons Minimap
-	virtual void DrawUnitMiniMapIcons() const = 0;
+	virtual void DrawUnitMiniMapIcons(const MiniMapIconDrawParams& params) const = 0;
 	        void UpdateUnitIconsByUnitDef(const UnitDef* ud) { modelDrawerData->UpdateUnitIconsByUnitDef(ud); }
 
 	// Icons Map
@@ -152,7 +175,7 @@ public:
 	bool ShowUnitBuildSquare(const BuildInfo& buildInfo, const std::vector<Command>& commands) const override;
 	void DrawBuildIcons(const std::vector<CCursorIcons::BuildIcon>& buildIcons) const override;
 
-	void DrawUnitMiniMapIcons() const override;
+	void DrawUnitMiniMapIcons(const MiniMapIconDrawParams& params) const override;
 	void DrawUnitIcons() const override;
 	void DrawUnitIconsScreen() const override;
 protected:
@@ -191,7 +214,7 @@ protected:
 	void PopIndividualOpaqueState(const S3DModel* model, int teamID, bool deferredPass) const;
 	void PopIndividualAlphaState(const S3DModel* model, int teamID, bool deferredPass) const;
 
-	void DrawUnitMiniMapIcon(TypedRenderBuffer<VA_TYPE_2DTC3>& rb, size_t iconIdx, const float iconScale, const float3& pos, const SColor& color) const;
+	void DrawUnitMiniMapIcon(TypedRenderBuffer<VA_TYPE_2DTC3>& rb, size_t iconIdx, const float iconScale, const float3& pos, const SColor& color, const MiniMapIconDrawParams& params) const;
 	float DrawUnitIcon(TypedRenderBuffer<VA_TYPE_TC3>& rb, size_t iconIdx, const float iconRadius, const float unitRadius, float3 pos, const SColor& color) const;
 	void DrawUnitIconScreen(TypedRenderBuffer<VA_TYPE_2DTC3>& rb, size_t iconIdx, const float3& pos, SColor& color, float unitRadius, bool isIcon) const;
 };

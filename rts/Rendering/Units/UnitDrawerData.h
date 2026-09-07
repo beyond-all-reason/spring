@@ -150,6 +150,8 @@ public:
 	void UpdateUnitIconsByUnitDef(const UnitDef* ud);
 public:
 	void UpdateCurrentUnitIcon(const CUnit* unit);
+	/// icon shown to an arbitrary viewer (same rules that maintain currentIconIndex for the local view)
+	size_t GetUnitIconIndex(const CUnit* unit, int allyTeam, bool fullView) const;
 
 	const auto& GetUnitDefImages() const { return unitDefImages; }
 	      auto& GetUnitDefImages() { return unitDefImages; }
@@ -158,16 +160,16 @@ public:
 	const auto& GetTempAlphaDrawUnits(int modelType) const { return  savedData.tempAlphaUnits[modelType]; }
 
 	auto GetDeadGhostBuildings(int allyTeam) const {
-		assert((unsigned)gu->myAllyTeam < savedData.deadGhostBuildings.size());
+		assert((unsigned)allyTeam < savedData.deadGhostBuildings.size());
 		return std::views::join(savedData.deadGhostBuildings[allyTeam]);
 	}
 
 	const auto& GetDeadGhostBuildings(int allyTeam, int modelType) const {
-		assert((unsigned)gu->myAllyTeam < savedData.deadGhostBuildings.size());
+		assert((unsigned)allyTeam < savedData.deadGhostBuildings.size());
 		return savedData.deadGhostBuildings[allyTeam][modelType];
 	}
 	const auto& GetLiveGhostBuildings(int allyTeam, int modelType) const {
-		assert((unsigned)gu->myAllyTeam < savedData.liveGhostBuildings.size());
+		assert((unsigned)allyTeam < savedData.liveGhostBuildings.size());
 		return savedData.liveGhostBuildings[allyTeam][modelType];
 	}
 

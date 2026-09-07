@@ -181,7 +181,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData, IPath* pa
 	// auto *pathToRepair = ( tryPathRepair && registry.valid(QTPFS::entity(searchID)) )
 	// 		? registry.try_get<IPath>(QTPFS::entity(searchID)) : nullptr; // FIXME: race condition
 
-	// Path repairs need only search to the point of finding the beginning of the renaming clean part of the old path.
+	// Path repairs need only search to the point of finding the beginning of the remaining clean part of the old path.
 	// Such searches are also restricted in the area they can search to avoid creating poor paths that would be better
 	// off being recreated from scratch.
 	doPathRepair = tryPathRepair

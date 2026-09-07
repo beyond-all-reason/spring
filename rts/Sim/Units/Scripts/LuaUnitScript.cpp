@@ -1154,7 +1154,7 @@ static inline int ParseAxis(lua_State* L, const char* caller, int index)
 /*** Create a Lua unit script for the given unit, replacing any existing script.
  *
  * @function UnitScriptTable.CreateScript
- * @param unitID integer
+ * @param unitID UnitID
  * @param callIns table<string, function>
  * @return nil
  */
@@ -1189,7 +1189,7 @@ int CLuaUnitScript::CreateScript(lua_State* L)
 /*** Update or remove a callIn on a unit script.
  *
  * @function UnitScriptTable.UpdateCallIn
- * @param unitID integer
+ * @param unitID UnitID
  * @param callin string
  * @param func function?
  * @return nil
@@ -1221,7 +1221,7 @@ int CLuaUnitScript::UpdateCallIn(lua_State* L)
 /*** Execute a function in the context of a unit's script environment.
  *
  * @function UnitScriptTable.CallAsUnit
- * @param unitID integer
+ * @param unitID UnitID
  * @param func function
  * @param ... any arguments passed to func
  * @return any ... values returned by func
@@ -1297,7 +1297,7 @@ int CLuaUnitScript::GetUnitValue(lua_State* L, CUnitScript* script, int arg)
 /*** Get a COB/script value for a unit (synced gadget API).
  *
  * @function UnitScriptTable.GetUnitCOBValue
- * @param unitID integer
+ * @param unitID UnitID
  * @param val integer COB value ID (use COB constants)
  * @param ... number optional extra args for certain COB values
  * @return integer value
@@ -1354,7 +1354,7 @@ int CLuaUnitScript::SetUnitValue(lua_State* L, CUnitScript* script, int arg)
 /*** Set a COB/script value for a unit (synced gadget API).
  *
  * @function UnitScriptTable.SetUnitCOBValue
- * @param unitID integer
+ * @param unitID UnitID
  * @param val integer COB value ID (use COB constants)
  * @param param integer|boolean value to set
  * @return nil
@@ -1439,7 +1439,7 @@ int CLuaUnitScript::EmitSfx(lua_State* L)
  *
  * @function UnitScriptTable.AttachUnit
  * @param piece integer 1-indexed piece number
- * @param transporteeID integer
+ * @param transporteeID UnitID
  * @return nil
  */
 int CLuaUnitScript::AttachUnit(lua_State* L)
@@ -1462,7 +1462,7 @@ int CLuaUnitScript::AttachUnit(lua_State* L)
 /*** Drop a transported unit.
  *
  * @function UnitScriptTable.DropUnit
- * @param transporteeID integer
+ * @param transporteeID UnitID
  * @return nil
  */
 int CLuaUnitScript::DropUnit(lua_State* L)
@@ -1980,7 +1980,7 @@ int CLuaUnitScript::GetPiecePosDir(lua_State* L)
 /*** Get the unit ID of the currently executing unit script.
  *
  * @function UnitScriptTable.GetActiveUnitID
- * @return integer? unitID
+ * @return UnitID? unitID
  */
 int CLuaUnitScript::GetActiveUnitID(lua_State* L)
 {

@@ -563,7 +563,7 @@ int LuaFBOs::DeleteFBO(lua_State* L)
  * @param fbo FBO
  * @param target GL?
  * @return boolean valid
- * @return number? status
+ * @return GL? status
  */
 int LuaFBOs::IsValidFBO(lua_State* L)
 {
@@ -688,7 +688,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  * @function gl.RawBindFBO
  * @param fbo FBO
  * @param target GL? (Default: `fbo.target`)
- * @return number previouslyBoundRawFboId
+ * @return integer previouslyBoundRawFboId
  */
 int LuaFBOs::RawBindFBO(lua_State* L)
 {
@@ -720,32 +720,32 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 /*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
- * @param x0Src number
- * @param y0Src number
- * @param x1Src number
- * @param y1Src number
- * @param x0Dst number
- * @param y0Dst number
- * @param x1Dst number
- * @param y1Dst number
- * @param mask number? (Default: GL_COLOR_BUFFER_BIT)
- * @param filter number? (Default: GL_NEAREST)
+ * @param x0Src integer
+ * @param y0Src integer
+ * @param x1Src integer
+ * @param y1Src integer
+ * @param x0Dst integer
+ * @param y0Dst integer
+ * @param x1Dst integer
+ * @param y1Dst integer
+ * @param mask GL? (Default: GL_COLOR_BUFFER_BIT)
+ * @param filter GL? (Default: GL_NEAREST)
  */
 /*** needs `GLAD_GL_EXT_framebuffer_blit`
  *
  * @function gl.BlitFBO
  * @param fboSrc FBO
- * @param x0Src number
- * @param y0Src number
- * @param x1Src number
- * @param y1Src number
+ * @param x0Src integer
+ * @param y0Src integer
+ * @param x1Src integer
+ * @param y1Src integer
  * @param fboDst FBO
- * @param x0Dst number
- * @param y0Dst number
- * @param x1Dst number
- * @param y1Dst number
- * @param mask number? (Default: GL_COLOR_BUFFER_BIT)
- * @param filter number? (Default: GL_NEAREST)
+ * @param x0Dst integer
+ * @param y0Dst integer
+ * @param x1Dst integer
+ * @param y1Dst integer
+ * @param mask GL? (Default: GL_COLOR_BUFFER_BIT)
+ * @param filter GL? (Default: GL_NEAREST)
  */
 int LuaFBOs::BlitFBO(lua_State* L)
 {
@@ -820,7 +820,7 @@ namespace Impl {
  * Clears the "attachment" of the currently bound FBO type "target" with "clearValues"
  * 
  * @function gl.ClearAttachmentFBO
- * @param target number? (Default: `GL.FRAMEBUFFER`)
+ * @param target GL? (Default: `GL.FRAMEBUFFER`)
  * @param attachment GL|Attachment (e.g. `"color0"` or `GL.COLOR_ATTACHMENT0`)
  * @param clearValue0 number? (Default: `0`)
  * @param clearValue1 number? (Default: `0`)
