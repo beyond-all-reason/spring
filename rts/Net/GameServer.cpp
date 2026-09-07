@@ -205,6 +205,8 @@ void CGameServer::Initialize()
 		if (demoReader != nullptr) {
 			const size_t demoPlayers = demoReader->GetFileHeader().numPlayers;
 			players.resize(std::max(demoPlayers, playerStartData.size()));
+			for (size_t n = 0; n < demoPlayers; ++n)
+				players[n].isFromDemo = true;
 			if (players.size() >= MAX_PLAYERS)
 				Message(spring::format("Too many Players (%d) in the demo", players.size()));
 		}
@@ -2196,6 +2198,9 @@ void CGameServer::CheckForGameStart(bool forced)
 	bool anyReady = false;
 
 	for (size_t a = static_cast<size_t>(myGameSetup->numDemoPlayers); a < players.size(); a++) {
+		if (players[a].isFromDemo)
+			continue;
+
 		if (players[a].myState == GameParticipant::UNCONNECTED && serverStartTime + spring_secs(30) < spring_gettime()) {
 			// autostart the game when 30 seconds have passed and everyone who managed to connect is ready
 			continue;
