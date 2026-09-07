@@ -170,7 +170,7 @@ public:
 		return (forceUseWeapons || (allowUseWeapons && !onTempHoldFire && !isDead && !beingBuilt && !IsStunned()));
 	}
 
-	bool HasStartedDying() const { return isDead; }
+	bool IsDead() const { return isDead; }
 	bool IsSimulating() const { return !isDead; }
 	// Individual callers still test LOS, category, allegiance, etc. separately.
 	bool IsTargetable() const { return (!isDead || modInfo.fireAtKilled); }

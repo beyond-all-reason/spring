@@ -321,10 +321,10 @@ void CWeapon::Update()
 
 	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
 	bool fastAutoRetargetRequired = fastAutoRetargeting && HaveTarget()
-									&& currentTarget.unit != nullptr && currentTarget.unit->HasStartedDying();
+									&& currentTarget.unit != nullptr && currentTarget.unit->IsDead();
 	if (fastAutoRetargetRequired) {
 		// switch to unit's target if it has one - see next bit below
-		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->HasStartedDying())
+		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->IsDead())
 								|| (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
 		if (ownerTargetIsValid)
 			DropCurrentTarget();

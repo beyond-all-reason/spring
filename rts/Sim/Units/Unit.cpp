@@ -423,7 +423,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
-	if (HasStartedDying()) // Lua can kill a freshy spawned unit in UnitCreated
+	if (IsDead()) // Lua can kill a freshy spawned unit in UnitCreated
 		return;
 
 	ChangeLos(realLosRadius, realAirLosRadius);
@@ -766,7 +766,7 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 		CUnit* transportee = tu.unit;
 		assert(transportee != this);
 
-		if (transportee->HasStartedDying())
+		if (transportee->IsDead())
 			continue;
 
 		transportee->SetTransporter(nullptr);
@@ -1349,7 +1349,7 @@ void CUnit::DoDamage(
 		// unit might have been killed via Lua from within UnitDamaged (e.g.
 		// through a recursive DoDamage call from AddUnitDamage or directly
 		// via DestroyUnit); can skip the rest
-		if (HasStartedDying())
+		if (IsDead())
 			return;
 
 		eoh->UnitDamaged(*this, attacker, baseDamage, weaponDefID, projectileID, isParalyzer);
@@ -1371,7 +1371,7 @@ void CUnit::DoDamage(
 
 	KillUnit(attacker, false, false, weaponDefID);
 
-	if (!HasStartedDying())
+	if (!IsDead())
 		return;
 	if (beingBuilt)
 		return;
