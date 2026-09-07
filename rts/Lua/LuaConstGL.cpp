@@ -741,6 +741,47 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.FRAMEBUFFER integer */
 	PUSH_GL(FRAMEBUFFER);
 
+	/******************************************************************************
+	 * Pixel Formats
+	 *
+	 * Accepted by `gl.ReadPixels` as its pixel format, and by the `format` field
+	 * of the `gl.CreateTexture` and `gl.CreateRBO` options tables.
+	 *
+	 * @section pixelformats
+	******************************************************************************/
+
+	/*** @field GL.COLOR_INDEX integer */
+	PUSH_GL(COLOR_INDEX);
+	/*** @field GL.STENCIL_INDEX integer */
+	PUSH_GL(STENCIL_INDEX);
+	/*** @field GL.DEPTH_COMPONENT integer */
+	PUSH_GL(DEPTH_COMPONENT);
+
+	/*** @field GL.RED integer */
+	PUSH_GL(RED);
+	/*** @field GL.GREEN integer */
+	PUSH_GL(GREEN);
+	/*** @field GL.BLUE integer */
+	PUSH_GL(BLUE);
+	/*** @field GL.ALPHA integer */
+	PUSH_GL(ALPHA);
+
+	/*** @field GL.RGB integer */
+	PUSH_GL(RGB);
+	/*** @field GL.RGBA integer */
+	PUSH_GL(RGBA);
+	/*** @field GL.BGR integer */
+	PUSH_GL(BGR);
+	/*** @field GL.BGRA integer */
+	PUSH_GL(BGRA);
+
+	/*** Only accepted in the compatibility profile, i.e. with `ForceCoreContext` unset.
+	 * @field GL.LUMINANCE integer */
+	PUSH_GL(LUMINANCE);
+	/*** Only accepted in the compatibility profile, i.e. with `ForceCoreContext` unset.
+	 * @field GL.LUMINANCE_ALPHA integer */
+	PUSH_GL(LUMINANCE_ALPHA);
+
 	return true;
 
 #undef PUSH_GL
@@ -757,21 +798,6 @@ bool LuaConstGL::PushEntries(lua_State* L)
 /// @field GL_RGBA16F_ARB 0x881A
 
 /// @field GL_RGBA32F_ARB 0x8814
-
-/// @field GL_DEPTH_COMPONENT 0x1902
-
-/******************************************************************************
- * Not included, but useful RBO Formats
- * @section rboformats
-******************************************************************************/
-
-/// @field GL_RGB 0x1907
-
-/// @field GL_RGBA 0x1908
-
-/// @field GL_DEPTH_COMPONENT 0x1902
-
-/// @field GL_STENCIL_INDEX 0x1901
 
 /******************************************************************************
  * Not included, but useful FBO Targets

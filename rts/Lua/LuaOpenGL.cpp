@@ -6499,44 +6499,118 @@ static void PushPixelData(lua_State* L, int fSize, const float*& data)
 
 
 /***
+ * Pixel format with a single color component.
+ *
+ * Pass the matching `GL` table constant, e.g. `GL.RED`.
+ *
+ * `GL.COLOR_INDEX`, `GL.ALPHA` and `GL.LUMINANCE` were removed in the core
+ * profile, and are only accepted while running in the compatibility profile,
+ * i.e. with the `ForceCoreContext` config unset. `GL.COLOR_INDEX` additionally
+ * requires a color-index color buffer, which Recoil never creates.
+ *
+ * `GL.STENCIL_INDEX` and `GL.DEPTH_COMPONENT` require the read buffer to
+ * actually have the matching attachment.
+ *
+ * @alias GLPixelFormat1
+ * | 6400 # `GL.COLOR_INDEX` (`0x1900`)
+ * | 6401 # `GL.STENCIL_INDEX` (`0x1901`)
+ * | 6402 # `GL.DEPTH_COMPONENT` (`0x1902`)
+ * | 6403 # `GL.RED` (`0x1903`)
+ * | 6404 # `GL.GREEN` (`0x1904`)
+ * | 6405 # `GL.BLUE` (`0x1905`)
+ * | 6406 # `GL.ALPHA` (`0x1906`)
+ * | 6409 # `GL.LUMINANCE` (`0x1909`)
+ */
+/***
+ * Pixel format with two color components.
+ *
+ * `GL.LUMINANCE_ALPHA` was removed in the core profile, and is only accepted
+ * while running in the compatibility profile, i.e. with the `ForceCoreContext`
+ * config unset.
+ *
+ * @alias GLPixelFormat2
+ * | 6410 # `GL.LUMINANCE_ALPHA` (`0x190A`)
+ */
+/***
+ * Pixel format with three color components.
+ *
+ * @alias GLPixelFormat3
+ * | 6407 # `GL.RGB` (`0x1907`)
+ * | 32992 # `GL.BGR` (`0x80E0`)
+ */
+/***
+ * Pixel format with four color components.
+ *
+ * @alias GLPixelFormat4
+ * | 6408 # `GL.RGBA` (`0x1908`)
+ * | 32993 # `GL.BGRA` (`0x80E1`)
+ */
+/***
  * Get single pixel.
+ *
+ * One value is returned per component of `format`, in the order the format
+ * names them, so `GL.BGRA` returns blue, green, red and alpha.
+ *
  * @function gl.ReadPixels
  * @param x integer
  * @param y integer
  * @param w 1
  * @param h 1
- * @param format GL? (Default: `GL.RGBA`)
- * @return number ... Color value (color size based on format).
+ * @param format GLPixelFormat4? (Default: `GL.RGBA`, i.e. `6408`)
+ * @return number red
+ * @return number green
+ * @return number blue
+ * @return number alpha
+ * @overload fun(x: integer, y: integer, w: 1, h: 1, format: GLPixelFormat3): number, number, number
+ * @overload fun(x: integer, y: integer, w: 1, h: 1, format: GLPixelFormat2): number, number
+ * @overload fun(x: integer, y: integer, w: 1, h: 1, format: GLPixelFormat1): number
  */
 /***
  * Get column of pixels.
+ *
  * @function gl.ReadPixels
  * @param x integer
  * @param y integer
  * @param w 1
  * @param h integer
- * @param format GL? (Default: `GL.RGBA`)
- * @return number[][] colors Column of color values (color size based on format).
+ * @param format GLPixelFormat4? (Default: `GL.RGBA`, i.e. `6408`)
+ * @return [number,number,number,number][] colors Color values indexed by row.
+ * @overload fun(x: integer, y: integer, w: 1, h: integer, format: GLPixelFormat3): [number,number,number][]
+ * @overload fun(x: integer, y: integer, w: 1, h: integer, format: GLPixelFormat2): [number,number][]
+ * @overload fun(x: integer, y: integer, w: 1, h: integer, format: GLPixelFormat1): number[]
  */
 /***
  * Get row of pixels.
+ *
  * @function gl.ReadPixels
  * @param x integer
  * @param y integer
  * @param w integer
  * @param h 1
- * @param format GL? (Default: `GL.RGBA`)
- * @return number[][] colors Row of color values (color size based on format).
+ * @param format GLPixelFormat4? (Default: `GL.RGBA`, i.e. `6408`)
+ * @return [number,number,number,number][] colors Color values indexed by column.
+ * @overload fun(x: integer, y: integer, w: integer, h: 1, format: GLPixelFormat3): [number,number,number][]
+ * @overload fun(x: integer, y: integer, w: integer, h: 1, format: GLPixelFormat2): [number,number][]
+ * @overload fun(x: integer, y: integer, w: integer, h: 1, format: GLPixelFormat1): number[]
  */
 /***
- * Get columns of pixels.
+ * Get a rectangle of pixels.
+ *
+ * `glReadPixels` fills the region row by row, and those values are then handed
+ * out as `w` tables of `h` values each. For a square region that works out to
+ * `colors[row][column]`, which is how callers index it; for a non-square one
+ * the nesting does not line up with the pixel grid at all.
+ *
  * @function gl.ReadPixels
  * @param x integer
  * @param y integer
  * @param w integer
  * @param h integer
- * @param format GL? (Default: `GL.RGBA`)
- * @return number[][][] colors Array of columns of color values (color size based on format).
+ * @param format GLPixelFormat4? (Default: `GL.RGBA`, i.e. `6408`)
+ * @return [number,number,number,number][][] colors Pixels of the region, nested as described above.
+ * @overload fun(x: integer, y: integer, w: integer, h: integer, format: GLPixelFormat3): [number,number,number][][]
+ * @overload fun(x: integer, y: integer, w: integer, h: integer, format: GLPixelFormat2): [number,number][][]
+ * @overload fun(x: integer, y: integer, w: integer, h: integer, format: GLPixelFormat1): number[][]
  */
 int LuaOpenGL::ReadPixels(lua_State* L)
 {
