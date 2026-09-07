@@ -26,6 +26,7 @@ CTracerProjectile::CTracerProjectile()
 	, drawLength(0.0f)
 {
 	checkCol = false;
+	mtDrawSafe = false; // Draw() issues immediate GL calls on its own buffer
 }
 
 CTracerProjectile::CTracerProjectile(CUnit* owner, const float3& pos, const float3& spd, const float range)
@@ -36,6 +37,7 @@ CTracerProjectile::CTracerProjectile(CUnit* owner, const float3& pos, const floa
 	SetRadiusAndHeight(1.0f, 0.0f);
 
 	checkCol = false;
+	mtDrawSafe = false; // Draw() issues immediate GL calls on its own buffer
 	// Projectile::Init has been called by base ctor, so .w is defined
 	// FIXME: constant, assumes |speed| never changes after creation
 	speedf = this->speed.w;

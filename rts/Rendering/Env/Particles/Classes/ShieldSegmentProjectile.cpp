@@ -232,6 +232,9 @@ ShieldSegmentProjectile::ShieldSegmentProjectile(
 	useAirLos     = true;
 	drawRadius    = shieldWeaponDef->shieldRadius * 0.4f;
 	mygravity     = 0.0f;
+	// Draw() mutates the shared segment collection and can fire the DrawShield
+	// Lua callin, neither of which may run off the main thread
+	mtDrawSafe    = false;
 
 	vertices = GetSegmentVertices(xpart, ypart);
 	texCoors = GetSegmentTexCoords(collection->GetShieldTexture(), xpart, ypart);
