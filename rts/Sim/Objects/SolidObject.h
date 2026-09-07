@@ -113,6 +113,7 @@ public:
 		DAMAGE_KAMIKAZE_ACTIVATED  = 18,
 		DAMAGE_CONSTRUCTION_DECAY  = 19,
 		DAMAGE_TURNED_INTO_FEATURE = 20,
+		DAMAGE_FORCE_DELETED       = 21,
 
 		// Keep killed by Lua as last index here. This will be exposed as
 		// lowest index for games. As we keep killed by Lua as lowest index,
@@ -121,7 +122,7 @@ public:
 		//      envTypes.CullingStrike      = envTypes.KilledByLua - 1
 		//      envTypes.SummonTimerExpired = envTypes.KilledByLua - 2
 		//
-		DAMAGE_KILLED_LUA = 21
+		DAMAGE_KILLED_LUA = 22
 	};
 
 	CSolidObject();
