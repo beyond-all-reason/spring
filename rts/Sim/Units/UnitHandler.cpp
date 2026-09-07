@@ -238,13 +238,17 @@ bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 	if (inUpdateCall)
 		return false;
 
-	assert(unitsToBeRemoved.empty());
+	CUnit* unit = units[id];
 
-	if (!QueueDeleteUnit(units[id]))
+	if (unit == nullptr)
+		return false;
+	if (!QueueDeleteUnit(unit))
 		return false;
 
-	// only processes units[id]
-	DeleteUnits();
+	// the queue holds units killed on a previous frame plus what we've enqueued
+	spring::VectorEraseAll(unitsToBeRemoved, unit);
+
+	DeleteUnit(unit);
 
 	return (idPool.RecycleID(id));
 }
