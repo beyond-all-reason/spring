@@ -1282,6 +1282,17 @@ void CCommandAI::ExecuteRemove(const Command& c)
 				if (!facCAI && (ci == queue->begin())) {
 					if (!active) {
 						active = true;
+
+						// the active command is pulled out from under the unit (a queue
+						// edit, or DependentDied because the command's target object was
+						// deleted); FinishCommand() alone leaves the move-type heading for
+						// the goal this command set, so a mobile attacker that was still
+						// closing in on a target that just died walks on to the target's
+						// last position with an empty queue; stop unless the next command
+						// is a move command, which sets its own goal right away
+						if (queue->size() < 2 || !(queue->begin() + 1)->IsMoveCommand())
+							StopMove();
+
 						FinishCommand();
 						ci = queue->begin();
 						break;
