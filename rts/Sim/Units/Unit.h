@@ -171,7 +171,6 @@ public:
 	}
 
 	bool IsDead() const { return isDead; }
-	bool IsSimulating() const { return !isDead; }
 	// Individual callers still test LOS, category, allegiance, etc. separately.
 	bool IsTargetable() const { return (!isDead || modInfo.fireAtKilled); }
 	bool CanTakeDamage() const { return (!isDead && !IsCrashing() && !IsInVoid()); }

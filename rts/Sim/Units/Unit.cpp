@@ -673,7 +673,7 @@ void CUnit::Update()
 
 	if (beingBuilt)
 		return;
-	if (!IsSimulating())
+	if (IsDead())
 		return;
 
 	recentDamage *= 0.9f;
