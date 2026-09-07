@@ -3,6 +3,7 @@
 #ifndef MOD_INFO_H
 #define MOD_INFO_H
 
+#include <optional>
 #include <string>
 #include "Sim/Misc/Resource.h"
 #include "Sim/Path/PFSTypes.h"
@@ -233,6 +234,9 @@ public:
 	float pfUpdateRateScale;
 
 	bool enableSmoothMesh;
+
+	/// If set, overrides the map's gravity (in elmo/s^2, same units as mapinfo `gravity`).
+	std::optional<float> forcedMapGravityStrength;
 
 	/// Reduce the resolution of the smooth mesh by the divider value. Increasing the value reduces
 	/// the accuracy of the smooth mesh, but improves performance. Minimum 1, default 2.

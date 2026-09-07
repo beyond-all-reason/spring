@@ -138,6 +138,7 @@ void CModInfo::ResetState()
 		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
 
 		enableSmoothMesh = true;
+		forcedMapGravityStrength.reset();
 		smoothMeshResDivider = 2;
 		smoothMeshSmoothRadius = 40;
 		quadFieldQuadSizeInElmos = 128;
@@ -199,6 +200,8 @@ void CModInfo::Init(const std::string& modFileName)
 		qtMaxNodesSearchedRelativeToMapOpenNodes = system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
+		if (system.GetType("forcedMapGravityStrength") == LuaTable::NUMBER)
+			forcedMapGravityStrength = system.GetFloat("forcedMapGravityStrength", 0.0f);
 		smoothMeshResDivider = system.GetInt("smoothMeshResDivider", smoothMeshResDivider);
 		smoothMeshSmoothRadius = system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius);
 
