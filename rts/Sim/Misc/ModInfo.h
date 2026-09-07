@@ -3,6 +3,7 @@
 #ifndef MOD_INFO_H
 #define MOD_INFO_H
 
+#include <optional>
 #include <string>
 #include "Sim/Misc/Resource.h"
 #include "Sim/Path/PFSTypes.h"
@@ -234,8 +235,8 @@ public:
 
 	bool enableSmoothMesh;
 
-	bool overrideMapGravity; // Enable to override the map gravity, with the value in forcedMapGravityStrength.
-	float forcedMapGravityStrength; // If overrideMapGravity is true, then use this value for the gravity strength. Otherwise, use the map's gravity. Default's to 130.0f, which is the default map gravity.
+	/// If set, overrides the map's gravity (in elmo/s^2, same units as mapinfo `gravity`).
+	std::optional<float> forcedMapGravityStrength;
 
 	/// Reduce the resolution of the smooth mesh by the divider value. Increasing the value reduces
 	/// the accuracy of the smooth mesh, but improves performance. Minimum 1, default 2.
@@ -257,8 +258,6 @@ public:
 
 	// If true, players can select their start position by clicking the map
 	bool useStartPositionSelecter;
-
-	static constexpr float DEFAULT_MAP_GRAVITY = 130.0f;
 };
 
 extern CModInfo modInfo;

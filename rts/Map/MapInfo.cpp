@@ -98,7 +98,7 @@ void CMapInfo::ReadGlobal()
 	map.hardness      = topTable.GetFloat("maphardness", 100.0f);
 	map.notDeformable = topTable.GetBool("notDeformable", false);
 
-	map.gravity = (modInfo.overrideMapGravity) ? modInfo.forcedMapGravityStrength : topTable.GetFloat("gravity", CModInfo::DEFAULT_MAP_GRAVITY);
+	map.gravity = modInfo.forcedMapGravityStrength.value_or(topTable.GetFloat("gravity", 130.0f));
 	map.gravity = std::max(0.001f, map.gravity);
 	map.gravity = -map.gravity / (GAME_SPEED * GAME_SPEED);
 
