@@ -1622,6 +1622,11 @@ void CGroundMoveType::UpdateSkid()
 		}
 	}
 
+	// always update <oldPos> here so that <speed> does not make
+	// extreme jumps when the unit transitions from skidding back
+	// to non-skidding
+	oldPos = owner->pos;
+
 	// finally update speed.w
 	owner->SetSpeed(spd);
 	// translate before rotate, match terrain normal if not in air
@@ -1637,12 +1642,6 @@ void CGroundMoveType::UpdateSkid()
 	}
 
 	AdjustPosToWaterLine();
-
-	// always update <oldPos> here so that <speed> does not make
-	// extreme jumps when the unit transitions from skidding back
-	// to non-skidding
-	oldPos = owner->pos;
-
 	ASSERT_SANE_OWNER_SPEED(spd);
 	ASSERT_SYNCED(owner->midPos);
 }
