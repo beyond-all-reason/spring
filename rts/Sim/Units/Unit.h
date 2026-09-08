@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Sim/Objects/SolidObject.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/Resource.h"
 #include "Sim/Weapons/WeaponTarget.h"
 #include "System/Matrix44f.h"
@@ -168,6 +169,13 @@ public:
 	bool CanUpdateWeapons() const {
 		return (forceUseWeapons || (allowUseWeapons && !onTempHoldFire && !isDead && !beingBuilt && !IsStunned()));
 	}
+
+	bool IsDead() const { return isDead; }
+	// Individual callers still test LOS, category, allegiance, etc. separately.
+	bool IsTargetable() const { return (!isDead || modInfo.fireAtKilled); }
+	bool CanTakeDamage() const { return (!isDead && !IsCrashing() && !IsInVoid()); }
+	bool CanChangeTeam() const { return !isDead; }
+	bool CanAcceptBuildPower() const { return (!isDead && !IsCrashing()); }
 
 	void SetNeutral(bool b);
 	void SetStunned(bool stun);

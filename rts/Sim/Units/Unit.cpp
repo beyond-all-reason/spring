@@ -423,7 +423,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
-	if (isDead) // Lua can kill a freshy spawned unit in UnitCreated
+	if (IsDead()) // Lua can kill a freshy spawned unit in UnitCreated
 		return;
 
 	ChangeLos(realLosRadius, realAirLosRadius);
@@ -673,7 +673,7 @@ void CUnit::Update()
 
 	if (beingBuilt)
 		return;
-	if (isDead)
+	if (IsDead())
 		return;
 
 	recentDamage *= 0.9f;
@@ -766,7 +766,7 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 		CUnit* transportee = tu.unit;
 		assert(transportee != this);
 
-		if (transportee->isDead)
+		if (transportee->IsDead())
 			continue;
 
 		transportee->SetTransporter(nullptr);
@@ -1314,9 +1314,7 @@ void CUnit::DoDamage(
 	int weaponDefID,
 	int projectileID
 ) {
-	if (isDead)
-		return;
-	if (IsCrashing() || IsInVoid())
+	if (!CanTakeDamage())
 		return;
 
 	float baseDamage = damages.Get(armorType);
@@ -1351,7 +1349,7 @@ void CUnit::DoDamage(
 		// unit might have been killed via Lua from within UnitDamaged (e.g.
 		// through a recursive DoDamage call from AddUnitDamage or directly
 		// via DestroyUnit); can skip the rest
-		if (isDead)
+		if (IsDead())
 			return;
 
 		eoh->UnitDamaged(*this, attacker, baseDamage, weaponDefID, projectileID, isParalyzer);
@@ -1373,7 +1371,7 @@ void CUnit::DoDamage(
 
 	KillUnit(attacker, false, false, weaponDefID);
 
-	if (!isDead)
+	if (!IsDead())
 		return;
 	if (beingBuilt)
 		return;
@@ -1519,7 +1517,7 @@ void CUnit::ChangeLos(int losRad, int airRad)
 bool CUnit::ChangeTeam(int newteam, ChangeType type)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (isDead)
+	if (!CanChangeTeam())
 		return false;
 
 	// do not allow unit count violations due to team swapping
@@ -1988,7 +1986,7 @@ void CUnit::TurnIntoNanoframe()
 bool CUnit::AddBuildPower(CUnit* builder, float amount)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (isDead || IsCrashing())
+	if (!CanAcceptBuildPower())
 		return false;
 
 	// stop decaying on building AND reclaim
