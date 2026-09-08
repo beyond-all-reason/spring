@@ -80,6 +80,10 @@ public:
 		return (GetPosSpeedMod(moveDef, pos.x / SQUARE_SIZE, pos.z / SQUARE_SIZE, moveDir));
 	}
 	static float GetPosSpeedMod(const MoveDef& moveDef, unsigned squareIndex);
+	// speed-modifiers of the 2x2 block of squares with top-left corner <xSquare, zSquare>
+	// (both even) in row-major order; same values as four GetPosSpeedMod calls, but the
+	// half-resolution type- and slope-map lookups are shared
+	static void GetPosSpeedMod2x2(const MoveDef& moveDef, unsigned xSquare, unsigned zSquare, float speedMods[4]);
 
 	// tells whether a position is blocked (inaccessible for a given object's MoveDef)
 	static inline BlockType IsBlocked(const MoveDef& moveDef, const float3& pos, const CSolidObject* collider, int thread);
