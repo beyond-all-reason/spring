@@ -1,11 +1,21 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#if defined(__cpp_modules) && (__cpp_modules >= 201907L)
+
+import Recoil.System.Net.Exception;
+import Recoil.System.Net.ProtocolDef;
+
+#else
+
 #include "ProtocolDef.h"
+#include "Exception.h"
+
+#endif
 
 #include <string.h>
 #include "System/SpringFormat.h"
 
-#include "Exception.h"
+
 
 namespace netcode {
 

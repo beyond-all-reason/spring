@@ -33,13 +33,19 @@ endif()
 include(Util)
 include(PreferStaticLibs)
 
-# check for minimal gcc version
-set(MIN_GCC_VER "7.0")
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${MIN_GCC_VER}")
-		message(FATAL_ERROR "gcc >=${MIN_GCC_VER} required")
+include(CheckCXXCompilerFlag)
+
+option(RECOIL_ENABLE_CXX_MODULES "Enable experimental C++ named module facades" OFF)
+
+set(RECOIL_USE_CXX_MODULES OFF)
+
+if(RECOIL_ENABLE_CXX_MODULES)
+	check_cxx_compiler_flag("-fmodules-ts" RECOIL_CXX_HAS_MODULES_TS_FLAG)
+
+	if(RECOIL_CXX_HAS_MODULES_TS_FLAG)
+		set(RECOIL_USE_CXX_MODULES ON)
 	else()
-		message(STATUS "gcc ${CMAKE_CXX_COMPILER_VERSION} detected")
+		message(FATAL_ERROR "C++ modules disabled: compiler does not accept -fmodules-ts")
 	endif()
 endif()
 

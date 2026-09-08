@@ -3,7 +3,15 @@
 #include <string.h>
 #include <stdexcept>
 
+#if defined(__cpp_modules) && (__cpp_modules >= 201907L)
+
+import Recoil.System.Net.RawPacket;
+
+#else
+
 #include "RawPacket.h"
+
+#endif
 
 #include "System/Log/ILog.h"
 
