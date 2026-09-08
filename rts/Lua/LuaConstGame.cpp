@@ -292,6 +292,7 @@ bool LuaConstGame::PushEntries(lua_State* L)
 			LuaPushNamedNumber(L, "SetNegativeHealth", -CSolidObject::DAMAGE_NEGATIVE_HEALTH    );
 			LuaPushNamedNumber(L, "OutOfBounds"      , -CSolidObject::DAMAGE_KILLED_OOB         );
 			LuaPushNamedNumber(L, "KilledByCheat"    , -CSolidObject::DAMAGE_KILLED_CHEAT       );
+			LuaPushNamedNumber(L, "ForceDeleted"     , -CSolidObject::DAMAGE_FORCE_DELETED      );
 			LuaPushNamedNumber(L, "KilledByLua"      , -CSolidObject::DAMAGE_KILLED_LUA         );
 		lua_rawset(L, -3);
 	}
