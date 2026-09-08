@@ -27,6 +27,29 @@
 /******************************************************************************/
 /******************************************************************************/
 
+static bool IsSafePath(const std::string& path)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// keep searches within the Spring directory
+	if ((path[0] == '/') || (path[0] == '\\') ||
+	    ((path.size() >= 2) && (path[1] == ':'))) {
+		return false;
+	}
+	if ((path.find("..") != std::string::npos) ||
+		(path.find("springsettings.cfg") != std::string::npos) || //don't allow to change config file
+		(path.find(".springrc") != std::string::npos) ||
+		(path.find("springrc") != std::string::npos)
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+
+/******************************************************************************/
+/******************************************************************************/
+
 bool LuaIO::IsSimplePath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -55,17 +78,20 @@ bool LuaIO::SafeReadPath(const std::string& path)
 bool LuaIO::SafeWritePath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	#ifdef _WIN32
+	// reject NTFS streams and path components Win32 silently normalizes
+	for (std::size_t i = 0; i < path.size(); ++i) {
+		if (path[i] == ':' ||
+		    ((path[i] == '.' || path[i] == ' ') &&
+		     (i + 1 == path.size() || path[i + 1] == '/' || path[i + 1] == '\\')))
+			return false;
+	}
+	#endif
+
 	const std::array<std::string, 5> exeFiles = {"exe", "dll", "so", "bat", "com"};
 	const std::string ext = FileSystem::GetExtensionLowerCase(path);
 
 	if (std::find(std::begin(exeFiles), std::end(exeFiles), ext) != exeFiles.end())
-		return false;
-
-	// don't allow touching the config files; springsettings can redirect
-	// the write-dir, which would defeat every other path check here
-	const std::string lowerPath = StringToLower(path);
-	if ((lowerPath.find("springsettings.cfg") != std::string::npos) ||
-	    (lowerPath.find("springrc") != std::string::npos))
 		return false;
 
 	return dataDirsAccess.InWriteDir(path);
@@ -84,7 +110,8 @@ FILE* LuaIO::fopen(lua_State* L, const char* path, const char* mode)
 		errno = EINVAL;
 		return nullptr;
 	}
-	if (!SafeWritePath(path)) {
+	const bool writeMode = (modeStr.find_first_of("wa+") != std::string::npos);
+	if (!IsSafePath(path) || (writeMode && !SafeWritePath(path))) {
 		errno = EPERM; //EACCESS?
 		return nullptr;
 	}
@@ -125,7 +152,8 @@ int LuaIO::system(lua_State* L, const char* command)
 int LuaIO::remove(lua_State* L, const char* pathname)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!SafeWritePath(pathname)) {
+	if (!SafeWritePath(pathname)
+		|| !IsSafePath(pathname)) {
 		errno = EPERM; //EACCESS?
 		return -1;
 	}
@@ -136,7 +164,8 @@ int LuaIO::remove(lua_State* L, const char* pathname)
 int LuaIO::rename(lua_State* L, const char* oldpath, const char* newpath)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!SafeWritePath(oldpath) || !SafeWritePath(newpath)) {
+	if (!SafeWritePath(oldpath) || !SafeWritePath(newpath)
+		|| !IsSafePath(oldpath) || !IsSafePath(newpath)) {
 		errno = EPERM; //EACCESS?
 		return -1;
 	}

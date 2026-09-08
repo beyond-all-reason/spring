@@ -318,9 +318,8 @@ int LuaVFS::Include(lua_State* L, bool synced)
 	ScopedOnceTimer timer("LuaVFS::Include(" + fileName + ")");
 	#endif
 
-	// keep searches within the data directories
-	if (!LuaIO::SafeWritePath(fileName))
-		luaL_error(L, "[LuaVFS::%s] invalid access: %s", __func__, fileName.c_str());
+	// the path may point to a file or dir outside of any data-dir
+	// if (!LuaIO::IsSimplePath(fileName)) return 0;
 
 	// note: this check must happen before luaL_loadbuffer gets called
 	// it pushes new values on the stack and if only index 1 was given
@@ -417,9 +416,8 @@ int LuaVFS::UnsyncInclude(lua_State* L)
 int LuaVFS::LoadFile(lua_State* L, bool synced)
 {
 	const string filename = luaL_checkstring(L, 1);
-	// keep searches within the data directories
-	if (!LuaIO::SafeWritePath(filename))
-		return 0;
+	// the path may point to a file or dir outside of any data-dir
+	// if (!LuaIO::IsSimplePath(filename)) return 0;
 
 	string data;
 	if (LoadFileWithModes(filename, data, GetModes(L, 2, synced)) == 1) {
@@ -837,10 +835,6 @@ int LuaVFS::CompressFolder(lua_State* L)
 	 // "sdz" is the default type if not specified
 	const std::string& compressedFilePath = luaL_optstring(L, 3, (folderPath + ".sdz").c_str());
 	const std::string& modes = GetModes(L, 5, false);
-
-	// keep the output within the writable data-directory
-	if (!LuaIO::SafeWritePath(compressedFilePath))
-		luaL_error(L, "[LuaVFS::%s] invalid access: %s", __func__, compressedFilePath.c_str());
 
 	const bool includeFolder = luaL_optboolean(L, 4, false);
 
