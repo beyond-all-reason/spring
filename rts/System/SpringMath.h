@@ -15,6 +15,7 @@
 
 static constexpr int SPRING_MAX_HEADING = 32768;
 static constexpr int SPRING_CIRCLE_DIVS = (SPRING_MAX_HEADING << 1);
+static constexpr float SPRING_HEADING_EPSILON = 0.000001f;
 
 #define HEADING_CHECKSUM_1024 0x617a9968
 #define HEADING_CHECKSUM_4096 0x3d51b476

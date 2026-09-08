@@ -39,11 +39,11 @@ inline float GetHeadingFromVectorF(const float dx, const float dz)
 {
 	float h = 0.0f;
 
-	if (dz != 0.0f) {
-		// ensure a minimum distance between dz and 0 such that
-		// sqr(dx/dz) never exceeds abs(num_limits<float>::max)
-		const float sz = dz * 2.0f - 1.0f;
-		const float d  = dx / (dz + 0.000001f * sz);
+	if (std::fabs(dz) > SPRING_HEADING_EPSILON) {
+		// FIX: Use a tiny, sign-preserving offset to ensure dz never flips signs
+		// while protecting against division overflows.
+		const float safe_dz = dz + (std::copysign(SPRING_HEADING_EPSILON, dz));
+		const float d  = dx / safe_dz;
 		const float dd = d * d;
 
 		if (math::fabs(d) > 1.0f) {
