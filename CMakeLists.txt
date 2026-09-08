@@ -462,6 +462,12 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 		check_and_add_flags(CMAKE_CXX_FLAGS "-fdiagnostics-color=auto")
 	endif (UNIX)
 
+	if (IS_ARM64_BUILD)
+		# -Wpsabi just notes GCC 10.1's aarch64 aggregate-passing ABI change. That only
+		# matters when mixing pre/post-10.1 objects, which we never do. Drop the spam.
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+	endif ()
+
 	if (NOT MARCH_FLAG)
 		set(MARCH_FLAG "generic")
 	endif (NOT MARCH_FLAG)

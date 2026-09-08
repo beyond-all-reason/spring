@@ -37,6 +37,8 @@ set(_skirmish_ai_clang_warns
 set(_skirmish_ai_gcc_warns
 	-Wno-maybe-uninitialized
 	-Wno-deprecated-declarations
+	-Wno-deprecated
+	-Wno-sign-compare
 )
 foreach    (skirmishAIDir ${SKIRMISH_AI_DIRS})
 	add_subdirectory(${skirmishAIDir})

@@ -29,9 +29,6 @@ if (USE_MIMALLOC)
 		# Temporarily remove _WIN32_WINNT to avoid redefinition warning with mimalloc
 		# mimalloc defines _WIN32_WINNT=0x600 for MinGW in its CMakeLists.txt
 		remove_definitions(-D_WIN32_WINNT=0x0601)
-
-		# Suppress visibility attribute warnings for ALL mimalloc targets.
-		add_compile_options(-Wno-attributes)
 	endif()
 
 	ADD_SUBDIRECTORY(mimalloc)
@@ -39,6 +36,15 @@ if (USE_MIMALLOC)
 	if(MINGW)
 		# Restore _WIN32_WINNT definition after mimalloc
 		add_definitions(-D_WIN32_WINNT=0x0601)
+
+		# mimalloc's MinGW build trips two warnings we silence here:
+		#  - -Wno-attributes: visibility-attribute warnings on mimalloc's exports
+		#  - -Wno-array-bounds: false positive on the gs-segment TEB read (NtCurrentTeb)
+		foreach(_mi_tgt mimalloc-static mimalloc-obj mimalloc)
+			if(TARGET ${_mi_tgt})
+				target_compile_options(${_mi_tgt} PRIVATE -Wno-attributes -Wno-array-bounds)
+			endif()
+		endforeach()
 	endif()
 endif()
 

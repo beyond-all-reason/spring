@@ -381,7 +381,7 @@ static const inline int FastLog10(const float f)
 {
 	assert(f != 0.0f); // log10(0) = -inf
 
-	if (f < 1.0f || f >= (SPRING_INT64_MAX >> 1))
+	if (f < 1.0f || f >= static_cast<float>(SPRING_INT64_MAX >> 1))
 		return std::floor(std::log10(f));
 
 	const std::int64_t i = f;
