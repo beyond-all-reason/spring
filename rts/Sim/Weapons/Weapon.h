@@ -1,7 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef WEAPON_H
-#define WEAPON_H
+#pragma once
+
+#include "Sim/Misc/TargetCheckResult.h"
 
 #include <functional>
 #include <vector>
@@ -62,14 +63,14 @@ public:
 	/// test if the enemy/mapspot is in range/angle
 	virtual bool TestRange(const float3& tgtPos, const SWeaponTarget& trg) const;
 	/// test if something is blocking our LineOfFire
-	virtual bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const;
+	virtual bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const;
 
 	virtual bool CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const;
 
-	bool TryTarget(const SWeaponTarget& trg) const;
-	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire);
-	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire);
-	bool TryTargetHeading(short heading, const SWeaponTarget& trg);
+	bool TryTarget(const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const;
+	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1);
+	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1);
+	bool TryTargetHeading(short heading, const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1);
 
 	bool WantOwnerRotation() const { return onlyForward; }
 public:
@@ -138,7 +139,7 @@ private:
 	bool CallAimingScript(bool waitForAim);
 	void HoldIfTargetInvalid();
 
-	bool TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool preFire = false) const;
+	bool TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool preFire = false, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const;
 public:
 	CUnit* owner;
 	CWeapon* slavedTo;                      // use this weapon to choose target
@@ -228,5 +229,3 @@ protected:
 	// (eg. nuke toward a repulsor, or missile toward a shield)
 	std::vector<int> incomingProjectileIDs;
 };
-
-#endif /* WEAPON_H */

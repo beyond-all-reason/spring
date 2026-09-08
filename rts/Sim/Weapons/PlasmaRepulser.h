@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef PLASMAREPULSER_H
-#define PLASMAREPULSER_H
+#pragma once
 
 #include "Weapon.h"
 #include "Sim/Misc/CollisionVolume.h"
@@ -18,7 +17,7 @@ public:
 
 	void Init() override final;
 	void DependentDied(CObject* o) override final;
-	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const override final { return true; }
+	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const override final { return true; }
 
 	void Update() override final;
 	void SlowUpdate() override final;
@@ -81,5 +80,3 @@ private:
 
 	bool isEnabled = true;
 };
-
-#endif

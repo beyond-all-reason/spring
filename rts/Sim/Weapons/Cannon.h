@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _CANNON_H
-#define _CANNON_H
+#pragma once
 
 #include "Weapon.h"
 #include "System/type2.h"
@@ -48,8 +47,6 @@ private:
 
 	const float3& GetAimFromPos(bool useMuzzle = false) const override { return weaponMuzzlePos; }
 
-	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const override final;
+	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const override final;
 	void FireImpl(const bool scriptCall) override final;
 };
-
-#endif // _CANNON_H

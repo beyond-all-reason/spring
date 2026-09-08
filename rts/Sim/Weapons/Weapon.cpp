@@ -957,25 +957,28 @@ float3 CWeapon::GetTargetBorderPos(
 }
 
 
-bool CWeapon::TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool preFire) const
+bool CWeapon::TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool preFire, TargetCheckResult* result, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(GetLeadTargetPos(trg).SqDistance(tgtPos) < Square(250.0f));
 
+	if (result != nullptr)
+		*result = TargetCheckResult::Clear;
+
 	if (!TestTarget(tgtPos, trg))
-		return false;
+		return RejectTargetCheck(result, TargetCheckResult::InvalidTarget);
 
 	// auto-targeted units are allowed to be out of range
 	// (UpdateFire will still block firing at such units)
 	if (!trg.isAutoTarget && !TestRange(tgtPos, trg))
-		return false;
+		return RejectTargetCheck(result, TargetCheckResult::Range);
 
 	// no LOF if aim-position is below ground (not in HFLOF, is overridden)
 	if (preFire && (weaponMuzzlePos.y < CGround::GetHeightReal(weaponMuzzlePos.x, weaponMuzzlePos.z)))
-		return false;
+		return RejectTargetCheck(result, TargetCheckResult::Terrain);
 
 	// TODO: add a forcedUserTarget (forced-fire mode enabled with CTRL e.g.) and skip the tests below
-	return (HaveFreeLineOfFire(GetAimFromPos(preFire), tgtPos, trg));
+	return (HaveFreeLineOfFire(GetAimFromPos(preFire), tgtPos, trg, result, avoidFlagsOverride));
 }
 
 float CWeapon::GetShapedWeaponRange(const float3& dir, float maxLength) const
@@ -1115,9 +1118,10 @@ bool CWeapon::TestRange(const float3& tgtPos, const SWeaponTarget& trg) const
 }
 
 
-bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const
+bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
 	float3 tgtDir = tgtPos - srcPos;
 
 	const float length = tgtDir.LengthNormalize();
@@ -1133,13 +1137,13 @@ bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 	// NOTE:
 	//   ballistic weapons (Cannon / Missile icw. trajectoryHeight) override this part,
 	//   they rely on TrajectoryGroundCol with an external check for the NOGROUND flag
-	if ((avoidFlags & Collision::NOGROUND) == 0) {
+	if ((traceFlags & Collision::NOGROUND) == 0) {
 		const float gndDst = TraceRay::TraceRay(srcPos, tgtDir, length, ~Collision::NOGROUND, owner, unit, feature);
 		const float tgtDst = tgtPos.SqDistance(srcPos + tgtDir * gndDst);
 
 		// true iff ground does not block the ray of length <length> from <srcPos> along <tgtDir>
 		if ((gndDst > 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
-			return false;
+			return RejectTargetCheck(result, TargetCheckResult::Terrain);
 
 		unit = nullptr;
 		feature = nullptr;
@@ -1150,20 +1154,31 @@ bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 	// this reduces to a ray intersection, which is also more accurate
 	// must nerf TraceRay since it scans for enemies and ground if the
 	// flags are omitted, unlike TestCone which is restricted to A/N/F
-	if (spread < 0.001f)
-		return (TraceRay::TraceRay(srcPos, tgtDir, length, avoidFlags | Collision::NOENEMIES | Collision::NOGROUND, owner, unit, feature) >= length);
+	if (spread < 0.001f) {
+		if (TraceRay::TraceRay(srcPos, tgtDir, length, traceFlags | Collision::NOENEMIES | Collision::NOGROUND, owner, unit, feature) >= length)
+			return true;
+		if (feature != nullptr)
+			return RejectTargetCheck(result, TargetCheckResult::Feature);
+		if (unit != nullptr) {
+			if (unit->allyteam == owner->allyteam && (traceFlags & Collision::NOFRIENDLIES) == 0)
+				return RejectTargetCheck(result, TargetCheckResult::Friendly);
+			if (unit->IsNeutral() && (traceFlags & Collision::NONEUTRALS) == 0)
+				return RejectTargetCheck(result, TargetCheckResult::Neutral);
+		}
+		return RejectTargetCheck(result, TargetCheckResult::Blocked);
+	}
 
-	return (!TraceRay::TestCone(srcPos, tgtDir, length, spread, owner->allyteam, avoidFlags, owner));
+	return (!TraceRay::TestCone(srcPos, tgtDir, length, spread, owner->allyteam, traceFlags, owner, result));
 }
 
 
-bool CWeapon::TryTarget(const SWeaponTarget& trg) const {
+bool CWeapon::TryTarget(const SWeaponTarget& trg, TargetCheckResult* result, int avoidFlagsOverride) const {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return TryTarget(GetLeadTargetPos(trg), trg);
+	return TryTarget(GetLeadTargetPos(trg), trg, false, result, avoidFlagsOverride);
 }
 
 
-bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire)
+bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, TargetCheckResult* result, int avoidFlagsOverride)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tempTargetPos = GetUnitLeadTargetPos(unit);
@@ -1180,15 +1195,15 @@ bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFir
 	// if the aimToTgt is (close to) degenerate then enemyHeading value makes no sense,
 	// use the owner's heading instead
 	if unlikely(aimToTgt.SqLength2D() < 1.0f) {
-		return TryTargetHeading(owner->heading - weaponHeading, trg);
+		return TryTargetHeading(owner->heading - weaponHeading, trg, result, avoidFlagsOverride);
 	}
 
 	const short enemyHeading = GetHeadingFromVector(aimToTgt.x, aimToTgt.z);
-	return TryTargetHeading(enemyHeading - weaponHeading, trg);
+	return TryTargetHeading(enemyHeading - weaponHeading, trg, result, avoidFlagsOverride);
 }
 
 
-bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
+bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire, TargetCheckResult* result, int avoidFlagsOverride)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	AdjustTargetPosToWater(pos, true);
@@ -1197,11 +1212,11 @@ bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
 	SWeaponTarget trg(pos, userTarget);
 	trg.isManualFire = manualFire;
 
-	return TryTargetHeading(enemyHeading - weaponHeading, trg);
+	return TryTargetHeading(enemyHeading - weaponHeading, trg, result, avoidFlagsOverride);
 }
 
 
-bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg)
+bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg, TargetCheckResult* result, int avoidFlagsOverride)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tempfrontdir(owner->frontdir);
@@ -1214,7 +1229,7 @@ bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg)
 	auto wvs = SaveWeaponVectors();
 	UpdateWeaponVectors();
 
-	const bool val = TryTarget(trg);
+	const bool val = TryTarget(trg, result, avoidFlagsOverride);
 
 	owner->frontdir = tempfrontdir;
 	owner->rightdir = temprightdir;
