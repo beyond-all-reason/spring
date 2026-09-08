@@ -198,8 +198,6 @@ void CProjectileDrawer::Init() {
 	groundFXAtlas = new CTextureAtlas(CTextureAtlas::ATLAS_ALLOC_MP_LEGACY, 0, 0, "GroundFXAtlas", true);
 
 	LuaParser resourcesParser("gamedata/resources.lua", SPRING_VFS_MOD_BASE, SPRING_VFS_ZIP);
-	LuaParser mapResParser("gamedata/resources_map.lua", SPRING_VFS_MAP_BASE, SPRING_VFS_ZIP);
-
 	resourcesParser.Execute();
 
 	const LuaTable& resTable = resourcesParser.GetRoot();
@@ -291,17 +289,6 @@ void CProjectileDrawer::Init() {
 	blockedTexNames.insert("torpedotexture");
 	blockedTexNames.insert("wrecktexture");
 	blockedTexNames.insert("plasmatexture");
-
-	if (mapResParser.Execute()) {
-		// allow map-specified atlas textures (for gaia-projectiles and ground-flashes)
-		const LuaTable& mapResTable = mapResParser.GetRoot();
-		const LuaTable& mapResGraphicsTable = mapResTable.SubTable("graphics");
-		const LuaTable& mapResProjTexturesTable = mapResGraphicsTable.SubTable("projectileTextures");
-		const LuaTable& mapResGroundFXTexturesTable = mapResGraphicsTable.SubTable("groundfx");
-
-		ParseAtlasTextures(false, mapResProjTexturesTable, blockedTexNames, textureAtlas);
-		ParseAtlasTextures(false, mapResGroundFXTexturesTable, blockedTexNames, groundFXAtlas);
-	}
 
 	if (!textureAtlas->Finalize()) {
 #ifndef HEADLESS
@@ -582,7 +569,9 @@ void CProjectileDrawer::ParseAtlasTextures(
 
 		// no textures added to this atlas are allowed
 		// to be overwritten later by other textures of
-		// the same name
+		// the same name, useful for setting priority
+		// if multiple files are read and combined into
+		// the same atlas
 		if (blockTextures)
 			blockedTextures.insert(textureName);
 

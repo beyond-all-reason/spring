@@ -122,7 +122,6 @@
  *     - `messages.lua`
  *     - `modrules.lua`
  *     - `resources.lua`
- *     - `resources_map.lua`
  *     - `sidedata.lua`
  *     - `sounds.lua`
  *   - `luagaia/`

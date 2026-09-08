@@ -46,7 +46,6 @@ list(APPEND FILES
 	gamedata/unit_script_header.lua
 	gamedata/VFSUtils.lua
 	gamedata/parse_fbi.lua
-	gamedata/resources_map.lua
 	gamedata/sounds.lua
 	gamedata/icontypes.lua
 	anims/cursornormal_0.bmp
