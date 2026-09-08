@@ -2135,92 +2135,6 @@ bool CUnit::AllowedReclaim(CUnit* builder) const
 	return true;
 }
 
-
-bool CUnit::UseMetal(float metal)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (metal < 0.0f) {
-		AddMetal(-metal);
-		return true;
-	}
-
-	CTeam* myTeam = teamHandler.Team(team);
-	myTeam->resPull.metal += metal;
-
-	if (myTeam->UseMetal(metal)) {
-		resourcesUseI.metal += metal;
-		return true;
-	}
-
-	return false;
-}
-
-void CUnit::AddMetal(float metal, bool useIncomeMultiplier)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (metal < 0.0f) {
-		UseMetal(-metal);
-		return;
-	}
-
-	resourcesMakeI.metal += metal;
-	teamHandler.Team(team)->AddMetal(metal, useIncomeMultiplier);
-}
-
-
-bool CUnit::UseEnergy(float energy)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (energy < 0.0f) {
-		AddEnergy(-energy);
-		return true;
-	}
-
-	CTeam* myTeam = teamHandler.Team(team);
-	myTeam->resPull.energy += energy;
-
-	if (myTeam->UseEnergy(energy)) {
-		resourcesUseI.energy += energy;
-		return true;
-	}
-
-	return false;
-}
-
-void CUnit::AddEnergy(float energy, bool useIncomeMultiplier)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (energy < 0.0f) {
-		UseEnergy(-energy);
-		return;
-	}
-	resourcesMakeI.energy += energy;
-	teamHandler.Team(team)->AddEnergy(energy, useIncomeMultiplier);
-}
-
-
-bool CUnit::AddHarvestedMetal(float metal)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (harvestStorage.metal <= 0.0f) {
-		AddMetal(metal, false);
-		return true;
-	}
-
-	if (harvested.metal >= harvestStorage.metal) {
-		eventHandler.UnitHarvestStorageFull(this);
-		return false;
-	}
-
-	//FIXME what do with exceeding metal?
-	harvested.metal = std::min(harvested.metal + metal, harvestStorage.metal);
-	if (harvested.metal >= harvestStorage.metal) {
-		eventHandler.UnitHarvestStorageFull(this);
-	}
-	return true;
-}
-
-
 void CUnit::SetStorage(const SResourcePack& newStorage)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -2240,11 +2154,6 @@ bool CUnit::HaveResources(const SResourcePack& pack) const
 bool CUnit::UseResources(const SResourcePack& pack)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//FIXME
-	/*if (energy < 0.0f) {
-		AddEnergy(-energy);
-		return true;
-	}*/
 
 	CTeam* myTeam = teamHandler.Team(team);
 	myTeam->resPull += pack;
@@ -2260,11 +2169,6 @@ bool CUnit::UseResources(const SResourcePack& pack)
 void CUnit::AddResources(const SResourcePack& pack, bool useIncomeMultiplier)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	//FIXME
-	/*if (energy < 0.0f) {
-		UseEnergy(-energy);
-		return true;
-	}*/
 	resourcesMakeI += pack;
 	teamHandler.Team(team)->AddResources(pack, useIncomeMultiplier);
 }

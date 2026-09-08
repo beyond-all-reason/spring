@@ -120,63 +120,6 @@ void CTeam::ClampStartPosInStartBox(float3* pos) const
 	pos->z = ipos.y;
 }
 
-
-bool CTeam::UseMetal(float amount)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (res.metal < amount)
-		return false;
-
-	res.metal -= amount;
-	resExpense.metal += amount;
-	return true;
-}
-
-bool CTeam::UseEnergy(float amount)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (res.energy < amount)
-		return false;
-
-	res.energy -= amount;
-	resExpense.energy += amount;
-	return true;
-}
-
-
-
-void CTeam::AddMetal(float amount, bool useIncomeMultiplier)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (useIncomeMultiplier)
-		amount *= GetIncomeMultiplier();
-
-	res.metal += amount;
-	resIncome.metal += amount;
-
-	if (res.metal <= resStorage.metal)
-		return;
-
-	resExcessThisFrame.metal += (res.metal - resStorage.metal);
-	res.metal = resStorage.metal;
-}
-
-void CTeam::AddEnergy(float amount, bool useIncomeMultiplier)
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (useIncomeMultiplier)
-		amount *= GetIncomeMultiplier();
-
-	res.energy += amount;
-	resIncome.energy += amount;
-
-	if (res.energy > resStorage.energy) {
-		resExcessThisFrame.energy += (res.energy - resStorage.energy);
-		res.energy = resStorage.energy;
-	}
-}
-
-
 bool CTeam::HaveResources(const SResourcePack& amount) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
