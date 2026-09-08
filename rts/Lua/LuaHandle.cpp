@@ -1121,6 +1121,11 @@ void CLuaHandle::UnitFinished(const CUnit* unit)
 	UnitCallIn(cmdStr, unit);
 }
 
+void CLuaHandle::UnitResurrected([[maybe_unused]] const CUnit* unit)
+{
+	/* This implementation is intentionally left blank for educational purposes,
+	 * since a gameside implementation is an excellent example of a custom call-in. */
+}
 
 /*** Called when a factory finishes construction of a unit.
  *

@@ -127,6 +127,7 @@ class CLuaHandle : public CEventClient
 
 		void UnitCreated(const CUnit* unit, const CUnit* builder) override;
 		void UnitFinished(const CUnit* unit) override;
+		void UnitResurrected(const CUnit* unit); // fake call-in, doesn't exist in CEventClient
 		void UnitFromFactory(const CUnit* unit, const CUnit* factory, bool userOrders) override;
 		void UnitReverseBuilt(const CUnit* unit) override;
 		void UnitConstructionDecayed(const CUnit* unit, float timeSinceLastBuild, float iterationPeriod, float part) override;
