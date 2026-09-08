@@ -1,0 +1,88 @@
+name: STREFLOP Cross-Arch Sync Test
+
+# Cross-architecture floating-point determinism gate. Builds the standalone
+# streflop float test on x86_64 (SSE) and arm64 (NEON via sse2neon), then
+# asserts the two produce bit-identical results. Multiplayer sync requires that
+# Apple-Silicon/ARM players agree with x86 players byte for byte, so the NEON
+# code path needs guarding against codegen/library drift.
+#
+# Complements streflop-float-test.yml, which is x86-only and compares against a
+# checked-in NEON reference snapshot; this workflow builds and runs both arches
+# live so it catches divergence in the actual NEON output, not a frozen copy.
+#
+# Manual (workflow_dispatch) for now: the submodules and FastMath paths it
+# covers change rarely, so it is run on demand rather than gating every PR.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-run:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: x86_64 (SSE)
+            mode: SSE
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            label: arm64 (NEON)
+            mode: NEON
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Init streflop + sse2neon submodules
+        run: git submodule update --init --recursive rts/lib/streflop rts/lib/sse2neon
+
+      - name: Configure
+        run: cmake -B build -S tools/sync-test -DCMAKE_BUILD_TYPE=Release -DSTREFLOP_MODE=${{ matrix.mode }}
+
+      - name: Build
+        run: cmake --build build --target streflop-float-test -j"$(nproc)"
+
+      - name: Run (52K tests)
+        run: ./build/streflop-float-test -n 10000 "streflop_results_${{ matrix.mode }}_${{ matrix.arch }}"
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: streflop-results-${{ matrix.mode }}-${{ matrix.arch }}
+          path: |
+            streflop_results_${{ matrix.mode }}_${{ matrix.arch }}.bin
+            streflop_results_${{ matrix.mode }}_${{ matrix.arch }}.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  cross-arch-compare:
+    name: Cross-arch (SSE x86_64 == NEON arm64)
+    needs: build-and-run
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download SSE (x86_64) results
+        uses: actions/download-artifact@v4
+        with:
+          name: streflop-results-SSE-x86_64
+          path: sse
+
+      - name: Download NEON (arm64) results
+        uses: actions/download-artifact@v4
+        with:
+          name: streflop-results-NEON-arm64
+          path: neon
+
+      - name: Compare (fails on any mismatch)
+        run: |
+          python3 tools/sync-test/compare_results.py \
+            "sse/streflop_results_SSE_x86_64.bin" \
+            "neon/streflop_results_NEON_arm64.bin"
