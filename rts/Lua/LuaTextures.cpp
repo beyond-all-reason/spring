@@ -90,7 +90,9 @@ std::string LuaTextures::Create(const Texture& tex)
 		} break;
 	}
 
-	if (glGetError() != GL_NO_ERROR) {
+	if (const GLenum texErr = glGetError(); texErr != GL_NO_ERROR) {
+		LOG_L(L_ERROR, "[LuaTextures::%s] glTexImage failed: target=0x%x size=%dx%d fmt=0x%x dataFmt=0x%x dataType=0x%x border=%d glError=0x%x",
+			__func__, tex.target, tex.xsize, tex.ysize, tex.format, dataFormat, dataType, tex.border, texErr);
 		glDeleteTextures(1, &texID);
 		glBindTexture(tex.target, currentBinding);
 		return "";

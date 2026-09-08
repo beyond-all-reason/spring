@@ -42,7 +42,7 @@ public:
 	void PostLoad();
 public:
 	void ReloadTextures() override {}
-	void DumpAtlasTextures() override {}
+	void DumpAtlasTextures(const std::string& /*fileExt*/) override {}
 
 	void Draw() override {}
 
@@ -106,7 +106,6 @@ protected:
 	CSMFGroundDrawer* smfDrawer;
 
 	bool highQuality = false;
-	float ghostDimming = 1.0f;
 	ScopedDepthBufferCopy sdbc;
 };
 
@@ -169,7 +168,7 @@ public:
 
 	// IGroundDecalDrawer
 	void ReloadTextures() override;
-	void DumpAtlasTextures() override;
+	void DumpAtlasTextures(const std::string& fileExt) override;
 
 	void Draw() override;
 

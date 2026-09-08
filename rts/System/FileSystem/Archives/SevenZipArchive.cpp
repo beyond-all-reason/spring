@@ -147,12 +147,12 @@ CSevenZipArchive::CSevenZipArchive(const std::string& name)
 			continue;
 		}
 
-		const auto& fd = fileEntries.emplace_back(
-			i, //fp
-			SzArEx_GetFileSize(&db, i), // size
+		const auto& fd = fileEntries.emplace_back(FileEntry{
+			static_cast<int>(i), //fp
+			static_cast<int>(SzArEx_GetFileSize(&db, i)), // size
 			db.MTime.Vals ? static_cast<uint32_t>(CTimeUtil::NTFSTimeToTime64(db.MTime.Vals[i].Low, db.MTime.Vals[i].High)) : 0, // modtime
 			std::move(fileName.value()) // origName
-		);
+		});
 
 		lcNameIndex.emplace(StringToLower(fd.origName), fileEntries.size() - 1);
 	}

@@ -124,7 +124,7 @@ private:
 	struct boolean { bool b; };
 
 public:
-	LuaParser() = default;
+	LuaParser() = delete;
 	LuaParser(const std::string& fileName, const std::string& fileModes, const std::string& accessModes, const boolean& synced = {false}, const boolean& setup = {true});
 	LuaParser(const std::string& textChunk, const std::string& accessModes, int = 0, const boolean& synced = {false}, const boolean& setup = {true});
 	~LuaParser();

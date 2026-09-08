@@ -4,6 +4,7 @@
 #define CHAT_MESSAGE_H
 
 #include <memory>
+#include <cstdint>
 #include <string>
 
 namespace netcode {

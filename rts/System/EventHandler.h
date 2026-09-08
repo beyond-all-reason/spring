@@ -60,6 +60,8 @@ class CEventHandler
 
 		void TeamDied(int teamID);
 		void TeamChanged(int teamID);
+		bool ResourceExcess(const std::map <int, SResourcePack>& excess);
+
 		void PlayerChanged(int playerID);
 		void PlayerAdded(int playerID);
 		void PlayerRemoved(int playerID, int reason);
@@ -308,6 +310,8 @@ class CEventHandler
 		void DrawAlphaFeaturesLua(bool drawReflection, bool drawRefraction);
 		void DrawShadowUnitsLua();
 		void DrawShadowFeaturesLua();
+
+		void DrawBuildSquare(int unitDefID, int x, int z, int facing, const std::vector<uint8_t>& statuses);
 
 		/// @brief this UNSYNCED event is generated every GameServer::gameProgressFrameInterval
 		/// it skips network queuing and caching and can be used to calculate the current catchup

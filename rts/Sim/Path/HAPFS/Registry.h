@@ -1,4 +1,4 @@
-#ifndef HAFS_REGISTRY_H__
+#ifndef HAPFS_REGISTRY_H__
 #define HAPFS_REGISTRY_H__
 
 #include "System/Ecs/EcsMain.h"

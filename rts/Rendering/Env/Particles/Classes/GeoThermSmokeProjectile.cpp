@@ -67,7 +67,7 @@ void CGeoThermSmokeProjectile::UpdateDir()
 	if (geoVector.SqLength() >= (obj->radius * obj->radius))
 		return;
 
-	geoVector *= (obj->radius * fastmath::isqrt_sse(geoVector.SqLength()));
+	geoVector *= (obj->radius * fastmath::isqrt_nosse(geoVector.SqLength()));
 
 	SetPosition(pos * 0.3f + (obj->pos + geoVector) * 0.7f);
 

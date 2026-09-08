@@ -18,6 +18,7 @@
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/CommandAI/CommandDescription.h"
+#include "Sim/Misc/CustomColorPalette.h"
 #include "Sim/Misc/LosHandler.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/Log/ILog.h"
@@ -761,9 +762,9 @@ int LuaUtils::PushModelRadius(lua_State* L, const SolidObjectDef* def, bool isUn
 int LuaUtils::PushFeatureModelDrawType(lua_State* L, const FeatureDef* def)
 {
 	switch (def->drawType) {
-		case DRAWTYPE_NONE:  { HSTR_PUSH(L,  "none"); } break;
-		case DRAWTYPE_MODEL: { HSTR_PUSH(L, "model"); } break;
-		default:             { HSTR_PUSH(L,  "tree"); } break;
+		case DRAWTYPE_NONE:  { LuaPushString(L,  "none"); } break;
+		case DRAWTYPE_MODEL: { LuaPushString(L, "model"); } break;
+		default:             { LuaPushString(L,  "tree"); } break;
 	}
 
 	return 1;
@@ -778,7 +779,7 @@ int LuaUtils::PushModelName(lua_State* L, const SolidObjectDef* def)
 int LuaUtils::PushModelType(lua_State* L, const SolidObjectDef* def)
 {
 	const std::string& modelPath = modelLoader.FindModelPath(def->modelName);
-	const std::string& modelType = StringToLower(FileSystem::GetExtension(modelPath));
+	const std::string& modelType = StringToLower(FileSystem::GetExtensionLowerCase(modelPath));
 	lua_pushsstring(L, modelType);
 	return 1;
 }
@@ -804,30 +805,30 @@ int LuaUtils::PushModelTable(lua_State* L, const SolidObjectDef* def) {
 
 	if (model != nullptr) {
 		// unit, or non-tree feature
-		HSTR_PUSH_NUMBER(L, "minx", model->mins.x);
-		HSTR_PUSH_NUMBER(L, "miny", model->mins.y);
-		HSTR_PUSH_NUMBER(L, "minz", model->mins.z);
-		HSTR_PUSH_NUMBER(L, "maxx", model->maxs.x);
-		HSTR_PUSH_NUMBER(L, "maxy", model->maxs.y);
-		HSTR_PUSH_NUMBER(L, "maxz", model->maxs.z);
+		LuaPushNamedNumber(L, "minx", model->mins.x);
+		LuaPushNamedNumber(L, "miny", model->mins.y);
+		LuaPushNamedNumber(L, "minz", model->mins.z);
+		LuaPushNamedNumber(L, "maxx", model->maxs.x);
+		LuaPushNamedNumber(L, "maxy", model->maxs.y);
+		LuaPushNamedNumber(L, "maxz", model->maxs.z);
 
-		HSTR_PUSH_NUMBER(L, "midx", model->relMidPos.x);
-		HSTR_PUSH_NUMBER(L, "midy", model->relMidPos.y);
-		HSTR_PUSH_NUMBER(L, "midz", model->relMidPos.z);
+		LuaPushNamedNumber(L, "midx", model->relMidPos.x);
+		LuaPushNamedNumber(L, "midy", model->relMidPos.y);
+		LuaPushNamedNumber(L, "midz", model->relMidPos.z);
 	} else {
-		HSTR_PUSH_NUMBER(L, "minx", 0.0f);
-		HSTR_PUSH_NUMBER(L, "miny", 0.0f);
-		HSTR_PUSH_NUMBER(L, "minz", 0.0f);
-		HSTR_PUSH_NUMBER(L, "maxx", 0.0f);
-		HSTR_PUSH_NUMBER(L, "maxy", 0.0f);
-		HSTR_PUSH_NUMBER(L, "maxz", 0.0f);
+		LuaPushNamedNumber(L, "minx", 0.0f);
+		LuaPushNamedNumber(L, "miny", 0.0f);
+		LuaPushNamedNumber(L, "minz", 0.0f);
+		LuaPushNamedNumber(L, "maxx", 0.0f);
+		LuaPushNamedNumber(L, "maxy", 0.0f);
+		LuaPushNamedNumber(L, "maxz", 0.0f);
 
-		HSTR_PUSH_NUMBER(L, "midx", 0.0f);
-		HSTR_PUSH_NUMBER(L, "midy", 0.0f);
-		HSTR_PUSH_NUMBER(L, "midz", 0.0f);
+		LuaPushNamedNumber(L, "midx", 0.0f);
+		LuaPushNamedNumber(L, "midy", 0.0f);
+		LuaPushNamedNumber(L, "midz", 0.0f);
 	}
 
-	HSTR_PUSH(L, "textures");
+	LuaPushString(L, "textures");
 	lua_createtable(L, 0, model != nullptr ? 2 : 0);
 
 	if (model != nullptr) {
@@ -849,16 +850,16 @@ int LuaUtils::PushColVolTable(lua_State* L, const CollisionVolume* vol) {
 	lua_createtable(L, 0, 11);
 	switch (vol->GetVolumeType()) {
 		case CollisionVolume::COLVOL_TYPE_ELLIPSOID:
-			HSTR_PUSH_CSTRING(L, "type", "ellipsoid");
+			LuaPushNamedString(L, "type", "ellipsoid");
 			break;
 		case CollisionVolume::COLVOL_TYPE_CYLINDER:
-			HSTR_PUSH_CSTRING(L, "type", "cylinder");
+			LuaPushNamedString(L, "type", "cylinder");
 			break;
 		case CollisionVolume::COLVOL_TYPE_BOX:
-			HSTR_PUSH_CSTRING(L, "type", "box");
+			LuaPushNamedString(L, "type", "box");
 			break;
 		case CollisionVolume::COLVOL_TYPE_SPHERE:
-			HSTR_PUSH_CSTRING(L, "type", "sphere");
+			LuaPushNamedString(L, "type", "sphere");
 			break;
 	}
 
@@ -916,7 +917,7 @@ int LuaUtils::ParseColVolData(lua_State* L, int idx, CollisionVolume* vol)
 void LuaUtils::PushCommandParamsTable(lua_State* L, const Command& cmd, bool subtable)
 {
 	if (subtable)
-		HSTR_PUSH(L, "params");
+		LuaPushString(L, "params");
 
 	lua_createtable(L, cmd.GetNumParams(), 0);
 
@@ -949,16 +950,16 @@ void LuaUtils::PushCommandParamsTable(lua_State* L, const Command& cmd, bool sub
 void LuaUtils::PushCommandOptionsTable(lua_State* L, const Command& cmd, bool subtable)
 {
 	if (subtable)
-		HSTR_PUSH(L, "options");
+		LuaPushString(L, "options");
 
 	lua_createtable(L, 0, 7);
-	HSTR_PUSH_NUMBER(L, "coded", cmd.GetOpts());
-	HSTR_PUSH_BOOL(L, "alt",      !!(cmd.GetOpts() & ALT_KEY        ));
-	HSTR_PUSH_BOOL(L, "ctrl",     !!(cmd.GetOpts() & CONTROL_KEY    ));
-	HSTR_PUSH_BOOL(L, "shift",    !!(cmd.GetOpts() & SHIFT_KEY      ));
-	HSTR_PUSH_BOOL(L, "right",    !!(cmd.GetOpts() & RIGHT_MOUSE_KEY));
-	HSTR_PUSH_BOOL(L, "meta",     !!(cmd.GetOpts() & META_KEY       ));
-	HSTR_PUSH_BOOL(L, "internal", !!(cmd.GetOpts() & INTERNAL_ORDER ));
+	LuaPushNamedNumber(L, "coded", cmd.GetOpts());
+	LuaPushNamedBool(L, "alt",      !!(cmd.GetOpts() & ALT_KEY        ));
+	LuaPushNamedBool(L, "ctrl",     !!(cmd.GetOpts() & CONTROL_KEY    ));
+	LuaPushNamedBool(L, "shift",    !!(cmd.GetOpts() & SHIFT_KEY      ));
+	LuaPushNamedBool(L, "right",    !!(cmd.GetOpts() & RIGHT_MOUSE_KEY));
+	LuaPushNamedBool(L, "meta",     !!(cmd.GetOpts() & META_KEY       ));
+	LuaPushNamedBool(L, "internal", !!(cmd.GetOpts() & INTERNAL_ORDER ));
 
 	if (subtable)
 		lua_rawset(L, -3);
@@ -1597,20 +1598,20 @@ void LuaUtils::PushCommandDesc(lua_State* L, const SCommandDescription& cd)
 	lua_checkstack(L, 1 + 1 + 1 + 1);
 	lua_createtable(L, 0, numTblKeys);
 
-	HSTR_PUSH_NUMBER(L, "id",          cd.id);
-	HSTR_PUSH_NUMBER(L, "type",        cd.type);
-	HSTR_PUSH_STRING(L, "name",        cd.name);
-	HSTR_PUSH_STRING(L, "action",      cd.action);
-	HSTR_PUSH_STRING(L, "tooltip",     cd.tooltip);
-	HSTR_PUSH_STRING(L, "texture",     cd.iconname);
-	HSTR_PUSH_STRING(L, "cursor",      cd.mouseicon);
-	HSTR_PUSH_BOOL(L,   "queueing",    cd.queueing);
-	HSTR_PUSH_BOOL(L,   "hidden",      cd.hidden);
-	HSTR_PUSH_BOOL(L,   "disabled",    cd.disabled);
-	HSTR_PUSH_BOOL(L,   "showUnique",  cd.showUnique);
-	HSTR_PUSH_BOOL(L,   "onlyTexture", cd.onlyTexture);
+	LuaPushNamedNumber(L, "id",          cd.id);
+	LuaPushNamedNumber(L, "type",        cd.type);
+	LuaPushNamedString(L, "name",        cd.name);
+	LuaPushNamedString(L, "action",      cd.action);
+	LuaPushNamedString(L, "tooltip",     cd.tooltip);
+	LuaPushNamedString(L, "texture",     cd.iconname);
+	LuaPushNamedString(L, "cursor",      cd.mouseicon);
+	LuaPushNamedBool  (L, "queueing",    cd.queueing);
+	LuaPushNamedBool  (L, "hidden",      cd.hidden);
+	LuaPushNamedBool  (L, "disabled",    cd.disabled);
+	LuaPushNamedBool  (L, "showUnique",  cd.showUnique);
+	LuaPushNamedBool  (L, "onlyTexture", cd.onlyTexture);
 
-	HSTR_PUSH(L, "params");
+	LuaPushString(L, "params");
 
 	lua_createtable(L, 0, numParams);
 
@@ -2011,4 +2012,13 @@ void LuaUtils::TracyRemoveAlsoExtras(char* script)
 			script += 18;
 	}
 #endif
+}
+
+uint16_t LuaUtils::ParsePalette(lua_State* L, int index)
+{
+	const int paletteID = static_cast<uint16_t>(luaL_checkint(L, index));
+	if (!CCustomColorPalette::IsValidIndex(paletteID))
+		luaL_error(L, "[%s] paletteID has to be [0; %d)\n", __func__, MAX_CUSTOM_COLORS);
+
+	return paletteID;
 }

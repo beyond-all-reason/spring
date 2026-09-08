@@ -9,7 +9,7 @@ public:
 	static constexpr int MAX_MODEL_UD_UNIFORMS = 16;
 
 	union {
-		uint32_t composite;
+		uint32_t composite1;
 		struct {
 			uint8_t drawFlag;
 			uint8_t unused1;
@@ -17,14 +17,22 @@ public:
 		};
 	};
 
-	uint32_t unused2;
-	uint32_t unused3;
+	union {
+		uint32_t composite2;
+		struct {
+			uint8_t teamID;
+			uint8_t unused2;
+			uint16_t unused3;
+		};
+	};
+
 	uint32_t unused4;
+	uint32_t unused5;
 
 	float maxHealth;
 	float health;
-	float unused5;
 	float unused6;
+	float unused7;
 
 	float4 drawPos;
 	float4 speed;

@@ -68,6 +68,10 @@ class LuaUnsyncedCtrl {
 
 		static int SetTeamColor(lua_State* L);
 
+		static int SetCustomPaletteColor(lua_State* L);
+		static int SetUnitPaletteIndex(lua_State* L);
+		static int SetFeaturePaletteIndex(lua_State* L);
+
 		static int AssignMouseCursor(lua_State* L);
 		static int ReplaceMouseCursor(lua_State* L);
 
@@ -79,6 +83,7 @@ class LuaUnsyncedCtrl {
 		static int SetDrawGround(lua_State* L);
 		static int SetDrawGroundDeferred(lua_State* L);
 		static int SetDrawModelsDeferred(lua_State* L);
+		static int SetEngineBuildSquareRendering(lua_State* L);
 		static int SetVideoCapturingMode(lua_State* L);
 		static int SetVideoCapturingTimeOffset(lua_State* L);
 

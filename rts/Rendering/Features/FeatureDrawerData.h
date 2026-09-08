@@ -9,7 +9,7 @@ class CCamera;
 class CFeatureDrawerData : public CFeatureDrawerDataBase {
 public:
 	// CEventClient interface
-	bool WantsEvent(const std::string & eventName) {
+	bool WantsEvent(const std::string & eventName) override {
 		return
 			eventName == "RenderFeaturePreCreated" ||
 			eventName == "RenderFeatureCreated"    ||

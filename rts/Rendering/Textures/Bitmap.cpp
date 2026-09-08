@@ -168,7 +168,7 @@ public:
 		return mem;
 	}
 
-	void FreeRaw(uint8_t* mem, size_t size) {
+	void FreeRaw(uint8_t* mem, size_t size) override {
 		RECOIL_DETAILED_TRACY_ZONE;
 		if (mem == nullptr)
 			return;
@@ -207,7 +207,7 @@ public:
 			DefragRaw();
 	}
 
-	void Resize(size_t size) {
+	void Resize(size_t size) override {
 		RECOIL_DETAILED_TRACY_ZONE;
 		size = AlignUp(size, sizeof(uint64_t));
 
@@ -356,11 +356,11 @@ void ITexMemPool::Init(size_t size)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (size == 0) {
-		if (texMemPool == nullptr || typeid(*texMemPool.get()) != typeid(TexNoMemPool))
+		if (dynamic_cast<TexNoMemPool*>(texMemPool.get()) == nullptr)
 			texMemPool = std::make_unique<TexNoMemPool>();
 	}
 	else {
-		if (texMemPool == nullptr || typeid(*texMemPool.get()) != typeid(  TexMemPool))
+		if (dynamic_cast<  TexMemPool*>(texMemPool.get()) == nullptr)
 			texMemPool = std::make_unique<  TexMemPool>();
 	}
 	texMemPool->Resize(size);
@@ -405,6 +405,7 @@ public:
 	BitmapAction(CBitmap* bmp_)
 		: bmp{ bmp_ }
 	{}
+	virtual ~BitmapAction() = default;
 
 	BitmapAction(const BitmapAction& ba) = delete;
 	BitmapAction(BitmapAction&& ba) noexcept = delete;
@@ -1230,7 +1231,7 @@ bool CBitmap::Load(std::string const& filename, float defaultAlpha, uint32_t req
 	// files ending in ".DDS" would appear upside-down if loaded by nv_dds
 	//
 	// const bool loadDDS = (filename.find(".dds") != std::string::npos || filename.find(".DDS") != std::string::npos);
-	const bool loadDDS = (FileSystem::GetExtension(filename) == "dds"); // always lower-case
+	const bool loadDDS = (FileSystem::GetExtensionLowerCase(filename) == "dds");
 	const bool flipDDS = (filename.find("unitpics") == std::string::npos); // keep buildpics as-is
 
 	const size_t curMemSize = GetMemSize();
@@ -1585,7 +1586,7 @@ bool CBitmap::Save(const std::string& filename, bool dontSaveAlpha, bool logged,
 		assert(ilGetError() == IL_NO_ERROR);
 	}
 
-	const std::string& fsImageExt = FileSystem::GetExtension(filename);
+	const std::string& fsImageExt = FileSystem::GetExtensionLowerCase(filename);
 	const std::string& fsFullPath = dataDirsAccess.LocateFile(filename, FileQueryFlags::WRITE);
 	const std::wstring& ilFullPath = std::wstring(fsFullPath.begin(), fsFullPath.end());
 
@@ -1702,7 +1703,7 @@ bool CBitmap::SaveFloat(std::string const& filename) const
 
 	ITexMemPool::texMemPool->FreeRaw(reinterpret_cast<uint8_t*>(ctb), channels * xsize * ysize * sizeof(ConvertType));
 
-	const std::string fsImageExt = FileSystem::GetExtension(filename);
+	const std::string fsImageExt = FileSystem::GetExtensionLowerCase(filename);
 	const std::string fsFullPath = dataDirsAccess.LocateFile(filename, FileQueryFlags::WRITE);
 	const std::wstring ilFullPath = std::wstring(fsFullPath.begin(), fsFullPath.end());
 

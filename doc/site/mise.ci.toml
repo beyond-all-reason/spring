@@ -6,6 +6,6 @@
 	hugo = "{{env.HUGO_VERSION}}"
 	"cargo:emmylua_doc_cli" = "{{env.EMMYLUA_DOC_CLI_VERSION}}"
 	"aqua:jqlang/jq" = "{{env.JQ_VERSION}}"
-	"aqua:ip7z/7zip" = "{{env.7Z_VERSION}}"
+	"aqua:ip7z/7zip" = "{{env.SEVENZIP_VERSION}}"
 	"npm:lua-doc-extractor" = "{{env.LUA_DOC_EXTRACTOR_VERSION}}"
 	"ruby" = "{{env.RUBY_VERSION}}"

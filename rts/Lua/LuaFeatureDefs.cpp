@@ -83,17 +83,17 @@ bool LuaFeatureDefs::PushEntries(lua_State* L)
 
 		lua_newtable(L); { // the metatable
 
-			HSTR_PUSH(L, "__index");
+			LuaPushString(L, "__index");
 			lua_pushlightuserdata(L, (void*)fd);
 			lua_pushcclosure(L, FeatureDefIndex, 1);
 			lua_rawset(L, -3); // closure
 
-			HSTR_PUSH(L, "__newindex");
+			LuaPushString(L, "__newindex");
 			lua_pushlightuserdata(L, (void*)fd);
 			lua_pushcclosure(L, FeatureDefNewIndex, 1);
 			lua_rawset(L, -3);
 
-			HSTR_PUSH(L, "__metatable");
+			LuaPushString(L, "__metatable");
 			lua_pushlightuserdata(L, (void*)fd);
 			lua_pushcclosure(L, FeatureDefMetatable, 1);
 			lua_rawset(L, -3);
@@ -102,11 +102,11 @@ bool LuaFeatureDefs::PushEntries(lua_State* L)
 		lua_setmetatable(L, -2);
 	}
 
-	HSTR_PUSH(L, "pairs");
+	LuaPushString(L, "pairs");
 	lua_pushcfunction(L, Pairs);
 	lua_rawset(L, -3);
 
-	HSTR_PUSH(L, "next");
+	LuaPushString(L, "next");
 	lua_pushcfunction(L, Next);
 	lua_rawset(L, -3);
 

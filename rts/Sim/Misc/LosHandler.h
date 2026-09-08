@@ -253,10 +253,15 @@ public:
 	bool InRadar(const CUnit* unit, int allyTeam) const;
 
 
-	// returns whether a square is being radar- or sonar-jammed
-	// (even when the square is not in radar- or sonar-coverage)
+	// returns whether a square is being radar-jammed
+	// (even when the square is not in radar-coverage)
 	bool InJammer(const float3 pos, int allyTeam) const;
 	bool InJammer(const CUnit* unit, int allyTeam) const;
+
+	// returns whether a square is being sonar-jammed
+	// (even when the square is not in sonar-coverage)
+	bool InSonarJammer(const float3 pos, int allyTeam) const;
+	bool InSonarJammer(const CUnit* unit, int allyTeam) const;
 
 
 	bool InSeismicDistance(const CUnit* unit, int allyTeam) const {

@@ -7,8 +7,8 @@
 #include "System/Ecs/Components/BaseComponents.h"
 #include <System/Threading/ThreadPool.h>
 
-struct CUnit;
-struct CFeature;
+class CUnit;
+class CFeature;
 
 namespace MoveTypes {
 

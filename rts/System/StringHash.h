@@ -17,7 +17,7 @@
 
 [[nodiscard]] constexpr uint32_t hashString(const std::string& str, uint32_t hash = 5381u) noexcept { return hashString(str.c_str(), str.length(), hash); }
 
-[[nodiscard]] constexpr uint32_t operator"" _hs(const char* str, std::size_t) noexcept {
+[[nodiscard]] constexpr uint32_t operator""_hs(const char* str, std::size_t) noexcept {
 	return hashString(str);
 }
 
@@ -36,4 +36,9 @@ struct compileTimeHasher<length, step, idx, idx> {
 	}
 };
 
-#define COMPILE_TIME_HASH(str) compileTimeHasher<sizeof(str) - 1>::hash(str)
+template <unsigned N>
+[[nodiscard]] constexpr uint32_t CompileTimeHash(const char (&literal)[N]) noexcept
+{
+	static_assert(N > 1);
+	return compileTimeHasher<N - 1>::hash(literal);
+}

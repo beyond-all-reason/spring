@@ -8,18 +8,49 @@ RecoilEngine is an open-source real-time strategy (RTS) game engine written in C
 
 ## Build Commands
 
+### Submodules
+
+The repo uses git submodules for vendored libraries (`rts/lib/*`, `tools/pr-downloader`, AI skirmish bots, etc.). If you cloned without `--recurse-submodules`, initialize them before building:
+```bash
+git submodule update --init --recursive
+```
+
 ### Building the Engine
 
 **Using Docker (Recommended):**
 ```bash
-# Build for Linux
+# Full build (default: RELWITHDEBINFO, -O3 -g -DNDEBUG, Ninja)
+# Output lands in build-<arch>-<os>/ (e.g. build-amd64-linux/) and the
+# ready-to-use install in build-amd64-linux/install/
 docker-build-v2/build.sh linux
 
-# Build for Windows
+# Parallelism
+docker-build-v2/build.sh -j 8 linux
+
+# Windows cross-build
 docker-build-v2/build.sh windows
 
-# Build with custom CMake options
+# Change optimization level — trailing -D… is forwarded to configure.sh and
+# overrides the baked-in RELWITHDEBINFO default.
 docker-build-v2/build.sh linux -DCMAKE_BUILD_TYPE=DEBUG
+docker-build-v2/build.sh linux -DCMAKE_BUILD_TYPE=RELEASE
+docker-build-v2/build.sh linux -DCMAKE_BUILD_TYPE=PROFILE
+
+# Combine cmake options (configure phase)
+docker-build-v2/build.sh linux -DBUILD_spring-headless=OFF -DTRACY_ENABLE=ON
+
+# List all available cmake options and their current values
+docker-build-v2/build.sh --configure linux -LH
+
+# Build a specific target — use --compile so args flow to `cmake --build`,
+# not to configure. Without --compile, `-t …` would be rejected by configure.
+docker-build-v2/build.sh --compile linux -t engine-headless
+docker-build-v2/build.sh --compile linux -t engine-legacy
+docker-build-v2/build.sh --compile linux -t tests --verbose
+
+# Split the phases
+docker-build-v2/build.sh --configure linux      # configure only
+docker-build-v2/build.sh --compile linux        # compile only (reuses existing config)
 ```
 
 **Without Docker:**
@@ -27,15 +58,43 @@ docker-build-v2/build.sh linux -DCMAKE_BUILD_TYPE=DEBUG
 # Create build directory
 mkdir -p build && cd build
 
-# Configure
+# Configure — project requires C++23 (clang ≥ 17 or gcc ≥ 13 on PATH).
+# CMAKE_BUILD_TYPE defaults to RELWITHDEBINFO when omitted.
 cmake ..
 
-# Build specific target
-cmake --build . --target engine-headless -j$(nproc)
+# Optional: Default generator is Unix Makefiles; add `-G Ninja` for faster builds if ninja is installed.
+cmake -G Ninja ..
 
-# Build all
-cmake --build . -j$(nproc)
+# Optional: pin to gcc-13 + gold linker via the in-repo toolchain file
+# (tracked under docker-build-v2/; same compiler the docker build uses).
+cmake \
+    -DCMAKE_TOOLCHAIN_FILE=../docker-build-v2/images/all-linux/toolchain.cmake ..
+
+# Optional: speed up incremental builds with ccache
+cmake \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
+
+# Change optimization level by re-running cmake (no wipe required):
+cmake -DCMAKE_BUILD_TYPE=DEBUG ..          # no optimization, full symbols
+cmake -DCMAKE_BUILD_TYPE=RELEASE ..        # optimized, no debug info
+cmake -DCMAKE_BUILD_TYPE=RELWITHDEBINFO .. # optimized + debug info (default)
+cmake -DCMAKE_BUILD_TYPE=PROFILE ..        # optimized + profiling hooks
+
+# Build (generator-agnostic — works under Ninja or Make)
+cmake --build .
+
+# Build a specific target
+cmake --build . --target engine-headless
+cmake --build . --target engine-legacy
+cmake --build . --target engine-dedicated
+cmake --build . --target tests
 ```
+
+> The docker flow writes to **`build-<arch>-<os>/`** (e.g. `build-amd64-linux/`
+> or `build-amd64-windows/`), which is a different directory than the `build/`
+> used by this flow. When running tests, point commands at whichever build
+> directory you populated.
 
 ### Build Types
 - `DEBUG` - Debug build with full symbols and no optimization
@@ -44,55 +103,64 @@ cmake --build . -j$(nproc)
 - `PROFILE` - Profiling build
 
 ### Build Targets
-- `engine-legacy` - Main engine build
-- `engine-headless` - Headless server build
-- `engine-dedicated` - Dedicated server build
-- `tests` - Build all test executables
-- `check` - Build and run all tests
-- `spring-content` - Build game content packages
+- `engine-legacy` — main interactive engine build
+- `engine-headless` — headless engine (no graphics)
+- `engine-dedicated` — dedicated server
+- `unitsync` — unitsync shared library
+- `pr-downloader` — content downloader tool
+- `tests` — phony; builds every `test_*` executable under `build/test/`
+- `check` — phony; depends on `engine-headless` + all `test_*` executables, then runs ctest with `--output-on-failure -V`
+- `install` — install into `CMAKE_INSTALL_PREFIX`
 
 ## Testing
 
-### Test Framework
-The project uses **Catch2** for unit testing. Test files are located in the `test/` directory.
+### Writing Tests
+See `test/AGENTS.md` for details on writing tests, available compile flags, patterns, and test helpers.
 
 ### Running Tests
 
 **Build and run all tests:**
 ```bash
-# From build directory
-make tests        # Build all test executables
-make check        # Build and run all tests via CTest
-make test         # Alternative: run via CTest
+# From build/ — ctest / check recipes below assume a non-docker build.
+# For a docker build, run `docker-build-v2/build.sh --compile linux -t check`
+# (runs ctest inside the container) or invoke the binaries in
+# build-amd64-linux/test/ directly.
+cmake --build . --target tests    # build all test executables (no run)
+ctest                             # run all tests (does not rebuild)
+# OR
+cmake --build . --target check    # rebuild engine-headless + all tests, then run ctest -V
 ```
 
-**Run a single test:**
+`check` is the safe default when iterating; bare `ctest` is faster when nothing relevant has changed since the last build.
+
+**Run a single test (from repo root):**
 ```bash
-# Tests are built as executable binaries in the build directory
-# Pattern: test_<TestName>
+# Tests are built as executable binaries under <build-folder>/test/
+# Pattern: <build-folder>/test/test_<TestName>
+# where <build-folder> depends on if you built in docker or not (see above).
 
-# Run specific test executable
-./test_Float3
-./test_Matrix44f
-./test_SyncedPrimitive
-./test_UDPListener
+./build/test/test_Float3
+./build/test/test_Matrix44f
+./build/test/test_SyncedPrimitive
+./build/test/test_UDPListener
 
-# Run with verbose output
-./test_Float3 -s
+# Catch2: show passing assertions too
+./build/test/test_Float3 -s
 
-# Run specific test case
-./test_Float3 "TestSection"
+# Run a specific test case by name (positional arg matches TEST_CASE name, supports wildcards)
+./build/test/test_Float3 "Float3"
+./build/test/test_Float3 "Float34_*"
 ```
 
-**Run via CTest:**
+**Run via CTest (from inside build/):**
 ```bash
-# Run specific test by name
+# Filter by regex, show output only on failure
+ctest -R Float3 --output-on-failure
+
+# Same, but verbose (full stdout regardless of result)
 ctest -R Float3 -V
 
-# Run with regex pattern
-ctest -R Matrix -V
-
-# List all available tests
+# List all registered tests without running
 ctest -N
 ```
 
@@ -325,20 +393,6 @@ Use preprocessor directives for platform-specific code:
 - Use tabs for indentation in CMake files
 - Keep lines reasonably short
 
-### Adding Tests
-In `test/CMakeLists.txt`:
-```cmake
-set(test_name TestName)
-set(test_src
-	"${CMAKE_CURRENT_SOURCE_DIR}/path/to/TestFile.cpp"
-	${test_Common_sources}
-)
-set(test_libs
-	library_name
-)
-add_spring_test(${test_name} "${test_src}" "${test_libs}" "${test_flags}")
-```
-
 ## Project Structure
 
 - `rts/` - Main engine source code
@@ -388,6 +442,10 @@ The engine uses custom thread pools. See `THREADPOOL` define and related code.
 4. Follow the workflow in `contributing.md`
 5. Disclose any AI assistance used
 
+### Additional docs
+Please see @coding-agents/ for additional documentation:
+- coding-agents/ENGINE_PERFORMANCE.md — notes on scale targets and engine performance internals. Useful for performance related changes.
+- coding-agents/BACKWARDS_COMPATIBILITY.md - notes on when we should strive to be backwards compatible. Reference it for any major reworks or api changes.
 ## Additional Resources
 
 - Official website: https://recoilengine.org

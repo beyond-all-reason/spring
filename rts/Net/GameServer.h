@@ -162,6 +162,7 @@ private:
 	void ProcessPacket(const unsigned playerNum, std::shared_ptr<const netcode::RawPacket> packet);
 	void CheckSync();
 	void HandleConnectionAttempts();
+	bool ValidateAICommandTeam(uint8_t aiID, int cmdID, const netcode::RawPacket& packet, const GameParticipant& player);
 	void ServerReadNet();
 
 	void LagProtection();

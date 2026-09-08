@@ -1,14 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef LUA_HASH_STRING_H
-#define LUA_HASH_STRING_H
+#pragma once
 
 #include <algorithm>
 #include <string>
 
 #include "LuaInclude.h"
 #include "System/StringHash.h"
-
 
 struct LuaHashString {
 	public:
@@ -97,30 +95,3 @@ struct LuaHashString {
 		uint32_t slen = 0;
 		uint32_t hash = 0;
 };
-
-
-// NOTE: scoped to avoid name conflicts
-// NOTE: since all the following are static, if name can change (e.g. within a loop)
-//       peculiar things will happen. => Only use raw strings (and not variables) in name.
-
-#define HSTR_PUSH(L, name) \
-	{ lua_pushhstring(L, COMPILE_TIME_HASH(name), name, sizeof(name) - 1); }
-
-#define HSTR_PUSH_BOOL(L, name, val) \
-	{ HSTR_PUSH(L, name); lua_pushboolean(L, val); lua_rawset(L, -3); }
-
-#define HSTR_PUSH_NUMBER(L, name, val) \
-	{ HSTR_PUSH(L, name); lua_pushnumber(L, val); lua_rawset(L, -3); }
-
-#define HSTR_PUSH_STRING(L, name, val) \
-	{ HSTR_PUSH(L, name); lua_pushsstring(L, val); lua_rawset(L, -3); }
-
-#define HSTR_PUSH_CSTRING(L, name, val) \
-	{ HSTR_PUSH(L, name); lua_pushhstring(L, COMPILE_TIME_HASH(val), val, sizeof(val) - 1); lua_rawset(L, -3); }
-
-#define HSTR_PUSH_CFUNC(L, name, val) \
-	{ HSTR_PUSH(L, name); lua_pushcfunction(L, val); lua_rawset(L, -3); }
-
-
-#endif // LUA_HASH_STRING_H
-

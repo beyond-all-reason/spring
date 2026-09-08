@@ -313,8 +313,6 @@ function Debug()
   print("Game.mapSizeZ              = " .. Game.mapSizeZ)
   print("Game.mapName               = " .. Game.mapName)
   print("Game.modName               = " .. Game.modName)
-  print("Game.limitDGun             = " .. tostring(Game.limitDGun))
-  print("Game.Game.diminishingMetal = " .. tostring(Game.diminishingMetal))
 
   PrintAllyTeamList()
   PrintTeamList()

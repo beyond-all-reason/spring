@@ -7,13 +7,14 @@
 #include <cstddef>
 #include <cstring> // memset
 #include <cmath>
+#include <algorithm>
 #include <array>
 #include <deque>
 #include <vector>
 #include <map>
 #include <memory>
 
-#include "smmalloc/smmalloc.h"
+#include "System/recoil-smmalloc.h"
 
 #include "System/UnorderedMap.hpp"
 #include "System/ContainerUtil.h"
@@ -62,14 +63,16 @@ private:
 };
 
 // Helper to infer the memory alignment and size from a set of types.
-template <class ...T>
-#if 0 // doesn't compile on MSVC 19.37
-struct TypesMem {
-    alignas(alignof(T)...) uint8_t data[std::max({sizeof(T)...})];
-};
-#else
-using TypesMem = std::aligned_storage_t< std::max({ sizeof(T)... }), std::max({ alignof(T)... }) >;
-#endif
+template<class... T>
+inline constexpr size_t TypesMemAlignment = std::max({alignof(T)...});
+
+template<class... T>
+inline constexpr size_t TypesMemSize = [] {
+	constexpr size_t alignment = TypesMemAlignment<T...>;
+	constexpr size_t size = std::max({sizeof(T)...});
+
+	return ((size + alignment - 1) / alignment) * alignment;
+}();
 
 template<size_t S, size_t Alignment> struct DynMemPool {
 public:
@@ -163,8 +166,8 @@ private:
 };
 
 // Helper to infer the DynMemPool pool parameters from a types.
-template<class ...T>
-using DynMemPoolT = DynMemPool<sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
+template<class... T>
+using DynMemPoolT = DynMemPool<TypesMemSize<T...>, TypesMemAlignment<T...>>;
 
 // fixed-size dynamic version
 // page size per chunk, number of chunks, number of pages per chunk
@@ -286,8 +289,8 @@ private:
 };
 
 // Helper to infer the FixedDynMemPool pool parameters from a types.
-template<size_t N, size_t K, class ...T>
-using FixedDynMemPoolT = FixedDynMemPool<sizeof(TypesMem<T...>), N, K, alignof(TypesMem<T...>)>;
+template<size_t N, size_t K, class... T>
+using FixedDynMemPoolT = FixedDynMemPool<TypesMemSize<T...>, N, K, TypesMemAlignment<T...>>;
 
 // fixed-size version.
 template<size_t N, size_t S, size_t Alignment> struct StaticMemPool {
@@ -372,8 +375,8 @@ private:
 };
 
 // Helper to infer the StaticMemPool pool parameters from a types.
-template<size_t N, class ...T>
-using StaticMemPoolT = StaticMemPool<N, sizeof(TypesMem<T...>), alignof(TypesMem<T...>)>;
+template<size_t N, class... T>
+using StaticMemPoolT = StaticMemPool<N, TypesMemSize<T...>, TypesMemAlignment<T...>>;
 
 
 // dynamic memory allocator operating with stable index positions
@@ -431,7 +434,7 @@ inline size_t StablePosAllocator<T>::Allocate(size_t numElems)
 	if (positionToSize.empty()) {
 		size_t returnPos = data.size();
 		data.resize(data.size() + numElems);
-		myLog("StablePosAllocator<T>::Allocate(%u) = %u [thread_id = %u]", uint32_t(numElems), uint32_t(returnPos), static_cast<uint32_t>(Threading::GetCurrentThreadId()));
+		myLog("StablePosAllocator<T>::Allocate(%u) = %u [thread_id = %u]", uint32_t(numElems), uint32_t(returnPos), Threading::GetCurrentThreadIdAsU32());
 		return returnPos;
 	}
 

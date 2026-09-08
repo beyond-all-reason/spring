@@ -66,6 +66,11 @@
 			 return Rml::LoadFontFace(file, fallback, weight);
 		 }
 
+		 auto loadFontFace4(const Rml::String& file, bool fallback, Rml::Style::FontWeight weight, int face_index)
+		 {
+			 return Rml::LoadFontFace(file, fallback, weight, face_index);
+		 }
+
 		 auto registerEventType4(const Rml::String& type, bool interruptible, bool bubbles, Rml::DefaultActionPhase default_action_phase)
 		 {
 			 return Rml::RegisterEventType(type, interruptible, bubbles, default_action_phase);
@@ -170,12 +175,14 @@
 			  * @param file_path string
 			  * @param fallback boolean?
 			  * @param weight RmlUi.font_weight?
+			  * @param face_index number? The index of the font face within a font collection.
 			  * @return boolean success
 			  */
 			 "LoadFontFace", sol::overload(
 				 &functions::loadFontFace1,
 				 &functions::loadFontFace2,
-				 &functions::loadFontFace3
+				 &functions::loadFontFace3,
+				 &functions::loadFontFace4
 			 ),
 			 //"RegisterTag",
 			 /***

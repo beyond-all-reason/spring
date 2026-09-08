@@ -51,6 +51,8 @@ CR_REG_METADATA(CSolidObject,
 	CR_MEMBER(team),
 	CR_MEMBER(allyteam),
 
+	CR_MEMBER_UN(paletteIndex),
+
 	CR_MEMBER(creationFrame),
 
 	CR_MEMBER(pieceHitFrames),

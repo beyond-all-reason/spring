@@ -1,0 +1,59 @@
+name: STREFLOP Float Sync Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      large_scale:
+        description: 'Run 2.6B test hash-only pass (adds ~3 min)'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  streflop-sync-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -S tools/sync-test -DCMAKE_BUILD_TYPE=Release -DSTREFLOP_MODE=SSE
+
+      - name: Build
+        run: cmake --build build --target streflop-float-test -j$(nproc)
+
+      # Step 1: Generate SSE reference at N=10000 and report hash
+      - name: Reference test (52K tests, generate SSE baseline)
+        run: |
+          ./build/streflop-float-test -n 10000 streflop_results_SSE_x86_64
+          echo ""
+          echo "--- Compare against checked-in NEON reference ---"
+          if [ -f tools/sync-test/reference/streflop_results_NEON_arm64.bin ]; then
+            python3 tools/sync-test/compare_results.py \
+              tools/sync-test/reference/streflop_results_NEON_arm64.bin \
+              streflop_results_SSE_x86_64.bin
+          else
+            echo "No NEON reference found — skipping cross-arch comparison"
+            echo "Run locally on ARM64 to generate NEON reference"
+          fi
+
+      # Step 2: 10M inputs — 261M tests, upload binary for cross-arch comparison
+      - name: Medium scale (261M tests, ~45s)
+        run: |
+          ./build/streflop-float-test -n 10000000 streflop_10M_SSE_x86_64
+
+      # Step 3: 100M inputs — 2.6B tests, hash-only (no disk I/O)
+      - name: Large scale (2.6B tests, hash-only, ~3 min)
+        if: ${{ inputs.large_scale }}
+        run: |
+          ./build/streflop-float-test -n 100000000 --hash-only
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: streflop-SSE-x86_64
+          path: |
+            streflop_results_SSE_x86_64.bin
+            streflop_results_SSE_x86_64.txt
+            streflop_10M_SSE_x86_64.bin
+          retention-days: 90

@@ -94,6 +94,12 @@ void SMFRenderStateGLSL::Update(
 		for (uint32_t n = GLSL_SHADER_FWD_ADV; n <= GLSL_SHADER_DFR_ADV; n++) {
 			glslShaders[n]->LoadFromID(luaMapShaderData->shaderIDs[n - 1]);
 		}
+
+		// currShader is null from Init() (GLSL_SHADER_FWD_STD is never created for
+		// the Lua state), so re-evaluate it now that program IDs changed; otherwise
+		// HasValidShader(Normal) stays false and a forward-only Lua map shader is
+		// never selected until a deferred Lua draw happens to run first
+		SetCurrentShader(smfGroundDrawer, DrawPass::Normal);
 	} else {
 		assert(luaMapShaderData == nullptr);
 

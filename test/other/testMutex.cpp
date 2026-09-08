@@ -11,9 +11,18 @@
 #include <cstdint>
 #include <functional>
 
-#ifndef _WIN32
+#ifdef __linux__
 	#include <sys/syscall.h>
 	#include <linux/futex.h>
+	#include <unistd.h>
+#endif
+
+#ifdef __OpenBSD__
+	#include <sys/futex.h>
+#endif
+
+#ifndef _WIN32
+	#include <unistd.h>
 #endif
 
 #ifdef _WIN32
@@ -25,34 +34,43 @@
 InitSpringTime ist;
 
 #ifndef _WIN32
-	typedef uint32_t futex;
+	typedef uint32_t lock;
 
-	static void futex_init(futex* m)
+	static inline long do_futex (uint32_t *mtx, int op, uint32_t value, const struct timespec *timeout)
+	{
+#ifndef __OpenBSD__
+		return syscall(SYS_futex, mtx, op, value, timeout, NULL, 0);
+#else
+		return futex(mtx, op, value, timeout, NULL);
+#endif
+	}
+
+	static void futex_init(lock* m)
 	{
 		*m = 0;
 	}
 
-	static void futex_destroy(futex* m)
+	static void futex_destroy(lock* m)
 	{
 		*m = 0;
 	}
 
-	static void futex_lock(futex* m)
+	static void futex_lock(lock* m)
 	{
-		futex c;
+		lock c;
 		if ((c = __sync_val_compare_and_swap(m, 0, 1)) != 0)  {
 			do {
 				if ((c == 2) || __sync_val_compare_and_swap(m, 1, 2) != 0)
-					syscall(SYS_futex, m, FUTEX_WAIT_PRIVATE, 2, NULL, NULL, 0);
+					do_futex(m, FUTEX_WAIT_PRIVATE, 2, NULL);
 			} while((c = __sync_val_compare_and_swap(m, 0, 2)) != 0);
 		}
 	}
 
-	static void futex_unlock(futex* m)
+	static void futex_unlock(lock* m)
 	{
 		if (__sync_fetch_and_sub(m, 1) != 1) {
 			*m = 0;
-			syscall(SYS_futex, m, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
+			do_futex(m, FUTEX_WAKE_PRIVATE, 1, NULL);
 		}
 	}
 #endif
@@ -97,7 +115,7 @@ TEST_CASE("Mutex")
 #endif
 
 #ifndef _WIN32
-	futex ftx;
+	lock ftx;
 	futex_init(&ftx);
 	spring_time tCrit = Test("futex", [&]{ futex_lock(&ftx); }, [&]{ futex_unlock(&ftx); });
 	futex_init(&ftx);

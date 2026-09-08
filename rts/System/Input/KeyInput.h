@@ -4,6 +4,7 @@
 #define KEYBOARD_INPUT_H
 
 #include <vector>
+#include <set>
 
 namespace KeyInput {
 	void Update(int fakeMetaKey);
@@ -13,6 +14,12 @@ namespace KeyInput {
 	bool IsScanPressed(int idx);
 	void SetKeyModState(int mod, bool pressed);
 	bool GetKeyModState(int mod);
+
+	// input emulation (debug.emulateKey*): keys forced down independent of hardware
+	bool IsKeyEmulated(int keyCode);
+	void SetKeyEmulated(int keyCode, bool pressed);
+	const std::set<int>& GetEmulatedKeys();
+	void ClearEmulatedKeys();
 
 	typedef std::pair<int, bool> Key;
 

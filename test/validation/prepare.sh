@@ -33,7 +33,6 @@ cat <<EOD
 		disablemapdamage=0;
 		fixedallies=0;
 		ghostedbuildings=1;
-		limitdgun=0;
 		mo_allowfactionchange=1;
 		mo_combomb_full_damage=1;
 		mo_comgate=0;

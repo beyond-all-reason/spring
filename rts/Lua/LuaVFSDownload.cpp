@@ -312,6 +312,12 @@ bool LuaVFSDownload::PushEntries(lua_State* L)
 	return true;
 }
 
+/***
+ * Queue an archive download through pr-downloader.
+ * @function VFS.DownloadArchive
+ * @param filename string Archive or rapid package name.
+ * @param category string One of `map`, `game`, or `engine`.
+ */
 int LuaVFSDownload::DownloadArchive(lua_State* L)
 {
 	const std::string& filename = luaL_checkstring(L, 1);
@@ -337,12 +343,22 @@ int LuaVFSDownload::DownloadArchive(lua_State* L)
 	return 0;
 }
 
+/***
+ * Abort a queued or active archive download.
+ * @function VFS.AbortDownload
+ * @param id integer Download queue identifier.
+ * @return boolean removed Whether a matching queued or active download was removed.
+ */
 int LuaVFSDownload::AbortDownload(lua_State* L)
 {
 	lua_pushboolean(L, downloadQueue.Remove(luaL_checkint(L, 1)));
 	return 1;
 }
 
+/***
+ * Rescan all data directories for newly added archives.
+ * @function VFS.ScanAllDirs
+ */
 int LuaVFSDownload::ScanAllDirs(lua_State* L)
 {
 	archiveScanner->ScanAllDirs();

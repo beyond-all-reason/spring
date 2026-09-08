@@ -5,9 +5,9 @@ draft = false
 author = "Slashscreen"
 +++
 
-RmlUi is a UI framework that is defined using a HTML/CSS style workflow (using Lua instead of JS) intended to simplify UI development especially for those already familiar with web development. It is designed for interactive applications, and so is reactive by default. You can learn more about it on the [RmlUI website] and [differences in the Recoil version here](#differences-between-upstream-rmlui-and-rmlui-in-recoil).
+RmlUi is a UI framework that is defined using a HTML/CSS style workflow (using Lua instead of JS) intended to simplify UI development especially for those already familiar with web development. It is designed for interactive applications, and so is reactive by default. You can learn more about it on the [RmlUi website] and [differences in the Recoil version here](#differences-between-upstream-rmlui-and-rmlui-in-recoil).
 
-## How does RmlUI Work?
+## How does RmlUi Work?
 
 To get started, it's important to learn a few key concepts.
 - Context: This is a bundle of documents and data models.
@@ -416,7 +416,7 @@ document = widget.rmlContext:LoadDocument("document.rml", document_table)
 - The Beyond All Reason devs prefer to use one shared context for all rmlui widgets.
 
 
-### Differences between upstream RmlUI and RmlUI in Recoil
+### Differences between upstream RmlUi and RmlUi in Recoil
 
 - The SVG element allows either a filepath or raw SVG data in the src attribute, allowing for inline svg to be used (this may change to svg being supported between the opening and closing tag when implemented upstream)
 - An additional element ```<texture>``` is available which allows for textures loaded in Recoil to be used, this behaves the same as an ```<img>``` element except the src attribute takes a [texture reference]({{% ref "articles/texture-reference-strings" %}})

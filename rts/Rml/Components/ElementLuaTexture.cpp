@@ -44,6 +44,7 @@
 #include "RmlUi/Core/ElementUtilities.h"
 #include "RmlUi/Core/MeshUtilities.h"
 #include "RmlUi/Core/PropertyIdSet.h"
+#include "RmlUi/Core/Types.h"
 
 namespace RmlGui
 {
@@ -75,7 +76,7 @@ bool ElementLuaTexture::GetIntrinsicDimensions(Rml::Vector2f& _dimensions, float
 		LoadTexture();
 
 	auto texDimensions = GetTextureDimensions();
-	
+
 	// Calculate the x dimension.
 	if (HasAttribute("width"))
 		dimensions.x = GetAttribute<float>("width", -1);
@@ -108,7 +109,7 @@ void ElementLuaTexture::OnRender()
 	// in a resize).
 	if (geometry_dirty)
 		GenerateGeometry();
-	
+
 	glBindTexture(GL_TEXTURE_2D, luaTexture.GetTextureID());
 	GetRenderInterface()->RenderGeometry(
 		geometry_handle,
@@ -230,7 +231,7 @@ void ElementLuaTexture::GenerateGeometry()
 	float opacity = computed.opacity();
 	Rml::ColourbPremultiplied quad_colour = computed.image_color().ToPremultiplied(opacity);
 
-	Rml::Vector2f quad_size = GetBox().GetSize(Rml::BoxArea::Content).Round();
+	Rml::Vector2f quad_size = GetRenderBox(Rml::BoxArea::Content).GetFillSize().Round();
 
 	if (
 		computed.border_top_left_radius() > 0 ||
@@ -238,18 +239,13 @@ void ElementLuaTexture::GenerateGeometry()
 		computed.border_bottom_left_radius() > 0 ||
 		computed.border_bottom_right_radius() > 0
 	) {
-		Rml::Vector4f radii{
-			computed.border_top_left_radius(),
-			computed.border_top_right_radius(),
-			computed.border_bottom_left_radius(),
-			computed.border_bottom_right_radius(),
-		};
-
 		const Rml::ColourbPremultiplied clear_colors[4] = {{0, 0},
 														   {0, 0},
 														   {0, 0},
 														   {0, 0}};
-		Rml::MeshUtilities::GenerateBackgroundBorder(mesh, GetBox(), Rml::Vector2f(), radii, quad_colour, clear_colors);
+
+		const Rml::RenderBox render_box = GetRenderBox(Rml::BoxArea::Content);
+		Rml::MeshUtilities::GenerateBackgroundBorder(mesh, render_box, quad_colour, clear_colors);
 
 		// GenerateBackgroundBorder does *not* set UV coords, so we must do that ourselves.
 		Rml::Vector<Rml::Vertex>& vertices = mesh.vertices;
@@ -269,7 +265,7 @@ void ElementLuaTexture::GenerateGeometry()
 			quad_colour, tex_coords[0], tex_coords[1]
 		);
 	}
-	
+
 	geometry_handle = render_interface->CompileGeometry(mesh.vertices, mesh.indices);
 	geometry_dirty = false;
 }

@@ -66,6 +66,12 @@ namespace Watchdog
 	};
 
 	struct WatchDogThreadSlot {
+		void Reset() {
+			primary  = false;
+			active   = false;
+			regorder = 0;
+		}
+
 		std::atomic<bool> primary = {false};
 		std::atomic<bool> active = {false};
 		std::atomic<unsigned int> regorder = {0};
@@ -366,12 +372,16 @@ namespace Watchdog
 	{
 		std::lock_guard<spring::mutex> lock(wdmutex);
 
-		memset(registeredThreadsData, 0, sizeof(registeredThreadsData));
+		for (auto& info : registeredThreadsData) {
+			info.ResetThreadInfo();
+			info.ResetThreadControls();
+		}
 		for (unsigned int i = 0; i < WDT_COUNT; ++i) {
 			registeredThreads[i] = &registeredThreadsData[WDT_COUNT];
 			threadNumTable[hashString(threadNames[i])] = i;
 		}
-		memset(threadSlots, 0, sizeof(threadSlots));
+		for (auto& slot : threadSlots)
+			slot.Reset();
 
 		// disable if gdb is running
 		if (Platform::IsRunningInDebugger()) {
@@ -416,10 +426,14 @@ namespace Watchdog
 		hangDetectorThread.join();
 		LOG_L(L_INFO, "[WatchDog::%s][3]", __func__);
 
-		memset(registeredThreadsData, 0, sizeof(registeredThreadsData));
+		for (auto& info : registeredThreadsData) {
+			info.ResetThreadInfo();
+			info.ResetThreadControls();
+		}
 		for (unsigned int i = 0; i < WDT_COUNT; ++i)
 			registeredThreads[i] = &registeredThreadsData[WDT_COUNT];
-		memset(threadSlots, 0, sizeof(threadSlots));
+		for (auto& slot : threadSlots)
+			slot.Reset();
 		threadNumTable.clear();
 	}
 }

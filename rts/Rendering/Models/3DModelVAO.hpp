@@ -65,15 +65,18 @@ public:
 
 	void DrawElements(GLenum prim, uint32_t vboIndxStart, uint32_t vboIndxCount) const;
 
-	bool AddToSubmission(const S3DModel* model, uint8_t teamID, uint8_t drawFlags);
+	bool AddToSubmission(const S3DModel* model, uint16_t paletteIndex);
 
 	bool AddToSubmission(const CUnit* unit);
 	bool AddToSubmission(const CFeature* feature);
 
-	bool AddToSubmission(const UnitDef* unitDef, uint8_t teamID);
+	bool AddToSubmission(const UnitDef* unitDef, uint16_t paletteIndex);
+
+	bool AddStaticInstance(const S3DModel* model, uint32_t worldTransformOffset, uint16_t paletteIndex);
+
 	void Submit(GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 
-	bool SubmitImmediately(const S3DModel* model, uint8_t teamID, uint8_t drawFlags, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
+	bool SubmitImmediately(const S3DModel* model, uint16_t paletteIndex, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 	bool SubmitImmediately(const CUnit* unit, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 	bool SubmitImmediately(const CFeature* feature, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 	bool SubmitImmediately(const UnitDef* unitDef, int teamID, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
@@ -91,8 +94,7 @@ private:
 		const TObj* obj,
 		uint32_t indexStart,
 		uint32_t indexCount,
-		uint8_t teamID,
-		uint8_t drawFlags,
+		uint16_t paletteIndex,
 		GLenum mode = GL_TRIANGLES,
 		bool bindUnbind = false
 	);
@@ -101,8 +103,18 @@ private:
 		const TObj* obj,
 		uint32_t indexStart,
 		uint32_t indexCount,
-		uint8_t teamID,
-		uint8_t drawFlags
+		uint16_t paletteIndex
+	);
+	// build one SInstanceData from already-resolved offsets and queue it for the next Submit();
+	// returns false (drawing nothing) if the world transform or bind pose is unavailable.
+	bool EmplaceInstance(
+		uint32_t indexStart,
+		uint32_t indexCount,
+		uint32_t traIndex,
+		uint16_t paletteIndex,
+		uint16_t numPieces,
+		uint32_t uniIndex,
+		uint32_t bposeIndex
 	);
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;

@@ -10,7 +10,7 @@ layout (location = 5) in uvec3 bonesInfo; //boneIDsLow, boneWeights, boneIDsHigh
 layout (location = 6) in uvec4 instData;
 // u32 matOffset
 // u32 uniOffset
-// u32 {teamIdx, drawFlag, numPiecesH, numPiecesL}, note numPiecesH then numPiecesL
+// u32 {paletteIndex[0:10], reserved[11:15], numPieces[16:31]}
 // u32 bposeMatOffset
 
 layout(std140, binding = 0) uniform UniformMatrixBuffer {
@@ -80,7 +80,7 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 	uint mouseUnused;
 	vec4 mouseWorldPos; //x,y,z; w=0 -- offmap. Ignores water, doesn't ignore units/features under the mouse cursor
 
-	vec4 teamColor[255]; //all team colors
+	vec4 teamColor[2048]; // [0..254] team colors, [255] reserved, [256..2047] custom palette
 };
 
 struct Transform {

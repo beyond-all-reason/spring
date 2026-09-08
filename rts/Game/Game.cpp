@@ -53,6 +53,7 @@
 #include "Rendering/Textures/NamedTextures.h"
 #include "Lua/LuaGaia.h"
 #include "Lua/LuaHandle.h"
+#include "Lua/LuaDebugExtra.h"
 #include "Lua/LuaInputReceiver.h"
 #include "Lua/LuaMenu.h"
 #include "Lua/LuaRules.h"
@@ -1022,6 +1023,9 @@ void CGame::KillInterface()
 	spring::SafeDelete(tooltip); // CTooltipConsole*
 
 	LOG("[Game::%s][2]", __func__);
+	// drop emulated input state (game-scoped, like the bindings below); no-fire
+	// since the Lua handles are being destroyed
+	LuaDebugExtra::ClearEmulatedInput(false);
 	keyBindings.Kill();
 	selectionKeys.Kill(); // CSelectionKeyHandler*
 	spring::SafeDelete(inMapDrawerModel);
@@ -1032,6 +1036,12 @@ void CGame::KillSimulation()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	LOG("[Game::%s][1]", __func__);
+
+	// a failed load leaves half-initialized objects behind, freeing them crashes
+	if (spring::exitCode == spring::EXIT_CODE_NOLOAD && gu->globalQuit) {
+		LOG_L(L_WARNING, "[Game::%s] simulation never finished loading, leaking it", __func__);
+		return;
+	}
 
 	// Kill all teams that are still alive, in
 	// case the game did not do so through Lua.

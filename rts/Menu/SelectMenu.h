@@ -39,7 +39,7 @@ private:
 	void ShowConnectWindow(bool show);
 	void DirectConnect(const std::string& addr);
 
-	bool HandleEventSelf(const SDL_Event& ev);
+	bool HandleEventSelf(const SDL_Event& ev) override;
 
 	void SelectScript(const std::string& s);
 	void SelectMap(const std::string& s);

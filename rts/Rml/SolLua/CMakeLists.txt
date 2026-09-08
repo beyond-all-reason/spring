@@ -10,6 +10,7 @@
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/ElementForm.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Event.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Global.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/bind/StyleSheet.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/bind/Vector.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaDataModel.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/plugin/SolLuaDocument.cpp"

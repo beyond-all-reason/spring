@@ -924,7 +924,7 @@ void CFontTexture::PinFont(std::shared_ptr<FontFace>& face, const std::string& f
 		cached->second.timestamp = time;
 	} else {
 		if (pinnedRecentFonts.size() >= maxPinnedFonts) {
-			SizedFontKey* oldest;
+			SizedFontKey* oldest = nullptr;
 			float oldestTime = time;
 			for(auto &[key, timestampedFont]: pinnedRecentFonts) {
 				if (timestampedFont.timestamp <= oldestTime) {
@@ -932,7 +932,9 @@ void CFontTexture::PinFont(std::shared_ptr<FontFace>& face, const std::string& f
 					oldestTime = timestampedFont.timestamp;
 				}
 			}
-			pinnedRecentFonts.erase(*oldest);
+			if (oldest != nullptr) {
+				pinnedRecentFonts.erase(*oldest);
+			}
 		}
 		pinnedRecentFonts[fontKey] = { face, time };
 	}
@@ -1270,7 +1272,7 @@ void CFontTexture::LoadGlyph(std::shared_ptr<FontFace>& f, char32_t ch, unsigned
 	const int channels = slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA ? 4 : 1;
 
 	if (slot->bitmap.pixel_mode != FT_PIXEL_MODE_GRAY && slot->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA) {
-		LOG_L(L_ERROR, "invalid pixeldata mode %d %d", slot->bitmap.pixel_mode, FT_HAS_COLOR(f->face));
+		LOG_L(L_ERROR, "invalid pixeldata mode %d %d", static_cast<int>(slot->bitmap.pixel_mode), static_cast<int>(FT_HAS_COLOR(f->face)));
 		return;
 	}
 

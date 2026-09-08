@@ -5,7 +5,17 @@
 
 #define ENTT_USE_ATOMIC
 
+#if defined(__GNUC__)
+// entt 3.10.3 uses std::aligned_storage_t, deprecated in C++23; bump entt to drop this
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include "lib/entt/src/entt/entt.hpp"
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 // class EcsMain {
 // public:

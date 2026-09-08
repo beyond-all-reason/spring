@@ -16,14 +16,14 @@ add_definitions(-DBUILDING_AI)
 set (AI_EXCLUDE_REGEX "XXXXXXXX" CACHE STRING "Which Skirmish AIs not to build (none by default, example: \"NTai|Null.*AI\", see also: AI_TYPES")
 option(AI_FIND_QUIETLY  "Whether to find AI Interfaces and Skirmish AIs quietly" FALSE)
 
-set(rts             "${CMAKE_SOURCE_DIR}/rts")
+set(rts "${CMAKE_SOURCE_DIR}/rts")
 
 include_directories(
 	${rts}
 	${CMAKE_BINARY_DIR}/src-generated/engine
 	${rts}/ExternalAI/Interface
 	Wrappers
-	)
+)
 
 # Set these for Interfaces and AIs with C sources
 set(CMAKE_C_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG}")
@@ -31,7 +31,6 @@ set(CMAKE_C_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 set(CMAKE_C_FLAGS_PROFILE        "${CMAKE_CXX_FLAGS_PROFILE}")
 
-remove_definitions(-DSTREFLOP_SSE)
 add_definitions(${PIC_FLAG} -D_REENTRANT -D_GNU_SOURCE=1)
 
 if    (MINGW)
@@ -77,5 +76,5 @@ set(DEPS_AI_ALL
 		${DEPS_AI_INTERFACES}
 		${DEPS_AI_WRAPPERS}
 		${DEPS_AI_SKIRMISH}
-	)
+)
 make_global(DEPS_AI_ALL)

@@ -91,7 +91,6 @@ CR_REG_METADATA(CGroundDecalHandlerData, (
 	CR_MEMBER_UN(smfDrawer),
 
 	CR_MEMBER_UN(highQuality),
-	CR_MEMBER_UN(ghostDimming),
 	CR_MEMBER_UN(sdbc),
 
 	CR_POSTLOAD(PostLoad)
@@ -105,7 +104,6 @@ CGroundDecalHandlerData::CGroundDecalHandlerData()
 	, decalsUpdateList{ }
 	, smfDrawer{ nullptr }
 	, highQuality{ configHandler->GetBool("HighQualityDecals") && (globalRendering->msaaLevel > 0) }
-	, ghostDimming{ configHandler->GetFloat("UnitGhostIconsDimming") }
 	, sdbc{ highQuality }
 {
 }
@@ -165,7 +163,7 @@ namespace Impl {
 		RECOIL_DETAILED_TRACY_ZONE;
 		std::string fileName = StringToLower(name);
 
-		if (FileSystem::GetExtension(fileName).empty())
+		if (FileSystem::GetExtensionLowerCase(fileName).empty())
 			fileName += ".bmp";
 
 		std::string fullName = fileName;
@@ -184,7 +182,7 @@ namespace Impl {
 		if (!bm.Load(fullName))
 			return std::make_tuple(LoadResult::BITMAP_ERROR, CBitmap(), fullName);
 
-		if (convertDecalBitmap && FileSystem::GetExtension(fullName) == "bmp") {
+		if (convertDecalBitmap && FileSystem::GetExtensionLowerCase(fullName) == "bmp") {
 			// bitmaps don't have an alpha channel
 			// so use: red := brightness & green := alpha
 			auto* rmem = bm.GetRawMem();
@@ -632,7 +630,7 @@ void CGroundDecalHandler::AddExplosion(AddExplosionInfo&& ei)
 
 		validScarIndices.emplace_back(scarIdx);
 	}
-	
+
 	int scarIdx;
 	if (validScarIndices.empty())
 		scarIdx = 1 + guRNG.NextInt(maxUniqueScars); //not inclusive
@@ -739,10 +737,10 @@ void CGroundDecalHandler::ReloadTextures()
 	decalsUpdateList.SetNeedUpdateAll();
 }
 
-void CGroundDecalHandler::DumpAtlasTextures()
+void CGroundDecalHandler::DumpAtlasTextures(const std::string& fileExt)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	atlasTex->DumpTexture();
+	atlasTex->DumpTexture(fileExt);
 }
 
 void CGroundDecalHandler::Draw()
@@ -1562,18 +1560,22 @@ void CGroundDecalHandler::UpdateDecalsVisibility()
 			if (const CUnit* unit = dynamic_cast<const CUnit*>(so); unit != nullptr) {
 				const bool decalOwnerInCurLOS = ((unit->losStatus[gu->myAllyTeam] &   LOS_INLOS) != 0);
 				const bool decalOwnerInPrvLOS = ((unit->losStatus[gu->myAllyTeam] & LOS_PREVLOS) != 0);
-
-#if 0
-				if (unit->GetIsIcon())
-					wantedMult = 0.0f;
-#endif
 				const bool isGhostNow = gameSetup->ghostedBuildings && decalOwnerInPrvLOS && !decalOwnerInCurLOS;
+				const bool iconOnly = (unit->GetDrawFlag() == DrawFlags::SO_DRICON_FLAG);
 
-				if (!gu->spectatingFullView)
-					if (isGhostNow)
-						wantedMult = ghostDimming;
-					else if (!decalOwnerInCurLOS)
-						wantedMult = 0.0f;
+				if (!gu->spectatingFullView && isGhostNow) {
+					// don't show ground decals for ghosts, this not for long used to be ghostDimming
+					// borrowed from icons implementation, see https://github.com/beyond-all-reason/RecoilEngine/issues/2875
+					wantedMult = 0.0f;
+				}
+				else if (iconOnly) {
+					// icon -> hide decal (covers both spectating modes)
+					wantedMult = 0.0f;
+				}
+				else if (!gu->spectatingFullView && !decalOwnerInCurLOS) {
+					// out of LOS, !ghost, !spectatingFullView -> hide
+					wantedMult = 0.0f;
+				}
 
 				wantedMult *= std::clamp(unit->buildProgress, 0.0f, 1.0f);
 			}
@@ -1730,8 +1732,6 @@ void CGroundDecalHandler::ConfigNotify(const std::string& key, const std::string
 		highQuality = newHQ;
 		ReloadDecalShaders();
 	}
-
-	ghostDimming = configHandler->GetFloat("UnitGhostIconsDimming");
 }
 
 void CGroundDecalHandler::RenderUnitCreated(const CUnit* unit, int cloaked) { AddSolidObject(unit); }

@@ -612,6 +612,12 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 		// <build> is never parsed (except in PostLoad) so just copy it
 		build = bi;
 		inCommand = c.GetID();
+
+		// One-time early check: if repeating the order (or first run), skip immediately if now blocked
+		if (IsBuildPosBlocked(build)) {
+			StopMoveAndFinishCommand();
+			return;
+		}
 	}
 
 	// guard against dangling non-build commands
@@ -885,13 +891,13 @@ void CBuilderCAI::ExecuteGuard(Command& c)
 				StopSlowGuard();
 			}
 			return;
-		} else if (b->curReclaim && owner->unitDef->canReclaim) {
+		} else if (b->curReclaim && !b->curReclaim->detached && owner->unitDef->canReclaim) {
 			StopSlowGuard();
 			if (!ReclaimObject(b->curReclaim)) {
 				StopMove();
 			}
 			return;
-		} else if (b->curResurrect && owner->unitDef->canResurrect) {
+		} else if (b->curResurrect && !b->curResurrect->detached && owner->unitDef->canResurrect) {
 			StopSlowGuard();
 			if (!ResurrectObject(b->curResurrect)) {
 				StopMove();

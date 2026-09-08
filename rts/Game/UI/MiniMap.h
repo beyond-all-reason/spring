@@ -25,14 +25,14 @@ public:
 	CMiniMap();
 	~CMiniMap() override;
 
-	bool MousePress(int x, int y, int button);
-	void MouseMove(int x, int y, int dx, int dy, int button);
-	void MouseRelease(int x, int y, int button);
+	bool MousePress(int x, int y, int button) override;
+	void MouseMove(int x, int y, int dx, int dy, int button) override;
+	void MouseRelease(int x, int y, int button) override;
 	void MouseWheel(bool up, float delta);
 	void MoveView(int x, int y) { MoveView(GetMapPosition(x, y)); }
-	bool IsAbove(int x, int y);
+	bool IsAbove(int x, int y) override;
 	bool IsInside(int x, int y);
-	std::string GetTooltip(int x, int y);
+	std::string GetTooltip(int x, int y) override;
 	void Draw() override;
 	void DrawForReal(bool useNormalizedCoors = true, bool updateTex = false, bool luaCall = false);
 	void Update();

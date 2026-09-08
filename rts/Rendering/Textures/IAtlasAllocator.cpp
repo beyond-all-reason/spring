@@ -76,7 +76,7 @@ const spring::unordered_map<std::string, IAtlasAllocator::SAtlasEntry>& IAtlasAl
 }
 
 // pixel center based UV
-AtlasedTexture IAtlasAllocator::GetTexCoordsCntr(const spring::unordered_map<std::string, SAtlasEntry>::const_iterator& it)
+AtlasedTexture IAtlasAllocator::GetTexCoordsCntr(const spring::unordered_map<std::string, SAtlasEntry>::const_iterator& it) const
 {
 	if (it == entries.end())
 		return AtlasedTexture::DefaultAtlasTexture;
@@ -117,12 +117,12 @@ AtlasedTexture IAtlasAllocator::GetTexCoordsEdge(const spring::unordered_map<std
 	return uv;
 }
 
-AtlasedTexture IAtlasAllocator::GetTexCoordsCntr(const std::string& name)
+AtlasedTexture IAtlasAllocator::GetTexCoordsCntr(const std::string& name) const
 {
 	return GetTexCoordsCntr(FindEntry(name));
 }
 
-AtlasedTexture IAtlasAllocator::GetTexCoordsEdge(const std::string& name)
+AtlasedTexture IAtlasAllocator::GetTexCoordsEdge(const std::string& name) const
 {
 	return GetTexCoordsEdge(FindEntry(name));
 }

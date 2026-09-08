@@ -39,7 +39,7 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 	uint mouseUnused;
 	vec4 mouseWorldPos; //x,y,z; w=0 -- offmap. Ignores water, doesn't ignore units/features under the mouse cursor
 
-	vec4 teamColor[255]; //all team colors
+	vec4 teamColor[2048]; // [0..254] team colors, [255] reserved, [256..2047] custom palette
 };
 
 in Data {

@@ -10,7 +10,7 @@ Before we get to Widgets and Gadgets we will start with an overview of some key 
 - Synced mode is the environment that affects game simulation e.g ordering units around. Synced commands are distributed and run by all players in the game to ensure the simulation remains synced. 
 - Unsynced mode is the players own environment, functionality here could for example enhance controls, display helpful information.
 
-When in Unsynced mode LuaIntro, LuaUi, LuaRules and LuaGaia provide read access to synced but only LuaRules and LuaGaia have full access to simulation information (all players units etc.). In LuaIntro and LuaUi read access to synced is scoped to just what that player can see i.e. observing LoS & radar ranges. 
+When in Unsynced mode LuaIntro, LuaUI, LuaRules and LuaGaia provide read access to synced but only LuaRules and LuaGaia have full access to simulation information (all players units etc.). In LuaIntro and LuaUI read access to synced is scoped to just what that player can see i.e. observing LoS & radar ranges. 
 
 ### Key Areas
 - LuaRules - Generally home to lower level customisations that affect unit behavior or overall game operation
@@ -29,7 +29,7 @@ Widgets and Gadgets are concepts that have been adopted by several games using R
 
 Gadgets typically being lower level game logic, unit behaviour functionality that defines your game and should be present for all players, they are typically only found in LuaRules and LuaGaia and are often included using VFS.ZIP_ONLY so as not to be easily overridden by end users (your packaged version takes priority). 
 
-Widgets usually involve improving UX or showing helpful UI interfaces, and are often considered things that users can turn on/off in the game to suit their needs, be it through settings or a widget manager UI. They are usually specific to LuaIntro, LuaMenu and LuaUi.
+Widgets usually involve improving UX or showing helpful UI interfaces, and are often considered things that users can turn on/off in the game to suit their needs, be it through settings or a widget manager UI. They are usually specific to LuaIntro, LuaMenu and LuaUI.
 
 To manage the invocation of Widgets & Gadgets a "**handler**" is setup in the Lua entrypoint. For environments with synced and unsyned entry points these typically use the same handler which calls the same widgets/gadgets but use a function the he handler like IsSyncedCode to check if they are being run in synced mode or unsynced mode and running the appropriate section of code.
 
@@ -85,7 +85,7 @@ end
 ```
 
 ## Handlers
-Handlers are the code that runs in the entry point to load in addons/widgets/gadgets and distribute callins to them, and example implementation of a handler is included in the [Recoil base content](https://github.com/beyond-all-reason/RecoilEngine/blob/master/cont/base/springcontent/LuaHandler/handler.lua) for LuaIntro, LuaRules and LuaUi, and will likely do well for a simple game, although many games eventually choose to make their own handlers. This means for LuaIntro and LuaUi you can start creating widgets without worrying about handlers in the luaintro/widgets or luaui/widgets folders, and for creating gadgets for LuaRules in luarules/gadgets folder.
+Handlers are the code that runs in the entry point to load in addons/widgets/gadgets and distribute callins to them, and example implementation of a handler is included in the [Recoil base content](https://github.com/beyond-all-reason/RecoilEngine/blob/master/cont/base/springcontent/LuaHandler/handler.lua) for LuaIntro, LuaRules and LuaUI, and will likely do well for a simple game, although many games eventually choose to make their own handlers. This means for LuaIntro and LuaUI you can start creating widgets without worrying about handlers in the luaintro/widgets or luaui/widgets folders, and for creating gadgets for LuaRules in luarules/gadgets folder.
 
 Below is a very simplified pseudocode example of a handler is below to illustrate adding a gadget and forwarding callins to gadgets.
 ```lua

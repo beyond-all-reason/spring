@@ -127,7 +127,7 @@ public:
 	const float3& GetGroundNormal(const float3&) const;
 	float GetGroundHeight(const float3&) const;
 
-	void SyncWaypoints() {
+	void SyncWaypoints() override {
 		// Synced vars trigger a checksum update on change, which is expensive so we should check
 		// that there has been a change before triggering an update to the checksum.
 		if (!currWayPoint.bitExactEquals(earlyCurrWayPoint))
@@ -135,7 +135,7 @@ public:
 		if (!nextWayPoint.bitExactEquals(earlyNextWayPoint))
 			nextWayPoint = earlyNextWayPoint;
 	}
-	unsigned int GetPathId() { return pathID; }
+	unsigned int GetPathId() override { return pathID; }
 
 	float GetTurnRadius() {
 		const float absTurnSpeed = std::max(0.0001f, math::fabs(turnRate));

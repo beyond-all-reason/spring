@@ -242,7 +242,7 @@ void CPathTexture::Update()
 				CFeature* f = nullptr;
 
 				if (CGameHelper::TestUnitBuildSquare(
-						bi, f, gu->myAllyTeam, false, nullptr, nullptr, nullptr, nullptr, currentThread
+						bi, f, gu->myAllyTeam, false, nullptr, nullptr, currentThread
 					)) {
 					if (f != nullptr) {
 						status = OBJECTBLOCKED;

@@ -107,3 +107,9 @@ using uint2 = type2<uint32_t>;
 using float2 = type2<float>;
 using short2 = type2<int16_t>;
 using ushort2 = type2<uint16_t>;
+
+// creg_class specializations are defined in type2.cpp via CR_BIND_TEMPLATE
+CR_BIND_TEMPLATE_DECLARE(int2)
+CR_BIND_TEMPLATE_DECLARE(float2)
+CR_BIND_TEMPLATE_DECLARE(short2)
+CR_BIND_TEMPLATE_DECLARE(ushort2)

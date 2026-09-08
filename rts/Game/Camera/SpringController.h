@@ -43,7 +43,9 @@ private:
 	inline float ZoomIn(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 	inline float ZoomOut(const float3& curCamPos, const float3& dir, const float& curDistPre, const float& scaledMode);
 
-	void SmoothCamHeight(const float3& prevPos);
+	void FreezeCamHeight();
+	float GetFocusSurfaceHeight(float x, float z, float dist) const;
+	float DistanceToFocusSurface(const float3& from) const;
 
 private:
 	float3 rot;
@@ -54,6 +56,9 @@ private:
 	float oldDist;
 	float fastScaleMove;
 	float fastScaleMousewheel;
+
+	float meshBlendMinDist;
+	float meshBlendMaxDist;
 
 	bool zoomBack;
 	bool cursorZoomIn;

@@ -6,7 +6,7 @@
 #include "System/float3.h"
 
 class CSolidObject;
-class MoveDef;
+struct MoveDef;
 
 namespace HAPFS {
 	struct PathSearch {

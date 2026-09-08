@@ -64,7 +64,7 @@ bool LuaMathExtra::PushEntries(lua_State* L)
  * @function math.hypot
  * @param x number
  * @param y number
- * @return number `sqrt(x*x+y*y)`
+ * @return number hypotenuse `sqrt(x*x+y*y)`
  */
 int LuaMathExtra::hypot(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -146,7 +146,7 @@ int LuaMathExtra::sgn(lua_State* L) {
  * @param x number
  * @param y number
  * @param a number
- * @return number (x+(y-x)*a)
+ * @return number mixed (x+(y-x)*a)
  */
 int LuaMathExtra::mix(lua_State* L) {
 	RECOIL_DETAILED_TRACY_ZONE;

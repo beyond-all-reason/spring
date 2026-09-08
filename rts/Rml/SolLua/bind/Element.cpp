@@ -36,6 +36,8 @@
 
 #include <unordered_map>
 
+// Forward declaration for deferred element deletion
+extern void AddPendingDelete(Rml::ElementPtr element);
 
 namespace Rml::SolLua
 {
@@ -46,6 +48,24 @@ namespace Rml::SolLua
 		{
 			auto e = new SolLuaEventListener{ func, &self };
 			self.AddEventListener(event, e, in_capture_phase);
+		}
+
+		void setInnerRMLSafe(Rml::Element& self, const Rml::String& rml)
+		{
+			// Manually remove all DOM children and defer their deletion
+			// This prevents use-after-free when Lua holds references to children
+			while (self.GetNumChildren())
+			{
+				Rml::Element* child = self.GetChild(0);
+				// RemoveChild returns an ElementPtr which owns the child
+				Rml::ElementPtr removed = self.RemoveChild(child);
+				// Store it for deferred deletion
+				AddPendingDelete(std::move(removed));
+			}
+
+			// Now set the new content
+			if (!rml.empty())
+				self.SetInnerRML(rml);
 		}
 
 		void addEventListener(Rml::Element& self, const Rml::String& event, const Rml::String& code, sol::this_state s)
@@ -111,6 +131,11 @@ namespace Rml::SolLua
 			self.QuerySelectorAll(result, selector);
 			return result;
 		}
+
+		static auto getVisible(Rml::Element& self)
+		{
+			return self.IsVisible();
+		}
 	}
 
 	namespace child
@@ -153,7 +178,7 @@ namespace Rml::SolLua
 
 			void Set(const sol::this_state L, const std::string& name, const sol::object& value)
 			{
-				if (value.get_type() == sol::type::nil) {
+				if (value.get_type() == sol::type::lua_nil) {
 					m_element->RemoveProperty(name);
 					return;
 				}
@@ -282,7 +307,10 @@ namespace Rml::SolLua
 			 * Gives input focus to this element.
 			 * @function RmlUi.Element:Focus
 			 */
-			"Focus", &Rml::Element::Focus,
+			"Focus", sol::overload(
+				&Rml::Element::Focus,
+				[](Rml::Element& self) { self.Focus(true); }
+			),
 			/***
 			 * Returns the value of the attribute named name. If no such attribute exists, the empty string will be returned.
 			 * @function RmlUi.Element:GetAttribute
@@ -318,6 +346,13 @@ namespace Rml::SolLua
 			 * @return RmlUi.ElementPtr[]
 			 */
 			"QuerySelectorAll", &functions::getQuerySelectorAll,
+			/***
+			 * Checks if the current element matches the given RCSS selector(s).
+			 * @function RmlUi.Element:Matches
+			 * @param selectors string
+			 * @return boolean
+			 */
+			"Matches", &Rml::Element::Matches,
 			/***
 			 * Returns True if the element has a value for the attribute named name, False if not.
 			 * @function RmlUi.Element:HasAttribute
@@ -438,7 +473,7 @@ namespace Rml::SolLua
 			/***
 			 * Is a screen-space point within this element?
 			 * @function RmlUi.Element:IsPointWithinElement
-			 * @param point RmlUi.Vector2i
+			 * @param point RmlUi.Vector2f
 			 * @return boolean
 			 */
 			"IsPointWithinElement", &Rml::Element::IsPointWithinElement,
@@ -447,6 +482,15 @@ namespace Rml::SolLua
 			 * @param event RmlUi.Event
 			 */
 			"ProcessDefaultAction", &Rml::Element::ProcessDefaultAction,
+			/***
+			 * @function RmlUi.Element:IsVisible
+			 * True if the element is visible, false otherwise.
+			 * @return boolean
+			 */
+			"IsVisible", sol::overload(
+				&functions::getVisible,
+				&Rml::Element::IsVisible
+			),
 			/***
 			 * Get the value of this element.
 			 * @function RmlUi.Element:GetValue
@@ -473,7 +517,7 @@ namespace Rml::SolLua
 			/*** @field RmlUi.Element.id string ID of this element, in the context of `<span id="foo">`. */
 			"id", sol::property(&Rml::Element::GetId, &Rml::Element::SetId),
 			/*** @field RmlUi.Element.inner_rml string Gets or sets the inner RML (markup) content of the element. */
-			"inner_rml", sol::property(sol::resolve<Rml::String() const>(&Rml::Element::GetInnerRML), &Rml::Element::SetInnerRML),
+			"inner_rml", sol::property(sol::resolve<Rml::String() const>(&Rml::Element::GetInnerRML), &functions::setInnerRMLSafe),
 			/*** @field RmlUi.Element.scroll_left integer Gets or sets the number of pixels that the content of the element is scrolled from the left. */
 			"scroll_left", sol::property(&Rml::Element::GetScrollLeft, &Rml::Element::SetScrollLeft),
 			/*** @field RmlUi.Element.scroll_top integer Gets or sets the number of pixels that the content of the element is scrolled from the top. */
@@ -534,7 +578,7 @@ namespace Rml::SolLua
 			/*** @field RmlUi.Element.line_height integer Read-only. The computed line height of the element. */
 			"line_height", sol::readonly_property(&Rml::Element::GetLineHeight),
 			/*** @field RmlUi.Element.visible boolean Read-only. True if the element is visible, false otherwise. */
-			"visible", sol::readonly_property(&Rml::Element::IsVisible),
+			"visible", sol::readonly_property(&functions::getVisible),
 			/*** @field RmlUi.Element.z_index integer Read-only. The computed z-index of the element. */
 			"z_index", sol::readonly_property(&Rml::Element::GetZIndex)
 		);

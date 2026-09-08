@@ -107,7 +107,7 @@ void CUnitDefHandler::CleanBuildOptions()
 			const UnitDef* bd = GetUnitDefByName(buildOpt.second);
 
 			if (bd == nullptr /*|| bd->maxThisUnit <= 0*/) {
-				LOG_L(L_WARNING, "removed the \"%s\" entry from the \"%s\" build menu", buildOpt.second.c_str(), ud.name.c_str());
+				LOG_L(L_WARNING, "unit def \"%s\" does not exist (check earlier logs), removing it as entry from the \"%s\" build menu", buildOpt.second.c_str(), ud.name.c_str());
 				eraseOpts.push_back(buildOpt.first);
 			}
 		}

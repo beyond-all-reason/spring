@@ -18,7 +18,7 @@ class CUnit;
 class LuaTable;
 
 namespace MoveTypes {
-	class CheckCollisionQuery;
+	struct CheckCollisionQuery;
 }
 
 namespace MoveDefs {

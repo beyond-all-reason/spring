@@ -12,8 +12,6 @@
 #include "Archives/SevenZipArchive.h"
 #include "Archives/VirtualArchive.h"
 
-#include "System/StringUtil.h"
-
 #include "FileSystem.h"
 #include "DataDirsAccess.h"
 #include "System/Log/ILog.h"
@@ -49,7 +47,7 @@ const CArchiveLoader& CArchiveLoader::GetInstance()
 
 bool CArchiveLoader::IsArchiveFile(const std::string& fileName) const
 {
-	const std::string fileExt = StringToLower(FileSystem::GetExtension(fileName));
+	const std::string fileExt = FileSystem::GetExtensionLowerCase(fileName);
 
 	using P = decltype(archiveFactories)::value_type;
 
@@ -64,7 +62,7 @@ IArchive* CArchiveLoader::OpenArchive(const std::string& fileName, const std::st
 {
 	IArchive* ret = nullptr;
 
-	const std::string fileExt = type.empty() ? StringToLower(FileSystem::GetExtension(fileName)) : type;
+	const std::string fileExt = type.empty() ? FileSystem::GetExtensionLowerCase(fileName) : type;
 	const std::string filePath = dataDirsAccess.LocateFile(fileName);
 
 	using P = decltype(archiveFactories)::value_type;

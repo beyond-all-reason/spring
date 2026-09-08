@@ -605,7 +605,7 @@ std::string CArchiveScanner::SearchMapFile(const IArchive* ar, std::string& erro
 	// check for smf and if the uncompression of important files is too costy
 	for (uint32_t fid = 0; fid != ar->NumFiles(); ++fid) {
 		const auto& fn = ar->FileName(fid);
-		const std::string ext = FileSystem::GetExtension(StringToLower(fn));
+		const std::string ext = FileSystem::GetExtensionLowerCase(StringToLower(fn));
 
 		if (ext == "smf")
 			return fn;
@@ -832,7 +832,7 @@ bool CArchiveScanner::CheckCachedData(const std::string& fullName, uint32_t& mod
 {
 	// virtual archives do not exist on disk, and thus do not have a modification time
 	// they should still be scanned as normal archives so we only skip the cache-check
-	if (FileSystem::GetExtension(fullName) == "sva")
+	if (FileSystem::GetExtensionLowerCase(fullName) == "sva")
 		return false;
 
 	// if stat fails, assume the archive is not broken nor cached
@@ -1282,44 +1282,69 @@ void CArchiveScanner::WriteCacheData(const std::string& filename)
 			allPoolRootDirs.emplace(CPoolArchive::GetPoolRootDirectory(ai.path + ai.origName));
 		}
 
-		const uint32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
-		std::mt19937 generator(seed);
-		std::uniform_int_distribution<size_t> distribution(0, poolFilesInfo.size() - 1);
-		auto startOffset = distribution(generator);
+		// No pool archives means we have no roots to verify file existence
+		// against. Without this guard, ExistenceTest below returns false for
+		// every entry, the loop erases the entire cache, and the next
+		// iteration dereferences begin()==end() on the now-empty map.
+		if (!allPoolRootDirs.empty()) {
+			const uint32_t seed = std::chrono::system_clock::now().time_since_epoch().count();
+			std::mt19937 generator(seed);
+			std::uniform_int_distribution<size_t> distribution(0, poolFilesInfo.size() - 1);
+			auto startOffset = distribution(generator);
 
-		auto st = poolFilesInfo.begin();
-		std::advance(st, startOffset);
-		auto it = st;
+			auto st = poolFilesInfo.begin();
+			std::advance(st, startOffset);
+			auto it = st;
 
-		// we only want to check if the file still exists, we don't check for size / modDate
-		// this is checked in the checksum code anyway.
-		const auto ExistenceTest = [&allPoolRootDirs = std::as_const(allPoolRootDirs)](const auto& it) {
-			for (const auto& poolRootDir : allPoolRootDirs) {
-				const auto fileName = CPoolArchive::GetPoolFilePath(poolRootDir, it->first);
-				if (FileSystem::FileExists(fileName)) {
-					return true;
+			// we only want to check if the file still exists, we don't check for size / modDate
+			// this is checked in the checksum code anyway.
+			const auto ExistenceTest = [&allPoolRootDirs = std::as_const(allPoolRootDirs)](const auto& it) {
+				for (const auto& poolRootDir : allPoolRootDirs) {
+					const auto fileName = CPoolArchive::GetPoolFilePath(poolRootDir, it->first);
+					if (FileSystem::FileExists(fileName)) {
+						return true;
+					}
 				}
+				return false;
+			};
+
+			// can't spend too much time in this code, thus set the deadline and rely on
+			// random luck and sheer amount of invocations to eventually remove most if not all
+			// stale items from the pool cache
+			static constexpr int64_t MAX_POOL_VERIFICATION_TIME = 1 * 1000;
+			for (auto t0 = spring_now(), t1 = t0; (t1 - t0).toMilliSecsi() < MAX_POOL_VERIFICATION_TIME; t1 = spring_now()) {
+				// Map can drain to empty mid-loop (e.g. all entries genuinely
+				// missing). begin() then equals end(); ExistenceTest(end())
+				// would dereference past the allocated buckets array.
+				if (it == poolFilesInfo.end())
+					break;
+
+				// cleanup files that got deleted in the meantime
+				if (ExistenceTest(it)) {
+					++it;
+				} else {
+					// erase invalidates the erased iterator. If we're erasing
+					// the loop's anchor, re-anchor to the successor so the
+					// `it == st` termination check below still works; otherwise
+					// st dangles and we'd burn the full deadline re-checking
+					// survivors.
+					const bool erasingStart = (it == st);
+					it = poolFilesInfo.erase(it);
+					if (erasingStart)
+						st = it;
+				}
+
+				if (it == poolFilesInfo.end())
+					it = poolFilesInfo.begin(); //rewind to the very start
+
+				// st may have been re-anchored to end() above; wrap it too so
+				// the comparison is meaningful.
+				if (st == poolFilesInfo.end())
+					st = poolFilesInfo.begin();
+
+				if (it == st)
+					break; // everything got checked and we're back to the starting iterator
 			}
-			return false;
-		};
-
-		// can't spend too much time in this code, thus set the deadline and rely on
-		// random luck and sheer amount of invocations to eventually remove most if not all
-		// stale items from the pool cache
-		static constexpr int64_t MAX_POOL_VERIFICATION_TIME = 1 * 1000;
-		for (auto t0 = spring_now(), t1 = t0; (t1 - t0).toMilliSecsi() < MAX_POOL_VERIFICATION_TIME; t1 = spring_now()) {
-			// cleanup files that got deleted in the meantime
-
-			if (ExistenceTest(it))
-				++it;
-			else
-				it = poolFilesInfo.erase(it);
-
-			if (it == poolFilesInfo.end())
-				it = poolFilesInfo.begin(); //rewind to the very start
-
-			if (it == st)
-				break; // everything got checked and we're back to the starting iterator
 		}
 	}
 
@@ -1801,7 +1826,7 @@ CArchiveScanner::ArchiveData CArchiveScanner::GetArchiveDataByArchive(const std:
 int CArchiveScanner::GetMetaFileClass(const std::string& filePath)
 {
 	const std::string& lowerFilePath = StringToLower(filePath);
-	// const std::string& ext = FileSystem::GetExtension(lowerFilePath);
+	// const std::string& ext = FileSystem::GetExtensionLowerCase(lowerFilePath);
 	const auto it = metaFileClasses.find(lowerFilePath);
 
 	if (it != metaFileClasses.end())

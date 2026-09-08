@@ -142,7 +142,6 @@ make_global_var(engineSources
 		${sources_engine_ExternalAI}
 	)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp/include) #FIXME: hack for rts/Rendering/Models/IModelParser.cpp
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/simdjson/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/fastgltf/include)
 
 ### Add headers for generated project files (e.g. Code::Blocks)

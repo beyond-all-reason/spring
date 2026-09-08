@@ -114,8 +114,7 @@ void CSMFGroundTextures::LoadTiles(CSMFMapFile& file)
 
 	tileMap.clear();
 	tileMap.resize(smfMap->tileCount);
-	tiles.clear();
-	tiles.resize(tileHeader.numTiles * SMALL_TILE_SIZE);
+	tiles.assign(static_cast<size_t>(tileHeader.numTiles) * SMALL_TILE_SIZE, 0);
 	squares.clear();
 	squares.resize(smfMap->numBigTexX * smfMap->numBigTexY);
 

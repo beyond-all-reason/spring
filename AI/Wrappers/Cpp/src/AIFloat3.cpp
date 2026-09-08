@@ -16,10 +16,6 @@ springai::AIFloat3::AIFloat3(float* xyz)
 	: float3(xyz)
 {
 }
-springai::AIFloat3::AIFloat3(const springai::AIFloat3& other)
-	: float3(other)
-{
-}
 springai::AIFloat3::AIFloat3(const float3& f3)
 	: float3(f3)
 {

@@ -38,15 +38,6 @@ local options =
     step   = 1,  -- quantization is aligned to the def value
                     -- (step <= 0) means that there is no quantization
   },
-
-  {
-    key    = 'LimitDgun',
-    name   = 'Limit D-Gun range',
-    desc   = "The commander's D-Gun weapon will be usable only close to the player's starting location",
-    type   = 'bool',
-    def    = false,
-  },
-
   {
     key    = 'GhostedBuildings',
     name   = 'Ghosted buildings',

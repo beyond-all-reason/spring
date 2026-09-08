@@ -25,7 +25,15 @@
 #include "System/Threading/ThreadPool.h"
 #include "System/ContainerUtil.h"
 #include "System/LoadLock.h"
+// assimp public headers modify #pragma pack across includes (clang -Wpragma-pack)
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#endif
 #include "lib/assimp/include/assimp/Importer.hpp"
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #include "System/Misc/TracyDefs.h"
 
@@ -205,7 +213,7 @@ std::string CModelLoader::FindModelPath(std::string name) const
 
 	const std::string vfsPath = "objects3d/";
 
-	if (const std::string& fileExt = FileSystem::GetExtension(name); fileExt.empty()) {
+	if (const std::string& fileExt = FileSystem::GetExtensionLowerCase(name); fileExt.empty()) {
 		for (const auto& [formatExt, parser] : parsers) {
 			if (CFileHandler::FileExists(name + "." + formatExt, SPRING_VFS_ZIP)) {
 				name.append("." + formatExt);
@@ -328,7 +336,7 @@ S3DModel* CModelLoader::GetCachedModel(std::string fullName)
 	}
 
 	auto keyName = std::pair<std::string, uint32_t>("", uint32_t(-1));
-	if (const auto ext = FileSystem::GetExtension(fullName); !ext.empty()) {
+	if (const auto ext = FileSystem::GetExtensionLowerCase(fullName); !ext.empty()) {
 		keyName.first = fullName.substr(0, fullName.size() - ext.size() - 1);
 		const auto ci = spring::BinarySearch(cache.begin(), cache.end(), keyName, CompPred);
 		if (ci != cache.end()) {
@@ -408,7 +416,7 @@ void CModelLoader::ParseModel(S3DModel& model, const std::string& name, const st
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	try {
-		auto* parser = GetFormatParser(FileSystem::GetExtension(path));
+		auto* parser = GetFormatParser(FileSystem::GetExtensionLowerCase(path));
 		if (parser == nullptr) {
 			LoadDummyModel(model);
 			throw content_error(fmt::sprintf("could not find a parser for model \"%s\" (unknown format?)", name));

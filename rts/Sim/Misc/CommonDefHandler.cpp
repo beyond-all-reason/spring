@@ -59,7 +59,7 @@ int CommonDefHandler::LoadSoundFile(const std::string& fileName)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!fileName.empty()) {
-		const std::string soundExt = FileSystem::GetExtension(fileName);
+		const std::string soundExt = FileSystem::GetExtensionLowerCase(fileName);
 
 		// unlike constructing a CFileHandler this does not read the data
 		// into memory; faster for large files and many small individually

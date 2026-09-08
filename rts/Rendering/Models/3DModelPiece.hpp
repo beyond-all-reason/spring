@@ -15,6 +15,7 @@
 struct S3DModel;
 struct S3DModelPiece {
 	S3DModelPiece() = default;
+	virtual ~S3DModelPiece() = default;
 
 	virtual void Clear() {
 		name.clear();

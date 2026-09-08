@@ -277,7 +277,7 @@ bool CMouseCursor::LoadCursorImage(const std::string& name, ImageData& image)
 	}
 
 	// hardcoded bmp transparency mask
-	if (FileSystem::GetExtension(name) == "bmp")
+	if (FileSystem::GetExtensionLowerCase(name) == "bmp")
 		b.SetTransparent(SColor(84, 84, 252));
 
 	if (hwCursor->NeedsYFlip()) {

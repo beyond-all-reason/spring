@@ -101,7 +101,6 @@ list(APPEND FILES
 	LuaGadgets/Gadgets/share_levels.lua
 	LuaGadgets/Gadgets/cmd_nocost.lua
 	LuaGadgets/Gadgets/game_end.lua
-	LuaGadgets/Gadgets/share_delayed.lua
 	LuaGadgets/Gadgets/README.txt
 	LuaGadgets/Gadgets/share_no_builders.lua
 	LuaGadgets/Gadgets/object_statusbars_default.lua
@@ -109,7 +108,6 @@ list(APPEND FILES
 	LuaGadgets/Gadgets/share_control.lua
 	LuaGadgets/Gadgets/unit_script.lua
 	LuaGadgets/Gadgets/game_spawn.lua
-	LuaGadgets/Gadgets/unit_limit_dgun.lua
 	LuaGadgets/system.lua
 	LuaGadgets/actions.lua
 	LuaGadgets/README.txt

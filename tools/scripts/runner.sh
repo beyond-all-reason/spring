@@ -133,9 +133,6 @@ _write_startscript()
 	StartEnergy=1000;
 	MaxUnits=500;       // per team
 	StartPosType=1;     // 0 fixed, 1 random, 2 select in map
-	GameMode=0;         // 0 cmdr dead->game continues, 1 cmdr dead->game ends
-	LimitDgun=1;        // limit dgun to fixed radius around startpos?
-	DiminishingMMs=0;   // diminish metal maker's metal production for every new one of them?
 	DisableMapDamage=0; // disable map craters?
 	GhostedBuildings=1; // ghost enemy buildings after losing los on them
 

@@ -10,6 +10,8 @@
 
 #include "Rendering/GL/myGL.h"
 
+#include <cmath>
+#include <limits>
 #include <vector>
 #include <algorithm>
 #include <optional>
@@ -291,6 +293,7 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetViewRange);
 
 	REGISTER_LUA_CFUNC(DrawMiniMap);
+	REGISTER_LUA_CFUNC(DrawMiniMapIcons);
 	REGISTER_LUA_CFUNC(SlaveMiniMap);
 	REGISTER_LUA_CFUNC(ConfigMiniMap);
 
@@ -350,6 +353,8 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(DeleteTexture);
 	REGISTER_LUA_CFUNC(TextureInfo);
 	REGISTER_LUA_CFUNC(CopyToTexture);
+	if (GLAD_GL_ARB_copy_image)
+		REGISTER_LUA_CFUNC(CopyImageSubData);
 	if (FBO::IsSupported()) {
 		// FIXME: obsolete
 		REGISTER_LUA_CFUNC(DeleteTextureFBO);
@@ -1187,6 +1192,7 @@ int LuaOpenGL::GetNumber(lua_State* L)
  * Get a string describing the current OpenGL connection.
  * @function gl.GetString
  * @param pname GL
+ * @return string value `"[NULL]"` if the driver returns no string for `pname`.
  */
 int LuaOpenGL::GetString(lua_State* L)
 {
@@ -1220,8 +1226,8 @@ int LuaOpenGL::GetScreenViewTrans(lua_State* L)
 
 /***
  * @function gl.GetViewSizes
- * @return number x
- * @return number y
+ * @return integer x
+ * @return integer y
  */
 int LuaOpenGL::GetViewSizes(lua_State* L)
 {
@@ -1324,6 +1330,85 @@ int LuaOpenGL::DrawMiniMap(lua_State* L)
 }
 
 
+/***
+ * Draws all unit icons visible to the given perspective (as on the minimap: team
+ * colors, radar dots, LOS rules, ghost dimming) for a map-space rectangle, without
+ * involving the actual minimap.
+ *
+ * The rectangle is mapped onto the unit square under the current transform:
+ * (left,top) -> (0,0), (right,bottom) -> (1,1). Callers position, scale, rotate or
+ * flip the result via their own matrices, e.g. inside gl.RenderToTexture. Blending,
+ * scissor and viewport state are left to the caller.
+ *
+ * @function gl.DrawMiniMapIcons
+ * @param left number map-space rectangle edges in elmos; left < right and top < bottom (top = smaller z) are required, mirror via your own transform instead
+ * @param top number
+ * @param right number
+ * @param bottom number
+ * @param iconSize number base icon half-size in elmos, scaled per icon by its icontypes.lua size
+ * @param allyTeam integer? (Default: your allyTeam) perspective to render; other allyteams require a full-read handle
+ * @param fullView boolean? (Default: true when spectating in full view with a full-read handle) draw every unit at its true position; true requires a full-read handle, false is always allowed
+ * @param highlightSelected boolean? (Default: true) draw the local player's selected units white. Other players' selections are unknown to the engine — when rendering another perspective, pass false and overlay that viewer's selection yourself
+ */
+int LuaOpenGL::DrawMiniMapIcons(lua_State* L)
+{
+	CheckDrawingEnabled(L, __func__);
+
+	const float left     = luaL_checkfloat(L, 1);
+	const float top      = luaL_checkfloat(L, 2);
+	const float right    = luaL_checkfloat(L, 3);
+	const float bottom   = luaL_checkfloat(L, 4);
+	const float iconSize = luaL_checkfloat(L, 5);
+
+	// callers wanting a mirrored result can flip it via their own transform
+	if (!((right - left) > float3::cmp_eps()) || !((bottom - top) > float3::cmp_eps()))
+		luaL_error(L, "gl.DrawMiniMapIcons(): map rectangle must have left < right and top < bottom");
+
+	const int allyTeam = luaL_optint(L, 6, gu->myAllyTeam);
+	const bool fullView = luaL_optboolean(L, 7, gu->spectatingFullView && CLuaHandle::GetHandleFullRead(L));
+
+	if (!teamHandler.IsValidAllyTeam(allyTeam))
+		luaL_error(L, "gl.DrawMiniMapIcons(): invalid allyTeam %d", allyTeam);
+
+	// info-leak gate: other allyteams' perspectives and the fullview (godmode) view
+	// expose units this handle may not see; requesting less visibility is always fine
+	if ((allyTeam != gu->myAllyTeam || fullView) && !CLuaHandle::GetHandleFullRead(L))
+		luaL_error(L, "gl.DrawMiniMapIcons(): rendering another perspective requires a full-read handle");
+
+	MiniMapIconDrawParams params;
+	params.iconSizeX = iconSize;
+	params.iconSizeY = iconSize;
+	params.rotation = CMiniMap::ROTATION_0;
+	params.viewAllyTeam = allyTeam;
+	params.fullView = fullView;
+	params.useIcons = true;
+	// no simplecolors by design, a game can set teamcolors manually before this call if it wants to
+	params.useSimpleColors = false;
+	params.highlightSelected = luaL_optboolean(L, 8, true);
+
+	// cull to the rect, with margin so partially visible icons at the edges still draw.
+	// the bound covers the per-icon scale multiplier the drawer applies (icontypes.lua
+	// size, times radius/30 for radiusAdjust icons); icons scaled beyond it can pop at
+	// the rect edge, callers that care can pad their rectangle
+	constexpr float MAX_ICON_SCALE_MULT = 8.0f;
+	const float cullMargin = iconSize * MAX_ICON_SCALE_MULT;
+	params.cullMinX = left - cullMargin;
+	params.cullMaxX = right + cullMargin;
+	params.cullMinZ = top - cullMargin;
+	params.cullMaxZ = bottom + cullMargin;
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glScalef(1.0f / (right - left), 1.0f / (bottom - top), 1.0f);
+	glTranslatef(-left, -top, 0.0f);
+
+	unitDrawer->DrawUnitMiniMapIcons(params);
+
+	glPopMatrix();
+	return 0;
+}
+
+
 /******************************************************************************
  * Text
  * @section text
@@ -1369,7 +1454,7 @@ int LuaOpenGL::EndText(lua_State* L)
  * @param text string
  * @param x number
  * @param y number
- * @param size number
+ * @param size number?
  * @param options string? concatenated string of option characters.
  *
  *   - horizontal alignment:
@@ -1540,7 +1625,7 @@ static bool GLObjectDrawWithLuaMat(lua_State* L, CSolidObject* obj, LuaObjType o
  * Pushes or pops the model render state for the given object.
  * 
  * Parses params, starting at param 2:
- * @param teamID integer
+ * @param teamID TeamID
  * @param rawState boolean? (Default: `true`)
  * @param toScreen boolean? (Default: `false`)
  * @param opaque boolean? (Default: `true`) If `true`, draw opaque; if `false`, draw alpha.
@@ -1665,7 +1750,7 @@ int LuaOpenGL::UnitCommon(lua_State* L, bool applyTransform, bool callDrawUnit)
  * Draw the unit, applying transform.
  * 
  * @function gl.Unit
- * @param unitID integer
+ * @param unitID UnitID
  * @param doRawDraw boolean? (Default: `false`)
  * @param useLuaMat integer?
  * @param noLuaCall boolean? (Default: `false`) Skip the `DrawUnit` callin.
@@ -1680,7 +1765,7 @@ int LuaOpenGL::Unit(lua_State* L) { return (UnitCommon(L, true, true)); }
  * recursion is blocked.
  * 
  * @function gl.UnitRaw
- * @param unitID integer
+ * @param unitID UnitID
  * @param doRawDraw boolean? (Default: `false`)
  * @param useLuaMat integer?
  * @param noLuaCall boolean? (Default: `true`) Skip the `DrawUnit` callin.
@@ -1690,7 +1775,7 @@ int LuaOpenGL::UnitRaw(lua_State* L) { return (UnitCommon(L, false, false)); }
 
 /***
  * @function gl.UnitTextures
- * @param unitID integer
+ * @param unitID UnitID
  * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::UnitTextures(lua_State* L)
@@ -1702,8 +1787,8 @@ int LuaOpenGL::UnitTextures(lua_State* L)
 
 /***
  * @function gl.UnitShape
- * @param unitDefID integer
- * @param teamID integer
+ * @param unitDefID UnitDefID
+ * @param teamID TeamID
  * @param rawState boolean? (Default: `true`)
  * @param toScreen boolean? (Default: `false`)
  * @param opaque boolean? (Default: `true`) If `true`, draw opaque; if `false`, draw alpha.
@@ -1717,7 +1802,7 @@ int LuaOpenGL::UnitShape(lua_State* L)
 
 /***
  * @function gl.UnitShapeTextures
- * @param unitDefID integer
+ * @param unitDefID UnitDefID
  * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::UnitShapeTextures(lua_State* L)
@@ -1730,7 +1815,7 @@ int LuaOpenGL::UnitShapeTextures(lua_State* L)
 
 /***
  * @function gl.UnitMultMatrix
- * @param unitID integer
+ * @param unitID UnitID
  */
 int LuaOpenGL::UnitMultMatrix(lua_State* L)
 {
@@ -1748,7 +1833,7 @@ int LuaOpenGL::UnitMultMatrix(lua_State* L)
 
 /***
  * @function gl.UnitPiece
- * @param unitID integer
+ * @param unitID UnitID
  * @param pieceID integer
  */ 
 int LuaOpenGL::UnitPiece(lua_State* L)
@@ -1759,14 +1844,14 @@ int LuaOpenGL::UnitPiece(lua_State* L)
 
 /***
  * @function gl.UnitPieceMatrix
- * @param unitID integer
+ * @param unitID UnitID
  * @param pieceID integer
  */ 
 int LuaOpenGL::UnitPieceMatrix(lua_State* L) {return (UnitPieceMultMatrix(L)); }
 
 /***
  * @function gl.UnitPieceMultMatrix
- * @param unitID integer
+ * @param unitID UnitID
  * @param pieceID integer
  */ 
 int LuaOpenGL::UnitPieceMultMatrix(lua_State* L)
@@ -1833,7 +1918,7 @@ int LuaOpenGL::FeatureCommon(lua_State* L, bool applyTransform, bool callDrawFea
  * Draw the feature, applying transform.
  * 
  * @function gl.Feature
- * @param featureID integer
+ * @param featureID FeatureID
  * @param doRawDraw boolean? (Default: `false`)
  * @param useLuaMat integer?
  * @param noLuaCall boolean? (Default: `false`) Skip the `DrawFeature` callin.
@@ -1847,7 +1932,7 @@ int LuaOpenGL::Feature(lua_State* L) { return (FeatureCommon(L, true, true)); }
  * recursion is blocked.
  
  * @function gl.FeatureRaw
- * @param featureID integer
+ * @param featureID FeatureID
  * @param doRawDraw boolean? (Default: `false`)
  * @param useLuaMat integer?
  * @param noLuaCall boolean? (Default: `true`) Skip the `DrawFeature` callin.
@@ -1856,7 +1941,7 @@ int LuaOpenGL::FeatureRaw(lua_State* L) { return (FeatureCommon(L, false, false)
 
 /***
  * @function gl.FeatureTextures
- * @param featureID integer
+ * @param featureID FeatureID
  * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::FeatureTextures(lua_State* L)
@@ -1868,8 +1953,8 @@ int LuaOpenGL::FeatureTextures(lua_State* L)
 
 /***
  * @function gl.FeatureShape
- * @param featureDefID integer
- * @param teamID integer
+ * @param featureDefID FeatureDefID
+ * @param teamID TeamID
  * @param rawState boolean? (Default: `true`)
  * @param toScreen boolean? (Default: `false`)
  * @param opaque boolean? (Default: `true`) If `true`, draw opaque; if `false`, draw alpha.
@@ -1883,7 +1968,7 @@ int LuaOpenGL::FeatureShape(lua_State* L)
 
 /***
  * @function gl.FeatureShapeTextures
- * @param featureDefID integer
+ * @param featureDefID FeatureDefID
  * @param push boolean If `true`, push the render state; if `false`, pop it.
  */
 int LuaOpenGL::FeatureShapeTextures(lua_State* L)
@@ -1896,7 +1981,7 @@ int LuaOpenGL::FeatureShapeTextures(lua_State* L)
 
 /***
  * @function gl.FeatureMultMatrix
- * @param featureID integer
+ * @param featureID FeatureID
  */
 int LuaOpenGL::FeatureMultMatrix(lua_State* L)
 {
@@ -1914,7 +1999,7 @@ int LuaOpenGL::FeatureMultMatrix(lua_State* L)
 
 /***
  * @function gl.FeaturePiece
- * @param featureID integer
+ * @param featureID FeatureID
  * @param pieceID integer
  */
 int LuaOpenGL::FeaturePiece(lua_State* L)
@@ -1926,7 +2011,7 @@ int LuaOpenGL::FeaturePiece(lua_State* L)
 
 /***
  * @function gl.FeaturePieceMatrix
- * @param featureID integer
+ * @param featureID FeatureID
  * @param pieceID integer
  */
 int LuaOpenGL::FeaturePieceMatrix(lua_State* L) { return (FeaturePieceMultMatrix(L)); }
@@ -1934,7 +2019,7 @@ int LuaOpenGL::FeaturePieceMatrix(lua_State* L) { return (FeaturePieceMultMatrix
 
 /***
  * @function gl.FeaturePieceMultMatrix
- * @param featureID integer
+ * @param featureID FeatureID
  * @param pieceID integer
  */
 int LuaOpenGL::FeaturePieceMultMatrix(lua_State* L)
@@ -1951,7 +2036,7 @@ int LuaOpenGL::FeaturePieceMultMatrix(lua_State* L)
 
 /***
  * @function gl.DrawListAtUnit
- * @param unitID integer
+ * @param unitID UnitID
  * @param listIndex integer
  * @param useMidPos boolean? (Default: `true`)
  * @param scaleX number? (Default: `1.0`)
@@ -2008,7 +2093,7 @@ int LuaOpenGL::DrawListAtUnit(lua_State* L)
 
 /***
  * @function gl.DrawFuncAtUnit
- * @param unitID integer
+ * @param unitID UnitID
  * @param useMidPos boolean? (Default: `true`)
  * @param fun(...) func Function to call.
  * @param ... any Arguments passed to function.
@@ -2065,8 +2150,8 @@ int LuaOpenGL::DrawFuncAtUnit(lua_State* L)
  * @param radius number
  * @param resolution integer
  * @param slope number
- * @param gravity number
- * @param weaponDefID integer
+ * @param gravity number?
+ * @param weaponDefID WeaponDefID?
  */
 int LuaOpenGL::DrawGroundCircle(lua_State* L)
 {
@@ -2109,7 +2194,7 @@ int LuaOpenGL::DrawGroundCircle(lua_State* L)
 
 
 /***
- * @function gl.DrawGroundCircle
+ * @function gl.DrawGroundQuad
  * @param x0 number
  * @param z0 number
  * @param x1 number
@@ -2118,7 +2203,7 @@ int LuaOpenGL::DrawGroundCircle(lua_State* L)
  * @param useTxcd boolean? (Default: `false`)
  */
 /***
- * @function gl.DrawGroundCircle
+ * @function gl.DrawGroundQuad
  * @param x0 number
  * @param z0 number
  * @param x1 number
@@ -2825,7 +2910,7 @@ int LuaOpenGL::Rect(lua_State* L)
 
 
 /***
- * @function gl.Rect
+ * @function gl.TexRect
  * @param x1 number
  * @param y1 number
  * @param x2 number
@@ -2834,7 +2919,7 @@ int LuaOpenGL::Rect(lua_State* L)
  * @param flipTCoords boolean?
  */
 /***
- * @function gl.Rect
+ * @function gl.TexRect
  * @param x1 number
  * @param y1 number
  * @param x2 number
@@ -2901,10 +2986,10 @@ int LuaOpenGL::TexRect(lua_State* L)
 
 /***
  * @function gl.DispatchCompute
- * @param numGroupX integer
+ * @param numGroupX integer?
  * @param numGroupY integer
  * @param numGroupZ integer
- * @param barriers integer? (Default: `4`)
+ * @param barriers integer? (Default: `0`)
  */
 int LuaOpenGL::DispatchCompute(lua_State* L)
 {
@@ -2922,14 +3007,14 @@ int LuaOpenGL::DispatchCompute(lua_State* L)
 
 	static std::array<GLint, 3> maxNumGroups = maxCompWGFunc();
 
-	if (numGroupX < 0 && numGroupX > maxNumGroups[0] ||
-		numGroupY < 0 && numGroupY > maxNumGroups[1] ||
-		numGroupZ < 0 && numGroupZ > maxNumGroups[2])
-		luaL_error(L, "%s Incorrect number of work groups specified x: 0 > %d < %d; y: 0 > %d < %d; z: 0 > %d < %d", __func__, numGroupX, maxNumGroups[0], numGroupY, maxNumGroups[1], numGroupZ, maxNumGroups[2]);
+	if (numGroupX > maxNumGroups[0] ||
+		numGroupY > maxNumGroups[1] ||
+		numGroupZ > maxNumGroups[2])
+		luaL_error(L, "%s: work groups count exceeds GL_MAX_COMPUTE_WORK_GROUP_COUNT. (x=%u > %d, y=%u > %d, z=%u > %d)", __func__, numGroupX, maxNumGroups[0], numGroupY, maxNumGroups[1], numGroupZ, maxNumGroups[2]);
 
 	glDispatchCompute(numGroupX, numGroupY, numGroupZ);
 
-	GLbitfield barriers = (GLbitfield)luaL_optint(L, 1, 4);
+	GLbitfield barriers = (GLbitfield)luaL_optint(L, 4, 0);
 	//skip checking the correctness of values :)
 
 	if (barriers > 0u)
@@ -4316,14 +4401,14 @@ int LuaOpenGL::TextureInfo(lua_State* L)
 
 	lua_createtable(L, 0, 5);
 	const auto [xsize, ysize, zsize] = tex.GetSize();
-	HSTR_PUSH_NUMBER(L, "xsize", xsize)
-	HSTR_PUSH_NUMBER(L, "ysize", ysize)
-	HSTR_PUSH_NUMBER(L, "zsize", zsize)
+	LuaPushNamedNumber(L, "xsize", xsize);
+	LuaPushNamedNumber(L, "ysize", ysize);
+	LuaPushNamedNumber(L, "zsize", zsize);
 
-	HSTR_PUSH_NUMBER(L, "id"    , tex.GetTextureID());
-	HSTR_PUSH_NUMBER(L, "target", tex.GetTextureTarget());
-	// HSTR_PUSH_BOOL(L,   "alpha", texInfo.alpha);  FIXME
-	// HSTR_PUSH_NUMBER(L, "type",  texInfo.type);
+	LuaPushNamedNumber(L, "id"    , tex.GetTextureID());
+	LuaPushNamedNumber(L, "target", tex.GetTextureTarget());
+	// LuaPushNamedBool  (L, "alpha", texInfo.alpha); // FIXME
+	// LuaPushNamedNumber(L, "type", texInfo.type);
 	return 1;
 }
 
@@ -4370,6 +4455,131 @@ int LuaOpenGL::CopyToTexture(lua_State* L)
 	glCopyTexSubImage2D(target, level, xoff, yoff, x, y, w, h);
 
 	if (tex->target != GL_TEXTURE_2D) {glDisable(tex->target);}
+
+	return 0;
+}
+
+
+/***
+ * @function gl.CopyImageSubData
+ * @param srcName string
+ * @param srcLevel integer
+ * @param srcX integer
+ * @param srcY integer
+ * @param srcZ integer
+ * @param dstName string
+ * @param dstLevel integer
+ * @param dstX integer
+ * @param dstY integer
+ * @param dstZ integer
+ * @param width integer
+ * @param height integer
+ * @param depth integer
+ */
+int LuaOpenGL::CopyImageSubData(lua_State* L)
+{
+	CheckDrawingEnabled(L, __func__);
+
+	const auto CheckInteger = [L](int index) {
+		const lua_Number value = luaL_checknumber(L, index);
+
+		if (!std::isfinite(value) || value != std::trunc(value) || value < std::numeric_limits<GLint>::min() || value > std::numeric_limits<GLint>::max())
+			luaL_argerror(L, index, "integer out of range");
+
+		return static_cast<GLint>(value);
+	};
+
+	LuaMatTexture srcTex;
+
+	if (!LuaOpenGLUtils::ParseTextureImage(L, srcTex, luaL_checkstring(L, 1)))
+		luaL_error(L, "gl.CopyImageSubData() invalid source texture");
+
+	// ParseTextureImage accepts unresolved named textures.
+	if (srcTex.GetTextureID() == 0)
+		luaL_error(L, "gl.CopyImageSubData() source texture does not exist");
+
+	const std::string& dstName = luaL_checkstring(L, 6);
+
+	if (dstName[0] != LuaTextures::prefix) // '!'
+		luaL_error(L, "gl.CopyImageSubData() can only write to lua textures");
+
+	const LuaTextures& textures = CLuaHandle::GetActiveTextures(L);
+	const LuaTextures::Texture* dstTex = textures.GetInfo(dstName);
+
+	if (dstTex == nullptr)
+		luaL_error(L, "gl.CopyImageSubData() unknown destination texture");
+
+	const GLint srcLevel = CheckInteger(2);
+	const GLint srcX = CheckInteger(3);
+	const GLint srcY = CheckInteger(4);
+	const GLint srcZ = CheckInteger(5);
+	const GLint dstLevel = CheckInteger(7);
+	const GLint dstX = CheckInteger(8);
+	const GLint dstY = CheckInteger(9);
+	const GLint dstZ = CheckInteger(10);
+	const GLsizei width  = CheckInteger(11);
+	const GLsizei height = CheckInteger(12);
+	const GLsizei depth  = CheckInteger(13);
+
+	if (srcLevel < 0 || dstLevel < 0 || srcX < 0 || srcY < 0 || srcZ < 0 || dstX < 0 || dstY < 0 || dstZ < 0 || width <= 0 || height <= 0 || depth <= 0)
+		luaL_error(L, "gl.CopyImageSubData() negative offset or non-positive size");
+
+	const auto LevelSize = [](int size, GLint level) {
+		return (level < std::numeric_limits<unsigned int>::digits)? std::max(1, size >> level): 1;
+	};
+	const auto ImageSize = [&LevelSize](GLenum target, int x, int y, int z, GLint level) {
+		switch (target) {
+			case GL_TEXTURE_1D:             return std::tuple(LevelSize(x, level), 1, 1);
+			case GL_TEXTURE_2D:             return std::tuple(LevelSize(x, level), LevelSize(y, level), 1);
+			case GL_TEXTURE_2D_ARRAY:       return std::tuple(LevelSize(x, level), LevelSize(y, level), z);
+			case GL_TEXTURE_3D:             return std::tuple(LevelSize(x, level), LevelSize(y, level), LevelSize(z, level));
+			case GL_TEXTURE_CUBE_MAP:       return std::tuple(LevelSize(x, level), LevelSize(y, level), 6);
+			case GL_TEXTURE_2D_MULTISAMPLE: return std::tuple(x, y, 1);
+			default:                        return std::tuple(0, 0, 0);
+		}
+	};
+	const auto RegionFits = [](GLint offset, GLsizei extent, int size) {
+		return (size <= 0 || (offset <= size && extent <= size - offset));
+	};
+	const auto MaxMipLevel = [](GLenum target, int x, int y, int z) {
+		int size = x;
+
+		if (target != GL_TEXTURE_1D)
+			size = std::max(size, y);
+		if (target == GL_TEXTURE_3D)
+			size = std::max(size, z);
+
+		GLint level = 0;
+		while (size > 1) {
+			size >>= 1;
+			++level;
+		}
+
+		return level;
+	};
+
+	const auto [srcXSize, srcYSize, srcZSize] = srcTex.GetSize();
+	const GLenum srcTarget = srcTex.GetTextureTarget();
+	const auto [srcLevelX, srcLevelY, srcLevelZ] = ImageSize(srcTarget, srcXSize, srcYSize, srcZSize, srcLevel);
+	const auto [dstLevelX, dstLevelY, dstLevelZ] = ImageSize(dstTex->target, dstTex->xsize, dstTex->ysize, dstTex->zsize, dstLevel);
+
+	if ((srcXSize > 0 && srcLevel > MaxMipLevel(srcTarget, srcXSize, srcYSize, srcZSize)) || dstLevel > MaxMipLevel(dstTex->target, dstTex->xsize, dstTex->ysize, dstTex->zsize))
+		luaL_error(L, "gl.CopyImageSubData() mip level out of bounds");
+
+	if ((srcTarget == GL_TEXTURE_2D_MULTISAMPLE && srcLevel != 0) || (dstTex->target == GL_TEXTURE_2D_MULTISAMPLE && dstLevel != 0))
+		luaL_error(L, "gl.CopyImageSubData() invalid multisample mip level");
+
+	if (!RegionFits(srcX, width, srcLevelX) || !RegionFits(srcY, height, srcLevelY) || !RegionFits(srcZ, depth, srcLevelZ))
+		luaL_error(L, "gl.CopyImageSubData() source region out of bounds");
+
+	if (!RegionFits(dstX, width, dstLevelX) || !RegionFits(dstY, height, dstLevelY) || !RegionFits(dstZ, depth, dstLevelZ))
+		luaL_error(L, "gl.CopyImageSubData() destination region out of bounds");
+
+	glCopyImageSubData(
+		srcTex.GetTextureID(), srcTarget, srcLevel, srcX, srcY, srcZ,
+		dstTex->id, dstTex->target, dstLevel, dstX, dstY, dstZ,
+		width, height, depth
+	);
 
 	return 0;
 }
@@ -4490,13 +4700,13 @@ int LuaOpenGL::ActiveTexture(lua_State* L)
 
 
 /***
- * @function gl.TextEnv
+ * @function gl.TexEnv
  * @param target GL
  * @param pname GL
  * @param value number
  */
 /***
- * @function gl.TextEnv
+ * @function gl.TexEnv
  * @param target GL
  * @param pname GL
  * @param r number? (Default: `0.0`)
@@ -4538,7 +4748,7 @@ int LuaOpenGL::TexEnv(lua_State* L)
  * @param texNum integer
  * @param target GL
  * @param pname GL
- * @param value number
+ * @param value number?
  */
 /***
  * @function gl.MultiTexEnv
@@ -4609,7 +4819,7 @@ static void SetTexGenState(GLenum target, bool state)
  * @function gl.TexGen
  * @param target GL
  * @param pname GL
- * @param value number
+ * @param value number?
  */
 /***
  * @function gl.TexGen
@@ -4669,7 +4879,7 @@ int LuaOpenGL::TexGen(lua_State* L)
  * @param texNum integer
  * @param target GL
  * @param pname GL
- * @param value number
+ * @param value number?
  */
 /***
  * @function gl.MultiTexGen
@@ -5073,6 +5283,10 @@ int LuaOpenGL::GetEngineAtlasTextures(lua_State* L) {
 /******************************************************************************/
 
 
+/***
+ * @function gl.Clear
+ * @param bits GL any buffer bit mask (e.g. `GL.STENCIL_BUFFER_BIT`). Clears with current/default values.
+ */
 /***
  * @function gl.Clear
  * @param bits GL `GL.DEPTH_BUFFER_BIT` or `GL.STENCIL_BUFFER_BIT`.
@@ -5681,22 +5895,22 @@ int LuaOpenGL::PushPopMatrix(lua_State* L)
  * @function gl.GetMatrixData
  * @param type GL Matrix type (`GL.PROJECTION`, `GL.MODELVIEW`, `GL.TEXTURE`).
  * @param index integer Matrix index in range `[1, 16]`.
- * @return number The value.
+ * @return number value The value at the given index.
  */
 /***
  * @function gl.GetMatrixData
  * @param type GL Matrix type (`GL.PROJECTION`, `GL.MODELVIEW`, `GL.TEXTURE`).
- * @return Matrix4x4 The matrix.
+ * @return Matrix4x4
  */
 /***
  * @function gl.GetMatrixData
  * @param index integer Matrix index in range `[1, 16]`.
- * @return number The value.
+ * @return number value The value at the given index.
  */
 /***
  * @function gl.GetMatrixData
- * @param name MatrixName The matrix name.
- * @return Matrix4x4 The matrix.
+ * @param name MatrixName
+ * @return Matrix4x4
  */
 int LuaOpenGL::GetMatrixData(lua_State* L)
 {
@@ -5767,7 +5981,7 @@ int LuaOpenGL::GetMatrixData(lua_State* L)
 int LuaOpenGL::PushAttrib(lua_State* L)
 {
 	CheckDrawingEnabled(L, __func__);
-	int mask = luaL_optnumber(L, 1, GL_ALL_ATTRIB_BITS);
+	int mask = luaL_optnumber(L, 1, static_cast<lua_Number>(GL_ALL_ATTRIB_BITS));
 	if (mask < 0) {
 		mask = -mask;
 		mask |= GL_ALL_ATTRIB_BITS;
@@ -5845,9 +6059,9 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 		GLint val = 0; glGetIntegerv(key, &val); \
 		if (toStr) { \
 			auto strIter = fixedStateEnumToString.find(val); \
-			HSTR_PUSH_STRING(L, #key, strIter != fixedStateEnumToString.end() ? strIter->second : fixedStateEnumToStringUnk); \
+			LuaPushNamedString(L, #key, strIter != fixedStateEnumToString.end() ? strIter->second : fixedStateEnumToStringUnk); \
 		} else { \
-			HSTR_PUSH_NUMBER(L, #key, val); \
+			LuaPushNamedNumber(L, #key, val); \
 		}; \
 	}
 
@@ -5891,10 +6105,10 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 			glGetIntegerv(GL_SCISSOR_BOX, rect);
 
 			lua_createtable(L, 0, 4);
-			HSTR_PUSH_NUMBER(L, "GL_SCISSOR_BOX_X", rect[0]);
-			HSTR_PUSH_NUMBER(L, "GL_SCISSOR_BOX_Y", rect[1]);
-			HSTR_PUSH_NUMBER(L, "GL_SCISSOR_BOX_W", rect[2]);
-			HSTR_PUSH_NUMBER(L, "GL_SCISSOR_BOX_H", rect[3]);
+			LuaPushNamedNumber(L, "GL_SCISSOR_BOX_X", rect[0]);
+			LuaPushNamedNumber(L, "GL_SCISSOR_BOX_Y", rect[1]);
+			LuaPushNamedNumber(L, "GL_SCISSOR_BOX_W", rect[2]);
+			LuaPushNamedNumber(L, "GL_SCISSOR_BOX_H", rect[3]);
 
 			return 2;
 		} break;
@@ -5911,10 +6125,10 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 			glGetBooleanv(GL_COLOR_WRITEMASK, mask);
 
 			lua_createtable(L, 0, 4);
-			HSTR_PUSH_BOOL(L, "GL_COLOR_WRITEMASK_R", mask[0]);
-			HSTR_PUSH_BOOL(L, "GL_COLOR_WRITEMASK_G", mask[1]);
-			HSTR_PUSH_BOOL(L, "GL_COLOR_WRITEMASK_B", mask[2]);
-			HSTR_PUSH_BOOL(L, "GL_COLOR_WRITEMASK_A", mask[3]);
+			LuaPushNamedBool(L, "GL_COLOR_WRITEMASK_R", mask[0]);
+			LuaPushNamedBool(L, "GL_COLOR_WRITEMASK_G", mask[1]);
+			LuaPushNamedBool(L, "GL_COLOR_WRITEMASK_B", mask[2]);
+			LuaPushNamedBool(L, "GL_COLOR_WRITEMASK_A", mask[3]);
 
 			return 1;
 		} break;
@@ -5946,7 +6160,7 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 
 			lua_createtable(L, 0, 2);
 			PushFixedState(GL_ALPHA_TEST_FUNC);
-			HSTR_PUSH_NUMBER(L, "GL_ALPHA_TEST_REF", alphaRef);
+			LuaPushNamedNumber(L, "GL_ALPHA_TEST_REF", alphaRef);
 
 			return 2;
 		} break;
@@ -5966,14 +6180,14 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 			glGetFloatv(GL_FOG_END, &fogEnd);
 
 			lua_createtable(L, 0, 8);
-			HSTR_PUSH_NUMBER(L, "GL_FOG_COLOR_R", fogColor[0]);
-			HSTR_PUSH_NUMBER(L, "GL_FOG_COLOR_G", fogColor[1]);
-			HSTR_PUSH_NUMBER(L, "GL_FOG_COLOR_B", fogColor[2]);
-			HSTR_PUSH_NUMBER(L, "GL_FOG_COLOR_A", fogColor[3]);
+			LuaPushNamedNumber(L, "GL_FOG_COLOR_R", fogColor[0]);
+			LuaPushNamedNumber(L, "GL_FOG_COLOR_G", fogColor[1]);
+			LuaPushNamedNumber(L, "GL_FOG_COLOR_B", fogColor[2]);
+			LuaPushNamedNumber(L, "GL_FOG_COLOR_A", fogColor[3]);
 
-			HSTR_PUSH_NUMBER(L, "GL_FOG_DENSITY", fogDensity);
-			HSTR_PUSH_NUMBER(L, "GL_FOG_START", fogStart);
-			HSTR_PUSH_NUMBER(L, "GL_FOG_END", fogEnd);
+			LuaPushNamedNumber(L, "GL_FOG_DENSITY", fogDensity);
+			LuaPushNamedNumber(L, "GL_FOG_START",   fogStart);
+			LuaPushNamedNumber(L, "GL_FOG_END",     fogEnd);
 
 			PushFixedState(GL_FOG_MODE);
 
@@ -6003,8 +6217,8 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 			glGetIntegerv(GL_LINE_STIPPLE_REPEAT, &strippleRepeat);
 
 			lua_createtable(L, 0, 2);
-			HSTR_PUSH_NUMBER(L, "GL_LINE_STIPPLE_PATTERN", stripplePattern);
-			HSTR_PUSH_NUMBER(L, "GL_LINE_STIPPLE_REPEAT", strippleRepeat);
+			LuaPushNamedNumber(L, "GL_LINE_STIPPLE_PATTERN", stripplePattern);
+			LuaPushNamedNumber(L, "GL_LINE_STIPPLE_REPEAT",  strippleRepeat);
 
 			return 1;
 		} break;
@@ -6024,11 +6238,11 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 			glGetFloatv(GL_POLYGON_OFFSET_UNITS, &offsetDensity);
 
 			lua_createtable(L, 0, 5);
-			HSTR_PUSH_BOOL(L, "GL_POLYGON_OFFSET_FILL", glIsEnabled(GL_POLYGON_OFFSET_FILL));
-			HSTR_PUSH_BOOL(L, "GL_POLYGON_OFFSET_LINE", glIsEnabled(GL_POLYGON_OFFSET_LINE));
-			HSTR_PUSH_BOOL(L, "GL_POLYGON_OFFSET_POINT", glIsEnabled(GL_POLYGON_OFFSET_POINT));
-			HSTR_PUSH_NUMBER(L, "GL_POLYGON_OFFSET_FACTOR", offsetFactor);
-			HSTR_PUSH_NUMBER(L, "GL_POLYGON_OFFSET_UNITS", offsetDensity);
+			LuaPushNamedBool  (L, "GL_POLYGON_OFFSET_FILL",   glIsEnabled(GL_POLYGON_OFFSET_FILL));
+			LuaPushNamedBool  (L, "GL_POLYGON_OFFSET_LINE",   glIsEnabled(GL_POLYGON_OFFSET_LINE));
+			LuaPushNamedBool  (L, "GL_POLYGON_OFFSET_POINT",  glIsEnabled(GL_POLYGON_OFFSET_POINT));
+			LuaPushNamedNumber(L, "GL_POLYGON_OFFSET_FACTOR", offsetFactor);
+			LuaPushNamedNumber(L, "GL_POLYGON_OFFSET_UNITS",  offsetDensity);
 
 			return 2;
 		} break;
@@ -6045,12 +6259,12 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 			glGetIntegerv(GL_STENCIL_VALUE_MASK, &stencilValueMask);
 
 			lua_createtable(L, 0, 8);
-			HSTR_PUSH_NUMBER(L, "GL_STENCIL_WRITEMASK", stencilWriteMask);
+			LuaPushNamedNumber(L, "GL_STENCIL_WRITEMASK", stencilWriteMask);
 
-			HSTR_PUSH_NUMBER(L, "GL_STENCIL_BITS", stencilBits);
+			LuaPushNamedNumber(L, "GL_STENCIL_BITS", stencilBits);
 
-			HSTR_PUSH_NUMBER(L, "GL_STENCIL_VALUE_MASK", stencilValueMask);
-			HSTR_PUSH_NUMBER(L, "GL_STENCIL_REF", stencilValueMask);
+			LuaPushNamedNumber(L, "GL_STENCIL_VALUE_MASK", stencilValueMask);
+			LuaPushNamedNumber(L, "GL_STENCIL_REF", stencilValueMask);
 
 			PushFixedState(GL_STENCIL_FUNC);
 
@@ -6064,9 +6278,9 @@ int LuaOpenGL::GetFixedState(lua_State* L)
 				GLint stencilBackRef;
 				glGetIntegerv(GL_STENCIL_BACK_REF, &stencilBackRef);
 
-				HSTR_PUSH_NUMBER(L, "GL_STENCIL_BACK_WRITEMASK", stencilBackWriteMask);
-				HSTR_PUSH_NUMBER(L, "GL_STENCIL_BACK_VALUE_MASK", stencilBackValueMask);
-				HSTR_PUSH_NUMBER(L, "GL_STENCIL_BACK_REF", stencilBackRef);
+				LuaPushNamedNumber(L, "GL_STENCIL_BACK_WRITEMASK", stencilBackWriteMask);
+				LuaPushNamedNumber(L, "GL_STENCIL_BACK_VALUE_MASK", stencilBackValueMask);
+				LuaPushNamedNumber(L, "GL_STENCIL_BACK_REF", stencilBackRef);
 
 				PushFixedState(GL_STENCIL_BACK_FUNC);
 			}
@@ -6119,6 +6333,7 @@ int LuaOpenGL::GetFixedState(lua_State* L)
  * @function gl.CreateList
  * @param func fun()
  * @param ... any Arguments to the function.
+ * @return integer listID `0` if the list could not be generated or `func` errored.
  */
 int LuaOpenGL::CreateList(lua_State* L)
 {
@@ -6291,7 +6506,7 @@ static void PushPixelData(lua_State* L, int fSize, const float*& data)
  * @param w 1
  * @param h 1
  * @param format GL? (Default: `GL.RGBA`)
- * @return number ... Color values (color size based on format).
+ * @return number ... Color value (color size based on format).
  */
 /***
  * Get column of pixels.
@@ -6301,7 +6516,7 @@ static void PushPixelData(lua_State* L, int fSize, const float*& data)
  * @param w 1
  * @param h integer
  * @param format GL? (Default: `GL.RGBA`)
- * @return number[][] Column of color values (color size based on format).
+ * @return number[][] colors Column of color values (color size based on format).
  */
 /***
  * Get row of pixels.
@@ -6311,17 +6526,17 @@ static void PushPixelData(lua_State* L, int fSize, const float*& data)
  * @param w integer
  * @param h 1
  * @param format GL? (Default: `GL.RGBA`)
- * @return number[][] Row of color values (color size based on format).
+ * @return number[][] colors Row of color values (color size based on format).
  */
 /***
- * Get row of pixels.
+ * Get columns of pixels.
  * @function gl.ReadPixels
  * @param x integer
  * @param y integer
  * @param w integer
  * @param h integer
  * @param format GL? (Default: `GL.RGBA`)
- * @return number[][][] Array of columns of color values (color size based on format).
+ * @return number[][][] colors Array of columns of color values (color size based on format).
  */
 int LuaOpenGL::ReadPixels(lua_State* L)
 {
@@ -6397,10 +6612,10 @@ int LuaOpenGL::ReadPixels(lua_State* L)
 /***
  * @class SaveImageOptions
  * @x_helper
- * @field alpha boolean (Default: `false`)
- * @field yflip boolean (Default: `true`)
- * @field grayscale16bit boolean (Default: `false`)
- * @field readbuffer GL (Default: current read buffer)
+ * @field alpha boolean? (Default: `false`)
+ * @field yflip boolean? (Default: `true`)
+ * @field grayscale16bit boolean? (Default: `false`)
+ * @field readbuffer GL? (Default: current read buffer)
  */
 
 /***
@@ -6606,7 +6821,7 @@ int LuaOpenGL::GetQuery(lua_State* L)
 
 /***
  * @function gl.GetGlobalTexNames
- * @return string[] List of texture names.
+ * @return string[] texNames List of texture names.
  */
 int LuaOpenGL::GetGlobalTexNames(lua_State* L)
 {
@@ -7081,7 +7296,7 @@ int LuaOpenGL::ObjectLabel(lua_State* L) {
  * @function gl.PushDebugGroup 
  * @param id integer A numeric identifier for the group, can be any unique number.
  * @param message string A human-readable string describing the debug group. Will be truncated if longer than driver-specific limit
- * @param sourceIsThirdParty boolean Set the source tag, true for GL_DEBUG_SOURCE_THIRD_PARTY, false for GL_DEBUG_SOURCE_APPLICATION. default false
+ * @param sourceIsThirdParty boolean? Set the source tag, true for GL_DEBUG_SOURCE_THIRD_PARTY, false for GL_DEBUG_SOURCE_APPLICATION. default false
  * @return nil
  */
 int LuaOpenGL::PushDebugGroup(lua_State* L) {

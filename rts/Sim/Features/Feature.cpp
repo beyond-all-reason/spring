@@ -161,6 +161,7 @@ void CFeature::Initialize(const FeatureLoadParams& params)
 	id = params.featureID;
 
 	team = params.teamID;
+	paletteIndex = static_cast<uint16_t>(team);
 	allyteam = params.allyTeamID;
 
 	heading = params.heading;

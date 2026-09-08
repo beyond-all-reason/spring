@@ -99,6 +99,7 @@ public:
 	bool SetActiveCommand(int cmdIndex, bool rightMouseButton);
 	bool SetActiveCommand(int cmdIndex, int button, bool leftMouseButton, bool rightMouseButton, bool alt, bool ctrl, bool meta, bool shift);
 	bool SetActiveCommand(const Action& action, const CKeySet& ks, int actionIndex);
+	void CancelActiveCommand();
 
 	void SetDrawSelectionInfo(bool dsi) { drawSelectionInfo = dsi; }
 	bool GetDrawSelectionInfo() const { return drawSelectionInfo; }

@@ -169,6 +169,7 @@ local flexCallIns = {
   'DrawScreenEffects',
   'DrawScreenPost',
   'DrawInMiniMap',
+  'DrawBuildSquare',
   'FontsChanged',
   'SunChanged',
   'RecvSkirmishAIMessage',
@@ -1390,6 +1391,14 @@ end
 function widgetHandler:DrawInMiniMap(xSize, ySize)
   for _,w in ripairs(self.DrawInMiniMapList) do
     w:DrawInMiniMap(xSize, ySize)
+  end
+  return
+end
+
+
+function widgetHandler:DrawBuildSquare(unitDefID, x, z, facing, statuses)
+  for _,w in ripairs(self.DrawBuildSquareList) do
+    w:DrawBuildSquare(unitDefID, x, z, facing, statuses)
   end
   return
 end

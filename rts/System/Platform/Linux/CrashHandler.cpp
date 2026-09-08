@@ -183,7 +183,7 @@ static std::string LocateSymbolFile(const std::string& binaryFile)
 
 	const std::string binPath = FileSystem::GetDirectory(binaryFile);
 	const std::string binFile = FileSystem::GetFilename(binaryFile);
-	// const std::string binExt  = FileSystem::GetExtension(binaryFile);
+	// const std::string binExt  = FileSystem::GetExtensionLowerCase(binaryFile);
 
 	if (FileSystem::IsReadableFile(symbolFile = binPath + binFile + ".dbg"))
 		return symbolFile;
@@ -709,7 +709,7 @@ namespace CrashHandler
 
 		unw_cursor_t cursor;
 
-#if (defined(__arm__) || defined(__APPLE__))
+#if (defined(__arm__) || defined(__aarch64__) || defined(__APPLE__))
 		// ucontext_t and unw_context_t are not aliases here
 		unw_context_t thisctx;
 		unw_getcontext(&thisctx);
@@ -742,7 +742,7 @@ namespace CrashHandler
 		}
 		*/
 
-#if (defined(__arm__) || defined(__APPLE__))
+#if (defined(__arm__) || defined(__aarch64__) || defined(__APPLE__))
 		const int err = unw_init_local(&cursor, &thisctx);
 #else
 		const int err = unw_init_local(&cursor, uc);

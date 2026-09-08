@@ -33,6 +33,7 @@
 
 #include "../plugin/SolLuaDataModel.h"
 #include "../plugin/SolLuaDocument.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include "sol2/sol.hpp"
 
 #include <memory>
@@ -131,7 +132,7 @@ struct lua_iterator_state
 			sol::state_view l{s};
 			int index = 0;
 			int count = keytable.size();
-			while (keytable.get<sol::object>(++index).get_type() != sol::type::nil && index <= count) {
+			while (keytable.get<sol::object>(++index).get_type() != sol::type::lua_nil && index <= count) {
 				this->keys.emplace_back(sol::object(l, sol::in_place, index));
 			}
 		} else {
@@ -199,7 +200,7 @@ createNewIndexFunction(std::shared_ptr<Rml::SolLua::SolLuaDataModel> data, const
 		}
 		if (value.is<sol::table>()) {
 			auto value_raw = value.as<sol::table>().raw_get<sol::object>("__raw");
-			if (value_raw != sol::nil && value_raw.is<sol::function>()) {
+			if (value_raw != sol::lua_nil && value_raw.is<sol::function>()) {
 				// new value is a datamodel proxy, so get the underlying table to assign
 				prop.as<sol::table>().raw_set(solkey, value_raw.as<sol::function>().call<sol::object>(value));
 			} else {
@@ -290,7 +291,7 @@ sol::table openDataModel(Rml::Context& self, const Rml::String& name, sol::objec
 			}
 			if (value.is<sol::table>()) {
 				auto value_raw = value.as<sol::table>().raw_get<sol::object>("__raw");
-				if (value_raw != sol::nil && value_raw.is<sol::function>()) {
+				if (value_raw != sol::lua_nil && value_raw.is<sol::function>()) {
 					// new value is a datamodel proxy, so get the underlying table to assign
 					data->Table.raw_set(key, value_raw.as<sol::function>().call<sol::object>(value));
 				} else {
@@ -427,7 +428,12 @@ void bind_context(sol::table& namespace_table, SolLuaPlugin* slp)
 		 * @function RmlUi.Context:Render
 		 * @return boolean
 		 */
-		"Render", &Rml::Context::Render,
+		"Render", [](Rml::Context& self) {
+			RmlGui::BeginFrame();
+			bool result = self.Render();
+			RmlGui::PresentFrame();
+			return result;
+		},
 		/***
 		 * Closes all documents currently loaded with the context.
 		 * @function RmlUi.Context:UnloadAllDocuments

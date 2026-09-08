@@ -42,7 +42,7 @@ CDirArchive::CDirArchive(const std::string& archiveName)
 
 		// all variables here will use forward slashes, no need for conversion
 		std::string rawFileName = dataDirsAccess.LocateFile(dirName + origName);
-		files.emplace_back(origName, std::move(rawFileName), -1, 0);
+		files.emplace_back(Files{origName, std::move(rawFileName), -1, 0});
 
 		// convert to lowercase and store
 		lcNameIndex[StringToLower(std::move(origName))] = static_cast<decltype(lcNameIndex)::value_type::second_type>(files.size() - 1);

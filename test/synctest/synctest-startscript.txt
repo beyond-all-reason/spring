@@ -1,0 +1,57 @@
+[game]
+{
+    [allyteam1]
+    {
+        startrectleft=0.82999998;
+        startrectright=1;
+        startrectbottom=1;
+        numallies=0;
+        startrecttop=0;
+    }
+    [team0]
+    {
+        startposx=800;
+        allyteam=0;
+        teamleader=0;
+        side=Armada;
+        startposz=100;
+    }
+    [allyteam0]
+    {
+        startrectleft=0;
+        startrectright=0.17;
+        startrectbottom=1;
+        numallies=0;
+        startrecttop=0;
+    }
+    [modoptions]
+    {
+        debugcommands=2:cheat|3:globallos|4:luaui disable|15:luarules synctest 2000 0.33 0.33 0.1 0.5 100|20:setspeed 20|21:speedcontrol 0|2200:quitforce;
+    }
+    [player0]
+    {
+        team=0;
+        name=Player;
+    }
+    [ai0]
+    {
+        team=1;
+        host=0;
+        shortname=NullAI;
+    }
+    [team1]
+    {
+        allyteam=1;
+        teamleader=0;
+        side=Cortex;
+        startposx=100;
+        startposz=800;
+    }
+    ishost=1;
+    startpostype=3;
+    gametype=Beyond All Reason @VERSION@;
+    mapname=@MAPNAME@;
+    myplayername=Player;
+    fixedrngseed=123123;
+    numplayers=1;
+}

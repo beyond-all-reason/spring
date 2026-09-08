@@ -46,3 +46,9 @@
 [submodule "rts/lib/mimalloc"]
 	path = rts/lib/mimalloc
 	url = https://github.com/microsoft/mimalloc
+[submodule "rts/lib/sse2neon"]
+	path = rts/lib/sse2neon
+	url = https://github.com/DLTcollab/sse2neon.git
+[submodule "rts/lib/streflop"]
+	path = rts/lib/streflop
+	url = https://github.com/RecoilEngine/streflop.git

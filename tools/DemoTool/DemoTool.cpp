@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <cstdint>
 #include <string>
 #include <map>
 #include <iostream>
@@ -417,7 +418,7 @@ void TrafficDump(CDemoReader& reader, bool trafficStats)
 				//uchar myPlayerNum; int frameNum; uint checksum;
 				std::cout << "NETMSG_SYNCRESPONSE: Playernum: "<< (unsigned)buffer[1];
 				std::cout << " Framenum: " << *(int*)(buffer+2);
-				std::cout << " Checksum: " << (unsigned)buffer[6];
+				std::cout << " Checksum: " << *(uint32_t*)(buffer+6);
 				std::cout << std::endl;
 				break;
 			case NETMSG_DIRECT_CONTROL:

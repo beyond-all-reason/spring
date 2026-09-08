@@ -370,18 +370,18 @@ static int WeaponsTable(lua_State* L, const void* data)
 
 		lua_pushnumber(L, i + LUA_WEAPON_BASE_INDEX);
 		lua_createtable(L, 0, 10); {
-			HSTR_PUSH_NUMBER(L, "weaponDef",   wd->id);
-			HSTR_PUSH_NUMBER(L, "slavedTo",    udw.slavedTo - 1 + LUA_WEAPON_BASE_INDEX);
-			HSTR_PUSH_NUMBER(L, "maxAngleDif", udw.maxMainDirAngleDif);
-			HSTR_PUSH_NUMBER(L, "mainDirX",    udw.mainDir.x);
-			HSTR_PUSH_NUMBER(L, "mainDirY",    udw.mainDir.y);
-			HSTR_PUSH_NUMBER(L, "mainDirZ",    udw.mainDir.z);
+			LuaPushNamedNumber(L, "weaponDef",   wd->id);
+			LuaPushNamedNumber(L, "slavedTo",    udw.slavedTo - 1 + LUA_WEAPON_BASE_INDEX);
+			LuaPushNamedNumber(L, "maxAngleDif", udw.maxMainDirAngleDif);
+			LuaPushNamedNumber(L, "mainDirX",    udw.mainDir.x);
+			LuaPushNamedNumber(L, "mainDirY",    udw.mainDir.y);
+			LuaPushNamedNumber(L, "mainDirZ",    udw.mainDir.z);
 
-			HSTR_PUSH(L, "badTargets");
+			LuaPushString(L, "badTargets");
 			CategorySetFromBits(L, &udw.badTargetCat);
 			lua_rawset(L, -3);
 
-			HSTR_PUSH(L, "onlyTargets");
+			LuaPushString(L, "onlyTargets");
 			CategorySetFromBits(L, &udw.onlyTargetCat);
 			lua_rawset(L, -3);
 		}
@@ -404,10 +404,10 @@ static void PushGuiSoundSet(lua_State* L, const string& name,
 		lua_pushnumber(L, i + 1);
 		lua_createtable(L, 0, CLuaHandle::GetHandleSynced(L) ? 2 : 3);
 		const GuiSoundSetData& sound = soundSet.GetSoundData(i);
-		HSTR_PUSH_STRING(L, "name",   sound.name);
-		HSTR_PUSH_NUMBER(L, "volume", sound.volume);
+		LuaPushNamedString(L, "name",   sound.name);
+		LuaPushNamedNumber(L, "volume", sound.volume);
 		if (!CLuaHandle::GetHandleSynced(L)) {
-			HSTR_PUSH_NUMBER(L, "id", sound.id);
+			LuaPushNamedNumber(L, "id", sound.id);
 		}
 		lua_rawset(L, -3);
 	}
@@ -451,22 +451,22 @@ static int MoveDefTable(lua_State* L, const void* data)
 	assert(md->pathType == mdPathType);
 	lua_createtable(L, 0, 14);
 
-	HSTR_PUSH_NUMBER(L, "id"           , md->pathType);
-	HSTR_PUSH_NUMBER(L, "smClass"      , md->speedModClass);
-	HSTR_PUSH_NUMBER(L, "xsize"        , md->xsize);
-	HSTR_PUSH_NUMBER(L, "zsize"        , md->zsize);
-	HSTR_PUSH_NUMBER(L, "depth"        , md->depth);
-	HSTR_PUSH_NUMBER(L, "maxSlope"     , md->maxSlope);
-	HSTR_PUSH_NUMBER(L, "slopeMod"     , md->slopeMod);
-	HSTR_PUSH_NUMBER(L, "depthMod"     , md->depthModParams[MoveDef::DEPTHMOD_LIN_COEFF]);
-	HSTR_PUSH_NUMBER(L, "crushStrength", md->crushStrength);
-	HSTR_PUSH_BOOL  (L, "isSubmarine"  , md->isSubmarine);
+	LuaPushNamedNumber(L, "id"           , md->pathType);
+	LuaPushNamedNumber(L, "smClass"      , md->speedModClass);
+	LuaPushNamedNumber(L, "xsize"        , md->xsize);
+	LuaPushNamedNumber(L, "zsize"        , md->zsize);
+	LuaPushNamedNumber(L, "depth"        , md->depth);
+	LuaPushNamedNumber(L, "maxSlope"     , md->maxSlope);
+	LuaPushNamedNumber(L, "slopeMod"     , md->slopeMod);
+	LuaPushNamedNumber(L, "depthMod"     , md->depthModParams[MoveDef::DEPTHMOD_LIN_COEFF]);
+	LuaPushNamedNumber(L, "crushStrength", md->crushStrength);
+	LuaPushNamedBool  (L, "isSubmarine"  , md->isSubmarine);
 
-	HSTR_PUSH_BOOL  (L, "heatMapping"  , md->heatMapping);
-	HSTR_PUSH_NUMBER(L, "heatMod"      , md->heatMod);
-	HSTR_PUSH_NUMBER(L, "heatProduced" , md->heatProduced);
+	LuaPushNamedBool  (L, "heatMapping"  , md->heatMapping);
+	LuaPushNamedNumber(L, "heatMod"      , md->heatMod);
+	LuaPushNamedNumber(L, "heatProduced" , md->heatProduced);
 
-	HSTR_PUSH_STRING(L, "name"         , md->name);
+	LuaPushNamedString(L, "name"         , md->name);
 
 	return 1;
 }

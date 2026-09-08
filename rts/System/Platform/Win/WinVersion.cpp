@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <array>
 #include <cassert>
 #include <sstream>
 #include <string>
@@ -286,15 +287,13 @@ std::string windows::GetDisplayString(bool getName, bool getVersion, bool getExt
 		oss << " (build " << osvi.dwBuildNumber;
 
 		if (osvi.szCSDVersion[0] != 0) {
-			static_assert(sizeof(wchar_t) >= sizeof(osvi.szCSDVersion[0]), "");
+			const int utf8Len = WideCharToMultiByte(CP_UTF8, 0, osvi.szCSDVersion, -1, nullptr, 0, nullptr, nullptr);
 
-			// Windows uses UTF16
-			std::wstring_convert<std::codecvt_utf16<wchar_t>, wchar_t> ws2s;
-
-			const std::wstring wstr(osvi.szCSDVersion);
-			const std::string nstr(ws2s.to_bytes(wstr));
-
-			oss << ", " << nstr;
+			if (utf8Len > 1) {
+				std::string nstr(utf8Len - 1, '\0');
+				WideCharToMultiByte(CP_UTF8, 0, osvi.szCSDVersion, -1, nstr.data(), utf8Len, nullptr, nullptr);
+				oss << ", " << nstr;
+			}
 		}
 
 		oss << ")";
@@ -309,14 +308,25 @@ std::string windows::GetHardwareString()
 {
 	std::ostringstream oss;
 
-	unsigned char regbuf[200];
-	DWORD regLength = sizeof(regbuf);
+	std::array<wchar_t, 200> regbuf{};
+	DWORD regLength = static_cast<DWORD>(regbuf.size() * sizeof(wchar_t)); // RegQueryValueExW wants bytes
 	DWORD regType = REG_SZ;
 	HKEY regkey;
 
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"Hardware\\Description\\System\\CentralProcessor\\0", 0, KEY_READ, &regkey) == ERROR_SUCCESS) {
-		if (RegQueryValueEx(regkey, L"ProcessorNameString", 0, &regType, regbuf, &regLength) == ERROR_SUCCESS) {
-			oss << regbuf << "; ";
+	if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Hardware\\Description\\System\\CentralProcessor\\0", 0, KEY_READ, &regkey) == ERROR_SUCCESS) {
+		if (RegQueryValueExW(regkey, L"ProcessorNameString", 0, &regType, reinterpret_cast<LPBYTE>(regbuf.data()), &regLength) == ERROR_SUCCESS) {
+			// REG_SZ values aren't guaranteed to be null-terminated; force it
+			regbuf.back() = L'\0';
+
+			const int utf8Len = WideCharToMultiByte(CP_UTF8, 0, regbuf.data(), -1, nullptr, 0, nullptr, nullptr);
+
+			if (utf8Len > 1) {
+				std::string utf8str(utf8Len - 1, '\0');
+				WideCharToMultiByte(CP_UTF8, 0, regbuf.data(), -1, utf8str.data(), utf8Len, nullptr, nullptr);
+				oss << utf8str << "; ";
+			} else {
+				oss << "cannot convert processor name to UTF-8; ";
+			}
 		} else {
 			oss << "cannot read processor data; ";
 		}

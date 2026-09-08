@@ -1,0 +1,273 @@
+# Runs the Beyond All Reason "synctest" (/luarules synctest) against an engine
+# commit on all supported platforms (amd64-linux, arm64-linux, amd64-windows).
+#
+# This workflow looks up the most recent successful "Build Engine v2" run for
+# the target commit and downloads platform-specific artifacts. If no such run
+# exists, the workflow fails fast.
+# TODO: trigger after every engine build
+#
+# The cross-platform-check job compares hashes across architectures and is
+# intended as a merge-blocking required check.
+#
+# See test/synctest/README.md for background and how to run locally.
+name: Sync test
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Engine commit SHA to test. Leave blank to test the head of the ref selected in the picker above.'
+        type: string
+        default: ''
+
+permissions:
+  # actions:read is required to list workflow runs and download artifacts
+  # produced by a different workflow run (the Build Engine v2 run for the
+  # target commit).
+  actions: read
+  contents: read
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+env:
+  MAP: "Jade Empress 1.41"
+  GAME: "Beyond All Reason test-30770-4e0b241"
+  HASH_FILE: "synctest_synchash.json"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      run_id: ${{ steps.engine-run.outputs.run_id }}
+      platforms: ${{ steps.platforms.outputs.json }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Define target platforms
+        id: platforms
+        # Single source of truth for the platform matrix: needed so we can check
+        # if we have all platforms even if a later setup step fails.
+        run: |
+          # jq -c -n validates the JSON and emits it compact, as GITHUB_OUTPUT requires.
+          json=$(jq -c -n '[
+            {"platform": "amd64-linux",   "runs-on": "ubuntu-latest",    "bin-suffix": ""},
+            {"platform": "arm64-linux",   "runs-on": "ubuntu-24.04-arm",  "bin-suffix": ""},
+            {"platform": "amd64-windows", "runs-on": "windows-latest",    "bin-suffix": ".exe"}
+          ]')
+          echo "json=$json" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve target commit
+        id: resolve
+        env:
+          INPUT_COMMIT: ${{ inputs.commit }}
+          REPO: ${{ github.repository }}
+          DEFAULT_SHA: ${{ github.sha }}
+        run: |
+          target="${INPUT_COMMIT:-$DEFAULT_SHA}"
+
+          # Normalize whatever the user pasted (full sha, short sha, branch, tag)
+          # into a full 40-char SHA so the run lookup below is unambiguous.
+          full_sha=$(gh api "repos/$REPO/commits/$target" --jq '.sha')
+          echo "Resolved target commit: $full_sha"
+          echo "sha=$full_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Find Build Engine v2 run for this commit
+        id: engine-run
+        env:
+          REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ steps.resolve.outputs.sha }}
+        run: |
+          run_id=$(gh api \
+            "repos/$REPO/actions/workflows/engine-build.yml/runs?head_sha=$TARGET_SHA&status=success" \
+            --jq '.workflow_runs[0].id')
+          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+            echo "::error::No successful 'Build Engine v2' run found for commit $TARGET_SHA."
+            echo "::error::Trigger Build Engine v2 on that commit first (push it, or dispatch engine-build.yml manually) and retry."
+            exit 1
+          fi
+          echo "Using engine-build run $run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+  synctest:
+    needs: setup
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.platforms) }}
+    steps:
+      - name: Checkout workflow definition and test inputs
+        # Uses the ref picked in the dispatch UI (github.sha), NOT the target
+        # commit — so the startscript and any other test assets come from the
+        # workflow-definition ref. The target commit only controls which engine
+        # artifact gets downloaded below.
+        uses: actions/checkout@v4
+
+      - name: Download engine artifact (${{ matrix.platform }})
+        uses: actions/download-artifact@v4
+        with:
+          pattern: engine-artifacts-${{ matrix.platform }}*
+          run-id: ${{ needs.setup.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: engine-artifact
+          merge-multiple: true
+
+      - name: Extract install tree
+        run: |
+          mkdir -p install
+
+          # Engine is packaged with INSTALL_PORTABLE=ON (CMake default, see
+          # CMakeLists.txt:22), so binaries live at the install-tree root:
+          #   install/spring-headless, install/pr-downloader, install/spring, ...
+          # The archive name comes from docker-build-v2/scripts/package.sh; that
+          # script also emits a -dbgsym.tar.zst, which this glob excludes.
+          #
+          # Windows has 7z.exe, and ubuntu currently has 7z/7zz/7za but may later
+          # drop to just 7zz/7za.
+          sevenzip=$(command -v 7z || command -v 7zz || command -v 7za || true)
+          if [ -z "$sevenzip" ]; then
+            echo "::error::no 7-Zip binary (7z/7zz/7za) found on runner"; exit 1
+          fi
+          "$sevenzip" x engine-artifact/recoil_*_${{ matrix.platform }}*.7z -oinstall
+
+      - name: Restore BAR content cache
+        uses: actions/cache@v4
+        with:
+          # Content-addressed and immutable, so all three platform legs share one
+          # entry. packages/ (the <md5>.sdp manifests) is required alongside pool/
+          # for the engine to mount the game. Deliberately NOT the whole write-dir:
+          # everything else the engine writes here is build- and platform-specific.
+          # rapid/ is excluded too — mutable repo metadata, a few MB, refetched so
+          # the pin is genuinely re-resolved each run.
+          path: |
+            bar-data/pool
+            bar-data/packages
+            bar-data/maps
+          # IMPORTANT:
+          # Bump this key in lockstep with any change to the pinned
+          # gametype/mapname. See test/synctest/README.md.
+          key: bar-data-${{ env.GAME }}-${{ env.MAP }}
+
+      - name: Fetch pinned BAR assets (no-op on warm cache)
+        run: |
+          ./install/pr-downloader${{ matrix.bin-suffix }} \
+              --filesystem-writepath "$PWD/bar-data" \
+              --download-game "$GAME" \
+              --download-map  "$MAP"
+        env:
+          PRD_RAPID_USE_STREAMER: "false"
+          PRD_RAPID_REPO_MASTER: "https://repos-cdn.beyondallreason.dev/repos.gz"
+          PRD_HTTP_SEARCH_URL: "https://files-cdn.beyondallreason.dev/find"
+
+      - name: Render startscript
+        run: |
+          # The checked-in startscript is a template: @VERSION@ is the version
+          # suffix of the pinned GAME (text after the last space, e.g.
+          # "test-29932-21b3bb0") and @MAPNAME@ is MAP.
+          sed -e "s/@VERSION@/${GAME##* }/g" -e "s/@MAPNAME@/$MAP/g" \
+              test/synctest/synctest-startscript.txt > startscript.txt
+
+          # Fail loudly here rather than letting the engine fail later with an
+          # opaque "can't find game/map" error.
+          if grep -qE '@VERSION@|@MAPNAME@' startscript.txt; then
+            echo "::error::startscript template was not fully rendered — leftover placeholders:"
+            grep -nE '@VERSION@|@MAPNAME@' startscript.txt
+            exit 1
+          fi
+          grep -nE 'gametype=|mapname=' startscript.txt
+
+      - name: Run synctest
+        run: |
+          ./install/spring-headless${{ matrix.bin-suffix }} --isolation \
+              --write-dir "$PWD/bar-data" startscript.txt 2>&1 | tee infolog.txt
+
+      - name: Assert sync-hash file produced
+        run: |
+          digest=$(jq -r '.digest // empty' "bar-data/$HASH_FILE" 2>/dev/null || true)
+          if [ -z "$digest" ]; then
+            echo "::error::bar-data/$HASH_FILE is missing, empty, or has no .digest — the synctest produced no checksum output"
+            exit 1
+          fi
+          echo "Sync hash digest: $digest"
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synctest-${{ matrix.platform }}-${{ needs.setup.outputs.sha }}
+          path: |
+            infolog.txt
+            bar-data/*.log
+            bar-data/${{ env.HASH_FILE }}
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # Collects sync hashes from all synctest runs across platforms and fails if
+  # hashes diverge between architectures (cross-platform desync detection).
+  # This job is intended to be a required/merge-blocking status check.
+  cross-platform-check:
+    if: ${{ !cancelled() }}
+    needs: [setup, synctest]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TESTED_SHA: ${{ needs.setup.outputs.sha }}
+    steps:
+      - name: Assert setup produced a platform list
+        env:
+          PLATFORMS_JSON: ${{ needs.setup.outputs.platforms }}
+        run: |
+          if [ -z "$PLATFORMS_JSON" ]; then
+            echo "::error::setup produced no platform list — it likely failed before it ran; check the setup job."
+            exit 1
+          fi
+
+      - name: Download current run artifacts
+        # If every platform leg died before uploading, the pattern matches
+        # nothing and this step errors. That is not the failure we want to
+        # report, so swallow it and let the MISSING check below speak instead.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: synctest-*-${{ env.TESTED_SHA }}
+          path: artifacts
+
+      - name: Compare sync hashes across platforms
+        env:
+          PLATFORMS_JSON: ${{ needs.setup.outputs.platforms }}
+        run: |
+          # Check from the EXPECTED platform list, so if artifact uploading fails
+          # we will be able to detect that its missing.
+          for platform in $(jq -r '.[].platform' <<<"$PLATFORMS_JSON"); do
+            digest=$(jq -r '.digest // empty' \
+              "artifacts/synctest-$platform-$TESTED_SHA/bar-data/$HASH_FILE" 2>/dev/null || true)
+            echo "$platform ${digest:-MISSING}"
+          done > synchashes.txt
+
+          echo "Cross-platform determinism check:"
+          cat synchashes.txt
+
+          if grep -qw MISSING synchashes.txt; then
+            echo "::error::sync hash MISSING on at least one platform — see the per-platform jobs"
+            exit 1
+          fi
+          digests=$(awk '{print $2}' synchashes.txt | sort -u)
+          if [ "$(wc -l <<<"$digests")" -gt 1 ]; then
+            echo "::error::CROSS-PLATFORM DESYNC — hashes differ across architectures; the engine is not deterministic across platforms"
+            exit 1
+          fi
+          echo "OK across all platforms ($digests)"
+
+      # A platform can write the hash and then fail, but
+      # `!cancelled()` means we still run the comparison.
+      # So let's do a final check to make sure they all passed.
+      - name: Assert all synctest jobs succeeded
+        if: ${{ needs.synctest.result != 'success' }}
+        run: |
+          echo "::error::synctest matrix result is '${{ needs.synctest.result }}' — a platform leg did not succeed; see the per-platform jobs"
+          exit 1

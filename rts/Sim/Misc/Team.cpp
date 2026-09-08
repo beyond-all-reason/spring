@@ -45,6 +45,7 @@ CR_REG_METADATA(CTeam, (
 	CR_MEMBER(resPrevExpense),
 	CR_MEMBER(resShare),
 	CR_MEMBER(resDelayedShare),
+	CR_MEMBER(resExcessThisFrame),
 	CR_MEMBER(resSent),
 	CR_MEMBER(resPrevSent),
 	CR_MEMBER(resReceived),
@@ -139,7 +140,7 @@ void CTeam::AddResources(SResourcePack amount, bool useIncomeMultiplier)
 		if (res[i] <= resStorage[i])
 			continue;
 
-		resDelayedShare[i] += (res[i] - resStorage[i]);
+		resExcessThisFrame[i] += (res[i] - resStorage[i]);
 		res[i] = resStorage[i];
 	}
 }

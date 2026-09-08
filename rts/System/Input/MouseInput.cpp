@@ -75,14 +75,15 @@ bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 		case SDL_MOUSEBUTTONDOWN: {
 			mousepos = int2(event.button.x, event.button.y);
 
-			if (mouse != nullptr)
+			// suppress if the button is already held via input emulation
+			if (mouse != nullptr && !mouse->IsButtonEmulated(event.button.button))
 				mouse->MousePress(mousepos.x, mousepos.y, event.button.button);
 
 		} break;
 		case SDL_MOUSEBUTTONUP: {
 			mousepos = int2(event.button.x, event.button.y);
 
-			if (mouse != nullptr)
+			if (mouse != nullptr && !mouse->IsButtonEmulated(event.button.button))
 				mouse->MouseRelease(mousepos.x, mousepos.y, event.button.button);
 
 		} break;

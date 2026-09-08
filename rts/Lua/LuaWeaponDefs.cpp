@@ -245,11 +245,11 @@ static int DamagesArray(lua_State* L, const void* data)
 	const DamageArray& d = *static_cast<const DamageArray*>(data);
 
 	lua_createtable(L, damageArrayHandler.GetNumTypes(), 5);
-	HSTR_PUSH_NUMBER(L, "impulseFactor",      d.impulseFactor);
-	HSTR_PUSH_NUMBER(L, "impulseBoost",       d.impulseBoost);
-	HSTR_PUSH_NUMBER(L, "craterMult",         d.craterMult);
-	HSTR_PUSH_NUMBER(L, "craterBoost",        d.craterBoost);
-	HSTR_PUSH_NUMBER(L, "paralyzeDamageTime", d.paralyzeDamageTime);
+	LuaPushNamedNumber(L, "impulseFactor",      d.impulseFactor);
+	LuaPushNamedNumber(L, "impulseBoost",       d.impulseBoost);
+	LuaPushNamedNumber(L, "craterMult",         d.craterMult);
+	LuaPushNamedNumber(L, "craterBoost",        d.craterBoost);
+	LuaPushNamedNumber(L, "paralyzeDamageTime", d.paralyzeDamageTime);
 
 	// damage values
 	for (int i = 0, n = damageArrayHandler.GetNumTypes(); i < n; i++) {
@@ -266,34 +266,34 @@ static int VisualsTable(lua_State* L, const void* data)
 {
 	const struct WeaponDef::Visuals& v = *static_cast<const struct WeaponDef::Visuals*>(data);
 	lua_createtable(L, 0, 28);
-	HSTR_PUSH_STRING(L, "modelName",            modelLoader.FindModelPath(v.modelName));
-	HSTR_PUSH_NUMBER(L, "colorR",               v.color.x);
-	HSTR_PUSH_NUMBER(L, "colorG",               v.color.y);
-	HSTR_PUSH_NUMBER(L, "colorB",               v.color.z);
-	HSTR_PUSH_NUMBER(L, "color2R",              v.color2.x);
-	HSTR_PUSH_NUMBER(L, "color2G",              v.color2.y);
-	HSTR_PUSH_NUMBER(L, "color2B",              v.color2.z);
-	HSTR_PUSH_BOOL  (L, "smokeTrail",           v.smokeTrail);
-	HSTR_PUSH_BOOL  (L, "smokeTrailCastShadow", v.smokeTrailCastShadow);
-	HSTR_PUSH_NUMBER(L, "smokePeriod",          v.smokePeriod);
-	HSTR_PUSH_NUMBER(L, "smokeTime",            v.smokeTime);
-	HSTR_PUSH_NUMBER(L, "smokeSize",            v.smokeSize);
-	HSTR_PUSH_NUMBER(L, "smokeColor",           v.smokeColor);
-	HSTR_PUSH_NUMBER(L, "tileLength",           v.tilelength);
-	HSTR_PUSH_NUMBER(L, "scrollSpeed",          v.scrollspeed);
-	HSTR_PUSH_NUMBER(L, "pulseSpeed",           v.pulseSpeed);
-	HSTR_PUSH_NUMBER(L, "laserFlareSize",       v.laserflaresize);
-	HSTR_PUSH_NUMBER(L, "thickness",            v.thickness);
-	HSTR_PUSH_NUMBER(L, "coreThickness",        v.corethickness);
-	HSTR_PUSH_NUMBER(L, "beamDecay",            v.beamdecay);
-	HSTR_PUSH_NUMBER(L, "stages",               v.stages);
-	HSTR_PUSH_NUMBER(L, "sizeDecay",            v.sizeDecay);
-	HSTR_PUSH_NUMBER(L, "alphaDecay",           v.alphaDecay);
-	HSTR_PUSH_NUMBER(L, "separation",           v.separation);
-	HSTR_PUSH_BOOL  (L, "castShadow",           v.castShadow);
-	HSTR_PUSH_BOOL  (L, "noGap",                v.noGap);
-	HSTR_PUSH_BOOL  (L, "alwaysVisible",        v.alwaysVisible);
-	HSTR_PUSH_BOOL  (L, "beamWeapon",           false); // DEPRECATED
+	LuaPushNamedString(L, "modelName",            modelLoader.FindModelPath(v.modelName));
+	LuaPushNamedNumber(L, "colorR",               v.color.x);
+	LuaPushNamedNumber(L, "colorG",               v.color.y);
+	LuaPushNamedNumber(L, "colorB",               v.color.z);
+	LuaPushNamedNumber(L, "color2R",              v.color2.x);
+	LuaPushNamedNumber(L, "color2G",              v.color2.y);
+	LuaPushNamedNumber(L, "color2B",              v.color2.z);
+	LuaPushNamedBool  (L, "smokeTrail",           v.smokeTrail);
+	LuaPushNamedBool  (L, "smokeTrailCastShadow", v.smokeTrailCastShadow);
+	LuaPushNamedNumber(L, "smokePeriod",          v.smokePeriod);
+	LuaPushNamedNumber(L, "smokeTime",            v.smokeTime);
+	LuaPushNamedNumber(L, "smokeSize",            v.smokeSize);
+	LuaPushNamedNumber(L, "smokeColor",           v.smokeColor);
+	LuaPushNamedNumber(L, "tileLength",           v.tilelength);
+	LuaPushNamedNumber(L, "scrollSpeed",          v.scrollspeed);
+	LuaPushNamedNumber(L, "pulseSpeed",           v.pulseSpeed);
+	LuaPushNamedNumber(L, "laserFlareSize",       v.laserflaresize);
+	LuaPushNamedNumber(L, "thickness",            v.thickness);
+	LuaPushNamedNumber(L, "coreThickness",        v.corethickness);
+	LuaPushNamedNumber(L, "beamDecay",            v.beamdecay);
+	LuaPushNamedNumber(L, "stages",               v.stages);
+	LuaPushNamedNumber(L, "sizeDecay",            v.sizeDecay);
+	LuaPushNamedNumber(L, "alphaDecay",           v.alphaDecay);
+	LuaPushNamedNumber(L, "separation",           v.separation);
+	LuaPushNamedBool  (L, "castShadow",           v.castShadow);
+	LuaPushNamedBool  (L, "noGap",                v.noGap);
+	LuaPushNamedBool  (L, "alwaysVisible",        v.alwaysVisible);
+	LuaPushNamedBool  (L, "beamWeapon",           false); // DEPRECATED
 
 	return 1;
 }
@@ -409,11 +409,11 @@ static int GuiSoundSetTable(lua_State* L, const void* data)
 
 		const GuiSoundSetData& sound = soundSet.GetSoundData(i);
 
-		HSTR_PUSH_STRING(L, "name",   sound.name);
-		HSTR_PUSH_NUMBER(L, "volume", sound.volume);
+		LuaPushNamedString(L, "name",   sound.name);
+		LuaPushNamedNumber(L, "volume", sound.volume);
 
 		if (!CLuaHandle::GetHandleSynced(L)) {
-			HSTR_PUSH_NUMBER(L, "id", sound.id);
+			LuaPushNamedNumber(L, "id", sound.id);
 		}
 
 		lua_rawset(L, -3);

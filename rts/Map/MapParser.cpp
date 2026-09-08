@@ -24,7 +24,7 @@ std::string MapParser::GetMapConfigName(const std::string& mapFileName)
 {
 	const std::string directory = FileSystem::GetDirectory(mapFileName);
 	const std::string filename  = FileSystem::GetBasename(mapFileName);
-	const std::string extension = FileSystem::GetExtension(mapFileName);
+	const std::string extension = FileSystem::GetExtensionLowerCase(mapFileName);
 
 	if (extension == "smf")
 		return directory + filename + ".smd";

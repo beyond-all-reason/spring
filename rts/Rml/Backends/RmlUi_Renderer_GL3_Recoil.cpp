@@ -486,7 +486,7 @@ struct FramebufferData
 
 enum class FramebufferAttachment
 {
-	None, Depth, DepthStencil
+	None, DepthStencil
 };
 
 struct CheckGLToken {
@@ -706,10 +706,12 @@ RenderInterface_GL3_Recoil::~RenderInterface_GL3_Recoil()
 	}
 }
 
-void RenderInterface_GL3_Recoil::SetViewport(int width, int height)
+void RenderInterface_GL3_Recoil::SetViewport(int width, int height, int offset_x, int offset_y)
 {
 	viewport_width = Rml::Math::Max(width, 1);
 	viewport_height = Rml::Math::Max(height, 1);
+	viewport_offset_x = offset_x;
+	viewport_offset_y = offset_y;
 	projection = Rml::Matrix4f::ProjectOrtho(0, (float) viewport_width, (float) viewport_height, 0, -10000, 10000);
 }
 
@@ -810,6 +812,7 @@ void RenderInterface_GL3_Recoil::EndFrame()
 
 	// Draw to backbuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(viewport_offset_x, viewport_offset_y, viewport_width, viewport_height);
 
 	// Assuming we have an opaque background, we can just write to it with the premultiplied alpha blend mode and we'll get the correct result.
 	// Instead, if we had a transparent destination that didn't use premultiplied alpha, we would need to perform a manual un-premultiplication step.
@@ -940,7 +943,7 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle hand
 	geometry->vao->Bind();
 	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
 	geometry->vao->Unbind();
-	
+
 	if (texture != TexturePostprocess) {
 		UseProgram(ProgramId::None);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -1022,35 +1025,34 @@ RenderInterface_GL3_Recoil::RenderToClipMask(Rml::ClipMaskOperation operation, R
 	RMLUI_ASSERT(glIsEnabled(GL_STENCIL_TEST))
 	using Rml::ClipMaskOperation;
 
-	const bool clear_stencil = (operation == ClipMaskOperation::Set || operation == ClipMaskOperation::SetInverse);
-	if (clear_stencil) {
-		// @performance Increment the reference value instead of clearing each time.
-		glClear(GL_STENCIL_BUFFER_BIT);
-	}
-
-	GLint stencil_test_value = 0;
-	glGetIntegerv(GL_STENCIL_REF, &stencil_test_value);
-
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	glStencilFunc(GL_ALWAYS, GLint(1), GLuint(-1));
+	GLint stencil_write_value = 1;
+	GLint stencil_test_value = 1;
 
 	switch (operation) {
 		case ClipMaskOperation::Set: {
+			// @performance Increment the reference value instead of clearing each time.
+			glClear(GL_STENCIL_BUFFER_BIT);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			stencil_test_value = 1;
 		}
 			break;
 		case ClipMaskOperation::SetInverse: {
+			glClearStencil(1);
+			glClear(GL_STENCIL_BUFFER_BIT);
+			glClearStencil(0);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			stencil_test_value = 0;
+			stencil_write_value = 0;
 		}
 			break;
 		case ClipMaskOperation::Intersect: {
 			glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+			glGetIntegerv(GL_STENCIL_REF, &stencil_test_value);
 			stencil_test_value += 1;
 		}
 			break;
 	}
+
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glStencilFunc(GL_ALWAYS, stencil_write_value, GLuint(-1));
 
 	RenderGeometry(geometry, translation, {});
 
@@ -1746,7 +1748,7 @@ Rml::TextureHandle RenderInterface_GL3_Recoil::SaveLayerAsTexture()
 	const Gfx::FramebufferData& destination = render_layers.GetPostprocessSecondary();
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination.framebuffer);
-	
+
 	// Flip the image vertically, as that convention is used for textures, and move to origin.
 	glBlitFramebuffer(                                  //
 		bounds.Left(), source.height - bounds.Bottom(), // src0

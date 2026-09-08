@@ -50,6 +50,7 @@ public:
 	void SetUpdated() { updated = true; }
 public:
 	static void SetSky();
+	static void SetSkyLuaTexture(const MapTextureData& td);
 	static auto& GetSky() { return sky; }
 	static void KillSky() { sky = nullptr; }
 public:

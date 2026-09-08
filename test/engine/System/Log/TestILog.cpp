@@ -3,6 +3,7 @@
 #include "System/Log/FileSink.h"
 #include "System/Log/StreamSink.h"
 #include "System/Log/LogUtil.h"
+#include "System/Log/DefaultFilter.h"
 
 #include <catch_amalgamated.hpp>
 
@@ -229,5 +230,35 @@ TEST_CASE("IsEnabled")
 		LOG_SL("other-one-time-section", L_DEBUG, "Testing LOG_IS_ENABLED_S");
 	}
 	TLOG_SL(   "other-one-time-section", L_DEBUG, "Testing LOG_IS_ENABLED_S");
+}
+
+
+// Regression for the duplicate-entry leak in log_filter_section_setMinLevel.
+// Setting a section to a non-default level used to *append* a new row every call
+// instead of updating the existing one, so repeated changes to one section filled
+// the fixed-size sectionMinLevels table and then made *all* section-level changes
+// silently fail ("too many section-levels").
+TEST_CASE("SectionMinLevelNoDuplicateLeak")
+{
+	// non-default levels for these (non-default) sections; restored at the end
+	const int savedDefined = log_filter_section_getMinLevel(LOG_SECTION_DEFINED);
+	const int savedOneTime = log_filter_section_getMinLevel(LOG_SECTION_ONE_TIME_0);
+
+	// hammer one section far more than the table could ever hold
+	for (int i = 0; i < 300; ++i)
+		log_filter_section_setMinLevel((i & 1) ? LOG_LEVEL_WARNING : LOG_LEVEL_ERROR, LOG_SECTION_DEFINED);
+
+	// the most recent value wins (a single, updated-in-place entry)
+	log_filter_section_setMinLevel(LOG_LEVEL_ERROR, LOG_SECTION_DEFINED);
+	CHECK(log_filter_section_getMinLevel(LOG_SECTION_DEFINED) == LOG_LEVEL_ERROR);
+
+	// and a *different* section must still be settable: with the old append bug
+	// the table is saturated by now and this set would be dropped
+	log_filter_section_setMinLevel(LOG_LEVEL_WARNING, LOG_SECTION_ONE_TIME_0);
+	CHECK(log_filter_section_getMinLevel(LOG_SECTION_ONE_TIME_0) == LOG_LEVEL_WARNING);
+
+	// restore original levels (setting back to default takes the erase path)
+	log_filter_section_setMinLevel(savedDefined, LOG_SECTION_DEFINED);
+	log_filter_section_setMinLevel(savedOneTime, LOG_SECTION_ONE_TIME_0);
 }
 

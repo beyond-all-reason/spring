@@ -11,7 +11,7 @@ public:
 	COverviewController();
 	~COverviewController();
 
-	const std::string GetName() const { return "ov"; }
+	const std::string GetName() const override { return "ov"; }
 
 	void KeyMove(float3 move) override {}
 	void MouseMove(float3 move) override {}
@@ -25,11 +25,11 @@ public:
 	void SetDir(const float3& newDir) override {}
 	void SetRot(const float3& newDir) override {camRotY = newDir.y;}
 
-	float3 SwitchFrom() const;
-	void SwitchTo(const CCameraController* oldCam, const bool showText);
+	float3 SwitchFrom() const override;
+	void SwitchTo(const CCameraController* oldCam, const bool showText) override;
 
-	void GetState(StateMap& sm) const;
-	bool SetState(const StateMap& sm);
+	void GetState(StateMap& sm) const override;
+	bool SetState(const StateMap& sm) override;
 
 	void ConfigNotify(const std::string& key, const std::string& value);
 	void ConfigUpdate();

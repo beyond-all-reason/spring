@@ -231,5 +231,6 @@ namespace Rml::SolLua
 	void bind_global(sol::table& namespace_table, SolLuaPlugin *slp);
 	void bind_vector(sol::table& namespace_table);
 	void bind_convert(sol::table& namespace_table);
+	void bind_stylesheet(sol::table& namespace_table);
 
 } // end namespace Rml::SolLua

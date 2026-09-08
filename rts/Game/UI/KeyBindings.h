@@ -58,7 +58,15 @@ class CKeyBindings : public CommandReceiver
 
 	protected:
 		void BuildHotkeyMap();
+		// rebuilds the reverse map once, and only if a binding actually changed
+		void MaybeBuildHotkeyMap();
 		void DebugActionList(const ActionList& actionList) const;
+
+		// the *Internal variants do the work but never rebuild the reverse map;
+		// the public Load/ExecuteCommand wrappers rebuild once at the end, so every
+		// outside call path rebuilds exactly once regardless of how it recurses
+		bool LoadInternal(const std::string& filename = DEFAULT_FILENAME);
+		bool ExecuteCommandInternal(const std::string& line);
 
 		void AddActionToKeyMap(KeyMap& bindings, Action& action);
 		static bool RemoveActionFromKeyMap(const std::string& command, KeyMap& bindings);
@@ -90,7 +98,7 @@ class CKeyBindings : public CommandReceiver
 		int fakeMetaKey = -1;
 		int keyChainTimeout = 750;
 
-		bool buildHotkeyMap = true;
+		bool buildHotkeyMap = true; // reverse hotkey map is stale and needs rebuilding
 		bool debugEnabled = false;
 };
 

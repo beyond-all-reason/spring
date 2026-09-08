@@ -31,6 +31,73 @@ namespace QTPFS {
 		static size_t MaxSpeedModTypeValue() { return (std::numeric_limits<SpeedModType>::max()); }
 		static size_t MaxSpeedBinTypeValue() { return (std::numeric_limits<SpeedBinType>::max()); }
 
+		struct MapSquareData {
+			SpeedBinType bin = 0;
+
+			static constexpr SpeedBinType EXIT_ONLY_MASK = 0x80;
+			static constexpr SpeedBinType BIN_VALUE_MASK = 0x7F;
+
+			MapSquareData() = default;
+			MapSquareData(SpeedBinType binValue, bool exitOnly) {
+				SetBinAndExitOnly(binValue, exitOnly);
+			}
+			MapSquareData(const MapSquareData& other) = default;
+
+			MapSquareData& operator= (const MapSquareData& other) {
+				bin = other.bin;
+				return *this;
+			}
+
+			bool IsExitOnly() const {
+				return !!(bin & EXIT_ONLY_MASK);
+			}
+
+			SpeedBinType GetBinValue() const {
+				return bin & BIN_VALUE_MASK;
+			}
+
+			void SetExitOnly() {
+				bin |= EXIT_ONLY_MASK;
+			}
+
+			void ClearExitOnly() {
+				bin &= ~EXIT_ONLY_MASK;
+			}
+
+			void SetBinValue(SpeedBinType value) {
+				bin = (bin & ~BIN_VALUE_MASK) | (value & BIN_VALUE_MASK);
+			}
+
+			void SetBinAndExitOnly(SpeedBinType value, bool exitOnly) {
+				bin = (value & BIN_VALUE_MASK) | (exitOnly ? EXIT_ONLY_MASK : 0);
+			}
+
+			bool operator== (const MapSquareData& other) const {
+				return bin == other.bin;
+			}
+
+			bool operator!= (const MapSquareData& other) const {
+				return bin != other.bin;
+			}
+		};
+
+		constexpr static unsigned int NODE_CACHE_SECTOR_SIZE   = QTPFS_MAP_DAMAGE_SIZE * QTPFS_MAP_DAMAGE_SIZE;
+		// Row stride within a NodeSpeedBinCache: equal to the sector width.
+		// Expressed here so callers never need to reference QTPFS_MAP_DAMAGE_SIZE directly.
+		constexpr static unsigned int NODE_CACHE_SECTOR_STRIDE = QTPFS_MAP_DAMAGE_SIZE;
+
+		struct NodeSpeedBinCache : public std::array<MapSquareData, NODE_CACHE_SECTOR_SIZE> {
+			// NOTE: This is used to cache the speed mod bins for each node, so that we don't have to recalculate them every time we need them.
+			//       The cache is indexed by the node index, and the value is an array of speed mod bins for each cell in the node's area.
+		};
+
+		struct ExitOnlyCacheView {
+			const NodeSpeedBinCache& data;
+			uint32_t stride;
+			uint32_t xOffset;
+			uint32_t zOffset;
+		};
+
 		~NodeLayer() { registry.clear(); }
 
 		NodeLayer() = default;
@@ -42,7 +109,8 @@ namespace QTPFS {
 		void Init(unsigned int layerNum);
 		void Clear();
 
-		bool Update(UpdateThreadData& threadData);
+		bool InitialUpdate(UpdateThreadData& threadData);
+		bool IncrementalUpdate(UpdateThreadData& threadData);
 
 		void ExecNodeNeighborCacheUpdates(const SRectangle& ur, UpdateThreadData& threadData);
 		float GetNodeRatio() const { return (numLeafNodes / std::max(1.0f, float(xsize * zsize))); }
@@ -117,6 +185,18 @@ namespace QTPFS {
 
 		const std::vector<SpeedBinType>& GetCurSpeedBins() const { return curSpeedBins; }
 		const std::vector<SpeedModType>& GetCurSpeedMods() const { return curSpeedMods; }
+		const NodeSpeedBinCache& GetNodeSpeedBinCache(int x, int z) const {
+			return mapSquareStatusCache[GetSectorIndex(x, z)];
+		}
+
+		ExitOnlyCacheView GetExitOnlyCacheView(uint32_t x1, uint32_t z1) const {
+			return {
+				mapSquareStatusCache[GetSectorIndex(x1, z1)],
+				NODE_CACHE_SECTOR_STRIDE,
+				x1 % NODE_CACHE_SECTOR_STRIDE,
+				z1 % NODE_CACHE_SECTOR_STRIDE
+			};
+		}
 
 		void SetNumLeafNodes(unsigned int n) { numLeafNodes = n; }
 		unsigned int GetNumLeafNodes() const { return numLeafNodes; }
@@ -127,6 +207,7 @@ namespace QTPFS {
 			std::uint64_t memFootPrint = sizeof(NodeLayer);
 			memFootPrint += (curSpeedMods.size() * sizeof(SpeedModType));
 			memFootPrint += (curSpeedBins.size() * sizeof(SpeedBinType));
+			memFootPrint += (mapSquareStatusCache.size() * sizeof(decltype(mapSquareStatusCache)::value_type));
 
 			memFootPrint += (selectedNodes.size() * sizeof(decltype(selectedNodes)::value_type));
 			memFootPrint += (openNodes.size()     * sizeof(decltype(openNodes)::value_type));
@@ -170,6 +251,14 @@ namespace QTPFS {
 		bool UseShortestPath() { return useShortestPath; }
 
 	private:
+		bool Update(UpdateThreadData& threadData, bool isInitialUpdate);
+
+		uint32_t GetSectorIndex(uint32_t x, uint32_t z) const {
+			const uint32_t sectorsPerRow = xsize / NODE_CACHE_SECTOR_STRIDE;
+			return (z / NODE_CACHE_SECTOR_STRIDE) * sectorsPerRow
+			     + (x / NODE_CACHE_SECTOR_STRIDE);
+		}
+
 		std::vector<QTNode> poolNodes[16];
 		std::vector<unsigned int> nodeIndcs;
 
@@ -178,6 +267,8 @@ namespace QTPFS {
 
 		std::vector<SpeedModType> curSpeedMods;
 		std::vector<SpeedBinType> curSpeedBins;
+
+		std::vector<NodeSpeedBinCache> mapSquareStatusCache;
 
 public:
 		static constexpr unsigned int NUM_POOL_CHUNKS = sizeof(poolNodes) / sizeof(poolNodes[0]);
@@ -236,4 +327,3 @@ private:
 }
 
 #endif
-

@@ -18,7 +18,8 @@ public:
 	AIFloat3();
 	AIFloat3(float x, float y, float z);
 	AIFloat3(float* xyz);
-	AIFloat3(const AIFloat3& other);
+	// must be trivial - same as float3, otherwise it ruins bindings
+	AIFloat3(const AIFloat3& other) = default;
 	AIFloat3(const float3& f3);
 
 	void LoadInto(float* xyz) const;

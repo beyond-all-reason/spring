@@ -2,6 +2,7 @@
 
 #include "LuaConstPlatform.h"
 #include "LuaUtils.h"
+#include "Game/GameVersion.h"
 #include "System/Platform/Hardware.h"
 #include "System/Platform/Misc.h"
 #include "Rendering/GlobalRendering.h"
@@ -23,7 +24,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "gpu", globalRenderingInfo.gpuName);
 	/*** @field Platform.gpuVendor "Nvidia"|"Intel"|"ATI"|"Mesa"|"Unknown" */
 	LuaPushNamedString(L, "gpuVendor", globalRenderingInfo.gpuVendor);
-	/*** @field Platform.gpuMemorySize number Size of total GPU memory in MBs; only available for "Nvidia", (rest are 0) */
+	/*** @field Platform.gpuMemorySize integer Size of total GPU memory in MBs; only available for "Nvidia", (rest are 0) */
 	LuaPushNamedNumber(L, "gpuMemorySize", globalRenderingInfo.gpuMemorySize.x);
 	/*** @field Platform.glVersionShort string `major.minor.buildNumber` */
 	LuaPushNamedString(L, "glVersionShort", globalRenderingInfo.glVersionShort.data());
@@ -47,17 +48,17 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	/*** @field Platform.glewVersion string */
 	LuaPushNamedString(L, "glewVersion", globalRenderingInfo.gladVersion);
 
-	/*** @field Platform.sdlVersionCompiledMajor number */
+	/*** @field Platform.sdlVersionCompiledMajor integer */
 	LuaPushNamedNumber(L, "sdlVersionCompiledMajor", globalRenderingInfo.sdlVersionCompiled.major);
-	/*** @field Platform.sdlVersionCompiledMinor number */
+	/*** @field Platform.sdlVersionCompiledMinor integer */
 	LuaPushNamedNumber(L, "sdlVersionCompiledMinor", globalRenderingInfo.sdlVersionCompiled.minor);
-	/*** @field Platform.sdlVersionCompiledPatch number */
+	/*** @field Platform.sdlVersionCompiledPatch integer */
 	LuaPushNamedNumber(L, "sdlVersionCompiledPatch", globalRenderingInfo.sdlVersionCompiled.patch);
-	/*** @field Platform.sdlVersionLinkedMajor number */
+	/*** @field Platform.sdlVersionLinkedMajor integer */
 	LuaPushNamedNumber(L, "sdlVersionLinkedMajor", globalRenderingInfo.sdlVersionLinked.major);
-	/*** @field Platform.sdlVersionLinkedMinor number */
+	/*** @field Platform.sdlVersionLinkedMinor integer */
 	LuaPushNamedNumber(L, "sdlVersionLinkedMinor", globalRenderingInfo.sdlVersionLinked.minor);
-	/*** @field Platform.sdlVersionLinkedPatch number */
+	/*** @field Platform.sdlVersionLinkedPatch integer */
 	LuaPushNamedNumber(L, "sdlVersionLinkedPatch", globalRenderingInfo.sdlVersionLinked.patch);
 
 	/*** @field Platform.availableVideoModes PlatformVideoMode[] */
@@ -76,13 +77,13 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 		LuaPushNamedNumber(L, "display", avm.displayIndex);
 		/*** @field PlatformVideoMode.displayName string */
 		LuaPushNamedString(L, "displayName", avm.displayName);
-		/*** @field PlatformVideoMode.w number */
+		/*** @field PlatformVideoMode.w integer */
 		LuaPushNamedNumber(L, "w", avm.width);
-		/*** @field PlatformVideoMode.h number */
+		/*** @field PlatformVideoMode.h integer */
 		LuaPushNamedNumber(L, "h", avm.height);
 		/*** @field PlatformVideoMode.bpp integer */
 		LuaPushNamedNumber(L, "bpp", avm.bpp);
-		/*** @field PlatformVideoMode.hz number */
+		/*** @field PlatformVideoMode.hz integer */
 		LuaPushNamedNumber(L, "hz", avm.refreshRate);
 
 		lua_rawset(L, -3);
@@ -111,7 +112,7 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	/*** @field Platform.glHaveGL4 boolean */
 	LuaPushNamedBool(L, "glHaveGL4", globalRendering->haveGL4);
 
-	/*** @field Platform.glSupportDepthBufferBitDepth number */
+	/*** @field Platform.glSupportDepthBufferBitDepth integer */
 	LuaPushNamedNumber(L, "glSupportDepthBufferBitDepth", globalRendering->supportDepthBufferBitDepth);
 
 	/*** @field Platform.glSupportRestartPrimitive boolean */
@@ -129,6 +130,8 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "osVersion", Platform::GetOSVersionStr());
 	/*** @field Platform.osFamily "Windows"|"Linux"|"MacOSX"|"FreeBSD"|"Unknown" */
 	LuaPushNamedString(L, "osFamily", Platform::GetOSFamilyStr());
+	/*** @field Platform.architecture string CPU architecture (e.g., "x86_64", "arm64") */
+	LuaPushNamedString(L, "architecture", Platform::GetArchitectureStr());
 	/*** @field Platform.hwConfig string */
 	LuaPushNamedString(L, "hwConfig", Platform::GetHardwareStr());
 	/*** @field Platform.cpuLogicalCores integer */
@@ -144,6 +147,16 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedString(L, "sysInfoHash", Platform::GetSysInfoHash());
 	/*** @field Platform.macAddrHash string */
 	LuaPushNamedString(L, "macAddrHash", Platform::GetMacAddrHash());
+
+	/*** @field Platform.isHeadless boolean Is this a headless build which only simulates and doesnt offer interactive IO? */
+	LuaPushNamedBool(L, "isHeadless", SpringVersion::IsHeadless());
+
+	/*** @field Platform.hasSyncChecksums boolean Whether the engine was built with sync-check support (i.e. Spring.GetPrevFrameSyncChecksum() returns a meaningful value). */
+	#ifdef SYNCCHECK
+		LuaPushNamedBool(L, "hasSyncChecksums", true);
+	#else
+		LuaPushNamedBool(L, "hasSyncChecksums", false);
+	#endif
 
 	return true;
 }

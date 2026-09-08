@@ -70,7 +70,7 @@ A "skirmish" AI is hosted by one of the players and generally acts very similar 
 It can read the game state via AI interface and works by giving units commands.
 Strictly speaking, it is their hosting player relaying commands - this means that this type of AI is subject to lag and will drop if the hosting player quits.
 On the other hand, only the host player is taking on the burden of simulating the AI.
-There are currently Skirmish AI bindings for C and Java (though distributing the Java runtime environment for a Java skirmish AI is up to the game).
+There are currently Skirmish AI bindings available in C and C++.
 A game does not need explicit support for this kind of AI (meaning for example, somebody can homebrew one), though it will likely want to handle distribution and infrastructure issues (for example to block homebrew AI).
 
 A Lua AI generally has two components: a piece of game mechanics, and the AI instance itself which is just a handle to tell game mechanics which teams are legal to control. 

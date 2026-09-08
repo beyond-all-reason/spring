@@ -6,11 +6,13 @@
 #include <memory>
 
 #include "DemoRecorder.h"
+#include "DemoFileExtension.h"
 #include "base64.h"
 #include "Game/GameVersion.h"
 #include "Sim/Misc/TeamStatistics.h"
 #include "System/TimeUtil.h"
 #include "System/StringUtil.h"
+#include "System/Config/ConfigHandler.h"
 #include "System/FileSystem/DataDirsAccess.h"
 #include "System/FileSystem/FileSystem.h"
 #include "System/FileSystem/FileQueryFlags.h"
@@ -41,7 +43,8 @@ CDemoRecorder::CDemoRecorder(const std::string& mapName, const std::string& modN
 	SetFileHeader();
 	WriteFileHeader(false);
 
-	file = gzopen(demoName.c_str(), "wb9");
+	std::string absoluteFilePath = dataDirsAccess.LocateFile(demoName, FileQueryFlags::WRITE);
+	file = gzopen(absoluteFilePath.c_str(), "wb9");
 }
 
 CDemoRecorder::~CDemoRecorder()
@@ -159,15 +162,16 @@ void CDemoRecorder::SetName(const std::string& mapName, const std::string& modNa
 	// oss << FileSystem::GetBasename(modName);
 	// oss << "_";
 	oss << engineVersionName;
-	buf << oss.str() << ".sdfz";
+	const std::string ext = "." + GetDemoFileExtensions()[0];
+	buf << oss.str() << ext;
 
 	int n = 0;
 	while (FileSystem::FileExists(buf.str()) && (n < 99)) {
 		buf.str(""); // clears content
-		buf << oss.str() << "_" << n++ << ".sdfz";
+		buf << oss.str() << "_" << n++ << ext;
 	}
 
-	demoName = dataDirsAccess.LocateFile(buf.str(), FileQueryFlags::WRITE);
+	demoName = buf.str();
 }
 
 void CDemoRecorder::SetGameID(const unsigned char* buf)

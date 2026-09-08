@@ -35,8 +35,6 @@ class CUnsyncedLuaHandle : public CLuaHandle
 
 		bool Init(std::string code, const std::string& file);
 
-		void EnactDevMode() const override;
-
 		static CUnsyncedLuaHandle* GetUnsyncedHandle(lua_State* L) {
 			assert(dynamic_cast<CUnsyncedLuaHandle*>(CLuaHandle::GetHandle(L)) != nullptr);
 			return static_cast<CUnsyncedLuaHandle*>(CLuaHandle::GetHandle(L));
@@ -58,6 +56,8 @@ class CSyncedLuaHandle : public CLuaHandle
 	public: // call-ins
 		bool CommandFallback(const CUnit* unit, const Command& cmd) override;
 		bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua) override;
+
+		bool ResourceExcess(const std::map <int, SResourcePack>& excess) override;
 
 		std::pair <bool, bool> AllowUnitCreation(const UnitDef* unitDef, const CUnit* builder, const BuildInfo* buildInfo) override;
 		bool AllowUnitTransfer(const CUnit* unit, int newTeam, bool capture) override;

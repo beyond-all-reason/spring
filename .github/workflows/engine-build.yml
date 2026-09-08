@@ -61,13 +61,21 @@ jobs:
     strategy:
       matrix:
         system:
-          - amd64-linux
-          - amd64-windows
+          - target: amd64-linux
+            runs-on-arch: amd64
+            bazel-remote-sha256: 025d53aeb03a7fdd4a0e76262a5ae9eeee9f64d53ca510deff1c84cf3f276784
+          - target: arm64-linux
+            runs-on-arch: arm64
+            bazel-remote-sha256: b8b9456d669d45bb8c5480ce0529ca4fa9d445e0c33b3aeed779df802d8164db
+          - target: amd64-windows
+            runs-on-arch: amd64
+            bazel-remote-sha256: 025d53aeb03a7fdd4a0e76262a5ae9eeee9f64d53ca510deff1c84cf3f276784
+    name: Build ${{ matrix.system.target }} engine
     runs-on:
       # Run on 8 core, 16GiB ubuntu 24.04 machine.
-      - nscloud-ubuntu-24.04-amd64-8x16-with-cache
-      # Mount named cache volume `engine-${{ matrix.system }}`.
-      - nscloud-cache-tag-engine-${{ matrix.system }}
+      - nscloud-ubuntu-24.04-${{ matrix.system.runs-on-arch }}-8x16-with-cache
+      # Mount named cache volume `engine-${{ matrix.system.target }}`.
+      - nscloud-cache-tag-engine-${{ matrix.system.target }}
       # The cache volume should be 20GiB (minimal size).
       - nscloud-cache-size-20gb
       # Also cache the git checkouts in datacenter local namespace git mirror
@@ -78,7 +86,7 @@ jobs:
       - nscloud-exp-container-image-cache
     steps:
       - name: Checkout code
-        uses: namespacelabs/nscloud-checkout-action@v7
+        uses: namespacelabs/nscloud-checkout-action@v8
         with:
           # We fetch full history because engine automatic version naming uses
           # that.
@@ -98,8 +106,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: bazel-remote-data-overlay.tar
-          key: pr-bazel-remote-data-${{ matrix.system }}-${{ github.run_id }}
-          restore-keys: pr-bazel-remote-data-${{ matrix.system }}-
+          key: pr-bazel-remote-data-${{ matrix.system.target }}-${{ github.run_id }}
+          restore-keys: pr-bazel-remote-data-${{ matrix.system.target }}-
       - name: Mount bazel remote overlay
         id: mount-overlay
         if: github.event_name == 'pull_request'
@@ -118,8 +126,8 @@ jobs:
           BAZEL_REMOTE_S3_SECRET_ACCESS_KEY: ${{ github.event_name == 'pull_request' && vars.R2_RO_ACCESS_KEY_SECRET || secrets.R2_ACCESS_KEY_SECRET }}
         with:
           run: |
-            if ! sha256sum --status -c <<< "0e3ccc67bced00bc783ee395160092c107a4699e06586a68dcd53fcfa7d8063e tools/bazel-remote"; then
-              curl -L https://github.com/buchgr/bazel-remote/releases/download/v2.5.0/bazel-remote-2.5.0-linux-x86_64 -o bazel-remote
+            if ! sha256sum --status -c <<< "${{ matrix.system.bazel-remote-sha256 }} tools/bazel-remote"; then
+              curl -L "https://github.com/buchgr/bazel-remote/releases/download/v2.6.1/bazel-remote-2.6.1-linux-${{ matrix.system.runs-on-arch }}" -o bazel-remote
               chmod +x bazel-remote
               mv bazel-remote tools/bazel-remote
             fi
@@ -150,21 +158,21 @@ jobs:
         if: inputs.image-artifacts
         uses: actions/download-artifact@v8
         with:
-          name: build-image-${{ matrix.system }}
+          name: build-image-${{ matrix.system.target }}
           path: ${{ runner.temp }}
       - name: Pull builder image
         id: resolve-image
         run: |
           if [[ -f ${{ runner.temp }}/image.tar ]]; then
             docker load --input ${{ runner.temp }}/image.tar
-            echo "image=recoil-build-${{ matrix.system }}:latest" >> "$GITHUB_OUTPUT"
+            echo "image=recoil-build-${{ matrix.system.target }}:latest" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           source src/docker-build-v2/images_versions.sh
 
-          digest=${image_version[${{ matrix.system }}]}
-          ghcr_image=ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system }}
+          digest=${image_version[${{ matrix.system.target }}]}
+          ghcr_image=ghcr.io/${{ github.repository_owner }}/recoil-build-${{ matrix.system.target }}
 
           docker version
           docker pull $ghcr_image@$digest
@@ -199,7 +207,7 @@ jobs:
         uses: actions/upload-artifact@v4
         id: save-artifact
         with:
-          name: engine-artifacts-${{ matrix.system }}-${{ inputs.package-suffix }}
+          name: engine-artifacts-${{ matrix.system.target }}-${{ inputs.package-suffix }}
           path: ./artifacts
           compression-level: 0  # already compressed
       - name: Unmount bazel remote overlay

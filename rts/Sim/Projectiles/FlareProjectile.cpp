@@ -37,7 +37,7 @@ CFlareProjectile::CFlareProjectile(const float3& pos, const float3& speed, CUnit
 	deathFrame(activateFrame + ((owner != nullptr)? owner->unitDef->flareTime: 1)),
 
 	numSubProjs(0),
-	maxSubProjs(std::min((owner != nullptr)? owner->unitDef->flareSalvoSize: 0, int(subProjPos.size()))),
+	maxSubProjs(std::min((owner != nullptr)? owner->unitDef->flareSalvoSize: 0, int(std::tuple_size_v<decltype(subProjPos)>))),
 	lastSubProj(0)
 {
 	alphaFalloff = (owner != nullptr)? 1.0f / owner->unitDef->flareTime: 1.0f;

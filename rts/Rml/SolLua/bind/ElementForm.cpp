@@ -73,6 +73,17 @@ namespace Rml::SolLua
 		#define SETATTR(S, N, D) [](S& self, const D& value) { functions::setAttribute(self, N, value); }
 	}
 
+	namespace input
+	{
+		static auto getSelection(Rml::ElementFormControlInput& self)
+		{
+			int start, end;
+			Rml::String text;
+			self.GetSelection(&start, &end, &text);
+			return std::make_tuple(start, end, text);
+		}
+	}
+
 	namespace options
 	{
 		struct SelectOptionsProxyNode
@@ -134,6 +145,17 @@ namespace Rml::SolLua
 		}
 	}
 
+	namespace textarea
+	{
+		static auto getSelection(Rml::ElementFormControlTextArea& self)
+		{
+			int start, end;
+			Rml::String text;
+			self.GetSelection(&start, &end, &text);
+			return std::make_tuple(start, end, text);
+		}
+	}
+
 	void bind_element_form(sol::table& namespace_table)
 	{
 		/***
@@ -179,6 +201,26 @@ namespace Rml::SolLua
 		 * @class RmlUi.ElementFormControlInput : RmlUi.Element, RmlUi.ElementFormControl
 		 */
 		namespace_table.new_usertype<Rml::ElementFormControlInput>("ElementFormControlInput", sol::no_constructor,
+			// M
+			/***
+			 * @function RmlUi.ElementFormControlInput:Select
+			 * Selects all text.
+			 */
+			"Select", &Rml::ElementFormControlInput::Select,
+			/***
+			 * @function RmlUi.ElementFormControlInput:SetSelection
+			 * Selects the text in the given character range.
+			 * @param selection_start integer The first character to be selected.
+			 * @param selection_end integer The first character *after* the selection.
+			 */
+			"SetSelection", &Rml::ElementFormControlInput::SetSelectionRange,
+			/***
+			 * @function RmlUi.ElementFormControlInput:GetSelection
+			 * Retrieves the selection range and text.
+			 * @return any selection_start The first character selected; selection_end The first character *after* the selection; selected_text The selected text.
+			 */
+			"GetSelection", &input::getSelection,
+
 			// G+S
 			/*** @field RmlUi.ElementFormControlInput.checked boolean */
 			"checked", sol::property(HASATTRGETTER(Rml::ElementFormControlInput, "checked"), SETATTR(Rml::ElementFormControlInput, "checked", bool)),
@@ -255,6 +297,26 @@ namespace Rml::SolLua
 		 * @class RmlUi.ElementFormControlTextArea : RmlUi.Element, RmlUi.ElementFormControl
 		 */
 		namespace_table.new_usertype<Rml::ElementFormControlTextArea>("ElementFormControlTextArea", sol::no_constructor,
+			// M
+			/***
+			 * @function RmlUi.ElementFormControlTextArea:Select
+			 * Selects all text.
+			 */
+			"Select", &Rml::ElementFormControlTextArea::Select,
+			/***
+			 * @function RmlUi.ElementFormControlTextArea:SetSelection
+			 * Selects the text in the given character range.
+			 * @param selection_start integer The first character to be selected.
+			 * @param selection_end integer The first character *after* the selection.
+			 */
+			"SetSelection", &Rml::ElementFormControlTextArea::SetSelectionRange,
+			/***
+			 * @function RmlUi.ElementFormControlTextArea:GetSelection
+			 * Retrieves the selection range and text.
+			 * @return any selection_start The first character selected; selection_end The first character *after* the selection; selected_text The selected text.
+			 */
+			"GetSelection", &textarea::getSelection,
+
 			// G+S
 			/*** @field RmlUi.ElementFormControlTextArea.cols integer */
 			"cols", sol::property(&Rml::ElementFormControlTextArea::GetNumColumns, &Rml::ElementFormControlTextArea::SetNumColumns),

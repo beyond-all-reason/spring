@@ -284,7 +284,7 @@ public:
 	*/
 	float moveSlowMult;
 
-	int edgeMoveWidth;
+	float edgeMoveWidth;
 	int useInterpolate;
 	bool edgeMoveDynamic;
 

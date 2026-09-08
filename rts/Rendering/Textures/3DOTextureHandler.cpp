@@ -175,17 +175,17 @@ void C3DOTextureHandler::Kill()
 	textures.clear();
 }
 
-void C3DOTextureHandler::DumpAtlasTextures() const
+void C3DOTextureHandler::DumpAtlasTextures(const std::string& fileExt) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (atlas3do1) {
 		for (int level = 0; level < numLevels; ++level) {
-			glSaveTexture(atlas3do1, fmt::format("3DOAtlas1-{}.png", level).c_str(), level);
+			glSaveTexture(atlas3do1, fmt::format("3DOAtlas1-{}.{}", level, fileExt).c_str(), level);
 		}
 	}
 	if (atlas3do2) {
 		for (int level = 0; level < numLevels; ++level) {
-			glSaveTexture(atlas3do2, fmt::format("3DOAtlas2-{}.png", level).c_str(), level);
+			glSaveTexture(atlas3do2, fmt::format("3DOAtlas2-{}.{}", level, fileExt).c_str(), level);
 		}
 	}
 }

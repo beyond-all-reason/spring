@@ -4,6 +4,7 @@
 #include <functional>
 #include <cassert>
 #include <cctype>
+#include <set>
 
 #include <SDL_keyboard.h>
 #include <SDL_events.h>
@@ -23,6 +24,10 @@ namespace KeyInput {
 	static const std::function<bool(const Key&, const Key&)> keyCmp = [](const Key& a, const Key& b) { return (a.first < b.first); };
 
 	static SDL_Keymod keyMods;
+
+	// keycodes forced down by debug.emulateKey*; re-applied on top of the SDL
+	// poll at the end of every Update so they survive the re-poll
+	static std::set<int> emulatedKeyCodes;
 
 
 	bool IsKeyPressed(int keyCode) {
@@ -61,6 +66,19 @@ namespace KeyInput {
 		iter->second = isPressed;
 	}
 
+	// mark a code pressed, inserting it (keeping the vector sorted) if the poll
+	// never created a slot for it -- headless has no SDL keyboard, so keyVec/scanVec
+	// come back empty and plain SetKeyPressed would have nothing to flip
+	static void ForcePressed(std::vector<Key>& vec, int code) {
+		const auto iter = std::lower_bound(vec.begin(), vec.end(), Key{code, false}, keyCmp);
+
+		if (iter != vec.end() && iter->first == code) {
+			iter->second = true;
+		} else {
+			vec.insert(iter, Key{code, true});
+		}
+	}
+
 	void SetKeyModState(int mod, bool isPressed) {
 		if (isPressed) {
 			keyMods = SDL_Keymod(keyMods | mod);
@@ -71,6 +89,26 @@ namespace KeyInput {
 
 	bool GetKeyModState(int mod) {
 		return (keyMods & mod);
+	}
+
+	bool IsKeyEmulated(int keyCode) {
+		return emulatedKeyCodes.contains(keyCode);
+	}
+
+	void SetKeyEmulated(int keyCode, bool pressed) {
+		if (pressed) {
+			emulatedKeyCodes.insert(keyCode);
+		} else {
+			emulatedKeyCodes.erase(keyCode);
+		}
+	}
+
+	const std::set<int>& GetEmulatedKeys() {
+		return emulatedKeyCodes;
+	}
+
+	void ClearEmulatedKeys() {
+		emulatedKeyCodes.clear();
 	}
 
 	/**
@@ -108,6 +146,21 @@ namespace KeyInput {
 		SetKeyPressed(SDL_SCANCODE_LCTRL , GetKeyModState(KMOD_CTRL ));
 		SetKeyPressed(SDL_SCANCODE_LGUI  , GetKeyModState(KMOD_GUI  ));
 		SetKeyPressed(SDL_SCANCODE_LSHIFT, GetKeyModState(KMOD_SHIFT));
+
+		// OR the emulated keys back in: the poll above only reflects real hardware,
+		// so anything held via debug.emulateKey* has to be re-applied here to show
+		// up in IsKeyPressed / GetKeyModState / GetPressedKeys
+		for (const int keyCode: emulatedKeyCodes) {
+			ForcePressed(keyVec, keyCode);
+			ForcePressed(scanVec, SDL_GetScancodeFromKey((SDL_Keycode)keyCode));
+
+			switch (keyCode) {
+				case SDLK_LALT:   case SDLK_RALT:   SetKeyModState(KMOD_ALT  , true); break;
+				case SDLK_LCTRL:  case SDLK_RCTRL:  SetKeyModState(KMOD_CTRL , true); break;
+				case SDLK_LGUI:   case SDLK_RGUI:   SetKeyModState(KMOD_GUI  , true); break;
+				case SDLK_LSHIFT: case SDLK_RSHIFT: SetKeyModState(KMOD_SHIFT, true); break;
+			}
+		}
 	}
 
 	const std::vector<Key>& GetPressedKeys()

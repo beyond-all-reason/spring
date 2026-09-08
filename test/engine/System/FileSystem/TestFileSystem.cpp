@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <string>
+#include <vector>
 #include <nowide/cstdio.hpp>
 #include <sys/stat.h>
 #include "System/Log/ILog.h"
@@ -7,6 +9,7 @@
 
 // needs to be included after catch
 #include "System/FileSystem/FileSystem.h"
+#include "System/FileSystem/FileQueryFlags.h"
 
 namespace {
 	struct PrepareFileSystem {
@@ -130,6 +133,12 @@ TEST_CASE("GetDirectory")
 	CHECK_DIR_EXTRACTION("./foo/testFile.txt", "./foo/");
 
 #undef CHECK_DIR_EXTRACTION
+}
+
+
+TEST_CASE("GetExtensionLowerCase")
+{
+	CHECK(FileSystem::GetExtensionLowerCase("SCRIPT.COB") == "cob");
 }
 
 
@@ -257,3 +266,85 @@ TEST_CASE("GetNormalizedPath - original failing tests")
 }
 
 #undef CHECK_NORM_PATH
+
+
+// Regression test for commit c3b8b6397a (#2235): the std::filesystem-based
+// FindFiles implementation was emitting absolute paths because it pushed the
+// iterated entry path verbatim (including the dataDir prefix). The contract is
+// that matches are relative to dataDir, i.e. `dir + <entry below dir>` only.
+// This is what made VFS.DirList / VFS.SubDirs (raw mode) return absolute paths.
+TEST_CASE("FindFiles - matches are relative to the data dir")
+{
+	// dataDir is the search root that must NOT appear in the results
+	const std::string dataDir = FileSystem::EnsurePathSepAtEnd(FileSystem::ForwardSlashes(pfs.testCwd));
+
+	// build a small tree under the data dir
+	REQUIRE(FileSystem::CreateDirectory("findDir"));
+	REQUIRE(FileSystem::CreateDirectory("findDir/sub"));
+	PrepareFileSystem::WriteFile("findDir/a.txt",     "a");
+	PrepareFileSystem::WriteFile("findDir/b.lua",     "b");
+	PrepareFileSystem::WriteFile("findDir/sub/c.txt", "c");
+
+	const std::string anyRegex = FileSystem::ConvertGlobToRegex("*");
+	const std::string txtRegex = FileSystem::ConvertGlobToRegex("*.txt");
+
+	SECTION("files, non-recursive") {
+		std::vector<std::string> matches;
+		FileSystem::FindFiles(matches, dataDir, "findDir/", anyRegex, 0);
+		std::sort(matches.begin(), matches.end());
+
+		// the dataDir prefix must not leak into the results
+		for (const std::string& m: matches)
+			CHECK(m.rfind(dataDir, 0) != 0);
+
+		REQUIRE(matches.size() == 2);
+		CHECK(matches[0] == "findDir/a.txt");
+		CHECK(matches[1] == "findDir/b.lua");
+	}
+
+	SECTION("pattern is honoured") {
+		std::vector<std::string> matches;
+		FileSystem::FindFiles(matches, dataDir, "findDir/", txtRegex, 0);
+
+		REQUIRE(matches.size() == 1);
+		CHECK(matches[0] == "findDir/a.txt");
+	}
+
+	SECTION("recursive descends but keeps paths relative") {
+		std::vector<std::string> matches;
+		FileSystem::FindFiles(matches, dataDir, "findDir/", anyRegex, FileQueryFlags::RECURSE);
+		std::sort(matches.begin(), matches.end());
+
+		REQUIRE(matches.size() == 3);
+		CHECK(matches[0] == "findDir/a.txt");
+		CHECK(matches[1] == "findDir/b.lua");
+		CHECK(matches[2] == "findDir/sub/c.txt");
+	}
+
+	SECTION("dirs only, with trailing slash") {
+		std::vector<std::string> matches;
+		FileSystem::FindFiles(matches, dataDir, "findDir/", anyRegex,
+			FileQueryFlags::ONLY_DIRS | FileQueryFlags::INCLUDE_DIRS);
+
+		REQUIRE(matches.size() == 1);
+		CHECK(matches[0] == "findDir/sub/");
+	}
+
+	SECTION("absolute lookup (empty dataDir) stays absolute") {
+		// the absolute-path branch passes dataDir="" and dir=<absolute path>;
+		// results should remain absolute, prefixed by the requested dir
+		const std::string absDir = dataDir + "findDir/";
+		std::vector<std::string> matches;
+		FileSystem::FindFiles(matches, "", absDir, txtRegex, 0);
+
+		REQUIRE(matches.size() == 1);
+		CHECK(matches[0] == absDir + "a.txt");
+	}
+
+	// cleanup (bottom-up: files before their dirs)
+	FileSystem::DeleteFile("findDir/sub/c.txt");
+	FileSystem::DeleteFile("findDir/a.txt");
+	FileSystem::DeleteFile("findDir/b.lua");
+	FileSystem::DeleteFile("findDir/sub");
+	FileSystem::DeleteFile("findDir");
+}

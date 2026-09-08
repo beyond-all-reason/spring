@@ -145,7 +145,7 @@ void CInMapDrawModel::EraseNear(const float3& constPos, int playerID, const bool
 	if (!playerHandler.IsValidPlayer(playerID))
 		return;
 
-	const CPlayer* sender;
+	const CPlayer* sender = nullptr;
 
 	if (!alwaysErase) // we don't need to check sender if we always erase regardless of sender
 		sender = playerHandler.Player(playerID);

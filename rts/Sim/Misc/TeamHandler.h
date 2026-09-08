@@ -161,6 +161,7 @@ public:
 	bool TransferTeamMaxUnits(CTeam* fromTeam, CTeam* toTeam, int transferAmnt);
 
 private:
+	void HandleFrameExcess();
 
 	/**
 	 * @brief gaia team

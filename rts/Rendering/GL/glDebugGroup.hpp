@@ -15,7 +15,7 @@ namespace GL {
 	public:
 		DebugGroupNoop(uint32_t id, const char* messsage) {}
 	};
-	class DebugGroupImpl : public DebugGroup {
+	class DebugGroupImpl final : public DebugGroup {
 	public:
 		DebugGroupImpl(uint32_t id, const char* messsage);
 		~DebugGroupImpl() override final;

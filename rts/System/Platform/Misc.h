@@ -85,6 +85,7 @@ namespace Platform
 	std::string GetOSFamilyStr();
 	std::string GetWordSizeStr();
 	std::string GetPlatformStr(); // OS family + wordsize
+	std::string GetArchitectureStr(); // CPU architecture (e.g., "x86_64", "arm64")
 	std::string GetHardwareStr(); // processor + memory
 	std::string GetSysInfoHash();
 	std::string GetMacAddrHash();

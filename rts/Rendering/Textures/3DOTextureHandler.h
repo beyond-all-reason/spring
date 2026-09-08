@@ -32,7 +32,7 @@ public:
 
 	const spring::unordered_map<std::string, UnitTexture>& GetAtlasTextures() const { return textures; }
 
-	void DumpAtlasTextures() const;
+	void DumpAtlasTextures(const std::string& fileExt = "png") const;
 
 private:
 	std::vector<TexFile> LoadTexFiles();

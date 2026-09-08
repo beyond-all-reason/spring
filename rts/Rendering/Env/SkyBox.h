@@ -25,7 +25,7 @@ public:
 	void UpdateSunDir() override {}
 	void UpdateSkyTexture() override {}
 
-	void Draw();
+	void Draw() override;
 
 	bool IsValid() const override { return valid; }
 

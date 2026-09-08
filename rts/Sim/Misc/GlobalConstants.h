@@ -76,6 +76,7 @@ static constexpr int TEAM_SLOWUPDATE_RATE = 30;
  */
 static constexpr int MAX_TEAMS = 255;
 
+
 /**
  * @brief max players
  *

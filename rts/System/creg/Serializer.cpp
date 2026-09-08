@@ -13,6 +13,7 @@
 #include "System/Log/ILog.h"
 #include "System/Platform/byteorder.h"
 #include "System/Exceptions.h"
+#include "System/StringUtil.h"
 
 #include <algorithm>
 #include <fstream>
@@ -415,11 +416,9 @@ CInputStreamSerializer::CInputStreamSerializer()
 
 CInputStreamSerializer::~CInputStreamSerializer()
 {
-	for (StoredObject& o: objects) {
-		if (o.obj) {
-			classRefs[o.classRef]->DeleteInstance(o.obj);
-		}
-	}
+	// the entries are live or half-initialized objects, deleting either crashes
+	if (!objects.empty())
+		LOG_L(L_WARNING, "[creg::%s] load failed, leaking %d partially loaded objects", __func__, int(objects.size()));
 }
 
 bool CInputStreamSerializer::IsWriting()
@@ -476,6 +475,8 @@ void CInputStreamSerializer::SerializeObjectPtr(void** ptr, creg::Class* cls)
 {
 	unsigned int id;
 	ReadVarSizeUInt(stream, &id);
+	if (id >= objects.size())
+		throw content_error("Save corrupted: object reference " + IntToString(id) + " out of range (" + IntToString(objects.size()) + " objects)");
 	if (id) {
 		StoredObject& o = objects [id];
 		if (o.obj) *ptr = o.obj;
@@ -501,7 +502,13 @@ void CInputStreamSerializer::SerializeObjectInstance(void* inst, creg::Class* cl
 	if (id == 0)
 		return; // this is old save game and it has not this object - skip it
 
+	if (id >= objects.size())
+		throw content_error("Save corrupted: instance reference " + IntToString(id) + " out of range (" + IntToString(objects.size()) + " objects)");
+
 	StoredObject& o = objects[id];
+	creg::Class* fileCls = classRefs[o.classRef];
+	if (fileCls != cls)
+		throw content_error(std::string("Save incompatible: file contains ") + fileCls->name + " where " + cls->name + " was expected (the save was made with different settings)");
 	assert(!o.obj);
 	assert(o.isEmbedded);
 
@@ -637,6 +644,8 @@ void CInputStreamSerializer::LoadPackage(std::istream* s, void*& root, creg::Cla
 
 		creg::Class* cls = classRefs[object.classRef];
 		SerializeObject(cls, object.obj);
+		if (stream->fail())
+			throw content_error(std::string("Save corrupted: stream exhausted while reading ") + cls->name);
 		LOG_SL(LOG_SECTION_CREG_SERIALIZER, L_DEBUG, "Deserialized %s size:%i", cls->name, cls->size);
 	}
 

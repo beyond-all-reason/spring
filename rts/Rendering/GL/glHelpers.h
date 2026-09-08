@@ -107,7 +107,7 @@ inline GLuint FetchActiveTextureSlot() {
 template<auto DedicatedGLFuncPtrPtr, GLenum... GLParamName, class AttribValuesTupleType>
 inline void glSetAny(AttribValuesTupleType&& newValues)
 {
-	if constexpr(DedicatedGLFuncPtrPtr)
+	if constexpr(DedicatedGLFuncPtrPtr != nullptr)
 	{
 		static auto HelperFunc = [](auto&& ... p) {
 			(*DedicatedGLFuncPtrPtr)(std::forward<decltype(p)>(p)...);

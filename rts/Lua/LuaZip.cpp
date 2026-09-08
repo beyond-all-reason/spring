@@ -36,6 +36,7 @@
 #include "LuaZip.h"
 #include "LuaInclude.h"
 #include "LuaHashString.h"
+#include "LuaUtils.h"
 #include "System/FileSystem/Archives/IArchive.h"
 #include "System/FileSystem/ArchiveLoader.h"
 #include "System/FileSystem/DataDirsAccess.h"
@@ -79,7 +80,7 @@ bool LuaZipFileWriter::PushUnsynced(lua_State* L)
 	CreateMetatable(L);
 
 	// FIXME when this is enabled LuaGaia/LuaRules unsynced has access to it too!
-	//HSTR_PUSH_CFUNC(L, "CreateZipFileWriter", open);
+	// LuaPushNamedCFunc(L, "CreateZipFileWriter", open);
 
 	return true;
 }
@@ -93,10 +94,10 @@ bool LuaZipFileWriter::CreateMetatable(lua_State* L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 
-	HSTR_PUSH_CFUNC(L, "__gc",  meta_gc);
-	HSTR_PUSH_CFUNC(L, "close", meta_gc);
-	HSTR_PUSH_CFUNC(L, "open",  meta_open);
-	HSTR_PUSH_CFUNC(L, "write", meta_write);
+	LuaPushNamedCFunc(L, "__gc",  meta_gc);
+	LuaPushNamedCFunc(L, "close", meta_gc);
+	LuaPushNamedCFunc(L, "open",  meta_open);
+	LuaPushNamedCFunc(L, "write", meta_write);
 
 	lua_pop(L, 1);
 	return true;
@@ -238,7 +239,7 @@ bool LuaZipFileReader::PushUnsynced(lua_State* L)
 	CreateMetatable(L);
 
 	// FIXME when this is enabled LuaGaia/LuaRules unsynced has access to it too!
-	//HSTR_PUSH_CFUNC(L, "CreateZipFileReader", open);
+	// LuaPushNamedCFunc(L, "CreateZipFileReader", open);
 
 	return true;
 }
@@ -252,10 +253,10 @@ bool LuaZipFileReader::CreateMetatable(lua_State* L)
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
 
-	HSTR_PUSH_CFUNC(L, "__gc",  meta_gc);
-	HSTR_PUSH_CFUNC(L, "close", meta_gc);
-	HSTR_PUSH_CFUNC(L, "open",  meta_open);
-	HSTR_PUSH_CFUNC(L, "read",  meta_read);
+	LuaPushNamedCFunc(L, "__gc",  meta_gc);
+	LuaPushNamedCFunc(L, "close", meta_gc);
+	LuaPushNamedCFunc(L, "open",  meta_open);
+	LuaPushNamedCFunc(L, "read",  meta_read);
 
 	lua_pop(L, 1);
 	return true;

@@ -143,18 +143,16 @@ struct SDrawElementsIndirectCommand {
 
 struct SInstanceData {
 	SInstanceData() = default;
-	SInstanceData(uint32_t matOffset_, uint8_t teamIndex, uint8_t drawFlags, uint16_t numPieces, uint32_t uniOffset_, uint32_t bposeMatOffset_)
-		: matOffset{ matOffset_ }                         // updated during the following draw frames
-		, uniOffset{ uniOffset_ }                         // updated during the following draw frames
-		, info{ teamIndex, drawFlags                      // not updated during the following draw frames
-			, static_cast<uint8_t>((numPieces >> 8) & 0xFF)
-			, static_cast<uint8_t>((numPieces     ) & 0xFF) }
-		, bposeMatOffset { bposeMatOffset_ }              // updated during the following draw frames
+	SInstanceData(uint32_t matOffset_, uint16_t auxInfo_, uint16_t numPieces_, uint32_t uniOffset_, uint32_t bposeMatOffset_)
+		: matOffset{ matOffset_ }            // updated during the following draw frames
+		, uniOffset{ uniOffset_ }            // updated during the following draw frames
+		, info{ auxInfo_, numPieces_ }       // not updated during the following draw frames
+		, bposeMatOffset { bposeMatOffset_ } // updated during the following draw frames
 	{}
 
 	uint32_t matOffset;
 	uint32_t uniOffset;
-	std::array<uint8_t, 4> info;
+	std::array<uint16_t, 2> info; // u32 {paletteIndex[0:10], reserved[11:15], numPieces[16:31]}
 	uint32_t bposeMatOffset;
 };
 

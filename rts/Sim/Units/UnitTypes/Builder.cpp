@@ -470,7 +470,7 @@ bool CBuilder::UpdateResurrect(const Command& fCommand)
 			// in params[0] was coming from and traced it back to this WTF hack,
 			// increment the number of wasted hours below:
 			//   number_of_hours_wasted = 3;
-			c.SetParam(0, INT_MAX / 2);
+			c.SetParam(0, static_cast<float>(INT_MAX / 2));
 		}
 
 		// this takes one simframe to do the deletion
@@ -605,6 +605,15 @@ void CBuilder::SetRepairTarget(CUnit* target)
 void CBuilder::SetReclaimTarget(CSolidObject* target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// A target already being destroyed (detached) cannot have a death dependence
+	// registered (AddDeathDependence no-ops on detached objects), which would leave
+	// curReclaim dangling. This happens when ~CObject's DependentDied cascade re-enters
+	// reclaim logic mid-deletion (e.g. CBuilderCAI::ExecuteGuard reading a guardee's
+	// stale curReclaim) on the very feature being freed. Refuse the dead target.
+	assert(target != nullptr);
+	if (target->detached)
+		return;
+
 	if (dynamic_cast<CFeature*>(target) != nullptr && !static_cast<CFeature*>(target)->def->reclaimable)
 		return;
 
@@ -630,6 +639,11 @@ void CBuilder::SetReclaimTarget(CSolidObject* target)
 void CBuilder::SetResurrectTarget(CFeature* target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// see SetReclaimTarget: never depend on an object that is already being destroyed
+	assert(target != nullptr);
+	if (target->detached)
+		return;
+
 	if (curResurrect == target || target->udef == nullptr)
 		return;
 
@@ -646,6 +660,11 @@ void CBuilder::SetResurrectTarget(CFeature* target)
 void CBuilder::SetCaptureTarget(CUnit* target)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// see SetReclaimTarget: never depend on an object that is already being destroyed
+	assert(target != nullptr);
+	if (target->detached)
+		return;
+
 	if (target == curCapture)
 		return;
 

@@ -3,11 +3,11 @@
 #ifndef FASTMATH_H
 #define FASTMATH_H
 
-#ifndef DEDICATED_NOSSE
-#include <xmmintrin.h>
-#endif
+#include "System/simd_compat.h"
 #include <cinttypes>
 
+// Tell streflop_cond.h not to define math::sqrt(float) - we'll provide a faster one
+#define MATH_SQRT_OVERRIDE 1
 #include "lib/streflop/streflop_cond.h"
 #include "System/MainDefines.h"
 #include "System/MathConstants.h"
@@ -27,36 +27,18 @@
  */
 
 namespace fastmath {
-	float isqrt_sse(float x) _const;
-	float sqrt_sse(float x) _const;
-	float isqrt_nosse(float x) _const;
-	float isqrt2_nosse(float x) _const;
-	float sqrt_builtin(float x) _const;
-	float apxsqrt(float x) _const;
-	float apxsqrt2(float x) _const;
-	float sin(float x) _const;
-	float cos(float x) _const;
-	template<typename T> T floor(T f) _const;
-
 	/****************** Square root functions ******************/
 
 	/**
-	* @brief DO NOT USE IN SYNCED CODE. Calculates 1/sqrt(x) using SSE instructions.
+	* @brief DEPRECATED - Use isqrt_nosse instead.
 	*
-	* This is much slower than isqrt_nosse (extremely slow on some AMDs) and
-	* additionally gives different results on Intel and AMD processors.
+	* Removed because:
+	* - Much slower than isqrt_nosse on some AMD processors
+	* - Produces different results on Intel vs AMD (non-deterministic)
+	* - Unsafe for synced multiplayer code
 	*/
-	__FORCE_ALIGN_STACK__
-	inline float isqrt_sse(float x)
-	{
-#ifndef DEDICATED_NOSSE
-		__m128 vec = _mm_set_ss(x);
-		vec = _mm_rsqrt_ss(vec);
-		return _mm_cvtss_f32(vec);
-#else
-		return fastmath::isqrt_nosse(x);
-#endif
-	}
+	[[deprecated("Use isqrt_nosse instead")]]
+	float isqrt_sse(float x) = delete;
 
 	/**
 	* @brief Sync-safe. Calculates square root using SSE instructions.
@@ -66,18 +48,9 @@ namespace fastmath {
 	__FORCE_ALIGN_STACK__
 	inline float sqrt_sse(float x)
 	{
-#ifndef DEDICATED_NOSSE
 		__m128 vec = _mm_set_ss(x);
 		vec = _mm_sqrt_ss(vec);
 		return _mm_cvtss_f32(vec);
-#else
-	#if STREFLOP_ENABLED
-		return streflop::sqrt(x);
-	#else
-		// not in synced context, pick either fm or std
-		return fastmath::sqrt_builtin(x);
-	#endif
-#endif
 	}
 
 
@@ -218,15 +191,12 @@ namespace fastmath {
 
 
 namespace math {
-	// override streflop with faster sqrt!
-	float sqrt(float x) _const;
-	float sqrtf(float x) _const;
-	float isqrt(float x) _const;
-
-	inline float sqrt(float x) { return fastmath::sqrt_sse(x); }
-	inline float sqrtf(float x) { return fastmath::sqrt_sse(x); }
-	inline float isqrt(float x) { return fastmath::isqrt2_nosse(x); }
-
+	template<typename T>
+	inline float sqrt(T x) { return fastmath::sqrt_sse(static_cast<float>(x)); }
+	template<typename T>
+	inline float sqrtf(T x) { return fastmath::sqrt_sse(static_cast<float>(x)); }
+	template<typename T>
+	inline float isqrt(T x) { return fastmath::isqrt2_nosse(static_cast<float>(x)); }
 	using fastmath::floor;
 }
 

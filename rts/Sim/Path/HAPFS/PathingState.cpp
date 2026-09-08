@@ -106,8 +106,8 @@ void PathingState::Init(std::vector<IPathFinder*> pathFinderlist, PathingState* 
 	 	pathChecksum = 0;
 	 	fileHashCode = CalcHash(__func__);
 
-		offsetBlockNum = {mapDimensionsInBlocks.x * mapDimensionsInBlocks.y};
-		costBlockNum = {mapDimensionsInBlocks.x * mapDimensionsInBlocks.y};
+		offsetBlockNum = mapDimensionsInBlocks.x * mapDimensionsInBlocks.y;
+		costBlockNum = mapDimensionsInBlocks.x * mapDimensionsInBlocks.y;
 
 		vertexCosts.clear();
 		vertexCosts.resize(moveDefHandler.GetNumMoveDefs() * blockStates.GetSize() * PATH_DIRECTION_VERTICES, PATHCOST_INFINITY);
@@ -395,7 +395,7 @@ void PathingState::CalcVertexPathCosts(const MoveDef& moveDef, int2 block, unsig
 	// other four directions are stored at the adjacent vertices)
 	auto idx = BlockPosToIdx(block);
 	const uint8_t nodeLinksObsoleteFlags = blockStates.nodeLinksObsoleteFlags[idx]
-								  		 & (moveDef.allowDirectionalPathing) ? PATH_DIRECTIONS_MASK : PATH_DIRECTIONS_HALF_MASK;
+								  		 & ((moveDef.allowDirectionalPathing) ? PATH_DIRECTIONS_MASK : PATH_DIRECTIONS_HALF_MASK);
 
 	int pathdir = 0;
 	for (int checkBit = 1; checkBit <= PATHDIR_LEFT_DOWN_MASK; checkBit <<= 1, ++pathdir) {

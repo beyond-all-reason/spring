@@ -11,6 +11,8 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "System/creg/creg.h"
+#include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/CustomColorPalette.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/GL/StreamBuffer.h"
 
@@ -87,7 +89,7 @@ struct UniformParamsBuffer {
 	uint32_t mouseUnused;
 	float4 mouseWorldPos; //x,y,z; w=0 -- offmap. Ignores water, doesn't ignore units/features under the mouse cursor
 
-	float4 teamColor[MAX_TEAMS]; //all team colors
+	float4 teamColor[MAX_PALETTE_COLORS]; // [0..254] = team, [255] = reserved, [256..2047] = custom
 };
 
 class UniformConstants {

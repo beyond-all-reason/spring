@@ -91,7 +91,7 @@ static int SyncTableMetatable(lua_State* L)
  */
 bool LuaSyncedTable::PushEntries(lua_State* L)
 {
-	HSTR_PUSH(L, "SYNCED");
+	LuaPushString(L, "SYNCED");
 	lua_newtable(L); { // the proxy table
 
 		lua_createtable(L, 0, 3); { // the metatable

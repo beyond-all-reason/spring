@@ -79,7 +79,7 @@ bool LuaIO::SafeWritePath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const std::array<std::string, 5> exeFiles = {"exe", "dll", "so", "bat", "com"};
-	const std::string ext = FileSystem::GetExtension(path);
+	const std::string ext = FileSystem::GetExtensionLowerCase(path);
 
 	if (std::find(std::begin(exeFiles), std::end(exeFiles), ext) != exeFiles.end())
 		return false;

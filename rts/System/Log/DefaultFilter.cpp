@@ -157,13 +157,15 @@ void log_filter_section_setMinLevel(int level, const char* section)
 	// (same string but will not become garbage)
 	section = *registeredSection;
 
+	// locate any existing override for this section (the array is kept sorted)
+	using P = decltype(log_filter::sectionMinLevels)::value_type;
+	const auto sectionComparer = [](const P& a, const P& b) { return (log_filter_section_compare()(a.first, b.first)); };
+	const auto sectionMinLevel = std::lower_bound(secLvls.begin(), secLvls.begin() + log_filter::numLevels, P{section, 0}, sectionComparer);
+	const bool exists = (sectionMinLevel != (secLvls.begin() + log_filter::numLevels) && strcmp(sectionMinLevel->first, section) == 0);
+
 	if (level == log_filter_section_getDefaultMinLevel(section)) {
-		using P = decltype(log_filter::sectionMinLevels)::value_type;
-
-		const auto sectionComparer = [](const P& a, const P& b) { return (log_filter_section_compare()(a.first, b.first)); };
-		const auto sectionMinLevel = std::lower_bound(secLvls.begin(), secLvls.begin() + log_filter::numLevels, P{section, 0}, sectionComparer);
-
-		if (sectionMinLevel == (secLvls.begin() + log_filter::numLevels) || strcmp(sectionMinLevel->first, section) != 0)
+		// back to default: drop any existing override (nothing to do otherwise)
+		if (!exists)
 			return;
 
 		// erase
@@ -175,6 +177,13 @@ void log_filter_section_setMinLevel(int level, const char* section)
 		return;
 	}
 
+	// non-default: update any existing override in-place
+	if (exists) {
+		sectionMinLevel->second = level;
+		return;
+	}
+
+	// add a net new override
 	secLvls[log_filter::numLevels++] = {section, level};
 
 	// swap into position

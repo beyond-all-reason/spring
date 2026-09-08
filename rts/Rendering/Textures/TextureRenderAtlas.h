@@ -21,6 +21,7 @@ class CTextureRenderAtlas {
 public:
 	struct UniqueSubTexture {
 		uint32_t texID;
+		uint32_t stableIdx; // deterministic index for name generation (texID is non-deterministic)
 		float4 subTexCoords;
 		std::string GetName() const;
 
@@ -66,13 +67,17 @@ public:
 
 	uint32_t DisownTexture();
 
-	bool DumpTexture() const;
+	bool DumpTexture(const std::string& fileExt = "png") const;
 private:
 
 
 	bool AddTexFromBitmapRaw(const std::string& name, const CBitmap& bm, const float4& subTexCoords, const std::string& refFileName);
 
-	spring::unordered_map<std::string, uint32_t> filenameToTexID;
+	struct FileTexEntry {
+		uint32_t texID;
+		uint32_t stableIdx;
+	};
+	spring::unordered_map<std::string, FileTexEntry> filenameToTexID;
 	spring::unordered_map<std::string, UniqueSubTexture> uniqueSubTextureMap;
 	spring::unordered_map<std::string, std::string> nameToUniqueSubTexStr;
 

@@ -61,7 +61,7 @@ public:
 	explicit operator bool() const;
 
 	// The viewport should be updated whenever the window size changes.
-	void SetViewport(int viewport_width, int viewport_height);
+	void SetViewport(int viewport_width, int viewport_height, int viewport_offset_x = 0, int viewport_offset_y = 0);
 
 	// Sets up OpenGL states for taking rendering commands from RmlUi.
 	void BeginFrame();
@@ -136,6 +136,8 @@ private:
 
 	int viewport_width = 0;
 	int viewport_height = 0;
+	int viewport_offset_x = 0;
+	int viewport_offset_y = 0;
 
 	Rml::CompiledGeometryHandle fullscreen_quad_geometry = {};
 

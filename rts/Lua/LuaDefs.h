@@ -60,16 +60,18 @@ namespace {
 
 // Requires a "start" address, use ADDRESS()
 #define ADD_INT(lua, cpp) \
+	static_assert(std::is_integral_v<decltype(cpp)>, \
+		"Lua API break! Add DataElement manually"); \
 	paramMap[lua] = DataElement(GetDataType(cpp), ADDRESS(cpp) - start)
 
-#define ADD_BOOL(lua, cpp) \
+#define ADD_SIMPLE_DATA(lua, cpp, expected_type) \
+	static_assert(std::is_same_v<decltype(cpp), expected_type>, \
+		"Lua API break! Add DataElement manually"); \
 	paramMap[lua] = DataElement(GetDataType(cpp), ADDRESS(cpp) - start)
 
-#define ADD_FLOAT(lua, cpp) \
-	paramMap[lua] = DataElement(GetDataType(cpp), ADDRESS(cpp) - start)
-
-#define ADD_STRING(lua, cpp) \
-	paramMap[lua] = DataElement(GetDataType(cpp), ADDRESS(cpp) - start)
+#define ADD_BOOL(lua, cpp)    ADD_SIMPLE_DATA(lua, cpp, bool)
+#define ADD_FLOAT(lua, cpp)   ADD_SIMPLE_DATA(lua, cpp, float)
+#define ADD_STRING(lua, cpp)  ADD_SIMPLE_DATA(lua, cpp, std::string)
 
 #define ADD_FUNCTION(lua, cpp, func) \
 	paramMap[lua] = DataElement(FUNCTION_TYPE, ADDRESS(cpp) - start, func)

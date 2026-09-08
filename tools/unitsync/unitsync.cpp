@@ -12,6 +12,7 @@
 // shared with spring:
 #include "lib/lua/include/LuaInclude.h"
 #include "Game/GameVersion.h"
+#include "Lua/LuaMemPool.h"
 #include "Lua/LuaParser.h"
 #include "Map/MapParser.h"
 #include "Map/ReadMap.h"
@@ -421,6 +422,7 @@ EXPORT(void) UnInit()
 	try {
 		_Cleanup();
 		FileSystemInitializer::Cleanup();
+		LuaMemPool::KillStatic();
 		ConfigHandler::Deallocate();
 		DataDirLocater::FreeInstance();
 	}
@@ -604,7 +606,7 @@ static bool internal_GetMapInfo(const char* mapName, InternalMapInfo* outInfo)
 
 	// Retrieve the map header as well
 	if (err.empty()) {
-		const std::string extension = FileSystem::GetExtension(mapFile);
+		const std::string extension = FileSystem::GetExtensionLowerCase(mapFile);
 		if (extension == "smf") {
 			try {
 				const CSMFMapFile file(mapFile);
@@ -972,7 +974,7 @@ EXPORT(unsigned short*) GetMinimap(const char* mapName, int mipLevel)
 		ScopedMapLoader mapLoader(mapName, mapFile);
 
 		unsigned short* ret = nullptr;
-		const std::string extension = FileSystem::GetExtension(mapFile);
+		const std::string extension = FileSystem::GetExtensionLowerCase(mapFile);
 		if (extension == "smf") {
 			ret = GetMinimapSMF(mapFile, mipLevel);
 		} else if (extension == "sm3") {
@@ -2371,4 +2373,3 @@ EXPORT(const char*) GetMacAddrHash() {
 	memcpy(macAddrBuf.data(), macAddrHash.data(), std::min(macAddrHash.size(), macAddrBuf.size()));
 	return (macAddrBuf.data());
 }
-

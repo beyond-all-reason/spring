@@ -124,11 +124,11 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tg
 	const float pAcc = weaponDef->weaponacceleration;
 	float curspeed = weaponDef->startvelocity;
 	float dist = srcPos.distance(tgtPos);
-	float rt = (tgtPos - srcPos).Length2D();
-	float yt = (tgtPos.y - srcPos.y);
-	float eH = (dist * weaponDef->trajectoryHeight);
-	int eHT = int(dist / maxSpeed);
-	float hstep = eHT / 8.0f;
+	const float rt = (tgtPos - srcPos).Length2D();
+	const float yt = (tgtPos.y - srcPos.y);
+	const float eH = (dist * weaponDef->trajectoryHeight);
+	const float eHT = math::truncf(dist / maxSpeed);
+	const float hstep = eHT / 8.0f;
 
 	// For close targets, impact within 8 frames, just use a TestTrajectoryCone check
 	if (hstep < 1.0f)
@@ -143,10 +143,10 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tg
 
 	float t = 0.0f;
 	// perform the Heun's method
-	for (int i = 1; i < 8; i++) {
+	for (uint32_t i = 1; i < 8; i++) {
 		// due to maxSpeed boundary, and parameters of the pursuit curve, dist cannot be zero
 		// but if a divide by zero error does somehow occur here, a zero check can be added
-		dist = math::sqrt(math::pow((rt - mdist[i-1]), 2) + math::pow((yt + eH * (1 - t / eHT) - mheight[i-1]), 2));
+		dist = math::sqrt(math::pow((rt - mdist[i - 1]), 2) + math::pow((yt + eH * (1 - t / eHT) - mheight[i - 1]), 2));
 		curspeed = std::min((pSpeed + pAcc * t), maxSpeed);
 		drdt = curspeed * (rt - mdist[i-1]) / dist;
 		dydt = curspeed * (yt + eH * (1 - t / eHT) - mheight[i-1]) / dist;
@@ -163,8 +163,8 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tg
 
 	// debug draw
 	if (globalRendering->drawDebugTraceRay) {
-		for (int i = 1; i < 9; i++) {
-			geometricObjects->SetColor(geometricObjects->AddLine(srcPos + targetVec * mdist[i-1] + UpVector * mheight[i-1], srcPos + targetVec * mdist[i] + UpVector * mheight[i], 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
+		for (uint32_t i = 1; i < 9; i++) {
+			geometricObjects->SetColor(geometricObjects->AddLine(srcPos + targetVec * mdist[i - 1] + UpVector * mheight[i - 1], srcPos + targetVec * mdist[i] + UpVector * mheight[i], 3, 0, GAME_SPEED), 1.0f, 0.0f, 0.0f, 1.0f);
 		}
 	}
 
@@ -173,7 +173,7 @@ bool CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tg
 	// but the pursuit curve (and the 8 piecewise linear approximation used here) 
 	// that trajectoryheight missiles follow is singularly unique
 	// so no need to spin it off until something else needs this
-	int ii = 1;
+	uint32_t ii = 1;
 	float delta1 = mdist[ii] - mdist[ii - 1];
 	float delta2 = 0.0f;
 	float ratio = 0.0f;

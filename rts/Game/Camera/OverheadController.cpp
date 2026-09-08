@@ -59,7 +59,7 @@ void COverheadController::ConfigUpdate()
 	tiltSpeed = configHandler->GetFloat("OverheadTiltSpeed");
 	enabled = configHandler->GetBool("OverheadEnabled");
 	fov = configHandler->GetFloat("OverheadFOV");
-	minHeight = configHandler->GetFloat("OverheadMinZoomDistance");
+	minHeight = std::max(configHandler->GetFloat("OverheadMinZoomDistance"), 0.1f);
 	maxHeight = 9.5f * std::max(mapDims.mapx, mapDims.mapy) * configHandler->GetFloat("OverheadMaxHeightFactor");
 	fastScale = configHandler->GetFloat("CamOverheadFastScale");
 }

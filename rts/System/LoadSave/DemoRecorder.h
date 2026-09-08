@@ -51,7 +51,6 @@ public:
 
 	void SetStream();
 	void SetName(const std::string& mapName, const std::string& modName);
-	const std::string& GetName() const { return demoName; }
 
 	void SetGameID(const unsigned char* buf);
 	void SetTime(int gameTime, int wallclockTime);

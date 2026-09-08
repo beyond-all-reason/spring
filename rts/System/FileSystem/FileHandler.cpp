@@ -269,7 +269,7 @@ bool CFileHandler::LoadStringData(string& data)
 
 std::string CFileHandler::GetFileExt() const
 {
-	return FileSystem::GetExtension(fileName);
+	return FileSystem::GetExtensionLowerCase(fileName);
 }
 
 std::string CFileHandler::GetFileAbsolutePath(const std::string& filePath, const std::string& modes)

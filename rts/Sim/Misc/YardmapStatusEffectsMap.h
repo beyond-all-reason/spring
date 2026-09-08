@@ -3,8 +3,13 @@
 #ifndef YardmapStatusEffectsMap_H
 #define YardmapStatusEffectsMap_H
 
+#include <cassert>
 #include <cstdint>
+#include <cstring>
+#include <type_traits>
+#include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "Map/ReadMap.h"
 #include "Sim/Misc/GlobalConstants.h"
@@ -17,126 +22,83 @@ class YardmapStatusEffectsMap {
 public:
 	CR_DECLARE_STRUCT(YardmapStatusEffectsMap)
 
-    enum SquareStates {
-        EXIT_ONLY      = 0x01,
-        BLOCK_BUILDING = 0x02,
-    };
+	enum SquareStates {
+		EXIT_ONLY      = 0x01,
+		BLOCK_BUILDING = 0x02,
+	};
 
-    uint32_t interleave(uint32_t x, uint32_t z)
-    {
-		x = std::clamp(int(x), 0, mapDims.mapxm1);
-		z = std::clamp(int(z), 0, mapDims.mapym1);
+	const uint8_t& GetMapState(int x, int z) const {
+		const int cx = std::clamp(x, 0, mapDims.mapxm1);
+		const int cz = std::clamp(z, 0, mapDims.mapym1);
+		const int tileId   = (cz / TILE_SIZE) * tileStride + (cx / TILE_SIZE);
+		const int squareId = (cz & (TILE_SIZE - 1)) * TILE_SIZE  + (cx & (TILE_SIZE - 1));
+		return stateMap[tileId].squares[squareId];
+	}
+	uint8_t& GetMapState(int x, int z) {
+		return const_cast<uint8_t&>(std::as_const(*this).GetMapState(x, z));
+	}
 
-		static constexpr uint32_t zMasks[] = {0x0000FFFF, 0x00FF00FF, 0x0F0F0F0F, 0x33333333, 0x55555555};
-		static constexpr uint32_t zShifts[] = {16, 8, 4, 2, 1};
+	bool AreAllFlagsSet(int x, int z, uint8_t flags) const { return (GetMapState(x, z) & flags) == flags; }
+	bool AreAnyFlagsSet(int x, int z, uint8_t flags) const { return (GetMapState(x, z) & flags) != 0; }
 
-        for(uint32_t i = 0; i < sizeof(zMasks)/sizeof(uint32_t); i++)
-        {
-            x = (x | (x << zShifts[i])) & zMasks[i];
-            z = (z | (z << zShifts[i])) & zMasks[i];
-        }
-        return x | (z << 1);
-    }
+	void SetFlags  (int x, int z, uint8_t flags) { GetMapState(x, z) |=  flags; }
+	void ClearFlags(int x, int z, uint8_t flags) { GetMapState(x, z) &= ~flags; }
 
-    uint8_t& GetMapState(int x, int z) { return stateMap[interleave(x, z)]; }
+	void ClearTile(int tileId);
 
-    bool AreAllFlagsSet(int x, int z, uint8_t flags) { return (GetMapState(x, z) & flags) == flags; }
-	bool AreAnyFlagsSet(int x, int z, uint8_t flags) { return (GetMapState(x, z) & flags) != 0; }
-	
-    void SetFlags(int x, int z, uint8_t flags) { GetMapState(x, z) |= flags; }
-    void ClearFlags(int x, int z, uint8_t flags) { GetMapState(x, z) &= ~flags; }
+	void InitNewYardmapStatusEffectsMap();
 
-    void InitNewYardmapStatusEffectsMap();
+	void PostLoad();
 
-    typedef std::vector<uint8_t> ExitOnlyMapType;
-    ExitOnlyMapType stateMap;
+private:
+	// Each tile is exactly 64 bytes — one cache line.
+	// Tiles are stored in row-major order: tileId = (z/8)*tileStride + (x/8).
+	// Within a tile, squares are in row-major order: squareId = (z%8)*8 + (x%8).
+	static constexpr int TILE_SIZE = 8;
+	static constexpr int TILE_AREA = TILE_SIZE * TILE_SIZE; // 64
+
+	struct alignas(64) Tile {
+		CR_DECLARE_STRUCT(Tile)
+		uint8_t squares[TILE_AREA];
+	};
+	static_assert(sizeof(Tile) == 64, "Tile must be exactly one cache line");
+	// resize() value-initialises Tile, which zero-initialises squares only if
+	// Tile remains a trivial aggregate — enforce that here.
+	static_assert(std::is_trivially_default_constructible_v<Tile>,
+	              "Tile must be trivially default constructible for resize() zero-init to hold");
+
+	int tileStride = 0; // tiles per map row, set by Init / PostLoad
+
+	typedef std::vector<Tile> TileMapType;
+	TileMapType stateMap;
 };
 
 extern YardmapStatusEffectsMap yardmapStatusEffectsMap;
 
 struct ObjectCollisionMapHelper {
-	bool collidesUnderWater = false;
-	bool collidesAboveWater = false;
-
 	ObjectCollisionMapHelper() {}
-
-	ObjectCollisionMapHelper(const CSolidObject& object) {
-		// SetObjectCollisionStates(object);
-	}
-
-	ObjectCollisionMapHelper(const MoveDef& moveDef, float ypos) {
-		// SetMoveDefCollisionStates(moveDef, ypos);
-	}
-
-	ObjectCollisionMapHelper(const MoveDef& moveDef) {
-		// SetMoveDefCollisionStates(moveDef);
-	}
-
-	// float GetMoveCollisionHeight(const CSolidObject& object) const {
-	// 	if (object.moveDef != nullptr)
-	// 		return object.moveDef->height;
-	// 	else
-	// 		return object.height;
-	// }
-
-	// bool IsOnWaterSurface(const CSolidObject& object) const {
-	// 	if (object.moveDef != nullptr)
-	// 		return !object.moveDef->isSubmersible;
-	// 	else {
-	// 		auto unit = dynamic_cast<const CUnit*>(&object);
-	// 		if (unit != nullptr)
-	// 			return unit->FloatOnWater();
-	// 	}
-	// 	return false;
-	// }
-
-	// void SetObjectCollisionStates(const CSolidObject& object) {
-	// 	const bool floatsOnWater = IsOnWaterSurface(object);
-	// 	collidesUnderWater = !floatsOnWater;
-	// 	collidesAboveWater = (floatsOnWater || object.pos.y + GetMoveCollisionHeight(object) >= 0.f);
-	// }
-
-    // void SetMoveDefCollisionStates(const MoveDef& moveDef, float ypos) {
-	// 	const bool floatsOnWater = !moveDef.isSubmersible;
-	// 	collidesUnderWater = !floatsOnWater;
-	// 	collidesAboveWater = (floatsOnWater || ypos + moveDef.height >= 0.f);
-    // }
-
-    // void SetMoveDefCollisionStates(const MoveDef& moveDef) {
-	// 	collidesUnderWater = moveDef.isSubmersible;
-	// 	collidesAboveWater = true;
-    // }
-
-	uint8_t GetExitOnlyFlags() const {
-		return YardmapStatusEffectsMap::EXIT_ONLY;
-	}
+	ObjectCollisionMapHelper(const CSolidObject& object) {}
+	ObjectCollisionMapHelper(const MoveDef& moveDef, float ypos) {}
+	ObjectCollisionMapHelper(const MoveDef& moveDef) {}
 
 	bool IsExitOnlyAt(int x, int z) const {
-		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, GetExitOnlyFlags());
+		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, YardmapStatusEffectsMap::EXIT_ONLY);
+	}
+	void SetExitOnlyAt(int x, int z) {
+		yardmapStatusEffectsMap.SetFlags(x, z, YardmapStatusEffectsMap::EXIT_ONLY);
+	}
+	void ClearExitOnlyAt(int x, int z) {
+		yardmapStatusEffectsMap.ClearFlags(x, z, YardmapStatusEffectsMap::EXIT_ONLY);
 	}
 
-	void SetExitOnlyAt(int x, int z) const {
-		yardmapStatusEffectsMap.SetFlags(x, z, GetExitOnlyFlags());
+	bool IsBlockBuildingAt(int x, int z) const {
+		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, YardmapStatusEffectsMap::BLOCK_BUILDING);
 	}
-
-	void ClearExitOnlyAt(int x, int z) const {
-		yardmapStatusEffectsMap.ClearFlags(x, z, GetExitOnlyFlags());
+	void SetBlockBuildingAt(int x, int z) {
+		yardmapStatusEffectsMap.SetFlags(x, z, YardmapStatusEffectsMap::BLOCK_BUILDING);
 	}
-
-	uint8_t GetBlockBuildingFlags() const {
-		return YardmapStatusEffectsMap::BLOCK_BUILDING;
-	}
-
-    bool IsBlockBuildingAt(int x, int z) const {
-		return yardmapStatusEffectsMap.AreAllFlagsSet(x, z, GetBlockBuildingFlags());
-	}
-
-	void SetBlockBuildingAt(int x, int z) const {
-		yardmapStatusEffectsMap.SetFlags(x, z, GetBlockBuildingFlags());
-	}
-
-	void ClearBlockBuildingAt(int x, int z) const {
-		yardmapStatusEffectsMap.ClearFlags(x, z, GetBlockBuildingFlags());
+	void ClearBlockBuildingAt(int x, int z) {
+		yardmapStatusEffectsMap.ClearFlags(x, z, YardmapStatusEffectsMap::BLOCK_BUILDING);
 	}
 };
 

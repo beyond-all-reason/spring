@@ -149,6 +149,6 @@ void DepthBufferCopy::CreateTextureAndFBO(bool ms)
 	depthFBO->Bind();
 	depthFBO->AttachTexture(depthTexture, target, GL_DEPTH_ATTACHMENT);
 	glDrawBuffer(GL_NONE);
-	depthFBO->CheckStatus("DEPTH-BUFFER-COPY-FBO" + ms ? "-MULTISAMPLED" : "");
+	depthFBO->CheckStatus(ms ? "DEPTH-BUFFER-COPY-FBO-MULTISAMPLED" : "DEPTH-BUFFER-COPY-FBO");
 	depthFBO->Unbind();
 }

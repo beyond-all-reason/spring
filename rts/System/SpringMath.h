@@ -175,6 +175,26 @@ template <class T, class T2> constexpr T mixRotation(T v1, T v2, T2 a) {
 
 template<class T> constexpr T Blend(const T v1, const T v2, const float a) { return mix(v1, v2, a); }
 
+// Catmull-Rom cubic interpolation through p1..p2, with p0/p3 the outer neighbours, t in [0,1].
+// C1-continuous (matching gradients across segment borders), unlike linear mix.
+constexpr float CatmullRom(float p0, float p1, float p2, float p3, float t)
+{
+	return p1 + 0.5f * t * ((p2 - p0) + t * ((2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) + t * (3.0f * (p1 - p2) + p3 - p0)));
+}
+
+// Bicubic Catmull-Rom over a 4x4 patch of samples p[row][col]; dx/dy are the
+// fractional offsets in [0,1] from the inner sample p[1][1] toward p[2][2].
+inline float InterpolateBicubic(const float p[4][4], float dx, float dy)
+{
+	const float cols[4] = {
+		CatmullRom(p[0][0], p[0][1], p[0][2], p[0][3], dx),
+		CatmullRom(p[1][0], p[1][1], p[1][2], p[1][3], dx),
+		CatmullRom(p[2][0], p[2][1], p[2][2], p[2][3], dx),
+		CatmullRom(p[3][0], p[3][1], p[3][2], p[3][3], dx),
+	};
+	return CatmullRom(cols[0], cols[1], cols[2], cols[3], dy);
+}
+
 int Round(const float f) _const _warn_unused_result;
 
 template<class T> constexpr T Square(const T x) { return x*x; }

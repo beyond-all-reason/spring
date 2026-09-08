@@ -52,6 +52,15 @@ public:
 	void MousePress(int x, int y, int button);
 	void MouseMove(int x, int y, int dx, int dy);
 	void MouseWheel(float delta);
+
+	// input emulation (debug.emulateMouse*): a button held independent of hardware.
+	// SetButtonEmulated fires the press/release itself, on the physical-or-emulated edge
+	void SetButtonEmulated(int button, bool pressed);
+	// drop all emulated flags without firing an event (game teardown)
+	void ClearEmulatedButtons();
+	// bounds-guarded: the SDL-event gate calls this with a raw Uint8 button that
+	// can exceed NUM_BUTTONS on multi-button mice
+	bool IsButtonEmulated(int button) const { return (button >= 1 && button <= NUM_BUTTONS) && buttons[button].emulated; }
 	void WindowLeave();
 	void WindowEnter();
 
@@ -127,6 +136,7 @@ private:
 	bool hardwareCursor = false;
 	bool invertMouse = false;
 	bool ignoreMove = false;
+	bool rebindCursorAfterWarp = false;
 
 	float cursorScale = 1.0f;
 
@@ -153,6 +163,7 @@ public:
 
 	struct ButtonPressEvt {
 		bool pressed = false;
+		bool emulated = false;
 		bool chorded = false;
 		int x = 0;
 		int y = 0;

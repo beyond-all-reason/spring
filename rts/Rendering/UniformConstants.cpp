@@ -18,6 +18,7 @@
 #include "Sim/Features/Feature.h"
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/GlobalSynced.h"
+#include "Sim/Misc/CustomColorPalette.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Misc/Wind.h"
 #include "Map/ReadMap.h"
@@ -297,6 +298,10 @@ void UniformConstants::UpdateParamsImpl(UniformParamsBuffer* updateBuffer)
 			continue;
 
 		updateBuffer->teamColor[teamID] = float4{team->color[0] / 255.0f, team->color[1] / 255.0f, team->color[2] / 255.0f, team->color[3] / 255.0f};
+	}
+
+	for (int i = 0; i < MAX_CUSTOM_COLORS; ++i) {
+		updateBuffer->teamColor[CCustomColorPalette::EncodePaletteIndex(i)] = customColorPalette.GetColor(i);
 	}
 }
 

@@ -31,6 +31,8 @@ class CSyncChecker {
 		 * Keeps a running checksum over all assignments to synced variables.
 		 */
 		static unsigned GetChecksum() { return g_checksum; }
+		static unsigned GetPrevChecksum() { return g_prevChecksum; }
+		static void SetPrevChecksum(unsigned v) { g_prevChecksum = v; }
 		static void NewFrame();
 		static void debugSyncCheckThreading();
 		static void Sync(uint32_t val);
@@ -47,6 +49,11 @@ class CSyncChecker {
 		 * The sync checksum
 		 */
 		static unsigned g_checksum;
+
+		/**
+		 * Final checksum of the previous simulation frame.
+		 */
+		static unsigned g_prevChecksum;
 
 		/**
 		 * @brief in synced code

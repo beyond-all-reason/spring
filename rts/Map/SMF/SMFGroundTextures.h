@@ -17,10 +17,10 @@ public:
 	CSMFGroundTextures(CSMFReadMap* rm);
 	~CSMFGroundTextures() override;
 
-	void DrawUpdate();
-	bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID);
-	bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax);
-	void BindSquareTexture(int texSquareX, int texSquareY);
+	void DrawUpdate() override;
+	bool SetSquareLuaTexture(int texSquareX, int texSquareY, int texID) override;
+	bool GetSquareLuaTexture(int texSquareX, int texSquareY, int texID, int texSizeX, int texSizeY, int lodMin, int lodMax) override;
+	void BindSquareTexture(int texSquareX, int texSquareY) override;
 
 protected:
 	void LoadTiles(CSMFMapFile& file);

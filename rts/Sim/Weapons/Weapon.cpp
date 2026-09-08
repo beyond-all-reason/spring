@@ -819,6 +819,12 @@ void CWeapon::HoldIfTargetInvalid()
 		return;
 
 	if (!TryTarget(currentTarget)) {
+		// BombDroppers must retain ground targets until their active salvo ends.
+		// Dropping one after the aircraft passes the target prevents the CAI from
+		// associating the completed salvo with its current attack command.
+		if (noAutoTarget && HavePosTarget() && salvoLeft > 0)
+			return;
+
 		DropCurrentTarget();
 		return;
 	}

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <format>
 
 #include "System/creg/creg_cond.h"
 #include "System/SpringMath.h"
@@ -14,6 +15,11 @@ CR_REG_METADATA(float3, (CR_MEMBER(x), CR_MEMBER(y), CR_MEMBER(z)))
 //! gets initialized later when the map is loaded
 float float3::maxxpos = -1.0f;
 float float3::maxzpos = -1.0f;
+
+std::string float3::str() const
+{
+	return std::format("float3({:.3f}, {:.3f}, {:.3f})", x, y, z);
+}
 
 float3 float3::PickNonParallel() const
 {

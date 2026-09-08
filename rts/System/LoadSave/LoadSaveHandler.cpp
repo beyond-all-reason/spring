@@ -12,7 +12,7 @@ SaveFileData globalSaveFileData;
 
 ILoadSaveHandler* ILoadSaveHandler::CreateHandler(const std::string& saveFile)
 {
-	const std::string& ext = FileSystem::GetExtension(saveFile);
+	const std::string& ext = FileSystem::GetExtensionLowerCase(saveFile);
 
 	if (ext == "ssf")
 		return (new CCregLoadSaveHandler());

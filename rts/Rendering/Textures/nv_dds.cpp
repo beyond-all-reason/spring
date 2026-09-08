@@ -8,11 +8,9 @@
 //
 // Description:
 //
-// Loads DDS images (DXTC1, DXTC3, DXTC5, RGB (888, 888X), and RGBA (8888) are
-// supported) for use in OpenGL. Image is flipped when its loaded as DX images
-// are stored with different coordinate system. If file has mipmaps and/or
-// cubemaps then these are loaded as well. Volume textures can be loaded as
-// well but they must be uncompressed.
+// Loads DDS images for use in OpenGL. DXT1, DXT3, DXT5, BC4, BC5, BC7,
+// RGB (888, 888X), and RGBA (8888) are supported. Images are flipped to match
+// OpenGL coordinates, except BC7. Volume textures must be uncompressed.
 //
 // When multiple textures are loaded (i.e a volume or cubemap texture),
 // additional faces can be accessed using the array operator.
@@ -349,6 +347,24 @@ bool CDDSImage::load(string filename, bool flipImage)
 	file.Read(&ddsh.dwCaps2, tmp);
 	file.Read(&ddsh.dwReserved2, tmp*3);
 
+    const bool hasDX10Header = ((swabDWord(ddsh.ddspf.dwFlags) & DDSF_FOURCC) && swabDWord(ddsh.ddspf.dwFourCC) == FOURCC_DX10);
+    DDS_HEADER_DXT10 ddsh10 = {0, 0, 0, 1, 0};
+    if (hasDX10Header)
+	{
+        if (file.Read(&ddsh10.dxgiFormat, tmp) != tmp ||
+            file.Read(&ddsh10.resourceDimension, tmp) != tmp ||
+            file.Read(&ddsh10.miscFlag, tmp) != tmp ||
+            file.Read(&ddsh10.arraySize, tmp) != tmp ||
+            file.Read(&ddsh10.miscFlags2, tmp) != tmp)
+            return false;
+
+		ddsh10.dxgiFormat = swabDWord(ddsh10.dxgiFormat);
+		ddsh10.resourceDimension = swabDWord(ddsh10.resourceDimension);
+		ddsh10.miscFlag = swabDWord(ddsh10.miscFlag);
+		ddsh10.arraySize = swabDWord(ddsh10.arraySize);
+		ddsh10.miscFlags2 = swabDWord(ddsh10.miscFlags2);
+	}
+
 	// if in VFS, read post-header data directly from buffer
 	if (file.IsBuffered()) {
 		fileBuf = std::move(file.GetBuffer());
@@ -374,16 +390,29 @@ bool CDDSImage::load(string filename, bool flipImage)
 	ddsh.dwCaps1 = swabDWord(ddsh.dwCaps1);
 	ddsh.dwCaps2 = swabDWord(ddsh.dwCaps2);
 
+    if (hasDX10Header &&
+        (ddsh10.arraySize != 1 ||
+         (ddsh10.resourceDimension != DX10_DIMENSION_TEXTURE2D && ddsh10.resourceDimension != DX10_DIMENSION_TEXTURE3D) ||
+         ((ddsh10.miscFlag & DX10_MISC_TEXTURECUBE) && ddsh10.resourceDimension != DX10_DIMENSION_TEXTURE2D)))
+		return false;
+
 	// default to flat texture type (1D, 2D, or rectangle)
 	m_type = TextureFlat;
 
-	// check if image is a cubemap
-	if (ddsh.dwCaps2 & DDSF_CUBEMAP)
-		m_type = TextureCubemap;
+	if (hasDX10Header) {
+		if (ddsh10.miscFlag & DX10_MISC_TEXTURECUBE)
+			m_type = TextureCubemap;
+		else if (ddsh10.resourceDimension == DX10_DIMENSION_TEXTURE3D)
+			m_type = Texture3D;
+	} else {
+		// check if image is a cubemap
+		if (ddsh.dwCaps2 & DDSF_CUBEMAP)
+			m_type = TextureCubemap;
 
-	// check if image is a volume texture
-	if ((ddsh.dwCaps2 & DDSF_VOLUME) && (ddsh.dwDepth > 0))
-		m_type = Texture3D;
+		// check if image is a volume texture
+		if ((ddsh.dwCaps2 & DDSF_VOLUME) && (ddsh.dwDepth > 0))
+			m_type = Texture3D;
+	}
 
 	// figure out what the image format is
 	if (ddsh.ddspf.dwFlags & DDSF_FOURCC)
@@ -401,6 +430,51 @@ bool CDDSImage::load(string filename, bool flipImage)
 			case FOURCC_DXT5:
 				m_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				m_components = 4;
+				break;
+			case FOURCC_ATI1:
+			case FOURCC_BC4U:
+				m_format = GL_COMPRESSED_RED_RGTC1;
+				m_components = 1;
+				break;
+			case FOURCC_ATI2:
+			case FOURCC_BC5U:
+				m_format = GL_COMPRESSED_RG_RGTC2;
+				m_components = 2;
+				break;
+			case FOURCC_DX10:
+				switch (ddsh10.dxgiFormat)
+				{
+					case DXGI_FORMAT_BC1_UNORM:
+						m_format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+						m_components = 3;
+						break;
+					case DXGI_FORMAT_BC2_UNORM:
+						m_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+						m_components = 4;
+						break;
+					case DXGI_FORMAT_BC3_UNORM:
+						m_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+						m_components = 4;
+						break;
+					case DXGI_FORMAT_BC4_UNORM:
+						m_format = GL_COMPRESSED_RED_RGTC1;
+						m_components = 1;
+						break;
+					case DXGI_FORMAT_BC5_UNORM:
+						m_format = GL_COMPRESSED_RG_RGTC2;
+						m_components = 2;
+						break;
+					case DXGI_FORMAT_BC7_UNORM:
+						m_format = GL_COMPRESSED_RGBA_BPTC_UNORM;
+						m_components = 4;
+						break;
+					case DXGI_FORMAT_BC7_UNORM_SRGB:
+						m_format = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
+						m_components = 4;
+						break;
+					default:
+						return false;
+				}
 				break;
 			default:
 				//fclose(fp);
@@ -433,6 +507,11 @@ bool CDDSImage::load(string filename, bool flipImage)
 		fclose(fp);
 		#endif
 		return false;
+	}
+
+	if (flipImage && (m_format == GL_COMPRESSED_RGBA_BPTC_UNORM || m_format == GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM)) {
+		LOG_L(L_WARNING, "[nv_dds] cannot vertically flip BC7 image \"%s\", author it pre-flipped", filename.c_str());
+		flipImage = false;
 	}
 
 	// store primary surface width/height/depth
@@ -577,6 +656,12 @@ bool CDDSImage::save(std::string filename, bool flipImage) const
 	RECOIL_DETAILED_TRACY_ZONE;
     assert(m_valid);
     assert(m_type != TextureNone);
+
+    if (is_compressed() &&
+        m_format != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
+        m_format != GL_COMPRESSED_RGBA_S3TC_DXT3_EXT &&
+        m_format != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+        return false;
 
     DDS_HEADER ddsh;
     unsigned int headerSize = sizeof(DDS_HEADER);
@@ -727,7 +812,11 @@ bool CDDSImage::is_compressed() const
 	RECOIL_DETAILED_TRACY_ZONE;
 	return ((m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ||
 		   (m_format == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) ||
-		   (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT));
+		   (m_format == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT) ||
+		   (m_format == GL_COMPRESSED_RED_RGTC1) ||
+		   (m_format == GL_COMPRESSED_RG_RGTC2) ||
+		   (m_format == GL_COMPRESSED_RGBA_BPTC_UNORM) ||
+		   (m_format == GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM));
 }
 
 #ifndef HEADLESS
@@ -969,7 +1058,7 @@ inline unsigned int CDDSImage::size_dxtc(unsigned int width, unsigned int height
 {
 	RECOIL_DETAILED_TRACY_ZONE;
     return ((width+3)/4)*((height+3)/4)*
-        (m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16);
+        ((m_format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT || m_format == GL_COMPRESSED_RED_RGTC1) ? 8 : 16);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1029,6 +1118,14 @@ void CDDSImage::flip(CSurface &surface) const
             case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
                 blocksize = 16;
                 flipblocks = &CDDSImage::flip_blocks_dxtc5;
+                break;
+            case GL_COMPRESSED_RED_RGTC1:
+                blocksize = 8;
+                flipblocks = &CDDSImage::flip_blocks_bc4;
+                break;
+            case GL_COMPRESSED_RG_RGTC2:
+                blocksize = 16;
+                flipblocks = &CDDSImage::flip_blocks_bc5;
                 break;
             default:
                 return;
@@ -1214,6 +1311,40 @@ void CDDSImage::flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) con
 
         swap(&curblock->row[0], &curblock->row[3], sizeof(unsigned char));
         swap(&curblock->row[1], &curblock->row[2], sizeof(unsigned char));
+
+        curblock++;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// flip a line of BC4 blocks
+void CDDSImage::flip_blocks_bc4(DXTColBlock *line, unsigned int numBlocks) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+    DXT5AlphaBlock *curblock = reinterpret_cast<DXT5AlphaBlock*>(line);
+
+    for (unsigned int i = 0; i < numBlocks; i++)
+    {
+        flip_dxt5_alpha(curblock);
+
+        curblock++;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// flip a line of BC5 blocks
+void CDDSImage::flip_blocks_bc5(DXTColBlock *line, unsigned int numBlocks) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+    DXT5AlphaBlock *curblock = reinterpret_cast<DXT5AlphaBlock*>(line);
+
+    for (unsigned int i = 0; i < numBlocks; i++)
+    {
+        flip_dxt5_alpha(curblock);
+
+        curblock++;
+
+        flip_dxt5_alpha(curblock);
 
         curblock++;
     }

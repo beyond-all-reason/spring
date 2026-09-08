@@ -49,7 +49,7 @@ public:
 	CModelDrawerDataBase(const std::string& ecName, int ecOrder, bool& mtModelDrawer_);
 	virtual ~CModelDrawerDataBase() override;
 public:
-	virtual void Update() = 0;
+	void Update() override = 0;
 protected:
 	virtual bool IsAlpha(const T* co) const = 0;
 private:
@@ -208,6 +208,7 @@ inline void CModelDrawerDataBase<T>::UpdateObjectUniforms(const T* o)
 
 	if (gu->spectatingFullView || o->IsInLosForAllyTeam(gu->myAllyTeam)) {
 		uni.id = o->id;
+		uni.teamID = o->team;
 		// TODO remove drawPos, replace with pos
 		uni.drawPos = float4{ o->drawPos, o->heading * math::PI / SPRING_MAX_HEADING };
 		uni.speed = o->speed;

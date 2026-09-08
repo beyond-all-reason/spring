@@ -9,7 +9,8 @@
 #include <atomic>
 #include <thread>
 #include <condition_variable>
-#include <immintrin.h>
+
+#include "System/simd_compat.h"
 
 
 #if   defined(_WIN32)

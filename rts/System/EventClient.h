@@ -4,6 +4,7 @@
 #define EVENT_CLIENT_H
 
 #include <algorithm>
+#include <map>
 #include <typeinfo>
 #include <string>
 #include <vector>
@@ -35,6 +36,7 @@ struct BuildInfo;
 struct FeatureDef;
 class LuaMaterial;
 struct WeaponDef;
+struct SResourcePack;
 
 #ifndef zipFile
 	// might be defined through zip.h already
@@ -122,6 +124,8 @@ class CEventClient
 
 		virtual void TeamDied(int teamID) {}
 		virtual void TeamChanged(int teamID) {}
+		virtual bool ResourceExcess(const std::map <int, SResourcePack>& excess) { return false; }
+
 		virtual void PlayerChanged(int playerID) {}
 		virtual void PlayerAdded(int playerID) {}
 		virtual void PlayerRemoved(int playerID, int reason) {}
@@ -369,6 +373,8 @@ class CEventClient
 		virtual void DrawAlphaFeaturesLua(bool drawReflection, bool drawRefraction) {}
 		virtual void DrawShadowUnitsLua() {}
 		virtual void DrawShadowFeaturesLua() {}
+
+		virtual void DrawBuildSquare(int unitDefID, int x, int z, int facing, const std::vector<uint8_t>& statuses) {}
 
 		virtual void FontsChanged() {}
 

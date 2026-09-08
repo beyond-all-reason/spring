@@ -81,13 +81,13 @@ private:
 	inline void InstanceBufferCheckAndFormatCheck(int attrID, const char* func);
 
 	template<typename TObj>
-	static SInstanceData InstanceDataFromGetData(int id, int attrID, uint8_t defTeamID);
+	static SInstanceData InstanceDataFromGetData(int id, int attrID, uint16_t defPaletteIndex);
 
 	template<typename TObj>
-	size_t InstanceDataFromImpl(int id, int attrID, uint8_t defTeamID, const sol::optional<int>& elemOffsetOpt);
+	size_t InstanceDataFromImpl(int id, int attrID, uint16_t defPaletteIndex, const sol::optional<int>& elemOffsetOpt);
 
 	template<typename TObj>
-	size_t InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint8_t defTeamID, const sol::optional<int>& elemOffsetOpt);
+	size_t InstanceDataFromImpl(const sol::stack_table& ids, int attrID, uint16_t defPaletteIndex, const sol::optional<int>& elemOffsetOpt);
 
 	template<typename Iterable>
 	size_t MatrixDataFromProjectileIDsImpl(const Iterable& ids, int attrID, sol::optional<int> elemOffsetOpt, const char* func);

@@ -13,8 +13,10 @@
 #include "LuaConstEngine.h"
 #include "LuaConstGame.h"
 #include "LuaConstPlatform.h"
+#include "LuaDebugExtra.h"
 #include "LuaSyncedRead.h"
 #include "LuaInterCall.h"
+#include "LuaLibs.h"
 #include "LuaUnsyncedRead.h"
 #include "LuaUICommand.h"
 #include "LuaFeatureDefs.h"
@@ -25,7 +27,6 @@
 #include "LuaUtils.h"
 #include "LuaVFS.h"
 #include "LuaVFSDownload.h"
-#include "LuaIO.h"
 #include "LuaZip.h"
 #include "Game/Camera.h"
 #include "Game/GlobalUnsynced.h"
@@ -40,7 +41,6 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
 #include "System/Threading/SpringThreading.h"
-#include "lib/luasocket/src/luasocket.h"
 
 #include <cctype>
 
@@ -101,40 +101,10 @@ CLuaUI::CLuaUI()
 		return;
 	}
 
-	// load the standard libraries
-	LUA_OPEN_LIB(L, luaopen_base);
-	LUA_OPEN_LIB(L, luaopen_io);
-	LUA_OPEN_LIB(L, luaopen_os);
-	LUA_OPEN_LIB(L, luaopen_math);
-	LUA_OPEN_LIB(L, luaopen_table);
-	LUA_OPEN_LIB(L, luaopen_string);
-	LUA_OPEN_LIB(L, luaopen_debug);
+	LuaLibs::OpenUnsynced(L);
 
-	// initialize luasocket
 	if (luaSocketEnabled)
 		InitLuaSocket(L);
-
-	// setup the lua IO access check functions
-	lua_set_fopen(L, LuaIO::fopen);
-	lua_set_popen(L, LuaIO::popen, LuaIO::pclose);
-	lua_set_system(L, LuaIO::system);
-	lua_set_remove(L, LuaIO::remove);
-	lua_set_rename(L, LuaIO::rename);
-
-	// remove a few dangerous calls
-	lua_getglobal(L, "io");
-	lua_pushstring(L, "popen"); lua_pushnil(L); lua_rawset(L, -3);
-	lua_pop(L, 1);
-	lua_getglobal(L, "os"); {
-		lua_pushliteral(L, "exit");      lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "execute");   lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "remove");    lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "rename");    lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "tmpname");   lua_pushnil(L); lua_rawset(L, -3);
-		lua_pushliteral(L, "getenv");    lua_pushnil(L); lua_rawset(L, -3);
-		//lua_pushliteral(L, "setlocale"); lua_pushnil(L); lua_rawset(L, -3);
-	}
-	lua_pop(L, 1); // os
 
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 
@@ -159,6 +129,7 @@ CLuaUI::CLuaUI()
 	    !AddEntriesToTable(L, "Spring",      LuaUnsyncedCtrl::PushEntries)   ||
 	    !AddEntriesToTable(L, "Spring",      LuaUnsyncedRead::PushEntries)   ||
 	    !AddEntriesToTable(L, "Spring",      LuaUICommand::PushEntries)      ||
+	    !AddEntriesToTable(L, "debug",       LuaDebugExtra::PushEntries)     ||
 	    !AddEntriesToTable(L, "gl",          LuaOpenGL::PushEntries)         ||
 	    !AddEntriesToTable(L, "GL",          LuaConstGL::PushEntries)        ||
 	    !AddEntriesToTable(L, "Engine",      LuaConstEngine::PushEntries)    ||
@@ -194,6 +165,7 @@ CLuaUI::CLuaUI()
 	// update extra call-ins
 	UpdateCallIn(L, "WorldTooltip");
 	UpdateCallIn(L, "MapDrawCmd");
+	UpdateCallIn(L, "DrawBuildSquare");
 
 	lua_settop(L, 0);
 }
@@ -235,25 +207,6 @@ CLuaUI::~CLuaUI()
 GetWatchDef(Explosion)
 SetWatchDef(Explosion)
 
-
-void CLuaUI::InitLuaSocket(lua_State* L) {
-	std::string code;
-	std::string filename = "LuaSocket/socket.lua";
-	CFileHandler f(filename, SPRING_VFS_BASE);
-
-	if (!f.FileExists()) {
-		LOG_L(L_ERROR, "Error loading %s (file does not exist)", filename.c_str());
-		return;
-	}
-
-	LUA_OPEN_LIB(L, luaopen_socket_core);
-
-	if (f.LoadStringData(code)) {
-		LoadCode(L, std::move(code), filename);
-	} else {
-		LOG_L(L_ERROR, "Error loading %s", filename.c_str());
-	}
-}
 
 string CLuaUI::LoadFile(const string& name, const std::string& mode) const
 {
@@ -720,6 +673,12 @@ bool CLuaUI::GetLuaCmdDescList(lua_State* L, int index, vector<SCommandDescripti
 // Lua Callbacks
 //
 
+/***
+ * @function Spring.SetShockFrontFactors
+ * @param minArea number?
+ * @param minPower number?
+ * @param distAdj number?
+ */
 int CLuaUI::SetShockFrontFactors(lua_State* L)
 {
 	luaUI->haveShockFront = true;

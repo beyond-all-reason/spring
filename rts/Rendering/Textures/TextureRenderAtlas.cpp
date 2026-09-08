@@ -1,6 +1,7 @@
 #include "TextureRenderAtlas.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "LegacyAtlasAlloc.h"
 #include "QuadtreeAtlasAlloc.h"
@@ -43,19 +44,20 @@ static constexpr const char* fsTRA = R"(
 
 uniform sampler2D tex;
 uniform float lod;
+uniform vec4 srcClamp;
 
 in vec2 vUV;
 out vec4 outColor;
 
 void main() {
-	outColor = textureLod(tex, vUV, lod);
+	outColor = textureLod(tex, clamp(vUV, srcClamp.xy, srcClamp.zw), lod);
 }
 )";
 };
 
 std::string CTextureRenderAtlas::UniqueSubTexture::GetName() const
 {
-	return fmt::format("{};{},{},{},{}", texID, subTexCoords.x1, subTexCoords.y1, subTexCoords.x2, subTexCoords.y2);
+	return fmt::format("{};{},{},{},{}", stableIdx, subTexCoords.x1, subTexCoords.y1, subTexCoords.x2, subTexCoords.y2);
 }
 
 CTextureRenderAtlas::CTextureRenderAtlas(
@@ -107,6 +109,7 @@ CTextureRenderAtlas::CTextureRenderAtlas(
 		shader->Enable();
 		shader->SetUniform("tex", 0);
 		shader->SetUniform("lod", 0.0f);
+		shader->SetUniform("srcClamp", 0.0f, 0.0f, 1.0f, 1.0f);
 		shader->Disable();
 		shader->Validate();
 	}
@@ -122,10 +125,10 @@ CTextureRenderAtlas::~CTextureRenderAtlas()
 	if (shaderRef == 0)
 		shaderHandler->ReleaseProgramObjects("[TextureRenderAtlas]");
 
-	for (auto& [_, tID] : filenameToTexID) {
-		if (tID) {
-			glDeleteTextures(1, &tID);
-			tID = 0;
+	for (auto& [_, entry] : filenameToTexID) {
+		if (entry.texID) {
+			glDeleteTextures(1, &entry.texID);
+			entry.texID = 0;
 		}
 	}
 
@@ -181,11 +184,14 @@ bool CTextureRenderAtlas::AddTexFromBitmapRaw(const std::string& name, const CBi
 
 	auto it = filenameToTexID.find(refFileName);
 	if (it == filenameToTexID.end()) {
-		it = filenameToTexID.emplace(refFileName, bm.CreateMipMapTexture()).first;
+		// Assign stable index at insertion time so all icons sharing a file get the same index
+		const uint32_t stableIdx = static_cast<uint32_t>(filenameToTexID.size());
+		it = filenameToTexID.emplace(refFileName, FileTexEntry{ bm.CreateMipMapTexture(), stableIdx }).first;
 	}
 
 	const auto uniqueSubTex = UniqueSubTexture(
-		it->second,
+		it->second.texID,
+		it->second.stableIdx,
 		subTexCoords
 	);
 	const auto uniqueSubTexStr = uniqueSubTex.GetName();
@@ -305,7 +311,7 @@ uint32_t CTextureRenderAtlas::DisownTexture()
 	return atlasTex->DisOwn();
 }
 
-bool CTextureRenderAtlas::DumpTexture() const
+bool CTextureRenderAtlas::DumpTexture(const std::string& fileExt) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 
@@ -319,13 +325,13 @@ bool CTextureRenderAtlas::DumpTexture() const
 	if (numPages > 1) {
 		for (uint32_t page = 0; page < numPages; ++page) {
 			for (uint32_t level = 0; level < numLevels; ++level) {
-				glSaveTextureArray(atlasTex->GetId(), fmt::format("{}_{}_{}.png", atlasName, page, level).c_str(), level, page);
+				glSaveTextureArray(atlasTex->GetId(), fmt::format("{}_{}_{}.{}", atlasName, page, level, fileExt).c_str(), level, page);
 			}
 		}
 	}
 	else {
 		for (uint32_t level = 0; level < numLevels; ++level) {
-			glSaveTexture(atlasTex->GetId(), fmt::format("{}_{}.png", atlasName, level).c_str(), level);
+			glSaveTexture(atlasTex->GetId(), fmt::format("{}_{}.{}", atlasName, level, fileExt).c_str(), level);
 		}
 	}
 
@@ -350,10 +356,10 @@ bool CTextureRenderAtlas::CreateAtlasTexture()
 	if (atlasRendered)
 		return true;
 
-	LOG_L(L_INFO, "CTextureRenderAtlas::%s()[0] atlas=%s FBO::ready=%d", __func__, atlasName.c_str(), FBO::IsReady());
-
 	if (!FBO::IsReady())
 		return false;
+
+	LOG_L(L_INFO, "CTextureRenderAtlas::%s()[0] atlas=%s FBO::ready=%d", __func__, atlasName.c_str(), FBO::IsReady());
 
 	const auto numLevels = atlasAllocator->GetNumTexLevels();
 	const auto numPages = atlasAllocator->GetNumPages();
@@ -406,7 +412,6 @@ bool CTextureRenderAtlas::CreateAtlasTexture()
 		atlasRendered = (fbo.IsValid() && atlasTex->GetId() > 0);
 
 		if (atlasRendered) {
-			static const auto Norm2SNorm = [](float value) { return (value * 2.0f - 1.0f); };
 			auto& rb = RenderBuffer::GetTypedRenderBuffer<VA_TYPE_2DT>();
 
 			for (uint32_t page = 0; page < numPages; ++page) {
@@ -422,27 +427,88 @@ bool CTextureRenderAtlas::CreateAtlasTexture()
 					glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 					auto shEnToken = shader->EnableScoped();
-					shader->SetUniform("lod", static_cast<float>(level));
+					// Always sample from LOD 0 of the source texture and let the
+					// viewport shrinking handle downsampling. This prevents inter-texel
+					// bleed when a single source image contains multiple sub-textures
+					// (e.g. icon sprite sheets where glGenerateMipmap averages across
+					// icon boundaries).
+					shader->SetUniform("lod", 0.0f);
+
+					// Pixel-snapped mip-level rendering:
+					// At mip levels > 0, reusing level-0 normalized coords can place quad vertices
+					// at fractional pixel positions (e.g. 9.75px at level 2). The diagonal triangle
+					// split then rasterizes inconsistently with GL_NEAREST, baking a seam into the
+					// atlas mip texture. Fix: compute integer pixel coords per mip level.
+					const uint32_t mipW = std::max(atlasSize.x >> level, 1u);
+					const uint32_t mipH = std::max(atlasSize.y >> level, 1u);
+					const float invMipW = 1.0f / static_cast<float>(mipW);
+					const float invMipH = 1.0f / static_cast<float>(mipH);
+					const uint32_t scale = 1u << level;
+					// At the highest LOD level, don't expand the destination rect into
+					// the padding zone. The padding is too thin (sub-mip-pixel) and
+					// floor/ceil rounding causes destination rects of neighboring icons
+					// to overlap, writing one icon's edge color over another's.
+					const int halfPad = (level < numLevels - 1) ? (atlasAllocator->GetPadding() / 2) : 0;
+
 					// draw
 					for (auto& [uniqTexName, entry] : atlasAllocator->GetEntries()) {
 						if (entry.texCoords.pageNum != page)
 							continue;
 
-						const auto atlasedTexCoords = atlasAllocator->GetTexCoordsEdge(uniqTexName);
-						const auto& [srcTexID, srcSubTC] = uniqueSubTextureMap[uniqTexName];
+						const auto& [srcTexID, _stableIdx, srcSubTC] = uniqueSubTextureMap[uniqTexName];
 
 						if (srcTexID == 0)
 							continue;
 
-						auto posTL = VA_TYPE_2DT{ .x = Norm2SNorm(atlasedTexCoords.x1), .y = Norm2SNorm(atlasedTexCoords.y1), .s = srcSubTC.x, .t = srcSubTC.y };
-						auto posTR = VA_TYPE_2DT{ .x = Norm2SNorm(atlasedTexCoords.x2), .y = Norm2SNorm(atlasedTexCoords.y1), .s = srcSubTC.z, .t = srcSubTC.y };
-						auto posBL = VA_TYPE_2DT{ .x = Norm2SNorm(atlasedTexCoords.x1), .y = Norm2SNorm(atlasedTexCoords.y2), .s = srcSubTC.x, .t = srcSubTC.w };
-						auto posBR = VA_TYPE_2DT{ .x = Norm2SNorm(atlasedTexCoords.x2), .y = Norm2SNorm(atlasedTexCoords.y2), .s = srcSubTC.z, .t = srcSubTC.w };
+						// Raw inclusive pixel coords from allocator (level-0 space)
+						const int px1 = static_cast<int>(entry.texCoords.x1);
+						const int py1 = static_cast<int>(entry.texCoords.y1);
+						const int px2 = static_cast<int>(entry.texCoords.x2); // inclusive
+						const int py2 = static_cast<int>(entry.texCoords.y2); // inclusive
+
+						// Entry size in level-0 pixels (exclusive width = inclusive + 1)
+						const float entryW = static_cast<float>(px2 - px1 + 1);
+						const float entryH = static_cast<float>(py2 - py1 + 1);
+
+						// Destination rect in mip-level pixels, snapped to integers
+						// floor for left/top, ceil for right/bottom ensures full coverage
+						const int dstX1 = std::max(static_cast<int>(std::floor(static_cast<float>(px1 + 0 - halfPad) / static_cast<float>(scale))),                      0);
+						const int dstY1 = std::max(static_cast<int>(std::floor(static_cast<float>(py1 + 0 - halfPad) / static_cast<float>(scale))),                      0);
+						const int dstX2 = std::min(static_cast<int>(std::ceil (static_cast<float>(px2 + 1 + halfPad) / static_cast<float>(scale))), static_cast<int>(mipW));
+						const int dstY2 = std::min(static_cast<int>(std::ceil (static_cast<float>(py2 + 1 + halfPad) / static_cast<float>(scale))), static_cast<int>(mipH));
+
+						// Convert integer mip-level pixels to NDC [-1, 1]
+						const float ndcX1 = 2.0f * static_cast<float>(dstX1) * invMipW - 1.0f;
+						const float ndcY1 = 2.0f * static_cast<float>(dstY1) * invMipH - 1.0f;
+						const float ndcX2 = 2.0f * static_cast<float>(dstX2) * invMipW - 1.0f;
+						const float ndcY2 = 2.0f * static_cast<float>(dstY2) * invMipH - 1.0f;
+
+						// Derive source UVs from snapped destination rect
+						// Maps mip-level pixel boundaries back to source texture coordinates
+						const float srcW = srcSubTC.z - srcSubTC.x;
+						const float srcH = srcSubTC.w - srcSubTC.y;
+						const float srcU1 = srcSubTC.x + (static_cast<float>(dstX1 * static_cast<int>(scale) - px1) / entryW) * srcW;
+						const float srcV1 = srcSubTC.y + (static_cast<float>(dstY1 * static_cast<int>(scale) - py1) / entryH) * srcH;
+						const float srcU2 = srcSubTC.x + (static_cast<float>(dstX2 * static_cast<int>(scale) - px1) / entryW) * srcW;
+						const float srcV2 = srcSubTC.y + (static_cast<float>(dstY2 * static_cast<int>(scale) - py1) / entryH) * srcH;
+
+						auto posTL = VA_TYPE_2DT{ .x = ndcX1, .y = ndcY1, .s = srcU1, .t = srcV1 };
+						auto posTR = VA_TYPE_2DT{ .x = ndcX2, .y = ndcY1, .s = srcU2, .t = srcV1 };
+						auto posBL = VA_TYPE_2DT{ .x = ndcX1, .y = ndcY2, .s = srcU1, .t = srcV2 };
+						auto posBR = VA_TYPE_2DT{ .x = ndcX2, .y = ndcY2, .s = srcU2, .t = srcV2 };
 
 						auto texBind = GL::TexBind(GL_TEXTURE_2D, srcTexID);
+						shader->SetUniform("srcClamp", srcSubTC.x, srcSubTC.y, srcSubTC.z, srcSubTC.w);
 
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+						// Use GL_LINEAR to avoid GL_NEAREST ambiguity at texel boundaries.
+						// At mip levels > 0, for odd-positioned atlas entries, the source UV can land
+						// exactly halfway between two source LOD-N texels. GL_NEAREST is undefined there;
+						// floating-point UV interpolation differences between the two triangles can
+						// then pick different texels, baking a diagonal seam into the atlas mip.
+						// GL_LINEAR gives the same result as NEAREST when UVs hit texel centers (level 0)
+						// and smooth blending otherwise (levels 1+), eliminating the seam.
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -469,10 +535,10 @@ bool CTextureRenderAtlas::CreateAtlasTexture()
 	if (!atlasRendered)
 		return false;
 
-	for (auto& [_, texID] : filenameToTexID) {
-		if (texID) {
-			glDeleteTextures(1, &texID);
-			texID = 0;
+	for (auto& [_, entry] : filenameToTexID) {
+		if (entry.texID) {
+			glDeleteTextures(1, &entry.texID);
+			entry.texID = 0;
 		}
 	}
 

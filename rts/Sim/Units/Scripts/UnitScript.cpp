@@ -216,7 +216,7 @@ void CUnitScript::TickAllAnims(int deltaTime)
 	for (auto& ai : anims) {
 		LocalModelPiece& lmp = *pieces[ai.piece];
 		const auto& currFunc = TICK_ANIM_FUNCS[ai.animType];
-		if (ai.done |= std::invoke(currFunc, this, tickRate, lmp, ai)) {
+		if ((ai.done |= std::invoke(currFunc, this, tickRate, lmp, ai))) {
 			if (ai.hasWaiting)
 				doneAnims.emplace_back(ai);
 		}

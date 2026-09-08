@@ -373,7 +373,7 @@ void CGrassDrawer::EnableShader(const GrassShaderProgram type) {
 	grassShader->SetUniform3v("ambientLightColor",  &sunLighting->modelAmbientColor.x);
 	grassShader->SetUniform3v("diffuseLightColor",  &sunLighting->modelDiffuseColor.x);
 	grassShader->SetUniform3v("specularLightColor", &sunLighting->modelSpecularColor.x);
-	grassShader->SetUniform3v("sunDir",             &mapInfo->light.sunDir.x);
+	grassShader->SetUniform3v("sunDir",             &ISky::GetSky()->GetLight()->GetLightDir().x);
 }
 
 
@@ -1062,5 +1062,3 @@ void CGrassDrawer::UnsyncedHeightMapUpdate(const SRectangle& rect)
 		}
 	}
 }
-
-

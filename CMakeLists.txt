@@ -73,11 +73,6 @@ else()
 	set(DEBUG_BUILD FALSE)
 endif()
 
-if(DEBUG_BUILD)
-	set(JAVA_COMPILE_FLAG_CONDITIONAL "-g:lines,source,vars")
-else()
-	set(JAVA_COMPILE_FLAG_CONDITIONAL "-g:lines,source")
-endif()
 
 # By default, the libraries that don't explicitly specify SHARED/STATIC are build statically.
 # See https://cmake.org/cmake/help/latest/variable/BUILD_SHARED_LIBS.html
@@ -105,17 +100,26 @@ endif (APPLE)
 ### Compiler flags and defines based on build type
 include(TestCXXFlags)
 
-## 32bit or 64bit?
+## 64-bit architecture check
 set(MARCH_FLAG ${MARCH} CACHE STRING "CPU optimization (use `generic` for generic optimization)")
-if    (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(MARCH_BITS 64 CACHE INTERNAL "" FORCE)
-else  (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	message(FATAL_ERROR "RecoilEngine does not support 32 bits." )
-endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+if    (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+	message(FATAL_ERROR "RecoilEngine requires a 64-bit build environment.")
+endif (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+set(MARCH_BITS 64 CACHE INTERNAL "" FORCE)
 
-message(STATUS "Building Spring on ${MARCH_BITS}bit environment")
-set(BUILD_BITS "${MARCH_BITS}" CACHE STRING "Target arch machine type")
-message(STATUS "Targetting ${BUILD_BITS}bit")
+# Detect architecture
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|armv8|ARM64|AARCH64")
+	set(IS_ARM64_BUILD TRUE)
+	message(STATUS "Detected ARM64 architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+	set(IS_ARM64_BUILD FALSE)
+	message(STATUS "Detected x86-64 architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+else()
+	message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}. Only ARM64 and x86-64 are supported.")
+endif()
+
+message(STATUS "Building Spring on a 64-bit environment")
+set(BUILD_BITS 64 CACHE INTERNAL "Target architecture bitness" FORCE)
 
 
 ### Install paths (relative to CMAKE_INSTALL_PREFIX)
@@ -200,7 +204,7 @@ endif (UNIX AND NOT MINGW)
 # (next two are relative to CMAKE_INSTALL_PREFIX)
 set(AI_LIBS_DIR "${DATADIR}"     CACHE STRING "Where to install Skirmish AI libraries")
 set(AI_DATA_DIR "${AI_LIBS_DIR}" CACHE STRING "Where to install Skirmish AI additional files (eg. configuration)")
-set(AI_TYPES    "NATIVE"            CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|JAVA|NONE]")
+set(AI_TYPES    "NATIVE"            CACHE STRING "Which AI Interfaces (and Skirmish AIs using them) to build [ALL|NATIVE|NONE]")
 
 ## DataDirs
 set(BUILTIN_DATADIRS "")
@@ -398,10 +402,12 @@ if(NOT MSVC)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsignaling-nans")
 	endif()
 
-	## warning: space between quotes and suffix is deprecated in C++23
-	## [[nodiscard]] constexpr uint32_t operator"" _hs(const char* str, std::size_t) noexcept
-	## it's been quite annoying since we switched to C++23
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")
+	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		## warning: space between quotes and suffix is deprecated in C++23
+		## [[nodiscard]] constexpr uint32_t operator"" _hs(const char* str, std::size_t) noexcept
+		## it's been quite annoying since we switched to C++23
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-literal-operator")
+	endif()
 
 	### CompileTime Warnings
 	set(COMMON_WARNINGS "${COMMON_WARNINGS} -Wformat -Wformat-security")
@@ -428,14 +434,26 @@ endif()
 option(ENABLE_STREFLOP "build Spring with streflop support (REQUIRED FOR MULTIPLAYER)" TRUE)
 
 if (ENABLE_STREFLOP)
-## note: is removed in ./AI/CMakeLists.txt since it would break AI compilation
-add_definitions(-DSTREFLOP_SSE)
+	set(STREFLOP_AUTO ON CACHE BOOL "Enable STREFLOP autodetection" FORCE)
 else ()
-add_definitions(-DNOT_USING_STREFLOP)
+	add_definitions(-DNOT_USING_STREFLOP)
 endif ()
 
 ### Asio
 add_definitions(-DASIO_STANDALONE)
+
+### sse2neon
+if (IS_ARM64_BUILD)
+	add_definitions(-DSSE2NEON)
+	add_definitions(-DSSE2NEON_SUPPRESS_WARNINGS)
+
+#   These are mentioned by sse2neon docs, do *not* use them. They will cause desyncs!
+#	add_definitions(-DSSE2NEON_PRECISE_MINMAX)
+#	add_definitions(-DSSE2NEON_PRECISE_DIV)
+#	add_definitions(-DSSE2NEON_PRECISE_SQRT)
+#	add_definitions(-DSSE2NEON_PRECISE_DP)
+endif()
+
 
 ### compiler specific flags
 set(CXX_FLAGS_DEBUG_ADDITIONAL "")
@@ -454,6 +472,8 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 
 	if (NOT MARCH_FLAG STREQUAL "generic")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${MARCH_FLAG} -mtune=${MARCH_FLAG}") #march/mtune define SSE flags
+	elseif (IS_ARM64_BUILD)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a+simd ${FP_CONTRACT_FLAG}")
 	else (NOT MARCH_FLAG STREQUAL "generic")
 		set(FALLBACK_SSE_FLAGS "-msse")
 		#set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mmmx")
@@ -467,21 +487,30 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 		set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mno-avx -mno-fma -mno-fma4 -mno-xop -mno-lwp")
 		set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mno-avx2")
 
-		if (MARCH_BITS EQUAL 64)
-			set(FALLBACK_MARCH "x86-64")
-		else (MARCH_BITS EQUAL 64)
-			set(FALLBACK_MARCH "i686")
-		endif (MARCH_BITS EQUAL 64)
-
+		set(FALLBACK_MARCH "x86-64")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${FALLBACK_MARCH} -mtune=generic ${FALLBACK_SSE_FLAGS}")
 	endif (NOT MARCH_FLAG STREQUAL "generic")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS} -mfpmath=sse") #SSE_FLAGS are now user input only
+	if (NOT IS_ARM64_BUILD)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS} -mfpmath=sse") #SSE_FLAGS are now user input only
+	endif ()
 elseif (MSVC)
 	set(MSVC_CXX_FLAGS "/arch:SSE2") #default, but still set explicitly
 	# silence warnings
 	add_definitions(-D_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS)
-else   (MSVC)
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+	# Clang on ARM64: no SSE flags needed, use armv8-a with NEON SIMD
+	if (IS_ARM64_BUILD)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FP_CONTRACT_FLAG}")
+	else()
+		# Clang on x86_64: use SSE like GCC
+		if (NOT MARCH_FLAG OR MARCH_FLAG STREQUAL "" OR MARCH_FLAG STREQUAL "generic")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -mfpmath=sse")
+		else()
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${MARCH_FLAG} -mtune=${MARCH_FLAG}")
+		endif()
+	endif()
+else()
 	message(WARNING "unknown compiler")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
@@ -505,8 +534,14 @@ if    (MSVC)
 	set(CMAKE_CXX_FLAGS_PROFILE               "${CMAKE_CXX_FLAGS_PROFILE} /LTCG")
 else  (MSVC)
 	if (CMAKE_COMPILER_IS_GNUCXX)
+		# -fsingle-precision-constant: treat FP constants as float, not double (GCC-only)
+		# -frounding-math: honor runtime rounding mode (GCC-only)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsingle-precision-constant -frounding-math")
-	endif(CMAKE_COMPILER_IS_GNUCXX)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+		# Clang does not support -fsingle-precision-constant.
+		# -frounding-math is supported on Clang 14+; use it if available.
+		check_and_add_flags(CMAKE_CXX_FLAGS "-frounding-math")
+	endif()
 	# Experiment with frame pointers to see whether it improves the quality of the stack unwinds.
 	# We're having trouble getting meaningful information form crash reports. Trying this before
 	# moving onto more performance-impacting methods.
@@ -539,22 +574,10 @@ else  (MSVC)
 	#set(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3") #cmake has -g it by default
 	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ggdb3") #cmake has -g it by default
 
-	if (MARCH_BITS EQUAL 64 AND BUILD_BITS EQUAL 32)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
-	endif (MARCH_BITS EQUAL 64 AND BUILD_BITS EQUAL 32)
 
 	if     (MINGW)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -Wl,--enable-auto-import")
 		set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -Wl,--enable-auto-import")
-		if    (BUILD_BITS EQUAL 32)
-			# Increase memory limit from 2GB to 3GB on 32bit Windows and 2GB->4GB on 64bit Windows (assuming spring.exe is 32bit)
-			# http://msdn.microsoft.com/en-us/library/windows/desktop/aa366778(v=vs.85).aspx
-			message(STATUS "Enable IMAGE_FILE_LARGE_ADDRESS_AWARE (>2GB memory limit)")
-			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--large-address-aware")
-		else (BUILD_BITS EQUAL 32)
-			message(WARNING "The 64bit version of spring on windows is experimental and may not sync with regular builds")
-		endif (BUILD_BITS EQUAL 32)
 	endif  (MINGW)
 endif (MSVC)
 
@@ -596,11 +619,28 @@ set_source_files_properties(
 	PROPERTIES GENERATED TRUE
 )
 
-# This is always executed (on every run of "make"),
-# but the actual version files are only written in case of a change
-# in the version info they use, or in the template file content.
-add_custom_target(generateVersionFiles)
-add_custom_command(TARGET generateVersionFiles
+# Find git metadata files to depend on, so version regenerates when commits change
+if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+	if(EXISTS "${CMAKE_SOURCE_DIR}/.git/index")
+		list(APPEND VERSION_GIT_DEPS "${CMAKE_SOURCE_DIR}/.git/index")
+	endif()
+	if(EXISTS "${CMAKE_SOURCE_DIR}/.git/HEAD")
+		list(APPEND VERSION_GIT_DEPS "${CMAKE_SOURCE_DIR}/.git/HEAD")
+	endif()
+endif()
+
+# Declare template files as inputs (for proper dependency tracking)
+set(VERSION_TEMPLATE_FILES
+	"${CMAKE_SOURCE_DIR}/rts/System/VersionGenerated.h.template"
+	"${CMAKE_SOURCE_DIR}/VERSION.template"
+)
+
+# Use add_custom_command(OUTPUT ...) to properly declare file outputs.
+# This creates real file-level dependencies (not just order-only deps),
+# fixing race conditions where compilation starts before version generation.
+# Remove any existing generated files first to ensure fresh generation.
+add_custom_command(
+	OUTPUT ${VERSION_GENERATE_SOURCES}
 	COMMAND "${CMAKE_COMMAND}"
 		"-DSOURCE_ROOT=${CMAKE_SOURCE_DIR}"
 		"-DCMAKE_MODULES_SPRING=${CMAKE_MODULES_SPRING}"
@@ -608,9 +648,13 @@ add_custom_command(TARGET generateVersionFiles
 		"-DVERSION_ADDITIONAL=${VERSION_ADDITIONAL}"
 		-P "${CMAKE_MODULES_SPRING}/ConfigureVersion.cmake"
 		"${VERSION_GENERATE_DIR}"
-	COMMENT
-		"  Configuring Version files ..." VERBATIM
+	DEPENDS ${VERSION_TEMPLATE_FILES} ${VERSION_GIT_DEPS}
+	COMMENT "  Configuring Version files ..."
+	VERBATIM
 )
+
+# Target for dependency purposes
+add_custom_target(generateVersionFiles DEPENDS ${VERSION_GENERATE_SOURCES})
 
 add_dependencies(generateSources generateVersionFiles)
 
@@ -652,8 +696,11 @@ add_subdirectory(rts)
 
 # Unit tests
 # this has to be in root CMakeLists.txt
-enable_testing()
-add_subdirectory(test)
+option(BUILD_TESTING "Build engine tests" ON)
+if (BUILD_TESTING)
+	enable_testing()
+	add_subdirectory(test)
+endif ()
 
 if (INSTALL_PORTABLE)
 	install(DIRECTORY DESTINATION games)

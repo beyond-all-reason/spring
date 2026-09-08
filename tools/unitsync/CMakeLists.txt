@@ -67,6 +67,7 @@ set(main_files
 	"${ENGINE_SRC_ROOT}/Lua/LuaParser.cpp"
 	"${ENGINE_SRC_ROOT}/Lua/LuaUtils.cpp"
 	"${ENGINE_SRC_ROOT}/Lua/LuaIO.cpp"
+	"${ENGINE_SRC_ROOT}/Lua/LuaLibs.cpp"
 	"${ENGINE_SRC_ROOT}/Map/MapParser.cpp"
 	"${ENGINE_SRC_ROOT}/Map/SMF/SMFMapFile.cpp"
 	"${ENGINE_SRC_ROOT}/Sim/Misc/SideParser.cpp"

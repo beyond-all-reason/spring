@@ -11,6 +11,8 @@
 #include "System/FileSystem/VFSHandler.h"
 #include "System/Log/ILog.h"
 
+#include "fmt/ranges.h"
+
 #include "lib/squish/squish.h"
 
 #include <string>
@@ -19,6 +21,27 @@
 #include <algorithm>
 #include <cstring> // strcpy,memset
 #include <sstream>
+
+namespace {
+
+std::string EscapeLuaString(const std::string& input)
+{
+	std::string escaped;
+	escaped.reserve(input.size() + 2);
+
+	escaped += '\"';
+	for (char c: input) {
+		if (c == '\\' || c == '"')
+			escaped += '\\';
+
+		escaped += c;
+	}
+	escaped += '\"';
+
+	return escaped;
+}
+
+} // namespace
 
 #include "System/Misc/TracyDefs.h"
 
@@ -211,6 +234,13 @@ void CBlankMapGenerator::GenerateSMF(CVirtualFile* fileSMF)
 void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	const auto& mapOpts = setup->GetMapOptionsCont();
+	auto GetBlankMapOpt = [&](const std::string& key) -> std::string {
+		const std::string blankMapKey = "blank_map_" + key;
+		const std::string *const optValue = Recoil::map_try_get(mapOpts, blankMapKey);
+		return optValue ? *optValue : "";
+	};
+
 	//Open template mapinfo.lua
 	const std::string luaTemplate = "mapgenerator/mapinfo_template.lua";
 	CFileHandler fh(luaTemplate, SPRING_VFS_PWD_ALL);
@@ -228,10 +258,35 @@ void CBlankMapGenerator::GenerateMapInfo(CVirtualFile* fileMapInfo)
 	}
 	startPosString = ss.str();
 
+	std::array <std::string, 4> splatTexScaleValues = {{"0.02", "0.02", "0.02", "0.02"}};
+	std::array <std::string, 4> splatTexMultValues  = {{"1.0" , "1.0" , "1.0" , "1.0" }};
+	for (int i = 0; i < 4; ++i) {
+		if (const std::string texScale = GetBlankMapOpt(IntToString(i + 1, "splattexscale%i")); !texScale.empty())
+			splatTexScaleValues[i] = texScale;
+		if (const std::string texMult = GetBlankMapOpt(IntToString(i + 1, "splattexmult%i")); !texMult.empty())
+			splatTexMultValues [i] = texMult;
+	}
+
+	bool splatDetailNormalDiffuseAlpha = StringToBool(GetBlankMapOpt("splatdetailnormaldiffusealpha"));
+
+	const auto StringOrNil = [] (const std::string &str) {
+		return str.empty() ? "nil" : EscapeLuaString(str);
+	};
+
 	//Replace tags in mapinfo.lua
 	luaInfo = StringReplace(luaInfo, "${NAME}", setup->mapName);
 	luaInfo = StringReplace(luaInfo, "${DESCRIPTION}", mapDescription);
 	luaInfo = StringReplace(luaInfo, "${START_POSITIONS}", startPosString);
+
+	luaInfo = StringReplace(luaInfo, "${SPLAT_TEXSCALES}", fmt::format("{}", fmt::join(splatTexScaleValues, ", ")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_TEXMULTS}", fmt::format("{}", fmt::join(splatTexMultValues, ", ")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DETAIL_TEX}", StringOrNil(GetBlankMapOpt("splatdetailtex")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DISTR_TEX}", StringOrNil(GetBlankMapOpt("splatdistr")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DETAIL_NORMAL_TEX_1}", StringOrNil(GetBlankMapOpt("splatdetailnormaltex1")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DETAIL_NORMAL_TEX_2}", StringOrNil(GetBlankMapOpt("splatdetailnormaltex2")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DETAIL_NORMAL_TEX_3}", StringOrNil(GetBlankMapOpt("splatdetailnormaltex3")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DETAIL_NORMAL_TEX_4}", StringOrNil(GetBlankMapOpt("splatdetailnormaltex4")));
+	luaInfo = StringReplace(luaInfo, "${SPLAT_DETAIL_NORMAL_DIFFUSE_ALPHA}", splatDetailNormalDiffuseAlpha ? "true" : "false");
 
 	//Copy to filebuffer
 	fileMapInfo->buffer.assign(luaInfo.begin(), luaInfo.end());

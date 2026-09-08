@@ -74,7 +74,7 @@ TEST_CASE("ISQRT")
 	//typedef float(sqrtfunc*)(float*);
 	//std::array
 
-	std::array<float, 5> hash;
+	std::array<float, 2> hash;
 	hash.fill(0);
 
 	{
@@ -87,12 +87,6 @@ TEST_CASE("ISQRT")
 		ScopedOnceTimer foo("isqrt2_nosse");
 		for (auto j=iterations; j>0; --j) {
 			hash[1] += fastmath::isqrt2_nosse(RandFloat(0.f, 1e6));
-		}
-	}
-	{
-		ScopedOnceTimer foo("isqrt_sse");
-		for (auto j=iterations; j>0; --j) {
-			hash[2] += fastmath::isqrt_sse(RandFloat(0.f, 1e6));
 		}
 	}
 }

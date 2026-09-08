@@ -746,8 +746,8 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 	}
 
 	int2 border;
-	border.x = std::max<int>(1, windowW * edgeMoveWidth);
-	border.y = std::max<int>(1, viewH * edgeMoveWidth);
+	border.x = std::max<int>(1, static_cast <int> (windowW * edgeMoveWidth));
+	border.y = std::max<int>(1, static_cast <int> (  viewH * edgeMoveWidth));
 
 	float2 move;
 	// must be float, ints don't save the sign in case of 0 and we need it for copysign()

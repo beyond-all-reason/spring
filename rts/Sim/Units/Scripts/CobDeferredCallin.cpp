@@ -12,10 +12,9 @@
 
 
 CCobDeferredCallin::CCobDeferredCallin(const CUnit* unit, const LuaHashString& hs, const std::vector<int>& dataStack, const int stackStart)
-	: argCount(argCount), unit(unit), funcName(hs.GetString()), funcHash(hs.GetHash())
+	: unit(unit), argCount(std::min(stackStart, MAX_LUA_COB_ARGS)), funcName(hs.GetString()), funcHash(hs.GetHash())
 {
 	const int size = static_cast<int>(dataStack.size());
-	argCount = std::min(stackStart, MAX_LUA_COB_ARGS);
 
 	const int start = std::max(0, size - stackStart);
 	const int end = std::min(size, start + argCount);

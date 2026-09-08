@@ -10,7 +10,7 @@ layout (location = 5) in uvec3 bonesInfo; //boneIDsLow, boneWeights, boneIDsHigh
 layout (location = 6) in uvec4 instData;
 // u32 matOffset
 // u32 uniOffset
-// u32 {teamIdx, drawFlag, numPiecesH, numPiecesL}, note numPiecesH then numPiecesL
+// u32 {paletteIndex[0:10], reserved[11:15], numPieces[16:31]}
 // u32 bposeMatOffset
 
 layout(std140, binding = 0) uniform UniformMatrixBuffer {
@@ -80,7 +80,7 @@ layout(std140, binding = 1) uniform UniformParamsBuffer {
 	uint mouseUnused;
 	vec4 mouseWorldPos; //x,y,z; w=0 -- offmap. Ignores water, doesn't ignore units/features under the mouse cursor
 
-	vec4 teamColor[255]; //all team colors
+	vec4 teamColor[2048]; // [0..254] team colors, [255] reserved, [256..2047] custom palette
 };
 
 struct Transform {
@@ -262,7 +262,7 @@ Transform Lerp(Transform t0, Transform t1, float a) {
 
 void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 {
-	bool staticModel = (matrixMode > 0);
+	bool staticModel = (matrixMode == MATMODE_STATIC || matrixMode == MATMODE_ARRAY);
 
 	vec4 piecePos = vec4(pos, 1.0);
 	vec4 normal4 = vec4(normal, 0.0);
@@ -271,7 +271,10 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 	
 	Transform tx;
 	if (staticModel) {
-		tx = transforms[instData.x + bID0];
+		// pieces always come from the bind-pose block (instData.w). In ARRAY_MATMODE
+		// instData.x is the per-instance world transform, not the bind pose; for static
+		// model submits instData.x == instData.w anyway, so instData.w is correct for both.
+		tx = transforms[instData.w + bID0];
 	} else {
 		// do interpolation
 		tx = Lerp(
@@ -327,16 +330,20 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 
 void main(void)
 {
-	bool staticModel = (matrixMode > 0);
-
 	vec4 modelPos;
 	vec3 modelNormal;
 	GetModelSpaceVertex(modelPos, modelNormal);
 
-	if (staticModel) {
+	if (matrixMode == MATMODE_ARRAY) {
+		// static instanced: per-instance world transform read from the SSBO (no interpolation)
+		Transform wtx = transforms[instData.x + 0u];
+		worldPos = ApplyTransform(wtx, modelPos);
+		wtx.trSc = vec4(0, 0, 0, 1); //nullify the translation part for the normal
+		worldNormal = ApplyTransform(wtx, modelNormal);
+	} else if (matrixMode == MATMODE_STATIC) {
 		worldPos = staticModelMatrix * modelPos;
 		worldNormal = mat3(staticModelMatrix) * modelNormal;
-	} else {
+	} else { // MATMODE_NORMAL
 		// do interpolation
 		Transform tx = Lerp(
 			transforms[instData.x + 0u],
@@ -353,8 +360,8 @@ void main(void)
 	gl_ClipDistance[1] = dot(modelPos, clipPlane1); //lower construction clip plane
 	gl_ClipDistance[2] = dot(worldPos, clipPlane2); //water clip plane
 
-	uint teamIndex = (instData.z & 0x000000FFu); //leftmost ubyte is teamIndex
-	teamCol = teamColor[teamIndex];
+	uint paletteIndex = instData.z & 0x07FFu; // mask 11 bits: 0..254 = team, 256..2047 = custom
+	teamCol = teamColor[paletteIndex];
 	teamCol.a = teamColorAlpha;
 
 	uvCoord = uv;

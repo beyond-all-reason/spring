@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "System/RangesCompat.h"
 #include "UnitDef.h"
 #include "Unit.h"
 #include "UnitHandler.h"
@@ -221,6 +222,7 @@ void CUnit::PreInit(const UnitLoadParams& params)
 	}
 
 	team = params.teamID;
+	paletteIndex = static_cast<uint16_t>(team);
 	allyteam = teamHandler.AllyTeam(team);
 
 	buildFacing = std::abs(params.facing) % NUM_FACINGS;
@@ -964,7 +966,7 @@ static auto SplitResourcePackIntoPositiveNegative (const SResourcePack &pack)
 {
 	SResourcePack positive {0.0f}, negative {0.0f};
 
-	for (auto [resourceID, value] : std::views::enumerate (pack)) {
+	for (auto [resourceID, value] : spring::views::enumerate (pack)) {
 		if (value < 0.0f)
 			negative[resourceID] = -value;
 		else
@@ -1561,6 +1563,8 @@ bool CUnit::ChangeTeam(int newteam, ChangeType type)
 
 
 	team = newteam;
+	if (paletteIndex == static_cast<uint16_t>(oldteam))
+		paletteIndex = static_cast<uint16_t>(newteam);
 	allyteam = teamHandler.AllyTeam(newteam);
 	neutral = false;
 

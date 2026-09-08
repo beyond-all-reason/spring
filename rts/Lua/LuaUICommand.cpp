@@ -40,20 +40,20 @@ int LuaUICommand::GetUICommands(lua_State* L)
 		const ISyncedActionExecutor* exec = pair.second;
 
 		lua_createtable(L, 0, 4);
-		HSTR_PUSH_STRING(L, "command",     exec->GetCommand());
-		HSTR_PUSH_STRING(L, "description", exec->GetDescription());
-		HSTR_PUSH_BOOL(L,   "synced",      exec->IsSynced());
-		HSTR_PUSH_BOOL(L,   "cheat",       exec->IsCheatRequired());
+		LuaPushNamedString(L, "command",     exec->GetCommand());
+		LuaPushNamedString(L, "description", exec->GetDescription());
+		LuaPushNamedBool(L,   "synced",      exec->IsSynced());
+		LuaPushNamedBool(L,   "cheat",       exec->IsCheatRequired());
 		lua_rawseti(L, -2, count++);
 	}
 	for (const auto& pair: unsyncedExecutors) {
 		const IUnsyncedActionExecutor* exec = pair.second;
 
 		lua_createtable(L, 0, 4);
-		HSTR_PUSH_STRING(L, "command",     exec->GetCommand());
-		HSTR_PUSH_STRING(L, "description", exec->GetDescription());
-		HSTR_PUSH_BOOL(L,   "synced",      exec->IsSynced());
-		HSTR_PUSH_BOOL(L,   "cheat",       exec->IsCheatRequired());
+		LuaPushNamedString(L, "command",     exec->GetCommand());
+		LuaPushNamedString(L, "description", exec->GetDescription());
+		LuaPushNamedBool(L,   "synced",      exec->IsSynced());
+		LuaPushNamedBool(L,   "cheat",       exec->IsCheatRequired());
 		lua_rawseti(L, -2, count++);
 	}
 	return 1;

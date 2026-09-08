@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(Glad)
 
-if    (UNIX AND NOT MINGW)
+if    (UNIX AND NOT MINGW AND NOT APPLE)
 	add_library(glad glad.c glad_glx.c)
-else  (UNIX AND NOT MINGW)
+else  (UNIX AND NOT MINGW AND NOT APPLE)
 	add_library(glad glad.c)
-endif (UNIX AND NOT MINGW)
+endif (UNIX AND NOT MINGW AND NOT APPLE)
 
 target_include_directories(glad PUBLIC /)

@@ -22,7 +22,7 @@ public:
 	static void FreeInstance();
 public:
 	virtual void ReloadTextures() = 0;
-	virtual void DumpAtlasTextures() = 0;
+	virtual void DumpAtlasTextures(const std::string& fileExt = "png") = 0;
 
 	virtual void Draw() = 0;
 
@@ -66,7 +66,7 @@ class NullGroundDecalDrawer: public IGroundDecalDrawer
 	CR_DECLARE_DERIVED(NullGroundDecalDrawer)
 public:
 	void ReloadTextures() override {}
-	void DumpAtlasTextures() override {}
+	void DumpAtlasTextures(const std::string& /*fileExt*/) override {}
 
 	void Draw() override {}
 

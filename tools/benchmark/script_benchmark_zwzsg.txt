@@ -35,7 +35,6 @@ datetime=Friday 30 July 2010 at 00:44:15;
 deathmode=killall;
 fixedallies=0;
 fullscript=script.sav;
-gamemode=0;
 ghostedbuildings=1;
 launchername=Write GameState widget;
 launcherversion=1.52;

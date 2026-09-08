@@ -1267,9 +1267,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	CFeature*& feature,
 	int allyteam,
 	bool synced,
-	std::vector<float3>* canbuildpos,
-	std::vector<float3>* featurepos,
-	std::vector<float3>* nobuildpos,
+	std::vector<uint8_t>* statuses,
 	const std::vector<Command>* commands,
 	int threadOwner
 ) {
@@ -1286,6 +1284,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const int z1 = int(testPos.z / SQUARE_SIZE) - (zsize >> 1), z2 = z1 + zsize;
 	const int2 xrange = int2(x1, x2);
 	const int2 zrange = int2(z1, z2);
+
+	if (statuses != nullptr) {
+		const int numCells = (x2 - x1) * (z2 - z1);
+		statuses->assign(numCells, 0);
+	}
 
 	const MoveDef* moveDef = (buildInfo.def->pathType != -1U) ? moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType) : nullptr;
 
@@ -1346,7 +1349,6 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	}
 
 	if (commands != nullptr) {
-		// this is only called in unsynced context (ShowUnitBuildSquare)
 		assert(!synced);
 
 		for (int z = z1; z < z2; z++) {
@@ -1360,8 +1362,7 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 					sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, gu->myAllyTeam, synced);
 
 				if (sqrStatus != BUILDSQUARE_BLOCKED) {
-					// test if build-position overlaps a queued command
-					for (const Command& c: *commands) {
+					for (const Command& c : *commands) {
 						const BuildInfo bc(c);
 
 						const int cmdSizeX = bc.GetXSize() * SQUARE_SIZE;
@@ -1377,17 +1378,9 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 					}
 				}
 
-				switch (sqrStatus) {
-					case BUILDSQUARE_OPEN:
-						canbuildpos->push_back(sqrPos);
-						break;
-					case BUILDSQUARE_RECLAIMABLE:
-					case BUILDSQUARE_OCCUPIED:
-						featurepos->push_back(sqrPos);
-						break;
-					case BUILDSQUARE_BLOCKED:
-						nobuildpos->push_back(sqrPos);
-						break;
+				if (statuses != nullptr) {
+					const int idx = (z - z1) * (x2 - x1) + (x - x1);
+					(*statuses)[idx] = sqrStatus;
 				}
 
 				testStatus = std::min(testStatus, sqrStatus);
@@ -1400,13 +1393,18 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 			return BUILDSQUARE_BLOCKED;
 		}
 
-		// this can be called in either context
+		// this can be called in either context (synced and unsynced)
 		for (int z = z1; z < z2; z++) {
 			for (int x = x1; x < x2; x++) {
 				sqrPos.x = x * SQUARE_SIZE;
 				sqrPos.z = z * SQUARE_SIZE;
 
 				const BuildSquareStatus sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, allyteam, synced);
+
+				if (statuses != nullptr) {
+					const int idx = (z - z1) * (x2 - x1) + (x - x1);
+					(*statuses)[idx] = sqrStatus;
+				}
 
 				if ((testStatus = std::min(testStatus, sqrStatus)) == BUILDSQUARE_BLOCKED) {
 					return BUILDSQUARE_BLOCKED;

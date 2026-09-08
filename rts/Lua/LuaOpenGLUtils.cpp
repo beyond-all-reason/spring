@@ -1114,6 +1114,8 @@ void LuaMatTexture::Print(const string& indent) const
 		STRING_CASE(typeName, LUATEX_ICONS_ATLAS0);
 		STRING_CASE(typeName, LUATEX_ICONS_ATLAS1);
 
+		STRING_CASE(typeName, LUATEX_LUATEXTUREATLAS);
+
 		#undef STRING_CASE
 	}
 

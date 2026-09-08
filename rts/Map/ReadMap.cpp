@@ -145,7 +145,7 @@ CReadMap* CReadMap::LoadMap(const std::string& mapName)
 	RECOIL_DETAILED_TRACY_ZONE;
 	CReadMap* rm = nullptr;
 
-	if (FileSystem::GetExtension(mapName) == "sm3") {
+	if (FileSystem::GetExtensionLowerCase(mapName) == "sm3") {
 		throw content_error("[CReadMap::LoadMap] SM3 maps are no longer supported as of Spring 95.0");
 	} else {
 		// assume SMF format by default; calls ::Initialize

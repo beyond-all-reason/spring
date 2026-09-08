@@ -131,6 +131,10 @@ namespace Shader {
 
 			// not needed for pre-compiled programs
 			shaderObjs.clear();
+			// cached locations/values belong to the previous program; without this,
+			// uniforms set by name (e.g. texSquare) target stale locations after a
+			// Spring.SetMapShader program swap
+			uniformStates.clear();
 		}
 
 		/// create the whole shader from a lua file

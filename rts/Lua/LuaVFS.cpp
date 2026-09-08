@@ -149,57 +149,57 @@ bool LuaVFS::PushCommon(lua_State* L)
 {
 
 	/*** @field VFS.RAW "r" Only select uncompressed files. */
-	HSTR_PUSH_CSTRING(L, "RAW",       SPRING_VFS_RAW);
+	LuaPushNamedString(L, "RAW",       SPRING_VFS_RAW);
 	/*** @field VFS.GAME "M" */
-	HSTR_PUSH_CSTRING(L, "GAME",      SPRING_VFS_MOD); // synonym to MOD
+	LuaPushNamedString(L, "GAME",      SPRING_VFS_MOD); // synonym to MOD
 	/*** @field VFS.MAP "m" */
-	HSTR_PUSH_CSTRING(L, "MAP",       SPRING_VFS_MAP);
+	LuaPushNamedString(L, "MAP",       SPRING_VFS_MAP);
 	/*** @field VFS.BASE "b" */
-	HSTR_PUSH_CSTRING(L, "BASE",      SPRING_VFS_BASE);
+	LuaPushNamedString(L, "BASE",      SPRING_VFS_BASE);
 	/*** @field VFS.MENU "e" */
-	HSTR_PUSH_CSTRING(L, "MENU",      SPRING_VFS_MENU);
+	LuaPushNamedString(L, "MENU",      SPRING_VFS_MENU);
 	/*** @field VFS.ZIP "Mmeb" Only select compressed files (`.sdz`, `.sd7`). */
-	HSTR_PUSH_CSTRING(L, "ZIP",       SPRING_VFS_ZIP);
+	LuaPushNamedString(L, "ZIP",       SPRING_VFS_ZIP);
 	/*** @field VFS.RAW_FIRST "rMmeb" Try uncompressed files first, then compressed. */
-	HSTR_PUSH_CSTRING(L, "RAW_FIRST", SPRING_VFS_RAW_FIRST);
+	LuaPushNamedString(L, "RAW_FIRST", SPRING_VFS_RAW_FIRST);
 	/*** @field VFS.ZIP_FIRST "Mmebr" Try compressed files first, then uncompressed. */
-	HSTR_PUSH_CSTRING(L, "ZIP_FIRST", SPRING_VFS_ZIP_FIRST);
+	LuaPushNamedString(L, "ZIP_FIRST", SPRING_VFS_ZIP_FIRST);
 
 	/***
 	 * @deprecated
 	 * @field VFS.MOD "M" Older spelling for `VFS.GAME`
 	 */
-	HSTR_PUSH_CSTRING(L, "MOD",       SPRING_VFS_MOD);
+	LuaPushNamedString(L, "MOD",       SPRING_VFS_MOD);
 	/***
 	 * @deprecated
 	 * @field VFS.RAW_ONLY "r"
 	 */
-	HSTR_PUSH_CSTRING(L, "RAW_ONLY",  SPRING_VFS_RAW); // backwards compatibility
+	LuaPushNamedString(L, "RAW_ONLY",  SPRING_VFS_RAW); // backwards compatibility
 	/***
 	 * @deprecated
 	 * @field VFS.ZIP_ONLY "Mmeb"
 	 */
-	HSTR_PUSH_CSTRING(L, "ZIP_ONLY",  SPRING_VFS_ZIP); // backwards compatibility
+	LuaPushNamedString(L, "ZIP_ONLY",  SPRING_VFS_ZIP); // backwards compatibility
 
-	HSTR_PUSH_CFUNC(L, "PackU8",    PackU8);
-	HSTR_PUSH_CFUNC(L, "PackU16",   PackU16);
-	HSTR_PUSH_CFUNC(L, "PackU32",   PackU32);
-	HSTR_PUSH_CFUNC(L, "PackS8",    PackS8);
-	HSTR_PUSH_CFUNC(L, "PackS16",   PackS16);
-	HSTR_PUSH_CFUNC(L, "PackS32",   PackS32);
-	HSTR_PUSH_CFUNC(L, "PackF32",   PackF32);
-	HSTR_PUSH_CFUNC(L, "UnpackU8",  UnpackU8);
-	HSTR_PUSH_CFUNC(L, "UnpackU16", UnpackU16);
-	HSTR_PUSH_CFUNC(L, "UnpackU32", UnpackU32);
-	HSTR_PUSH_CFUNC(L, "UnpackS8",  UnpackS8);
-	HSTR_PUSH_CFUNC(L, "UnpackS16", UnpackS16);
-	HSTR_PUSH_CFUNC(L, "UnpackS32", UnpackS32);
-	HSTR_PUSH_CFUNC(L, "UnpackF32", UnpackF32);
+	LuaPushNamedCFunc(L, "PackU8",    PackU8);
+	LuaPushNamedCFunc(L, "PackU16",   PackU16);
+	LuaPushNamedCFunc(L, "PackU32",   PackU32);
+	LuaPushNamedCFunc(L, "PackS8",    PackS8);
+	LuaPushNamedCFunc(L, "PackS16",   PackS16);
+	LuaPushNamedCFunc(L, "PackS32",   PackS32);
+	LuaPushNamedCFunc(L, "PackF32",   PackF32);
+	LuaPushNamedCFunc(L, "UnpackU8",  UnpackU8);
+	LuaPushNamedCFunc(L, "UnpackU16", UnpackU16);
+	LuaPushNamedCFunc(L, "UnpackU32", UnpackU32);
+	LuaPushNamedCFunc(L, "UnpackS8",  UnpackS8);
+	LuaPushNamedCFunc(L, "UnpackS16", UnpackS16);
+	LuaPushNamedCFunc(L, "UnpackS32", UnpackS32);
+	LuaPushNamedCFunc(L, "UnpackF32", UnpackF32);
 
 	// compression should be safe in synced context
-	HSTR_PUSH_CFUNC(L, "ZlibCompress", ZlibCompress);
-	HSTR_PUSH_CFUNC(L, "ZlibDecompress", ZlibDecompress);
-	HSTR_PUSH_CFUNC(L, "CalculateHash", CalculateHash);
+	LuaPushNamedCFunc(L, "ZlibCompress", ZlibCompress);
+	LuaPushNamedCFunc(L, "ZlibDecompress", ZlibDecompress);
+	LuaPushNamedCFunc(L, "CalculateHash", CalculateHash);
 
 	return true;
 }
@@ -209,11 +209,11 @@ bool LuaVFS::PushSynced(lua_State* L)
 {
 	PushCommon(L);
 
-	HSTR_PUSH_CFUNC(L, "Include",    SyncInclude);
-	HSTR_PUSH_CFUNC(L, "LoadFile",   SyncLoadFile);
-	HSTR_PUSH_CFUNC(L, "FileExists", SyncFileExists);
-	HSTR_PUSH_CFUNC(L, "DirList",    SyncDirList);
-	HSTR_PUSH_CFUNC(L, "SubDirs",    SyncSubDirs);
+	LuaPushNamedCFunc(L, "Include",    SyncInclude);
+	LuaPushNamedCFunc(L, "LoadFile",   SyncLoadFile);
+	LuaPushNamedCFunc(L, "FileExists", SyncFileExists);
+	LuaPushNamedCFunc(L, "DirList",    SyncDirList);
+	LuaPushNamedCFunc(L, "SubDirs",    SyncSubDirs);
 
 	return true;
 }
@@ -223,21 +223,21 @@ bool LuaVFS::PushUnsynced(lua_State* L)
 {
 	PushCommon(L);
 
-	HSTR_PUSH_CFUNC(L, "Include",             UnsyncInclude);
-	HSTR_PUSH_CFUNC(L, "LoadFile",            UnsyncLoadFile);
-	HSTR_PUSH_CFUNC(L, "FileExists",          UnsyncFileExists);
-	HSTR_PUSH_CFUNC(L, "DirList",             UnsyncDirList);
-	HSTR_PUSH_CFUNC(L, "SubDirs",             UnsyncSubDirs);
+	LuaPushNamedCFunc(L, "Include",             UnsyncInclude);
+	LuaPushNamedCFunc(L, "LoadFile",            UnsyncLoadFile);
+	LuaPushNamedCFunc(L, "FileExists",          UnsyncFileExists);
+	LuaPushNamedCFunc(L, "DirList",             UnsyncDirList);
+	LuaPushNamedCFunc(L, "SubDirs",             UnsyncSubDirs);
 
-	HSTR_PUSH_CFUNC(L, "GetFileAbsolutePath",      GetFileAbsolutePath);
-	HSTR_PUSH_CFUNC(L, "GetArchiveContainingFile", GetArchiveContainingFile);
+	LuaPushNamedCFunc(L, "GetFileAbsolutePath",      GetFileAbsolutePath);
+	LuaPushNamedCFunc(L, "GetArchiveContainingFile", GetArchiveContainingFile);
 
-	HSTR_PUSH_CFUNC(L, "UseArchive",     UseArchive);
-	HSTR_PUSH_CFUNC(L, "CompressFolder", CompressFolder);
+	LuaPushNamedCFunc(L, "UseArchive",     UseArchive);
+	LuaPushNamedCFunc(L, "CompressFolder", CompressFolder);
 
 	// Removed due to sync unsafety, see commit 0ee88788931f9f0b195eb5f895f1092fde4211c0
-	// HSTR_PUSH_CFUNC(L, "MapArchive",     MapArchive);
-	// HSTR_PUSH_CFUNC(L, "UnmapArchive",   UnmapArchive);
+	// LuaPushNamedCFunc(L, "MapArchive",     MapArchive);
+	// LuaPushNamedCFunc(L, "UnmapArchive",   UnmapArchive);
 
 	return true;
 }
@@ -1084,15 +1084,15 @@ int LuaVFS::PackS32(lua_State* L) { return PackType<std::int32_t>(L); }
 
 /***
  * Convert signed 32-bit float(s) to binary string.
- * @function VFS.PackS32 
- * @param ... integer Numbers to pack.
- * @return string
+ * @function VFS.PackF32
+ * @param ... number Numbers to pack.
+ * @return string?
  */
 /***
  * Convert signed 32-bit float(s) to binary string.
- * @function VFS.PackS32 
- * @param numbers integer[] Numbers to pack.
- * @return string
+ * @function VFS.PackF32
+ * @param numbers number[] Numbers to pack.
+ * @return string?
  */
 int LuaVFS::PackF32(lua_State* L) { return PackType<float>(L); }
 

@@ -51,6 +51,25 @@ namespace nv_dds
     const unsigned int FOURCC_DXT1 = 0x31545844; //(MAKEFOURCC('D','X','T','1'))
     const unsigned int FOURCC_DXT3 = 0x33545844; //(MAKEFOURCC('D','X','T','3'))
     const unsigned int FOURCC_DXT5 = 0x35545844; //(MAKEFOURCC('D','X','T','5'))
+    const unsigned int FOURCC_ATI1 = 0x31495441; //(MAKEFOURCC('A','T','I','1')), BC4
+    const unsigned int FOURCC_BC4U = 0x55344342; //(MAKEFOURCC('B','C','4','U'))
+    const unsigned int FOURCC_ATI2 = 0x32495441; //(MAKEFOURCC('A','T','I','2')), BC5
+    const unsigned int FOURCC_BC5U = 0x55354342; //(MAKEFOURCC('B','C','5','U'))
+    const unsigned int FOURCC_DX10 = 0x30315844; //(MAKEFOURCC('D','X','1','0'))
+
+    // Supported DXGI formats
+    const unsigned int DXGI_FORMAT_BC1_UNORM = 71;
+    const unsigned int DXGI_FORMAT_BC2_UNORM = 74;
+    const unsigned int DXGI_FORMAT_BC3_UNORM = 77;
+    const unsigned int DXGI_FORMAT_BC4_UNORM = 80;
+    const unsigned int DXGI_FORMAT_BC5_UNORM = 83;
+    const unsigned int DXGI_FORMAT_BC7_UNORM = 98;
+    const unsigned int DXGI_FORMAT_BC7_UNORM_SRGB = 99;
+
+    // DDS_HEADER_DXT10 values
+    const unsigned int DX10_DIMENSION_TEXTURE2D = 3;
+    const unsigned int DX10_DIMENSION_TEXTURE3D = 4;
+    const unsigned int DX10_MISC_TEXTURECUBE = 0x00000004;
 
     struct DXTColBlock
     {
@@ -83,6 +102,15 @@ namespace nv_dds
         unsigned int dwGBitMask;
         unsigned int dwBBitMask;
         unsigned int dwABitMask;
+    };
+
+    struct DDS_HEADER_DXT10
+    {
+        unsigned int dxgiFormat;
+        unsigned int resourceDimension;
+        unsigned int miscFlag;
+        unsigned int arraySize;
+        unsigned int miscFlags2;
     };
 
     struct DDS_HEADER
@@ -333,6 +361,8 @@ namespace nv_dds
             void flip_blocks_dxtc1(DXTColBlock *line, unsigned int numBlocks) const;
             void flip_blocks_dxtc3(DXTColBlock *line, unsigned int numBlocks) const;
             void flip_blocks_dxtc5(DXTColBlock *line, unsigned int numBlocks) const;
+            void flip_blocks_bc4(DXTColBlock *line, unsigned int numBlocks) const;
+            void flip_blocks_bc5(DXTColBlock *line, unsigned int numBlocks) const;
             void flip_dxt5_alpha(DXT5AlphaBlock *block) const;
 
             bool write_texture(const CTexture &texture, FILE *fp) const;

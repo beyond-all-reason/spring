@@ -10,15 +10,22 @@
 #include <memory.h>
 #include <algorithm>
 #include <cstring>
+#include <format>
 
-#include <xmmintrin.h>
-#include <emmintrin.h>
+#include "System/simd_compat.h"
 
 CR_BIND(CMatrix44f, )
 
 CR_REG_METADATA(CMatrix44f, CR_MEMBER(m))
 
 static_assert(alignof(CMatrix44f) == 64);
+
+std::string CMatrix44f::str() const
+{
+	return std::format(
+		"m44(\n{:.3f} {:.3f} {:.3f} {:.3f}\n{:.3f} {:.3f} {:.3f} {:.3f}\n{:.3f} {:.3f} {:.3f} {:.3f}\n{:.3f} {:.3f} {:.3f} {:.3f})",
+		m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14], m[3], m[7], m[11], m[15]);
+}
 CMatrix44f::CMatrix44f(const CMatrix44f& mat)
 {
 	memcpy(&m[0], &mat.m[0], sizeof(CMatrix44f));

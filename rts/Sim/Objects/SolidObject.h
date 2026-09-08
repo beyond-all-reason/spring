@@ -388,6 +388,10 @@ public:
 	///< allyteam that this->team is part of
 	int allyteam = 0;
 
+	///< Palette index for color lookup in the teamColor UBO (0..254 = team color, 256..2047 = custom).
+	///< Custom values are permanent until explicitly reset via Lua, and are NOT affected by team changes.
+	uint16_t paletteIndex = 0;
+
 	// useful to track the objects that just got created
 	int creationFrame = -1;
 

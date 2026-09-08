@@ -167,7 +167,7 @@ void CScanCodes::Reset()
 	// However, even if the feature is obscure, games can add functionality for
 	// when the user has a keyboard that emits the key or users can bind to it
 	// without relying on the keycode.
-	AddPair("sc_nonusbacklash", SDL_SCANCODE_NONUSBACKSLASH, true);
+	AddPair("sc_nonusbackslash", SDL_SCANCODE_NONUSBACKSLASH, true);
 
 	// Numeric keypad
 	AddPair("sc_numpad0", SDL_SCANCODE_KP_0, true);

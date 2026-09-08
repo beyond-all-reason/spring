@@ -33,6 +33,7 @@ CIconHandler iconHandler;
 void CIconHandler::Kill()
 {
 	defaultIconIdx = INVALID_ICON_INDEX;
+	drawOrderIconCount = 0;
 
 	glDeleteTextures(2, atlasTextureIDs.data());
 	atlasTextureIDs = { 0 };
@@ -46,16 +47,16 @@ void CIconHandler::Kill()
 }
 
 
-void CIconHandler::DumpAtlasTextures() const
+void CIconHandler::DumpAtlasTextures(const std::string& fileExt) const
 {
 	if (atlasTextureIDs[0]) {
 		for (int level = 0; level < DEFAULT_NUM_OF_TEXTURE_LEVELS; ++level) {
-			glSaveTexture(atlasTextureIDs[0], fmt::format("IconsAtlas1-{}.png", level).c_str(), level);
+			glSaveTexture(atlasTextureIDs[0], fmt::format("IconsAtlas1-{}.{}", level, fileExt).c_str(), level);
 		}
 	}
 	if (atlasTextureIDs[1]) {
 		for (int level = 0; level < DEFAULT_NUM_OF_TEXTURE_LEVELS; ++level) {
-			glSaveTexture(atlasTextureIDs[1], fmt::format("IconsAtlas2-{}.png", level).c_str(), level);
+			glSaveTexture(atlasTextureIDs[1], fmt::format("IconsAtlas2-{}.{}", level, fileExt).c_str(), level);
 		}
 	}
 }
@@ -69,8 +70,17 @@ bool CIconHandler::UpdateAtlasData(size_t atlasIdx)
 	atlas = std::make_unique<CTextureRenderAtlas>(CTextureAtlas::ATLAS_ALLOC_LEGACY, 0, 0, DEFAULT_NUM_OF_TEXTURE_LEVELS, GL_RGBA8, IntToString(atlasIdx, "IconsAtlas_%i"));
 
 	spring::unordered_set<std::string> invalidIcons;
-	for (const auto& [iconName, iconIndex] : iconsMap) {
 
+	// Sort icon names to ensure deterministic ordering across runs
+	std::vector<std::string> sortedIconNames;
+	sortedIconNames.reserve(iconsMap.size());
+	for (const auto& [iconName, _] : iconsMap) {
+		sortedIconNames.push_back(iconName);
+	}
+	std::sort(sortedIconNames.begin(), sortedIconNames.end());
+
+	for (const auto& iconName : sortedIconNames) {
+		const auto iconIndex = iconsMap[iconName];
 		const auto& iconData = iconsData[iconIndex];
 
 		if (iconData.GetAtlasIndex() != atlasIdx)
@@ -135,6 +145,11 @@ bool CIconHandler::CreateAtlasTexture(size_t atlasIdx)
 		atlasTextureIDs[atlasIdx] = bm.CreateMipMapTexture();
 		atlasTextureSizes[atlasIdx] = int2(bm.xsize, bm.ysize);
 
+		// CBitmap::CreateTexture defaults to GL_REPEAT, which is not what we want for atlas
+		glBindTexture(GL_TEXTURE_2D, atlasTextureIDs[atlasIdx]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 		return true;
 	}
 
@@ -177,7 +192,8 @@ void CIconHandler::LoadIcons(const std::string& filename)
 			iconTable.GetFloat("u0", 0.0f),
 			iconTable.GetFloat("v0", 0.0f),
 			iconTable.GetFloat("u1", 1.0f),
-			iconTable.GetFloat("v1", 1.0f)
+			iconTable.GetFloat("v1", 1.0f),
+			iconTable.GetFloat("drawOrder", 0.0f)
 		);
 	}
 
@@ -194,7 +210,8 @@ bool CIconHandler::AddIcon(
 	float size,
 	float distance,
 	bool radAdj,
-	float u0, float v0, float u1, float v1
+	float u0, float v0, float u1, float v1,
+	float drawOrder
 ) {
 	auto it = iconsMap.find(iconName);
 	if (it != iconsMap.end()) {
@@ -211,8 +228,11 @@ bool CIconHandler::AddIcon(
 		distance,
 		atlasIndex,
 		radAdj,
-		float4{u0, v0, u1, v1}
+		float4{u0, v0, u1, v1},
+		drawOrder
 	};
+
+	drawOrderIconCount += (drawOrder != 0.0f);
 
 	// do basic check instead of the full load procedure
 	return CFileHandler::FileExists(texFileName, SPRING_VFS_ALL);
@@ -232,6 +252,8 @@ bool CIconHandler::FreeIcon(const std::string& iconName)
 	if (const auto& ai = iconsData[it->second].GetAtlasIndex(); ai > 0) {
 		atlasNeedsUpdate.set(ai);
 	}
+
+	drawOrderIconCount -= (iconsData[it->second].GetDrawOrder() != 0.0f);
 
 	iconsData[it->second] = IconData{};
 	it->second = defaultIconIdx;
@@ -264,6 +286,14 @@ void CIconHandler::Update()
 	}
 
 	defaultIconIdx = defIt->second;
+
+#ifdef HEADLESS
+	// Headless builds don't render icons; skip the atlas pipeline entirely.
+	// Clearing the bits makes the atlasNeedsUpdate.none() check above short-circuit
+	// all subsequent calls to Update().
+	atlasNeedsUpdate.reset();
+	return;
+#endif
 
 	for (size_t i = 0; i < atlasNeedsUpdate.size(); ++i) {
 		if (!atlasNeedsUpdate.test(i))

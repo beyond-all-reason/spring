@@ -12,7 +12,7 @@
 
 namespace QTPFS {
 
-class INode;
+struct INode;
 
 struct NodeLayerSpeedInfoSweep {
 	static constexpr std::size_t page_size = MoveDefHandler::MAX_MOVE_DEFS;

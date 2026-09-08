@@ -35,8 +35,8 @@ void CPathEstimator::Init(IPathFinder* pf, unsigned int BLOCK_SIZE, PathingState
 		pathChecksum = 0;
 		fileHashCode = CalcHash(__func__);
 
-		offsetBlockNum = {nbrOfBlocks.x * nbrOfBlocks.y};
-		costBlockNum = {nbrOfBlocks.x * nbrOfBlocks.y};
+		offsetBlockNum = nbrOfBlocks.x * nbrOfBlocks.y;
+		costBlockNum = nbrOfBlocks.x * nbrOfBlocks.y;
 
 		parentPathFinder = pf;
 		//nextPathEstimator = nullptr;

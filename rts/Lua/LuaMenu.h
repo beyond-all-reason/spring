@@ -61,7 +61,6 @@ protected:
 	static bool LoadUnsyncedReadFunctions(lua_State* L);
 	static bool RemoveSomeOpenGLFunctions(lua_State* L);
 	static bool PushGameVersion(lua_State* L);
-	void InitLuaSocket(lua_State* L);
 protected:
 	QueuedAction queuedAction;
 };

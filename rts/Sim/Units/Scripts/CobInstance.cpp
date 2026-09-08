@@ -42,6 +42,20 @@
 /******************************************************************************/
 /******************************************************************************/
 
+// COB scripts encode angles as TA units where a full turn is COBSCALE (65536),
+// so any angle past a half turn exceeds the range of a signed short and is meant
+// to wrap around (it is a circular 16-bit angle). Truncating the scaled value to
+// int first is well defined for the bounded angles the sim feeds in, and the
+// following int->short narrowing performs that modular wrap deterministically.
+// Converting straight from float to short would be undefined behaviour once the
+// value leaves short's range, and produced different results on arm64 vs x86,
+// desyncing multiplayer.
+static inline short RadAngleToCobShort(float radAngle)
+{
+	return static_cast<short>(static_cast<int>(radAngle * RAD2TAANG));
+}
+
+
 CR_BIND_DERIVED(CCobInstance, CUnitScript, )
 
 CR_REG_METADATA(CCobInstance, (
@@ -237,7 +251,7 @@ void CCobInstance::WindChanged(float heading, float speed)
 {
 	ZoneScoped;
 	Call(COBFN_SetSpeed, int(speed * 3000.0f));
-	Call(COBFN_SetDirection, short(heading * RAD2TAANG));
+	Call(COBFN_SetDirection, RadAngleToCobShort(heading));
 }
 
 
@@ -387,8 +401,8 @@ void CCobInstance::StartBuilding(float heading, float pitch)
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
-	callinArgs[1] = short(heading * RAD2TAANG);
-	callinArgs[2] = short(  pitch * RAD2TAANG);
+	callinArgs[1] = RadAngleToCobShort(heading);
+	callinArgs[2] = RadAngleToCobShort(pitch);
 
 	Call(COBFN_StartBuilding, callinArgs);
 }
@@ -439,8 +453,8 @@ void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch)
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;
-	callinArgs[1] = short(heading * RAD2TAANG);
-	callinArgs[2] = short(  pitch * RAD2TAANG);
+	callinArgs[1] = RadAngleToCobShort(heading);
+	callinArgs[2] = RadAngleToCobShort(pitch);
 
 	Call(COBFN_AimPrimary + COBFN_Weapon_Funcs * weaponNum, callinArgs, CBAimWeapon, weaponNum, nullptr);
 }

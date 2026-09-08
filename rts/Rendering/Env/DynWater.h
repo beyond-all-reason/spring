@@ -20,7 +20,7 @@ public:
 	void Draw() override;
 	void UpdateWater(const CGame* game) override;
 	void Update() override;
-	void AddExplosion(const float3& pos, float strength, float size);
+	void AddExplosion(const float3& pos, float strength, float size) override;
 	WATER_RENDERER GetID() const override { return WATER_RENDERER_DYNAMIC; }
 
 	bool CanDrawReflectionPass() const override { return true; }

@@ -406,6 +406,17 @@ namespace Platform
 		return (Platform::GetOSFamilyStr() + " " + Platform::GetWordSizeStr());
 	}
 
+	std::string GetArchitectureStr()
+	{
+		#if defined(__x86_64__) || defined(__amd64__) || defined(_M_X64) || defined(_M_AMD64)
+		return "x86_64";
+		#elif defined(__aarch64__) || defined(_M_ARM64)
+		return "arm64";
+		#else
+		#error "Unsupported architecture"
+		#endif
+	}
+
 	#if (defined(_WIN32))
 	std::string GetHardwareStr() { return (windows::GetHardwareString()); }
 	#else

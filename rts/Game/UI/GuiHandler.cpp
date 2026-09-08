@@ -1851,16 +1851,18 @@ int CGuiHandler::GetIconPosCommand(int slot) const // only called by SetActiveCo
 }
 
 
+void CGuiHandler::CancelActiveCommand()
+{
+	activeMousePress = false;
+	SetActiveCommandIndex(-1);
+}
+
+
 bool CGuiHandler::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (keyCode == SDLK_ESCAPE && activeMousePress) {
-		activeMousePress = false;
-		SetActiveCommandIndex(-1);
-		return true;
-	}
-	if (keyCode == SDLK_ESCAPE && inCommand >= 0) {
-		SetActiveCommandIndex(-1);
+	if (keyCode == SDLK_ESCAPE && (activeMousePress || inCommand >= 0)) {
+		CancelActiveCommand();
 		return true;
 	}
 

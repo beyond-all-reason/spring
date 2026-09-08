@@ -17,6 +17,8 @@ class LuaUnsyncedRead {
 		static int GetReplayLength(lua_State* L);
 
 		static int GetGameName(lua_State* L);
+		static int GetReplayFilePath(lua_State* L);
+		static int GetReplayRecordingFilePath(lua_State* L);
 		static int GetMenuName(lua_State* L);
 
 		static int GetProfilerTimeRecord(lua_State* L);
@@ -30,6 +32,7 @@ class LuaUnsyncedRead {
 		static int GetGameSecondsInterpolated(lua_State* L);
 		static int GetLastUpdateSeconds(lua_State* L);
 		static int GetVideoCapturingMode(lua_State* L);
+		static int GetPrevFrameSyncChecksum(lua_State* L);
 
 		static int GetNumDisplays(lua_State* L);
 		static int GetViewGeometry(lua_State* L);
@@ -95,6 +98,9 @@ class LuaUnsyncedRead {
 		static int GetTeamColor(lua_State* L);
 		static int GetTeamOrigColor(lua_State* L);
 
+		static int GetCustomPaletteColor(lua_State* L);
+		static int GetUnitPaletteIndex(lua_State* L);
+		static int GetFeaturePaletteIndex(lua_State* L);
 		static int GetLocalPlayerID(lua_State* L);
 		static int GetLocalTeamID(lua_State* L);
 		static int GetLocalAllyTeamID(lua_State* L);

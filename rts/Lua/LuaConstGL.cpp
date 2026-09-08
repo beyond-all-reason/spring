@@ -19,7 +19,7 @@
 
 bool LuaConstGL::PushEntries(lua_State* L)
 {
-#define PUSH_GL(cmd) LuaPushNamedNumber(L, #cmd, GL_ ## cmd)
+#define PUSH_GL(cmd) LuaPushNamedNumber(L, #cmd, static_cast<lua_Number>(GL_ ## cmd))
 
 	/***
 	 * Drawing Primitives

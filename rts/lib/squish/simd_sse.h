@@ -26,10 +26,9 @@
 #ifndef SQUISH_SIMD_SSE_H
 #define SQUISH_SIMD_SSE_H
 
-#include <xmmintrin.h>
-#if ( SQUISH_USE_SSE > 1 )
-#include <emmintrin.h>
-#endif
+// Use simd_compat.h which routes to sse2neon on ARM64
+// and native SSE headers on x86.
+#include "System/simd_compat.h"
 
 #define SQUISH_SSE_SPLAT( a )										\
 	( ( a ) | ( ( a ) << 2 ) | ( ( a ) << 4 ) | ( ( a ) << 6 ) )

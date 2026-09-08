@@ -3,8 +3,8 @@
 #ifndef UNIT_TRAP_CHECK_UTILS_H__
 #define UNIT_TRAP_CHECK_UTILS_H__
 
-struct CFeature;
-struct CUnit;
+class CFeature;
+class CUnit;
 
 namespace MoveTypes {
     void RegisterFeatureForUnitTrapCheck(CFeature* object);

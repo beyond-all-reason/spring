@@ -14,7 +14,7 @@ inline int __bsfd (int mask)
 	return index;
 }
 #elif defined(__GNUC__)
-#include <x86intrin.h>
+#include "System/simd_compat.h"
 #else
 #error no bsfd intrinsic currently set
 #endif
@@ -77,16 +77,40 @@ void QTPFS::NodeLayer::Init(unsigned int layerNum) {
 
 	MoveDef* md = moveDefHandler.GetMoveDefByPathType(layerNum);
 	useShortestPath = md->preferShortestPath;
+
+	const uint32_t mapSize = xsize * zsize;
+	mapSquareStatusCache.clear();
+	mapSquareStatusCache.resize( mapSize / NODE_CACHE_SECTOR_SIZE );
 }
 
 void QTPFS::NodeLayer::Clear() {
 	RECOIL_DETAILED_TRACY_ZONE;
 	curSpeedMods.clear();
 	curSpeedBins.clear();
+	mapSquareStatusCache.clear();
+}
+
+bool QTPFS::NodeLayer::InitialUpdate(UpdateThreadData& threadData) {
+	const SRectangle& r = threadData.areaRelinkedInner;
+	assert( r.GetWidth() != 0 );
+	assert( r.GetHeight() != 0 );
+
+	return Update(threadData, true);
+}
+
+bool QTPFS::NodeLayer::IncrementalUpdate(UpdateThreadData& threadData) {
+	const SRectangle& r = threadData.areaRelinkedInner;
+
+	// Due to strength of the invariants on the update areas during the match, we have these two functions wrapping
+	// Update().
+	assert( r.GetWidth() == QTPFS_MAP_DAMAGE_SIZE );
+	assert( r.GetHeight() == QTPFS_MAP_DAMAGE_SIZE );
+
+	return Update(threadData, false);
 }
 
 
-bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
+bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData, bool isInitialUpdate) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// assert((luSpeedMods == nullptr && luBlockBits == nullptr) || (luSpeedMods != nullptr && luBlockBits != nullptr));
 
@@ -117,7 +141,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 		const int zmax = (chmz + md.zsizeh) - blockRect.z1;
 		const int blockRectWidth = blockRect.GetWidth();
 		int ret = 0;
-		
+
 		// footprints are point-symmetric around <xSquare, zSquare>
 		for (int z = zmin; z <= zmax; z += 2/*FOOTPRINT_ZSTEP*/) {
 			for (int x = xmin; x <= xmax; x += 2/*FOOTPRINT_XSTEP*/) {
@@ -148,11 +172,14 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 		return CMoveMath::RangeIsBlockedHashedMt(xmin, xmax, zmin, zmax, &virtualObject, tempNum, threadData.threadId);
 	};
 
-	// divide speed-modifiers into bins
-	for (unsigned int hmz = r.z1; hmz < r.z2; hmz++) {
-		for (unsigned int hmx = r.x1; hmx < r.x2; hmx++) {
-			const unsigned int recIdx = (hmz - r.z1) * r.GetWidth() + (hmx - r.x1);
+	// Initial updates always require updates. After that it may not always be the case.
+	bool updateRequired = isInitialUpdate;
+	QTPFS::NodeLayer::NodeSpeedBinCache* sectorCache = &mapSquareStatusCache[GetSectorIndex(r.x1, r.z1)];
 
+	// divide speed-modifiers into bins
+	unsigned int recIdx =  0;
+	for (unsigned int hmz = r.z1; hmz < r.z2; ++hmz) {
+		for (unsigned int hmx = r.x1; hmx < r.x2; ++hmx, ++recIdx) {
 			// don't tesselate map edges when footprint extends across them in IsBlocked*
 			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
 			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
@@ -190,10 +217,27 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData) {
 			// need to keep track of these for Tesselate
 			curSpeedMods[recIdx] = newRelSpeedMod * float(MaxSpeedModTypeValue());
 			curSpeedBins[recIdx] = newSpeedModBin;
+
+			const bool isExitOnlyZone = md->IsInExitOnly(chmx, chmz);
+			MapSquareData curSquareState(curSpeedBins[recIdx], isExitOnlyZone);
+
+			unsigned int cacheIdx =  recIdx;
+
+			// The initial map update will span across multiple status cache sectors.
+			// Afterwards this updates only impact a single sector.
+			if (isInitialUpdate){
+				sectorCache = &mapSquareStatusCache[GetSectorIndex(hmx, hmz)];
+				cacheIdx = hmx % NODE_CACHE_SECTOR_STRIDE + (hmz % NODE_CACHE_SECTOR_STRIDE) * NODE_CACHE_SECTOR_STRIDE;
+			}
+
+			if (curSquareState != (*sectorCache)[cacheIdx]) {
+				assert( cacheIdx < NODE_CACHE_SECTOR_SIZE );
+				(*sectorCache)[cacheIdx] = curSquareState;
+				updateRequired = true;
+			}
 		}
 	}
-
-	return true;
+	return updateRequired;
 }
 
 
@@ -227,8 +271,7 @@ void QTPFS::NodeLayer::ExecNodeNeighborCacheUpdates(const SRectangle& ur, Update
 	SRectangle searchArea(xmin, zmin, xmax, zmax);
 	GetNodesInArea(searchArea, selectedNodes);
 
-	threadData.relinkNodeGrid.clear();
-	threadData.relinkNodeGrid.resize(threadData.areaRelinked.GetArea(), nullptr);
+	threadData.relinkNodeGrid.assign(threadData.areaRelinked.GetArea(), nullptr);
 
 	// Build grid with selected nodes.
 	std::for_each(selectedNodes.begin(), selectedNodes.end(), [&threadData](INode *curNode){

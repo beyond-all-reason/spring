@@ -48,8 +48,13 @@ endif (NOT DEFINED VISIBILITY_INLINES_HIDDEN)
 If    (NOT DEFINED IEEE_FP_FLAG)
 	If   (MSVC)
 		Set(IEEE_FP_FLAG "/fp:strict")
-	elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		Message(WARNING "Clang detected, disabled IEEE-FP")
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		Message(STATUS "Clang detected, skipping -mieee-fp (not supported)")
+		Set(IEEE_FP_FLAG "")
+	elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|armv8")
+		# ARM64 is IEEE 754 compliant by default; -mieee-fp is x86-only
+		Message(STATUS "ARM64 detected, skipping -mieee-fp (ARM64 is IEEE 754 compliant by default)")
+		Set(IEEE_FP_FLAG "")
 	Else (MSVC)
 		CHECK_CXX_ACCEPTS_FLAG("-mieee-fp" HAS_IEEE_FP_FLAG)
 		If    (HAS_IEEE_FP_FLAG)
@@ -60,6 +65,22 @@ If    (NOT DEFINED IEEE_FP_FLAG)
 		EndIf (HAS_IEEE_FP_FLAG)
 	Endif(MSVC)
 EndIf (NOT DEFINED IEEE_FP_FLAG)
+
+
+# FMA prevention for ARM64: fused multiply-add produces different FP results
+# from x86, causing multiplayer desyncs. -ffp-contract=off prevents this.
+If    (NOT DEFINED FP_CONTRACT_FLAG)
+	Set(FP_CONTRACT_FLAG "")
+	if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|armv8")
+		CHECK_CXX_ACCEPTS_FLAG("-ffp-contract=off" HAS_FP_CONTRACT_OFF)
+		if (HAS_FP_CONTRACT_OFF)
+			Set(FP_CONTRACT_FLAG "-ffp-contract=off")
+			Message(STATUS "ARM64: enabling -ffp-contract=off to prevent FMA desync")
+		else()
+			Message(WARNING "ARM64: compiler does not support -ffp-contract=off, multiplayer sync may be affected")
+		endif()
+	endif()
+EndIf (NOT DEFINED FP_CONTRACT_FLAG)
 
 
 If    (NOT DEFINED CXX17_FLAGS)
@@ -77,20 +98,26 @@ EndIf (NOT MSVC AND NOT DEFINED LTO_FLAGS)
 IF    (NOT MSVC AND NOT DEFINED MARCH)
 	Set(MARCH "")
 
-	# 32bit
-	CHECK_CXX_ACCEPTS_FLAG("-march=i686" HAS_I686_FLAG_)
-	IF    (HAS_I686_FLAG_)
-		Set(MARCH "i686")
-	EndIf (HAS_I686_FLAG_)
+	if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|armv8")
+		# ARM64: leave MARCH empty; Apple Clang picks native arch by default.
+		# For GCC, armv8-a is set explicitly in the main CMakeLists.txt.
+		message(STATUS "ARM64 detected, skipping x86 march detection")
+	else()
+		# 32bit
+		CHECK_CXX_ACCEPTS_FLAG("-march=i686" HAS_I686_FLAG_)
+		IF    (HAS_I686_FLAG_)
+			Set(MARCH "i686")
+		EndIf (HAS_I686_FLAG_)
 
-	# 64bit
-	if    ((CMAKE_SIZEOF_VOID_P EQUAL 8) AND (NOT MARCH))
-		# always syncs with 32bit
-		check_cxx_accepts_flag("-march=x86_64" HAS_X86_64_FLAG_)
-		if    (HAS_X86_64_FLAG_)
-			set(MARCH "x86_64")
-		endif (HAS_X86_64_FLAG_)
-	endif ((CMAKE_SIZEOF_VOID_P EQUAL 8) AND (NOT MARCH))
+		# 64bit
+		if    ((CMAKE_SIZEOF_VOID_P EQUAL 8) AND (NOT MARCH))
+			# always syncs with 32bit
+			check_cxx_accepts_flag("-march=x86_64" HAS_X86_64_FLAG_)
+			if    (HAS_X86_64_FLAG_)
+				set(MARCH "x86_64")
+			endif (HAS_X86_64_FLAG_)
+		endif ((CMAKE_SIZEOF_VOID_P EQUAL 8) AND (NOT MARCH))
+	endif()
 endif (NOT MSVC AND NOT DEFINED MARCH)
 
 if   (NOT MSVC)

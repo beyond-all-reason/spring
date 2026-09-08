@@ -284,6 +284,8 @@ class CLuaHandle : public CEventClient
 		void DrawShadowUnitsLua() override;
 		void DrawShadowFeaturesLua() override;
 
+		void DrawBuildSquare(int unitDefID, int x, int z, int facing, const std::vector<uint8_t>& statuses) override;
+
 		void GameProgress(int frameNum) override;
 		void Pong(uint8_t pingTag, const spring_time pktSendTime, const spring_time pktRecvTime) override;
 
@@ -327,6 +329,7 @@ class CLuaHandle : public CEventClient
 		bool AddBasicCalls(lua_State* L);
 		bool AddCommonModules(lua_State* L);
 		bool LoadCode(lua_State* L, std::string code, const std::string& debug);
+		void InitLuaSocket(lua_State* L);
 		static bool AddEntriesToTable(lua_State* L, const char* name, bool (*entriesFunc)(lua_State*));
 
 		/// returns error code and sets traceback on error

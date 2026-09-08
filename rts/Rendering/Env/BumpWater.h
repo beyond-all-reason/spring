@@ -20,11 +20,11 @@ class CBumpWater : public IWater, public CEventClient
 {
 public:
 	//! CEventClient interface
-	bool WantsEvent(const std::string& eventName) {
+	bool WantsEvent(const std::string& eventName) override {
 		return shoreWaves && (eventName == "UnsyncedHeightMapUpdate");
 	}
-	bool GetFullRead() const { return true; }
-	int GetReadAllyTeam() const { return AllAccessTeam; }
+	bool GetFullRead() const override { return true; }
+	int GetReadAllyTeam() const override { return AllAccessTeam; }
 
 public:
 	CBumpWater();
@@ -64,7 +64,7 @@ private:
 
 	int atlasX,atlasY;
 
-	void UnsyncedHeightMapUpdate(const SRectangle& rect);
+	void UnsyncedHeightMapUpdate(const SRectangle& rect) override;
 
 private:
 	//! user options

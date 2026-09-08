@@ -12,15 +12,14 @@
 CR_BIND(ModelUniformData, )
 CR_REG_METADATA(ModelUniformData, (
 	CR_MEMBER_BEGINFLAG(CM_NoSerialize),
-
-		CR_MEMBER(composite),
-		CR_MEMBER(unused2),
-		CR_MEMBER(unused3),
+		CR_MEMBER(composite1),
+		CR_MEMBER(composite2),
 		CR_MEMBER(unused4),
+		CR_MEMBER(unused5),
 		CR_MEMBER(maxHealth),
 		CR_MEMBER(health),
-		CR_MEMBER(unused5),
 		CR_MEMBER(unused6),
+		CR_MEMBER(unused7),
 		CR_MEMBER(drawPos),
 		CR_MEMBER(speed),
 		CR_MEMBER(userDefined),

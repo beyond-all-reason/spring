@@ -95,7 +95,8 @@ void simpleLog_log(const char* fmt, ...) {
 
 void simpleLog_initcallback(int id, const char* section, logfunction func, int _logLevel)
 {
-	strncpy(logSection, section, 32);
+	strncpy(logSection, section, sizeof(logSection) - 1);
+	logSection[sizeof(logSection) - 1] = '\0';
 	logFunction = func;
 	interfaceid = id;
 	logLevel = _logLevel;

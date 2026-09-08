@@ -329,7 +329,7 @@ void CTextureAtlas::ReloadTextures()
 	Finalize();
 }
 
-void CTextureAtlas::DumpTexture(const char* newFileName) const
+void CTextureAtlas::DumpTexture(const char* newFileName, const std::string& fileExt) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!initialized)
@@ -341,11 +341,11 @@ void CTextureAtlas::DumpTexture(const char* newFileName) const
 
 	if (numPages > 1) {
 		for (uint32_t page = 0; page < numPages; ++page) {
-			glSaveTextureArray(atlasTex->GetId(), fmt::format("{}_{}.png", filename, page).c_str(), page);
+			glSaveTextureArray(atlasTex->GetId(), fmt::format("{}_{}.{}", filename, page, fileExt).c_str(), page);
 		}
 	}
 	else {
-		filename += ".png";
+		filename += "." + fileExt;
 		glSaveTexture(atlasTex->GetId(), filename.c_str());
 	}
 }

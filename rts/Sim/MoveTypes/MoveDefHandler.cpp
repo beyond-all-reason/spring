@@ -336,7 +336,10 @@ MoveDef::MoveDef(const LuaTable& moveDefTable): MoveDef() {
 		waterline = std::abs(moveDefTable.GetInt("waterline", defaultWaterline));
 		overrideUnitWaterline = moveDefTable.GetBool("overrideUnitWaterline", overrideUnitWaterline);
 	} else {
-		waterline = std::numeric_limits<int>::max();
+		// we read as int from configuration but used as float...
+		// this should probably be changed to float everywhere
+		// github issue: https://github.com/beyond-all-reason/RecoilEngine/issues/2996
+		waterline = static_cast<float>(std::numeric_limits<int>::max());
 	}
 
 	height = std::max(1, moveDefTable.GetInt("height", defaultHeight));

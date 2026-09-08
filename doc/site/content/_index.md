@@ -19,7 +19,7 @@ draft = false
 {{< /cards >}}
 {{< cards >}}
 {{< card title="Tech Annihilation" image="/showcase/ta.jpeg" link="https://github.com/techannihilation/TA" >}}
-{{< card title="SplinterFaction" image="showcase/splinter_faction.jpg" link="splinterfaction.info" >}}
+{{< card title="SplinterFaction" image="showcase/splinter_faction.jpg" link="https://splinterfaction.info" >}}
 {{< card title="Mechcommander: Legacy" image="/showcase/mcl.jpg" link="https://github.com/SpringMCLegacy/SpringMCLegacy/wiki" >}}
 {{< /cards >}}
 

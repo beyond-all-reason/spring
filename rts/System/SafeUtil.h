@@ -5,6 +5,8 @@
 
 #include <limits>
 #include <cstring>
+#include <type_traits>
+#include <memory>
 
 namespace spring {
 	template<class T> inline void SafeDestruct(T*& p)
@@ -52,6 +54,10 @@ namespace spring {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-const-int-float-conversion"
+#endif
     template<typename TOut, typename TIn>
     inline TOut SafeCast(TIn value)
     {
@@ -96,6 +102,9 @@ namespace spring {
         // limits have been checked, therefore safe to cast
         return static_cast<TOut>(value);
     }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -105,8 +114,8 @@ namespace spring {
         static_assert(sizeof(TIn) == sizeof(TOut), "Types must match sizes");
         static_assert(std::is_trivially_copyable<TIn>::value , "Requires TriviallyCopyable input");
         static_assert(std::is_trivially_copyable<TOut>::value, "Requires TriviallyCopyable output");
-        static_assert(std::is_trivially_constructible_v<TOut>,
-            "This implementation additionally requires destination type to be trivially constructible");
+        static_assert(std::is_trivially_default_constructible<TOut>::value,
+            "This implementation additionally requires destination type to be trivially default-constructible");
 
         TOut t2;
         std::memcpy(std::addressof(t2), std::addressof(t1), sizeof(TIn));

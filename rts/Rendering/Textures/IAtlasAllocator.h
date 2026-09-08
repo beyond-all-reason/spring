@@ -51,13 +51,13 @@ public:
 	const spring::unordered_map<std::string, SAtlasEntry>& GetEntries() const;
 
 	// pixel center based UV
-	AtlasedTexture GetTexCoordsCntr(const spring::unordered_map<std::string, SAtlasEntry>::const_iterator& it);
+	AtlasedTexture GetTexCoordsCntr(const spring::unordered_map<std::string, SAtlasEntry>::const_iterator& it) const;
 
 	// pixel edges based UV
 	AtlasedTexture GetTexCoordsEdge(const spring::unordered_map<std::string, SAtlasEntry>::const_iterator& it) const;
 
-	AtlasedTexture GetTexCoordsCntr(const std::string& name);
-	AtlasedTexture GetTexCoordsEdge(const std::string& name);
+	AtlasedTexture GetTexCoordsCntr(const std::string& name) const;
+	AtlasedTexture GetTexCoordsEdge(const std::string& name) const;
 
 	bool contains(const std::string& name) const;
 

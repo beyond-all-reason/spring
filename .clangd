@@ -1,0 +1,14 @@
+# RecoilEngine clangd configuration
+
+CompileFlags:
+  # Path to the build directory containing compile_commands.json
+  CompilationDatabase: build
+  # Fallback flags for the engine source tree
+  Add:
+    - -std=c++23
+    - -I./rts
+    - -DSYNCCHECK
+    - -DTHREADPOOL
+
+Index:
+  Background: Build

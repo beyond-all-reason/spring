@@ -11,6 +11,7 @@
 
 
 unsigned CSyncChecker::g_checksum;
+unsigned CSyncChecker::g_prevChecksum;
 int CSyncChecker::inSyncedCode;
 
 void CSyncChecker::NewFrame()
