@@ -389,6 +389,11 @@ bool CEventHandler::TerraformComplete(const CUnit* unit, const CUnit* build)
 }
 
 
+bool CEventHandler::AttackCommandMovement(const CUnit* unit, const Command& cmd)
+{
+	return ControlIterateDefFalse(listAttackCommandMovement, &CEventClient::AttackCommandMovement, unit, cmd);
+}
+
 bool CEventHandler::MoveCtrlNotify(const CUnit* unit, int data)
 {
 	ZoneScoped;

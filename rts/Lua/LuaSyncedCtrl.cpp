@@ -68,6 +68,7 @@
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/CommandAI/MobileCAI.h"
 #include "Sim/Units/CommandAI/FactoryCAI.h"
 #include "Sim/Units/UnitTypes/ExtractorBuilding.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
@@ -225,6 +226,9 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
 	REGISTER_LUA_CFUNC(SetUnitMoveGoal);
+	REGISTER_LUA_CFUNC(GetUnitAttackMovementState);
+	REGISTER_LUA_CFUNC(GetUnitAttackWeaponState);
+	REGISTER_LUA_CFUNC(SetUnitAttackMovement);
 	REGISTER_LUA_CFUNC(SetUnitLandGoal);
 	REGISTER_LUA_CFUNC(ClearUnitGoal);
 	REGISTER_LUA_CFUNC(SetUnitNeutral);
@@ -3993,6 +3997,90 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
 		unit->SetPosErrorBit(std::clamp(lua_tointeger(L, 9), 0, teamHandler.ActiveAllyTeams()), lua_toboolean(L, 10));
 
 	return 0;
+}
+
+
+/*** Read the native inputs for this unit's active AttackCommandMovement callback.
+ * Synced only and only valid during the callback for the same controlled unit.
+ * The state includes object, manual, skipParalyze, temporary, holdPosition,
+ * hovering, stopToAttack, strafeToAttack, targetBehind, numWeapons, distance,
+ * distanceSq, range90, range90Sq, frame, lastCloseInTry and retryTicks.
+ * Object attacks also include goalDistanceSq and goalThresholdSq.
+ * range90 values and goal thresholds expose the legacy movement policy for
+ * equivalent Lua ports; they do not constrain when the callback runs.
+ * @function Spring.GetUnitAttackMovementState
+ * @param unitID integer
+ * @return table? state Nil for an inaccessible unit or unsupported command AI
+ * @see SyncedCallins:AttackCommandMovement
+ */
+int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
+{
+	return AttackMovement(L, "state");
+}
+
+/*** Run the native rotation/heading tests for an active attack-movement callback.
+ * Uses the weapon's actual native line/arc test. Omit avoidFlags to use its
+ * existing avoidance flags, or supply a Game.collisionFlags bitmask to replace
+ * them for this query only. Bits mean ignore that category: noGround skips
+ * terrain; noFriendlies skips allies. The weapon's stored flags and actual
+ * firing behavior are never changed. Range/target tests are always performed.
+ * Reasons describe the first failed test: clear, notChecked, invalidTarget,
+ * range (including angle constraints), terrain, friendly, neutral, feature,
+ * or blocked (unclassified). They do not enumerate all simultaneous blockers.
+ * Native pre-aim avoidance ignores enemies as a category. Ray tests can still
+ * include them via the independent cloaked category; use noCloaked for strict
+ * friendly-only or terrain-only masks (noUnits does not include noCloaked).
+ * clear does not guarantee a hit, aim readiness, reload completion or firing.
+ * No extra traces are run to classify a failure. Object rotation and heading
+ * are separate hypothetical orientations and may return different reasons.
+ * @function Spring.GetUnitAttackWeaponState
+ * @param unitID integer Same unit as the active callback
+ * @param weaponNum integer 1-based weapon index
+ * @param avoidFlags integer? Query-only avoidance mask (0 checks all native categories)
+ * @return boolean? eligible False if excluded by the native manual-fire filter
+ * @return boolean? rotate Native TryTargetRotate result; false for ground targets
+ * @return boolean? heading Native TryTargetHeading result
+ * @return boolean? ownerRotation Weapon requires chassis rotation
+ * @return number? targetBorder Absolute target-border factor
+ * @return string? rotateReason notChecked for a ground target
+ * @return string? headingReason
+ * @see SyncedCallins:AttackCommandMovement
+ */
+int LuaSyncedCtrl::GetUnitAttackWeaponState(lua_State* L)
+{
+	return AttackMovement(L, "weapon");
+}
+
+/*** Apply a native movement primitive during AttackCommandMovement.
+ * Operations: stop, finish (stop and finish command), point, stopPoint,
+ * attack (assign the command target), chase, strafe, approach, closeInFrame.
+ * chase/strafe/approach require an object target. approach takes a third,
+ * numeric targetBorder argument. point/stopPoint retain the native pointing
+ * radius; other movement policies can use SetUnitMoveGoal and return true.
+ * finish can invalidate this callback's command; subsequent API calls reject
+ * a changed command, owner or order target. Effects are immediate, not rolled
+ * back if the callback later returns false or raises an error.
+ * @function Spring.SetUnitAttackMovement
+ * @param unitID integer Same unit as the active callback
+ * @param operation string
+ * @param targetBorder number? Required for approach
+ * @return boolean? accepted Only returned for attack; this does not mean a shot fired
+ * @see SyncedCallins:AttackCommandMovement
+ */
+int LuaSyncedCtrl::SetUnitAttackMovement(lua_State* L)
+{
+	return AttackMovement(L, nullptr);
+}
+
+int LuaSyncedCtrl::AttackMovement(lua_State* L, const char* query)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	if (unit == nullptr)
+		return 0;
+	auto* cai = dynamic_cast<CMobileCAI*>(unit->commandAI);
+	if (cai == nullptr)
+		return 0;
+	return cai->LuaAttackMovement(L, query);
 }
 
 

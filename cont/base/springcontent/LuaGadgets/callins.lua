@@ -123,6 +123,7 @@ CALLIN_LIST = {
 	"AllowWeaponInterceptTarget",
 
 	"Explosion",
+	"AttackCommandMovement",
 	"CommandFallback",
 	"MoveCtrlNotify",
 	"TerraformComplete",
