@@ -3,6 +3,7 @@
 #ifndef GAME_VERSION_H
 #define GAME_VERSION_H
 
+#include <cstdint>
 #include <string>
 
 /**
@@ -115,6 +116,15 @@ namespace SpringVersion
 	 * @see GetAdditional
 	 */
 	extern const std::string& GetFull();
+
+	/**
+	 * The version of the network/replay packet protocol.
+	 *
+	 * Increment whenever anything changes (new packet type,
+	 * new members in an existing packet type, different
+	 * meaning or layout of existing members, anything).
+	 */
+	static constexpr uint16_t NETWORK_VERSION = 2027;
 }
 
 #endif // GAME_VERSION_H

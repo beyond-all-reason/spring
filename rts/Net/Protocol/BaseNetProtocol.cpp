@@ -243,7 +243,7 @@ PacketType CBaseNetProtocol::SendAttemptConnect(
 	bool reconnect
 ) {
 	const uint32_t payloadSize =
-		sizeof(NETWORK_VERSION) +
+		sizeof(SpringVersion::NETWORK_VERSION) +
 		sizeof(static_cast<uint8_t>(netloss)) +
 		sizeof(static_cast<uint8_t>(reconnect)) +
 		(name.size() + 1) +
@@ -255,7 +255,7 @@ PacketType CBaseNetProtocol::SendAttemptConnect(
 
 	PackPacket* packet = new PackPacket(packetSize, NETMSG_ATTEMPTCONNECT);
 	*packet << static_cast<uint16_t>(packetSize);
-	*packet << NETWORK_VERSION;
+	*packet << SpringVersion::NETWORK_VERSION;
 	*packet << name;
 	*packet << passwd;
 	*packet << version;

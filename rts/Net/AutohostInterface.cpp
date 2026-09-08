@@ -38,7 +38,7 @@ enum EVENT
 	/**
 	 * Server has started
 	 *
-	 *   ()
+	 *   (uint16 networkVersion)
 	 */
 	SERVER_STARTED = 0,
 
@@ -236,9 +236,14 @@ std::string AutohostInterface::TryBindSocket(
 
 void AutohostInterface::SendStart()
 {
-	uchar msg = SERVER_STARTED;
+	const auto networkVersion {SpringVersion::NETWORK_VERSION};
 
-	Send(asio::buffer(&msg, sizeof(uchar)));
+	std::array <std::uint8_t, 1 + sizeof networkVersion> buffer;
+
+	buffer[0] = SERVER_STARTED;
+	memcpy(&buffer[1], &networkVersion, sizeof networkVersion);
+
+	Send(asio::buffer(buffer));
 }
 
 void AutohostInterface::SendQuit()

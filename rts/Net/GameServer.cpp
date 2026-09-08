@@ -1906,8 +1906,8 @@ void CGameServer::HandleConnectionAttempts()
 			msg >> reconnect;
 			msg >> netloss;
 
-			if (netversion != NETWORK_VERSION)
-				throw netcode::UnpackPacketException(spring::format("Wrong network version: received %d, required %d", (int)netversion, (int)NETWORK_VERSION));
+			if (netversion != SpringVersion::NETWORK_VERSION)
+				throw netcode::UnpackPacketException(spring::format("Wrong network version: received %d, required %d", (int)netversion, (int)SpringVersion::NETWORK_VERSION));
 
 			BindConnection(udpListener->AcceptConnection(), name, passwd, version, platform, false, reconnect, netloss);
 		} catch (const netcode::UnpackPacketException& ex) {
@@ -2947,9 +2947,16 @@ unsigned CGameServer::BindConnection(
 
 	if (clientLink->CanReconnect())
 		canReconnect = true;
-	// first client to connect determines the reference version
-	// the proliferation of maintenance builds since 104.0 means
-	// comparing just NETWORK_VERSION is no longer strict enough
+
+	/* First client to connect determines the reference version.
+	 *
+	 * Ideally this would accept versions that sync with each other, but we
+	 * do not actually have a way to keep track of that.
+	 *
+	 * Historically this used to check for `SpringVersion::NETWORK_VERSION`,
+	 * but that just resolved to major (104 etc) so is not sufficient when
+	 * dev versions introduce sync changes. Perhaps it would be alright to
+	 * use that for dedi which doesn't care about sync either way though. */
 	if (refClientVersion.second.empty())
 		refClientVersion = {clientName, clientVersion};
 

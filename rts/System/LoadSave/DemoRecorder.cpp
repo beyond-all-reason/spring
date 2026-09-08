@@ -78,6 +78,7 @@ void CDemoRecorder::SetFileHeader()
 	fileHeader.teamStatElemSize = sizeof(TeamStatistics);
 	fileHeader.teamStatPeriod = TeamStatistics::statsPeriod;
 	fileHeader.winningAllyTeamsSize = 0;
+	fileHeader.networkVersion = SpringVersion::NETWORK_VERSION;
 }
 
 void CDemoRecorder::WriteDemoFile()

@@ -70,6 +70,7 @@ struct DemoFileHeader
 	int teamStatElemSize;         ///< sizeof(CTeam::Statistics)
 	int teamStatPeriod;           ///< Interval (in seconds) between team stats.
 	int winningAllyTeamsSize;     ///< The size of the vector of the winning ally teams
+	std::uint16_t networkVersion; ///< The version of the replay/network packet protocol (`SpringVersion::NETWORK_VERSION`)
 
 
 	/// Change structure from host endian to little endian or vice versa.
@@ -89,6 +90,7 @@ struct DemoFileHeader
 		swabDWordInPlace(teamStatElemSize);
 		swabDWordInPlace(teamStatPeriod);
 		swabDWordInPlace(winningAllyTeamsSize);
+		swabDWordInPlace(networkVersion);
 	}
 };
 
