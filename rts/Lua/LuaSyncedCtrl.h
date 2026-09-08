@@ -75,6 +75,8 @@ class LuaSyncedCtrl
 
 		static int CreateUnit(lua_State* L);
 		static int DestroyUnit(lua_State* L);
+		static int SetUnitDead(lua_State* L);
+		static int RemoveUnit(lua_State* L);
 		static int TransferUnit(lua_State* L);
 		static int TransferTeamMaxUnits(lua_State* L);
 

@@ -238,13 +238,17 @@ bool CUnitHandler::GarbageCollectUnit(unsigned int id)
 	if (inUpdateCall)
 		return false;
 
-	assert(unitsToBeRemoved.empty());
+	CUnit* unit = units[id];
 
-	if (!QueueDeleteUnit(units[id]))
+	if (unit == nullptr)
+		return false;
+	if (!QueueDeleteUnit(unit))
 		return false;
 
-	// only processes units[id]
-	DeleteUnits();
+	// the queue holds units killed on a previous frame plus what we've enqueued
+	spring::VectorEraseAll(unitsToBeRemoved, unit);
+
+	DeleteUnit(unit);
 
 	return (idPool.RecycleID(id));
 }
@@ -268,7 +272,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 	// there are many ways to fiddle with "deathScriptFinished", so a unit may
 	// arrive here not having been properly killed while isDead is still false
 	// make sure we always call Killed; no-op if isDead was already set to true
-	unit->ForcedKillUnit(nullptr, false, true);
+	unit->ForcedKillUnit(nullptr, false, true, -CSolidObject::DAMAGE_UNIT_SCRIPT);
 	unitsToBeRemoved.push_back(unit);
 	return true;
 }
@@ -376,7 +380,7 @@ void CUnitHandler::SlowUpdateUnits()
 			unit->SlowUpdateWeapons();
 			unit->SanityCheck();
 
-			if (!unit->isDead && unit->localModel.GetBoundariesNeedsRecalc())
+			if (unit->IsSimulating() && unit->localModel.GetBoundariesNeedsRecalc())
 				updateBoundingVolumeList.emplace_back(unit);
 		}
 	}

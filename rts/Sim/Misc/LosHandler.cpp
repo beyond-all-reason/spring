@@ -170,7 +170,7 @@ inline void ILosType::UpdateUnit(CUnit* unit, bool ignore)
 	// do not check if the unit is inside a transporter here
 	// non-firebase transporters stun their cargo, so are already handled below
 	// firebase transporters should not deprive sensor coverage from their cargo
-	if (unit->isDead || unit->beingBuilt)
+	if (!unit->IsSimulating() || unit->beingBuilt)
 		return;
 
 	// NOTE:

@@ -321,10 +321,10 @@ void CWeapon::Update()
 
 	// Fast auto targeting needs to trigger an immediate retarget once the target is dead.
 	bool fastAutoRetargetRequired = fastAutoRetargeting && HaveTarget()
-									&& currentTarget.unit != nullptr && currentTarget.unit->isDead;
+									&& currentTarget.unit != nullptr && currentTarget.unit->HasStartedDying();
 	if (fastAutoRetargetRequired) {
 		// switch to unit's target if it has one - see next bit below
-		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->isDead)
+		bool ownerTargetIsValid = (owner->curTarget.type == Target_Unit && currentTarget.unit != nullptr && !currentTarget.unit->HasStartedDying())
 								|| (owner->curTarget.type != Target_Unit && owner->curTarget.type != Target_None);
 		if (ownerTargetIsValid)
 			DropCurrentTarget();
@@ -1038,7 +1038,7 @@ bool CWeapon::TestTarget(const float3& tgtPos, const SWeaponTarget& trg) const
 				return false;
 			if ((trg.unit->category & onlyTargetCategory) == 0)
 				return false;
-			if (trg.unit->isDead && !modInfo.fireAtKilled)
+			if (!trg.unit->IsTargetable())
 				return false;
 			if (trg.unit->IsCrashing() && !modInfo.fireAtCrashing)
 				return false;

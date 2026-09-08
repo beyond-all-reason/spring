@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Sim/Objects/SolidObject.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/Resource.h"
 #include "Sim/Weapons/WeaponTarget.h"
 #include "System/Matrix44f.h"
@@ -60,6 +61,9 @@ static constexpr uint8_t LOS_ALL_BITS = \
 static constexpr uint8_t LOS_ALL_MASK_BITS = \
 	(LOS_INLOS_MASK | LOS_INRADAR_MASK | LOS_PREVLOS_MASK | LOS_CONTRADAR_MASK);
 
+
+// whether a unit can leave the dead state; see Engine.FeatureSupport.canReviveUnits
+static constexpr bool CAN_REVIVE_UNITS = false;
 
 class CUnit : public CSolidObject
 {
@@ -163,6 +167,14 @@ public:
 		return (forceUseWeapons || (allowUseWeapons && !onTempHoldFire && !isDead && !beingBuilt && !IsStunned()));
 	}
 
+	bool HasStartedDying() const { return isDead; }
+	bool IsSimulating() const { return !isDead; }
+	// Individual callers still test LOS, category, allegiance, etc. separately.
+	bool IsTargetable() const { return (!isDead || modInfo.fireAtKilled); }
+	bool CanTakeDamage() const { return (!isDead && !IsCrashing() && !IsInVoid()); }
+	bool CanChangeTeam() const { return !isDead; }
+	bool CanAcceptBuildPower() const { return (!isDead && !IsCrashing()); }
+
 	void SetNeutral(bool b);
 	void SetStunned(bool stun);
 
@@ -228,8 +240,8 @@ public:
 
 public:
 	void KilledScriptFinished(int wreckLevel) { deathScriptFinished = true; delayedWreckLevel = wreckLevel; }
-	void ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID = 0);
-	virtual void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID = 0);
+	void ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID, bool noDeathExplosion = false);
+	virtual void KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID);
 	virtual void IncomingMissile(CMissileProjectile* missile);
 	CFeature* CreateWreck(int wreckLevel, int smokeTime);
 
@@ -507,6 +519,8 @@ public:
 
 	// signals if script has finished executing Killed and the unit can be deleted
 	bool deathScriptFinished = false;
+	// set by Spring.RemoveUnit; the wreck is only created later, in ~CUnit
+	bool blockWreck = false;
 
 	// if true, unit will not be automatically fired upon unless attacker's fireState is set to > FIREATWILL
 	bool neutral = false;

@@ -176,6 +176,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(CreateUnit);
 	REGISTER_LUA_CFUNC(DestroyUnit);
+	REGISTER_LUA_CFUNC(SetUnitDead);
+	REGISTER_LUA_CFUNC(RemoveUnit);
 	REGISTER_LUA_CFUNC(TransferUnit);
 	REGISTER_LUA_CFUNC(TransferTeamMaxUnits);
 
@@ -1991,6 +1993,118 @@ int LuaSyncedCtrl::DestroyUnit(lua_State* L)
 	inDestroyUnit--;
 
 	return 0;
+}
+
+
+/***
+ * Set whether a unit is dead, and why.
+ *
+ * This flips the unit's dead state and intentionally does as little else as possible.
+ *
+ * It reports the death event to the relevant callins, then runs the unit death script.
+ * Attackers are not awarded any XP and are not credited with any kills.
+ * Death explosions are not fired and the physical unit is not deleted.
+ * Use `Spring.RemoveUnit` to control how the unit model/body is disposed.
+ * Simulate side effects yourself, e.g. adding attacker xp, spawning explosions/wrecks.
+ *
+ * @function Spring.SetUnitDead
+ * @see Spring.RemoveUnit
+ * @see Spring.GetUnitIsDead
+ * @param unitID UnitID
+ * @param dead boolean Must be `true`. Reviving a dead unit is not supported yet; check `Engine.FeatureSupport.canReviveUnits` before passing `false`.
+ * @param weaponDefID integer? (Default: `Game.envDamageTypes.KilledByLua`) the death type reported to `UnitDestroyed`. See `Game.envDamageTypes`.
+ * @param attackerID UnitID? named as the killer in `UnitDestroyed`. No experience or kill count is awarded.
+ * @return boolean changed `false` if the unit was already dead.
+ */
+int LuaSyncedCtrl::SetUnitDead(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	luaL_checktype(L, 2, LUA_TBOOLEAN);
+
+	if (!lua_toboolean(L, 2)) {
+		static_assert(!CAN_REVIVE_UNITS, "Spring.SetUnitDead has no revive path");
+
+		luaL_error(L, "[%s] reviving a unit is not supported, see Engine.FeatureSupport.canReviveUnits", __func__);
+	}
+
+	if (unit->HasStartedDying()) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const int weaponDefID = luaL_optint(L, 3, -CSolidObject::DAMAGE_KILLED_LUA);
+
+	if (weaponDefID >= int(weaponDefHandler->NumWeaponDefs()))
+		luaL_error(L, "[%s] invalid weaponDefID %d", __func__, weaponDefID);
+
+	CUnit* attacker = nullptr;
+
+	if (!lua_isnoneornil(L, 4))
+		attacker = ParseUnit(L, __func__, 4);
+
+	if (inDestroyUnit >= MAX_CMD_RECURSION_DEPTH)
+		luaL_error(L, "[%s] recursion is not permitted, max depth: %d", __func__, MAX_CMD_RECURSION_DEPTH);
+
+	inDestroyUnit++;
+
+	ASSERT_SYNCED(unit->id);
+	unit->ForcedKillUnit(attacker, false, false, weaponDefID, true);
+
+	inDestroyUnit--;
+
+	lua_pushboolean(L, unit->HasStartedDying());
+	return 1;
+}
+
+
+/***
+ * Dispose of a dead unit's physical body and remove it from the simulation.
+ *
+ * Has no effect on units that are not dead. See `Spring.SetUnitDead`.
+ * Death explosions and extra wreckage are not handled here, either,
+ * but if the unit's death script chose a wreck level, it can be ignored.
+ *
+ * @function Spring.RemoveUnit
+ * @see Spring.SetUnitDead
+ * @param unitID UnitID
+ * @param noWreck boolean? (Default: `true`) when the unit's death script already chose a wreck level, suppress the wreckage.
+ * @param cleanupImmediately boolean? (Default: `false`) removes the unit unconditionally and makes its ID available for immediate reuse (otherwise it takes a few frames). Refused from inside some callins; check the return value.
+ * @return boolean removed `false` if the unit was still alive.
+ * @return boolean recycled whether the ID was freed for immediate reuse.
+ */
+int LuaSyncedCtrl::RemoveUnit(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+
+	if (unit == nullptr)
+		return 0;
+
+	if (!unit->HasStartedDying()) {
+		lua_pushboolean(L, false);
+		lua_pushboolean(L, false);
+		return 2;
+	}
+
+	const bool noWreck = luaL_optboolean(L, 2, true);
+	const bool cleanupImmediately = luaL_optboolean(L, 3, false);
+
+	ASSERT_SYNCED(unit->id);
+
+	unit->blockWreck = noWreck;
+
+	if (!unit->deathScriptFinished)
+		unit->KilledScriptFinished(-1); // declare the script done
+
+	// refused while the UnitHandler is updating
+	const bool recycled = (cleanupImmediately && unitHandler.GarbageCollectUnit(unit->id));
+
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, recycled);
+	return 2;
 }
 
 

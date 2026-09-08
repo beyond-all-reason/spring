@@ -111,7 +111,7 @@ CUnit::~CUnit()
 	//   we nevertheless want the sim-frame latency between CUnitKilledCB()
 	//   and the CreateWreckage() call to be as low as possible to prevent
 	//   position discontinuities
-	if (delayedWreckLevel >= 0)
+	if (delayedWreckLevel >= 0 && !blockWreck)
 		CreateWreck(delayedWreckLevel - 1, 1);
 
 	if (deathExpDamages != nullptr)
@@ -423,7 +423,7 @@ void CUnit::FinishedBuilding(bool postInit)
 		soloBuilder = nullptr;
 	}
 
-	if (isDead) // Lua can kill a freshy spawned unit in UnitCreated
+	if (HasStartedDying()) // Lua can kill a freshy spawned unit in UnitCreated
 		return;
 
 	ChangeLos(realLosRadius, realAirLosRadius);
@@ -472,7 +472,7 @@ void CUnit::KillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int wea
 	ForcedKillUnit(attacker, selfDestruct, reclaimed, weaponDefID);
 }
 
-void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID)
+void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, int weaponDefID, bool noDeathExplosion)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (isDead)
@@ -499,9 +499,9 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 	const WeaponDef* wd = selfDestruct? unitDef->selfdExpWeaponDef: unitDef->deathExpWeaponDef;
 	const DynDamageArray* da = selfDestruct? selfdExpDamages: deathExpDamages;
 
-	if (wd != nullptr) {
+	if (wd != nullptr && !noDeathExplosion) {
 		assert(da != nullptr);
-		const CExplosionParams params = {
+		const CExplosionParams expParams = {
 			.pos                  = pos,
 			.dir                  = ZeroVector,
 			.damages              = *da,
@@ -520,7 +520,7 @@ void CUnit::ForcedKillUnit(CUnit* attacker, bool selfDestruct, bool reclaimed, i
 			.projectileID         = static_cast<uint32_t>(-1u)
 		};
 
-		helper->Explosion(params);
+		helper->Explosion(expParams);
 	}
 
 	recentDamage += (maxHealth * 2.0f * selfDestruct);
@@ -673,7 +673,7 @@ void CUnit::Update()
 
 	if (beingBuilt)
 		return;
-	if (isDead)
+	if (!IsSimulating())
 		return;
 
 	recentDamage *= 0.9f;
@@ -766,7 +766,7 @@ void CUnit::ReleaseTransportees(CUnit* attacker, bool selfDestruct, bool reclaim
 		CUnit* transportee = tu.unit;
 		assert(transportee != this);
 
-		if (transportee->isDead)
+		if (transportee->HasStartedDying())
 			continue;
 
 		transportee->SetTransporter(nullptr);
@@ -1314,9 +1314,7 @@ void CUnit::DoDamage(
 	int weaponDefID,
 	int projectileID
 ) {
-	if (isDead)
-		return;
-	if (IsCrashing() || IsInVoid())
+	if (!CanTakeDamage())
 		return;
 
 	float baseDamage = damages.Get(armorType);
@@ -1351,7 +1349,7 @@ void CUnit::DoDamage(
 		// unit might have been killed via Lua from within UnitDamaged (e.g.
 		// through a recursive DoDamage call from AddUnitDamage or directly
 		// via DestroyUnit); can skip the rest
-		if (isDead)
+		if (HasStartedDying())
 			return;
 
 		eoh->UnitDamaged(*this, attacker, baseDamage, weaponDefID, projectileID, isParalyzer);
@@ -1373,7 +1371,7 @@ void CUnit::DoDamage(
 
 	KillUnit(attacker, false, false, weaponDefID);
 
-	if (!isDead)
+	if (!HasStartedDying())
 		return;
 	if (beingBuilt)
 		return;
@@ -1519,7 +1517,7 @@ void CUnit::ChangeLos(int losRad, int airRad)
 bool CUnit::ChangeTeam(int newteam, ChangeType type)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (isDead)
+	if (!CanChangeTeam())
 		return false;
 
 	// do not allow unit count violations due to team swapping
@@ -1988,7 +1986,7 @@ void CUnit::TurnIntoNanoframe()
 bool CUnit::AddBuildPower(CUnit* builder, float amount)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (isDead || IsCrashing())
+	if (!CanAcceptBuildPower())
 		return false;
 
 	// stop decaying on building AND reclaim
@@ -2868,6 +2866,7 @@ CR_REG_METADATA(CUnit, (
 	CR_MEMBER(allowUseWeapons),
 
 	CR_MEMBER(deathScriptFinished),
+	CR_MEMBER(blockWreck),
 	CR_MEMBER(delayedWreckLevel),
 
 	CR_MEMBER(restTime),

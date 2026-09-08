@@ -1092,7 +1092,7 @@ void CGame::ClientReadNet()
 						if (unit->team != srcTeamID)
 							continue;
 
-						if (unit->isDead)
+						if (!unit->CanChangeTeam())
 							continue;
 						if (unit->IsCrashing())
 							continue;

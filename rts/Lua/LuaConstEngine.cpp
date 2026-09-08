@@ -7,6 +7,7 @@
 #include "System/Platform/Misc.h"
 #include "Rendering/Fonts/glFont.h"
 #include "Sim/Misc/CustomColorPalette.h"
+#include "Sim/Units/Unit.h"
 
 /******************************************************************************
  * Engine constants
@@ -29,6 +30,7 @@
  * @field groupAddDoesntSelect boolean Whether 'group add' also selects the group (does both if false)
  * @field deadTeamsKeepUnitLimit boolean Whether engine redistributes dead team unitlimit to allies (false) or keeps it as-is (true)
  * @field reliableLuaMapShaders boolean Whether forward-only Lua map shaders activate without a deferred draw and Spring.SetMapShader program swaps refresh cached uniform locations
+ * @field canReviveUnits boolean Whether the engine can bring a dead unit back, i.e. whether Spring.SetUnitDead accepts `false`
  */
 
 /***
@@ -70,7 +72,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 	 *
 	 * will be compatible even on engines that don't yet know about the entry at all. */
 	lua_pushliteral(L, "FeatureSupport");
-	lua_createtable(L, 0, 11);
+	lua_createtable(L, 0, 15);
 		LuaPushNamedBool(L, "NegativeGetUnitCurrentCommand", true);
 		LuaPushNamedBool(L, "hasExitOnlyYardmaps", true);
 		LuaPushNamedNumber(L, "rmlUiApiVersion", 1);
@@ -85,6 +87,7 @@ bool LuaConstEngine::PushEntries(lua_State* L)
 		LuaPushNamedBool(L, "groupAddDoesntSelect", true);
 		LuaPushNamedBool(L, "deadTeamsKeepUnitLimit", false);
 		LuaPushNamedBool(L, "reliableLuaMapShaders", true);
+		LuaPushNamedBool(L, "canReviveUnits", CAN_REVIVE_UNITS);
 	lua_rawset(L, -3);
 
 	lua_pushliteral(L, "textColorCodes");

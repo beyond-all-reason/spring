@@ -468,7 +468,7 @@ bool CStrafeAirMoveType::Update()
 			const CCommandQueue& cmdQue = owner->commandAI->commandQue;
 
 			const bool isAttacking = (!cmdQue.empty() && (cmdQue.front()).GetID() == CMD_ATTACK);
-			const bool keepAttacking = ((owner->curTarget.type == Target_Unit && !owner->curTarget.unit->isDead) || owner->curTarget.type == Target_Pos);
+			const bool keepAttacking = ((owner->curTarget.type == Target_Unit && !owner->curTarget.unit->HasStartedDying()) || owner->curTarget.type == Target_Pos);
 
 			/*
 			const float brakeDistSq = Square(0.5f * lastSpd.SqLength2D() / decRate);
