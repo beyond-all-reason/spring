@@ -156,6 +156,7 @@ public:
 	float wobble;                    ///< how much the missile will wobble around its course
 	float dance;                     ///< how much the missile will dance
 	float trajectoryHeight;          ///< how high trajectory missiles will try to fly in
+	float expiredDrag;               ///< drag applied to missiles/torpedoes when their fuel runs out (flighttime)
 
 	bool largeBeamLaser;             // whether a BeamLaser should spawn LargeBeamLaserProjectile's or regular ones
 	bool laserHardStop;              // whether the shot should fade out or stop and contract at max-range (applies to LaserCannons only)

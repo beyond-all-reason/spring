@@ -144,7 +144,7 @@ void CTorpedoProjectile::Update()
 		} else {
 			if (!luaMoveCtrl) {
 				// must update dir and speed.w here
-				SetVelocityAndSpeed((speed * 0.98f) + (UpVector * mygravity));
+				SetVelocityAndSpeed((speed * weaponDef->expiredDrag) + (UpVector * mygravity));
 			}
 		}
 	}

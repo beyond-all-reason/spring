@@ -1295,6 +1295,7 @@ const springLegacyAI::WeaponDef* springLegacyAI::CAIAICallback::GetWeaponDefById
 		weaponDef->wobble = sAICallback->WeaponDef_getWobble(skirmishAIId, weaponDefId);
 		weaponDef->dance = sAICallback->WeaponDef_getDance(skirmishAIId, weaponDefId);
 		weaponDef->trajectoryHeight = sAICallback->WeaponDef_getTrajectoryHeight(skirmishAIId, weaponDefId);
+		weaponDef->expiredDrag = sAICallback->WeaponDef_getExpiredDrag(skirmishAIId, weaponDefId);
 		weaponDef->largeBeamLaser = sAICallback->WeaponDef_isLargeBeamLaser(skirmishAIId, weaponDefId);
 		weaponDef->isShield = sAICallback->WeaponDef_isShield(skirmishAIId, weaponDefId);
 		weaponDef->shieldRepulser = sAICallback->WeaponDef_isShieldRepulser(skirmishAIId, weaponDefId);

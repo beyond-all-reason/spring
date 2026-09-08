@@ -95,6 +95,7 @@ public:
 		, wobble(0.0f)
 		, dance(0.0f)
 		, trajectoryHeight(0.0f)
+		, expiredDrag(0.98f)
 		, largeBeamLaser(false)
 		, isShield(false)
 		, shieldRepulser(false)
@@ -212,6 +213,7 @@ public:
 		, wobble(0.0f)
 		, dance(0.0f)
 		, trajectoryHeight(0.0f)
+		, expiredDrag(0.98f)
 		, largeBeamLaser(false)
 		, isShield(false)
 		, shieldRepulser(false)
@@ -353,6 +355,7 @@ public:
 	float wobble;             ///< how much the missile will wobble around its course
 	float dance;              ///< how much the missile will dance
 	float trajectoryHeight;   ///< how high trajectory missiles will try to fly in
+	float expiredDrag;        ///< drag applied to missiles/torpedoes when their fuel runs out
 
 	bool largeBeamLaser;
 

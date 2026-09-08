@@ -235,7 +235,7 @@ void CMissileProjectile::Update()
 			// only when TTL <= 0 do we (missiles)
 			// get influenced by gravity and drag
 			if (!luaMoveCtrl)
-				SetVelocityAndSpeed((speed * 0.98f) + (UpVector * mygravity));
+				SetVelocityAndSpeed((speed * weaponDef->expiredDrag) + (UpVector * mygravity));
 		}
 	}
 

@@ -2100,6 +2100,9 @@ struct SSkirmishAICallback {
 	/** How high trajectory missiles will try to fly in. */
 	float             (CALLING_CONV *WeaponDef_getTrajectoryHeight)(int skirmishAIId, int weaponDefId);
 
+	/** Drag applied to missiles/torpedoes when their fuel runs out. */
+	float             (CALLING_CONV *WeaponDef_getExpiredDrag)(int skirmishAIId, int weaponDefId);
+
 	bool              (CALLING_CONV *WeaponDef_isLargeBeamLaser)(int skirmishAIId, int weaponDefId);
 
 	/** If the weapon is a shield rather than a weapon. */
