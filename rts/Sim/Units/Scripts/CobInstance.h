@@ -3,6 +3,7 @@
 #ifndef COB_INSTANCE_H
 #define COB_INSTANCE_H
 
+#include "CobThreadID.h"
 #include "UnitScript.h"
 #include "Sim/Units/Unit.h"
 
@@ -48,7 +49,7 @@ public:
 	CCobFile* cobFile;
 
 	std::vector<int> staticVars;
-	std::vector<int> threadIDs;
+	std::vector<CobThreadID> threadIDs;
 
 public:
 	// creg only
@@ -59,8 +60,8 @@ public:
 	void Init();
 	void PostLoad();
 
-	void AddThreadID(int threadID) { threadIDs.push_back(threadID); }
-	bool RemoveThreadID(int threadID)
+	void AddThreadID(CobThreadID threadID) { threadIDs.push_back(threadID); }
+	bool RemoveThreadID(CobThreadID threadID)
 	{
 		const auto it = std::find(threadIDs.begin(), threadIDs.end(), threadID);
 

@@ -7,6 +7,7 @@
 #include <array>
 
 #include "CobInstance.h"
+#include "CobThreadID.h"
 #include "Lua/LuaRules.h"
 
 class CCobFile;
@@ -67,7 +68,7 @@ public:
 	void Start(int functionId, int sigMask, const std::array<int, 1 + MAX_COB_ARGS>& args, bool schedule);
 	void Stop();
 
-	void SetID(int threadID) { id = threadID; }
+	void SetID(CobThreadID threadID) { id = threadID; }
 	void SetState(State s) { state = s; }
 
 	/**
@@ -100,7 +101,7 @@ public:
 
 	const std::string& GetName();
 
-	int GetID() const { return id; }
+	CobThreadID GetID() const { return id; }
 	int GetStackVal(int pos) const { return dataStack[pos]; }
 	int GetWakeTime() const { return wakeTime; }
 	int GetRetCode() const { return retCode; }
@@ -148,7 +149,7 @@ protected:
 	}
 
 protected:
-	int id = -1;
+	CobThreadID id;
 	int pc = 0;
 
 	int wakeTime = 0;

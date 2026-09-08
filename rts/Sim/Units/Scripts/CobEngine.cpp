@@ -7,6 +7,7 @@
 #include "CobThread.h"
 #include "CobFile.h"
 
+#include <cstddef>
 #include <cstdint>
 #include "System/Misc/TracyDefs.h"
 #include "Lua/LuaUI.h"
@@ -14,7 +15,8 @@
 CR_BIND(CCobEngine, )
 
 CR_REG_METADATA(CCobEngine, (
-	CR_MEMBER(threadInstances),
+	CR_MEMBER(threadSlots),
+	CR_MEMBER(recycledThreadSlots),
 	CR_MEMBER(tickAddedThreads),
 	CR_MEMBER(tickRemovedThreads),
 	CR_MEMBER(runningThreadIDs),
@@ -25,8 +27,7 @@ CR_REG_METADATA(CCobEngine, (
 	CR_IGNORED(curThread),
 	CR_IGNORED(deferredCallins),
 
-	CR_MEMBER(currentTime),
-	CR_MEMBER(threadCounter)
+	CR_MEMBER(currentTime)
 ))
 
 CR_BIND(CCobEngine::SleepingThread, )
@@ -34,38 +35,77 @@ CR_REG_METADATA(CCobEngine::SleepingThread, (
 	CR_MEMBER(id),
 	CR_MEMBER(wt)
 ))
+CR_BIND(CCobEngine::Slot, )
+CR_REG_METADATA(CCobEngine::Slot, (
+	CR_MEMBER(generation),
+	CR_MEMBER(isOccupied),
+	CR_MEMBER(thread)
+))
 
 static const char* const numCobThreadsPlot = "CobThreads";
 
-int CCobEngine::AddThread(CCobThread&& thread)
+CobThreadID CCobEngine::AllocateThreadID()
 {
-	RECOIL_DETAILED_TRACY_ZONE;
-	if (thread.GetID() == -1)
-		thread.SetID(GenThreadID());
-
-	CCobInstance* o = thread.cobInst;
-	CCobThread& t = threadInstances[thread.GetID()];
-
-	// move thread into registry, hand its ID to owner
-	t = std::move(thread);
-	o->AddThreadID(t.GetID());
-
-	TracyPlot(numCobThreadsPlot, static_cast<int64_t>(threadInstances.size()));
-
-	return (t.GetID());
+	size_t slotIndex;
+    
+	if (recycledThreadSlots.empty()) {
+		slotIndex = threadSlots.size();
+		threadSlots.emplace_back();
+	} else {
+		slotIndex = recycledThreadSlots.back();
+		recycledThreadSlots.pop_back();
+	}
+	
+	Slot* slot = &threadSlots[slotIndex];
+	slot->generation = (slot->generation + 1) & CobThreadID::GEN_MAX;
+	slot->isOccupied = true;
+	return CobThreadID::Pack(slot->generation, slotIndex);
 }
 
-bool CCobEngine::RemoveThread(int threadID) {
+CobThreadID CCobEngine::AddThread(CCobThread&& thread)
+{
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto it = threadInstances.find(threadID);
+	if (!thread.GetID().IsValid()) {
+		thread.SetID(AllocateThreadID());
+	}
+	assert(thread.GetID().IsValid());
 
-	if (it != threadInstances.end()) {
-		threadInstances.erase(it);
-		TracyPlot(numCobThreadsPlot, static_cast<int64_t>(threadInstances.size()));
-		return true;
+	uint32_t generation;
+    size_t slotIndex;
+    thread.GetID().Unpack(generation, slotIndex);
+
+	Slot* slot = &threadSlots[slotIndex];
+	slot->thread = std::move(thread);
+	slot->thread.cobInst->AddThreadID(slot->thread.GetID());
+
+	TracyPlot(numCobThreadsPlot, static_cast<int64_t>(threadSlots.size() - recycledThreadSlots.size()));
+	return slot->thread.GetID();
+}
+
+bool CCobEngine::RemoveThread(CobThreadID threadID) {
+	RECOIL_DETAILED_TRACY_ZONE;
+	assert(threadID.IsValid());
+
+    size_t slotIndex;
+	uint32_t generation;
+	threadID.Unpack(generation, slotIndex);
+	if unlikely(slotIndex >= threadSlots.size()) {
+    	return false;
 	}
 
-	return false;
+	Slot* matchingSlot = &threadSlots[slotIndex];
+	if (!matchingSlot->isOccupied || matchingSlot->generation != generation) {
+		return false;
+	}
+
+	std::destroy_at(&matchingSlot->thread);
+	std::construct_at(&matchingSlot->thread); // avoids double destruct when the deque tears down at engine shutdown
+
+	matchingSlot->isOccupied = false;
+	recycledThreadSlots.push_back(slotIndex);
+
+	TracyPlot(numCobThreadsPlot, static_cast<int64_t>(threadSlots.size() - recycledThreadSlots.size()));
+	return true;
 }
 
 void CCobEngine::ProcessQueuedThreads() {
@@ -73,12 +113,12 @@ void CCobEngine::ProcessQueuedThreads() {
 
 	// Remove threads killed during Tick by other thread (SIGNAL), we do it
 	// here as nothing is actively referencing any thread's memory here.
-	for (int threadID: tickRemovedThreads) {
+	for (CobThreadID threadID: tickRemovedThreads) {
 		RemoveThread(threadID);
 	}
 	tickRemovedThreads.clear();
 
-	// move new threads spawned by START into threadInstances;
+	// move new threads spawned by START into threadSlots;
 	// their ID's will already have been scheduled into either
 	// waitingThreadIDs or sleepingThreadIDs
 	for (CCobThread& t: tickAddedThreads) {
@@ -100,7 +140,7 @@ void CCobEngine::ScheduleThread(const CCobThread* thread)
 			sleepingThreadIDs.push(SleepingThread{thread->GetID(), thread->GetWakeTime()});
 		} break;
 		default: {
-			LOG_L(L_ERROR, "[COBEngine::%s] unknown state %d for thread %d", __func__, thread->GetState(), thread->GetID());
+			LOG_L(L_ERROR, "[COBEngine::%s] unknown state %d for thread %d", __func__, thread->GetState(), thread->GetID().Raw());
 		} break;
 	}
 }
@@ -110,8 +150,8 @@ void CCobEngine::SanityCheckThreads(const CCobInstance* owner)
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (false) {
 		// no threads belonging to owner should be left
-		for (const auto& p: threadInstances) {
-			assert(p.second.cobInst != owner);
+		for (const auto& p: threadSlots) {
+			assert(p.thread.cobInst != owner || p.isOccupied == false);
 		}
 		for (const CCobThread& t: tickAddedThreads) {
 			assert(t.cobInst != owner);
@@ -164,7 +204,7 @@ void CCobEngine::WakeSleepingThreads()
 				RemoveThread(zzzThread->GetID());
 			} break;
 			default: {
-				LOG_L(L_ERROR, "[COBEngine::%s] unknown state %d for thread %d", __func__, zzzThread->GetState(), zzzThread->GetID());
+				LOG_L(L_ERROR, "[COBEngine::%s] unknown state %d for thread %d", __func__, zzzThread->GetState(), zzzThread->GetID().Raw());
 			} break;
 		}
 	}
@@ -174,7 +214,7 @@ void CCobEngine::TickRunningThreads()
 {
 	ZoneScoped;
 	// advance all currently running threads
-	for (const int threadID: runningThreadIDs) {
+	for (const CobThreadID threadID: runningThreadIDs) {
 		TickThread(GetThread(threadID));
 	}
 
@@ -238,3 +278,4 @@ void CCobEngine::RunDeferredCallins()
 			luaUI->Cob2LuaBatch(cmdStr, callins);
 	}
 }
+

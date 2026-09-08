@@ -120,6 +120,7 @@ add_library(engineSim STATIC
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/CobInstance.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/CobScriptNames.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/CobThread.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/CobThreadID.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/LuaScriptNames.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/LuaUnitScript.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/Units/Scripts/NullUnitScript.cpp"
