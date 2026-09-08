@@ -57,24 +57,24 @@ void CCannon::UpdateRange(const float val)
 }
 
 
-bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result, int avoidFlagsOverride) const
+TargetCheckResult CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
 	// assume we can still fire at partially submerged targets
 	if (!weaponDef->waterweapon && TargetUnderWater(tgtPos, trg))
-		return RejectTargetCheck(result, TargetCheckResult::InvalidTarget);
+		return TargetCheckResult::InvalidTarget;
 
 	if (projectileSpeed == 0.0f)
-		return true;
+		return TargetCheckResult::Clear;
 
 	float3 launchDir = CalcWantedDir(tgtPos - srcPos);
 	float3 targetVec = (tgtPos - srcPos) * XZVector;
 
 	if (launchDir.SqLength() == 0.0f)
-		return RejectTargetCheck(result, TargetCheckResult::Range);
+		return TargetCheckResult::Range;
 	if (targetVec.SqLength2D() == 0.0f)
-		return true;
+		return TargetCheckResult::Clear;
 
 	const float xzTargetDist = targetVec.LengthNormalize();
 
@@ -96,10 +96,10 @@ bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 	const float angleSpread = (AccuracyExperience() + SprayAngleExperience()) * 0.6f * 0.9f;
 
 	if (groundDist > 0.0f)
-		return RejectTargetCheck(result, TargetCheckResult::Terrain);
+		return TargetCheckResult::Terrain;
 
 	// TODO: add a forcedUserTarget mode (enabled with meta key e.g.) and skip this test accordingly
-	return (!TraceRay::TestTrajectoryCone(srcPos, targetVec, xzTargetDist, linCoeff, qdrCoeff, angleSpread, owner->allyteam, traceFlags, owner, result));
+	return (TraceRay::TestTrajectoryCone(srcPos, targetVec, xzTargetDist, linCoeff, qdrCoeff, angleSpread, owner->allyteam, traceFlags, owner));
 }
 
 void CCannon::FireImpl(const bool scriptCall)

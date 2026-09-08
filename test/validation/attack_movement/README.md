@@ -53,3 +53,18 @@ For interactive review, use the same placements and masks with a graphical
 engine. Compare `attackmovementmode=lua` with the unset option and `fallback`.
 The equivalent BAR policy deliberately retains the native 90% range behavior;
 these tests do not claim that all behavior reports in #3331 are fixed.
+
+## Command lifecycle
+
+Also copy `ended.lua` into the isolated game's gadget directory, then run
+`ended.txt` through `run.py`. Expected: `PASS ended=10`. Cases cover completion,
+explicit removal, target death, replacement, front insertion, WAIT suspension and inactive queued
+removal. Empty queues and WAIT successors must stop when the callback clears the
+old goal; MOVE successors must remain queued and continue. The callback checks
+the old tag and reason and observes the successor before it executes.
+
+`UnitCommandEnded` supplements `UnitCmdDone`; it does not change its legacy
+notification contract or install a default stop policy. `completed` means the
+CAI finished the command, not necessarily that its gameplay objective succeeded.
+The hook covers shared FinishCommand and explicit queue editing paths; internal
+CAI subcommand insertion is not a general suspension/resumption notification.

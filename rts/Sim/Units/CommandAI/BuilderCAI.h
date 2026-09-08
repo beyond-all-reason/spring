@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _BUILDER_CAI_H_
-#define _BUILDER_CAI_H_
+#pragma once
 
 #include "MobileCAI.h"
 #include "Sim/Units/BuildInfo.h"
@@ -32,7 +31,7 @@ public:
 	int GetDefaultCmd(const CUnit* unit, const CFeature* feature);
 	void SlowUpdate();
 
-	void FinishCommand();
+	void FinishCommand(CommandEndReason reason = CommandEndReason::Completed);
 	void GiveCommandReal(const Command& c, bool fromSynced = true);
 	void BuggerOff(const float3& pos, float radius);
 	bool TargetInterceptable(const CUnit* unit, float uspeed);
@@ -143,5 +142,3 @@ private:
 
 	bool range3D;
 };
-
-#endif // _BUILDER_CAI_H_

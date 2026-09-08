@@ -77,24 +77,23 @@ namespace TraceRay {
 	);
 
 	/**
-	 * @return true if there is an object (allied/neutral unit, feature)
-	 * within the firing cone of \<owner\> (that might be hit)
+	 * @return Clear if unobstructed, otherwise the first blocker category
+	 * within the firing cone of \<owner\>.
 	 */
-	bool TestCone(
+	TargetCheckResult TestCone(
 		const float3& from,
 		const float3& dir,
 		float length,
 		float spread,
 		int allyteam,
 		int traceFlags,
-		CUnit* owner,
-		TargetCheckResult* result = nullptr);
+		CUnit* owner);
 
 	/**
-	 * @return true if there is an object (allied/neutral unit, feature)
-	 *  within the firing trajectory of \<owner\> (that might be hit)
+	 * @return Clear if unobstructed, otherwise the first blocker category
+	 * within the firing trajectory of \<owner\>.
 	 */
-	bool TestTrajectoryCone(
+	TargetCheckResult TestTrajectoryCone(
 		const float3& from,
 		const float3& dir,
 		float length,
@@ -103,6 +102,5 @@ namespace TraceRay {
 		float spread,
 		int allyteam,
 		int traceFlags,
-		CUnit* owner,
-		TargetCheckResult* result = nullptr);
+		CUnit* owner);
 }

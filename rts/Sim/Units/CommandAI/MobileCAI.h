@@ -30,9 +30,9 @@ public:
 
 	void StopMove() override;
 	void StopMoveAndKeepPointing(const float3& p, const float r, bool b);
-	void StopMoveAndFinishCommand() {
+	void StopMoveAndFinishCommand(CommandEndReason reason = CommandEndReason::Completed) {
 		StopMove();
-		FinishCommand();
+		FinishCommand(reason);
 	}
 
 	bool AllowedCommand(const Command& c, bool fromSynced) override;
@@ -40,11 +40,14 @@ public:
 	void SlowUpdate() override;
 	void GiveCommandReal(const Command& c, bool fromSynced = true) override;
 	void NonMoving();
-	void FinishCommand() override;
+	void FinishCommand(CommandEndReason reason = CommandEndReason::Completed) override;
 	void StopSlowGuard();
 	void StartSlowGuard(float speed);
 	void ExecuteAttack(Command& c) override;
-	int LuaAttackMovement(lua_State* L, const char* query);
+	const Command& CheckAttackMovementContext(lua_State* L) const;
+	int GetAttackMovementState(lua_State* L);
+	int GetAttackWeaponState(lua_State* L);
+	int SetAttackMovement(lua_State* L);
 	bool CallAttackMovement(Command& c);
 	void ExecuteStop(Command& c) override;
 

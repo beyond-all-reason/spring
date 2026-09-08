@@ -524,24 +524,21 @@ float GuiTraceRay(
 }
 
 
-bool TestCone(
+TargetCheckResult TestCone(
 	const float3& from,
 	const float3& dir,
 	float length,
 	float spread,
 	int allyteam,
 	int traceFlags,
-	CUnit* owner,
-	TargetCheckResult* result
+	CUnit* owner
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetQuadsOnRay(qfQuery, from, dir, length);
 
 	if (qfQuery.quads->empty()) {
-		if (result != nullptr)
-			*result = TargetCheckResult::Blocked;
-		return true;
+		return TargetCheckResult::Blocked;
 	}
 
 	const bool scanForAllies   = ((traceFlags & Collision::NOFRIENDLIES) == 0);
@@ -559,9 +556,7 @@ bool TestCone(
 					continue;
 
 				if (TestConeHelper(from, dir, length, spread, u)) {
-					if (result != nullptr)
-						*result = TargetCheckResult::Friendly;
-					return true;
+					return TargetCheckResult::Friendly;
 				}
 			}
 		}
@@ -576,9 +571,7 @@ bool TestCone(
 					continue;
 
 				if (TestConeHelper(from, dir, length, spread, u)) {
-					if (result != nullptr)
-						*result = TargetCheckResult::Neutral;
-					return true;
+					return TargetCheckResult::Neutral;
 				}
 			}
 		}
@@ -589,20 +582,18 @@ bool TestCone(
 					continue;
 
 				if (TestConeHelper(from, dir, length, spread, f)) {
-					if (result != nullptr)
-						*result = TargetCheckResult::Feature;
-					return true;
+					return TargetCheckResult::Feature;
 				}
 			}
 		}
 	}
 
-	return false;
+	return TargetCheckResult::Clear;
 }
 
 
 
-bool TestTrajectoryCone(
+TargetCheckResult TestTrajectoryCone(
 	const float3& from,
 	const float3& dir,
 	float length,
@@ -611,17 +602,14 @@ bool TestTrajectoryCone(
 	float spread,
 	int allyteam,
 	int traceFlags,
-	CUnit* owner,
-	TargetCheckResult* result
+	CUnit* owner
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	QuadFieldQuery qfQuery;
 	quadField.GetQuadsOnRay(qfQuery, from, dir, length);
 
 	if (qfQuery.quads->empty()) {
-		if (result != nullptr)
-			*result = TargetCheckResult::Blocked;
-		return true;
+		return TargetCheckResult::Blocked;
 	}
 
 	const bool scanForAllies   = ((traceFlags & Collision::NOFRIENDLIES) == 0);
@@ -640,9 +628,7 @@ bool TestTrajectoryCone(
 					continue;
 
 				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, u)) {
-					if (result != nullptr)
-						*result = TargetCheckResult::Friendly;
-					return true;
+					return TargetCheckResult::Friendly;
 				}
 
 			}
@@ -659,9 +645,7 @@ bool TestTrajectoryCone(
 					continue;
 
 				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, u)) {
-					if (result != nullptr)
-						*result = TargetCheckResult::Neutral;
-					return true;
+					return TargetCheckResult::Neutral;
 				}
 			}
 		}
@@ -673,15 +657,13 @@ bool TestTrajectoryCone(
 					continue;
 
 				if (TestTrajectoryConeHelper(from, dir, length, linear, quadratic, spread, 0.0f, f)) {
-					if (result != nullptr)
-						*result = TargetCheckResult::Feature;
-					return true;
+					return TargetCheckResult::Feature;
 				}
 			}
 		}
 	}
 
-	return false;
+	return TargetCheckResult::Clear;
 }
 
 

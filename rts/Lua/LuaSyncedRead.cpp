@@ -5503,7 +5503,7 @@ int LuaSyncedRead::GetUnitWeaponTryTarget(lua_State* L)
 			return 0;
 	}
 
-	lua_pushboolean(L, weapon->TryTarget(SWeaponTarget(enemy, pos, true)));
+	lua_pushboolean(L, weapon->TryTarget(SWeaponTarget(enemy, pos, true)) == TargetCheckResult::Clear);
 	return 1;
 }
 
@@ -5709,7 +5709,7 @@ int LuaSyncedRead::GetUnitWeaponHaveFreeLineOfFire(lua_State* L)
 		} break;
 	}
 
-	lua_pushboolean(L, weapon->HaveFreeLineOfFire(srcPos, tgtPos, SWeaponTarget(enemy, tgtPos, true)));
+	lua_pushboolean(L, weapon->HaveFreeLineOfFire(srcPos, tgtPos, SWeaponTarget(enemy, tgtPos, true)) == TargetCheckResult::Clear);
 	return 1;
 }
 

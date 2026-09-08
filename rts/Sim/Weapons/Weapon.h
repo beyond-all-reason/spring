@@ -63,14 +63,14 @@ public:
 	/// test if the enemy/mapspot is in range/angle
 	virtual bool TestRange(const float3& tgtPos, const SWeaponTarget& trg) const;
 	/// test if something is blocking our LineOfFire
-	virtual bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const;
+	virtual TargetCheckResult HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride = -1) const;
 
 	virtual bool CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const;
 
-	bool TryTarget(const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const;
-	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1);
-	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1);
-	bool TryTargetHeading(short heading, const SWeaponTarget& trg, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1);
+	TargetCheckResult TryTarget(const SWeaponTarget& trg, int avoidFlagsOverride = -1) const;
+	TargetCheckResult TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, int avoidFlagsOverride = -1);
+	TargetCheckResult TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire, int avoidFlagsOverride = -1);
+	TargetCheckResult TryTargetHeading(short heading, const SWeaponTarget& trg, int avoidFlagsOverride = -1);
 
 	bool WantOwnerRotation() const { return onlyForward; }
 public:
@@ -139,7 +139,7 @@ private:
 	bool CallAimingScript(bool waitForAim);
 	void HoldIfTargetInvalid();
 
-	bool TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool preFire = false, TargetCheckResult* result = nullptr, int avoidFlagsOverride = -1) const;
+	TargetCheckResult TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool preFire = false, int avoidFlagsOverride = -1) const;
 public:
 	CUnit* owner;
 	CWeapon* slavedTo;                      // use this weapon to choose target

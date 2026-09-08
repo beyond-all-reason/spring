@@ -87,6 +87,7 @@ class CEventHandler
 
 		void UnitIdle(const CUnit* unit);
 		void UnitCommand(const CUnit* unit, const Command& command, int playerNum, bool fromSynced, bool fromLua);
+		void UnitCommandEnded(const CUnit* unit, const Command& command, const char* reason);
 		void UnitCmdDone(const CUnit* unit, const Command& command                                              );
 		void UnitDamaged(
 			const CUnit* unit,
@@ -546,6 +547,12 @@ inline void CEventHandler::UnitCommand(const CUnit* unit, const Command& command
 {
 	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitCommand, unit, command, playerNum, fromSynced, fromLua)
 }
+
+inline void CEventHandler::UnitCommandEnded(const CUnit* unit, const Command& command, const char* reason)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitCommandEnded, unit, command, reason)
+}
+
 
 inline void CEventHandler::UnitCmdDone(const CUnit* unit, const Command& command)
 {

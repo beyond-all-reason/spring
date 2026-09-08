@@ -4015,7 +4015,9 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
  */
 int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
 {
-	return AttackMovement(L, "state");
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->GetAttackMovementState(L) : 0;
 }
 
 /*** Run the native rotation/heading tests for an active attack-movement callback.
@@ -4048,7 +4050,9 @@ int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
  */
 int LuaSyncedCtrl::GetUnitAttackWeaponState(lua_State* L)
 {
-	return AttackMovement(L, "weapon");
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->GetAttackWeaponState(L) : 0;
 }
 
 /*** Apply a native movement primitive during AttackCommandMovement.
@@ -4069,19 +4073,11 @@ int LuaSyncedCtrl::GetUnitAttackWeaponState(lua_State* L)
  */
 int LuaSyncedCtrl::SetUnitAttackMovement(lua_State* L)
 {
-	return AttackMovement(L, nullptr);
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->SetAttackMovement(L) : 0;
 }
 
-int LuaSyncedCtrl::AttackMovement(lua_State* L, const char* query)
-{
-	CUnit* unit = ParseUnit(L, __func__, 1);
-	if (unit == nullptr)
-		return 0;
-	auto* cai = dynamic_cast<CMobileCAI*>(unit->commandAI);
-	if (cai == nullptr)
-		return 0;
-	return cai->LuaAttackMovement(L, query);
-}
 
 
 /*** Used by default commands to get in build-, attackrange etc.

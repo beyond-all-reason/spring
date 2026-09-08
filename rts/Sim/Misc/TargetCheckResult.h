@@ -4,7 +4,7 @@
 
 // The first failed native targeting test, not a prediction of a future shot.
 enum class TargetCheckResult {
-	Clear,
+	Clear = 0,
 	NotChecked,
 	InvalidTarget,
 	Range,
@@ -14,13 +14,6 @@ enum class TargetCheckResult {
 	Feature,
 	Blocked,
 };
-
-inline bool RejectTargetCheck(TargetCheckResult* result, TargetCheckResult reason)
-{
-	if (result != nullptr)
-		*result = reason;
-	return false;
-}
 
 inline const char* TargetCheckResultName(TargetCheckResult result)
 {

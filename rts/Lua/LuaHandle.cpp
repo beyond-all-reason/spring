@@ -1353,6 +1353,33 @@ void CLuaHandle::UnitCommand(const CUnit* unit, const Command& command, int play
 }
 
 
+/*** Called when the front command finishes, is removed, or is interrupted.
+ * Runs before the next command executes. Interruption can retain the old command
+ * in the queue (front insertion); replacement discards it. This is not emitted
+ * for removal of inactive queued commands. UnitCmdDone keeps its legacy behavior.
+ * Synced Lua can clear movement with Spring.ClearUnitGoal without adding STOP.
+ * @function Callins:UnitCommandEnded
+ * @param unitID integer
+ * @param cmdID integer
+ * @param cmdTag integer
+ * @param reason string completed, removed, targetLost, or interrupted
+ */
+void CLuaHandle::UnitCommandEnded(const CUnit* unit, const Command& command, const char* reason)
+{
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 5, __func__);
+	const LuaUtils::ScopedDebugTraceBack traceBack(L);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, command.GetID());
+	lua_pushnumber(L, command.GetTag());
+	lua_pushstring(L, reason);
+	RunCallInTraceback(L, cmdStr, 4, 0, traceBack.GetErrFuncIdx(), false);
+}
+
+
 /*** Called when a unit completes a command.
  *
  * @function Callins:UnitCmdDone

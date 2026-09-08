@@ -48,11 +48,11 @@ void CStarburstLauncher::FireImpl(const bool scriptCall)
 	WeaponProjectileFactory::LoadProjectile(params);
 }
 
-bool CStarburstLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, TargetCheckResult* result, int avoidFlagsOverride) const
+TargetCheckResult CStarburstLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
-	return (!TraceRay::TestCone(srcPos, weaponDef->fixedLauncher? weaponDir: UpVector, 100.0f, 0.0f, owner->allyteam, traceFlags, owner, result));
+	return (TraceRay::TestCone(srcPos, weaponDef->fixedLauncher? weaponDir: UpVector, 100.0f, 0.0f, owner->allyteam, traceFlags, owner));
 }
 
 float CStarburstLauncher::GetRange2D(float boost, float ydiff) const

@@ -1184,7 +1184,7 @@ bool CGuiHandler::TryTarget(const SCommandDescription& cmdDesc) const
 			if (u->immobile) {
 				// immobile unit
 				// check range and weapon target properties
-				if (w->TryTarget(wtrg)) {
+				if (w->TryTarget(wtrg) == TargetCheckResult::Clear) {
 					return true;
 				}
 			} else {

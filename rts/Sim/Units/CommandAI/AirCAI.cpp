@@ -546,11 +546,11 @@ bool CAirCAI::IsValidTarget(const CUnit* enemy, CWeapon* weapon) const {
 
 
 
-void CAirCAI::FinishCommand()
+void CAirCAI::FinishCommand(CommandEndReason reason)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	targetAge = 0;
-	CCommandAI::FinishCommand();
+	CCommandAI::FinishCommand(reason);
 }
 
 void CAirCAI::BuggerOff(const float3& pos, float radius)

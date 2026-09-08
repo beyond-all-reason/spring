@@ -54,6 +54,7 @@ CALLIN_LIST = {
 	"RenderUnitDestroyed",
 	"UnitExperience",
 	"UnitIdle",
+	"UnitCommandEnded",
 	"UnitCmdDone",
 	"UnitPreDamaged",
 	"UnitDamaged",
