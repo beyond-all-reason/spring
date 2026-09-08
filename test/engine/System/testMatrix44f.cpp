@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <random>
+
 #include "System/simd_compat.h"
 #include "System/Matrix44f.h"
 #include "System/float4.h"
@@ -99,7 +101,7 @@ static const int testRuns = 40000000;
 }
 
 
-_noinline static void MatrixMatrixMultiply(CMatrix44f* m1, const CMatrix44f& m2)
+_noinline static void MatrixMatrixMultiplySSEOld(CMatrix44f* m1, const CMatrix44f& m2)
 {
 	assert(long(&m1->m[0]) % 16 == 0); // 16byte aligned
 
@@ -206,10 +208,11 @@ _noinline static int TestMMSSE()
 	ScopedOnceTimer timer("Matrix-Matrix-Mult: sse");
 	CMatrix44f m1(m_);
 	for (int i = 0; i < testRuns; ++i) {
-		MatrixMatrixMultiply(&m1, m);
+		MatrixMatrixMultiplySSEOld(&m1, m);
 	}
 	return spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
 }
+
 
 _noinline static int TestSpring()
 {
@@ -286,4 +289,83 @@ TEST_CASE("Matrix44MatrixMultiply")
 			m[i] = 0.0f;
 		}
 	}
+}
+
+TEST_CASE("Matrix44MatrixMultiplySSE")
+{
+	for (int i = 0; i < 16; ++i) {
+		if ((i != 7) && (i != 3)) {
+			m[i] = float(i + 1) / 31.3125f;
+			m_[i] = float(i + 1) / 31.3125f;
+		} else {
+			m[i] = 0.0f;
+			m_[i] = 0.0f;
+		}
+	}
+
+	ScopedOnceTimer timer("Matrix-Matrix-Mult: sse");
+	CMatrix44f m1(m_);
+	for (int i = 0; i < testRuns; ++i) {
+		MatrixMatrixMultiplySSEOld(&m1, m);
+	}
+	spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
+
+	spring_clock::PopTickRate();
+}
+
+TEST_CASE("Matrix44MatrixMultiplySSEOldVsSSENew")
+{
+	const int numTests = 100000;
+	bool allMatch = true;
+	std::mt19937 rng(12345);
+	std::uniform_real_distribution<float> dist(-10.0f, 10.0f);
+
+	for (int t = 0; t < numTests; ++t) {
+		for (int i = 0; i < 16; ++i) {
+			m[i] = dist(rng);
+		}
+
+		for (int i = 0; i < 16; ++i) {
+			if (i == 3 || i == 7) {
+				m_[i] = 0.0f;
+			} else {
+				m_[i] = dist(rng);
+			}
+		}
+
+		assert(m_[3] == 0.0f);
+		assert(m_[7] == 0.0f);
+
+		CMatrix44f resultNew = m * m_;
+		MatrixMatrixMultiplySSEOld(&m, m_);
+
+		if (!(m == resultNew)) {
+			allMatch = false;
+			break;
+		}
+	}
+
+	CHECK(allMatch == true);
+}
+
+TEST_CASE("Matrix44MatrixMultiplySSE_Opt")
+{
+	for (int i = 0; i < 16; ++i) {
+		if ((i != 7) && (i != 3)) {
+			m[i] = float(i + 1) / 31.3125f;
+			m_[i] = float(i + 1) / 31.3125f;
+		} else {
+			m[i] = 0.0f;
+			m_[i] = 0.0f;
+		}
+	}
+
+	ScopedOnceTimer timer("Matrix-Matrix-Mult: sse_new");
+	CMatrix44f m1(m_);
+	for (int i = 0; i < testRuns; ++i) {
+		m1 = m1 * m_;
+	}
+	spring::LiteHash(&m1, sizeof(CMatrix44f), 0);
+
+	spring_clock::PopTickRate();
 }
