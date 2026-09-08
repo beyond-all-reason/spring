@@ -57,7 +57,7 @@ std::string CLuaGaia::GetSyncedFileName() const
 
 std::string CLuaGaia::GetInitFileModes() const
 {
-	return SPRING_VFS_MAP_BASE;
+	return SPRING_VFS_MOD SPRING_VFS_MAP_BASE;
 }
 
 int CLuaGaia::GetInitSelectTeam() const
