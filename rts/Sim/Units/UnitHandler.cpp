@@ -268,7 +268,7 @@ bool CUnitHandler::QueueDeleteUnit(CUnit* unit)
 	// there are many ways to fiddle with "deathScriptFinished", so a unit may
 	// arrive here not having been properly killed while isDead is still false
 	// make sure we always call Killed; no-op if isDead was already set to true
-	unit->ForcedKillUnit(nullptr, false, true);
+	unit->ForcedKillUnit(nullptr, false, true, -CSolidObject::DAMAGE_FORCE_DELETED);
 	unitsToBeRemoved.push_back(unit);
 	return true;
 }
