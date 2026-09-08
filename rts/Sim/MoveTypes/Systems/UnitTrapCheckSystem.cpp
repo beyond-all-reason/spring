@@ -108,7 +108,7 @@ void UnitTrapCheckSystem::Update() {
         TagUnitsThatMayBeStuck(curList, object, curThread);
     });
 
-    view.each([](entt::entity entity){ Sim::registry.remove<UnitTrapCheck>(entity); });
+    Sim::registry.clear<UnitTrapCheck>();
 }
 
 void UnitTrapCheckSystem::Shutdown() {
