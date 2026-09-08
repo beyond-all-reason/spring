@@ -1757,9 +1757,11 @@ void CCommandAI::WeaponFired(CWeapon* weapon, const bool searchForNewTarget, boo
 		// manual fire or attack commands with meta will only fire a single salvo
 		// noAutoTarget weapons finish an attack commands after a
 		// salvo if they have more orders queued
-		if (weapon->weaponDef->manualfire && !(c.GetOpts() & META_KEY))
+		if (weapon->weaponDef->manualfire && !(c.GetOpts() & META_KEY)) {
 			orderFinished = true;
-
+			StopMove(); // additional fix for https://springrts.com/mantis/view.php?id=4131
+		} 
+		
 		if (weapon->noAutoTarget && !(c.GetOpts() & META_KEY) && haveGroundAttackCmd && HasMoreMoveCommands())
 			orderFinished = true;
 
