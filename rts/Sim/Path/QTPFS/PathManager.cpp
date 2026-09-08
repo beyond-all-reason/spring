@@ -198,7 +198,7 @@ QTPFS::PathManager::~PathManager() {
 
 	// print out and clear anything still left in the registry
 	// due to delayed path deletion there may be some entities still around.
-	for ( auto& entity : registry.storage<QTPFS::entity>() ) {
+	for ( auto entity : registry.storage<QTPFS::entity>() ) {
 		bool isPath = registry.all_of<IPath>(entity);
 		bool isUnsyncedPath = registry.all_of<UnsyncedIPath>(entity);
 		bool isExternallyManagedSyncedPath = registry.all_of<ExternallyManagedSyncedIPath>(entity);
