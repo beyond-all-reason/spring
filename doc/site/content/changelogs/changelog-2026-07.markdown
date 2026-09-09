@@ -3,7 +3,7 @@ title = "Release 2026.07"
 aliases = ['/changelogs/changelog-2026-07']
 +++
 
-This is the changelog since version 2025.07 until **version 2025.07.04**, which was released on 2026-08-04.
+This is the changelog since version 2025.06 until **version 2025.07.04**, which was released on 2026-08-04.
 
 ## Caveats
 - removed Java bindings for Skirmish AI.
