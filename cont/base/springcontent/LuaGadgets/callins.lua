@@ -86,6 +86,7 @@ CALLIN_LIST = {
 	"StockpileChanged",
 	"UnitWeaponBurstStart",
 	"UnitWeaponBurstEnd",
+	"UnitWeaponFired",
 
 	-- feature callins
 	"FeatureCreated",

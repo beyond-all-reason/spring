@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef LUA_HANDLE_H
-#define LUA_HANDLE_H
+#pragma once
 #include <cinttypes>
 
 #include "System/EventClient.h"
@@ -197,6 +196,7 @@ class CLuaHandle : public CEventClient
 		                      const CWeapon* weapon, int oldCount) override;
 		void UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon) override;
 		void UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon) override;
+		void UnitWeaponFired(const CUnit* unit, const CWeapon* weapon) override;
 
 		void Save(zipFile archive) override;
 
@@ -377,6 +377,7 @@ class CLuaHandle : public CEventClient
 		std::vector<bool> watchFeatureDefs;     // callin masks for UnitFeatureCollision
 		std::vector<bool> watchProjectileDefs;  // callin masks for Projectile*
 		std::vector<bool> watchWeaponBurstDefs; // callin masks for UnitWeaponBurstStart, UnitWeaponBurstEnd
+		std::vector<bool> watchWeaponFiredDefs; // callin mask for UnitWeaponFired
 		std::vector<bool> watchExplosionDefs;   // callin masks for Explosion
 		std::vector<bool> watchAllowTargetDefs; // callin masks for AllowWeapon*Target*
 
@@ -443,6 +444,3 @@ inline bool CLuaHandle::RunCallInLUS(lua_State* L, std::string* ts, int inArgs, 
 
 /******************************************************************************/
 /******************************************************************************/
-
-
-#endif /* LUA_HANDLE_H */

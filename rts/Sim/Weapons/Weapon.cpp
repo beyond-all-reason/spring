@@ -596,6 +596,9 @@ void CWeapon::UpdateSalvo()
 		Fire(false);
 	}
 
+	if (projectilesPerShot > 0)
+		eventHandler.UnitWeaponFired(owner, this);
+
 	// Rock the unit in the direction of fire
 	if (owner->script->HasRockUnit())
 		owner->script->WorldRockUnit((-wantedDir).SafeNormalize2D());
