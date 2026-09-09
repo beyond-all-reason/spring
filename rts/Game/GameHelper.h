@@ -29,6 +29,10 @@ struct UnitDef;
 struct MoveDef;
 struct BuildInfo;
 
+namespace QueuedBuildOverlap {
+	enum class Result;
+}
+
 class ExplosionHitObject {
 private:
 	using VariantType = std::variant<std::monostate, CUnit*, CFeature*, CWeapon*>;
@@ -153,6 +157,10 @@ public:
 		const int2& xrange,
 		const int2& zrange
 	);
+
+	/// Classify a queued-build conflict as cancellation, rejected overlap, or
+	/// no conflict. The occupied-cell test is directional and yardmap-aware.
+	static QueuedBuildOverlap::Result TestQueuedBuildOverlap(const BuildInfo& queuedBuild, const BuildInfo& buildInfo);
 
 	///< test whether a blocked map square has a build override
 	static bool TestBlockSquareForBuildOnly(

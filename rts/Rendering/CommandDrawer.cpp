@@ -652,7 +652,11 @@ void CommandDrawer::DrawDefaultCommand(const Command& c, const CUnit* owner) con
 	lineDrawer.DrawLineAndIcon(dd->cmdIconID, unit->GetObjDrawErrorPos(owner->allyteam), dd->color);
 }
 
-void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
+void CommandDrawer::DrawQuedBuildingSquares(
+	const CBuilderCAI* cai,
+	const spring::unordered_set<unsigned int>& cancelledCommandTags,
+	const float* overlapColor
+) const
 {
 	const CCommandQueue& commandQue = cai->commandQue;
 	const auto& buildOptions = cai->buildOptions;
@@ -663,7 +667,6 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 	for (const Command& c: commandQue) {
 		if (buildOptions.find(c.GetID()) == buildOptions.end())
 			continue;
-
 		BuildInfo bi;
 
 		if (!bi.Parse(c))
@@ -677,6 +680,7 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 
 	// worst case - 2 squares per building (when underwater) - 8 vertices * 3 floats
 	std::vector<GLfloat>   quadVerts(buildCommands * 12);
+	std::vector<GLfloat> cancelledQuadVerts(buildCommands * 12);
 	std::vector<GLfloat> uwquadVerts(buildCommands * 12); // underwater
 	// 4 vertical lines
 	std::vector<GLfloat> lineVerts(uwaterCommands * 24);
@@ -684,13 +688,13 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 	std::vector<GLfloat> lineColors(uwaterCommands * 48);
 
 	unsigned int   quadcounter = 0;
+	unsigned int cancelledQuadcounter = 0;
 	unsigned int uwquadcounter = 0;
 	unsigned int   linecounter = 0;
 
 	for (const Command& c: commandQue) {
 		if (buildOptions.find(c.GetID()) == buildOptions.end())
 			continue;
-
 		BuildInfo bi;
 
 		if (!bi.Parse(c))
@@ -707,18 +711,21 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 		const float x2 = bi.pos.x + xsize;
 		const float z2 = bi.pos.z + zsize;
 
-		quadVerts[quadcounter++] = x1;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z1;
-		quadVerts[quadcounter++] = x1;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z2;
-		quadVerts[quadcounter++] = x2;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z2;
-		quadVerts[quadcounter++] = x2;
-		quadVerts[quadcounter++] = h + 1;
-		quadVerts[quadcounter++] = z1;
+		std::vector<GLfloat>& verts = cancelledCommandTags.contains(c.GetTag()) ? cancelledQuadVerts : quadVerts;
+		unsigned int& counter = cancelledCommandTags.contains(c.GetTag()) ? cancelledQuadcounter : quadcounter;
+
+		verts[counter++] = x1;
+		verts[counter++] = h + 1;
+		verts[counter++] = z1;
+		verts[counter++] = x1;
+		verts[counter++] = h + 1;
+		verts[counter++] = z2;
+		verts[counter++] = x2;
+		verts[counter++] = h + 1;
+		verts[counter++] = z2;
+		verts[counter++] = x2;
+		verts[counter++] = h + 1;
+		verts[counter++] = z1;
 
 		if (bi.pos.y >= 0.0f)
 			continue;
@@ -774,11 +781,20 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 		lineVerts[linecounter++] = z2;
 	}
 
-	if (quadcounter > 0) {
+	if (quadcounter > 0 || cancelledQuadcounter > 0) {
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glVertexPointer(3, GL_FLOAT, 0, &quadVerts[0]);
-		glDrawArrays(GL_QUADS, 0, quadcounter / 3);
+
+		if (quadcounter > 0) {
+			glVertexPointer(3, GL_FLOAT, 0, &quadVerts[0]);
+			glDrawArrays(GL_QUADS, 0, quadcounter / 3);
+		}
+
+		if (cancelledQuadcounter > 0) {
+			glColor4fv(overlapColor);
+			glVertexPointer(3, GL_FLOAT, 0, &cancelledQuadVerts[0]);
+			glDrawArrays(GL_QUADS, 0, cancelledQuadcounter / 3);
+		}
 
 		if (linecounter > 0) {
 			glPushAttrib(GL_CURRENT_BIT);
@@ -797,4 +813,3 @@ void CommandDrawer::DrawQuedBuildingSquares(const CBuilderCAI* cai) const
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 }
-

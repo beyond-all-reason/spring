@@ -56,6 +56,7 @@
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
 #include "Sim/Units/BuildInfo.h"
+#include "Sim/Units/QueuedBuildOverlap.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitHandler.h"
@@ -365,6 +366,7 @@ bool LuaSyncedRead::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(TestMoveOrder);
 	REGISTER_LUA_CFUNC(TestBuildOrder);
+	REGISTER_LUA_CFUNC(TestBuildOrderOverlap);
 	REGISTER_LUA_CFUNC(Pos2BuildPos);
 	REGISTER_LUA_CFUNC(ClosestBuildPos);
 
@@ -8199,6 +8201,68 @@ int LuaSyncedRead::TestBuildOrder(lua_State* L)
 	return 2;
 }
 
+
+/***
+ * @class BuildOrderSpec
+ * @x_helper
+ * @field [1] integer unitDefID
+ * @field [2] number x
+ * @field [3] number y
+ * @field [4] number z
+ * @field [5] Facing facing
+ */
+
+static BuildInfo ParseBuildOrderSpec(lua_State* L, int tableIndex)
+{
+	luaL_checktype(L, tableIndex, LUA_TTABLE);
+
+	BuildInfo buildInfo;
+
+	lua_rawgeti(L, tableIndex, 1);
+	buildInfo.def = unitDefHandler->GetUnitDefByID(luaL_checkint(L, -1));
+	lua_pop(L, 1);
+
+	float pos[3];
+	for (int i = 0; i < 3; ++i) {
+		lua_rawgeti(L, tableIndex, i + 2);
+		pos[i] = luaL_checkfloat(L, -1);
+		lua_pop(L, 1);
+	}
+	buildInfo.pos = {pos[0], pos[1], pos[2]};
+
+	lua_rawgeti(L, tableIndex, 5);
+	buildInfo.buildFacing = LuaUtils::ParseFacing(L, __func__, -1);
+	lua_pop(L, 1);
+
+	return buildInfo;
+}
+
+/***
+ * @function Spring.TestBuildOrderOverlap
+ * @param queuedBuild BuildOrderSpec
+ * @param proposedBuild BuildOrderSpec
+ * @return boolean overlaps Whether the builds conflict under the queued-build overlap rules.
+ * @return boolean cancels Whether the proposed build would cancel the earlier queued build.
+ */
+int LuaSyncedRead::TestBuildOrderOverlap(lua_State* L)
+{
+	BuildInfo queuedBuild = ParseBuildOrderSpec(L, 1);
+	BuildInfo proposedBuild = ParseBuildOrderSpec(L, 2);
+
+	if (queuedBuild.def == nullptr || proposedBuild.def == nullptr) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	const bool synced = CLuaHandle::GetHandleSynced(L);
+	queuedBuild.pos = CGameHelper::Pos2BuildPos(queuedBuild, synced);
+	proposedBuild.pos = CGameHelper::Pos2BuildPos(proposedBuild, synced);
+
+	const auto result = CGameHelper::TestQueuedBuildOverlap(queuedBuild, proposedBuild);
+	lua_pushboolean(L, result != QueuedBuildOverlap::Result::NONE);
+	lua_pushboolean(L, result == QueuedBuildOverlap::Result::CANCEL);
+	return 2;
+}
 
 /*** Snaps a position to the building grid
  *

@@ -8,6 +8,7 @@
 #include "ExternalAI/EngineOutHandler.h"
 #include "ExternalAI/SkirmishAIHandler.h"
 #include "Game/GlobalUnsynced.h"
+#include "Game/GameHelper.h"
 #include "Game/SelectedUnitsHandler.h"
 #include "Game/WaitCommandsAI.h"
 #include "Map/Ground.h"
@@ -20,6 +21,7 @@
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/Units/BuildInfo.h"
+#include "Sim/Units/QueuedBuildOverlap.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -1308,6 +1310,40 @@ bool CCommandAI::WillCancelQueued(const Command& c) const
 	return (GetCancelQueued(c, commandQue) != commandQue.end());
 }
 
+static bool CommandsCancel(const Command& c, const Command& queuedCommand)
+{
+	const int cmdID = c.GetID();
+	const int queuedCmdID = queuedCommand.GetID();
+	const bool attackAndFight = (cmdID == CMD_ATTACK && queuedCmdID == CMD_FIGHT && queuedCommand.GetNumParams() == 1);
+
+	if (queuedCommand.GetNumParams() != c.GetNumParams())
+		return false;
+	if (cmdID != queuedCmdID && (cmdID >= 0 || queuedCmdID >= 0) && !attackAndFight)
+		return false;
+
+	if (c.GetNumParams() == 1)
+		return (queuedCommand.GetParam(0) == c.GetParam(0));
+
+	if (c.GetNumParams() < 3)
+		return false;
+
+	if (cmdID < 0) {
+		const BuildInfo proposedBuild(c);
+		const BuildInfo queuedBuild(queuedCommand);
+
+		if (proposedBuild.def == nullptr || queuedBuild.def == nullptr)
+			return false;
+
+		return (CGameHelper::TestQueuedBuildOverlap(queuedBuild, proposedBuild) == QueuedBuildOverlap::Result::CANCEL);
+	}
+
+	if ((c.GetPos(0) - queuedCommand.GetPos(0)).SqLength2D() >= (COMMAND_CANCEL_DIST * COMMAND_CANCEL_DIST))
+		return false;
+	if ((c.GetOpts() & SHIFT_KEY) != 0 && c.IsInternalOrder())
+		return false;
+
+	return true;
+}
 
 CCommandQueue::const_iterator CCommandAI::GetCancelQueued(const Command& c, const CCommandQueue& q) const
 {
@@ -1316,47 +1352,8 @@ CCommandQueue::const_iterator CCommandAI::GetCancelQueued(const Command& c, cons
 
 	while (ci != q.begin()) {
 		--ci; //iterate from the end and dont check the current order
-		const Command& c2 = *ci;
-		const int cmdID = c.GetID();
-		const int cmd2ID = c2.GetID();
-
-		const bool attackAndFight = (cmdID == CMD_ATTACK && cmd2ID == CMD_FIGHT && c2.GetNumParams() == 1);
-
-		if (c2.GetNumParams() != c.GetNumParams())
-			continue;
-
-		if ((cmdID == cmd2ID) || (cmdID < 0 && cmd2ID < 0) || attackAndFight) {
-			if (c.GetNumParams() == 1) {
-				// assume the param is a unit-ID or feature-ID
-				if (c2.GetParam(0) == c.GetParam(0))
-					return ci;
-			}
-			else if (c.GetNumParams() >= 3) {
-				if (cmdID < 0) {
-					const BuildInfo bc1(c);
-					const BuildInfo bc2(c2);
-
-					if (bc1.def == nullptr) continue;
-					if (bc2.def == nullptr) continue;
-
-					if (math::fabs(bc1.pos.x - bc2.pos.x) * 2 <= std::max(bc1.GetXSize(), bc2.GetXSize()) * SQUARE_SIZE &&
-					    math::fabs(bc1.pos.z - bc2.pos.z) * 2 <= std::max(bc1.GetZSize(), bc2.GetZSize()) * SQUARE_SIZE) {
-						return ci;
-					}
-				} else {
-					// assume c and c2 are positional commands
-					const float3& c1p = c.GetPos(0);
-					const float3& c2p = c2.GetPos(0);
-
-					if ((c1p - c2p).SqLength2D() >= (COMMAND_CANCEL_DIST * COMMAND_CANCEL_DIST))
-						continue;
-					if ((c.GetOpts() & SHIFT_KEY) != 0 && c.IsInternalOrder())
-						continue;
-
-					return ci;
-				}
-			}
-		}
+		if (CommandsCancel(c, *ci))
+			return ci;
 	}
 
 	return q.end();
@@ -1436,18 +1433,10 @@ std::vector<Command> CCommandAI::GetOverlapQueued(const Command& c, const CComma
 					// NOTE: uses a BuildInfo structure, but <t> can be ANY command
 					BuildInfo tbi;
 					if (tbi.Parse(t)) {
-						const float dist2X = 2.0f * math::fabs(cbi.pos.x - tbi.pos.x);
-						const float dist2Z = 2.0f * math::fabs(cbi.pos.z - tbi.pos.z);
-						const float addSizeX = SQUARE_SIZE * (cbi.GetXSize() + tbi.GetXSize());
-						const float addSizeZ = SQUARE_SIZE * (cbi.GetZSize() + tbi.GetZSize());
-						const float maxSizeX = SQUARE_SIZE * std::max(cbi.GetXSize(), tbi.GetXSize());
-						const float maxSizeZ = SQUARE_SIZE * std::max(cbi.GetZSize(), tbi.GetZSize());
-
 						if (cbi.def == NULL) continue;
 						if (tbi.def == NULL) continue;
 
-						if (((dist2X > maxSizeX) || (dist2Z > maxSizeZ)) &&
-						    ((dist2X < addSizeX) && (dist2Z < addSizeZ))) {
+						if (CGameHelper::TestQueuedBuildOverlap(tbi, cbi) != QueuedBuildOverlap::Result::NONE) {
 							v.push_back(t);
 						}
 					} else {
@@ -1861,4 +1850,3 @@ void CCommandAI::StopAttackingAllyTeam(int ally)
 	RECOIL_DETAILED_TRACY_ZONE;
 	StopAttackingTargetIf([&](const CUnit* t) { return (t != nullptr && t->allyteam == ally); });
 }
-

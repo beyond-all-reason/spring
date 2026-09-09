@@ -31,6 +31,7 @@
 #include "Sim/Units/CommandAI/MobileCAI.h"
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Units/BuildInfo.h"
+#include "Sim/Units/QueuedBuildOverlap.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/Unit.h"
 #include "Sim/Units/UnitHandler.h"
@@ -1019,35 +1020,13 @@ float4 CGameHelper::BuildPosToRect(const float3& midPoint, int facing, int xsize
 int CGameHelper::GetYardMapIndex(int buildFacing, const int2& yardPos, const int2& xrange, const int2& zrange)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	int yardX = yardPos.x - xrange.x;
-	int yardZ = yardPos.y - zrange.x;
-	int yardXR = xrange.y - xrange.x;
-	int yardZR = zrange.y - zrange.x;
+	return QueuedBuildOverlap::GetYardMapIndex(buildFacing, yardPos, xrange, zrange);
+}
 
-	switch (buildFacing) {
-		default: {
-			// FACING_SOUTH don't need to do any remapping
-		} break;
-
-		case FacingMap::FACING_NORTH: {
-			yardX = yardXR - yardX - 1; //mirror yardX
-			yardZ = yardZR - yardZ - 1; //mirror yardZ
-		} break;
-
-		case FacingMap::FACING_EAST: {
-			yardZ = yardZR - yardZ - 1; //mirror yardZ
-			std::swap(yardX , yardZ );  //swap yard{X,Z}
-			std::swap(yardXR, yardZR);  //swap yard{XR,ZR}
-		} break;
-
-		case FacingMap::FACING_WEST: {
-			yardX = yardXR - yardX - 1; //mirror yardX
-			std::swap(yardX , yardZ );  //swap yard{X,Z}
-			std::swap(yardXR, yardZR);  //swap yard{XR,ZR}
-		} break;
-	}
-
-	return yardX + yardXR * yardZ;
+QueuedBuildOverlap::Result CGameHelper::TestQueuedBuildOverlap(const BuildInfo& queuedBuild, const BuildInfo& buildInfo)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	return QueuedBuildOverlap::Test(queuedBuild, buildInfo, modInfo.useYardmapsForQueuedBuildOverlap);
 }
 
 
@@ -1284,11 +1263,10 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 	const int z1 = int(testPos.z / SQUARE_SIZE) - (zsize >> 1), z2 = z1 + zsize;
 	const int2 xrange = int2(x1, x2);
 	const int2 zrange = int2(z1, z2);
+	const int numCells = (x2 - x1) * (z2 - z1);
 
-	if (statuses != nullptr) {
-		const int numCells = (x2 - x1) * (z2 - z1);
+	if (statuses != nullptr)
 		statuses->assign(numCells, 0);
-	}
 
 	const MoveDef* moveDef = (buildInfo.def->pathType != -1U) ? moveDefHandler.GetMoveDefByPathType(buildInfo.def->pathType) : nullptr;
 
@@ -1350,9 +1328,23 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 
 	if (commands != nullptr) {
 		assert(!synced);
+		std::vector<uint8_t> queuedBuildBlockedCells(numCells, false);
+		size_t queuedBuildOpenCellCount = numCells;
+		for (const Command& command: *commands) {
+			const BuildInfo queuedBuild(command);
+			if (QueuedBuildOverlap::AddBlockedCells(
+				queuedBuild,
+				buildInfo,
+				modInfo.useYardmapsForQueuedBuildOverlap,
+				queuedBuildBlockedCells,
+				queuedBuildOpenCellCount
+			))
+				break;
+		}
 
 		for (int z = z1; z < z2; z++) {
 			for (int x = x1; x < x2; x++) {
+				const int idx = (z - z1) * (x2 - x1) + (x - x1);
 				sqrPos.x = x * SQUARE_SIZE;
 				sqrPos.z = z * SQUARE_SIZE;
 
@@ -1361,27 +1353,11 @@ CGameHelper::BuildSquareStatus CGameHelper::TestUnitBuildSquare(
 				if (sqrPos.IsInBounds())
 					sqrStatus = TestBuildSquare(sqrPos, xrange, zrange, buildInfo, moveDef, feature, gu->myAllyTeam, synced);
 
-				if (sqrStatus != BUILDSQUARE_BLOCKED) {
-					for (const Command& c : *commands) {
-						const BuildInfo bc(c);
+				if (sqrStatus != BUILDSQUARE_BLOCKED && queuedBuildBlockedCells[idx])
+					sqrStatus = BUILDSQUARE_BLOCKED;
 
-						const int cmdSizeX = bc.GetXSize() * SQUARE_SIZE;
-						const int cmdSizeZ = bc.GetZSize() * SQUARE_SIZE;
-
-						const int cmdDistX = std::max(bc.pos.x - sqrPos.x - SQUARE_SIZE, sqrPos.x - bc.pos.x) * 2;
-						const int cmdDistZ = std::max(bc.pos.z - sqrPos.z - SQUARE_SIZE, sqrPos.z - bc.pos.z) * 2;
-
-						if (cmdDistX < cmdSizeX && cmdDistZ < cmdSizeZ) {
-							sqrStatus = BUILDSQUARE_BLOCKED;
-							break;
-						}
-					}
-				}
-
-				if (statuses != nullptr) {
-					const int idx = (z - z1) * (x2 - x1) + (x - x1);
+				if (statuses != nullptr)
 					(*statuses)[idx] = sqrStatus;
-				}
 
 				testStatus = std::min(testStatus, sqrStatus);
 			}

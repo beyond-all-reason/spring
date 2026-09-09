@@ -54,6 +54,8 @@ public:
 	bool IsInBuildRange(const CWorldObject* obj) const;
 	bool IsInBuildRange(const float3& pos, const float radius) const;
 	float GetBuildRange(const float targetRadius) const;
+	bool HasCurrentBuild() const;
+	bool GetCurrentBuildCommandTag(unsigned int& commandTag) const;
 
 public:
 	spring::unordered_set<int> buildOptions;
