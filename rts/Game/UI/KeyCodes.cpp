@@ -167,7 +167,7 @@ void CKeyCodes::Reset()
 	//AddPair("break", SDLK_BREAK);
 	//AddPair("euro", SDLK_EURO);       // Some european keyboards
 
-	for (int i = ACTION_BUTTON_MIN; i <= NUM_BUTTONS; i++) {
+	for (int i = 1; i <= NUM_BUTTONS; i++) {
 		AddPair("mouse" + IntToString(i), CKeyCodes::GetMouseButtonSymbol(i));
 	}
 

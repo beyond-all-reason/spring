@@ -214,7 +214,7 @@ void CScanCodes::Reset()
 	AddPair("sc_alt",   SDL_SCANCODE_LALT);
 	AddPair("sc_meta",  SDL_SCANCODE_LGUI);
 
-	for (int i = ACTION_BUTTON_MIN; i <= NUM_BUTTONS; i++) {
+	for (int i = 1; i <= NUM_BUTTONS; i++) {
 		AddPair("sc_mouse" + IntToString(i), CScanCodes::GetMouseButtonSymbol(i));
 	}
 

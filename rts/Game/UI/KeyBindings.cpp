@@ -65,6 +65,9 @@ static const DefaultBinding defaultBindings[] = {
 	{  "Alt+Shift+esc", "reloadforce" },
 	{      "Any+pause", "pause"       },
 
+	{     "Any+mouse1", "mouseprimary"  },
+	{     "Any+mouse3", "mousesecondary" },
+
 	{ "c", "controlunit"      },
 	{ "Any+h", "sharedialog"  },
 	{ "Any+i", "gameinfo"     },

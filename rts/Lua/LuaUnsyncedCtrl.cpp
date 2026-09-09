@@ -2822,7 +2822,7 @@ static int SetActiveCommandByIndex(lua_State* L)
 	const int button = luaL_optint(L, 2, 1); // LMB
 
 	if (args <= 2) {
-		lua_pushboolean(L, guihandler->SetActiveCommand(cmdIndex, button != SDL_BUTTON_LEFT));
+		lua_pushboolean(L, guihandler->SetActiveCommand(cmdIndex, !mouse->IsButtonBoundToAction(button, "mouseprimary")));
 		return 1;
 	}
 

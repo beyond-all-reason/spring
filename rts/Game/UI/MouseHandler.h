@@ -13,7 +13,6 @@
 #include "MouseCursor.h"
 
 static const int NUM_BUTTONS = 10;
-static const int ACTION_BUTTON_MIN = 2;
 
 class CInputReceiver;
 class CCameraController;
@@ -99,9 +98,20 @@ public:
 
 	bool ButtonPressed();
 
+	bool IsButtonBoundToAction(int button, const std::string& action) const;
+	bool IsActionButtonPressed(const std::string& action) const;
+	int GetActionButton(const std::string& action) const;
+	int GetPressedActionButton(const std::string& action) const;
+
 private:
 	int2 GetViewMouseCenter() const;
 	void SetCursor(const std::string& cmdName, const bool forceRebind = false);
+
+	bool IsOtherActionButtonPressed(int button) const;
+
+	// the draw/command paths query the mouse-role binds every frame; cache which
+	// buttons carry each role so those queries are a bitmask test, not a keybind lookup
+	void RefreshRoleButtonMasks();
 
 	void DrawScrollCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const;
 	void DrawFPSCursor(TypedRenderBuffer<VA_TYPE_C>& rb) const;
@@ -131,6 +141,9 @@ public:
 	uint32_t pressedBitMask = 0;
 
 private:
+	uint32_t primaryButtonMask = 0;
+	uint32_t secondaryButtonMask = 0;
+
 	bool hideCursor = true;
 	bool hwHideCursor = true;
 	bool hardwareCursor = false;
