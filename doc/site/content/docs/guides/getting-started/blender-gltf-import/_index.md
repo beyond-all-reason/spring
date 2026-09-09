@@ -65,7 +65,7 @@ The list of supported key-values is following:
 | `radius`          | `float`    | The radius of the model, by default calculated based on the model dimensions                                                                                  |
 | `fliptextures`    | `boolean`  | Whether to flip the supplied `tex1` / `tex2` (if supported by the texture types). `False` by default                                                          |
 | `invertteamcolor` | `boolean`  | Whether to inverse the teamcolor in `tex1` (if supported by the texture types). `False` by default                                                            |
-| `s3ocompat`       | `boolean`  | Transform the model such that its animation and worldspace position matches those of s3o (left-hand coordinate system). `False` by default. Very experimental |
+| `s3ocompat`       | `boolean`  | Select the source-facing convention used by models imported through the S3O Blender workflow. It changes model facing, but both modes load piece data and animation axes into the engine coordinate frame. `False` by default |
 
 > [!NOTE]
 > You can export any additional attributes not listed above, there's no harm in that
@@ -98,12 +98,27 @@ In order to load the GLTF model, make sure it resides somewhere in `Objects3d` d
 
 ### S3O Compat
 
-If you export your existing s3o model as GLTF and reuse the existing animation, made for s3o model and you see your units are walking "backwards", make sure to instruct the importer to try to rotate the model in s3o compatible way (define `s3ocompat` to `true`).
+If you import an existing S3O into Blender and export it as GLTF, define
+`s3ocompat` as `true`. This selects the same source-facing conversion as the S3O
+Blender tools: Blender `(x, y, z)` becomes engine `(-x, z, y)`.
 
-By default, GLTF is imported in the same (right handed) coordinate system as Collada / `.dae` and thus require changes to the animation scripts.
+The default convention preserves the historical GLTF facing conversion
+`(x, z, -y)`. Both conventions are baked into vertices, piece offsets, node rest
+rotations, normals, and tangents while the model loads. The resulting hierarchy is
+always in the engine model coordinate frame.
+
+BOS and LUS piece animation axes are therefore the same as for S3O. Do not remap
+script axes based on whether the model uses `.s3o`, `.gltf`, or `.glb`, and do not
+use BARScriptCompiler's deprecated GLTF axis-remapping flags or macros.
+
+`midpos`, `mins`, and `maxs` metadata values are interpreted directly in engine
+model coordinates. They are not converted from Blender's Z-up source frame.
 
 ![image](blender-gltf-9.png)
 
 ### Nodes hierarchy
 
-The importer will create a few empty top level pieces to accomodate for rotations and other nuances of the importer. This is usually completely transparent to the game devs. This might be optimized later on.
+The importer creates an empty scene piece above the exported node hierarchy. The
+piece has an identity transform; coordinate conversion is applied to the imported
+piece data rather than hidden in this ancestor. Additional empty nodes exported by
+Blender remain ordinary model pieces.

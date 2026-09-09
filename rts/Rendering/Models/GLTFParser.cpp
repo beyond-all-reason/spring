@@ -9,6 +9,7 @@
 #include "GLTFParser.h"
 #include "3DModel.hpp"
 #include "3DModelLog.h"
+#include "GLTFModelAxisConversion.hpp"
 #include "ModelUtils.h"
 
 #include "Lua/LuaParser.h"
@@ -42,8 +43,11 @@ namespace Impl {
 		return Transform{ r, t, s.x };
 	}
 
-	Transform GetNodeTransform(const fastgltf::Node& node) {
-		return fastgltf::visit_exhaustive(fastgltf::visitor{
+	Transform GetNodeTransform(
+		const fastgltf::Node& node,
+		gltfmodel::SourceConvention sourceConvention
+	) {
+		const Transform sourceTransform = fastgltf::visit_exhaustive(fastgltf::visitor{
 			[](const fastgltf::math::fmat4x4& matrix) {
 				return Impl::MatrixToTransform(matrix);
 			},
@@ -51,10 +55,22 @@ namespace Impl {
 				return Impl::TRStoTransform(trs);
 			}
 		}, node.transform);
+
+		return gltfmodel::ToEngineSpace(sourceTransform, sourceConvention);
 	}
 
 	template<typename PrimContainer>
-	void ReadGeometryData(const fastgltf::Asset& asset, const PrimContainer& primitives, std::vector<SVertexData>& verts, std::vector<uint32_t>& indcs, size_t nodeIdx, const fastgltf::Skin* skinPtr = nullptr) {
+	void ReadGeometryData(
+		const fastgltf::Asset& asset,
+		const PrimContainer& primitives,
+		std::vector<SVertexData>& verts,
+		std::vector<uint32_t>& indcs,
+		size_t nodeIdx,
+		gltfmodel::SourceConvention sourceConvention,
+		const fastgltf::Skin* skinPtr = nullptr
+	) {
+			const size_t firstVertSize = verts.size();
+
 			for (const auto& prim : primitives) {
 				const size_t prevVertSize = verts.size();
 				const size_t prevIndcSize = indcs.size();
@@ -197,6 +213,15 @@ namespace Impl {
 
 			if (!seenTangents)
 				ModelUtils::CalculateTangents(verts, indcs);
+
+		}
+
+		for (size_t i = firstVertSize; i < verts.size(); ++i) {
+			auto& vert = verts[i];
+			vert.pos = gltfmodel::ToEngineSpace(vert.pos, sourceConvention);
+			vert.normal = gltfmodel::ToEngineSpace(vert.normal, sourceConvention);
+			vert.sTangent = gltfmodel::ToEngineSpace(vert.sTangent, sourceConvention);
+			vert.tTangent = gltfmodel::ToEngineSpace(vert.tTangent, sourceConvention);
 		}
 	}
 
@@ -312,7 +337,7 @@ namespace Impl {
 		// TODO guess the texture?
 	}
 
-	auto GetModelTransforms(const fastgltf::Asset& asset, std::size_t sceneIndex, const Transform& sceneTransform = Transform{}) {
+	auto GetModelTransforms(const fastgltf::Asset& asset, std::size_t sceneIndex, gltfmodel::SourceConvention sourceConvention) {
 		auto& scene = asset.scenes[sceneIndex];
 
 		spring::unordered_map<size_t, Transform> transforms(asset.nodes.size());
@@ -322,7 +347,7 @@ namespace Impl {
 
 			const auto& [it, noDup] = transforms.emplace(
 				nodeIdx,
-				parentTransform * GetNodeTransform(node)
+				parentTransform * GetNodeTransform(node, sourceConvention)
 			);
 			assert(noDup);
 
@@ -332,7 +357,7 @@ namespace Impl {
 		};
 
 		for (auto& node : scene.nodeIndices) {
-			function(function, node, sceneTransform);
+			function(function, node, Transform{});
 		}
 
 		return transforms;
@@ -444,14 +469,16 @@ void CGLTFParser::Load(S3DModel& model, const std::string& modelFilePath)
 	model.mins = DEF_MIN_SIZE;
 	model.maxs = DEF_MAX_SIZE;
 
-	// GLTF model MUST be exported with Z axis UP. We will rotate it here by ourselves
-	const auto initTransform = (optionalModelParams.s3oCompat.value_or(false)) ?
-		Transform(CQuaternion(0, -math::HALFSQRT2, -math::HALFSQRT2, 0)): // Rotate so xyz ==> (-x,z, y)
-		Transform(CQuaternion( math::HALFSQRT2, 0, 0, -math::HALFSQRT2)); // Rotate so xyz ==> ( x,z,-y)
+	// GLTF source coordinates are converted into the engine model frame at the
+	// parser boundary. Keeping the synthetic scene root unrotated makes script
+	// animation axes identical to those of S3O pieces.
+	const auto sourceConvention = gltfmodel::GetSourceConvention(
+		optionalModelParams.s3oCompat.value_or(false)
+	);
 
 	const auto defaultSceneIdx = asset.defaultScene.value_or(0);
 
-	auto* rootPiece = AllocRootEmptyPiece(&model, initTransform, asset, defaultSceneIdx);
+	auto* rootPiece = AllocRootEmptyPiece(&model, asset, defaultSceneIdx, sourceConvention);
 	model.FlattenPieceTree(rootPiece);
 
 	spring::unordered_map<size_t, size_t> nodeIdxToPieceIdx;
@@ -465,7 +492,7 @@ void CGLTFParser::Load(S3DModel& model, const std::string& modelFilePath)
 
 	// conceptually almost the same as AllocRootEmptyPiece + SetPieceMatrices
 	// except this one doesn't ignore nodes with skinned meshes
-	const auto modelTransforms = Impl::GetModelTransforms(asset, defaultSceneIdx, initTransform);
+	const auto modelTransforms = Impl::GetModelTransforms(asset, defaultSceneIdx, sourceConvention);
 
 	std::vector<Skinning::SkinnedMesh> allSkinnedMeshes;
 
@@ -481,7 +508,7 @@ void CGLTFParser::Load(S3DModel& model, const std::string& modelFilePath)
 		const auto& mesh = asset.meshes[*node.meshIndex];
 		auto& skinnedMesh = allSkinnedMeshes.emplace_back();
 
-		Impl::ReadGeometryData(asset, mesh.primitives, skinnedMesh.verts, skinnedMesh.indcs, ni, &skin);
+		Impl::ReadGeometryData(asset, mesh.primitives, skinnedMesh.verts, skinnedMesh.indcs, ni, sourceConvention, &skin);
 		Impl::TransformSkinsToModelSpace(skinnedMesh.verts, ni, modelTransforms);
 		Impl::ReplaceNodeIndexWithPieceIndex(skinnedMesh.verts, nodeIdxToPieceIdx);
 	}
@@ -544,7 +571,12 @@ GLTFPiece* CGLTFParser::AllocPiece()
 	return &piecePool[numPoolPieces++];
 }
 
-GLTFPiece* CGLTFParser::AllocRootEmptyPiece(S3DModel* model, const Transform& parentTransform, const fastgltf::Asset& asset, size_t sceneIndex)
+GLTFPiece* CGLTFParser::AllocRootEmptyPiece(
+	S3DModel* model,
+	const fastgltf::Asset& asset,
+	size_t sceneIndex,
+	gltfmodel::SourceConvention sourceConvention
+)
 {
 	const auto& scene = asset.scenes[sceneIndex];
 
@@ -553,13 +585,9 @@ GLTFPiece* CGLTFParser::AllocRootEmptyPiece(S3DModel* model, const Transform& pa
 
 	piece->SetParentModel(model);
 
-	auto bakedTransform = parentTransform;
-	// only rotation is allowed because of Spring-isms
-	bakedTransform.t = float3{};
-	bakedTransform.s = 1.0f;
-	piece->SetBakedTransform(bakedTransform); // bakedRotAngles are not read or supported for GLTF
-	piece->offset = parentTransform.t;
-	piece->scale = parentTransform.s;
+	piece->SetBakedTransform(Transform{});
+	piece->offset = float3{};
+	piece->scale = 1.0f;
 
 
 	piece->parent = nullptr;
@@ -567,7 +595,7 @@ GLTFPiece* CGLTFParser::AllocRootEmptyPiece(S3DModel* model, const Transform& pa
 	piece->children.reserve(scene.nodeIndices.size());
 
 	for (const auto childNodeIndex : scene.nodeIndices) {
-		auto* childPiece = LoadPiece(model, piece, asset, childNodeIndex);
+		auto* childPiece = LoadPiece(model, piece, asset, childNodeIndex, sourceConvention);
 		if (childPiece)
 			piece->children.push_back(childPiece);
 	}
@@ -576,7 +604,13 @@ GLTFPiece* CGLTFParser::AllocRootEmptyPiece(S3DModel* model, const Transform& pa
 }
 
 
-GLTFPiece* CGLTFParser::LoadPiece(S3DModel* model, GLTFPiece* parentPiece, const fastgltf::Asset& asset, size_t nodeIndex)
+GLTFPiece* CGLTFParser::LoadPiece(
+	S3DModel* model,
+	GLTFPiece* parentPiece,
+	const fastgltf::Asset& asset,
+	size_t nodeIndex,
+	gltfmodel::SourceConvention sourceConvention
+)
 {
 	const auto& node = asset.nodes[nodeIndex];
 
@@ -593,19 +627,20 @@ GLTFPiece* CGLTFParser::LoadPiece(S3DModel* model, GLTFPiece* parentPiece, const
 	piece->children.reserve(node.children.size());
 	piece->nodeIndex = nodeIndex;
 
-	Transform pieceTransform = Impl::GetNodeTransform(node);
+	Transform pieceTransform = Impl::GetNodeTransform(node, sourceConvention);
 	
 	auto bakedTransform = pieceTransform;
-	// by idiotic Spring convention bakedTransform should only contain rotation
+	// Piece translation and scale are stored separately; bakedTransform contains
+	// only the artist-authored rest rotation expressed in engine axes.
 	bakedTransform.t = float3{};
 	bakedTransform.s = 1.0f;
 
-	piece->SetBakedTransform(bakedTransform); // bakedRotAngles are not read or supported for GLTF
+	piece->SetBakedTransform(bakedTransform);
 	piece->offset = pieceTransform.t;
 	piece->scale = pieceTransform.s;
 
 	for (const auto childNodeIndex : node.children) {
-		auto* childPiece = LoadPiece(model, piece, asset, childNodeIndex);
+		auto* childPiece = LoadPiece(model, piece, asset, childNodeIndex, sourceConvention);
 		if (childPiece)
 			piece->children.push_back(childPiece);
 	}
@@ -616,7 +651,7 @@ GLTFPiece* CGLTFParser::LoadPiece(S3DModel* model, GLTFPiece* parentPiece, const
 	auto& verts = piece->GetVerticesVec();
 	auto& indcs = piece->GetIndicesVec();
 	const auto& mesh = asset.meshes[*node.meshIndex];
-	Impl::ReadGeometryData(asset, mesh.primitives, verts, indcs, nodeIndex, nullptr);
+	Impl::ReadGeometryData(asset, mesh.primitives, verts, indcs, nodeIndex, sourceConvention, nullptr);
 
 	return piece;
 }
