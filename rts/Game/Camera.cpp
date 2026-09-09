@@ -733,6 +733,9 @@ float3 CCamera::GetMoveVectorFromState(bool fromKeyState) const
 		return v;
 	}
 
+	if (edgeMoveWidth <= 0.0f)
+		return v;
+
 	const int windowW = globalRendering->winSizeX;
 	int mouseY = mouse->lasty;
 	int viewH;
