@@ -6,6 +6,7 @@
 #include "System/Sound/SoundLog.h"
 #include "ALShared.h"
 #include "System/Platform/byteorder.h"
+#include "System/Threading/SpringThreading.h"
 #include "OggDecoder.h"
 #include "Mp3Decoder.h"
 
@@ -19,7 +20,11 @@
 SoundBuffer::bufferMapT SoundBuffer::bufferMap;
 SoundBuffer::bufferVecT SoundBuffer::buffers;
 
-static std::vector<std::uint8_t> decodeBuffer;
+// decodes from different threads can run concurrently
+static thread_local std::vector<std::uint8_t> decodeBuffer;
+
+// from Sound.cpp, AL calls stay serialized under it while decoding runs outside
+extern spring::recursive_mutex soundMutex;
 
 
 #pragma pack(push, 1)
@@ -225,6 +230,8 @@ bool SoundBuffer::LoadMp3(const std::string& file, const std::vector<std::uint8_
 
 bool SoundBuffer::AlGenBuffer(const std::string& file, ALenum format, const std::uint8_t* data, size_t datalength, int rate)
 {
+	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
+
 	alGenBuffers(1, &id);
 	if (!CheckError("SoundBuffer::alGenBuffers"))
 		return false;
@@ -235,6 +242,8 @@ bool SoundBuffer::AlGenBuffer(const std::string& file, ALenum format, const std:
 bool SoundBuffer::Release() {
 	if (id == 0)
 		return false;
+
+	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 	alDeleteBuffers(1, &id);
 	return true;
 }

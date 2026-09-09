@@ -93,6 +93,7 @@ private:
 	void GenSources(int alMaxSounds);
 
 	size_t MakeItemFromDef(const SoundItemNameMap& itemDef);
+	size_t RegisterSoundItem(const SoundItemNameMap& itemDef, size_t bufferID);
 	size_t LoadSoundBuffer(const std::string& filename);
 
 private:
@@ -110,8 +111,6 @@ private:
 
 	std::vector<SoundItem> soundItems;
 	std::vector<CSoundSource> soundSources; // fixed-size
-
-	std::vector<std::uint8_t> loadBuffer;
 
 	SoundItemNameMap defaultItemNameMap;
 	SoundItemDefsMap soundItemDefsMap; // parsed from sounds.lua

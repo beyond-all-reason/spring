@@ -185,30 +185,51 @@ size_t CSound::GetDefSoundId(const std::string& name)
 
 size_t CSound::GetSoundId(const std::string& name)
 {
+	SoundItemNameMap itemMap;
+	bool isDefItem = false;
+
+	{
+		std::lock_guard<spring::recursive_mutex> lck(soundMutex);
+
+		// do not preload-loop forever, erase even if the sound fails to load
+		// note: this breaks the name reference, has to be done when returning
+		// regular GetSoundId calls will pre-empt any preload items
+		if (soundSources.empty())
+			return (preloadSet.erase(name), 0);
+
+		const auto soundMapIt = soundMap.find(name);
+		if (soundMapIt != soundMap.end())
+			return (preloadSet.erase(name), soundMapIt->second);
+
+		const auto itemDefIt = soundItemDefsMap.find(StringToLower(name));
+
+		if (itemDefIt != soundItemDefsMap.end()) {
+			isDefItem = true;
+			itemMap = itemDefIt->second;
+		} else {
+			// name does not match any sounds.lua item, interpret as raw file reference
+			itemMap = defaultItemNameMap;
+			itemMap.erase("file");
+			itemMap.emplace("file", name);
+		}
+	}
+
+	const auto fileIt = itemMap.find("file");
+	const size_t bufferID = (fileIt != itemMap.end())? LoadSoundBuffer(fileIt->second): 0;
+
 	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 
-	// do not preload-loop forever, erase even if the sound fails to load
-	// note: this breaks the name reference, has to be done when returning
-	// regular GetSoundId calls will pre-empt any preload items
-	if (soundSources.empty())
-		return (preloadSet.erase(name), 0);
-
+	// another thread may have registered the item while the buffer was loading
 	const auto soundMapIt = soundMap.find(name);
 	if (soundMapIt != soundMap.end())
 		return (preloadSet.erase(name), soundMapIt->second);
 
-	const auto itemDefIt = soundItemDefsMap.find(StringToLower(name));
+	if (bufferID > 0)
+		return (preloadSet.erase(name), RegisterSoundItem(itemMap, bufferID));
 
-	if (itemDefIt != soundItemDefsMap.end())
-		return (preloadSet.erase(name), MakeItemFromDef(itemDefIt->second));
-
-	// name does not match any sounds.lua item, interpret as raw file reference
-	if (LoadSoundBuffer(name) > 0) {
-		SoundItemNameMap itemMap = defaultItemNameMap;
-		itemMap.erase("file");
-		itemMap.emplace("file", name);
-		return (preloadSet.erase(name), MakeItemFromDef(itemMap));
-	}
+	// LoadSoundBuffer already logged the failure if this was a known item
+	if (isDefItem)
+		return (preloadSet.erase(name), 0);
 
 	LOG_L(L_ERROR, "[Sound::%s] could not find sound \"%s\"", __func__, name.c_str());
 	return (preloadSet.erase(name), 0);
@@ -795,13 +816,23 @@ void CSound::UpdateThread(int cfgMaxSounds)
 
 void CSound::Update()
 {
-	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
-
 	// limit consumption-rate to prevent source starvation
-	// lock is held, size can not be changed except by loop
-	for (size_t i = 0, n = std::min(size_t(4), preloadSet.size()); i < n; i++) {
-		GetSoundId(*preloadSet.begin());
+	for (int i = 0; i < 4; i++) {
+		std::string name;
+
+		{
+			std::lock_guard<spring::recursive_mutex> lck(soundMutex);
+
+			if (preloadSet.empty())
+				break;
+
+			name = *preloadSet.begin();
+		}
+
+		GetSoundId(name);
 	}
+
+	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 
 	for (CSoundSource& source: soundSources) {
 		source.Update();
@@ -813,7 +844,7 @@ void CSound::Update()
 
 size_t CSound::MakeItemFromDef(const SoundItemNameMap& itemDef)
 {
-	// only callers are LoadSoundDefs{Impl} and GetSoundId which both grab this
+	// only caller is LoadSoundDefsImpl which grabs this
 	// std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 
 	const auto defIt = itemDef.find("file");
@@ -822,10 +853,17 @@ size_t CSound::MakeItemFromDef(const SoundItemNameMap& itemDef)
 		return 0;
 
 	const size_t bufferID = LoadSoundBuffer(defIt->second);
-	const size_t   itemID = soundItems.size();
 
 	if (bufferID == 0)
 		return 0;
+
+	return (RegisterSoundItem(itemDef, bufferID));
+}
+
+size_t CSound::RegisterSoundItem(const SoundItemNameMap& itemDef, size_t bufferID)
+{
+	// caller must hold soundMutex
+	const size_t itemID = soundItems.size();
 
 	soundItems.emplace_back(itemID, bufferID, itemDef);
 	soundMap[ soundItems[itemID].Name() ] = itemID;
@@ -968,20 +1006,26 @@ bool CSound::LoadSoundDefsImpl(LuaParser* defsParser)
 	return true;
 }
 
-// only used internally, locked in caller's scope
+// only used internally, takes soundMutex itself, do not call with the lock
+// held or the decode runs under it again
 size_t CSound::LoadSoundBuffer(const std::string& path)
 {
-	const size_t id = SoundBuffer::GetId(path);
+	{
+		std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 
-	if (id > 0)
-		return id; // file is loaded already
+		const size_t id = SoundBuffer::GetId(path);
 
-	// do not keep generating AL buffers for files that previously failed to load, etc
-	if (failureSet.find(path) != failureSet.end())
-		return 0;
+		if (id > 0)
+			return id; // file is loaded already
+
+		// do not keep generating AL buffers for files that previously failed to load, etc
+		if (failureSet.find(path) != failureSet.end())
+			return 0;
+	}
 
 	CFileHandler file("", "");
 
+	static thread_local std::vector<std::uint8_t> loadBuffer;
 	loadBuffer.clear();
 	loadBuffer.reserve(1024 * 1024);
 
@@ -993,6 +1037,8 @@ size_t CSound::LoadSoundBuffer(const std::string& path)
 
 	if (!file.FileExists()) {
 		LOG_L(L_ERROR, "[%s] unable to open audio file \"%s\"", __func__, path.c_str());
+
+		std::lock_guard<spring::recursive_mutex> lck(soundMutex);
 		failureSet.insert(path);
 		return 0;
 	}
@@ -1016,6 +1062,8 @@ size_t CSound::LoadSoundBuffer(const std::string& path)
 		} break;
 	}
 
+	std::lock_guard<spring::recursive_mutex> lck(soundMutex);
+
 	CheckError("[Sound::LoadSoundBuffer]");
 
 	if (soundBuf.GetLength() <= 0.0f) {
@@ -1023,6 +1071,12 @@ size_t CSound::LoadSoundBuffer(const std::string& path)
 		failureSet.insert(path);
 		return 0;
 	}
+
+	// another thread may have loaded the same file meanwhile
+	const size_t id = SoundBuffer::GetId(path);
+
+	if (id > 0)
+		return id;
 
 	return (SoundBuffer::Insert(std::move(soundBuf)));
 }
