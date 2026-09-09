@@ -3318,8 +3318,9 @@ bool CGroundMoveType::UpdateDirectControl()
 		ChangeSpeed(0.0f, false, true);
 	}
 
-	if (unitCon.left ) { ChangeHeading(owner->heading + turnRate); turnSign =  1.0f; }
-	if (unitCon.right) { ChangeHeading(owner->heading - turnRate); turnSign = -1.0f; }
+	// via int, a direct float->short is UB once out of range (#3075)
+	if (unitCon.left ) { ChangeHeading(short(int(owner->heading + turnRate))); turnSign =  1.0f; }
+	if (unitCon.right) { ChangeHeading(short(int(owner->heading - turnRate))); turnSign = -1.0f; }
 
 	// local client is controlling us
 	if (selfCon.GetControllee() == owner)
