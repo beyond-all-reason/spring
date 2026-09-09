@@ -131,6 +131,7 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(wantedSpeed),
 	CR_MEMBER(currentSpeed),
 	CR_MEMBER(deltaSpeed),
+	CR_MEMBER(terrainSpeedMod),
 
 	CR_MEMBER(currWayPointDist),
 	CR_MEMBER(prevWayPointDist),
@@ -449,11 +450,12 @@ static float3 CalcSpeedVectorExclGravity(const CUnit* owner, const CGroundMoveTy
 	else {
 		float vel = owner->speed.w;
 		float maxSpeed = owner->moveType->GetMaxSpeed();
-		if (vel > maxSpeed) {
+		const float effectiveMaxSpeed = maxSpeed * mt->GetTerrainSpeedMod();
+		if (vel > effectiveMaxSpeed) {
 			// Once a unit is travelling faster than their maximum speed, their engine power is no longer sufficient to counteract
 			// the drag from air and rolling resistance. So reduce their velocity by these forces until a return to maximum speed.
 			float rollingResistanceCoeff = owner->unitDef->rollingResistanceCoefficient;
-			vel = std::max(maxSpeed,
+			vel = std::max(effectiveMaxSpeed,
 				(owner->speed +
 				owner->GetDragAccelerationVec(
 					mapInfo->atmosphere.fluidDensity,
@@ -1315,6 +1317,8 @@ void CGroundMoveType::ChangeSpeed(float newWantedSpeed, bool wantReverse, bool f
 			// trying to release ourselves towards a passable square
 			if (groundSpeedMod == 0.0f)
 				groundSpeedMod = CMoveMath::GetPosSpeedMod(*md, owner->pos + flatFrontDir * SQUARE_SIZE, flatFrontDir);
+
+			terrainSpeedMod = groundSpeedMod;
 
 			const float curGoalDistSq = (owner->pos - goalPos).SqLength2D();
 			const float minGoalDistSq = Square(BrakingDistance(currentSpeed, decRate));

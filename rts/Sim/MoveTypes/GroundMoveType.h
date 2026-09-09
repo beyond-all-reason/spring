@@ -113,6 +113,7 @@ public:
 	float GetWantedSpeed() const { return wantedSpeed; }
 	float GetCurrentSpeed() const { return currentSpeed; }
 	float GetDeltaSpeed() const { return deltaSpeed; }
+	float GetTerrainSpeedMod() const { return terrainSpeedMod; }
 
 	float GetCurrWayPointDist() const { return currWayPointDist; }
 	float GetPrevWayPointDist() const { return prevWayPointDist; }
@@ -253,6 +254,7 @@ private:
 	float wantedSpeed = 0.0f;
 	float currentSpeed = 0.0f;
 	float deltaSpeed = 0.0f;
+	float terrainSpeedMod = 1.0f; /// last groundSpeedMod from ChangeSpeed (typemap × slope/depth)
 
 	float currWayPointDist = 0.0f;
 	float prevWayPointDist = 0.0f;
