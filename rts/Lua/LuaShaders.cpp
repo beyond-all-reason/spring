@@ -671,6 +671,8 @@ int LuaShaders::CreateShader(lua_State* L)
 	if (!graphicSrcEmpty && !computeSrcEmpty)
 		return 0;
 
+	CLuaHandle::GetActiveShaders(L).errorLog.clear();
+
 	bool success;
 	const GLuint vertObj = CompileObject(L, shdrDefs, vertSrcs, GL_VERTEX_SHADER, success);
 
