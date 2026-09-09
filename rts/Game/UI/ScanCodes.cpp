@@ -218,6 +218,9 @@ void CScanCodes::Reset()
 		AddPair("sc_mouse" + IntToString(i), CScanCodes::GetMouseButtonSymbol(i));
 	}
 
+	AddPair("sc_mousewheelup",   CScanCodes::GetMouseWheelSymbol(true));
+	AddPair("sc_mousewheeldown", CScanCodes::GetMouseWheelSymbol(false));
+
 	// Miscellaneous function keys
 	AddPair("sc_help", SDL_SCANCODE_HELP);
 	AddPair("sc_printscreen", SDL_SCANCODE_PRINTSCREEN);
@@ -251,6 +254,14 @@ int CScanCodes::GetMouseButtonSymbol(int button)
 	// magic number here chosen so it won't conflict with SDL reserved values.
 	// just in case taking a value from private unicode area.
 	return 0x100000+button;
+}
+
+
+int CScanCodes::GetMouseWheelSymbol(bool up)
+{
+	// wheel up/down as pseudo-buttons just past the real mouse buttons (reuses the
+	// same symbol scheme, so the private-range base is defined in one place)
+	return GetMouseButtonSymbol(NUM_BUTTONS + (up ? 1 : 2));
 }
 
 

@@ -18,6 +18,7 @@ public:
 
 	bool MousePress(int x, int y, int button) override;
 	void MouseRelease(int x, int y, int button) override;
+	bool MouseWheel(float delta) override;
 
 	ActionList lastActionList;
 private:

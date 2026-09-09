@@ -11,6 +11,7 @@
 #include "SyncedActionExecutor.h"
 #include "Action.h"
 #include "CameraHandler.h"
+#include "UI/MouseHandler.h"
 #include "ConsoleHistory.h"
 #include "CommandMessage.h"
 #include "Game.h"
@@ -783,6 +784,21 @@ public:
 private:
 	int moveStateIdx;
 	bool halt;
+};
+
+
+class ScrollZoomActionExecutor : public IUnsyncedActionExecutor {
+public:
+	ScrollZoomActionExecutor(float _dir, const std::string& name)
+		: IUnsyncedActionExecutor(name, "Zooms the camera by one mouse-wheel step"), dir(_dir) {}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		mouse->ScrollZoom(dir);
+		return true;
+	}
+
+private:
+	float dir;
 };
 
 
@@ -4090,6 +4106,8 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_TLT, "Tilt"  , false));
 	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RST, "Reset" , false));
 	AddActionExecutor(AllocActionExecutor<CameraMoveActionExecutor>(CCamera::MOVE_STATE_RTT, "Rotate", false));
+	AddActionExecutor(AllocActionExecutor<ScrollZoomActionExecutor>( 1.0f, "ZoomIn" ));
+	AddActionExecutor(AllocActionExecutor<ScrollZoomActionExecutor>(-1.0f, "ZoomOut"));
 	AddActionExecutor(AllocActionExecutor<MouseStateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(true));
 	AddActionExecutor(AllocActionExecutor<AIKillReloadActionExecutor>(false));

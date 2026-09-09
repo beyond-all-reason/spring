@@ -20,6 +20,7 @@ public:
 	static int GetNormalizedSymbol(int sym);
 
 	static int GetMouseButtonSymbol(int button);
+	static int GetMouseWheelSymbol(bool up);
 };
 
 extern CScanCodes scanCodes;

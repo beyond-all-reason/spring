@@ -239,6 +239,9 @@ static const DefaultBinding defaultBindings[] = {
 	{    "Any+pageup",   "moveup"       },
 	{    "Any+pagedown", "movedown"     },
 
+	{ "mousewheelup",   "zoomin"  },
+	{ "mousewheeldown", "zoomout" },
+
 	{    "Any+ctrl",     "moveslow"     }, // decreases delta for move/zoom camera transitions
 	{    "Any+shift",    "movefast"     }, // increases delta for move/zoom camera transitions
 

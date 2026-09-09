@@ -52,6 +52,7 @@ public:
 	void MousePress(int x, int y, int button);
 	void MouseMove(int x, int y, int dx, int dy);
 	void MouseWheel(float delta);
+	void ScrollZoom(float delta);
 
 	// input emulation (debug.emulateMouse*): a button held independent of hardware.
 	// SetButtonEmulated fires the press/release itself, on the physical-or-emulated edge

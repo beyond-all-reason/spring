@@ -120,6 +120,24 @@ void CGameInputReceiver::MouseRelease(int x, int y, int button)
 	return;
 }
 
+bool CGameInputReceiver::MouseWheel(float delta)
+{
+	const bool up = (delta > 0.0f);
+	const int keyCode  = CKeyCodes::GetMouseWheelSymbol(up);
+	const int scanCode = CScanCodes::GetMouseWheelSymbol(up);
+
+	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+
+	// the wheel is a momentary tick with no held state: fire press, then release
+	// so nothing latches on a stateful action.
+	const bool handled = TryOnPressActions(false);
+
+	for (const Action& action: lastActionList)
+		game->ActionReleased(action);
+
+	return handled;
+}
+
 bool CGameInputReceiver::TryOnPressActions(bool isRepeat)
 {
 	// try our list of actions

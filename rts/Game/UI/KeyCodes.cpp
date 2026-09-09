@@ -171,6 +171,9 @@ void CKeyCodes::Reset()
 		AddPair("mouse" + IntToString(i), CKeyCodes::GetMouseButtonSymbol(i));
 	}
 
+	AddPair("mousewheelup",   CKeyCodes::GetMouseWheelSymbol(true));
+	AddPair("mousewheeldown", CKeyCodes::GetMouseWheelSymbol(false));
+
 	std::sort(nameToCode.begin(), nameToCode.end(), namePred);
 	std::sort(codeToName.begin(), codeToName.end(), codePred);
 	std::sort(printableCodes.begin(), printableCodes.end());
@@ -195,6 +198,14 @@ int CKeyCodes::GetMouseButtonSymbol(int button)
 	// magic number here chosen so it won't conflict with SDL or unicode reserved values.
 	// choosing a private part of unicode range.
 	return 0xE000+button;
+}
+
+
+int CKeyCodes::GetMouseWheelSymbol(bool up)
+{
+	// wheel up/down as pseudo-buttons just past the real mouse buttons (reuses the
+	// same symbol scheme, so the private-range base is defined in one place)
+	return GetMouseButtonSymbol(NUM_BUTTONS + (up ? 1 : 2));
 }
 
 
