@@ -3,8 +3,13 @@
 #ifndef _GLOBAL_RENDERING_INFO_H
 #define _GLOBAL_RENDERING_INFO_H
 
-#include <SDL_version.h>
 #include "System/type2.h"
+
+struct SDLVersionInfo {
+	int major;
+	int minor;
+	int patch;
+};
 
 #include <vector>
 
@@ -39,8 +44,8 @@ struct GlobalRenderingInfo {
 	int2 glContextVersion;
 	int2 gpuMemorySize;
 
-	SDL_version sdlVersionCompiled;
-	SDL_version sdlVersionLinked;
+	SDLVersionInfo sdlVersionCompiled;
+	SDLVersionInfo sdlVersionLinked;
 
 	std::vector<AvailableVideoMode> availableVideoModes;
 };

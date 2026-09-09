@@ -4,7 +4,7 @@
 #include <iostream>
 #include <chrono>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <System/GflagsExt.h>
 
 #ifdef _WIN32
@@ -87,6 +87,7 @@
 #include "System/FileSystem/Misc.hpp"
 #include "System/Input/KeyInput.h"
 #include "System/Input/MouseInput.h"
+#include "System/Input/ControllerInput.h"
 #include "System/LoadSave/LoadSaveHandler.h"
 #include "System/Log/ConsoleSink.h"
 #include "System/Log/ILog.h"
@@ -168,8 +169,6 @@ int spring::exitCode = spring::EXIT_CODE_SUCCESS;
 
 static unsigned int reloadCount = 0;
 static unsigned int killedCount = 0;
-
-static constexpr auto RECOIL_SDL_WINDOWEVENT_DISPLAY_CHANGED = 18;
 
 // initialize basic systems for command line help / output
 static void ConsolePrintInitialize(const std::string& configSource, bool safemode)
@@ -289,6 +288,7 @@ bool SpringApp::Init()
 
 	CInfoConsole::InitStatic();
 	CMouseHandler::InitStatic();
+	ControllerInput::InitStatic();
 
 	inputToken = input.AddHandler([this](const SDL_Event& event) { return SpringApp::MainEventHandler(event); });
 
@@ -1047,6 +1047,7 @@ void SpringApp::Kill(bool fromRun)
 
 	CInfoConsole::KillStatic();
 	CMouseHandler::KillStatic();
+	ControllerInput::KillStatic();
 
 	LOG("[SpringApp::%s][6]", __func__);
 	gs->Kill();
@@ -1075,212 +1076,216 @@ void SpringApp::Kill(bool fromRun)
 bool SpringApp::MainEventHandler(const SDL_Event& event)
 {
 	switch (event.type) {
-		case SDL_WINDOWEVENT: {
-			switch (event.window.event) {
-				case SDL_WINDOWEVENT_MOVED: {
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_MOVED][1] di=%d, ssx=%d, ssy=%d, wsx=%d, wsy=%d, wpx=%d, wpy=%d"
-						, __func__
-						, globalRendering->GetCurrentDisplayIndex()
-						, globalRendering->screenSizeX
-						, globalRendering->screenSizeY
-						, globalRendering->winSizeX
-						, globalRendering->winSizeY
-						, globalRendering->winPosX
-						, globalRendering->winPosY);
+		case SDL_EVENT_WINDOW_MOVED: {
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_MOVED][1] di=%d, ssx=%d, ssy=%d, wsx=%d, wsy=%d, wpx=%d, wpy=%d"
+				, __func__
+				, globalRendering->GetCurrentDisplayIndex()
+				, globalRendering->screenSizeX
+				, globalRendering->screenSizeY
+				, globalRendering->winSizeX
+				, globalRendering->winSizeY
+				, globalRendering->winPosX
+				, globalRendering->winPosY);
 
-					SaveWindowPosAndSize();
+			SaveWindowPosAndSize();
 
-					if (globalRendering->numDisplays > 1 && globalRendering->dualScreenMode) {
-						{
-							SCOPED_ONCE_TIMER("GlobalRendering::UpdateGL");
+			if (globalRendering->numDisplays > 1 && globalRendering->dualScreenMode) {
+				{
+					SCOPED_ONCE_TIMER("GlobalRendering::UpdateGL");
 
-							globalRendering->UpdateGLConfigs();
-							globalRendering->UpdateGLGeometry();
-							globalRendering->InitGLState();
-							UpdateInterfaceGeometry();
-						}
-					}
+					globalRendering->UpdateGLConfigs();
+					globalRendering->UpdateGLGeometry();
+					globalRendering->InitGLState();
+					UpdateInterfaceGeometry();
+				}
+			}
 
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_MOVED][2] di=%d, ssx=%d, ssy=%d, wsx=%d, wsy=%d, wpx=%d, wpy=%d"
-						, __func__
-						, globalRendering->GetCurrentDisplayIndex()
-						, globalRendering->screenSizeX
-						, globalRendering->screenSizeY
-						, globalRendering->winSizeX
-						, globalRendering->winSizeY
-						, globalRendering->winPosX
-						, globalRendering->winPosY);
-				} break;
-				// case SDL_WINDOWEVENT_RESIZED: // always preceded by CHANGED
-				case SDL_WINDOWEVENT_SIZE_CHANGED: {
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_SIZE_CHANGED][1] fullScreen=%d", __func__, globalRendering->fullScreen);
-
-					Watchdog::ClearTimer(WDT_MAIN, true);
-
-					{
-						SCOPED_ONCE_TIMER("GlobalRendering::UpdateGL");
-
-						SaveWindowPosAndSize();
-						globalRendering->UpdateGLConfigs();
-						globalRendering->UpdateGLGeometry();
-						globalRendering->InitGLState();
-						UpdateInterfaceGeometry();
-					}
-					{
-						SCOPED_ONCE_TIMER("ActiveController::ResizeEvent");
-
-						activeController->ResizeEvent();
-						mouseInput->InstallWndCallback();
-					}
-
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_SIZE_CHANGED][2]\n", __func__);
-				} break;
-				case SDL_WINDOWEVENT_MAXIMIZED:
-				case SDL_WINDOWEVENT_RESTORED:
-				case SDL_WINDOWEVENT_SHOWN: {
-					LOG("%s", "");
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_SHOWN][1] fullScreen=%d", __func__, globalRendering->fullScreen);
-
-					// reactivate sounds and other
-					globalRendering->active = true;
-
-					if (ISound::IsInitialized()) {
-						SCOPED_ONCE_TIMER("Sound::Iconified");
-						sound->Iconified(false);
-					}
-
-					if (globalRendering->fullScreen) {
-						SCOPED_ONCE_TIMER("FBO::GLContextReinit");
-						FBO::GLContextReinit();
-					}
-
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_SHOWN][2]\n", __func__);
-				} break;
-				case SDL_WINDOWEVENT_MINIMIZED:
-				case SDL_WINDOWEVENT_HIDDEN: {
-					LOG("%s", "");
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_HIDDEN][1] fullScreen=%d", __func__, globalRendering->fullScreen);
-
-					// deactivate sounds and other
-					globalRendering->active = false;
-
-					if (ISound::IsInitialized()) {
-						SCOPED_ONCE_TIMER("Sound::Iconified");
-						sound->Iconified(true);
-					}
-
-					if (globalRendering->fullScreen) {
-						SCOPED_ONCE_TIMER("FBO::GLContextLost");
-						FBO::GLContextLost();
-					}
-
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_HIDDEN][2]\n", __func__);
-				} break;
-
-				case SDL_WINDOWEVENT_FOCUS_GAINED: {
-					// update keydown table
-					KeyInput::Update(keyBindings.GetFakeMetaKey());
-				} break;
-				case SDL_WINDOWEVENT_FOCUS_LOST: {
-					Watchdog::ClearTimer(WDT_MAIN, true);
-
-					// SDL has some bug and does not update modstate on alt+tab/minimize etc.
-					//FIXME check if still happens with SDL2 (2013)
-					SDL_SetModState((SDL_Keymod)(SDL_GetModState() & (KMOD_NUM | KMOD_CAPS | KMOD_MODE)));
-
-					// drop emulated input first: it fires its own releases directly,
-					// since the pushed SDL releases below get eaten by the emulation gate
-					LuaDebugExtra::ClearEmulatedInput();
-
-					// release all keyboard keys
-					KeyInput::ReleaseAllKeys();
-
-					if (mouse != nullptr) {
-						// simulate mouse release to prevent hung buttons
-						for (int i = 1; i <= NUM_BUTTONS; ++i) {
-							if (!mouse->buttons[i].pressed)
-								continue;
-
-							SDL_Event event;
-							event.type = event.button.type = SDL_MOUSEBUTTONUP;
-							event.button.state = SDL_RELEASED;
-							event.button.which = 0;
-							event.button.button = i;
-							event.button.x = -1;
-							event.button.y = -1;
-							SDL_PushEvent(&event);
-						}
-
-						// unlock mouse
-						if (mouse->locked)
-							mouse->ToggleMiddleClickScroll();
-					}
-
-					// and make sure to un-capture mouse
-					globalRendering->SetWindowInputGrabbing(false);
-				} break;
-				// replace with normal SDL_WINDOWEVENT_DISPLAY_CHANGED when our Linux SDL2 is updated
-				case RECOIL_SDL_WINDOWEVENT_DISPLAY_CHANGED: {
-					LOG("[SpringApp::%s][SDL_WINDOWEVENT_DISPLAY_CHANGED] to display %d\n", __func__, event.window.data1);
-					// try to reinit GL context
-					globalRendering->MakeCurrentContext(false);
-				} break;
-
-				case SDL_WINDOWEVENT_CLOSE: {
-					gu->globalQuit = true;
-				} break;
-			};
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_MOVED][2] di=%d, ssx=%d, ssy=%d, wsx=%d, wsy=%d, wpx=%d, wpy=%d"
+				, __func__
+				, globalRendering->GetCurrentDisplayIndex()
+				, globalRendering->screenSizeX
+				, globalRendering->screenSizeY
+				, globalRendering->winSizeX
+				, globalRendering->winSizeY
+				, globalRendering->winPosX
+				, globalRendering->winPosY);
 		} break;
-		case SDL_AUDIODEVICEREMOVED: {
-			LOG("[SpringApp::%s][SDL_AUDIODEVICEREMOVED][1] type=%u, which=%u, iscapture=%u", __func__, event.adevice.type, event.adevice.which, static_cast<uint32_t>(event.adevice.iscapture));
-			sound->DeviceChanged(event.adevice.which);
+		case SDL_EVENT_WINDOW_RESIZED: {
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_RESIZED][1] fullScreen=%d", __func__, globalRendering->fullScreen);
+
+			Watchdog::ClearTimer(WDT_MAIN, true);
+
+			{
+				SCOPED_ONCE_TIMER("GlobalRendering::UpdateGL");
+
+				SaveWindowPosAndSize();
+				globalRendering->UpdateGLConfigs();
+				globalRendering->UpdateGLGeometry();
+				globalRendering->InitGLState();
+				UpdateInterfaceGeometry();
+			}
+			{
+				SCOPED_ONCE_TIMER("ActiveController::ResizeEvent");
+
+				activeController->ResizeEvent();
+				mouseInput->InstallWndCallback();
+			}
+
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_RESIZED][2]\n", __func__);
 		} break;
-		case SDL_AUDIODEVICEADDED: {
-			LOG("[SpringApp::%s][SDL_AUDIODEVICEADDED][1] type=%u, which=%u, iscapture=%u", __func__, event.adevice.type, event.adevice.which, static_cast<uint32_t>(event.adevice.iscapture));
-			sound->DeviceChanged(event.adevice.which);
+		case SDL_EVENT_WINDOW_MAXIMIZED:
+		case SDL_EVENT_WINDOW_RESTORED:
+		case SDL_EVENT_WINDOW_SHOWN: {
+			LOG("%s", "");
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_SHOWN][1] fullScreen=%d", __func__, globalRendering->fullScreen);
+
+			// reactivate sounds and other
+			globalRendering->active = true;
+
+			if (ISound::IsInitialized()) {
+				SCOPED_ONCE_TIMER("Sound::Iconified");
+				sound->Iconified(false);
+			}
+
+			if (globalRendering->fullScreen) {
+				SCOPED_ONCE_TIMER("FBO::GLContextReinit");
+				FBO::GLContextReinit();
+			}
+
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_SHOWN][2]\n", __func__);
 		} break;
-		case SDL_QUIT: {
+		case SDL_EVENT_WINDOW_MINIMIZED:
+		case SDL_EVENT_WINDOW_HIDDEN: {
+			LOG("%s", "");
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_HIDDEN][1] fullScreen=%d", __func__, globalRendering->fullScreen);
+
+			// deactivate sounds and other
+			globalRendering->active = false;
+
+			if (ISound::IsInitialized()) {
+				SCOPED_ONCE_TIMER("Sound::Iconified");
+				sound->Iconified(true);
+			}
+
+			if (globalRendering->fullScreen) {
+				SCOPED_ONCE_TIMER("FBO::GLContextLost");
+				FBO::GLContextLost();
+			}
+
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_HIDDEN][2]\n", __func__);
+		} break;
+
+		case SDL_EVENT_WINDOW_FOCUS_GAINED: {
+			// update keydown table
+			KeyInput::Update(keyBindings.GetFakeMetaKey());
+		} break;
+		case SDL_EVENT_WINDOW_FOCUS_LOST: {
+			Watchdog::ClearTimer(WDT_MAIN, true);
+
+			// SDL has some bug and does not update modstate on alt+tab/minimize etc.
+			//FIXME check if still happens with SDL3 (2013)
+			SDL_SetModState((SDL_Keymod)(SDL_GetModState() & (SDL_KMOD_NUM | SDL_KMOD_CAPS | SDL_KMOD_MODE)));
+
+			// drop emulated input first: it fires its own releases directly,
+			// since the pushed SDL releases below get eaten by the emulation gate
+			LuaDebugExtra::ClearEmulatedInput();
+
+			// release all keyboard keys
+			KeyInput::ReleaseAllKeys();
+
+			if (mouse != nullptr) {
+				// simulate mouse release to prevent hung buttons
+				for (int i = 1; i <= NUM_BUTTONS; ++i) {
+					if (!mouse->buttons[i].pressed)
+						continue;
+
+					SDL_Event event;
+					event.type = event.button.type = SDL_EVENT_MOUSE_BUTTON_UP;
+					event.button.down = false;
+					event.button.which = 0;
+					event.button.button = i;
+					event.button.x = -1;
+					event.button.y = -1;
+					SDL_PushEvent(&event);
+				}
+
+				// unlock mouse
+				if (mouse->locked)
+					mouse->ToggleMiddleClickScroll();
+			}
+
+			// and make sure to un-capture mouse
+			globalRendering->SetWindowInputGrabbing(false);
+		} break;
+		case SDL_EVENT_WINDOW_DISPLAY_CHANGED: {
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_DISPLAY_CHANGED] to display %d\n", __func__, event.window.data1);
+			// try to reinit GL context
+			globalRendering->MakeCurrentContext(false);
+			globalRendering->RefreshHDRState(true);
+		} break;
+		case SDL_EVENT_WINDOW_HDR_STATE_CHANGED: {
+			LOG("[SpringApp::%s][SDL_EVENT_WINDOW_HDR_STATE_CHANGED]\n", __func__);
+			globalRendering->RefreshHDRState(false);
+		} break;
+		case SDL_EVENT_DISPLAY_ADDED:
+		case SDL_EVENT_DISPLAY_REMOVED: {
+			LOG("[SpringApp::%s][display hotplug] display=%u\n", __func__, event.display.displayID);
+			globalRendering->RefreshHDRState(true);
+		} break;
+
+		case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
 			gu->globalQuit = true;
 		} break;
-		case SDL_TEXTEDITING: {
+		case SDL_EVENT_AUDIO_DEVICE_REMOVED: {
+			LOG("[SpringApp::%s][SDL_EVENT_AUDIO_DEVICE_REMOVED][1] which=%u, recording=%u", __func__, (unsigned)event.adevice.which, (unsigned)event.adevice.recording);
+			sound->DeviceChanged(event.adevice.which);
+		} break;
+		case SDL_EVENT_AUDIO_DEVICE_ADDED: {
+			LOG("[SpringApp::%s][SDL_EVENT_AUDIO_DEVICE_ADDED][1] which=%u, recording=%u", __func__, (unsigned)event.adevice.which, (unsigned)event.adevice.recording);
+			sound->DeviceChanged(event.adevice.which);
+		} break;
+		case SDL_EVENT_QUIT: {
+			gu->globalQuit = true;
+		} break;
+		case SDL_EVENT_TEXT_EDITING: {
 			if (activeController != nullptr)
 				activeController->TextEditing(event.edit.text, event.edit.start, event.edit.length);
 
 		} break;
-		case SDL_TEXTINPUT: {
+		case SDL_EVENT_TEXT_INPUT: {
 			if (activeController != nullptr)
 				activeController->TextInput(event.text.text);
 
 		} break;
-		case SDL_KEYDOWN: {
+		case SDL_EVENT_KEY_DOWN: {
 			KeyInput::Update(keyBindings.GetFakeMetaKey());
 
 			if (activeController != nullptr) {
-				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.keysym.sym);
-				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.keysym.scancode);
+				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.key);
+				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.scancode);
 
 				// if the key is already held via input emulation the effective
 				// state is already down, so the real press is not a new edge
-				// (the emulated store is keyed by raw SDL2 keycode, like keyVec)
-				if (!KeyInput::IsKeyEmulated(event.key.keysym.sym))
+				// (the emulated store is keyed by raw SDL3 keycode, like keyVec)
+				if (!KeyInput::IsKeyEmulated(event.key.key))
 					activeController->KeyPressed(keyCode, scanCode, event.key.repeat);
 			}
 
 		} break;
-		case SDL_KEYUP: {
+		case SDL_EVENT_KEY_UP: {
 			KeyInput::Update(keyBindings.GetFakeMetaKey());
 
 			if (activeController != nullptr) {
 				gameTextInput.ignoreNextChar = false;
-				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.keysym.sym);
-				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.keysym.scancode);
+				int keyCode = CKeyCodes::GetNormalizedSymbol(event.key.key);
+				int scanCode = CScanCodes::GetNormalizedSymbol(event.key.scancode);
 
 				// emulation still holds it down, so the real release is not an edge
-				if (!KeyInput::IsKeyEmulated(event.key.keysym.sym))
+				if (!KeyInput::IsKeyEmulated(event.key.key))
 					activeController->KeyReleased(keyCode, scanCode);
 			}
 		} break;
-		case SDL_KEYMAPCHANGED: {
+		case SDL_EVENT_KEYMAP_CHANGED: {
 			if (activeController != nullptr) {
 				activeController->KeyMapChanged();
 			}

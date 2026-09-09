@@ -10,7 +10,7 @@
 #include "System/StringUtil.h"
 #include "System/Input/KeyInput.h"
 
-#include <SDL_keycode.h>
+#include <SDL3/SDL_keycode.h>
 
 #include "System/Misc/TracyDefs.h"
 
@@ -89,10 +89,10 @@ unsigned char CKeySet::GetCurrentModifiers()
 	RECOIL_DETAILED_TRACY_ZONE;
 	unsigned char modifiers = 0;
 
-	if (KeyInput::GetKeyModState(KMOD_ALT))   { modifiers |= KS_ALT; }
-	if (KeyInput::GetKeyModState(KMOD_CTRL))  { modifiers |= KS_CTRL; }
-	if (KeyInput::GetKeyModState(KMOD_GUI))   { modifiers |= KS_META; }
-	if (KeyInput::GetKeyModState(KMOD_SHIFT)) { modifiers |= KS_SHIFT; }
+	if (KeyInput::GetKeyModState(SDL_KMOD_ALT))   { modifiers |= KS_ALT; }
+	if (KeyInput::GetKeyModState(SDL_KMOD_CTRL))  { modifiers |= KS_CTRL; }
+	if (KeyInput::GetKeyModState(SDL_KMOD_GUI))   { modifiers |= KS_META; }
+	if (KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) { modifiers |= KS_SHIFT; }
 
 	return modifiers;
 }

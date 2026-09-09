@@ -45,6 +45,7 @@ set(sources_engine_Lua
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaSyncedTable.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaTableExtra.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaTextures.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/LuaVideoTextures.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaTracyExtra.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaAtlasTextures.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/LuaUI.cpp"

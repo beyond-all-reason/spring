@@ -3,8 +3,8 @@
 #include <array>
 #include <tuple>
 
-#include <SDL_keycode.h>
-#include <SDL_mouse.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
 
 #include "CommandColors.h"
 #include "GuiHandler.h"
@@ -621,7 +621,7 @@ void CMiniMap::SelectUnits(int x, int y)
 	const CUnit *_lastClicked = lastClicked;
 	lastClicked = nullptr;
 
-	if (!KeyInput::GetKeyModState(KMOD_SHIFT) && !KeyInput::GetKeyModState(KMOD_CTRL))
+	if (!KeyInput::GetKeyModState(SDL_KMOD_SHIFT) && !KeyInput::GetKeyModState(SDL_KMOD_CTRL))
 		selectedUnitsHandler.ClearSelected();
 
 	CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
@@ -781,7 +781,7 @@ void CMiniMap::MouseMove(int x, int y, int dx, int dy, int button)
 			curDim.x = std::min(globalRendering->viewSizeX, curDim.x);
 		}
 
-		if (KeyInput::GetKeyModState(KMOD_SHIFT))
+		if (KeyInput::GetKeyModState(SDL_KMOD_SHIFT))
 			switch (rotation)
 			{
 				case ROTATION_0:
@@ -838,7 +838,7 @@ void CMiniMap::MouseRelease(int x, int y, int button)
 
 	if (button == SDL_BUTTON_LEFT) {
 		if (showButtons && maximizeBox.Inside(x, y)) {
-			ToggleMaximized(!!KeyInput::GetKeyModState(KMOD_SHIFT));
+			ToggleMaximized(!!KeyInput::GetKeyModState(SDL_KMOD_SHIFT));
 			return;
 		}
 

@@ -40,8 +40,8 @@
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 
-#include <SDL_mouse.h>
-#include <SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_keycode.h>
 
 #include "System/Misc/TracyDefs.h"
 
@@ -318,7 +318,7 @@ void CSelectedUnitsHandler::HandleUnitBoxSelection(const float4& planeRight, con
 			if (vec.dot4(planeBottom) >= 0.0f)
 				continue;
 
-			if (KeyInput::GetKeyModState(KMOD_CTRL) && (selectedUnits.find(u->id) != selectedUnits.end())) {
+			if (KeyInput::GetKeyModState(SDL_KMOD_CTRL) && (selectedUnits.find(u->id) != selectedUnits.end())) {
 				RemoveUnit(u);
 				continue;
 			}
@@ -353,7 +353,7 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 		return;
 
 	if (!selectType) {
-		if (KeyInput::GetKeyModState(KMOD_CTRL) && (selectedUnits.find(unit->id) != selectedUnits.end())) {
+		if (KeyInput::GetKeyModState(SDL_KMOD_CTRL) && (selectedUnits.find(unit->id) != selectedUnits.end())) {
 			RemoveUnit(unit);
 		} else {
 			AddUnit(unit);
@@ -377,7 +377,7 @@ void CSelectedUnitsHandler::HandleSingleUnitClickSelection(CUnit* unit, bool doI
 				if (u->unitDef->id != unit->unitDef->id)
 					continue;
 
-				if (!doInViewTest || KeyInput::GetKeyModState(KMOD_CTRL) || camera->InView((u)->midPos))
+				if (!doInViewTest || KeyInput::GetKeyModState(SDL_KMOD_CTRL) || camera->InView((u)->midPos))
 					AddUnit(u);
 			}
 		}
@@ -686,7 +686,7 @@ void CSelectedUnitsHandler::Draw()
 	// (or old-style, whenever the shift key is being held down)
 	if (cmdColors.buildBox[3] > 0.0f) {
 		if (!selectedUnits.empty() &&
-				((cmdColors.BuildBoxesOnShift() && KeyInput::GetKeyModState(KMOD_SHIFT)) ||
+				((cmdColors.BuildBoxesOnShift() && KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) ||
 				 ((guihandler->inCommand >= 0) &&
 					(guihandler->inCommand < int(guihandler->commands.size())) &&
 					(guihandler->commands[guihandler->inCommand].id < 0)))) {

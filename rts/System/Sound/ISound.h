@@ -5,12 +5,14 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 #include <vector>
 
 class float3;
 class LuaParser;
 class CSoundSource;
 class SoundItem;
+class IPCMStream;
 
 
 /**
@@ -47,6 +49,7 @@ public:
 
 	virtual void UpdateListener(const float3& camPos, const float3& camDir, const float3& camUp) = 0;
 	virtual void NewFrame() = 0;
+	virtual std::shared_ptr<IPCMStream> CreatePCMStream() = 0;
 
 	virtual void ConfigNotify(const std::string& key, const std::string& value) = 0;
 	virtual void PitchAdjust(const float newPitch) = 0;

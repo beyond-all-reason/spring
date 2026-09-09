@@ -13,7 +13,7 @@ add_dependencies(Game generateVersionFiles)
 target_include_directories(Game PRIVATE "${CMAKE_BINARY_DIR}/src-generated/engine")
 target_link_libraries(Game PRIVATE
 	 Tracy::TracyClient
-	 SDL2::SDL2
+	 SDL3::SDL3
 	 RmlUi::RmlUi
 	 ${sound-impl}
 	 prd::jsoncpp
@@ -22,13 +22,13 @@ target_link_libraries(Game PRIVATE
 )
 
 ### Assemble libraries
-find_package(SDL2 MODULE REQUIRED)
+find_package(SDL3 REQUIRED CONFIG)
 
 
 
 
 
-set(engineLibraries SDL2::SDL2)
+set(engineLibraries SDL3::SDL3)
 
 set(OpenGL_GL_PREFERENCE LEGACY)
 find_package_static(OpenGL 3.0 REQUIRED)
@@ -83,6 +83,17 @@ include_directories(${engineIncludes})
 ### Build the executable
 add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
 target_link_libraries(engine-legacy ${engineLibraries} Game)
+
+if(ENABLE_VIDEO)
+	target_compile_definitions(engine-legacy PRIVATE RECOIL_VIDEO)
+	target_link_libraries(engine-legacy
+		FFmpeg::avformat
+		FFmpeg::avcodec
+		FFmpeg::swscale
+		FFmpeg::swresample
+		FFmpeg::avutil
+	)
+endif()
 
 # Export symbols for plugin access (replaces CMP0065 OLD behavior)
 set_target_properties(engine-legacy PROPERTIES ENABLE_EXPORTS TRUE)

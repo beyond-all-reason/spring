@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <functional>
-#include <SDL_events.h>
+#include <SDL3/SDL_events.h>
 
 /**
  * @brief Simple thing: events go in, events come out

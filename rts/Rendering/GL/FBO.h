@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef FBO_H
-#define FBO_H
+#pragma once
 
 #include <vector>
 #include <array>
@@ -27,6 +26,10 @@ public:
 	static bool IsSupported();
 	static bool IsReady();
 	static GLint GetCurrentBoundFBO();
+	static void SetDefaultFBO(GLuint fboId);
+	static GLuint GetDefaultFBO();
+	static void BindDefault();
+	static void BindFramebufferZero();
 
 	FBO(         ) { Init(false); }
 	explicit FBO(bool noop) { Init( noop); }
@@ -195,6 +198,7 @@ private:
 	};
 
 	static std::vector<FBO*> activeFBOs;
+	static GLuint defaultFBO;
 	static spring::unordered_map<GLuint, TexData> fboTexData;
 
 	static GLint maxAttachments;
@@ -214,5 +218,3 @@ private:
 	 */
 	static GLenum GetTextureTargetByID(const GLuint id, const unsigned int i = 0);
 };
-
-#endif /* FBO_H */

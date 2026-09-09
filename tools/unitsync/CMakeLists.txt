@@ -25,8 +25,8 @@ if (WIN32)
 	list(APPEND unitsync_libs ${WINMM_LIBRARY})
 endif (WIN32)
 
-find_package(SDL2 MODULE REQUIRED)
-list(APPEND unitsync_libs SDL2::SDL2)
+find_package(SDL3 REQUIRED CONFIG)
+list(APPEND unitsync_libs SDL3::SDL3)
 
 if    (MINGW)
 	#list(APPEND unitsync_lib_flags -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread)

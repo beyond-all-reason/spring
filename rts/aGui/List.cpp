@@ -2,7 +2,7 @@
 
 #include "List.h"
 
-#include <SDL_mouse.h>
+#include <SDL3/SDL_mouse.h>
 
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/GlobalRendering.h"
@@ -296,30 +296,32 @@ void List::DrawSelf()
 bool List::HandleEventSelf(const SDL_Event& ev)
 {
 	switch (ev.type) {
-		case SDL_MOUSEBUTTONDOWN: {
-			hasFocus = gui->MouseOverElement(GetRoot(), ev.button.x, ev.button.y);
-			if(MouseOver(ev.button.x, ev.button.y)) {
+		case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+			int mx = int(ev.button.x);
+			int my = int(ev.button.y);
+			hasFocus = gui->MouseOverElement(GetRoot(), mx, my);
+			if(MouseOver(mx, my)) {
 				if(hasFocus) {
-					MousePress(ev.button.x, ev.button.y, ev.button.button);
+					MousePress(mx, my, ev.button.button);
 					return true;
 				}
 			}
 			break;
 		}
-		case SDL_MOUSEBUTTONUP: {
+		case SDL_EVENT_MOUSE_BUTTON_UP: {
 			if (!hasFocus)
 				break;
-			if (MouseOver(ev.button.x, ev.button.y) || activeScrollbar)
+			if (MouseOver(int(ev.button.x), int(ev.button.y)) || activeScrollbar)
 			{
-				MouseRelease(ev.button.x, ev.button.y, ev.button.button);
+				MouseRelease(int(ev.button.x), int(ev.button.y), ev.button.button);
 				return true;
 			}
 			break;
 		}
-		case SDL_MOUSEWHEEL: {
-			int mousex, mousey;
+		case SDL_EVENT_MOUSE_WHEEL: {
+			float mousex, mousey;
 			SDL_GetMouseState(&mousex, &mousey);
-			if(hasFocus && MouseOver(mousex, mousey)) {
+			if(hasFocus && MouseOver(int(mousex), int(mousey))) {
 				if (ev.wheel.y > 0) {
 					ScrollUpOne();
 				} else {
@@ -328,25 +330,27 @@ bool List::HandleEventSelf(const SDL_Event& ev)
 				return true;
 			}
 		} break;
-		case SDL_MOUSEMOTION: {
+		case SDL_EVENT_MOUSE_MOTION: {
 			if (!hasFocus)
 				break;
-			if (MouseOver(ev.motion.x, ev.motion.y) || activeScrollbar)
+			int mx = int(ev.motion.x);
+			int my = int(ev.motion.y);
+			if (MouseOver(mx, my) || activeScrollbar)
 			{
-				MouseMove(ev.motion.x, ev.motion.y, ev.motion.xrel, ev.motion.yrel, ev.motion.state);
+				MouseMove(mx, my, int(ev.motion.xrel), int(ev.motion.yrel), 0);
 				return true;
 			}
 			break;
 		}
-		case SDL_KEYDOWN: {
+		case SDL_EVENT_KEY_DOWN: {
 			if (!hasFocus)
 				break;
-			if(ev.key.keysym.sym == SDLK_ESCAPE)
+			if(ev.key.key == SDLK_ESCAPE)
 			{
 				hasFocus = false;
 				break;
 			}
-			return KeyPressed(ev.key.keysym.sym, false);
+			return KeyPressed(ev.key.key, false);
 		}
 	}
 	return false;

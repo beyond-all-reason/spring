@@ -1,8 +1,8 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef WINDOW_MANAGER_HELPER_H
-#define WINDOW_MANAGER_HELPER_H
+#pragma once
 
+#include <cstdint>
 #include <string>
 
 class CBitmap;
@@ -10,6 +10,13 @@ struct SDL_Window;
 struct SDL_Surface;
 
 namespace WindowManagerHelper {
+	struct AdvancedColorInfo {
+		bool available = false;
+		bool supported = false;
+		bool enabled = false;
+	};
+
+	AdvancedColorInfo GetAdvancedColorInfo(uint32_t displayID);
 	/**
 	 * Sets the window-manager icon for the running process.
 	 * It will be displayed in the OS task-bar, for example.
@@ -38,5 +45,3 @@ namespace WindowManagerHelper {
 	 */
 	void SetWindowResizable(SDL_Window* window, bool resizable);
 };
-
-#endif // WINDOW_MANAGER_HELPER_H

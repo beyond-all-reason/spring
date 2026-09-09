@@ -1,10 +1,15 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Platform/WindowManagerHelper.h"
-#include <SDL_video.h>
+#include <SDL3/SDL_video.h>
 
 
 namespace WindowManagerHelper {
+
+AdvancedColorInfo GetAdvancedColorInfo(uint32_t)
+{
+	return {};
+}
 
 void BlockCompositing(SDL_Window* window)
 {

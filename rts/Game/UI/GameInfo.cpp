@@ -17,7 +17,7 @@
 #include "System/FileSystem/FileSystem.h"
 #include "System/StringUtil.h"
 
-#include <SDL_keycode.h>
+#include <SDL3/SDL_keycode.h>
 #include <fmt/printf.h>
 
 #include "System/Misc/TracyDefs.h"

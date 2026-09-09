@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include <SDL2/SDL_rect.h>
+#include <SDL3/SDL_rect.h>
 
 class Action;
 struct GameControllerTextInput {

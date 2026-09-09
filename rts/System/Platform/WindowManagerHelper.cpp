@@ -2,7 +2,7 @@
 
 #include "WindowManagerHelper.h"
 
-#include <SDL_video.h>
+#include <SDL3/SDL_video.h>
 
 #include "Game/GameVersion.h"
 #include "Rendering/GlobalRendering.h"
@@ -51,7 +51,7 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 
 	if (bmp == nullptr) {
 		// only reached on exit
-		SDL_FreeSurface(windowIcon.surf);
+		SDL_DestroySurface(windowIcon.surf);
 		SDL_SetWindowIcon(win, windowIcon.surf = nullptr);
 
 		if (windowIcon.bmp)
@@ -74,7 +74,7 @@ bool SetIconSurface(SDL_Window* win, CBitmap* bmp) {
 
 	static auto SetWindowIconImpl = [](SDL_Window* win, SDL_Surface* surf) {
 		SDL_SetWindowIcon(win, surf);
-		SDL_FreeSurface(windowIcon.surf);
+		SDL_DestroySurface(windowIcon.surf);
 		windowIcon.surf = surf;
 	};
 

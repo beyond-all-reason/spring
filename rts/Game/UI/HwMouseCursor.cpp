@@ -12,7 +12,6 @@
 	typedef unsigned char byte;
 #else
 	#include <X11/Xcursor/Xcursor.h>
-	#include <SDL_syswm.h>
 #endif
 
 #include "HwMouseCursor.h"
@@ -22,10 +21,8 @@
 #include "System/Log/ILog.h"
 #include "System/SpringMath.h"
 
-#include <SDL_config.h>
-#include <SDL_syswm.h>
-#include <SDL_mouse.h>
-#include <SDL_events.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_events.h>
 #endif
 
 #include <bit>
@@ -171,8 +168,6 @@ private:
 	int xmaxsize = 0;
 	int ymaxsize = 0;
 
-	SDL_SYSWM_TYPE subsystem;
-
 	std::vector<XcursorImage*> cimages;
 };
 
@@ -215,20 +210,15 @@ IHardwareCursor* IHardwareCursor::Alloc(void* mem) {
 	static_assert(sizeof(HardwareCursorX11) <= CMouseCursor::HWC_MEM_SIZE, "");
 	static_assert(sizeof(HardwareCursorSDL) <= CMouseCursor::HWC_MEM_SIZE, "");
 
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-
-	if (SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
-		switch (info.subsystem)
-		{
-		case SDL_SYSWM_X11:
-			return (new (mem) HardwareCursorX11());
-		case SDL_SYSWM_WAYLAND:
-		default: {
-			return (new (mem) HardwareCursorSDL());
-		} break;
-		}
+	const SDL_PropertiesID props = SDL_GetWindowProperties(globalRendering->GetWindow());
+	const char* wmStr = SDL_GetStringProperty(props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+	if (wmStr || SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr)) {
+		return (new (mem) HardwareCursorSDL());
 	}
+	if (SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr)) {
+		return (new (mem) HardwareCursorX11());
+	}
+	return (new (mem) HardwareCursorSDL());
 #endif
 
 	return nullptr;
@@ -550,20 +540,7 @@ void HardwareCursorWindows::Finish()
 void HardwareCursorWindows::Bind()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	#if 0
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-
-	if (!SDL_GetWMInfo(&info)) {
-		LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window handle", spring::TypeToCStr<decltype(*this)>(), __func__);
-		return;
-	}
-
-	// SDL doesn't let us use it
-	SetClassLong(info.window, GCL_HCURSOR, (LONG) cursor);
-	#endif
-
-	SDL_ShowCursor(SDL_ENABLE);
+	SDL_ShowCursor();
 	SetCursor(cursor);
 	mouseInput->SetWMMouseCursor(cursor);
 }
@@ -590,15 +567,14 @@ void HardwareCursorX11::Kill()
 	cimages.clear();
 
 	if (cursor != 0) {
-		SDL_SysWMinfo info;
-		SDL_VERSION(&info.version);
-
-		if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
+		const SDL_PropertiesID props = SDL_GetWindowProperties(globalRendering->GetWindow());
+		Display* disp = (Display*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+		if (!disp) {
 			LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window info", spring::TypeToCStr<decltype(*this)>(), __func__);
 			return;
 		}
 
-		XFreeCursor(info.info.x11.display, cursor);
+		XFreeCursor(disp, cursor);
 	}
 }
 
@@ -698,16 +674,16 @@ void HardwareCursorX11::Finish()
 		cis->images[i] = ci;
 	}
 
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
+	const SDL_PropertiesID props = SDL_GetWindowProperties(globalRendering->GetWindow());
+	Display* disp = (Display*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+	if (!disp) {
 		LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window info", spring::TypeToCStr<decltype(*this)>(), __func__);
 		XcursorImagesDestroy(cis);
 		cimages.clear();
 		return;
 	}
 
-	cursor = XcursorImagesLoadCursor(info.info.x11.display, cis);
+	cursor = XcursorImagesLoadCursor(disp, cis);
 	XcursorImagesDestroy(cis);
 	cimages.clear();
 }
@@ -715,26 +691,26 @@ void HardwareCursorX11::Finish()
 void HardwareCursorX11::Bind()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-
-	if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info)) {
+	const SDL_PropertiesID props = SDL_GetWindowProperties(globalRendering->GetWindow());
+	Display* disp = (Display*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+	Window win = (Window)SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+	if (!disp || !win) {
 		LOG_L(L_ERROR, "[%s::%s] SDL error: can't get window info", spring::TypeToCStr<decltype(*this)>(), __func__);
 		return;
 	}
 
 	// do between lock/unlock so SDL's default cursor doesn't flicker in
-	SDL_ShowCursor(SDL_ENABLE);
-	XDefineCursor(info.info.x11.display, info.info.x11.window, cursor);
+	SDL_ShowCursor();
+	XDefineCursor(disp, win, cursor);
 }
 
 
 void HardwareCursorSDL::PushImage(int xsize, int ysize, const void* mem)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-    auto surface = SDL_CreateRGBSurface(0, xsize, ysize, 32, 0x000000FF, 0x0000FF00, 0x00FF0000,  0xFF000000);
+    auto surface = SDL_CreateSurface(xsize, ysize, SDL_PIXELFORMAT_ABGR8888);
     if (!surface) {
-        LOG_L(L_ERROR, "SDL_CreateRGBSurface failed: %s", SDL_GetError());
+        LOG_L(L_ERROR, "SDL_CreateSurface failed: %s", SDL_GetError());
         return;
     }
     SDL_memcpy(surface->pixels, mem, xsize * ysize * 4);
@@ -810,10 +786,10 @@ void HardwareCursorSDL::Kill()
 	RECOIL_DETAILED_TRACY_ZONE;
     for (auto &c : this->frames) {
         if (c.cursor) {
-            SDL_FreeCursor(c.cursor);
+            SDL_DestroyCursor(c.cursor);
         }
         if (c.surface) {
-            SDL_FreeSurface(c.surface);
+            SDL_DestroySurface(c.surface);
         }
     }
     this->frames.clear();
@@ -822,7 +798,7 @@ void HardwareCursorSDL::Kill()
 void HardwareCursorSDL::Bind()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-    SDL_ShowCursor(SDL_ENABLE);
+    SDL_ShowCursor();
     if (!this->frames.empty()) {
         SDL_SetCursor(this->frames[0].cursor);
     }

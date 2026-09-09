@@ -4,6 +4,7 @@
 #define _NULL_SOUND_H_
 
 #include "System/Sound/ISound.h"
+#include "System/Sound/Null/NullPCMStream.h"
 #include "System/float3.h"
 
 #include <string>
@@ -28,6 +29,7 @@ public:
 
 	void UpdateListener(const float3& campos, const float3& camdir, const float3& camup) override {}
 	void NewFrame() override {}
+	std::shared_ptr<IPCMStream> CreatePCMStream() override { return std::make_shared<NullPCMStream>(); }
 
 	void ConfigNotify(const std::string& key, const std::string& value) override {}
 	void PitchAdjust(const float newPitch) override {}

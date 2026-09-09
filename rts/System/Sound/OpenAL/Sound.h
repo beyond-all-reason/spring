@@ -8,7 +8,7 @@
 #include <vector>
 #include <al.h>
 #include <alc.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "System/Sound/ISound.h"
 #include "System/float3.h"
@@ -21,6 +21,7 @@
 class CSoundSource;
 class SoundBuffer;
 class SoundItem;
+class OpenALPCMStream;
 
 /// Default sound system implementation (OpenAL)
 class CSound : public ISound
@@ -41,6 +42,7 @@ public:
 	CSoundSource* GetNextBestSource(bool lock = true) override;
 
 	void NewFrame() override;
+	std::shared_ptr<IPCMStream> CreatePCMStream() override;
 	void UpdateListener(const float3& campos, const float3& camdir, const float3& camup) override {
 		myPos  = campos;
 		camDir = camdir;
@@ -70,6 +72,7 @@ public:
 	const float3& GetListenerPos() const override { return myPos; }
 
 	ALCdevice* GetCurrentDevice() { return curDevice; }
+	ALCcontext* GetCurrentContext() { return curContext; }
 	int GetFrameSize() const { return frameSize; }
 
 	std::vector<std::string> GetSoundDevices() override;
@@ -95,10 +98,11 @@ private:
 	size_t MakeItemFromDef(const SoundItemNameMap& itemDef);
 	size_t LoadSoundBuffer(const std::string& filename);
 
-private:
+	private:
 	ALCdevice* curDevice = nullptr;
 	ALCcontext* curContext = nullptr;
-	int sdlDeviceID = -1;
+	SDL_AudioDeviceID sdlDeviceID = 0;
+	SDL_AudioStream* sdlAudioStream = nullptr;
 	bool hasAlcSoftLoopBack = false;
 
 	std::string selectedDeviceName = "";
@@ -110,6 +114,7 @@ private:
 
 	std::vector<SoundItem> soundItems;
 	std::vector<CSoundSource> soundSources; // fixed-size
+	std::vector<std::shared_ptr<OpenALPCMStream>> pcmStreams;
 
 	std::vector<std::uint8_t> loadBuffer;
 

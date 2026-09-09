@@ -54,8 +54,8 @@
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
 
-#include <SDL_keycode.h>
-#include <SDL_mouse.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
 
 #include "System/Misc/TracyDefs.h"
 
@@ -98,8 +98,8 @@ CGuiHandler::CGuiHandler()
 bool CGuiHandler::GetQueueKeystate() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return (!invertQueueKey && KeyInput::GetKeyModState(KMOD_SHIFT)) ||
-	       (invertQueueKey && !KeyInput::GetKeyModState(KMOD_SHIFT));
+	return (!invertQueueKey && KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) ||
+	       (invertQueueKey && !KeyInput::GetKeyModState(SDL_KMOD_SHIFT));
 }
 
 
@@ -1048,7 +1048,7 @@ void CGuiHandler::Update()
 	SetCursorIcon();
 
 	{
-		if (!invertQueueKey && (needShift && !KeyInput::GetKeyModState(KMOD_SHIFT))) {
+		if (!invertQueueKey && (needShift && !KeyInput::GetKeyModState(SDL_KMOD_SHIFT))) {
 			SetActiveCommandIndex(-1);
 			needShift = false;
 		}
@@ -1267,7 +1267,7 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 		return;
 	}
 
-	if (!invertQueueKey && needShift && !KeyInput::GetKeyModState(KMOD_SHIFT)) {
+	if (!invertQueueKey && needShift && !KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) {
 		SetActiveCommandIndex(-1);
 		needShift = false;
 	}
@@ -1422,26 +1422,26 @@ bool CGuiHandler::SetActiveCommand(int cmdIndex, int button,
 	// setup the mouse and key states
 	const bool  prevLMB   = mouse->buttons[SDL_BUTTON_LEFT].pressed;
 	const bool  prevRMB   = mouse->buttons[SDL_BUTTON_RIGHT].pressed;
-	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(KMOD_ALT);
-	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
-	const std::uint8_t prevMeta  = KeyInput::GetKeyModState(KMOD_GUI);
-	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
+	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(SDL_KMOD_ALT);
+	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(SDL_KMOD_CTRL);
+	const std::uint8_t prevMeta  = KeyInput::GetKeyModState(SDL_KMOD_GUI);
+	const std::uint8_t prevShift = KeyInput::GetKeyModState(SDL_KMOD_SHIFT);
 
 	mouse->buttons[SDL_BUTTON_LEFT].pressed  = leftMouseButton;
 	mouse->buttons[SDL_BUTTON_RIGHT].pressed = rightMouseButton;
 
-	KeyInput::SetKeyModState(KMOD_ALT,   alt);
-	KeyInput::SetKeyModState(KMOD_CTRL,  ctrl);
-	KeyInput::SetKeyModState(KMOD_GUI,   meta);
-	KeyInput::SetKeyModState(KMOD_SHIFT, shift);
+	KeyInput::SetKeyModState(SDL_KMOD_ALT,   alt);
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL,  ctrl);
+	KeyInput::SetKeyModState(SDL_KMOD_GUI,   meta);
+	KeyInput::SetKeyModState(SDL_KMOD_SHIFT, shift);
 
 	const bool retval = SetActiveCommand(cmdIndex, effectiveRMB);
 
 	// revert the mouse and key states
-	KeyInput::SetKeyModState(KMOD_SHIFT, prevShift);
-	KeyInput::SetKeyModState(KMOD_GUI,   prevMeta);
-	KeyInput::SetKeyModState(KMOD_CTRL,  prevCtrl);
-	KeyInput::SetKeyModState(KMOD_ALT,   prevAlt);
+	KeyInput::SetKeyModState(SDL_KMOD_SHIFT, prevShift);
+	KeyInput::SetKeyModState(SDL_KMOD_GUI,   prevMeta);
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL,  prevCtrl);
+	KeyInput::SetKeyModState(SDL_KMOD_ALT,   prevAlt);
 
 	mouse->buttons[SDL_BUTTON_RIGHT].pressed = prevRMB;
 	mouse->buttons[SDL_BUTTON_LEFT].pressed  = prevLMB;
@@ -1555,14 +1555,14 @@ static bool ParseCustomCmdMods(std::string& cmd, ModGroup& in, ModGroup& out)
 static bool CheckCustomCmdMods(bool rightMouseButton, ModGroup& inMods)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (((inMods.alt   == Required)  && !KeyInput::GetKeyModState(KMOD_ALT))   ||
-	    ((inMods.alt   == Forbidden) &&  KeyInput::GetKeyModState(KMOD_ALT))   ||
-	    ((inMods.ctrl  == Required)  && !KeyInput::GetKeyModState(KMOD_CTRL))  ||
-	    ((inMods.ctrl  == Forbidden) &&  KeyInput::GetKeyModState(KMOD_CTRL))  ||
-	    ((inMods.meta  == Required)  && !KeyInput::GetKeyModState(KMOD_GUI))  ||
-	    ((inMods.meta  == Forbidden) &&  KeyInput::GetKeyModState(KMOD_GUI))  ||
-	    ((inMods.shift == Required)  && !KeyInput::GetKeyModState(KMOD_SHIFT)) ||
-	    ((inMods.shift == Forbidden) &&  KeyInput::GetKeyModState(KMOD_SHIFT)) ||
+	if (((inMods.alt   == Required)  && !KeyInput::GetKeyModState(SDL_KMOD_ALT))   ||
+	    ((inMods.alt   == Forbidden) &&  KeyInput::GetKeyModState(SDL_KMOD_ALT))   ||
+	    ((inMods.ctrl  == Required)  && !KeyInput::GetKeyModState(SDL_KMOD_CTRL))  ||
+	    ((inMods.ctrl  == Forbidden) &&  KeyInput::GetKeyModState(SDL_KMOD_CTRL))  ||
+	    ((inMods.meta  == Required)  && !KeyInput::GetKeyModState(SDL_KMOD_GUI))  ||
+	    ((inMods.meta  == Forbidden) &&  KeyInput::GetKeyModState(SDL_KMOD_GUI))  ||
+	    ((inMods.shift == Required)  && !KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) ||
+	    ((inMods.shift == Forbidden) &&  KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) ||
 	    ((inMods.right == Required)  && !rightMouseButton) ||
 	    ((inMods.right == Forbidden) &&  rightMouseButton)) {
 		return false;
@@ -1586,25 +1586,25 @@ void CGuiHandler::RunCustomCommands(const std::vector<std::string>& cmds, bool r
 		ModGroup outMods; // controls the state of the modifiers  (ex: "group1")
 		if (ParseCustomCmdMods(copy, inMods, outMods)) {
 			if (CheckCustomCmdMods(rightMouseButton, inMods)) {
-				const bool tmpAlt   = !!KeyInput::GetKeyModState(KMOD_ALT);
-				const bool tmpCtrl  = !!KeyInput::GetKeyModState(KMOD_CTRL);
-				const bool tmpMeta  = !!KeyInput::GetKeyModState(KMOD_GUI);
-				const bool tmpShift = !!KeyInput::GetKeyModState(KMOD_SHIFT);
+				const bool tmpAlt   = !!KeyInput::GetKeyModState(SDL_KMOD_ALT);
+				const bool tmpCtrl  = !!KeyInput::GetKeyModState(SDL_KMOD_CTRL);
+				const bool tmpMeta  = !!KeyInput::GetKeyModState(SDL_KMOD_GUI);
+				const bool tmpShift = !!KeyInput::GetKeyModState(SDL_KMOD_SHIFT);
 
-				if (outMods.alt   != DontCare)  { KeyInput::SetKeyModState(KMOD_ALT,   int(outMods.alt   == Required)); }
-				if (outMods.ctrl  != DontCare)  { KeyInput::SetKeyModState(KMOD_CTRL,  int(outMods.ctrl  == Required)); }
-				if (outMods.meta  != DontCare)  { KeyInput::SetKeyModState(KMOD_GUI,   int(outMods.meta  == Required)); }
-				if (outMods.shift != DontCare)  { KeyInput::SetKeyModState(KMOD_SHIFT, int(outMods.shift == Required)); }
+				if (outMods.alt   != DontCare)  { KeyInput::SetKeyModState(SDL_KMOD_ALT,   int(outMods.alt   == Required)); }
+				if (outMods.ctrl  != DontCare)  { KeyInput::SetKeyModState(SDL_KMOD_CTRL,  int(outMods.ctrl  == Required)); }
+				if (outMods.meta  != DontCare)  { KeyInput::SetKeyModState(SDL_KMOD_GUI,   int(outMods.meta  == Required)); }
+				if (outMods.shift != DontCare)  { KeyInput::SetKeyModState(SDL_KMOD_SHIFT, int(outMods.shift == Required)); }
 
 				Action action(copy);
 				if (!ProcessLocalActions(action)) {
 					game->ProcessAction(action);
 				}
 
-				KeyInput::SetKeyModState(KMOD_ALT,   tmpAlt);
-				KeyInput::SetKeyModState(KMOD_CTRL,  tmpCtrl);
-				KeyInput::SetKeyModState(KMOD_GUI,   tmpMeta);
-				KeyInput::SetKeyModState(KMOD_SHIFT, tmpShift);
+				KeyInput::SetKeyModState(SDL_KMOD_ALT,   tmpAlt);
+				KeyInput::SetKeyModState(SDL_KMOD_CTRL,  tmpCtrl);
+				KeyInput::SetKeyModState(SDL_KMOD_GUI,   tmpMeta);
+				KeyInput::SetKeyModState(SDL_KMOD_SHIFT, tmpShift);
 			}
 		}
 	}
@@ -1647,9 +1647,9 @@ unsigned char CGuiHandler::CreateOptions(bool rightMouseButton)
 			options |= SHIFT_KEY;
 		}
 	}
-	if (KeyInput::GetKeyModState(KMOD_CTRL)) { options |= CONTROL_KEY; }
-	if (KeyInput::GetKeyModState(KMOD_ALT) ) { options |= ALT_KEY;     }
-	if (KeyInput::GetKeyModState(KMOD_GUI))  { options |= META_KEY;    }
+	if (KeyInput::GetKeyModState(SDL_KMOD_CTRL)) { options |= CONTROL_KEY; }
+	if (KeyInput::GetKeyModState(SDL_KMOD_ALT) ) { options |= ALT_KEY;     }
+	if (KeyInput::GetKeyModState(SDL_KMOD_GUI))  { options |= META_KEY;    }
 
 	return options;
 }
@@ -2073,7 +2073,7 @@ bool CGuiHandler::KeyReleased(int keyCode, int scanCode)
 
 void CGuiHandler::FinishCommand(int button)
 {
-	if ((button == SDL_BUTTON_LEFT) && (KeyInput::GetKeyModState(KMOD_SHIFT) || invertQueueKey)) {
+	if ((button == SDL_BUTTON_LEFT) && (KeyInput::GetKeyModState(SDL_KMOD_SHIFT) || invertQueueKey)) {
 		needShift = true;
 	} else {
 		SetActiveCommandIndex(-1);
@@ -2512,7 +2512,7 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 	buildInfos.clear();
 	buildInfos.reserve(16);
 
-	if (GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
+	if (GetQueueKeystate() && KeyInput::GetKeyModState(SDL_KMOD_CTRL)) {
 		const CUnit* unit = nullptr;
 		const CFeature* feature = nullptr;
 
@@ -2533,7 +2533,7 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 		}
 	}
 
-	if (other.def && GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
+	if (other.def && GetQueueKeystate() && KeyInput::GetKeyModState(SDL_KMOD_CTRL)) {
 		// circle build around building
 		const int oxsize = other.GetXSize() * SQUARE_SIZE;
 		const int ozsize = other.GetZSize() * SQUARE_SIZE;
@@ -2566,9 +2566,9 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 		float xstep = (int)((0 < delta.x) ? xsize : -xsize);
 		float zstep = (int)((0 < delta.z) ? zsize : -zsize);
 
-		if (KeyInput::GetKeyModState(KMOD_ALT)) {
+		if (KeyInput::GetKeyModState(SDL_KMOD_ALT)) {
 			// build a (filled or hollow) rectangle
-			if (KeyInput::GetKeyModState(KMOD_CTRL)) {
+			if (KeyInput::GetKeyModState(SDL_KMOD_CTRL)) {
 				if ((1 < xnum) && (1 < znum)) {
 					// go "down" on the "left" side
 					FillRowOfBuildPos(startInfo, start.x                     , start.z + zstep             ,      0,  zstep, znum - 1, 0, false, buildInfos);
@@ -2602,9 +2602,9 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 			const bool xDominatesZ = (math::fabs(delta.x) > math::fabs(delta.z));
 
 			if (xDominatesZ) {
-				zstep = KeyInput::GetKeyModState(KMOD_CTRL) ? 0 : xstep * delta.z / (delta.x ? delta.x : 1);
+				zstep = KeyInput::GetKeyModState(SDL_KMOD_CTRL) ? 0 : xstep * delta.z / (delta.x ? delta.x : 1);
 			} else {
-				xstep = KeyInput::GetKeyModState(KMOD_CTRL) ? 0 : zstep * delta.x / (delta.z ? delta.z : 1);
+				xstep = KeyInput::GetKeyModState(SDL_KMOD_CTRL) ? 0 : zstep * delta.x / (delta.z ? delta.z : 1);
 			}
 
 			FillRowOfBuildPos(startInfo, start.x, start.z, xstep, zstep, xDominatesZ ? xnum : znum, 0, false, buildInfos);
@@ -4016,11 +4016,11 @@ void CGuiHandler::DrawCentroidCursor()
 	}
 
 	if ((cmd == CMD_MOVE) || (cmd == CMD_GATHERWAIT)) {
-		if (!KeyInput::GetKeyModState(KMOD_CTRL) && !KeyInput::GetKeyModState(KMOD_ALT) && !KeyInput::GetKeyModState(KMOD_GUI)) {
+		if (!KeyInput::GetKeyModState(SDL_KMOD_CTRL) && !KeyInput::GetKeyModState(SDL_KMOD_ALT) && !KeyInput::GetKeyModState(SDL_KMOD_GUI)) {
 			return;
 		}
 	} else if ((cmd == CMD_FIGHT) || (cmd == CMD_PATROL)) {
-		if (!KeyInput::GetKeyModState(KMOD_CTRL)) {
+		if (!KeyInput::GetKeyModState(SDL_KMOD_CTRL)) {
 			return;
 		}
 	} else {

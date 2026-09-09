@@ -15,7 +15,7 @@
 #include "System/SpringMath.h"
 #include "Net/Protocol/NetProtocol.h"
 
-#include <SDL_mouse.h>
+#include <SDL3/SDL_mouse.h>
 
 #include "System/Misc/TracyDefs.h"
 

@@ -3,7 +3,7 @@
 #include "System/Input/InputHandler.h"
 #include "Gui.h"
 
-#include <SDL_events.h>
+#include <SDL3/SDL_events.h>
 
 #include "GuiElement.h"
 #include "Rendering/GlobalRendering.h"

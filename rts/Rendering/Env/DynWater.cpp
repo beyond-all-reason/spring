@@ -605,7 +605,7 @@ void CDynWater::DrawWaves()
 	int resetTexs[] = { 0, 1, 2, 3, 4, 5, -1 };
 	DrawUpdateSquare(dx, dy, resetTexs);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 	glFlush();
 
 
@@ -641,7 +641,7 @@ void CDynWater::DrawWaves()
 	int resetTexs2[] = {0, -1};
 	DrawUpdateSquare(dx, dy, resetTexs2);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 
 	glFlush();
 
@@ -685,7 +685,7 @@ void CDynWater::DrawWaves()
 	glTexCoord2f(end,   start); glVertexf3( RgtVector);
 	glEnd();
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 
 	glFlush();
 
@@ -758,7 +758,7 @@ void CDynWater::DrawHeightTex()
 
 	glDisable(GL_FRAGMENT_PROGRAM_ARB);
 	glDisable(GL_VERTEX_PROGRAM_ARB);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 
 	glFlush();
 }
@@ -1007,7 +1007,7 @@ void CDynWater::DrawDetailNormalTex()
 	glEnd();
 
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 
 	glDisable(GL_FRAGMENT_PROGRAM_ARB);
 	glDisable(GL_VERTEX_PROGRAM_ARB);
@@ -1127,7 +1127,7 @@ void CDynWater::AddShipWakes()
 
 	va2->DrawArrayTN(GL_QUADS);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -1211,7 +1211,7 @@ void CDynWater::AddExplosions()
 
 	va->DrawArrayTN(GL_QUADS);
 
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	FBO::BindDefault();
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

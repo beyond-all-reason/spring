@@ -4,7 +4,7 @@
 #include <cfloat>
 #include <functional>
 
-#include <SDL_keycode.h>
+#include <SDL3/SDL_keycode.h>
 
 #include "PreGame.h"
 
@@ -153,7 +153,7 @@ int CPreGame::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	if (keyCode != SDLK_ESCAPE)
 		return 0;
 
-	if (!KeyInput::GetKeyModState(KMOD_SHIFT)) {
+	if (!KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) {
 		LOG("[PreGame::%s] press shift+escape to abort loading or exit", __func__);
 		return 0;
 	}

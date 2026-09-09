@@ -1,11 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _GLOBAL_RENDERING_H
-#define _GLOBAL_RENDERING_H
+#pragma once
 
 #include <string>
 #include <memory>
 #include <array>
+#include <cstdint>
+#include <vector>
 
 #include "System/Matrix44f.h"
 #include "System/creg/creg_cond.h"
@@ -14,10 +15,13 @@
 #include "System/type2.h"
 
 class SharedLib;
-struct SDL_version;
+struct SDLVersionInfo;
 struct SDL_Rect;
 struct SDL_Window;
-typedef void* SDL_GLContext;
+#ifndef SDL_h_
+struct SDL_GLContextState;
+typedef struct SDL_GLContextState *SDL_GLContext;
+#endif
 
 /**
  * @brief Globally accessible unsynced, rendering related data
@@ -29,6 +33,52 @@ class CGlobalRendering {
 	CR_DECLARE_STRUCT(CGlobalRendering)
 
 public:
+	enum class HDRMode { Off, Auto, On };
+	enum class HDROutputMode { SDR, HDR };
+	enum class HDRCapability { Unknown, Unsupported, Supported };
+	enum class HDRInactiveReason {
+		NoReason,
+		RequestedOff,
+		Unsupported,
+		OSHDROff,
+		WindowHDROff,
+		FloatVisualUnavailable,
+		WindowCreationFailed,
+		ContextCreationFailed,
+		VerificationFailed,
+		PipelineUnavailable,
+		RestartRequired,
+	};
+
+	struct HDRDisplayInfo {
+		uint32_t id = 0;
+		int index = -1;
+		std::string name;
+		HDRCapability capability = HDRCapability::Unknown;
+		bool osHdrStateKnown = false;
+		bool osHdrEnabled = false;
+	};
+
+	struct HDRState {
+		uint32_t generation = 0;
+		HDRMode requestedMode = HDRMode::Off;
+		HDROutputMode effectiveMode = HDROutputMode::SDR;
+		HDRInactiveReason inactiveReason = HDRInactiveReason::RequestedOff;
+		uint32_t currentDisplayID = 0;
+		int currentDisplayIndex = -1;
+		HDRCapability displayCapability = HDRCapability::Unknown;
+		bool osHdrStateKnown = false;
+		bool osHdrEnabled = false;
+		bool windowHdrEnabled = false;
+		float sdrWhiteLevel = 1.0f;
+		float hdrHeadroom = 1.0f;
+		bool floatFramebufferRequested = false;
+		bool floatFramebufferActive = false;
+		bool pipelineHdrActive = false;
+		std::array<int, 8> framebufferBits = {};
+		std::vector<HDRDisplayInfo> displays;
+	};
+
 	CGlobalRendering();
 	~CGlobalRendering();
 
@@ -43,7 +93,7 @@ public:
 	 * Sets SDL video mode options/settings
 	 */
 	bool CreateWindowAndContext(const char* title);
-	SDL_Window* CreateSDLWindow(const char* title) const;
+	SDL_Window* CreateSDLWindow(const char* title, bool reportFailure = true) const;
 	SDL_GLContext CreateGLContext(const int2& minCtx);
 	SDL_Window* GetWindow() { return sdlWindow; }
 	SDL_GLContext GetContext() { return glContext; }
@@ -65,6 +115,24 @@ public:
 	void QueryGLMaxVals();
 	void LogVersionInfo(const char* sdlVersionStr, const char* glVidMemStr) const;
 	void LogDisplayMode(SDL_Window* window) const;
+	void RefreshHDRState(bool enumerateDisplays = false);
+	const HDRState& GetHDRState() const { return hdrState; }
+	bool BeginSceneFrame();
+	void ResolveSceneFrame();
+	void PresentScene();
+	bool BeginUIFrame();
+	void PresentUI();
+	void ResizeScreenRenderTargets();
+	void KillScreenRenderTargets();
+	unsigned int GetSceneColorTexture() const { return sceneColorTexture; }
+	unsigned int GetSceneDepthTexture() const { return sceneDepthTexture; }
+	bool IsSceneTargetActive() const { return screenTargetsValid; }
+
+	static const char* HDRModeToString(HDRMode mode);
+	static const char* HDROutputModeToString(HDROutputMode mode);
+	static const char* HDRCapabilityToString(HDRCapability capability);
+	static const char* HDRInactiveReasonToString(HDRInactiveReason reason);
+	const char* GetHDRUserState() const;
 
 	void GetAllDisplayBounds(SDL_Rect& r) const;
 
@@ -413,16 +481,43 @@ public:
 private:
 	void SetMinSampleShadingRate();
 	bool SetWindowMinMaximized(bool maximize) const;
+	void SetGLFramebufferAttributes(bool hdr);
+	void VerifyHDRFramebuffer();
+	// True only when HDR output is actually being presented, i.e. an HDR path is
+	// requested, a float framebuffer is active, and the current window is HDR.
+	// SDR displays keep the legacy direct-to-backbuffer path.
+	bool HDRPipelineShouldBeActive() const;
+	bool InitScreenRenderTargets();
+	bool InitPresentationShader();
+	void DrawPresentationTexture(unsigned int texture, bool ui);
 private:
 	spring::unordered_set<std::string> glExtensions;
 	// double-buffered; results from frame N become available on frame N+1
 	std::array<uint32_t, NUM_OPENGL_TIMER_QUERIES * 2> glTimerQueries;
+	HDRState hdrState;
+	unsigned int sceneFramebuffer = 0;
+	unsigned int sceneMSAAFramebuffer = 0;
+	unsigned int sceneColorTexture = 0;
+	unsigned int sceneDepthTexture = 0;
+	unsigned int sceneMSAAColorBuffer = 0;
+	unsigned int sceneMSAADepthBuffer = 0;
+	unsigned int uiFramebuffer = 0;
+	unsigned int uiColorTexture = 0;
+	unsigned int uiDepthBuffer = 0;
+	unsigned int presentationProgram = 0;
+	unsigned int presentationVAO = 0;
+	int presentationLocSource = -1;
+	int presentationLocUiPass = -1;
+	int presentationLocHdrOutput = -1;
+	int presentationLocSdrWhite = -1;
+	int presentationLocHeadroom = -1;
+	int screenTargetSizeX = 0;
+	int screenTargetSizeY = 0;
+	int screenTargetSamples = 0;
+	bool screenTargetsValid = false;
 private:
 	static constexpr inline const char* xsKeys[2] = { "XResolutionWindowed", "XResolution" };
 	static constexpr inline const char* ysKeys[2] = { "YResolutionWindowed", "YResolution" };
 };
 
 extern CGlobalRendering* globalRendering;
-
-#endif /* _GLOBAL_RENDERING_H */
-

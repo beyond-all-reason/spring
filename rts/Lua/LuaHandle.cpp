@@ -60,9 +60,13 @@
 
 #include "lib/luasocket/src/luasocket.h"
 
-#include <SDL_keyboard.h>
-#include <SDL_keycode.h>
-#include <SDL_mouse.h>
+#ifdef camera
+#undef camera
+#endif
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_gamepad.h>
 
 #include "System/Misc/TracyDefs.h"
 #include <tracy/TracyLua.hpp>
@@ -3205,10 +3209,10 @@ bool CLuaHandle::KeyPress(int keyCode, int scanCode, bool isRepeat)
 	lua_pushinteger(L, SDL21_keysyms(keyCode));
 
 	lua_createtable(L, 0, 4);
-	LuaPushNamedBool(L, "alt",   !!KeyInput::GetKeyModState(KMOD_ALT));
-	LuaPushNamedBool(L, "ctrl",  !!KeyInput::GetKeyModState(KMOD_CTRL));
-	LuaPushNamedBool(L, "meta",  !!KeyInput::GetKeyModState(KMOD_GUI));
-	LuaPushNamedBool(L, "shift", !!KeyInput::GetKeyModState(KMOD_SHIFT));
+	LuaPushNamedBool(L, "alt",   !!KeyInput::GetKeyModState(SDL_KMOD_ALT));
+	LuaPushNamedBool(L, "ctrl",  !!KeyInput::GetKeyModState(SDL_KMOD_CTRL));
+	LuaPushNamedBool(L, "meta",  !!KeyInput::GetKeyModState(SDL_KMOD_GUI));
+	LuaPushNamedBool(L, "shift", !!KeyInput::GetKeyModState(SDL_KMOD_SHIFT));
 
 	lua_pushboolean(L, isRepeat);
 
@@ -3268,10 +3272,10 @@ bool CLuaHandle::KeyRelease(int keyCode, int scanCode)
 	lua_pushinteger(L, SDL21_keysyms(keyCode));
 
 	lua_createtable(L, 0, 4);
-	LuaPushNamedBool(L, "alt",   !!KeyInput::GetKeyModState(KMOD_ALT));
-	LuaPushNamedBool(L, "ctrl",  !!KeyInput::GetKeyModState(KMOD_CTRL));
-	LuaPushNamedBool(L, "meta",  !!KeyInput::GetKeyModState(KMOD_GUI));
-	LuaPushNamedBool(L, "shift", !!KeyInput::GetKeyModState(KMOD_SHIFT));
+	LuaPushNamedBool(L, "alt",   !!KeyInput::GetKeyModState(SDL_KMOD_ALT));
+	LuaPushNamedBool(L, "ctrl",  !!KeyInput::GetKeyModState(SDL_KMOD_CTRL));
+	LuaPushNamedBool(L, "meta",  !!KeyInput::GetKeyModState(SDL_KMOD_GUI));
+	LuaPushNamedBool(L, "shift", !!KeyInput::GetKeyModState(SDL_KMOD_SHIFT));
 
 	CKeySet ks(keyCode);
 	lua_pushsstring(L, ks.GetString(true));
@@ -3476,6 +3480,57 @@ bool CLuaHandle::MouseWheel(bool up, float value)
 
 	// call the function
 	if (!RunCallIn(L, cmdStr, 2, 1))
+		return false;
+
+	const bool retval = luaL_optboolean(L, -1, false);
+	lua_pop(L, 1);
+	return retval;
+}
+
+bool CLuaHandle::ControllerDevice(const std::string& eventName, int instanceId)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 4, __func__);
+	static const LuaHashString cmdStr(eventName.c_str());
+	if (!cmdStr.GetGlobalFunc(L))
+		return false;
+
+	lua_pushstring(L, ("Controller" + eventName).c_str());
+	lua_pushnumber(L, instanceId);
+
+	// call the function
+	if (!RunCallIn(L, cmdStr, 2, 1))
+		return false;
+
+	const bool retval = luaL_optboolean(L, -1, false);
+	lua_pop(L, 1);
+	return retval;
+}
+
+bool CLuaHandle::ControllerState(const std::string& eventName, int instanceId, int statefulId, int value)
+{
+	LUA_CALL_IN_CHECK(L, false);
+	luaL_checkstack(L, 6, __func__);
+	static const LuaHashString cmdStr(eventName.c_str());
+	if (!cmdStr.GetGlobalFunc(L))
+		return false;
+
+	lua_pushstring(L, ("Controller" + eventName).c_str());
+	lua_pushnumber(L, instanceId);
+	lua_pushnumber(L, statefulId);
+	lua_pushnumber(L, value);
+
+	std::string statefulName;
+	if (eventName.substr(0, 6) == "Button") {
+		statefulName = SDL_GetGamepadStringForButton((SDL_GamepadButton)statefulId);
+	} else {
+		statefulName = SDL_GetGamepadStringForAxis((SDL_GamepadAxis)statefulId);
+	}
+
+	lua_pushstring(L, statefulName.c_str());
+
+	// call the function
+	if (!RunCallIn(L, cmdStr, 4, 1))
 		return false;
 
 	const bool retval = luaL_optboolean(L, -1, false);

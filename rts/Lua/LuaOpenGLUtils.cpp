@@ -1,11 +1,13 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cctype>
+#include <cstdint>
 
 #include "LuaOpenGLUtils.h"
 
 #include "LuaHandle.h"
 #include "LuaTextures.h"
+#include "LuaVideoTextures.h"
 #include "LuaAtlasTextures.h"
 #include "Game/Camera.h"
 #include "Map/BaseGroundDrawer.h"
@@ -89,6 +91,8 @@ LuaMatTexture::Type LuaOpenGLUtils::GetLuaMatTextureType(const std::string& name
 
 		case hashString("$info" ): { return LuaMatTexture::LUATEX_INFOTEX_ACTIVE; } break;
 		case hashString("$extra"): { return LuaMatTexture::LUATEX_INFOTEX_ACTIVE; } break;
+		case hashString("$scene_color"): { return LuaMatTexture::LUATEX_SCENE_COLOR; } break;
+		case hashString("$scene_depth"): { return LuaMatTexture::LUATEX_SCENE_DEPTH; } break;
 
 		case hashString("$map_gb_nt"): { return LuaMatTexture::LUATEX_MAP_GBUFFER_NORM; } break;
 		case hashString("$map_gb_dt"): { return LuaMatTexture::LUATEX_MAP_GBUFFER_DIFF; } break;
@@ -364,6 +368,7 @@ bool LuaOpenGLUtils::ParseTextureImage(lua_State* L, LuaMatTexture& texUnit, con
 	// %34:0        --  unitDef 34 s3o tex1
 	// %-34:1       --  featureDef 34 s3o tex2
 	// !56          --  lua generated texture 56
+	// @7           --  lua video texture 7
 	// $shadow      --  shadowmap
 	// $specular    --  specular cube map
 	// $reflection  --  reflection cube map
@@ -380,6 +385,19 @@ bool LuaOpenGLUtils::ParseTextureImage(lua_State* L, LuaMatTexture& texUnit, con
 		return false;
 
 	switch (image[0]) {
+		case LuaVideoTextures::prefix: {
+			if (L == nullptr)
+				return false;
+
+			const LuaVideoTextures& videos = CLuaHandle::GetActiveVideoTextures(L);
+			const std::uint64_t handle = videos.GetHandle(image);
+			if (handle == 0 || !videos.Exists(image))
+				return false;
+
+			texUnit.type = LuaMatTexture::LUATEX_LUAVIDEOTEXTURE;
+			texUnit.data = reinterpret_cast<const void*>(static_cast<std::uintptr_t>(handle));
+		} break;
+
 		case LuaTextures::prefix: {
 			if (L == nullptr)
 				return false;
@@ -510,6 +528,11 @@ GLuint LuaMatTexture::GetTextureID() const
 
 			texID = luaTexture->id;
 		} break;
+		case LUATEX_LUAVIDEOTEXTURE: {
+			assert(state != nullptr);
+			LuaVideoTextures& videos = CLuaHandle::GetActiveVideoTextures(reinterpret_cast<lua_State*>(state));
+			texID = videos.GetTextureID(static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(data)));
+		} break;
 
 		case LUATEX_LUATEXTUREATLAS: {
 			assert(state != nullptr);
@@ -604,6 +627,12 @@ GLuint LuaMatTexture::GetTextureID() const
 			if (infoTextureHandler != nullptr)
 				texID = infoTextureHandler->GetCurrentInfoTexture();
 		} break;
+		case LUATEX_SCENE_COLOR: {
+			texID = globalRendering->GetSceneColorTexture();
+		} break;
+		case LUATEX_SCENE_DEPTH: {
+			texID = globalRendering->GetSceneDepthTexture();
+		} break;
 
 
 		// g-buffer textures
@@ -676,6 +705,9 @@ GLuint LuaMatTexture::GetTextureTarget() const
 
 			texType = luaTexture->target;
 		} break;
+		case LUATEX_LUAVIDEOTEXTURE: {
+			texType = GL_TEXTURE_2D;
+		} break;
 		case LUATEX_LUATEXTUREATLAS: {
 			assert(state != nullptr);
 
@@ -720,7 +752,9 @@ GLuint LuaMatTexture::GetTextureTarget() const
 
 
 		case LUATEX_INFOTEX_SUFFIX: [[fallthrough]];
-		case LUATEX_INFOTEX_ACTIVE: {
+		case LUATEX_INFOTEX_ACTIVE: [[fallthrough]];
+		case LUATEX_SCENE_COLOR: [[fallthrough]];
+		case LUATEX_SCENE_DEPTH: {
 			texType = GL_TEXTURE_2D;
 		} break;
 
@@ -864,6 +898,11 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 
 			return ReturnHelper(luaTexture->xsize, luaTexture->ysize, luaTexture->zsize);
 		} break;
+		case LUATEX_LUAVIDEOTEXTURE: {
+			assert(state != nullptr);
+			const LuaVideoTextures& videos = CLuaHandle::GetActiveVideoTextures(reinterpret_cast<lua_State*>(state));
+			return videos.GetSize(static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(data)));
+		} break;
 
 		case LUATEX_LUATEXTUREATLAS: {
 			assert(state != nullptr);
@@ -963,6 +1002,10 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 				return ReturnHelper(sz.x, sz.y);
 			}
 		} break;
+		case LUATEX_SCENE_COLOR:
+		case LUATEX_SCENE_DEPTH: {
+			return ReturnHelper(globalRendering->winSizeX, globalRendering->winSizeY);
+		} break;
 
 
 		case LUATEX_MAP_GBUFFER_NORM:
@@ -1056,6 +1099,7 @@ void LuaMatTexture::Print(const string& indent) const
 		STRING_CASE(typeName, LUATEX_NONE);
 		STRING_CASE(typeName, LUATEX_NAMED);
 		STRING_CASE(typeName, LUATEX_LUATEXTURE);
+		STRING_CASE(typeName, LUATEX_LUAVIDEOTEXTURE);
 		STRING_CASE(typeName, LUATEX_UNITTEXTURE1);
 		STRING_CASE(typeName, LUATEX_UNITTEXTURE2);
 		STRING_CASE(typeName, LUATEX_3DOTEXTURE);

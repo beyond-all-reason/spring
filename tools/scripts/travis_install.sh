@@ -16,7 +16,7 @@ set -e
 #fi
 
 sudo apt-get update
-sudo apt-get install -y libglew-dev libsdl2-dev libdevil-dev libopenal-dev libogg-dev \
+sudo apt-get install -y libglew-dev libsdl3-dev libdevil-dev libopenal-dev libogg-dev \
   libvorbis-dev libfreetype6-dev p7zip-full libxcursor-dev libunwind8-dev libgles2-mesa-dev
 
 #sudo apt-get install -y binutils-gold cmake cmake-data

@@ -9,6 +9,7 @@
 #if (!defined(UNITSYNC) && !defined(DEDICATED))
 #include "LuaShaders.h"
 #include "LuaTextures.h"
+#include "LuaVideoTextures.h"
 #include "LuaAtlasTextures.h"
 #include "LuaFBOs.h"
 #include "LuaRBOs.h"
@@ -68,6 +69,7 @@ public:
 	void Clear() {
 		#if (!defined(UNITSYNC) && !defined(DEDICATED))
 		shaders.Clear();
+		videoTextures.Clear();
 		textures.Clear();
 		fbos.Clear();
 		rbos.Clear();
@@ -108,6 +110,7 @@ public:
 	//   safe)
 	LuaShaders shaders;
 	LuaTextures textures;
+	LuaVideoTextures videoTextures;
 	LuaAtlasTextures atlasTextures;
 	LuaFBOs fbos;
 	LuaRBOs rbos;

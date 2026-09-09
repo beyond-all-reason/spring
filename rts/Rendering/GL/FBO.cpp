@@ -19,6 +19,7 @@
 CONFIG(bool, AtiSwapRBFix).defaultValue(false);
 
 std::vector<FBO*> FBO::activeFBOs;
+GLuint FBO::defaultFBO = 0;
 spring::unordered_map<GLuint, FBO::TexData> FBO::fboTexData;
 
 GLint FBO::maxAttachments = 0;
@@ -251,7 +252,7 @@ void FBO::Init(bool noop)
 
 	// we need to bind it once, else it isn't valid
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, defaultFBO);
 
 	activeFBOs.push_back(this);
 
@@ -280,7 +281,9 @@ void FBO::Kill()
 		rboIDs.clear();
 	}
 	{
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, (defaultFBO == fboId) ? 0 : defaultFBO);
+		if (defaultFBO == fboId)
+			defaultFBO = 0;
 		glDeleteFramebuffersEXT(1, &fboId);
 
 		fboId = 0;
@@ -332,6 +335,26 @@ void FBO::Unbind()
 	//   do stuff
 	// FBO::Unbind(); <- not redundant!
 	//   continue with screen FBO
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, defaultFBO);
+}
+
+void FBO::SetDefaultFBO(GLuint fboId)
+{
+	defaultFBO = fboId;
+}
+
+GLuint FBO::GetDefaultFBO()
+{
+	return defaultFBO;
+}
+
+void FBO::BindDefault()
+{
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, defaultFBO);
+}
+
+void FBO::BindFramebufferZero()
+{
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 

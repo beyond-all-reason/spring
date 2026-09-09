@@ -11,8 +11,8 @@
 #include "System/StringUtil.h"
 #include "System/FileSystem/FileHandler.h"
 #include "lib/streflop/streflop_cond.h"
-#include <SDL_mouse.h>
-#include <SDL_events.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_events.h>
 
 #include <string>
 
@@ -64,8 +64,8 @@ void AviVideoCapturing::StartCapturing()
 
 	aviGenerator = new CAVIGenerator(fileName, videoSizeX, videoSizeY, 30);
 
-	const int savedCursorMode = SDL_ShowCursor(SDL_QUERY);
-	SDL_ShowCursor(SDL_ENABLE);
+	const bool savedCursorVisible = SDL_CursorVisible();
+	SDL_ShowCursor();
 
 	if (!aviGenerator->InitEngine()) {
 		capturing = false;
@@ -77,7 +77,11 @@ void AviVideoCapturing::StartCapturing()
 		LOG("Recording avi to %s size %i x %i", fileName.c_str(), videoSizeX, videoSizeY);
 	}
 
-	SDL_ShowCursor(savedCursorMode);
+	if (savedCursorVisible) {
+		SDL_ShowCursor();
+	} else {
+		SDL_HideCursor();
+	}
 	//aviGenerator->InitEngine() (avicap32.dll)? modifies the FPU control word.
 	//Setting it back to default state.
 	streflop::streflop_init<streflop::Simple>();

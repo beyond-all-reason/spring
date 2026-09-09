@@ -35,7 +35,10 @@
 #include <RmlUi/Core/Input.h>
 #include <RmlUi/Core/SystemInterface.h>
 #include <RmlUi/Core/Types.h>
-#include <SDL.h>
+#undef camera
+#include <SDL3/SDL.h>
+#undef camera
+#define camera (CCamera::GetActive())
 
 #include "Rml/SolLua/TranslationTable.h"
 

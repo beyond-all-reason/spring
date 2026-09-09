@@ -32,7 +32,10 @@
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/Input.h>
 #include <RmlUi/Core/SystemInterface.h>
-#include <SDL.h>
+#undef camera
+#include <SDL3/SDL.h>
+#undef camera
+#define camera (CCamera::GetActive())
 #include <System/Log/ILog.h>
 #include <System/Misc/SpringTime.h>
 
@@ -176,44 +179,40 @@ bool RmlSDLRecoil::InputEventHandler(Rml::Context* context, const SDL_Event& ev)
 	bool result = true;
 
 	switch (ev.type) {
-		case SDL_MOUSEMOTION:
+		case SDL_EVENT_MOUSE_MOTION:
 			result = context->ProcessMouseMove(ev.motion.x, ev.motion.y, GetKeyModifierState());
 			break;
-		case SDL_MOUSEBUTTONDOWN:
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
 			result = context->ProcessMouseButtonDown(ConvertMouseButton(ev.button.button),
 			                                         GetKeyModifierState());
-			SDL_CaptureMouse(SDL_TRUE);
+			SDL_CaptureMouse(true);
 			break;
-		case SDL_MOUSEBUTTONUP:
-			SDL_CaptureMouse(SDL_FALSE);
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+			SDL_CaptureMouse(false);
 			result = context->ProcessMouseButtonUp(ConvertMouseButton(ev.button.button),
 			                                       GetKeyModifierState());
 			break;
-		case SDL_MOUSEWHEEL:
+		case SDL_EVENT_MOUSE_WHEEL:
 			result = context->ProcessMouseWheel(float(-ev.wheel.y), GetKeyModifierState());
 			break;
-		case SDL_KEYDOWN:
-			result = context->ProcessKeyDown(ConvertKey(ev.key.keysym.sym), GetKeyModifierState());
-			if (ev.key.keysym.sym == SDLK_RETURN || ev.key.keysym.sym == SDLK_KP_ENTER)
+		case SDL_EVENT_KEY_DOWN:
+			result = context->ProcessKeyDown(ConvertKey(ev.key.key), GetKeyModifierState());
+			if (ev.key.key == SDLK_RETURN || ev.key.key == SDLK_KP_ENTER)
 				result &= context->ProcessTextInput('\n');
 			break;
-		case SDL_KEYUP:
-			result = context->ProcessKeyUp(ConvertKey(ev.key.keysym.sym), GetKeyModifierState());
+		case SDL_EVENT_KEY_UP:
+			result = context->ProcessKeyUp(ConvertKey(ev.key.key), GetKeyModifierState());
 			break;
-		case SDL_TEXTINPUT:
+		case SDL_EVENT_TEXT_INPUT:
 			result = context->ProcessTextInput(Rml::String(&ev.text.text[0]));
 			break;
-		case SDL_WINDOWEVENT: {
-			switch (ev.window.event) {
-				case SDL_WINDOWEVENT_SIZE_CHANGED: {
-					Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
-					context->SetDimensions(dimensions);
-				} break;
-				case SDL_WINDOWEVENT_LEAVE:
-					context->ProcessMouseLeave();
-					break;
-			}
+		case SDL_EVENT_WINDOW_RESIZED: {
+			Rml::Vector2i dimensions(ev.window.data1, ev.window.data2);
+			context->SetDimensions(dimensions);
 		} break;
+		case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+			context->ProcessMouseLeave();
+			break;
 		default:
 			break;
 	}
@@ -239,43 +238,43 @@ Rml::Input::KeyIdentifier RmlSDLRecoil::ConvertKey(int sdlkey)
     case SDLK_7: return Rml::Input::KI_7;
     case SDLK_8: return Rml::Input::KI_8;
     case SDLK_9: return Rml::Input::KI_9;
-    case SDLK_a: return Rml::Input::KI_A;
-    case SDLK_b: return Rml::Input::KI_B;
-    case SDLK_c: return Rml::Input::KI_C;
-    case SDLK_d: return Rml::Input::KI_D;
-    case SDLK_e: return Rml::Input::KI_E;
-    case SDLK_f: return Rml::Input::KI_F;
-    case SDLK_g: return Rml::Input::KI_G;
-    case SDLK_h: return Rml::Input::KI_H;
-    case SDLK_i: return Rml::Input::KI_I;
-    case SDLK_j: return Rml::Input::KI_J;
-    case SDLK_k: return Rml::Input::KI_K;
-    case SDLK_l: return Rml::Input::KI_L;
-    case SDLK_m: return Rml::Input::KI_M;
-    case SDLK_n: return Rml::Input::KI_N;
-    case SDLK_o: return Rml::Input::KI_O;
-    case SDLK_p: return Rml::Input::KI_P;
-    case SDLK_q: return Rml::Input::KI_Q;
-    case SDLK_r: return Rml::Input::KI_R;
-    case SDLK_s: return Rml::Input::KI_S;
-    case SDLK_t: return Rml::Input::KI_T;
-    case SDLK_u: return Rml::Input::KI_U;
-    case SDLK_v: return Rml::Input::KI_V;
-    case SDLK_w: return Rml::Input::KI_W;
-    case SDLK_x: return Rml::Input::KI_X;
-    case SDLK_y: return Rml::Input::KI_Y;
-    case SDLK_z: return Rml::Input::KI_Z;
+    case SDLK_A: return Rml::Input::KI_A;
+    case SDLK_B: return Rml::Input::KI_B;
+    case SDLK_C: return Rml::Input::KI_C;
+    case SDLK_D: return Rml::Input::KI_D;
+    case SDLK_E: return Rml::Input::KI_E;
+    case SDLK_F: return Rml::Input::KI_F;
+    case SDLK_G: return Rml::Input::KI_G;
+    case SDLK_H: return Rml::Input::KI_H;
+    case SDLK_I: return Rml::Input::KI_I;
+    case SDLK_J: return Rml::Input::KI_J;
+    case SDLK_K: return Rml::Input::KI_K;
+    case SDLK_L: return Rml::Input::KI_L;
+    case SDLK_M: return Rml::Input::KI_M;
+    case SDLK_N: return Rml::Input::KI_N;
+    case SDLK_O: return Rml::Input::KI_O;
+    case SDLK_P: return Rml::Input::KI_P;
+    case SDLK_Q: return Rml::Input::KI_Q;
+    case SDLK_R: return Rml::Input::KI_R;
+    case SDLK_S: return Rml::Input::KI_S;
+    case SDLK_T: return Rml::Input::KI_T;
+    case SDLK_U: return Rml::Input::KI_U;
+    case SDLK_V: return Rml::Input::KI_V;
+    case SDLK_W: return Rml::Input::KI_W;
+    case SDLK_X: return Rml::Input::KI_X;
+    case SDLK_Y: return Rml::Input::KI_Y;
+    case SDLK_Z: return Rml::Input::KI_Z;
     case SDLK_SEMICOLON: return Rml::Input::KI_OEM_1;
     case SDLK_PLUS: return Rml::Input::KI_OEM_PLUS;
     case SDLK_COMMA: return Rml::Input::KI_OEM_COMMA;
     case SDLK_MINUS: return Rml::Input::KI_OEM_MINUS;
     case SDLK_PERIOD: return Rml::Input::KI_OEM_PERIOD;
     case SDLK_SLASH: return Rml::Input::KI_OEM_2;
-    case SDLK_BACKQUOTE: return Rml::Input::KI_OEM_3;
+    case SDLK_GRAVE: return Rml::Input::KI_OEM_3;
     case SDLK_LEFTBRACKET: return Rml::Input::KI_OEM_4;
     case SDLK_BACKSLASH: return Rml::Input::KI_OEM_5;
     case SDLK_RIGHTBRACKET: return Rml::Input::KI_OEM_6;
-    case SDLK_QUOTEDBL: return Rml::Input::KI_OEM_7;
+    case SDLK_DBLAPOSTROPHE: return Rml::Input::KI_OEM_7;
     case SDLK_KP_0: return Rml::Input::KI_NUMPAD0;
     case SDLK_KP_1: return Rml::Input::KI_NUMPAD1;
     case SDLK_KP_2: return Rml::Input::KI_NUMPAD2;
@@ -366,19 +365,19 @@ int RmlSDLRecoil::GetKeyModifierState()
 
 	int retval = 0;
 
-	if (sdl_mods & KMOD_CTRL)
+	if (sdl_mods & SDL_KMOD_CTRL)
 		retval |= Rml::Input::KM_CTRL;
 
-	if (sdl_mods & KMOD_SHIFT)
+	if (sdl_mods & SDL_KMOD_SHIFT)
 		retval |= Rml::Input::KM_SHIFT;
 
-	if (sdl_mods & KMOD_ALT)
+	if (sdl_mods & SDL_KMOD_ALT)
 		retval |= Rml::Input::KM_ALT;
 
-	if (sdl_mods & KMOD_NUM)
+	if (sdl_mods & SDL_KMOD_NUM)
 		retval |= Rml::Input::KM_NUMLOCK;
 
-	if (sdl_mods & KMOD_CAPS)
+	if (sdl_mods & SDL_KMOD_CAPS)
 		retval |= Rml::Input::KM_CAPSLOCK;
 
 	return retval;

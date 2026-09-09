@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cctype>
-#include <SDL_keycode.h>
+#include <SDL3/SDL_keycode.h>
 
 #include "KeyCodes.h"
 #include "Game/UI/MouseHandler.h"
@@ -80,9 +80,9 @@ void CKeyCodes::Reset()
 		AddPair(std::string(1, i), i, true);
 	}
 
-	AddPair("~", SDLK_BACKQUOTE, true);
-	AddPair("tilde", SDLK_BACKQUOTE, true);
-	AddPair("backquote", SDLK_BACKQUOTE, true);
+	AddPair("~", SDLK_GRAVE, true);
+	AddPair("tilde", SDLK_GRAVE, true);
+	AddPair("backquote", SDLK_GRAVE, true);
 	AddPair("caret", SDLK_CARET, true);
 
 	AddPair("§", 0xA7, true);

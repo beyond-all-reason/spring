@@ -2,31 +2,19 @@
 
 #if !defined(HEADLESS) && !defined(_WIN32) && !defined(__APPLE__)
 
+#include <SDL3/SDL_video.h>
 #include <glad/glad_glx.h>
-#include <SDL_syswm.h>
 
 void GLX::Load(SDL_Window* window)
 {
 	supported = false;
 
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	if (!SDL_GetWindowWMInfo(window, &info))
-		return;
-
-	switch (info.subsystem)
-	{
-	case SDL_SYSWM_X11: {
-		Display* display = info.info.x11.display;
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	Display* display = (Display*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+	if (display) {
 		supported = static_cast<bool>(gladLoadGLX(display, DefaultScreen(display)));
-	} break;
-	case SDL_SYSWM_WAYLAND: {
-		// unsafe in case XWayland is not available
-		//supported = static_cast<bool>(gladLoadGLX(nullptr, 0));
-	} break;
-	default:
-		break;
 	}
+	// Wayland: gladLoadGLX not applicable
 }
 
 void GLX::Unload()

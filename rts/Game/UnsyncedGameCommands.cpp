@@ -110,8 +110,15 @@
 #include "System/Sound/ISoundChannels.h"
 #include "System/Sync/DumpState.h"
 
-#include <SDL_events.h>
-#include <SDL_video.h>
+#ifdef camera
+#undef camera
+#endif
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_video.h>
+#ifdef camera
+#undef camera
+#endif
+#define camera (CCamera::GetActive())
 
 namespace { // prevents linking problems in case of duplicate symbols
 
@@ -1406,7 +1413,7 @@ public:
 
 public:
 	bool Execute(const UnsyncedAction& action) const final {
-		SDL_StartTextInput();
+		SDL_StartTextInput(globalRendering->GetWindow());
 
 		gameTextInput.PromptInput(setUserInputPrefix? &userInputPrefix: nullptr);
 		gameConsoleHistory.ResetPosition();
@@ -2504,6 +2511,18 @@ public:
 			quality = std::clamp(quality, 1, 99);
 			TakeScreenshot(args[0], quality);
 		}
+		return true;
+	}
+};
+
+class HDRScreenShotActionExecutor : public IUnsyncedActionExecutor {
+public:
+	HDRScreenShotActionExecutor()
+		: IUnsyncedActionExecutor("ScreenShotHDR", "Capture the scene-linear HDR render target as a Radiance .hdr image")
+	{}
+
+	bool Execute(const UnsyncedAction&) const final {
+		TakeHDRScreenshot();
 		return true;
 	}
 };
@@ -4179,6 +4198,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<IncreaseGUIOpacityActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<DecreaseGUIOpacityActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ScreenShotActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<HDRScreenShotActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<GrabInputActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<ClockActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<CrossActionExecutor>());

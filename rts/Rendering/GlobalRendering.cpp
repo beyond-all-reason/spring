@@ -3,8 +3,9 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "GlobalRendering.h"
 #include "GlobalRenderingInfo.h"
@@ -38,8 +39,8 @@
 #include "System/creg/creg_cond.h"
 #include "Game/Game.h"
 
-#include <SDL_syswm.h>
-#include <SDL_rect.h>
+// SDL3: SDL_syswm.h removed; use SDL_GetWindowProperties() instead
+#include <SDL3/SDL_rect.h>
 
 #include "System/Misc/TracyDefs.h"
 
@@ -50,6 +51,7 @@ CONFIG(bool, DebugGLReportGroups).defaultValue(false).description("Show OpenGL P
 CONFIG(int, GLContextMajorVersion).defaultValue(3).minimumValue(3).maximumValue(4);
 CONFIG(int, GLContextMinorVersion).defaultValue(0).minimumValue(0).maximumValue(5);
 CONFIG(int, MSAALevel).defaultValue(0).minimumValue(0).maximumValue(32).description("Enables multisample anti-aliasing; 'level' is the number of samples used.");
+CONFIG(std::string, HDRMode).defaultValue("off").safemodeValue("off").description("Requests HDR output at startup: off, auto, or on. Changing this setting requires an engine restart.");
 CONFIG(float, MinSampleShadingRate).defaultValue(0.0f).minimumValue(0.0f).maximumValue(1.0f).description("A value of 1.0 indicates that each sample in the framebuffer should be independently shaded. A value of 0.0 effectively allows the GL to ignore sample rate shading. Any value between 0.0 and 1.0 allows the GL to shade only a subset of the total samples within each covered fragment.");
 
 CONFIG(int, ForceDisablePersistentMapping).defaultValue(0).minimumValue(0).maximumValue(1);
@@ -386,8 +388,622 @@ CGlobalRendering::~CGlobalRendering()
 	KillSDL();
 }
 
+const char* CGlobalRendering::HDRModeToString(HDRMode mode)
+{
+	switch (mode) {
+		case HDRMode::Off:  return "off";
+		case HDRMode::Auto: return "auto";
+		case HDRMode::On:   return "on";
+	}
+	return "off";
+}
+
+const char* CGlobalRendering::HDROutputModeToString(HDROutputMode mode)
+{
+	return (mode == HDROutputMode::HDR) ? "hdr" : "sdr";
+}
+
+const char* CGlobalRendering::HDRCapabilityToString(HDRCapability capability)
+{
+	switch (capability) {
+		case HDRCapability::Supported:   return "supported";
+		case HDRCapability::Unsupported: return "unsupported";
+		case HDRCapability::Unknown:     return "unknown";
+	}
+	return "unknown";
+}
+
+const char* CGlobalRendering::HDRInactiveReasonToString(HDRInactiveReason reason)
+{
+	switch (reason) {
+		case HDRInactiveReason::NoReason:               return "none";
+		case HDRInactiveReason::RequestedOff:           return "requested-off";
+		case HDRInactiveReason::Unsupported:            return "unsupported";
+		case HDRInactiveReason::OSHDROff:               return "os-hdr-disabled";
+		case HDRInactiveReason::WindowHDROff:           return "window-hdr-disabled";
+		case HDRInactiveReason::FloatVisualUnavailable: return "float-visual-unavailable";
+		case HDRInactiveReason::WindowCreationFailed:   return "window-creation-failed";
+		case HDRInactiveReason::ContextCreationFailed:  return "context-creation-failed";
+		case HDRInactiveReason::VerificationFailed:     return "verification-failed";
+		case HDRInactiveReason::PipelineUnavailable:    return "pipeline-unavailable";
+		case HDRInactiveReason::RestartRequired:        return "restart-required";
+	}
+	return "none";
+}
+
+const char* CGlobalRendering::GetHDRUserState() const
+{
+	if (hdrState.pipelineHdrActive)
+		return "active";
+	if (hdrState.requestedMode != HDRMode::Off && hdrState.floatFramebufferRequested && !hdrState.floatFramebufferActive)
+		return "fallback-sdr";
+	if (hdrState.displayCapability == HDRCapability::Unsupported)
+		return "unsupported";
+	if (hdrState.displayCapability == HDRCapability::Unknown)
+		return "unknown";
+	if (!hdrState.windowHdrEnabled)
+		return "available-disabled";
+	if (!hdrState.floatFramebufferActive)
+		return "restart-required";
+	return "fallback-sdr";
+}
+
+void CGlobalRendering::SetGLFramebufferAttributes(bool hdr)
+{
+	const int colorBits = hdr ? 16 : 8;
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, colorBits);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, colorBits);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, colorBits);
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, colorBits);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_FLOATBUFFERS, hdr ? 1 : 0);
+}
+
+void CGlobalRendering::VerifyHDRFramebuffer()
+{
+	constexpr std::array attributes = {
+		SDL_GL_RED_SIZE, SDL_GL_GREEN_SIZE, SDL_GL_BLUE_SIZE, SDL_GL_ALPHA_SIZE,
+		SDL_GL_DEPTH_SIZE, SDL_GL_STENCIL_SIZE, SDL_GL_MULTISAMPLESAMPLES, SDL_GL_FLOATBUFFERS,
+	};
+
+	for (std::size_t i = 0; i < attributes.size(); ++i) {
+		int value = 0;
+		SDL_GL_GetAttribute(attributes[i], &value);
+		hdrState.framebufferBits[i] = value;
+	}
+
+	hdrState.floatFramebufferActive =
+		hdrState.framebufferBits[7] != 0 &&
+		hdrState.framebufferBits[0] >= 16 &&
+		hdrState.framebufferBits[1] >= 16 &&
+		hdrState.framebufferBits[2] >= 16;
+
+	LOG("[GR::%s] requestedFloat=%d activeFloat=%d rgba=%d/%d/%d/%d depth=%d stencil=%d samples=%d",
+		__func__, hdrState.floatFramebufferRequested, hdrState.floatFramebufferActive,
+		hdrState.framebufferBits[0], hdrState.framebufferBits[1], hdrState.framebufferBits[2], hdrState.framebufferBits[3],
+		hdrState.framebufferBits[4], hdrState.framebufferBits[5], hdrState.framebufferBits[6]);
+}
+
+void CGlobalRendering::RefreshHDRState(bool enumerateDisplays)
+{
+#ifdef HEADLESS
+	(void)enumerateDisplays;
+	return;
+#else
+	const auto oldGeneration = hdrState.generation;
+	const auto oldDisplayID = hdrState.currentDisplayID;
+	const auto oldDisplayIndex = hdrState.currentDisplayIndex;
+	const auto oldCapability = hdrState.displayCapability;
+	const auto oldOSKnown = hdrState.osHdrStateKnown;
+	const auto oldOSEnabled = hdrState.osHdrEnabled;
+	const auto oldWindowEnabled = hdrState.windowHdrEnabled;
+	const auto oldWhite = hdrState.sdrWhiteLevel;
+	const auto oldHeadroom = hdrState.hdrHeadroom;
+	const auto oldDisplayCount = hdrState.displays.size();
+
+	if (enumerateDisplays || hdrState.displays.empty()) {
+		hdrState.displays.clear();
+		int displayCount = 0;
+		SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
+
+		for (int index = 0; displays != nullptr && index < displayCount; ++index) {
+			HDRDisplayInfo info;
+			info.id = displays[index];
+			info.index = index;
+			if (const char* name = SDL_GetDisplayName(displays[index]); name != nullptr)
+				info.name = name;
+
+			const SDL_PropertiesID properties = SDL_GetDisplayProperties(displays[index]);
+			if (properties != 0 && SDL_HasProperty(properties, SDL_PROP_DISPLAY_HDR_ENABLED_BOOLEAN)) {
+				info.osHdrStateKnown = true;
+				info.osHdrEnabled = SDL_GetBooleanProperty(properties, SDL_PROP_DISPLAY_HDR_ENABLED_BOOLEAN, false);
+				// SDL exposes current HDR enablement, not inherent panel capability.
+				// A true value proves support; false remains unknown without a native probe.
+				info.capability = info.osHdrEnabled ? HDRCapability::Supported : HDRCapability::Unknown;
+			}
+
+			const WindowManagerHelper::AdvancedColorInfo nativeInfo = WindowManagerHelper::GetAdvancedColorInfo(displays[index]);
+			if (nativeInfo.available) {
+				info.capability = nativeInfo.supported ? HDRCapability::Supported : HDRCapability::Unsupported;
+				info.osHdrStateKnown = true;
+				info.osHdrEnabled = nativeInfo.enabled;
+			}
+			hdrState.displays.emplace_back(std::move(info));
+		}
+		SDL_free(displays);
+	}
+
+	hdrState.currentDisplayID = (sdlWindow != nullptr) ? SDL_GetDisplayForWindow(sdlWindow) : 0;
+	hdrState.currentDisplayIndex = -1;
+	hdrState.displayCapability = HDRCapability::Unknown;
+	hdrState.osHdrStateKnown = false;
+	hdrState.osHdrEnabled = false;
+
+	for (const HDRDisplayInfo& display : hdrState.displays) {
+		if ((hdrState.currentDisplayID != 0 && display.id == hdrState.currentDisplayID) ||
+		    (hdrState.currentDisplayID == 0 && display.index == 0)) {
+			hdrState.currentDisplayID = display.id;
+			hdrState.currentDisplayIndex = display.index;
+			hdrState.displayCapability = display.capability;
+			hdrState.osHdrStateKnown = display.osHdrStateKnown;
+			hdrState.osHdrEnabled = display.osHdrEnabled;
+			break;
+		}
+	}
+
+	if (sdlWindow != nullptr) {
+		const SDL_PropertiesID properties = SDL_GetWindowProperties(sdlWindow);
+		hdrState.windowHdrEnabled = SDL_GetBooleanProperty(properties, SDL_PROP_WINDOW_HDR_ENABLED_BOOLEAN, false);
+		hdrState.sdrWhiteLevel = SDL_GetFloatProperty(properties, SDL_PROP_WINDOW_SDR_WHITE_LEVEL_FLOAT, 1.0f);
+		hdrState.hdrHeadroom = SDL_GetFloatProperty(properties, SDL_PROP_WINDOW_HDR_HEADROOM_FLOAT, 1.0f);
+	}
+
+	if (!std::isfinite(hdrState.sdrWhiteLevel) || hdrState.sdrWhiteLevel <= 0.0f)
+		hdrState.sdrWhiteLevel = 1.0f;
+	if (!std::isfinite(hdrState.hdrHeadroom) || hdrState.hdrHeadroom < 1.0f)
+		hdrState.hdrHeadroom = 1.0f;
+
+	// The scene-linear target and final output transform are introduced in later
+	// phases. Never claim active HDR until that complete pipeline is connected.
+	hdrState.pipelineHdrActive = false;
+	hdrState.effectiveMode = HDROutputMode::SDR;
+	if (hdrState.requestedMode == HDRMode::Off)
+		hdrState.inactiveReason = HDRInactiveReason::RequestedOff;
+	else if (!hdrState.floatFramebufferActive && hdrState.inactiveReason == HDRInactiveReason::NoReason)
+		hdrState.inactiveReason = HDRInactiveReason::FloatVisualUnavailable;
+	else if (!hdrState.windowHdrEnabled && hdrState.inactiveReason == HDRInactiveReason::NoReason)
+		hdrState.inactiveReason = HDRInactiveReason::WindowHDROff;
+	else if (hdrState.inactiveReason == HDRInactiveReason::NoReason)
+		hdrState.inactiveReason = HDRInactiveReason::PipelineUnavailable;
+
+	const bool changed =
+		oldDisplayID != hdrState.currentDisplayID ||
+		oldDisplayIndex != hdrState.currentDisplayIndex ||
+		oldCapability != hdrState.displayCapability ||
+		oldOSKnown != hdrState.osHdrStateKnown ||
+		oldOSEnabled != hdrState.osHdrEnabled ||
+		oldWindowEnabled != hdrState.windowHdrEnabled ||
+		oldWhite != hdrState.sdrWhiteLevel ||
+		oldHeadroom != hdrState.hdrHeadroom ||
+		oldDisplayCount != hdrState.displays.size();
+	hdrState.generation = oldGeneration + changed;
+
+	if (changed || enumerateDisplays) {
+		LOG("[GR::%s] generation=%u state=%s capability=%s display=%d/%u osHDR=%s windowHDR=%d SDRWhite=%.3f headroom=%.3f reason=%s",
+			__func__, hdrState.generation, GetHDRUserState(), HDRCapabilityToString(hdrState.displayCapability),
+			hdrState.currentDisplayIndex, hdrState.currentDisplayID,
+			hdrState.osHdrStateKnown ? (hdrState.osHdrEnabled ? "on" : "off") : "unknown",
+			hdrState.windowHdrEnabled, hdrState.sdrWhiteLevel, hdrState.hdrHeadroom,
+			HDRInactiveReasonToString(hdrState.inactiveReason));
+		for (const HDRDisplayInfo& display : hdrState.displays) {
+			LOG("[GR::%s] display[%d] id=%u name=\"%s\" capability=%s osHDR=%s", __func__,
+				display.index, display.id, display.name.c_str(), HDRCapabilityToString(display.capability),
+				display.osHdrStateKnown ? (display.osHdrEnabled ? "on" : "off") : "unknown");
+		}
+	}
+#endif
+}
+
+bool CGlobalRendering::InitPresentationShader()
+{
+	if (presentationProgram != 0)
+		return true;
+
+	static constexpr const char* vertexSource = R"(
+		#version 150
+		out vec2 uv;
+		void main() {
+			vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+			uv = p * 0.5;
+			gl_Position = vec4(p - 1.0, 0.0, 1.0);
+		}
+	)";
+	static constexpr const char* fragmentSource = R"(
+		#version 150
+		uniform sampler2D sourceTexture;
+		uniform int uiPass;
+		uniform int hdrOutput;
+		uniform float sdrWhite;
+		uniform float headroom;
+		in vec2 uv;
+		out vec4 fragColor;
+
+		const float SRGB_LINEAR_CUTOFF  = 0.0031308; // sRGB OETF linear-segment threshold (linear domain)
+		const float SRGB_DECODE_CUTOFF  = 0.04045;   // sRGB EOTF linear-segment threshold (encoded domain)
+		const float SRGB_LINEAR_SLOPE   = 12.92;
+		const float SRGB_GAMMA          = 2.4;
+		const float SRGB_OFFSET         = 0.055;
+		const float SRGB_SCALE          = 1.055;
+
+		vec3 linearToSRGB(vec3 value) {
+			vec3 lo = value * SRGB_LINEAR_SLOPE;
+			vec3 hi = SRGB_SCALE * pow(max(value, vec3(0.0)), vec3(1.0 / SRGB_GAMMA)) - SRGB_OFFSET;
+			return mix(hi, lo, lessThanEqual(value, vec3(SRGB_LINEAR_CUTOFF)));
+		}
+
+		vec3 srgbToLinear(vec3 value) {
+			vec3 lo = value / SRGB_LINEAR_SLOPE;
+			vec3 hi = pow((value + SRGB_OFFSET) / SRGB_SCALE, vec3(SRGB_GAMMA));
+			return mix(hi, lo, lessThanEqual(value, vec3(SRGB_DECODE_CUTOFF)));
+		}
+
+		vec3 hdrRolloff(vec3 value) {
+			float range = max(headroom - 1.0, 0.001);
+			vec3 highlights = vec3(1.0) + range * (vec3(1.0) - exp(-(value - 1.0) / range));
+			return mix(value, highlights, greaterThan(value, vec3(1.0)));
+		}
+
+		void main() {
+			vec4 sampleValue = texture(sourceTexture, uv);
+			vec3 value;
+			if (uiPass != 0) {
+				// UI is authored as sRGB; decode with the real EOTF before scaling to
+				// the HDR reference-white level, and pass through untouched in SDR.
+				value = hdrOutput != 0
+					? srgbToLinear(max(sampleValue.rgb, vec3(0.0))) * sdrWhite
+					: sampleValue.rgb;
+			} else if (hdrOutput != 0) {
+				value = hdrRolloff(max(sampleValue.rgb, vec3(0.0))) * sdrWhite;
+			} else {
+				value = linearToSRGB(max(sampleValue.rgb, vec3(0.0)) / (vec3(1.0) + max(sampleValue.rgb, vec3(0.0))));
+			}
+			fragColor = vec4(value, sampleValue.a);
+		}
+	)";
+
+	auto compileShader = [](GLenum type, const char* source) {
+		const GLuint shader = glCreateShader(type);
+		glShaderSource(shader, 1, &source, nullptr);
+		glCompileShader(shader);
+		GLint compiled = GL_FALSE;
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+		if (compiled == GL_TRUE)
+			return shader;
+
+		GLint logLength = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+		std::string log(std::max(logLength, 1), '\0');
+		glGetShaderInfoLog(shader, log.size(), nullptr, log.data());
+		LOG_L(L_ERROR, "[GR::InitPresentationShader] shader compilation failed: %s", log.c_str());
+		glDeleteShader(shader);
+		return GLuint{0};
+	};
+
+	const GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexSource);
+	const GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
+	if (vertexShader == 0 || fragmentShader == 0) {
+		glDeleteShader(vertexShader);
+		glDeleteShader(fragmentShader);
+		return false;
+	}
+
+	presentationProgram = glCreateProgram();
+	glAttachShader(presentationProgram, vertexShader);
+	glAttachShader(presentationProgram, fragmentShader);
+	glLinkProgram(presentationProgram);
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	GLint linked = GL_FALSE;
+	glGetProgramiv(presentationProgram, GL_LINK_STATUS, &linked);
+	if (linked != GL_TRUE) {
+		GLint logLength = 0;
+		glGetProgramiv(presentationProgram, GL_INFO_LOG_LENGTH, &logLength);
+		std::string log(std::max(logLength, 1), '\0');
+		glGetProgramInfoLog(presentationProgram, log.size(), nullptr, log.data());
+		LOG_L(L_ERROR, "[GR::InitPresentationShader] program link failed: %s", log.c_str());
+		glDeleteProgram(presentationProgram);
+		presentationProgram = 0;
+		return false;
+	}
+
+	presentationLocSource    = glGetUniformLocation(presentationProgram, "sourceTexture");
+	presentationLocUiPass    = glGetUniformLocation(presentationProgram, "uiPass");
+	presentationLocHdrOutput = glGetUniformLocation(presentationProgram, "hdrOutput");
+	presentationLocSdrWhite  = glGetUniformLocation(presentationProgram, "sdrWhite");
+	presentationLocHeadroom  = glGetUniformLocation(presentationProgram, "headroom");
+
+	glGenVertexArrays(1, &presentationVAO);
+	return true;
+}
+
+bool CGlobalRendering::HDRPipelineShouldBeActive() const
+{
+	return hdrState.requestedMode != HDRMode::Off &&
+	       hdrState.floatFramebufferActive &&
+	       hdrState.windowHdrEnabled;
+}
+
+bool CGlobalRendering::InitScreenRenderTargets()
+{
+#ifdef HEADLESS
+	return false;
+#else
+	if (winSizeX <= 0 || winSizeY <= 0 || !FBO::IsSupported())
+		return false;
+	if (screenTargetsValid && screenTargetSizeX == winSizeX && screenTargetSizeY == winSizeY)
+		return true;
+
+	KillScreenRenderTargets();
+	screenTargetSizeX = winSizeX;
+	screenTargetSizeY = winSizeY;
+	screenTargetSamples = std::min(msaaLevel, static_cast<int>(FBO::GetMaxSamples()));
+
+	glGenTextures(1, &sceneColorTexture);
+	glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenTargetSizeX, screenTargetSizeY, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+	glGenTextures(1, &sceneDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, screenTargetSizeX, screenTargetSizeY, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+
+	glGenFramebuffers(1, &sceneFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, sceneFramebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+	bool complete = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+	if (complete && screenTargetSamples > 1) {
+		glGenFramebuffers(1, &sceneMSAAFramebuffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, sceneMSAAFramebuffer);
+		glGenRenderbuffers(1, &sceneMSAAColorBuffer);
+		glBindRenderbuffer(GL_RENDERBUFFER, sceneMSAAColorBuffer);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, screenTargetSamples, GL_RGBA16F, screenTargetSizeX, screenTargetSizeY);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, sceneMSAAColorBuffer);
+		glGenRenderbuffers(1, &sceneMSAADepthBuffer);
+		glBindRenderbuffer(GL_RENDERBUFFER, sceneMSAADepthBuffer);
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, screenTargetSamples, GL_DEPTH24_STENCIL8, screenTargetSizeX, screenTargetSizeY);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneMSAADepthBuffer);
+		complete = (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+	}
+
+	glGenTextures(1, &uiColorTexture);
+	glBindTexture(GL_TEXTURE_2D, uiColorTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, screenTargetSizeX, screenTargetSizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glGenFramebuffers(1, &uiFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, uiFramebuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, uiColorTexture, 0);
+	glGenRenderbuffers(1, &uiDepthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, uiDepthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenTargetSizeX, screenTargetSizeY);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, uiDepthBuffer);
+	complete = complete && (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+	complete = complete && InitPresentationShader();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	if (!complete) {
+		LOG_L(L_ERROR, "[GR::%s] HDR screen-target allocation failed; rendering directly to the presentation framebuffer", __func__);
+		KillScreenRenderTargets();
+		hdrState.inactiveReason = HDRInactiveReason::PipelineUnavailable;
+		return false;
+	}
+
+	screenTargetsValid = true;
+	++hdrState.generation;
+	const std::size_t colorBytes = std::size_t(screenTargetSizeX) * screenTargetSizeY * 8;
+	const std::size_t depthBytes = std::size_t(screenTargetSizeX) * screenTargetSizeY * 4;
+	const std::size_t msaaBytes = (screenTargetSamples > 1) ? (colorBytes + depthBytes) * screenTargetSamples : 0;
+	LOG("[GR::%s] allocated %dx%d RGBA16F scene target, %dx MSAA, estimated %.1f MiB",
+		__func__, screenTargetSizeX, screenTargetSizeY, screenTargetSamples,
+		(colorBytes + depthBytes + msaaBytes + colorBytes / 2 + depthBytes) / (1024.0 * 1024.0));
+	return true;
+#endif
+}
+
+void CGlobalRendering::KillScreenRenderTargets()
+{
+	const bool wasValid = screenTargetsValid;
+#ifndef HEADLESS
+	FBO::SetDefaultFBO(0);
+	glDeleteFramebuffers(1, &sceneFramebuffer);
+	glDeleteFramebuffers(1, &sceneMSAAFramebuffer);
+	glDeleteFramebuffers(1, &uiFramebuffer);
+	glDeleteTextures(1, &sceneColorTexture);
+	glDeleteTextures(1, &sceneDepthTexture);
+	glDeleteTextures(1, &uiColorTexture);
+	glDeleteRenderbuffers(1, &sceneMSAAColorBuffer);
+	glDeleteRenderbuffers(1, &sceneMSAADepthBuffer);
+	glDeleteRenderbuffers(1, &uiDepthBuffer);
+	glDeleteProgram(presentationProgram);
+	glDeleteVertexArrays(1, &presentationVAO);
+#endif
+	sceneFramebuffer = sceneMSAAFramebuffer = uiFramebuffer = 0;
+	sceneColorTexture = sceneDepthTexture = uiColorTexture = 0;
+	sceneMSAAColorBuffer = sceneMSAADepthBuffer = uiDepthBuffer = 0;
+	presentationProgram = presentationVAO = 0;
+	presentationLocSource = presentationLocUiPass = presentationLocHdrOutput = -1;
+	presentationLocSdrWhite = presentationLocHeadroom = -1;
+	screenTargetsValid = false;
+	if (wasValid)
+		++hdrState.generation;
+}
+
+void CGlobalRendering::ResizeScreenRenderTargets()
+{
+	if (screenTargetSizeX != winSizeX || screenTargetSizeY != winSizeY)
+		KillScreenRenderTargets();
+}
+
+bool CGlobalRendering::BeginSceneFrame()
+{
+	// Keep HDRMode=off, SDR fallback, and SDR displays on the legacy framebuffer
+	// path. Besides avoiding the HDR target cost, this preserves existing SDR
+	// output exactly: materials keep their own tone mapping and no extra
+	// offscreen/presentation pass runs. A float framebuffer that ends up on an
+	// SDR window still takes this path so its appearance matches HDRMode=off.
+	if (!HDRPipelineShouldBeActive()) {
+		if (screenTargetsValid)
+			KillScreenRenderTargets();
+		// Keep the Lua-visible state consistent on the same frame we drop to SDR.
+		if (hdrState.pipelineHdrActive || hdrState.effectiveMode != HDROutputMode::SDR) {
+			hdrState.pipelineHdrActive = false;
+			hdrState.effectiveMode = HDROutputMode::SDR;
+			++hdrState.generation;
+		}
+		FBO::SetDefaultFBO(0);
+		FBO::BindFramebufferZero();
+		return false;
+	}
+
+	if (!InitScreenRenderTargets()) {
+		FBO::SetDefaultFBO(0);
+		FBO::BindFramebufferZero();
+		return false;
+	}
+
+	const GLuint drawFramebuffer = (sceneMSAAFramebuffer != 0) ? sceneMSAAFramebuffer : sceneFramebuffer;
+	FBO::SetDefaultFBO(drawFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, drawFramebuffer);
+	glViewport(0, 0, screenTargetSizeX, screenTargetSizeY);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	return true;
+}
+
+void CGlobalRendering::DrawPresentationTexture(unsigned int texture, bool ui)
+{
+	if (!screenTargetsValid)
+		return;
+
+	GLint oldProgram = 0;
+	GLint oldVAO = 0;
+	GLint oldActiveTexture = 0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &oldProgram);
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &oldVAO);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &oldActiveTexture);
+	const GLboolean oldDepthTest = glIsEnabled(GL_DEPTH_TEST);
+	const GLboolean oldBlend = glIsEnabled(GL_BLEND);
+
+	glDisable(GL_DEPTH_TEST);
+	if (ui) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
+	}
+	glUseProgram(presentationProgram);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glUniform1i(presentationLocSource, 0);
+	glUniform1i(presentationLocUiPass, ui);
+	glUniform1i(presentationLocHdrOutput, hdrState.pipelineHdrActive);
+	glUniform1f(presentationLocSdrWhite, hdrState.sdrWhiteLevel);
+	glUniform1f(presentationLocHeadroom, hdrState.hdrHeadroom);
+	glBindVertexArray(presentationVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(oldActiveTexture);
+	glBindVertexArray(oldVAO);
+	glUseProgram(oldProgram);
+	if (oldDepthTest) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+	if (oldBlend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
+}
+
+void CGlobalRendering::ResolveSceneFrame()
+{
+	if (!screenTargetsValid || sceneMSAAFramebuffer == 0)
+		return;
+
+	GLint oldReadFramebuffer = 0;
+	GLint oldDrawFramebuffer = 0;
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &oldReadFramebuffer);
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &oldDrawFramebuffer);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, sceneMSAAFramebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneFramebuffer);
+	glBlitFramebuffer(0, 0, screenTargetSizeX, screenTargetSizeY, 0, 0, screenTargetSizeX, screenTargetSizeY,
+		GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFramebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFramebuffer);
+}
+
+void CGlobalRendering::PresentScene()
+{
+	if (!screenTargetsValid)
+		return;
+
+	ResolveSceneFrame();
+
+	const bool oldPipelineActive = hdrState.pipelineHdrActive;
+	const HDROutputMode oldEffectiveMode = hdrState.effectiveMode;
+	const HDRInactiveReason oldInactiveReason = hdrState.inactiveReason;
+	hdrState.pipelineHdrActive = HDRPipelineShouldBeActive() && screenTargetsValid;
+	hdrState.effectiveMode = hdrState.pipelineHdrActive ? HDROutputMode::HDR : HDROutputMode::SDR;
+	if (hdrState.pipelineHdrActive)
+		hdrState.inactiveReason = HDRInactiveReason::NoReason;
+	if (oldPipelineActive != hdrState.pipelineHdrActive ||
+	    oldEffectiveMode != hdrState.effectiveMode ||
+	    oldInactiveReason != hdrState.inactiveReason)
+		++hdrState.generation;
+
+	FBO::SetDefaultFBO(0);
+	FBO::BindFramebufferZero();
+	glViewport(0, 0, screenTargetSizeX, screenTargetSizeY);
+	DrawPresentationTexture(sceneColorTexture, false);
+}
+
+bool CGlobalRendering::BeginUIFrame()
+{
+	if (!screenTargetsValid)
+		return false;
+	FBO::SetDefaultFBO(uiFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, uiFramebuffer);
+	glViewport(0, 0, screenTargetSizeX, screenTargetSizeY);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	return true;
+}
+
+void CGlobalRendering::PresentUI()
+{
+	if (!screenTargetsValid)
+		return;
+	FBO::SetDefaultFBO(0);
+	FBO::BindFramebufferZero();
+	glViewport(0, 0, screenTargetSizeX, screenTargetSizeY);
+	DrawPresentationTexture(uiColorTexture, true);
+}
+
 void CGlobalRendering::PreKill()
 {
+	KillScreenRenderTargets();
 	UniformConstants::GetInstance().Kill(); //unsafe to kill in ~CGlobalRendering()
 	RenderBuffer::KillStatic();
 	GL::shapes.Kill();
@@ -395,7 +1011,7 @@ void CGlobalRendering::PreKill()
 }
 
 
-SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
+SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title, bool reportFailure) const
 {
 	SDL_Window* newWindow = nullptr;
 
@@ -425,9 +1041,9 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 	//   SDL_WINDOW_FULLSCREEN_DESKTOP for "fake" fullscreen that takes the size of the desktop;
 	//   and 0 for windowed mode.
 
-	uint32_t sdlFlags  = (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-	         sdlFlags |= (borderless_ ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen_;
-	         sdlFlags |= (SDL_WINDOW_BORDERLESS * borderless_);
+	SDL_WindowFlags sdlFlags = (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+	         sdlFlags |= (fullScreen_ ? SDL_WINDOW_FULLSCREEN : 0);
+	         sdlFlags |= (borderless_ ? SDL_WINDOW_BORDERLESS : 0);
 
 	for (size_t i = 0; i < (aaLvls.size()) && (newWindow == nullptr); i++) {
 		if (i > 0 && aaLvls[i] == aaLvls[i - 1])
@@ -439,7 +1055,7 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 		for (size_t j = 0; j < (zbBits.size()) && (newWindow == nullptr); j++) {
 			SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, zbBits[j]);
 
-			if ((newWindow = SDL_CreateWindow(title, winPosX_, winPosY_, newRes.x, newRes.y, sdlFlags)) == nullptr) {
+			if ((newWindow = SDL_CreateWindow(title, newRes.x, newRes.y, sdlFlags)) == nullptr) {
 				LOG_L(L_WARNING, frmts[0], __func__, SDL_GetError(), aaLvls[i], zbBits[j]);
 				continue;
 			}
@@ -449,8 +1065,10 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 	}
 
 	if (newWindow == nullptr) {
-		auto buf = fmt::sprintf("[GR::%s] could not create SDL-window\n", __func__);
-		handleerror(nullptr, buf.c_str(), "ERROR", MBF_OK | MBF_EXCL);
+		if (reportFailure) {
+			auto buf = fmt::sprintf("[GR::%s] could not create SDL-window\n", __func__);
+			handleerror(nullptr, buf.c_str(), "ERROR", MBF_OK | MBF_EXCL);
+		}
 		return nullptr;
 	}
 
@@ -498,7 +1116,7 @@ SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 			}
 
 			// accepts nullptr's
-			SDL_GL_DeleteContext(newContext);
+			SDL_GL_DestroyContext(newContext);
 		}
 	}
 
@@ -517,7 +1135,7 @@ SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 
 bool CGlobalRendering::CreateWindowAndContext(const char* title)
 {
-	if (SDL_Init(SDL_INIT_VIDEO) == -1) {
+	if (!SDL_Init(SDL_INIT_VIDEO)) {
 		LOG_L(L_FATAL, "[GR::%s] error \"%s\" initializing SDL", __func__, SDL_GetError());
 		return false;
 	}
@@ -526,6 +1144,24 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		handleerror(nullptr, "desktop color-depth should be at least 24 bits per pixel, aborting", "ERROR", MBF_OK | MBF_EXCL);
 		return false;
 	}
+
+	const std::string hdrMode = StringToLower(configHandler->GetString("HDRMode"));
+	hdrState.requestedMode =
+		(hdrMode == "on") ? HDRMode::On :
+		(hdrMode == "auto") ? HDRMode::Auto : HDRMode::Off;
+	hdrState.inactiveReason =
+		(hdrState.requestedMode == HDRMode::Off) ? HDRInactiveReason::RequestedOff : HDRInactiveReason::NoReason;
+	if (hdrMode != "off" && hdrMode != "auto" && hdrMode != "on")
+		LOG_L(L_WARNING, "[GR::%s] invalid HDRMode=\"%s\"; using off", __func__, hdrMode.c_str());
+
+	RefreshHDRState(true);
+	const bool anyHDREnabled = std::any_of(hdrState.displays.begin(), hdrState.displays.end(), [](const HDRDisplayInfo& display) {
+		return display.osHdrStateKnown && display.osHdrEnabled;
+	});
+	const bool requestFloatFramebuffer =
+		(hdrState.requestedMode == HDRMode::On) ||
+		(hdrState.requestedMode == HDRMode::Auto && anyHDREnabled);
+	hdrState.floatFramebufferRequested = requestFloatFramebuffer;
 
 	// should be set to "3.0" (non-core Mesa is stuck there), see below
 	const char* mesaGL = getenv("MESA_GL_VERSION_OVERRIDE");
@@ -536,14 +1172,7 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		int2{                  std::max(mesaGL[0] - '0', 3),                   std::max(mesaGL[2] - '0', 0)}:
 		int2{configHandler->GetInt("GLContextMajorVersion"), configHandler->GetInt("GLContextMinorVersion")};
 
-	// start with the standard (R8G8B8A8 + 24-bit depth + 8-bit stencil + DB) format
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,   8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  8);
-	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  24);
-	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SetGLFramebufferAttributes(requestFloatFramebuffer);
 
 	// create GL debug-context if wanted (more verbose GL messages, but runs slower)
 	// note:
@@ -567,13 +1196,39 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 			++msaaLevel;
 	}
 
-	if ((sdlWindow = CreateSDLWindow(title)) == nullptr)
-		return false;
-
 	if (configHandler->GetInt("MinimizeOnFocusLoss") == 0)
 		SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
 
-	SetWindowAttributes(sdlWindow);
+	bool windowCreated = false;
+	auto createWindowAndGLContext = [&](bool hdrRequest) {
+		windowCreated = false;
+		SetGLFramebufferAttributes(hdrRequest);
+		sdlWindow = CreateSDLWindow(title, !hdrRequest);
+		if (sdlWindow == nullptr)
+			return false;
+
+		windowCreated = true;
+		SetWindowAttributes(sdlWindow);
+		glContext = CreateGLContext(minCtx);
+		if (glContext != nullptr)
+			return true;
+
+		SDL_DestroyWindow(sdlWindow);
+		sdlWindow = nullptr;
+		return false;
+	};
+
+	bool hdrAttemptFailed = false;
+	if (!createWindowAndGLContext(requestFloatFramebuffer)) {
+		if (!requestFloatFramebuffer)
+			return false;
+
+		hdrAttemptFailed = true;
+		hdrState.inactiveReason = windowCreated ? HDRInactiveReason::ContextCreationFailed : HDRInactiveReason::WindowCreationFailed;
+		LOG_L(L_WARNING, "[GR::%s] HDR window/context creation failed; retrying with the SDR framebuffer format", __func__);
+		if (!createWindowAndGLContext(false))
+			return false;
+	}
 
 #if !defined(HEADLESS)
 	// disable desktop compositing to fix tearing
@@ -584,8 +1239,20 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		WindowManagerHelper::BlockCompositing(sdlWindow);
 #endif
 
-	if ((glContext = CreateGLContext(minCtx)) == nullptr)
-		return false;
+	VerifyHDRFramebuffer();
+	if (requestFloatFramebuffer && !hdrAttemptFailed && !hdrState.floatFramebufferActive) {
+		LOG_L(L_WARNING, "[GR::%s] the created framebuffer did not verify as floating-point; recreating in SDR", __func__);
+		SDL_GL_MakeCurrent(sdlWindow, nullptr);
+		SDL_GL_DestroyContext(glContext);
+		SDL_DestroyWindow(sdlWindow);
+		glContext = nullptr;
+		sdlWindow = nullptr;
+		hdrAttemptFailed = true;
+		hdrState.inactiveReason = HDRInactiveReason::VerificationFailed;
+		if (!createWindowAndGLContext(false))
+			return false;
+		VerifyHDRFramebuffer();
+	}
 
 	gladLoadGL();
 	GLX::Load(sdlWindow);
@@ -605,6 +1272,9 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 
 	MakeCurrentContext(false);
 	SDL_DisableScreenSaver();
+	RefreshHDRState(true);
+	if (hdrAttemptFailed)
+		hdrState.effectiveMode = HDROutputMode::SDR;
 	return true;
 }
 
@@ -626,7 +1296,7 @@ void CGlobalRendering::DestroyWindowAndContext() {
 
 	#if !defined(HEADLESS)
 	if (glContext)
-		SDL_GL_DeleteContext(glContext);
+		SDL_GL_DestroyContext(glContext);
 	#endif
 
 	sdlWindow = nullptr;
@@ -972,8 +1642,16 @@ void CGlobalRendering::QueryVersionInfo(char (&sdlVersionStr)[64], char (&glVidM
 	auto& sdlVC = grInfo.sdlVersionCompiled;
 	auto& sdlVL = grInfo.sdlVersionLinked;
 
-	SDL_VERSION(&sdlVC);
-	SDL_GetVersion(&sdlVL);
+	const int sdlCompileVer = SDL_VERSION;
+	const int sdlRuntimeVer = SDL_GetVersion();
+
+	sdlVC.major = SDL_VERSIONNUM_MAJOR(sdlCompileVer);
+	sdlVC.minor = SDL_VERSIONNUM_MINOR(sdlCompileVer);
+	sdlVC.patch = SDL_VERSIONNUM_MICRO(sdlCompileVer);
+
+	sdlVL.major = SDL_VERSIONNUM_MAJOR(sdlRuntimeVer);
+	sdlVL.minor = SDL_VERSIONNUM_MINOR(sdlRuntimeVer);
+	sdlVL.patch = SDL_VERSIONNUM_MICRO(sdlRuntimeVer);
 
 #ifndef HEADLESS
 	grInfo.gladVersion = "0.1.36";
@@ -1021,7 +1699,11 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 	LOG("\tGLSL version: %s", globalRenderingInfo.glslVersion);
 	LOG("\tGLAD version: %s", globalRenderingInfo.gladVersion);
 	LOG("\tGPU memory  : %s", glVidMemStr);
-	LOG("\tSDL swap-int: %d", SDL_GL_GetSwapInterval());
+		{
+			int si = 0;
+			SDL_GL_GetSwapInterval(&si);
+			LOG("\tSDL swap-int: %d", si);
+		}
 	LOG("\tSDL driver  : %s", globalRenderingInfo.sdlDriverName);
 	LOG("\t");
 	LOG("\tInitialized OpenGL Context: %i.%i (%s)", globalRenderingInfo.glContextVersion.x, globalRenderingInfo.glContextVersion.y, globalRenderingInfo.glContextIsCore ? "Core" : "Compat");
@@ -1151,8 +1833,8 @@ void CGlobalRendering::LogVersionInfo(const char* sdlVersionStr, const char* glV
 void CGlobalRendering::LogDisplayMode(SDL_Window* window) const
 {
 	// print final mode (call after SetupViewportGeometry, which updates viewSizeX/Y)
-	SDL_DisplayMode dmode;
-	SDL_GetWindowDisplayMode(window, &dmode);
+	const SDL_DisplayMode* dmode = SDL_GetWindowFullscreenMode(window);
+	if (!dmode) dmode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(window));
 
 	constexpr const std::array names = {
 		"windowed::decorated",       // fs=0,bl=0
@@ -1164,19 +1846,20 @@ void CGlobalRendering::LogDisplayMode(SDL_Window* window) const
 	const int fs = fullScreen;
 	const int bl = borderless;
 
-	LOG("[GR::%s] display-mode set to %ix%ix%ibpp@%iHz (%s)", __func__, viewSizeX, viewSizeY, SDL_BITSPERPIXEL(dmode.format), dmode.refresh_rate, names[fs * 2 + bl]);
+	LOG("[GR::%s] display-mode set to %ix%ix%ibpp@%fHz (%s)", __func__, viewSizeX, viewSizeY, SDL_BITSPERPIXEL(dmode->format), dmode->refresh_rate, names[fs * 2 + bl]);
 }
 
 void CGlobalRendering::GetAllDisplayBounds(SDL_Rect& r) const
 {
-	int displayIdx = 0;
-	GetDisplayBounds(r, &displayIdx);
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
 
-	std::array<int, 4> mb = { r.x, r.y, r.x + r.w, r.y + r.h }; //L, T, R, B
+	SDL_Rect db;
+	SDL_GetDisplayBounds(displays[0], &db);
+	std::array<int, 4> mb = { db.x, db.y, db.x + db.w, db.y + db.h }; //L, T, R, B
 
-	for (displayIdx = 1; displayIdx < numDisplays; ++displayIdx) {
-		SDL_Rect db;
-		GetDisplayBounds(db, &displayIdx);
+	for (int i = 1; i < displayCount; ++i) {
+		SDL_GetDisplayBounds(displays[i], &db);
 		std::array<int, 4> b = { db.x, db.y, db.x + db.w, db.y + db.h }; //L, T, R, B
 
 		if (b[0] < mb[0]) mb[0] = b[0];
@@ -1185,6 +1868,7 @@ void CGlobalRendering::GetAllDisplayBounds(SDL_Rect& r) const
 		if (b[3] > mb[3]) mb[3] = b[3];
 	}
 
+	SDL_free(displays);
 	r = { mb[0], mb[1], mb[2] - mb[0], mb[3] - mb[1] };
 }
 
@@ -1224,7 +1908,7 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	winPosY = configHandler->GetInt("WindowPosY");
 
 	// update display count
-	numDisplays = SDL_GetNumVideoDisplays();
+	{ int dc = 0; SDL_GetDisplays(&dc); numDisplays = dc; }
 
 	// get desired resolution
 	// note that the configured fullscreen resolution is just
@@ -1245,10 +1929,14 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	SDL_SetWindowPosition(window, winPosX, winPosY);
 	SDL_SetWindowSize(window, newRes.x, newRes.y);
 
-	if (SDL_SetWindowFullscreen(window, (borderless ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen) != 0)
-		LOG("[GR::%s][4][SDL_SetWindowFullscreen] err=\"%s\"", __func__, SDL_GetError());
+	SDL_SetWindowFullscreen(window, fullScreen);
+	if (borderless && fullScreen) {
+		SDL_SetWindowFullscreenMode(window, nullptr);
+	} else if (fullScreen) {
+		SDL_SetWindowFullscreenMode(window, nullptr);
+	}
 
-	SDL_SetWindowBordered(window, borderless ? SDL_FALSE : SDL_TRUE);
+	SDL_SetWindowBordered(window, !borderless);
 
 	if (newRes == maxRes)
 		SDL_MaximizeWindow(window);
@@ -1312,7 +2000,7 @@ void CGlobalRendering::UpdateTimer()
 
 bool CGlobalRendering::GetWindowInputGrabbing()
 {
-	return static_cast<bool>(SDL_GetWindowGrab(sdlWindow));
+	return SDL_GetWindowMouseGrab(sdlWindow);
 }
 
 bool CGlobalRendering::SetWindowInputGrabbing(bool enable)
@@ -1320,7 +2008,7 @@ bool CGlobalRendering::SetWindowInputGrabbing(bool enable)
 	// SDL_SetWindowGrab deadlocks in case it's called from non-main thread (during the MT loading).
 
 	static auto SetWindowGrabImpl = [](SDL_Window* sdlWindow, bool enable) {
-		SDL_SetWindowGrab(sdlWindow, enable ? SDL_TRUE : SDL_FALSE);
+		SDL_SetWindowMouseGrab(sdlWindow, enable);
 	};
 
 	if (Threading::IsMainThread())
@@ -1366,9 +2054,12 @@ bool CGlobalRendering::SetWindowPosHelper(int displayIdx, int winRPosX, int winR
 }
 
 int2 CGlobalRendering::GetMaxWinRes() const {
-	SDL_DisplayMode dmode;
-	SDL_GetDesktopDisplayMode(GetCurrentDisplayIndex(), &dmode);
-	return {dmode.w, dmode.h};
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
+	SDL_DisplayID displayID = displays[GetCurrentDisplayIndex()];
+	const SDL_DisplayMode* dmode = SDL_GetCurrentDisplayMode(displayID);
+	SDL_free(displays);
+	return {dmode->w, dmode->h};
 }
 
 int2 CGlobalRendering::GetCfgWinRes() const
@@ -1376,7 +2067,7 @@ int2 CGlobalRendering::GetCfgWinRes() const
 	int2 res = {configHandler->GetInt(xsKeys[fullScreen]), configHandler->GetInt(ysKeys[fullScreen])};
 
 	// copy Native Desktop Resolution if user did not specify a value
-	// SDL2 can do this itself if size{X,Y} are set to zero but fails
+	// SDL3 can do this itself if size{X,Y} are set to zero but fails
 	// with Display Cloning and similar, causing DVI monitors to only
 	// run at (e.g.) 640x400 and HDMI devices at full-HD
 	// TODO: make screen configurable?
@@ -1388,19 +2079,38 @@ int2 CGlobalRendering::GetCfgWinRes() const
 
 int CGlobalRendering::GetCurrentDisplayIndex() const
 {
-	return sdlWindow ? SDL_GetWindowDisplayIndex(sdlWindow) : 0;
+	if (!sdlWindow) return 0;
+	SDL_DisplayID curDisplay = SDL_GetDisplayForWindow(sdlWindow);
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
+	for (int i = 0; i < displayCount; ++i) {
+		if (displays[i] == curDisplay) {
+			SDL_free(displays);
+			return i;
+		}
+	}
+	SDL_free(displays);
+	return 0;
 }
 
 void CGlobalRendering::GetDisplayBounds(SDL_Rect& r, const int* di) const
 {
 	const int displayIndex = di ? *di : GetCurrentDisplayIndex();
-	SDL_GetDisplayBounds(displayIndex, &r);
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
+	SDL_DisplayID displayID = displays[displayIndex];
+	SDL_GetDisplayBounds(displayID, &r);
+	SDL_free(displays);
 }
 
 void CGlobalRendering::GetUsableDisplayBounds(SDL_Rect& r, const int* di) const
 {
 	const int displayIndex = di ? *di : GetCurrentDisplayIndex();
-	SDL_GetDisplayUsableBounds(displayIndex, &r);
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
+	SDL_DisplayID displayID = displays[displayIndex];
+	SDL_GetDisplayUsableBounds(displayID, &r);
+	SDL_free(displays);
 }
 
 bool CGlobalRendering::IsExtensionSupported(const char* ext) const
@@ -1463,13 +2173,16 @@ void CGlobalRendering::UpdateViewPortGeometry()
 	std::vector<SDL_Rect> screenRects;
 	SDL_Rect winRect = { winPosX, winPosY, winSizeX, winSizeY };
 
-	for(int i = 0 ; i < numDisplays ; ++i)
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
+
+	for(int i = 0 ; i < displayCount ; ++i)
 	{
 		SDL_Rect screen, interRect;
-		GetDisplayBounds(screen, &i);
+		SDL_GetDisplayBounds(displays[i], &screen);
 		LOG("[GR::%s] Raw Screen %i: pos %dx%d | size %dx%d", __func__, i, screen.x, screen.y, screen.w, screen.h);
 		// we only care about screenRects that overlap window
-		if (!SDL_IntersectRect(&screen, &winRect, &interRect)) {
+		if (!SDL_GetRectIntersection(&screen, &winRect, &interRect)) {
 			LOG("[GR::%s] No intersection: pos %dx%d | size %dx%d", __func__, screen.x, screen.y, screen.w, screen.h);
 			continue;
 		}
@@ -1480,6 +2193,8 @@ void CGlobalRendering::UpdateViewPortGeometry()
 
 		screenRects.push_back(interRect);
 	}
+
+	SDL_free(displays);
 
 	std::sort(screenRects.begin(), screenRects.end(), compareSDLRectPosX);
 
@@ -1590,7 +2305,7 @@ void CGlobalRendering::SaveWindowPosAndSize()
 		return;
 
 	// do not save if minimized
-	// note that maximized windows are automagically restored; SDL2
+	// note that maximized windows are automagically restored; SDL3
 	// apparently detects if the resolution is maximal and sets the
 	// flag (but we also check if winRes equals maxRes to be safe)
 	if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_MINIMIZED) != 0)
@@ -1656,10 +2371,10 @@ void CGlobalRendering::UpdateWindowBorders(SDL_Window* window) const
 	#if defined(_WIN32) && (WINDOWS_NO_INVISIBLE_GRIPS == 1)
 	// W/A for 8 px Aero invisible borders https://github.com/libsdl-org/SDL/commit/7c60bec493404905f512c835f502f1ace4eff003
 	if (DwmGetWindowAttribute) {
-		SDL_SysWMinfo wmInfo;
-		SDL_VERSION(&wmInfo.version);
-		SDL_GetWindowWMInfo(window, &wmInfo);
-		HWND& hwnd = wmInfo.info.win.window;
+		const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+		HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+		if (!hwnd)
+			return;
 
 		RECT rect, frame;
 
@@ -1674,7 +2389,7 @@ void CGlobalRendering::UpdateWindowBorders(SDL_Window* window) const
 		winBorder[2] -= std::max(0l, rect.bottom - frame.bottom);
 		winBorder[3] -= std::max(0l, rect.right  - frame.right);
 
-		LOG_L(L_DEBUG, "[GR::%s] Working around Windows 10+ thick borders SDL2 issue, borders are slimmed by TLBR(%d,%d,%d,%d)", __func__,
+		LOG_L(L_DEBUG, "[GR::%s] Working around Windows 10+ thick borders SDL3 issue, borders are slimmed by TLBR(%d,%d,%d,%d)", __func__,
 			static_cast<int>(std::max(0l, frame.top   - rect.top    )),
 			static_cast<int>(std::max(0l, frame.left  - rect.left   )),
 			static_cast<int>(std::max(0l, rect.bottom - frame.bottom)),

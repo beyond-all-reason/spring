@@ -8,6 +8,16 @@
 #include "LuaHashString.h"
 #include "LuaUtils.h"
 #include "LuaRules.h"
+
+#ifdef camera
+#undef camera
+#endif
+#include <SDL3/SDL_clipboard.h>
+#include <SDL3/SDL_gamepad.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
+
 #include "Game/Camera.h"
 #include "Game/CameraHandler.h"
 #include "Game/Game.h"
@@ -67,6 +77,13 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Config/ConfigVariable.h"
 #include "System/Input/KeyInput.h"
+
+#ifdef camera
+#undef camera
+#endif
+#include "System/Input/ControllerInput.h"
+#define camera (CCamera::GetActive())
+
 #include "System/LoadSave/DemoReader.h"
 #include "System/LoadSave/DemoRecorder.h"
 #include "System/Log/DefaultFilter.h"
@@ -87,11 +104,6 @@
 
 #include <cctype>
 #include <algorithm>
-
-#include <SDL_keyboard.h>
-#include <SDL_clipboard.h>
-#include <SDL_keycode.h>
-#include <SDL_mouse.h>
 
 
 
@@ -256,6 +268,9 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetMouseCursor);
 	REGISTER_LUA_CFUNC(GetMouseStartPosition);
 
+	REGISTER_LUA_CFUNC(GetControllerState);
+	REGISTER_LUA_CFUNC(GetAvailableControllers);
+
 	REGISTER_LUA_CFUNC(GetKeyFromScanSymbol);
 	REGISTER_LUA_CFUNC(GetKeyState);
 	REGISTER_LUA_CFUNC(GetModKeyState);
@@ -289,6 +304,7 @@ bool LuaUnsyncedRead::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(GetPlayerStatistics);
 
 	REGISTER_LUA_CFUNC(GetDrawSelectionInfo);
+	REGISTER_LUA_CFUNC(GetHDRInfo);
 
 	REGISTER_LUA_CFUNC(GetConfigParams);
 	REGISTER_LUA_CFUNC(GetConfigInt);
@@ -875,7 +891,9 @@ int LuaUnsyncedRead::DiffTimers(lua_State* L)
  */
 int LuaUnsyncedRead::GetNumDisplays(lua_State* L)
 {
-	lua_pushnumber(L, SDL_GetNumVideoDisplays());
+	int displayCount = 0;
+	SDL_GetDisplays(&displayCount);
+	lua_pushnumber(L, displayCount);
 	return 1;
 }
 
@@ -958,13 +976,14 @@ int LuaUnsyncedRead::GetWindowGeometry(lua_State* L)
  */
 int LuaUnsyncedRead::GetWindowDisplayMode(lua_State* L)
 {
-	SDL_DisplayMode dmode;
-	if (!SDL_GetWindowDisplayMode(globalRendering->GetWindow(), &dmode)) {
-		lua_pushnumber(L, dmode.w);
-		lua_pushnumber(L, dmode.h);
-		lua_pushnumber(L, SDL_BITSPERPIXEL(dmode.format));
-		lua_pushnumber(L, dmode.refresh_rate);
-		lua_pushstring(L, SDL_GetPixelFormatName(dmode.format));
+	const SDL_DisplayMode* dmode = SDL_GetWindowFullscreenMode(globalRendering->GetWindow());
+	if (!dmode) dmode = SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(globalRendering->GetWindow()));
+	if (dmode) {
+		lua_pushnumber(L, dmode->w);
+		lua_pushnumber(L, dmode->h);
+		lua_pushnumber(L, SDL_BITSPERPIXEL(dmode->format));
+		lua_pushnumber(L, dmode->refresh_rate);
+		lua_pushstring(L, SDL_GetPixelFormatName(dmode->format));
 		return 5;
 	}
 	return 0;
@@ -1135,6 +1154,71 @@ int LuaUnsyncedRead::GetSelectionBox(lua_State* L)
 int LuaUnsyncedRead::GetDrawSelectionInfo(lua_State* L)
 {
 	lua_pushboolean(L, guihandler ? guihandler->GetDrawSelectionInfo() : 0);
+	return 1;
+}
+
+/**
+ * Returns versioned HDR capability, window, framebuffer, and pipeline state.
+ *
+ * This is intentionally unsynced. Older engines can be detected with
+ * `Engine.FeatureSupport.hdrOutputApiVersion`.
+ *
+ * @function Spring.GetHDRInfo
+ * @return table hdrInfo
+ */
+int LuaUnsyncedRead::GetHDRInfo(lua_State* L)
+{
+	const CGlobalRendering::HDRState& hdr = globalRendering->GetHDRState();
+
+	lua_createtable(L, 0, 22);
+	LuaPushNamedNumber(L, "apiVersion", 1);
+	LuaPushNamedNumber(L, "generation", hdr.generation);
+	LuaPushNamedString(L, "state", globalRendering->GetHDRUserState());
+	LuaPushNamedString(L, "capability", CGlobalRendering::HDRCapabilityToString(hdr.displayCapability));
+	LuaPushNamedString(L, "requestedMode", CGlobalRendering::HDRModeToString(hdr.requestedMode));
+	LuaPushNamedString(L, "effectiveMode", CGlobalRendering::HDROutputModeToString(hdr.effectiveMode));
+	LuaPushNamedString(L, "inactiveReason", CGlobalRendering::HDRInactiveReasonToString(hdr.inactiveReason));
+	LuaPushNamedNumber(L, "currentDisplay", hdr.currentDisplayIndex);
+	LuaPushNamedNumber(L, "currentDisplayID", hdr.currentDisplayID);
+	if (hdr.osHdrStateKnown)
+		LuaPushNamedBool(L, "osHdrEnabled", hdr.osHdrEnabled);
+	LuaPushNamedBool(L, "windowHdrEnabled", hdr.windowHdrEnabled);
+	LuaPushNamedNumber(L, "sdrWhiteLevel", hdr.sdrWhiteLevel);
+	LuaPushNamedNumber(L, "hdrHeadroom", hdr.hdrHeadroom);
+	LuaPushNamedBool(L, "floatFramebufferRequested", hdr.floatFramebufferRequested);
+	LuaPushNamedBool(L, "floatFramebufferActive", hdr.floatFramebufferActive);
+	LuaPushNamedBool(L, "pipelineHdrActive", hdr.pipelineHdrActive);
+	LuaPushNamedBool(L, "sceneTargetActive", globalRendering->IsSceneTargetActive());
+	LuaPushNamedString(L, "sceneColorTexture", "$scene_color");
+	LuaPushNamedString(L, "sceneDepthTexture", "$scene_depth");
+	LuaPushNamedString(L, "hdrScreenshotFormat", "radiance-hdr-linear-srgb");
+
+	lua_pushliteral(L, "framebuffer");
+	lua_createtable(L, 0, 8);
+		LuaPushNamedNumber(L, "redBits", hdr.framebufferBits[0]);
+		LuaPushNamedNumber(L, "greenBits", hdr.framebufferBits[1]);
+		LuaPushNamedNumber(L, "blueBits", hdr.framebufferBits[2]);
+		LuaPushNamedNumber(L, "alphaBits", hdr.framebufferBits[3]);
+		LuaPushNamedNumber(L, "depthBits", hdr.framebufferBits[4]);
+		LuaPushNamedNumber(L, "stencilBits", hdr.framebufferBits[5]);
+		LuaPushNamedNumber(L, "samples", hdr.framebufferBits[6]);
+		LuaPushNamedBool(L, "floatingPoint", hdr.framebufferBits[7] != 0);
+	lua_rawset(L, -3);
+
+	lua_pushliteral(L, "displays");
+	lua_createtable(L, hdr.displays.size(), 0);
+	for (const CGlobalRendering::HDRDisplayInfo& display : hdr.displays) {
+		lua_createtable(L, 0, 6);
+			LuaPushNamedNumber(L, "id", display.id);
+			LuaPushNamedNumber(L, "index", display.index);
+			LuaPushNamedString(L, "name", display.name);
+			LuaPushNamedString(L, "capability", CGlobalRendering::HDRCapabilityToString(display.capability));
+			if (display.osHdrStateKnown)
+				LuaPushNamedBool(L, "osHdrEnabled", display.osHdrEnabled);
+		lua_rawseti(L, -2, display.index + 1);
+	}
+	lua_rawset(L, -3);
+
 	return 1;
 }
 
@@ -3992,6 +4076,96 @@ int LuaUnsyncedRead::GetMouseStartPosition(lua_State* L)
 	return 8;
 }
 
+/*** Get the current state of a game controller
+ *
+ * @function Spring.GetControllerState
+ * @param instanceId number
+ * @return table? {axis={...}, buttons={...}}
+ */
+int LuaUnsyncedRead::GetControllerState(lua_State* L)
+{
+	const int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	SDL_Gamepad* gamepad = SDL_GetGamepadFromID(instanceId);
+
+	if (gamepad == nullptr) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_newtable(L);
+		// axis
+		lua_pushliteral(L, "axis");
+		lua_newtable(L);
+			for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; ++i) {
+				SDL_GamepadAxis axis = (SDL_GamepadAxis)i;
+
+				if (!SDL_GamepadHasAxis(gamepad, axis))
+					continue;
+
+				LuaPushNamedNumber(L, std::string(SDL_GetGamepadStringForAxis(axis)), SDL_GetGamepadAxis(gamepad, axis));
+			}
+		lua_rawset(L, -3);
+
+		// buttons
+		lua_pushliteral(L, "buttons");
+		lua_newtable(L);
+			for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; ++i) {
+				SDL_GamepadButton button = (SDL_GamepadButton)i;
+
+				if (!SDL_GamepadHasButton(gamepad, button))
+					continue;
+
+				LuaPushNamedNumber(L, std::string(SDL_GetGamepadStringForButton(button)), SDL_GetGamepadButton(gamepad, button));
+			}
+		lua_rawset(L, -3);
+
+	return 1;
+}
+
+/*** Get the list of available game controllers
+ *
+ * @function Spring.GetAvailableControllers
+ * @return table {deviceIndex, {name=..., instanceId=...}}
+ */
+int LuaUnsyncedRead::GetAvailableControllers(lua_State* L)
+{
+	int joystickCount = 0;
+	SDL_JoystickID* joysticks = SDL_GetJoysticks(&joystickCount);
+
+	lua_newtable(L);
+	{
+		int idx = 1;
+		for (int j = 0; j < joystickCount; ++j) {
+			SDL_JoystickID joystickId = joysticks[j];
+
+			if (!SDL_IsGamepad(joystickId))
+				continue;
+
+			lua_pushnumber(L, idx++);
+			lua_newtable(L);
+			{
+				const char* name = "";
+				SDL_Joystick* joystick = SDL_OpenJoystick(joystickId);
+				if (joystick != nullptr) {
+					name = SDL_GetJoystickName(joystick);
+					SDL_CloseJoystick(joystick);
+				}
+				LuaPushNamedString(L, "name", std::string(name));
+				LuaPushNamedNumber(L, "instanceId", joystickId);
+			}
+			lua_rawset(L, -3);
+		}
+	}
+
+	return 1;
+}
+
 
 /***
  *
@@ -4164,7 +4338,7 @@ int LuaUnsyncedRead::GetKeyFromScanSymbol(lua_State* L)
 		return 1;
 	}
 
-	SDL_Keycode keyCode = (SDL_Keycode)SDL_GetKeyFromScancode(scanCode);
+	SDL_Keycode keyCode = (SDL_Keycode)SDL_GetKeyFromScancode(scanCode, 0, true);
 	if (keyCode <= 0 || keyCode == 0x40000000) {
 		lua_pushstring(L, result.c_str());
 		return 1;
@@ -4201,10 +4375,10 @@ int LuaUnsyncedRead::GetKeyState(lua_State* L)
  */
 int LuaUnsyncedRead::GetModKeyState(lua_State* L)
 {
-	lua_pushboolean(L, KeyInput::GetKeyModState(KMOD_ALT));
-	lua_pushboolean(L, KeyInput::GetKeyModState(KMOD_CTRL));
-	lua_pushboolean(L, KeyInput::GetKeyModState(KMOD_GUI));
-	lua_pushboolean(L, KeyInput::GetKeyModState(KMOD_SHIFT));
+	lua_pushboolean(L, KeyInput::GetKeyModState(SDL_KMOD_ALT));
+	lua_pushboolean(L, KeyInput::GetKeyModState(SDL_KMOD_CTRL));
+	lua_pushboolean(L, KeyInput::GetKeyModState(SDL_KMOD_GUI));
+	lua_pushboolean(L, KeyInput::GetKeyModState(SDL_KMOD_SHIFT));
 	return 4;
 }
 

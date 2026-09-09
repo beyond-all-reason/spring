@@ -3,7 +3,7 @@
 #ifndef MOUSE_INPUT_H
 #define MOUSE_INPUT_H
 
-#include <SDL_events.h>
+#include <SDL3/SDL_events.h>
 #include "System/Input/InputHandler.h"
 
 #include "System/type2.h"

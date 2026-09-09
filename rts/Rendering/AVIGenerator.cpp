@@ -16,7 +16,6 @@
 
 #ifdef _WIN32
 	#include <windows.h>
-	#include <SDL_syswm.h>
 #endif
 
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -338,10 +337,10 @@ bool CAVIGenerator::InitEngine()
 		freeImageBuffers.push_back(new unsigned char[bitmapInfo.biSizeImage]);
 	}
 
-	SDL_SysWMinfo wmInfo;
-	SDL_VERSION(&wmInfo.version);
-	SDL_GetWindowWMInfo(globalRendering->GetWindow(), &wmInfo);
-	HWND& mainWindow = wmInfo.info.win.window;
+	const SDL_PropertiesID props = SDL_GetWindowProperties(globalRendering->GetWindow());
+	HWND mainWindow = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+	if (!mainWindow)
+		return false;
 
 	if (globalRendering->fullScreen)
 		ShowWindow(mainWindow, SW_SHOWMINNOACTIVE);

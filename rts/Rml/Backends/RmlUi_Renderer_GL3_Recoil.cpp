@@ -46,6 +46,7 @@
 #include "RmlUi/Core/Core.h"
 #include "RmlUi/Core/SystemInterface.h"
 #include "RmlUi/Core/DecorationTypes.h"
+#include <tracy/Tracy.hpp>
 
 // Determines the anti-aliasing quality when creating layers. Enables better-looking visuals, especially when transforms are applied.
 static constexpr int NUM_MSAA_SAMPLES = 2;
@@ -923,6 +924,7 @@ RenderInterface_GL3_Recoil::CompileGeometry(Rml::Span<const Rml::Vertex> vertice
 void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle handle, Rml::Vector2f translation,
 												Rml::TextureHandle texture)
 {
+	ZoneNamedNC(tracyRenderGeom, "RmlRenderGeometry", tracy::Color::Tomato, true);
 	auto tok = Gfx::CheckGLError("RenderCompiledGeometry");
 
 	auto* geometry = (Gfx::CompiledGeometryData*) handle;
@@ -930,22 +932,40 @@ void RenderInterface_GL3_Recoil::RenderGeometry(Rml::CompiledGeometryHandle hand
 	if (texture == TexturePostprocess) {
 		// Do nothing.
 	} else if (texture) {
+		ZoneNamedNC(tracyUseProg, "UseProgram", tracy::Color::DodgerBlue2, true);
 		UseProgram(ProgramId::Texture);
+		ZoneNamedNC(tracySubmitUni, "SubmitTransformUniform", tracy::Color::Turquoise, true);
 		SubmitTransformUniform(translation);
-		if (texture != TextureEnableWithoutBinding)
+		if (texture != TextureEnableWithoutBinding) {
+			ZoneNamedNC(tracyBindTex, "glBindTexture", tracy::Color::Goldenrod, true);
 			glBindTexture(GL_TEXTURE_2D, (GLuint) texture);
+		}
 	} else {
+		ZoneNamedNC(tracyUseProgC, "UseProgram", tracy::Color::DodgerBlue2, true);
 		UseProgram(ProgramId::Color);
+		ZoneNamedNC(tracyBindTexC, "glBindTexture", tracy::Color::Goldenrod, true);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		ZoneNamedNC(tracySubmitUniC, "SubmitTransformUniform", tracy::Color::Turquoise, true);
 		SubmitTransformUniform(translation);
 	}
 
-	geometry->vao->Bind();
-	glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
-	geometry->vao->Unbind();
+	{
+		ZoneNamedNC(tracyVaobind, "VAO_Bind", tracy::Color::MediumPurple, true);
+		geometry->vao->Bind();
+	}
+	{
+		ZoneNamedNC(tracyDrawElem, "glDrawElements", tracy::Color::DarkTurquoise, true);
+		glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
+	}
+	{
+		ZoneNamedNC(tracyVaoUnbind, "VAO_Unbind", tracy::Color::MediumPurple, true);
+		geometry->vao->Unbind();
+	}
 
 	if (texture != TexturePostprocess) {
+		ZoneNamedNC(tracyUseProgN, "UseProgramNone", tracy::Color::DodgerBlue2, true);
 		UseProgram(ProgramId::None);
+		ZoneNamedNC(tracyBindTexN, "glBindTexture0", tracy::Color::Goldenrod, true);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }
@@ -1500,6 +1520,7 @@ void RenderInterface_GL3_Recoil::RenderShader(Rml::CompiledShaderHandle shader_h
 											  Rml::CompiledGeometryHandle geometry_handle,
 											  Rml::Vector2f translation, Rml::TextureHandle /*texture*/)
 {
+	ZoneNamedNC(tracyRenderShad, "RmlRenderShader", tracy::Color::Orange, true);
 	RMLUI_ASSERT(shader_handle && geometry_handle)
 
 	auto tok = Gfx::CheckGLError("RenderShader");
@@ -1509,34 +1530,64 @@ void RenderInterface_GL3_Recoil::RenderShader(Rml::CompiledShaderHandle shader_h
 
 	switch (type) {
 		case CompiledShaderType::Gradient: {
+			ZoneNamedNC(tracyGradShader, "Shader_Gradient", tracy::Color::DarkKhaki, true);
 			RMLUI_ASSERT(shader.stop_positions.size() == shader.stop_colors.size())
 			const int num_stops = (int) shader.stop_positions.size();
 
+			ZoneNamedNC(tracyUseProgG, "UseProgram", tracy::Color::DodgerBlue2, true);
 			auto gradient_prog = UseProgram(ProgramId::Gradient);
-			gradient_prog->SetUniform(Uniform::Func, static_cast<int>(shader.gradient_function));
-			gradient_prog->SetUniform(Uniform::P, shader.p.x, shader.p.y);
-			gradient_prog->SetUniform(Uniform::V, shader.v.x, shader.v.y);
-			gradient_prog->SetUniform(Uniform::NumStops, num_stops);
-			gradient_prog->SetUniform1v(Uniform::StopPositions, num_stops, shader.stop_positions.data());
-			gradient_prog->SetUniform4v(Uniform::StopColors, num_stops, (float*) &shader.stop_colors[0]);
+			{
+				ZoneNamedNC(tracySetUniG, "SetUniforms", tracy::Color::Turquoise, true);
+				gradient_prog->SetUniform(Uniform::Func, static_cast<int>(shader.gradient_function));
+				gradient_prog->SetUniform(Uniform::P, shader.p.x, shader.p.y);
+				gradient_prog->SetUniform(Uniform::V, shader.v.x, shader.v.y);
+				gradient_prog->SetUniform(Uniform::NumStops, num_stops);
+				gradient_prog->SetUniform1v(Uniform::StopPositions, num_stops, shader.stop_positions.data());
+				gradient_prog->SetUniform4v(Uniform::StopColors, num_stops, (float*) &shader.stop_colors[0]);
+			}
 
+			ZoneNamedNC(tracySubmitUniG, "SubmitTransformUniform", tracy::Color::Turquoise, true);
 			SubmitTransformUniform(translation);
-			geometry->vao->Bind();
-			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
-			geometry->vao->Unbind();
+			{
+				ZoneNamedNC(tracyVaobindG, "VAO_Bind", tracy::Color::MediumPurple, true);
+				geometry->vao->Bind();
+			}
+			{
+				ZoneNamedNC(tracyDrawElemG, "glDrawElements", tracy::Color::DarkTurquoise, true);
+				glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
+			}
+			{
+				ZoneNamedNC(tracyVaoUnbindG, "VAO_Unbind", tracy::Color::MediumPurple, true);
+				geometry->vao->Unbind();
+			}
 		}
 			break;
 		case CompiledShaderType::Creation: {
+			ZoneNamedNC(tracyCreatShader, "Shader_Creation", tracy::Color::DarkKhaki, true);
 			const double time = Rml::GetSystemInterface()->GetElapsedTime();
 
+			ZoneNamedNC(tracyUseProgC2, "UseProgram", tracy::Color::DodgerBlue2, true);
 			auto creation_prog = UseProgram(ProgramId::Creation);
-			creation_prog->SetUniform(Uniform::Value, (float) time);
-			creation_prog->SetUniform(Uniform::Dimensions, shader.dimensions.x, shader.dimensions.y);
+			{
+				ZoneNamedNC(tracySetUniC2, "SetUniforms", tracy::Color::Turquoise, true);
+				creation_prog->SetUniform(Uniform::Value, (float) time);
+				creation_prog->SetUniform(Uniform::Dimensions, shader.dimensions.x, shader.dimensions.y);
+			}
 
+			ZoneNamedNC(tracySubmitUniC3, "SubmitTransformUniform", tracy::Color::Turquoise, true);
 			SubmitTransformUniform(translation);
-			geometry->vao->Bind();
-			glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
-			geometry->vao->Unbind();
+			{
+				ZoneNamedNC(tracyVaobindC2, "VAO_Bind", tracy::Color::MediumPurple, true);
+				geometry->vao->Bind();
+			}
+			{
+				ZoneNamedNC(tracyDrawElemC2, "glDrawElements", tracy::Color::DarkTurquoise, true);
+				glDrawElements(GL_TRIANGLES, geometry->num_indices, GL_UNSIGNED_INT, nullptr);
+			}
+			{
+				ZoneNamedNC(tracyVaoUnbindC2, "VAO_Unbind", tracy::Color::MediumPurple, true);
+				geometry->vao->Unbind();
+			}
 		}
 			break;
 		case CompiledShaderType::Invalid: {

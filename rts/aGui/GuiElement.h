@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 #include <functional>
-#include <SDL_events.h>
+#include <SDL3/SDL_events.h>
 
 #include "System/Color.h"
 

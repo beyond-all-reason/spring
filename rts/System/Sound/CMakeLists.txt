@@ -36,6 +36,7 @@ if    (NOT NO_SOUND)
 			OpenAL/OggDecoder.cpp
 			OpenAL/Mp3Decoder.cpp
 			OpenAL/MusicStream.cpp
+			OpenAL/PCMStream.cpp
 			OpenAL/Sound.cpp
 			OpenAL/SoundChannels.cpp
 			OpenAL/SoundBuffer.cpp
@@ -47,13 +48,13 @@ if    (NOT NO_SOUND)
 	find_package_static(OpenAL 1.18.2 REQUIRED)
 	find_package_static(OggVorbis 1.3.4 REQUIRED)
 
-	find_package(SDL2 MODULE REQUIRED)
+	find_package(SDL3 REQUIRED CONFIG)
 
 	include_directories(${CMAKE_SOURCE_DIR}/include/)
 	include_directories(${CMAKE_SOURCE_DIR}/include/AL)
 
 	add_library(sound STATIC EXCLUDE_FROM_ALL ${soundSources})
-	target_link_libraries(sound SDL2::SDL2)
+	target_link_libraries(sound SDL3::SDL3)
 	target_link_libraries(sound vorbis::vorbisfile vorbis::vorbis Ogg::ogg)
 	target_link_libraries(sound OpenAL::OpenAL)
 	target_link_libraries(sound Tracy::TracyClient)

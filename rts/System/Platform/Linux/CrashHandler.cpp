@@ -15,7 +15,7 @@
 
 #include <csignal>
 #include <execinfo.h>
-#include <SDL_events.h>
+#include <SDL3/SDL_events.h>
 #include <sys/resource.h> // getrlimits
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
@@ -944,7 +944,7 @@ namespace CrashHandler
 
 				// first try a clean exit
 				SDL_Event event;
-				event.type = SDL_QUIT;
+				event.type = SDL_EVENT_QUIT;
 				SDL_PushEvent(&event);
 
 				// force an exit if no such luck

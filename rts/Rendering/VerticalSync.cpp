@@ -8,7 +8,7 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/Log/ILog.h"
 
-#include <SDL_video.h>
+#include <SDL3/SDL_video.h>
 
 static constexpr int MAX_ADAPTIVE_INTERVAL = -6;
 static constexpr int MAX_STANDARD_INTERVAL = +6;
@@ -50,11 +50,15 @@ void CVerticalSync::ConfigNotify(const std::string& key, const std::string& valu
 void CVerticalSync::Toggle()
 {
 	// no-arg switch, select smallest interval
-	switch (std::clamp(SDL_GL_GetSwapInterval(), -1, 1)) {
-		case -1: { SetInterval( 0); } break;
-		case  0: { SetInterval(+1); } break;
-		case +1: { SetInterval(-1); } break;
-		default: {} break;
+	{
+		int si = 0;
+		SDL_GL_GetSwapInterval(&si);
+		switch (std::clamp(si, -1, 1)) {
+			case -1: { SetInterval( 0); } break;
+			case  0: { SetInterval(+1); } break;
+			case +1: { SetInterval(-1); } break;
+			default: {} break;
+		}
 	}
 }
 
@@ -73,12 +77,12 @@ void CVerticalSync::SetInterval(int i)
 	#endif
 
 	// adaptive (delay swap iff frame-rate > vblank-rate)
-	if (interval < 0 && SDL_GL_SetSwapInterval(interval) == 0) {
+	if (interval < 0 && SDL_GL_SetSwapInterval(interval)) {
 		LOG("[VSync::%s] interval=%d (adaptive)", __func__, interval);
 		return;
 	}
 	// standard (<interval> vblanks per swap)
-	if (interval > 0 && SDL_GL_SetSwapInterval(interval) == 0) {
+	if (interval > 0 && SDL_GL_SetSwapInterval(interval)) {
 		LOG("[VSync::%s] interval=%d (standard)", __func__, interval);
 		return;
 	}

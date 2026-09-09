@@ -7,7 +7,7 @@
 #include <memory>
 
 #include <IL/il.h>
-#include <SDL_video.h>
+#include <SDL3/SDL_video.h>
 
 #include "Rendering/GL/myGL.h"
 #ifndef HEADLESS
@@ -2017,7 +2017,7 @@ SDL_Surface* CBitmap::CreateSDLSurface()
 
 	// this will only work with 24bit RGB and 32bit RGBA pictures
 	// note: does NOT create a copy of mem, must keep this around
-	surface = SDL_CreateRGBSurfaceFrom(GetRawMem(), xsize, ysize, 8 * channels, xsize * channels, 0x000000FF, 0x0000FF00, 0x00FF0000, (channels == 4) ? 0xFF000000 : 0);
+	surface = SDL_CreateSurfaceFrom(xsize, ysize, (channels == 4) ? SDL_PIXELFORMAT_ABGR8888 : SDL_PIXELFORMAT_XBGR8888, GetRawMem(), xsize * channels);
 
 	if (surface == nullptr)
 		LOG_L(L_WARNING, "CBitmap::CreateSDLSurface Failed!");

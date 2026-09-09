@@ -227,6 +227,14 @@ class LuaOpenGL {
 
 		static int Texture(lua_State* L);
 		static int CreateTexture(lua_State* L);
+		static int CreateVideoTexture(lua_State* L);
+		static int DeleteVideoTexture(lua_State* L);
+		static int PlayVideoTexture(lua_State* L);
+		static int PauseVideoTexture(lua_State* L);
+		static int StopVideoTexture(lua_State* L);
+		static int SeekVideoTexture(lua_State* L);
+		static int SetVideoTextureVolume(lua_State* L);
+		static int GetVideoTextureInfo(lua_State* L);
 		static int ChangeTextureParams(lua_State* L);
 		static int DeleteTexture(lua_State* L);
 		static int DeleteTextureFBO(lua_State* L);

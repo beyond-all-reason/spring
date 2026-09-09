@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cinttypes>
-#include <SDL_keycode.h>
+#include <SDL3/SDL_keycode.h>
 
 #include "FreeController.h"
 #include "Game/Camera.h"
@@ -202,7 +202,7 @@ void CFreeController::Update()
 	// setup ground lock
 	const float gndHeight = CGround::GetHeightReal(pos.x, pos.z, false);
 
-	if (KeyInput::GetKeyModState(KMOD_SHIFT)) {
+	if (KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) {
 		if (ctrlVelY > 0.0f) {
 			gndLock = false;
 		} else if ((gndOffset > 0.0f) && (ctrlVelY < 0.0f) &&
@@ -260,13 +260,13 @@ void CFreeController::KeyMove(float3 move)
 	const float qy = (move.y == 0.0f) ? 0.0f : (move.y > 0.0f ? 1.0f : -1.0f);
 	const float qx = (move.x == 0.0f) ? 0.0f : (move.x > 0.0f ? 1.0f : -1.0f);
 
-	const float speed  = (KeyInput::GetKeyModState(KMOD_GUI))? 4.0f * scrollSpeed : scrollSpeed;
-	const float aspeed = (KeyInput::GetKeyModState(KMOD_GUI))? 2.0f * tiltSpeed   : tiltSpeed;
+	const float speed  = (KeyInput::GetKeyModState(SDL_KMOD_GUI))? 4.0f * scrollSpeed : scrollSpeed;
+	const float aspeed = (KeyInput::GetKeyModState(SDL_KMOD_GUI))? 2.0f * tiltSpeed   : tiltSpeed;
 
-	if (KeyInput::GetKeyModState(KMOD_CTRL)) {
+	if (KeyInput::GetKeyModState(SDL_KMOD_CTRL)) {
 		avel.x += (aspeed * -qy); // tilt
 	}
-	else if (KeyInput::GetKeyModState(KMOD_SHIFT)) {
+	else if (KeyInput::GetKeyModState(SDL_KMOD_SHIFT)) {
 		vel.y += (speed * -qy); // up/down
 	}
 	else {
@@ -276,7 +276,7 @@ void CFreeController::KeyMove(float3 move)
 	if (tracking) {
 		avel.y += (aspeed * qx); // turntable rotation
 	}
-	else if (!KeyInput::GetKeyModState(KMOD_ALT) == invertAlt) {
+	else if (!KeyInput::GetKeyModState(SDL_KMOD_ALT) == invertAlt) {
 		vel.z += (speed * qx); // left/right
 	}
 	else {
@@ -288,50 +288,50 @@ void CFreeController::KeyMove(float3 move)
 void CFreeController::MouseMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(KMOD_ALT);
-	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
-	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
+	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(SDL_KMOD_ALT);
+	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(SDL_KMOD_CTRL);
+	const std::uint8_t prevShift = KeyInput::GetKeyModState(SDL_KMOD_SHIFT);
 
-	KeyInput::SetKeyModState(KMOD_CTRL, !prevCtrl);
-	KeyInput::SetKeyModState(KMOD_ALT, (invertAlt == !prevAlt));
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL, !prevCtrl);
+	KeyInput::SetKeyModState(SDL_KMOD_ALT, (invertAlt == !prevAlt));
 
 	KeyMove(move);
 
-	KeyInput::SetKeyModState(KMOD_ALT, prevAlt);
-	KeyInput::SetKeyModState(KMOD_CTRL, prevCtrl);
-	KeyInput::SetKeyModState(KMOD_SHIFT, prevShift);
+	KeyInput::SetKeyModState(SDL_KMOD_ALT, prevAlt);
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL, prevCtrl);
+	KeyInput::SetKeyModState(SDL_KMOD_SHIFT, prevShift);
 }
 
 
 void CFreeController::ScreenEdgeMove(float3 move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(KMOD_ALT);
-	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
-	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
+	const std::uint8_t prevAlt   = KeyInput::GetKeyModState(SDL_KMOD_ALT);
+	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(SDL_KMOD_CTRL);
+	const std::uint8_t prevShift = KeyInput::GetKeyModState(SDL_KMOD_SHIFT);
 
-	KeyInput::SetKeyModState(KMOD_ALT, (invertAlt == !prevAlt));
+	KeyInput::SetKeyModState(SDL_KMOD_ALT, (invertAlt == !prevAlt));
 	KeyMove(move);
 
-	KeyInput::SetKeyModState(KMOD_ALT, prevAlt);
-	KeyInput::SetKeyModState(KMOD_CTRL, prevCtrl);
-	KeyInput::SetKeyModState(KMOD_SHIFT, prevShift);
+	KeyInput::SetKeyModState(SDL_KMOD_ALT, prevAlt);
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL, prevCtrl);
+	KeyInput::SetKeyModState(SDL_KMOD_SHIFT, prevShift);
 }
 
 
 void CFreeController::MouseWheelMove(float move)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(KMOD_CTRL);
-	const std::uint8_t prevShift = KeyInput::GetKeyModState(KMOD_SHIFT);
+	const std::uint8_t prevCtrl  = KeyInput::GetKeyModState(SDL_KMOD_CTRL);
+	const std::uint8_t prevShift = KeyInput::GetKeyModState(SDL_KMOD_SHIFT);
 
-	KeyInput::SetKeyModState(KMOD_CTRL, false);
-	KeyInput::SetKeyModState(KMOD_SHIFT, true);
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL, false);
+	KeyInput::SetKeyModState(SDL_KMOD_SHIFT, true);
 
 	KeyMove(float3(0.0f, move, 0.0f));
 
-	KeyInput::SetKeyModState(KMOD_CTRL, prevCtrl);
-	KeyInput::SetKeyModState(KMOD_SHIFT, prevShift);
+	KeyInput::SetKeyModState(SDL_KMOD_CTRL, prevCtrl);
+	KeyInput::SetKeyModState(SDL_KMOD_SHIFT, prevShift);
 }
 
 

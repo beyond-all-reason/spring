@@ -697,7 +697,9 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 
 	if (lua_isnil(L, 1)) {
 		// revert to default or specified FB
-		glBindFramebufferEXT((GLenum) luaL_optinteger(L, 2, GL_FRAMEBUFFER_EXT), luaL_optinteger(L, 3, 0));
+		const GLenum target = (GLenum)luaL_optinteger(L, 2, GL_FRAMEBUFFER_EXT);
+		const GLuint framebuffer = lua_isnoneornil(L, 3) ? FBO::GetDefaultFBO() : lua_tointeger(L, 3);
+		glBindFramebufferEXT(target, framebuffer);
 		return 0;
 	}
 		

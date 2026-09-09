@@ -29,6 +29,8 @@ The above reference for unit textures can also be used for features (e.g trees).
 
 `*<atlasId#int>` -- Atlas/sprite (added by LUA CreateTextureAtlas)
 
+`@<videoId#int>` -- Context-owned video texture (added by `gl.CreateVideoTexture`)
+
 `$<textureName>` -- There are also named textures, with ssmf_splat_normals, extra and info also have subtextures beneath, below is a table of many named textures available.
 
 **FIXME: This table is a work in progress**

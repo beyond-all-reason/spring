@@ -1,6 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include <SDL_mouse.h>
+#include <SDL3/SDL_mouse.h>
 
 #include "StartPosSelecter.h"
 #include "MouseHandler.h"

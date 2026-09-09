@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 
-#include <SDL_scancode.h>
+#include <SDL3/SDL_scancode.h>
 
 #include "ScanCodes.h"
 #include "Game/UI/MouseHandler.h"

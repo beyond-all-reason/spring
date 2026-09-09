@@ -55,6 +55,7 @@
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Rendering/GL/myGL.h"
 #include "Rendering/CommandDrawer.h"
+#include "Rendering/Screenshot.h"
 #include "Rendering/IconHandler.h"
 #include "Rendering/Models/IModelParser.h"
 #include "Rendering/Features/FeatureDrawer.h"
@@ -76,6 +77,13 @@
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
 #include "System/GlobalConfig.h"
+
+#ifdef camera
+#undef camera
+#endif
+#include "System/Input/ControllerInput.h"
+#define camera (CCamera::GetActive())
+
 #include "System/Log/DefaultFilter.h"
 #include "System/Log/ILog.h"
 #include "System/Net/PackPacket.h"
@@ -105,9 +113,9 @@
 
 #include <nowide/fstream.hpp>
 
-#include <SDL_keyboard.h>
-#include <SDL_clipboard.h>
-#include <SDL_mouse.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_clipboard.h>
+#include <SDL3/SDL_mouse.h>
 
 // MinGW defines this for a WINAPI function
 #undef SendMessage
@@ -128,6 +136,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(Ping);
 	REGISTER_LUA_CFUNC(Echo);
 	REGISTER_LUA_CFUNC(Log);
+	REGISTER_LUA_CFUNC(TakeScreenshot);
 
 	REGISTER_LUA_CFUNC(SendMessage);
 	REGISTER_LUA_CFUNC(SendMessageToPlayer);
@@ -184,6 +193,9 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(AssignMouseCursor);
 	REGISTER_LUA_CFUNC(ReplaceMouseCursor);
+
+	REGISTER_LUA_CFUNC(ConnectController);
+	REGISTER_LUA_CFUNC(DisconnectController);
 
 	REGISTER_LUA_CFUNC(SetCustomCommandDrawData);
 
@@ -497,6 +509,30 @@ int LuaUnsyncedCtrl::Echo(lua_State* L)
 int LuaUnsyncedCtrl::Log(lua_State* L)
 {
 	return LuaUtils::Log(L);
+}
+
+/**
+ * Captures either the final SDR presentation or the scene-linear HDR target.
+ *
+ * @function Spring.TakeScreenshot
+ * @param mode ("sdr"|"hdr")?
+ * @param format string? SDR image extension, defaults to "png"
+ * @param quality integer? SDR encoder quality from 1 through 99
+ */
+int LuaUnsyncedCtrl::TakeScreenshot(lua_State* L)
+{
+	const std::string mode = StringToLower(luaL_optstring(L, 1, "sdr"));
+	if (mode == "hdr") {
+		TakeHDRScreenshot();
+		return 0;
+	}
+	if (mode != "sdr")
+		return luaL_error(L, "TakeScreenshot mode must be \"sdr\" or \"hdr\"");
+
+	const std::string format = luaL_optstring(L, 2, "png");
+	const unsigned quality = std::clamp(luaL_optint(L, 3, 80), 1, 99);
+	::TakeScreenshot(format, quality);
+	return 0;
 }
 
 
@@ -3119,6 +3155,57 @@ int LuaUnsyncedCtrl::ReplaceMouseCursor(lua_State* L)
 	return 1;
 }
 
+/*** Connect a game controller device
+ *
+ * @function Spring.ConnectController
+ * @param deviceIndex number SDL joystick index
+ * @return number? instanceId
+ */
+int LuaUnsyncedCtrl::ConnectController(lua_State* L)
+{
+	assert(controllerInput != nullptr);
+
+	int deviceIndex = luaL_checkint(L, 1);
+
+	if (deviceIndex < 0) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	int instanceId;
+	SDL_Gamepad* gamepad = controllerInput->ConnectController(deviceIndex, instanceId);
+
+	if (gamepad == nullptr) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_pushinteger(L, instanceId);
+
+	return 1;
+}
+
+/*** Disconnect a game controller device
+ *
+ * @function Spring.DisconnectController
+ * @param instanceId number
+ * @return boolean success
+ */
+int LuaUnsyncedCtrl::DisconnectController(lua_State* L)
+{
+	assert(controllerInput != nullptr);
+
+	int instanceId = luaL_checkint(L, 1);
+
+	if (instanceId < 0) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, controllerInput->DisconnectController(instanceId));
+	return 1;
+}
+
 
 /*** Register your custom cmd so it gets visible in the unit's cmd queue
  *
@@ -5350,7 +5437,7 @@ int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
 	textWindow.y = luaL_checkint(L, 2);
 	textWindow.w = luaL_checkint(L, 3);
 	textWindow.h = luaL_checkint(L, 4);
-	SDL_SetTextInputRect(&textWindow);
+	SDL_SetTextInputArea(globalRendering->GetWindow(), &textWindow, -1);
 	return 0;
 }
 
@@ -5361,7 +5448,7 @@ int LuaUnsyncedCtrl::SDLSetTextInputRect(lua_State* L)
  */
 int LuaUnsyncedCtrl::SDLStartTextInput(lua_State* L)
 {
-	SDL_StartTextInput();
+	SDL_StartTextInput(globalRendering->GetWindow());
 	return 0;
 }
 
@@ -5372,7 +5459,7 @@ int LuaUnsyncedCtrl::SDLStartTextInput(lua_State* L)
  */
 int LuaUnsyncedCtrl::SDLStopTextInput(lua_State* L)
 {
-	SDL_StopTextInput();
+	SDL_StopTextInput(globalRendering->GetWindow());
 	return 0;
 }
 

@@ -96,7 +96,7 @@ public:
 	/**
 	 * Allocates a new SDL_Surface, and feeds it with the data of this bitmap.
 	 * Note:
-	 * - You have to free the surface with SDL_FreeSurface(surface)
+	 * - You have to free the surface with SDL_DestroySurface(surface)
 	 *   if you do not need it anymore!
 	 */
 	SDL_Surface* CreateSDLSurface();

@@ -9,9 +9,9 @@ InputHandler::InputHandler() = default;
 
 void InputHandler::PushEvent(const SDL_Event& ev)
 {
-	for (const auto& eventHandler : eventHandlers) {
-		if (eventHandler) {
-			if (eventHandler(ev))
+	for (size_t i = 0; i < eventHandlers.size(); ++i) {
+		if (eventHandlers[i]) {
+			if (eventHandlers[i](ev))
 				break;
 		}
 	}
@@ -22,7 +22,6 @@ void InputHandler::PushEvents()
 	SCOPED_TIMER("Misc::InputHandler::PushEvents");
 
 	SDL_Event event;
-
 	while (SDL_PollEvent(&event)) {
 		// SDL_PollEvent may modify FPU flags
 		streflop::streflop_init<streflop::Simple>();

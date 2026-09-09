@@ -886,6 +886,17 @@ bool CEventHandler::MouseWheel(bool up, float value)
 	return ControlReverseIterateDefTrue(listMouseWheel, &CEventClient::MouseWheel, up, value);
 }
 
+bool CEventHandler::ControllerState(const std::string& eventName, int instanceId, int statefulId, int value)
+{
+	ZoneScoped;
+	return ControlReverseIterateDefTrue(listControllerState, &CEventClient::ControllerState, eventName, instanceId, statefulId, value);
+}
+
+bool CEventHandler::ControllerDevice(const std::string& eventName, int instanceId)
+{
+	ZoneScoped;
+	return ControlReverseIterateDefTrue(listControllerDevice, &CEventClient::ControllerDevice, eventName, instanceId);
+}
 
 bool CEventHandler::IsAbove(int x, int y)
 {

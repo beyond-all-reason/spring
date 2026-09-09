@@ -31,7 +31,7 @@ pipx install compdb
 Recoil engine dependencies
 
 ```bash
-sudo apt-get install -y libsdl2-dev libdevil-dev libcurl4-openssl-dev \
+sudo apt-get install -y libsdl3-dev libdevil-dev libcurl4-openssl-dev \
   p7zip-full libopenal-dev libogg-dev libvorbis-dev libunwind-dev libfreetype-dev \
   libglew-dev libminizip-dev libfontconfig-dev
 ```
@@ -48,7 +48,7 @@ sudo pip install compdb
 Recoil engine dependencies
 
 ```bash
-sudo pacman -S curl sdl2 devil p7zip openal libogg libvorbis libunwind freetype2 glew \
+sudo pacman -S curl sdl3 devil p7zip openal libogg libvorbis libunwind freetype2 glew \
   minizip fontconfig jsoncpp
 ```
 

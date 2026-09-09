@@ -27,9 +27,8 @@
 #include "System/MainDefines.h"
 #include "System/SafeUtil.h"
 
-#include <SDL_events.h>
-#include <SDL_hints.h>
-#include <SDL_syswm.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_hints.h>
 
 
 IMouseInput* mouseInput = nullptr;
@@ -37,78 +36,58 @@ IMouseInput* mouseInput = nullptr;
 IMouseInput::IMouseInput(bool relModeWarp)
 {
 	inputCon = input.AddHandler([this](const SDL_Event& event) { return this->HandleSDLMouseEvent(event); });
-	#ifndef HEADLESS
-	// Windows 10 FCU (Fall Creators Update) causes spurious SDL_MOUSEMOTION
-	// events to be generated with SDL_HINT_MOUSE_RELATIVE_MODE_WARP enabled
-	//
-	// while Spring did not previously set this hint and SDL defaults to raw
-	// input, the update also affects MMB scrolling via SDL_WarpMouseInWindow
-	// (our ancient manually implemented method of achieving relative motion)
-	//
-	// win32 SDL hides these events in 2.0.8 only if mouse->relative_mode_warp
-	// (which configures relative mouse mode to *internally* use mouse warping
-	// instead of raw input and gets toggled by SDL_SetRelativeMouseMode based
-	// on the hint given here); the alternative to RMW would be to *duplicate*
-	// the SDL patch in WarpPos
-	SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, relModeWarp? "1": "0");
-	#endif
+	// NOTE: SDL_HINT_MOUSE_RELATIVE_MODE_WARP was removed in SDL3.
+	// Relative mouse mode is now controlled via SDL_SetWindowRelativeMouseMode().
 }
 
 IMouseInput::~IMouseInput()
 {
-	#ifndef HEADLESS
-	SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "0");
-	#endif
 }
 
 
-bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
-{
-	switch (event.type) {
-		case SDL_MOUSEMOTION: {
-			mousepos = int2(event.motion.x, event.motion.y);
+	bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
+	{
+		switch (event.type) {
+			case SDL_EVENT_MOUSE_MOTION: {
+				mousepos = int2(event.motion.x, event.motion.y);
+
+				if (mouse != nullptr)
+					mouse->MouseMove(mousepos.x, mousepos.y, event.motion.xrel, event.motion.yrel);
+
+			} break;
+			case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+				mousepos = int2(event.button.x, event.button.y);
+
+				// suppress if the button is already held via input emulation
+				if (mouse != nullptr && !mouse->IsButtonEmulated(event.button.button))
+					mouse->MousePress(mousepos.x, mousepos.y, event.button.button);
+
+			} break;
+			case SDL_EVENT_MOUSE_BUTTON_UP: {
+				mousepos = int2(event.button.x, event.button.y);
+
+				if (mouse != nullptr && !mouse->IsButtonEmulated(event.button.button))
+					mouse->MouseRelease(mousepos.x, mousepos.y, event.button.button);
+
+			} break;
+			case SDL_EVENT_MOUSE_WHEEL: {
+				if (mouse != nullptr)
+					mouse->MouseWheel(event.wheel.y);
+
+			} break;
+			case SDL_EVENT_WINDOW_MOUSE_ENTER: {
+				if (mouse != nullptr)
+					mouse->WindowEnter();
+			} break;
+			case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+			// mouse left window; set pos internally to view center-pixel to prevent endless scrolling
+			mousepos = {
+				globalRendering->viewPosX          + (globalRendering->viewSizeX >> 1),
+				globalRendering->viewWindowOffsetY + (globalRendering->viewSizeY >> 1)
+			};
 
 			if (mouse != nullptr)
-				mouse->MouseMove(mousepos.x, mousepos.y, event.motion.xrel, event.motion.yrel);
-
-		} break;
-		case SDL_MOUSEBUTTONDOWN: {
-			mousepos = int2(event.button.x, event.button.y);
-
-			// suppress if the button is already held via input emulation
-			if (mouse != nullptr && !mouse->IsButtonEmulated(event.button.button))
-				mouse->MousePress(mousepos.x, mousepos.y, event.button.button);
-
-		} break;
-		case SDL_MOUSEBUTTONUP: {
-			mousepos = int2(event.button.x, event.button.y);
-
-			if (mouse != nullptr && !mouse->IsButtonEmulated(event.button.button))
-				mouse->MouseRelease(mousepos.x, mousepos.y, event.button.button);
-
-		} break;
-		case SDL_MOUSEWHEEL: {
-			if (mouse != nullptr)
-				mouse->MouseWheel(event.wheel.y);
-
-		} break;
-		case SDL_WINDOWEVENT: {
-			switch (event.window.event) {
-				case SDL_WINDOWEVENT_ENTER: {
-					if (mouse != nullptr)
-						mouse->WindowEnter();
-				} break;
-				case SDL_WINDOWEVENT_LEAVE: {
-					// mouse left window; set pos internally to view center-pixel to prevent endless scrolling
-					mousepos = {
-						globalRendering->viewPosX          + (globalRendering->viewSizeX >> 1),
-						globalRendering->viewWindowOffsetY + (globalRendering->viewSizeY >> 1)
-					};
-
-					if (mouse != nullptr)
-						mouse->WindowLeave();
-				} break;
-			}
+				mouse->WindowLeave();
 		} break;
 	}
 
@@ -118,6 +97,8 @@ bool IMouseInput::HandleSDLMouseEvent(const SDL_Event& event)
 //////////////////////////////////////////////////////////////////////
 
 #if defined(_WIN32) && !defined(HEADLESS)
+
+#include <windows.h>
 
 class CWin32MouseInput : public IMouseInput
 {
@@ -152,12 +133,10 @@ public:
 
 	void InstallWndCallback()
 	{
-		SDL_SysWMinfo info;
-		SDL_VERSION(&info.version);
-		if (!SDL_GetWindowWMInfo(globalRendering->GetWindow(), &info))
+		const SDL_PropertiesID props = SDL_GetWindowProperties(globalRendering->GetWindow());
+		wnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+		if (!wnd)
 			return;
-
-		wnd = info.info.win.window;
 
 		LONG_PTR cur_wndproc = GetWindowLongPtr(wnd, GWLP_WNDPROC);
 
@@ -212,15 +191,15 @@ bool IMouseInput::SetPos(int2 pos)
 bool IMouseInput::WarpPos(int2 pos)
 {
 	#if __unix__
-		/* Needed for SDL2+Wayland where warping isn't allowed otherwise, works fine with X11.
-		 * One would think there should be a corresponding `SDL_ShowCursor(SDL_ENABLE);` below,
+		/* Needed for SDL3+Wayland where warping isn't allowed otherwise, works fine with X11.
+		 * One would think there should be a corresponding `SDL_ShowCursor();` below,
 		 * but apparently this prevents this work-around from working (?!). */
-		SDL_ShowCursor(SDL_DISABLE);
+		SDL_HideCursor();
 	#endif
 
 	SDL_WarpMouseInWindow(globalRendering->GetWindow(), pos.x, pos.y);
 
-	// SDL_WarpMouse generates SDL_MOUSEMOTION events
+	// SDL_WarpMouse generates SDL_EVENT_MOUSE_MOTION events
 	// in `middle click scrolling` those SDL generated ones would point into
 	// the opposite direction the user moved the mouse, and so events would
 	// cancel each other -> camera wouldn't move at all or jitter
@@ -231,11 +210,11 @@ bool IMouseInput::WarpPos(int2 pos)
 	//   Windows 10 FCU bug with relative mode warping which similarly relies
 	//   on WMIW
 	#if 1
-	SDL_PumpEvents();
-	SDL_PeepEvents(&events[0], sizeof(events) / sizeof(events[0]), SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEMOTION);
+	// SDL_PeepEvents with SDL_GETEVENT auto-pumps events in SDL3
+	SDL_PeepEvents(&events[0], sizeof(events) / sizeof(events[0]), SDL_GETEVENT, SDL_EVENT_MOUSE_MOTION, SDL_EVENT_MOUSE_MOTION);
 	#else
 	// should be equivalent, but for some reason is not
-	SDL_FlushEvent(SDL_MOUSEMOTION);
+	SDL_FlushEvents(SDL_EVENT_MOUSE_MOTION);
 	#endif
 
 	return true;

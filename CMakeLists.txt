@@ -161,12 +161,11 @@ else  (UNIX AND NOT MINGW)
 		endif()
 
 		# MinGW needs an additional library, mwindows
-		# It's total link flags should look like -lmingw32 -lSDL2main -lSDL2 -lmwindows
-		# (Actually on second look, I think it only needs one of the m* libraries.)
+		# SDL3 removed SDLmain library; it's now header-only via SDL3/SDL_main.h
 		if(NOT MSVC)
 			set(MINGW32_LIBRARY mingw32 CACHE STRING "mwindows for MinGW")
 		endif(NOT MSVC)
-		set(SDL2_INCLUDE_DIR "${MINGWLIBS}/include/SDL2")
+		set(SDL3_INCLUDE_DIR "${MINGWLIBS}/include/SDL3")
 		set(CMAKE_PREFIX_PATH ${MINGWLIBS})
 		include_directories(${MINGWLIBS}/include)
 		set(CMAKE_LIBRARY_PATH ${MINGWLIBS}/dll ${MINGWLIBS}/lib)
@@ -175,6 +174,7 @@ else  (UNIX AND NOT MINGW)
 		set(CMAKE_FIND_ROOT_PATH ${MINGWLIBS} ${CMAKE_FIND_ROOT_PATH})
 		set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 		set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+		set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 	else()
 		message(WARNING "Compiling for windows. MINGWLIBS '${MINGWLIBS}' is not a valid directory, trying system libs")
 	endif ()
@@ -265,6 +265,24 @@ endif (NO_CREG)
 
 option(NO_SOUND "No sound output support" FALSE)
 
+# H.264/MP4 playback is deliberately opt-in until the release dependency
+# images and licensing artifacts contain the pinned minimal FFmpeg build.
+option(ENABLE_VIDEO "Enable H.264 video texture playback in the graphical client" FALSE)
+if(ENABLE_VIDEO)
+	# libavcodec 59 is the first supported API generation (FFmpeg 5.x).
+	find_package(FFmpeg 59 REQUIRED COMPONENTS avformat avcodec avutil swscale swresample)
+	install(FILES "${CMAKE_SOURCE_DIR}/doc/FFmpeg-video-playback.md" DESTINATION "${DOCDIR}")
+	if(FFmpeg_LICENSE_FILE AND FFmpeg_MANIFEST_FILE)
+		install(FILES
+			"${FFmpeg_LICENSE_FILE}"
+			"${FFmpeg_MANIFEST_FILE}"
+			DESTINATION "${DOCDIR}"
+		)
+	else()
+		message(WARNING "FFmpeg license/manifest not found; local builds may continue, but release packaging is incomplete")
+	endif()
+endif()
+
 if    (WIN32)
 	## internal AVI recorder (w/o sound atm)
 	option(NO_AVI "Disable in-game video recording" FALSE)
@@ -307,7 +325,7 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 
 # Note the missing REQUIRED, as headless & dedi may not depend on those.
 #  So req. checks are done in the build target's CMakeLists.txt.
-find_package(SDL2 MODULE)
+find_package(SDL3 REQUIRED CONFIG)
 
 find_package_static(DevIL 1.8.0 REQUIRED)
 

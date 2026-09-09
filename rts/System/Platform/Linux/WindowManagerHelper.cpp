@@ -1,10 +1,11 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include "System/Platform/WindowManagerHelper.h"
-#include <SDL_syswm.h>
 
 #ifndef HEADLESS
+	#include <SDL3/SDL_video.h>
 	#include <X11/Xlib.h>
+	#include <X11/Xatom.h>
 	#undef KeyPress
 	#undef KeyRelease
 	#undef GrayScale
@@ -12,16 +13,19 @@
 
 namespace WindowManagerHelper {
 
+AdvancedColorInfo GetAdvancedColorInfo(uint32_t)
+{
+	return {};
+}
+
 void BlockCompositing(SDL_Window* window)
 {
 #ifndef HEADLESS
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	if (!SDL_GetWindowWMInfo(window, &info))
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	Display* x11display = (Display*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, NULL);
+	Window x11window = (Window)SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+	if (!x11display || !x11window)
 		return;
-
-	auto x11display = info.info.x11.display;
-	auto x11window  = info.info.x11.window;
 
 	bool b = true;
 	Atom blockCompositAtomKDE = XInternAtom(x11display, "_KDE_NET_WM_BLOCK_COMPOSITING", false);
@@ -37,13 +41,11 @@ int GetWindowState(SDL_Window* window)
 {
 	int flags = 0;
 #ifndef HEADLESS
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	if (!SDL_GetWindowWMInfo(window, &info))
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	Display* x11display = (Display*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, NULL);
+	Window x11window = (Window)SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+	if (!x11display || !x11window)
 		return 0;
-
-	auto x11display = info.info.x11.display;
-	auto x11window  = info.info.x11.window;
 
 	// XGetWindowProperty stuff
 	Atom actual_type;

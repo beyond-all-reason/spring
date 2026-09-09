@@ -32,7 +32,10 @@
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Profiling.h>
 #include <RmlUi/Debugger.h>
-#include <SDL.h>
+#undef camera
+#include <SDL3/SDL.h>
+#undef camera
+#define camera (CCamera::GetActive())
 #include <functional>
 #include <ranges>
 #include <tracy/Tracy.hpp>
@@ -556,24 +559,22 @@ bool RmlGui::ProcessTextInput(const std::string& text)
 bool processContextEvent(Rml::Context* context, const SDL_Event& event)
 {
 	switch (event.type) {
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEWHEEL:
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-		case SDL_TEXTINPUT:
+		case SDL_EVENT_MOUSE_MOTION:
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+		case SDL_EVENT_MOUSE_WHEEL:
+		case SDL_EVENT_KEY_DOWN:
+		case SDL_EVENT_KEY_UP:
+		case SDL_EVENT_TEXT_INPUT:
 			return true;  // handled elsewhere
 
-		case SDL_WINDOWEVENT: {
-			if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-				auto x = event.window.data1;
-				auto y = event.window.data2;
+		case SDL_EVENT_WINDOW_RESIZED: {
+			auto x = event.window.data1;
+			auto y = event.window.data2;
 
-				state->render_interface.SetViewport(x, y);
-				state->winX = x;
-				state->winY = y;
-			}
+			state->render_interface.SetViewport(x, y);
+			state->winX = x;
+			state->winY = y;
 		} break;
 
 		default:

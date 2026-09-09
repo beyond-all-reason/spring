@@ -14,6 +14,7 @@
 #include <limits>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 #include <optional>
 #include <variant>
 #include <span>
@@ -34,6 +35,7 @@
 #include "LuaRBOs.h"
 #include "LuaShaders.h"
 #include "LuaTextures.h"
+#include "LuaVideoTextures.h"
 #include "LuaUtils.h"
 #include "LuaVAO.h"
 #include "LuaVBO.h"
@@ -80,6 +82,7 @@
 #include "Sim/Units/UnitHandler.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
 #include "System/Config/ConfigHandler.h"
+#include "System/FileSystem/VFSModes.h"
 #include "System/Log/ILog.h"
 #include "System/Matrix44f.h"
 
@@ -349,6 +352,14 @@ bool LuaOpenGL::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(Texture);
 	REGISTER_LUA_CFUNC(CreateTexture);
+	REGISTER_LUA_CFUNC(CreateVideoTexture);
+	REGISTER_LUA_CFUNC(DeleteVideoTexture);
+	REGISTER_LUA_CFUNC(PlayVideoTexture);
+	REGISTER_LUA_CFUNC(PauseVideoTexture);
+	REGISTER_LUA_CFUNC(StopVideoTexture);
+	REGISTER_LUA_CFUNC(SeekVideoTexture);
+	REGISTER_LUA_CFUNC(SetVideoTextureVolume);
+	REGISTER_LUA_CFUNC(GetVideoTextureInfo);
 	REGISTER_LUA_CFUNC(ChangeTextureParams);
 	REGISTER_LUA_CFUNC(DeleteTexture);
 	REGISTER_LUA_CFUNC(TextureInfo);
@@ -4310,6 +4321,155 @@ int LuaOpenGL::CreateTexture(lua_State* L)
 }
 
 /***
+ * Creates a context-owned real-time video texture. Supported media is MP4/MOV
+ * with progressive 8-bit yuv420p H.264 and optional AAC-LC stereo audio.
+ * @function gl.CreateVideoTexture
+ * @param path string VFS path to the video
+ * @param options table? Playback options: autoplay, loop, audio, volume
+ * @return string? videoTexture
+ * @return string? error
+ */
+int LuaOpenGL::CreateVideoTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return luaL_error(L, "gl.CreateVideoTexture is unsynced-only");
+
+#ifndef RECOIL_VIDEO
+	lua_pushnil(L);
+	lua_pushliteral(L, "video playback is disabled in this build");
+	return 2;
+#else
+	const std::string path = luaL_checksstring(L, 1);
+	if (CLuaHandle::GetHandle(L)->SecondaryGLContext()) {
+		lua_pushnil(L);
+		lua_pushliteral(L, "video textures are not supported in secondary GL contexts");
+		return 2;
+	}
+	video::VideoOptions options;
+	if (!lua_isnoneornil(L, 2)) {
+		luaL_checktype(L, 2, LUA_TTABLE);
+		for (lua_pushnil(L); lua_next(L, 2) != 0; lua_pop(L, 1)) {
+			if (!lua_isstring(L, -2))
+				return luaL_error(L, "video option names must be strings");
+			const std::string key = lua_tostring(L, -2);
+			if (key == "autoplay") {
+				luaL_checktype(L, -1, LUA_TBOOLEAN);
+				options.autoplay = lua_toboolean(L, -1);
+			} else if (key == "loop") {
+				luaL_checktype(L, -1, LUA_TBOOLEAN);
+				options.loop = lua_toboolean(L, -1);
+			} else if (key == "audio") {
+				luaL_checktype(L, -1, LUA_TBOOLEAN);
+				options.audio = lua_toboolean(L, -1);
+			} else if (key == "volume") {
+				const float volume = static_cast<float>(luaL_checknumber(L, -1));
+				if (!std::isfinite(volume))
+					return luaL_error(L, "video volume must be finite");
+				options.volume = std::clamp(volume, 0.0f, 1.0f);
+			} else {
+				return luaL_error(L, "unknown video option: %s", key.c_str());
+			}
+		}
+	}
+
+	// Ordinary game Lua may only open archive-backed media. Raw filesystem
+	// access remains available in explicit developer mode.
+	const std::string modes = CLuaHandle::GetDevMode() ? SPRING_VFS_RAW_FIRST : SPRING_VFS_ZIP;
+	LuaVideoTextures& videos = CLuaHandle::GetActiveVideoTextures(L);
+	std::string error;
+	const std::string name = videos.Create(path, modes, options, error);
+	if (name.empty()) {
+		lua_pushnil(L);
+		lua_pushsstring(L, error);
+		return 2;
+	}
+
+	lua_pushsstring(L, name);
+	return 1;
+#endif
+}
+
+/*** @function gl.DeleteVideoTexture @param videoTexture string @return boolean */
+int LuaOpenGL::DeleteVideoTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.DeleteVideoTexture is unsynced-only");
+	LuaVideoTextures& videos = CLuaHandle::GetActiveVideoTextures(L);
+	lua_pushboolean(L, videos.Free(luaL_checksstring(L, 1)));
+	return 1;
+}
+
+/*** @function gl.PlayVideoTexture @param videoTexture string @return boolean */
+int LuaOpenGL::PlayVideoTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.PlayVideoTexture is unsynced-only");
+	lua_pushboolean(L, CLuaHandle::GetActiveVideoTextures(L).Play(luaL_checksstring(L, 1)));
+	return 1;
+}
+
+/*** @function gl.PauseVideoTexture @param videoTexture string @return boolean */
+int LuaOpenGL::PauseVideoTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.PauseVideoTexture is unsynced-only");
+	lua_pushboolean(L, CLuaHandle::GetActiveVideoTextures(L).Pause(luaL_checksstring(L, 1)));
+	return 1;
+}
+
+/*** @function gl.StopVideoTexture @param videoTexture string @return boolean */
+int LuaOpenGL::StopVideoTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.StopVideoTexture is unsynced-only");
+	lua_pushboolean(L, CLuaHandle::GetActiveVideoTextures(L).Stop(luaL_checksstring(L, 1)));
+	return 1;
+}
+
+/*** @function gl.SeekVideoTexture @param videoTexture string @param position number @return boolean */
+int LuaOpenGL::SeekVideoTexture(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.SeekVideoTexture is unsynced-only");
+	lua_pushboolean(L, CLuaHandle::GetActiveVideoTextures(L).Seek(luaL_checksstring(L, 1), luaL_checknumber(L, 2)));
+	return 1;
+}
+
+/*** @function gl.SetVideoTextureVolume @param videoTexture string @param volume number @return boolean */
+int LuaOpenGL::SetVideoTextureVolume(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.SetVideoTextureVolume is unsynced-only");
+	const float volume = std::clamp(static_cast<float>(luaL_checknumber(L, 2)), 0.0f, 1.0f);
+	if (!std::isfinite(volume))
+		return luaL_error(L, "video volume must be finite");
+	lua_pushboolean(L, CLuaHandle::GetActiveVideoTextures(L).SetVolume(luaL_checksstring(L, 1), volume));
+	return 1;
+}
+
+/***
+ * @class VideoTextureInfo
+ * @field state string
+ * @field width integer
+ * @field height integer
+ * @field duration number
+ * @field position number
+ * @field hasAudio boolean
+ * @field error string
+ * @field droppedFrames integer
+ */
+/*** @function gl.GetVideoTextureInfo @param videoTexture string @return VideoTextureInfo */
+int LuaOpenGL::GetVideoTextureInfo(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.GetVideoTextureInfo is unsynced-only");
+	const video::VideoInfo info = CLuaHandle::GetActiveVideoTextures(L).GetInfo(luaL_checksstring(L, 1));
+	lua_createtable(L, 0, 8);
+	LuaPushNamedString(L, "state", video::ToString(info.state));
+	LuaPushNamedNumber(L, "width", info.width);
+	LuaPushNamedNumber(L, "height", info.height);
+	LuaPushNamedNumber(L, "duration", info.duration);
+	LuaPushNamedNumber(L, "position", info.position);
+	LuaPushNamedBool(L, "hasAudio", info.hasAudio);
+	LuaPushNamedString(L, "error", info.error);
+	LuaPushNamedNumber(L, "droppedFrames", info.droppedFrames);
+	return 1;
+}
+
+/***
  * @function gl.ChangeTextureParams
  * @param texName string
  * @param params Texture
@@ -4351,7 +4511,10 @@ int LuaOpenGL::DeleteTexture(lua_State* L)
 		return 0;
 
 	const std::string texture = luaL_checksstring(L, 1);
-	if (texture[0] == LuaTextures::prefix) {
+	if (texture[0] == LuaVideoTextures::prefix) {
+		LuaVideoTextures& videos = CLuaHandle::GetActiveVideoTextures(L);
+		lua_pushboolean(L, videos.Free(texture));
+	} else if (texture[0] == LuaTextures::prefix) {
 		LuaTextures& textures = CLuaHandle::GetActiveTextures(L);
 		lua_pushboolean(L, textures.Free(texture));
 	} else {
@@ -4989,6 +5152,8 @@ int LuaOpenGL::BindImageTexture(lua_State* L)
 	else {
 		LuaMatTexture luaTex;
 		const std::string luaTexStr = lua_tostring(L, argNum);
+		if (!luaTexStr.empty() && luaTexStr[0] == LuaVideoTextures::prefix)
+			luaL_error(L, "%s Video textures are read-only", __func__);
 		if (!LuaOpenGLUtils::ParseTextureImage(L, luaTex, luaTexStr))
 			luaL_error(L, "%s Failed to find a Lua texture %s", __func__, luaTexStr.c_str());
 

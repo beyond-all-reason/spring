@@ -1,7 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <cassert>
-#include <SDL2/SDL_keyboard.h>
+#include <SDL3/SDL_keyboard.h>
 
 #include "GameControllerTextInput.h"
 #include "Action.h"
@@ -40,7 +40,7 @@ void GameControllerTextInput::ViewResize() {
 	textEditingWindow.w = inputTextSizeX * globalRendering->viewSizeX;
 	textEditingWindow.h = inputTextSizeY * globalRendering->viewSizeY;
 
-	SDL_SetTextInputRect(&textEditingWindow);
+	SDL_SetTextInputArea(globalRendering->GetWindow(), &textEditingWindow, -1);
 }
 
 void GameControllerTextInput::Draw() {
@@ -244,7 +244,7 @@ bool GameControllerTextInput::HandleEditCommand(const std::string& command) {
 				}
 			}
 
-			SDL_StopTextInput();
+			SDL_StopTextInput(globalRendering->GetWindow());
 			return true;
 		} break;
 
@@ -259,7 +259,7 @@ bool GameControllerTextInput::HandleEditCommand(const std::string& command) {
 				inMapDrawer->SetWantLabel(false);
 			}
 
-			SDL_StopTextInput();
+			SDL_StopTextInput(globalRendering->GetWindow());
 			return true;
 		} break;
 

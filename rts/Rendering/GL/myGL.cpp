@@ -1,11 +1,12 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <array>
+#include <cmath>
 #include <vector>
 #include <string>
 #include <bit>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "myGL.h"
 #include "VertexArray.h"
@@ -49,70 +50,68 @@ CVertexArray* GetVertexArray()
 bool CheckAvailableVideoModes()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// Get available fullscreen/hardware modes
-	const int numDisplays = SDL_GetNumVideoDisplays();
+	int displayCount = 0;
+	SDL_DisplayID* displays = SDL_GetDisplays(&displayCount);
 
-	SDL_DisplayMode ddm = {0, 0, 0, 0, nullptr};
-	SDL_DisplayMode cdm = {0, 0, 0, 0, nullptr};
-
-	// ddm is virtual, contains all displays in multi-monitor setups
-	// for fullscreen windows with non-native resolutions, ddm holds
-	// the original screen mode and cdm is the changed mode
-	SDL_GetDesktopDisplayMode(0, &ddm);
-	SDL_GetCurrentDisplayMode(0, &cdm);
+	const SDL_DisplayMode* ddm = SDL_GetCurrentDisplayMode(displays[0]);
+	const SDL_DisplayMode* cdm = ddm;
 
 	globalRenderingInfo.availableVideoModes.clear();
 
 	LOG(
-		"[GL::%s] desktop={%ix%ix%ibpp@%iHz} current={%ix%ix%ibpp@%iHz}",
+		"[GL::%s] desktop={%ix%ix%ibpp@%.2fHz} current={%ix%ix%ibpp@%.2fHz}",
 		__func__,
-		ddm.w, ddm.h, SDL_BPP(ddm.format), ddm.refresh_rate,
-		cdm.w, cdm.h, SDL_BPP(cdm.format), cdm.refresh_rate
+		ddm->w, ddm->h, SDL_BPP(ddm->format), ddm->refresh_rate,
+		cdm->w, cdm->h, SDL_BPP(cdm->format), cdm->refresh_rate
 	);
 
-	for (int k = 0; k < numDisplays; ++k) {
-		const int numModes = SDL_GetNumDisplayModes(k);
+	for (int k = 0; k < displayCount; ++k) {
+		SDL_DisplayID display = displays[k];
 
-		if (numModes <= 0) {
+		int modeCount = 0;
+		SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes(display, &modeCount);
+
+		if (modeCount <= 0) {
 			LOG("\tdisplay=%d bounds=N/A modes=N/A", k + 1);
 			continue;
 		}
 
-		SDL_DisplayMode cm = {0, 0, 0, 0, nullptr};
-		SDL_DisplayMode pm = {0, 0, 0, 0, nullptr};
+		SDL_DisplayMode pm = {0, SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0.0f, 0.0f, 0, 0, nullptr};
 		SDL_Rect db;
-		SDL_GetDisplayBounds(k, &db);
-		const std::string dn = SDL_GetDisplayName(k);
+		SDL_GetDisplayBounds(display, &db);
+		const std::string dn = SDL_GetDisplayName(display);
 
-		LOG("\tDisplay (%s)=%d modes=%d bounds={x=%d, y=%d, w=%d, h=%d}", dn.c_str(), k + 1, numModes, db.x, db.y, db.w, db.h);
+		LOG("\tDisplay (%s)=%d modes=%d bounds={x=%d, y=%d, w=%d, h=%d}", dn.c_str(), k + 1, modeCount, db.x, db.y, db.w, db.h);
 
-		for (int i = 0; i < numModes; ++i) {
-			SDL_GetDisplayMode(k, i, &cm);
+		for (int i = 0; i < modeCount; ++i) {
+			const SDL_DisplayMode* cm = modes[i];
 
 			// skip resolutions less than minimum / per dimension
-			if (cm.w < globalRendering->minRes.x || cm.h < globalRendering->minRes.y)
+			if (cm->w < globalRendering->minRes.x || cm->h < globalRendering->minRes.y)
 				continue;
 
 			// show only the largest refresh-rate and bit-depth per resolution
-			if (cm.w == pm.w && cm.h == pm.h && (SDL_BPP(cm.format) < SDL_BPP(pm.format) || cm.refresh_rate < pm.refresh_rate))
+			if (cm->w == pm.w && cm->h == pm.h && (SDL_BPP(cm->format) < SDL_BPP(pm.format) || cm->refresh_rate < pm.refresh_rate))
 				continue;
 
 			globalRenderingInfo.availableVideoModes.emplace_back(GlobalRenderingInfo::AvailableVideoMode{
 				dn,
 				k + 1,
-				cm.w,
-				cm.h,
-				static_cast<int32_t>(SDL_BPP(cm.format)),
-				cm.refresh_rate
+				cm->w,
+				cm->h,
+				static_cast<int32_t>(SDL_BPP(cm->format)),
+				static_cast<int32_t>(std::lround(cm->refresh_rate))
 			});
 
-			LOG("\t\t[%2i] %ix%ix%ibpp@%iHz", int(i + 1), cm.w, cm.h, SDL_BPP(cm.format), cm.refresh_rate);
-			pm = cm;
+			LOG("\t\t[%2i] %ix%ix%ibpp@%.2fHz", int(i + 1), cm->w, cm->h, SDL_BPP(cm->format), cm->refresh_rate);
+			pm.w = cm->w; pm.h = cm->h; pm.format = cm->format; pm.refresh_rate = cm->refresh_rate;
 		}
 	}
 
+	SDL_free(displays);
+
 	// we need at least 24bpp or window-creation will fail
-	return (SDL_BPP(ddm.format) >= 24);
+	return (SDL_BPP(ddm->format) >= 24);
 }
 
 

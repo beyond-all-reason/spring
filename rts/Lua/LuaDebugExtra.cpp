@@ -17,9 +17,9 @@
 
 #include <set>
 
-#include <SDL_keyboard.h>
-#include <SDL_keycode.h>
-#include <SDL_mouse.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
 
 
 /******************************************************************************
@@ -60,7 +60,7 @@ static int emulateKey(lua_State* L, bool pressed)
 		return 0;
 
 	// Lua passes SDL1.2 keysyms; the held-state side (keyVec/IsKeyPressed) works in
-	// raw SDL2, while the event side wants the normalized code like a real KEYDOWN
+	// raw SDL3, while the event side wants the normalized code like a real KEYDOWN
 	const int rawKey = SDL12_keysyms(luaL_checkint(L, 1));
 
 	// reject a junk keycode (unmapped -> SDLK_UNKNOWN). We deliberately do NOT
@@ -69,12 +69,12 @@ static int emulateKey(lua_State* L, bool pressed)
 	if (rawKey == SDLK_UNKNOWN)
 		return 0;
 
-	const SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)rawKey);
+	const SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)rawKey, nullptr);
 	const int eventKey = CKeyCodes::GetNormalizedSymbol(rawKey);
 	const int scanCode = CScanCodes::GetNormalizedSymbol(sc);
 
 	int numKeys = 0;
-	const uint8_t* kbState = SDL_GetKeyboardState(&numKeys);
+	const bool* kbState = SDL_GetKeyboardState(&numKeys);
 	const bool physicalDown = ((int)sc < numKeys && kbState[sc] != 0);
 
 	// effective (physical-or-emulated) state before this call
@@ -220,11 +220,11 @@ void LuaDebugExtra::ClearEmulatedInput(bool fireReleases)
 
 	if (fireReleases && activeController != nullptr) {
 		int numKeys = 0;
-		const uint8_t* kbState = SDL_GetKeyboardState(&numKeys);
+		const bool* kbState = SDL_GetKeyboardState(&numKeys);
 
-		// the store holds raw SDL2 keycodes; the event side wants the normalized code
+		// the store holds raw SDL3 keycodes; the event side wants the normalized code
 		for (const int rawKey: keyCodes) {
-			const SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)rawKey);
+			const SDL_Scancode sc = SDL_GetScancodeFromKey((SDL_Keycode)rawKey, nullptr);
 
 			if ((int)sc < numKeys && kbState[sc] != 0)
 				continue;

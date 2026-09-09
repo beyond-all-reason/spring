@@ -1,7 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#include "SDL1_keysym.h"
-#include <SDL_keycode.h>
+/*
+ * SDL1 keysym to SDL2/SDL3 keysym translation table.
+ * Used for Lua backward compatibility.
+ *
+ * Note: SDL3 renumbers SDLK_* constant values compared to SDL2, but the
+ * constant names remain the same. This translation table maps old SDL1
+ * keysym values to their SDL2/SDL3 name equivalents, so it works correctly
+ * regardless of the underlying numeric value changes.
+ */
+
+#include <SDL3/SDL_keycode.h>
 
 #include "System/Log/ILog.h"
 #include "System/UnorderedMap.hpp"
@@ -15,12 +24,12 @@ static const spring::unordered_bimap<int, int> SDL_keysym_bimap = {
 	{SDLK_TAB, 9},
 	{SDLK_SPACE, 32},
 	{SDLK_EXCLAIM, 33},
-	{SDLK_QUOTEDBL, 34},
+	{SDLK_DBLAPOSTROPHE, 34},
 	{SDLK_HASH, 35},
 	//{SDLK_PERCENT, 0},
 	{SDLK_DOLLAR, 36},
 	{SDLK_AMPERSAND, 38},
-	{SDLK_QUOTE, 39},
+	{SDLK_APOSTROPHE, 39},
 	{SDLK_LEFTPAREN, 40},
 	{SDLK_RIGHTPAREN, 41},
 	{SDLK_ASTERISK, 42},
@@ -51,33 +60,33 @@ static const spring::unordered_bimap<int, int> SDL_keysym_bimap = {
 	{SDLK_RIGHTBRACKET, 93},
 	{SDLK_CARET, 94},
 	{SDLK_UNDERSCORE, 95},
-	{SDLK_BACKQUOTE, 96},
-	{SDLK_a, 97},
-	{SDLK_b, 98},
-	{SDLK_c, 99},
-	{SDLK_d, 100},
-	{SDLK_e, 101},
-	{SDLK_f, 102},
-	{SDLK_g, 103},
-	{SDLK_h, 104},
-	{SDLK_i, 105},
-	{SDLK_j, 106},
-	{SDLK_k, 107},
-	{SDLK_l, 108},
-	{SDLK_m, 109},
-	{SDLK_n, 110},
-	{SDLK_o, 111},
-	{SDLK_p, 112},
-	{SDLK_q, 113},
-	{SDLK_r, 114},
-	{SDLK_s, 115},
-	{SDLK_t, 116},
-	{SDLK_u, 117},
-	{SDLK_v, 118},
-	{SDLK_w, 119},
-	{SDLK_x, 120},
-	{SDLK_y, 121},
-	{SDLK_z, 122},
+	{SDLK_GRAVE, 96},
+	{SDLK_A, 97},
+	{SDLK_B, 98},
+	{SDLK_C, 99},
+	{SDLK_D, 100},
+	{SDLK_E, 101},
+	{SDLK_F, 102},
+	{SDLK_G, 103},
+	{SDLK_H, 104},
+	{SDLK_I, 105},
+	{SDLK_J, 106},
+	{SDLK_K, 107},
+	{SDLK_L, 108},
+	{SDLK_M, 109},
+	{SDLK_N, 110},
+	{SDLK_O, 111},
+	{SDLK_P, 112},
+	{SDLK_Q, 113},
+	{SDLK_R, 114},
+	{SDLK_S, 115},
+	{SDLK_T, 116},
+	{SDLK_U, 117},
+	{SDLK_V, 118},
+	{SDLK_W, 119},
+	{SDLK_X, 120},
+	{SDLK_Y, 121},
+	{SDLK_Z, 122},
 
 	{SDLK_CAPSLOCK, 301},
 
@@ -229,12 +238,12 @@ static const spring::unordered_bimap<int, int> SDL_keysym_bimap = {
 
 	{SDLK_MODE, 313},
 
-//	{SDLK_AUDIONEXT, 0},
-//	{SDLK_AUDIOPREV, 0},
-//	{SDLK_AUDIOSTOP, 0},
-//	{SDLK_AUDIOPLAY, 0},
-//	{SDLK_AUDIOMUTE, 0},
-//	{SDLK_MEDIASELECT, 0},
+//	{SDLK_MEDIA_NEXT_TRACK, 0},
+//	{SDLK_MEDIA_PREVIOUS_TRACK, 0},
+//	{SDLK_MEDIA_STOP, 0},
+//	{SDLK_MEDIA_PLAY, 0},
+//	{SDLK_MUTE, 0},
+//	{SDLK_MEDIA_SELECT, 0},
 //	{SDLK_WWW, 0},
 //	{SDLK_MAIL, 0},
 //	{SDLK_CALCULATOR, 0},
@@ -253,7 +262,7 @@ static const spring::unordered_bimap<int, int> SDL_keysym_bimap = {
 //	{SDLK_KBDILLUMTOGGLE, 0},
 //	{SDLK_KBDILLUMDOWN, 0},
 //	{SDLK_KBDILLUMUP, 0},
-//	{SDLK_EJECT, 0},
+//	{SDLK_MEDIA_EJECT, 0},
 //	{SDLK_SLEEP, 0},
 };
 
