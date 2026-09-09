@@ -44,7 +44,7 @@ void serialize(Archive &ar, float3 &c) { ar(c.x, c.y, c.z); }
 
 template<class S, class T>
 void ProcessComponents(T&& archive, S&& snapshot) {
-    snapshot.entities(archive);
+    snapshot.template get<entt::entity>(archive);
 
     MoveTypes::serializeComponents(archive, snapshot);
 }
@@ -55,14 +55,18 @@ void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
     systemUtils.NotifyPreLoad();
 
     auto archive = cereal::BinaryInputArchive{iss};
-    LOG_L(L_DEBUG, "%s: Entities before clear is %d", __func__, (int)registry.alive());
-    registry.each([this](entt::entity entity) { registry.destroy(entity); });
+    LOG_L(L_DEBUG, "%s: Entities before clear is %d", __func__,
+        (int)registry.storage<entt::entity>().free_list());
 
-    assert(registry.alive() == 0);
+    registry.clear();
 
-    LOG_L(L_DEBUG, "%s: Entities after clear is %d (%d)", __func__, (int)registry.alive(), (int)iss.tellg());
+    assert(registry.storage<entt::entity>().free_list() == 0);
+
+    LOG_L(L_DEBUG, "%s: Entities after clear is %d (%d)", __func__,
+        (int)registry.storage<entt::entity>().free_list(), (int)iss.tellg());
     {ProcessComponents<entt::snapshot_loader>(archive, entt::snapshot_loader{registry});}
-    LOG_L(L_DEBUG, "%s: Entities after load is %d (%d)", __func__, (int)registry.alive(), (int)iss.tellg());
+    LOG_L(L_DEBUG, "%s: Entities after load is %d (%d)", __func__,
+        (int)registry.storage<entt::entity>().free_list(), (int)iss.tellg());
 
     {
         archive(systemGlobals);
@@ -72,7 +76,8 @@ void SaveLoadUtils::LoadComponents(std::stringstream &iss) {
 
 void SaveLoadUtils::SaveComponents(std::stringstream &oss) {
     auto archive = cereal::BinaryOutputArchive{oss};
-    LOG_L(L_DEBUG, "%s: Entities before save is %d (%d)", __func__, (int)registry.alive(), (int)oss.tellp());
+    LOG_L(L_DEBUG, "%s: Entities before save is %d (%d)", __func__,
+        (int)registry.storage<entt::entity>().free_list(), (int)oss.tellp());
     {ProcessComponents<entt::snapshot>(archive, entt::snapshot{registry});}
     LOG_L(L_DEBUG, "%s: Save bytes writen %d", __func__, (int)oss.tellp());
 

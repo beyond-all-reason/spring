@@ -36,7 +36,7 @@ void GroundMoveSystem::Update() {
 		SCOPED_TIMER("Sim::Unit::MoveType::1::UpdateTraversalPlan");
         auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
-            auto entity = view.storage<GroundMoveType>()[i];
+            auto entity = (*view.storage<GroundMoveType>())[i];
             auto unitId = view.get<GroundMoveType>(entity);
 
             CUnit* unit = unitHandler.GetUnit(unitId.value);
@@ -80,7 +80,7 @@ void GroundMoveSystem::Update() {
 	{
         auto view = Sim::registry.view<GroundMoveType>();
         for_mt(0, view.size(), [&view](const int i){
-            auto entity = view.storage<GroundMoveType>()[i];
+            auto entity = (*view.storage<GroundMoveType>())[i];
             auto unitId = view.get<GroundMoveType>(entity);
 
             CUnit* unit = unitHandler.GetUnit(unitId.value);
@@ -108,7 +108,7 @@ void GroundMoveSystem::Update() {
         auto view = Sim::registry.view<GroundMoveType>();
         //size_t count = view.storage<GroundMoveType>().size();
         for_mt(0, view.size(), [&view](const int i){
-            auto entity = view.storage<GroundMoveType>()[i];
+            auto entity = (*view.storage<GroundMoveType>())[i];
             assert( Sim::registry.valid(entity) );
             assert( Sim::registry.all_of<GroundMoveType>(entity) );
             assert( !Sim::registry.all_of<GeneralMoveType>(entity) );

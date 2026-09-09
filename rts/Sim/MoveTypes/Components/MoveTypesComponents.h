@@ -35,9 +35,10 @@ void serialize(Archive &ar, UnitTrapCheck &c) { ar(c.type, c.id); }
 
 template<class Archive, class Snapshot>
 void serializeComponents(Archive &archive, Snapshot &snapshot) {
-    snapshot.template component
-        < GeneralMoveType, GroundMoveType, UnitTrapCheck
-        >(archive);
+    snapshot
+        .template get<GeneralMoveType>(archive)
+        .template get<GroundMoveType>(archive)
+        .template get<UnitTrapCheck>(archive);
 }
 
 struct YardmapTrapCheckSystemComponent {
