@@ -34,7 +34,7 @@ CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemode
 CONFIG(int, ShadowMapSize).defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE).minimumValue(32).description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
 CONFIG(int, ShadowProjectionMode).defaultValue(CShadowHandler::SHADOWPROMODE_CAM_CENTER);
 CONFIG(bool, ShadowColorMode).defaultValue(true).description("Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)");
-CONFIG(int, ProjectileShadowInterval).defaultValue(1).minimumValue(1).maximumValue(8).description("Redraw the transparent (particle) shadow layer only every Nth draw frame and reuse the previous one in between; the opaque shadow map is still updated every frame. 1 = every frame.");
+CONFIG(int, ProjectileShadowMinInterval).defaultValue(66).minimumValue(0).maximumValue(500).description("Minimum time in milliseconds between two redraws of the transparent (particle) shadow layer; in between the previous layer is reused. The opaque shadow map is still updated every frame. 0 = redraw every frame. Uses wall-clock time so slow frames always get a fresh layer while fast frames are capped (e.g. 33 = at most 30 updates per second).");
 
 CShadowHandler shadowHandler;
 
@@ -72,7 +72,8 @@ void CShadowHandler::Init()
 	shadowProMode = configHandler->GetInt("ShadowProjectionMode");
 	//shadowProMode = SHADOWPROMODE_CAM_CENTER;
 	shadowColorMode = configHandler->GetInt("ShadowColorMode");
-	transparentInterval = configHandler->GetInt("ProjectileShadowInterval");
+	transparentMinInterval = configHandler->GetInt("ProjectileShadowMinInterval");
+	lastTransparentUpdate = spring_notime;
 	shadowGenBits = SHADOWGEN_BIT_NONE;
 
 	shadowsLoaded = false;
@@ -719,7 +720,14 @@ void CShadowHandler::CreateShadows()
 		GLbitfield clearBits = GL_DEPTH_BUFFER_BIT;
 
 		// on frames that skip the transparent pass the previous layer is kept
-		updateTransparent = (transparentInterval <= 1) || ((globalRendering->drawFrame % transparentInterval) == 0);
+		{
+			const spring_time now = spring_gettime();
+
+			updateTransparent = (transparentMinInterval <= 0) || ((now - lastTransparentUpdate).toMilliSecsf() >= transparentMinInterval);
+
+			if (updateTransparent)
+				lastTransparentUpdate = now;
+		}
 
 		if (shadowColorDirty && updateTransparent && !eventHandler.HasDrawWorldShadowClients()) {
 			EnableColorOutput(true);

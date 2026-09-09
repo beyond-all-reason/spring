@@ -47,16 +47,6 @@ static constexpr uint32_t SHADOW_REGION_MIN_CAPACITY = 3 * 1024;
 static constexpr uint32_t SHADOW_REGION_MAX_CAPACITY = PATCH_SIZE * PATCH_SIZE * 2 * 3; // fully split patch
 static constexpr uint32_t SHADOW_BUFFER_MIN_CAPACITY = 64 * 1024;
 
-CONFIG(bool, ROAMBatchedShadowPass)
-	.defaultValue(true)
-	.description("Draw the whole ROAM shadow-pass terrain mesh with a single multi-draw call instead of one draw call per patch (needs GL4-level driver support).");
-
-CONFIG(float, ROAMShadowMeshDetail)
-	.defaultValue(1.0f)
-	.minimumValue(0.1f)
-	.maximumValue(1.0f)
-	.description("Scale applied to GroundDetail for the shadow-pass terrain mesh only; below 1.0 the shadow map is rendered from a coarser terrain mesh (fewer triangles, slightly softer terrain self-shadowing). Read when the mesh drawer is (re)created.");
-
 
 bool CRoamMeshDrawer::forceNextTesselation[MESH_COUNT] = {false, false};
 
@@ -109,10 +99,7 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 		}
 	}
 
-	shadowDetailScale = configHandler->GetFloat("ROAMShadowMeshDetail");
-
 	batchedShadowPass =
-		configHandler->GetBool("ROAMBatchedShadowPass") &&
 		VAO::IsSupported() &&
 		GLAD_GL_ARB_multi_draw_indirect &&
 		GLAD_GL_ARB_base_instance &&
@@ -251,10 +238,7 @@ void CRoamMeshDrawer::Update()
 
 	Patch::UpdateVisibility(cam, patches, numPatchesX);
 
-	// the shadow mesh may be tessellated at a reduced detail level
-	const int groundDetail = shadowPass ?
-		std::max(1, static_cast<int>(std::lround(smfGroundDrawer->GetGroundDetail() * shadowDetailScale))) :
-		smfGroundDrawer->GetGroundDetail();
+	const int groundDetail = smfGroundDrawer->GetGroundDetail();
 
 	const bool gldUpdated = groundDetail != lastGroundDetail[shadowPass];
 

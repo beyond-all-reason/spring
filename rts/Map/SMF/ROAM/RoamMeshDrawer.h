@@ -88,9 +88,6 @@ private:
 	// Falls back to one draw per patch if the required GL features are missing.
 	bool batchedShadowPass = false;
 
-	// GroundDetail multiplier for the shadow mesh (ROAMShadowMeshDetail)
-	float shadowDetailScale = 1.0f;
-
 	VBO shadowIndxVBO;
 	VBO shadowSquareVBO;
 	VAO shadowVAO;
