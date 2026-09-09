@@ -287,6 +287,7 @@ class CEventClient
 		virtual void Update();
 		virtual void UnsyncedHeightMapUpdate(const SRectangle& rect);
 
+		virtual void KeyBindingsChanged();
 		virtual bool KeyMapChanged();
 		virtual bool KeyPress(int keyCode, int scanCode, bool isRepeat);
 		virtual bool KeyRelease(int keyCode, int scanCode);

@@ -3129,6 +3129,31 @@ void CLuaHandle::Pong(uint8_t pingTag, const spring_time pktSendTime, const spri
 	RunCallIn(L, cmdStr, 3, 0);
 }
 
+/*** Called after a keybinding command runs.
+ *
+ * Called when:
+ *
+ * - A keybinding command runs, e.g. `bind k action`. This may fire even when nothing actually changed (e.g. a redundant bind), so treat it as "a binding command ran", not a guarantee that bindings differ. An operation covering multiple keybindings fires a single event at the end, e.g. `keyreload`.
+ * - Any operation that changes how actions are retrieved from input triggers happened, e.g. `fakemeta space`.
+ *
+ * Nothing is passed; call `Spring.GetKeyBindings` to read the current state.
+ *
+ * @function Callins:KeyBindingsChanged
+ */
+void CLuaHandle::KeyBindingsChanged()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 2, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	RunCallIn(L, cmdStr, 0, 0);
+}
+
 
 /*** Called when the keymap changes
  *

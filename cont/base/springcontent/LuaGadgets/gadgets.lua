@@ -2060,6 +2060,13 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
+function gadgetHandler:KeyBindingsChanged()
+  for _,g in r_ipairs(self.KeyBindingsChangedList) do
+    g:KeyBindingsChanged()
+  end
+end
+
+
 function gadgetHandler:KeyPress(key, mods, isRepeat, label, unicode, scanCode)
   for _,g in r_ipairs(self.KeyPressList) do
     if (g:KeyPress(key, mods, isRepeat, label, unicode, scanCode)) then

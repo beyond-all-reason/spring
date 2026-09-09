@@ -61,6 +61,7 @@ void CEventClient::DrawLoadScreen() {}
 void CEventClient::LoadProgress(const std::string& msg, const bool replace_lastline) {}
 
 // from LuaUI
+void CEventClient::KeyBindingsChanged() {}
 bool CEventClient::KeyMapChanged() { return false; }
 bool CEventClient::KeyPress(int keyCode, int scanCode, bool isRepeat) { return false; }
 bool CEventClient::KeyRelease(int keyCode, int scanCode) { return false; }

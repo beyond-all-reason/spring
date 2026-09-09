@@ -201,6 +201,7 @@ class CLuaHandle : public CEventClient
 		void UnsyncedHeightMapUpdate(const SRectangle& rect) override;
 		void Update() override;
 
+		void KeyBindingsChanged() override;
 		bool KeyMapChanged() override;
 		bool KeyPress(int keyCode, int scanCode, bool isRepeat) override;
 		bool KeyRelease(int keyCode, int scanCode) override;

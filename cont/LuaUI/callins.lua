@@ -23,6 +23,7 @@ CallInsList = {
 	"MiniMapGeometryChanged",
 	"CommandNotify",
 
+	"KeyBindingsChanged",
 	"KeyMapChanged",
 	"KeyPress",
 	"KeyRelease",

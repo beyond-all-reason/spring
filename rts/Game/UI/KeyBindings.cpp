@@ -9,6 +9,7 @@
 #include "KeySet.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
+#include "System/EventHandler.h"
 #include "System/FileSystem/FileHandler.h"
 #include "System/FileSystem/SimpleParser.h"
 #include "System/Log/ILog.h"
@@ -677,19 +678,17 @@ bool CKeyBindings::UnBind(const std::string& keystr, const std::string& command)
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
 	const auto it = bindings.find(ks);
 
-	if (it == bindings.end())
-		return false;
+	if (it != bindings.end()) {
+		ActionList& al = it->second;
 
-	ActionList& al = it->second;
-	const bool success = RemoveCommandFromList(al, command);
+		if (RemoveCommandFromList(al, command))
+			buildHotkeyMap = true;
 
-	if (al.empty())
-		bindings.erase(it);
+		if (al.empty())
+			bindings.erase(it);
+	}
 
-	if (success)
-		buildHotkeyMap = true;
-
-	return success;
+	return true;
 }
 
 
@@ -709,11 +708,11 @@ bool CKeyBindings::UnBindKeyset(const std::string& keystr)
 
 	const auto it = bindings.find(ks);
 
-	if (it == bindings.end())
-		return false;
+	if (it != bindings.end()) {
+		bindings.erase(it);
+		buildHotkeyMap = true;
+	}
 
-	bindings.erase(it);
-	buildHotkeyMap = true;
 	return true;
 }
 
@@ -756,7 +755,7 @@ bool CKeyBindings::UnBindAction(const std::string& command)
 	if (changed)
 		buildHotkeyMap = true;
 
-	return changed;
+	return true;
 }
 
 
@@ -880,6 +879,9 @@ bool CKeyBindings::ExecuteCommandInternal(const std::string& line)
 
 	const std::string command = StringToLower(words[0]);
 
+	// emit even on a no-op command so clients can tell it ran; keydebug is logging-only, so skip it
+	bool emitEvent = true;
+
 	if (command == "keydebug") {
 		if (words.size() == 1) {
 			// toggle
@@ -888,6 +890,7 @@ bool CKeyBindings::ExecuteCommandInternal(const std::string& line)
 			// set
 			debugEnabled = atoi(words[1].c_str());
 		}
+		emitEvent = false;
 	}
 	else if (command == "keyload") {
 		const std::string& filename = words.size() > 1 ? words[1] : DEFAULT_FILENAME;
@@ -952,15 +955,19 @@ bool CKeyBindings::ExecuteCommandInternal(const std::string& line)
 		return false;
 	}
 
-	return false;
+	return emitEvent;
 }
 
 
 bool CKeyBindings::ExecuteCommand(const std::string& line)
 {
-	const bool ret = ExecuteCommandInternal(line);
+	const bool emitEvent = ExecuteCommandInternal(line);
 	MaybeBuildHotkeyMap();
-	return ret;
+
+	if (emitEvent)
+		eventHandler.KeyBindingsChanged();
+
+	return emitEvent;
 }
 
 
@@ -1001,6 +1008,10 @@ bool CKeyBindings::Load(const std::string& filename)
 {
 	const bool ret = LoadInternal(filename);
 	MaybeBuildHotkeyMap();
+
+	if (ret)
+		eventHandler.KeyBindingsChanged();
+
 	return ret;
 }
 

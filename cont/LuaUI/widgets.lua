@@ -195,6 +195,7 @@ local callInLists = {
   'AddConsoleLine',
   'ViewResize',
   'DrawScreen',
+  'KeyBindingsChanged',
   'KeyMapChanged',
   'KeyPress',
   'KeyRelease',
@@ -1415,6 +1416,12 @@ end
 --
 --  Keyboard call-ins
 --
+
+function widgetHandler:KeyBindingsChanged()
+  for _,w in ipairs(self.KeyBindingsChangedList) do
+    w:KeyBindingsChanged()
+  end
+end
 
 function widgetHandler:KeyMapChanged()
   for _,w in ipairs(self.KeyMapChangedList) do
