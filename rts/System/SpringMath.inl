@@ -22,6 +22,13 @@ inline short int GetHeadingFromFacing(const int facing)
 	}
 }
 
+// headings are circular 16-bit TA angles, so a float sum past a half turn is meant
+// to wrap; truncate to int first, a direct float->short is UB once out of range
+inline short int TAAngleToShort(const float angle)
+{
+	return static_cast<short int>(static_cast<int>(angle));
+}
+
 inline int GetFacingFromHeading(const short int heading)
 {
 	if (heading >= 0) {

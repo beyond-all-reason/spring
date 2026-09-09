@@ -79,8 +79,7 @@ short GMTDefaultPathController::GetDeltaHeading(
 	// add lookahead term to avoid overshooting target heading
 	// note that turnBrakeDist is always positive
 	const short brakeDistFactor = (absTurnSpeed >= maxTurnAccel);
-	// via int, a direct float->short is UB once out of range (#3075)
-	const short stopTurnHeading = short(int(oldHeading + (turnBrakeDist * Sign(curTurnSpeed) * brakeDistFactor)));
+	const short stopTurnHeading = TAAngleToShort(oldHeading + (turnBrakeDist * Sign(curTurnSpeed) * brakeDistFactor));
 	const short curDeltaHeading = newHeading - stopTurnHeading;
 
 	if (brakeDistFactor == 0) {
