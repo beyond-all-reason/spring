@@ -416,7 +416,7 @@ const char* CGlobalRendering::HDRCapabilityToString(HDRCapability capability)
 const char* CGlobalRendering::HDRInactiveReasonToString(HDRInactiveReason reason)
 {
 	switch (reason) {
-		case HDRInactiveReason::None:                   return "none";
+		case HDRInactiveReason::NoReason:               return "none";
 		case HDRInactiveReason::RequestedOff:           return "requested-off";
 		case HDRInactiveReason::Unsupported:            return "unsupported";
 		case HDRInactiveReason::OSHDROff:               return "os-hdr-disabled";
@@ -571,11 +571,11 @@ void CGlobalRendering::RefreshHDRState(bool enumerateDisplays)
 	hdrState.effectiveMode = HDROutputMode::SDR;
 	if (hdrState.requestedMode == HDRMode::Off)
 		hdrState.inactiveReason = HDRInactiveReason::RequestedOff;
-	else if (!hdrState.floatFramebufferActive && hdrState.inactiveReason == HDRInactiveReason::None)
+	else if (!hdrState.floatFramebufferActive && hdrState.inactiveReason == HDRInactiveReason::NoReason)
 		hdrState.inactiveReason = HDRInactiveReason::FloatVisualUnavailable;
-	else if (!hdrState.windowHdrEnabled && hdrState.inactiveReason == HDRInactiveReason::None)
+	else if (!hdrState.windowHdrEnabled && hdrState.inactiveReason == HDRInactiveReason::NoReason)
 		hdrState.inactiveReason = HDRInactiveReason::WindowHDROff;
-	else if (hdrState.inactiveReason == HDRInactiveReason::None)
+	else if (hdrState.inactiveReason == HDRInactiveReason::NoReason)
 		hdrState.inactiveReason = HDRInactiveReason::PipelineUnavailable;
 
 	const bool changed =
@@ -967,7 +967,7 @@ void CGlobalRendering::PresentScene()
 	hdrState.pipelineHdrActive = HDRPipelineShouldBeActive() && screenTargetsValid;
 	hdrState.effectiveMode = hdrState.pipelineHdrActive ? HDROutputMode::HDR : HDROutputMode::SDR;
 	if (hdrState.pipelineHdrActive)
-		hdrState.inactiveReason = HDRInactiveReason::None;
+		hdrState.inactiveReason = HDRInactiveReason::NoReason;
 	if (oldPipelineActive != hdrState.pipelineHdrActive ||
 	    oldEffectiveMode != hdrState.effectiveMode ||
 	    oldInactiveReason != hdrState.inactiveReason)
@@ -1150,7 +1150,7 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		(hdrMode == "on") ? HDRMode::On :
 		(hdrMode == "auto") ? HDRMode::Auto : HDRMode::Off;
 	hdrState.inactiveReason =
-		(hdrState.requestedMode == HDRMode::Off) ? HDRInactiveReason::RequestedOff : HDRInactiveReason::None;
+		(hdrState.requestedMode == HDRMode::Off) ? HDRInactiveReason::RequestedOff : HDRInactiveReason::NoReason;
 	if (hdrMode != "off" && hdrMode != "auto" && hdrMode != "on")
 		LOG_L(L_WARNING, "[GR::%s] invalid HDRMode=\"%s\"; using off", __func__, hdrMode.c_str());
 

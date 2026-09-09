@@ -37,7 +37,7 @@ public:
 	enum class HDROutputMode { SDR, HDR };
 	enum class HDRCapability { Unknown, Unsupported, Supported };
 	enum class HDRInactiveReason {
-		None,
+		NoReason,
 		RequestedOff,
 		Unsupported,
 		OSHDROff,

@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <array>
+#include <cmath>
 #include <vector>
 #include <string>
 #include <bit>
@@ -58,7 +59,7 @@ bool CheckAvailableVideoModes()
 	globalRenderingInfo.availableVideoModes.clear();
 
 	LOG(
-		"[GL::%s] desktop={%ix%ix%ibpp@%iHz} current={%ix%ix%ibpp@%iHz}",
+		"[GL::%s] desktop={%ix%ix%ibpp@%.2fHz} current={%ix%ix%ibpp@%.2fHz}",
 		__func__,
 		ddm->w, ddm->h, SDL_BPP(ddm->format), ddm->refresh_rate,
 		cdm->w, cdm->h, SDL_BPP(cdm->format), cdm->refresh_rate
@@ -99,10 +100,10 @@ bool CheckAvailableVideoModes()
 				cm->w,
 				cm->h,
 				static_cast<int32_t>(SDL_BPP(cm->format)),
-				cm->refresh_rate
+				static_cast<int32_t>(std::lround(cm->refresh_rate))
 			});
 
-			LOG("\t\t[%2i] %ix%ix%ibpp@%iHz", int(i + 1), cm->w, cm->h, SDL_BPP(cm->format), cm->refresh_rate);
+			LOG("\t\t[%2i] %ix%ix%ibpp@%.2fHz", int(i + 1), cm->w, cm->h, SDL_BPP(cm->format), cm->refresh_rate);
 			pm.w = cm->w; pm.h = cm->h; pm.format = cm->format; pm.refresh_rate = cm->refresh_rate;
 		}
 	}

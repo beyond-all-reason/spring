@@ -151,7 +151,7 @@ namespace KeyInput {
 		// up in IsKeyPressed / GetKeyModState / GetPressedKeys
 		for (const int keyCode: emulatedKeyCodes) {
 			ForcePressed(keyVec, keyCode);
-			ForcePressed(scanVec, SDL_GetScancodeFromKey((SDL_Keycode)keyCode));
+			ForcePressed(scanVec, SDL_GetScancodeFromKey((SDL_Keycode)keyCode, nullptr));
 
 			switch (keyCode) {
 				case SDLK_LALT:   case SDLK_RALT:   SetKeyModState(SDL_KMOD_ALT  , true); break;

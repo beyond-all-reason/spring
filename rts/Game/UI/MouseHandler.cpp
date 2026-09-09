@@ -314,7 +314,7 @@ void CMouseHandler::SetButtonEmulated(int button, bool pressed)
 	if (button < 1 || button > NUM_BUTTONS)
 		return;
 
-	const bool physicalDown = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(button)) != 0;
+	const bool physicalDown = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_MASK(button)) != 0;
 	const bool wasDown = physicalDown || buttons[button].emulated;
 
 	buttons[button].emulated = pressed;

@@ -4378,14 +4378,14 @@ int LuaOpenGL::GetVideoTextureInfo(lua_State* L)
 	if (CLuaHandle::GetHandleSynced(L)) return luaL_error(L, "gl.GetVideoTextureInfo is unsynced-only");
 	const video::VideoInfo info = CLuaHandle::GetActiveVideoTextures(L).GetInfo(luaL_checksstring(L, 1));
 	lua_createtable(L, 0, 8);
-	HSTR_PUSH_STRING(L, "state", video::ToString(info.state));
-	HSTR_PUSH_NUMBER(L, "width", info.width);
-	HSTR_PUSH_NUMBER(L, "height", info.height);
-	HSTR_PUSH_NUMBER(L, "duration", info.duration);
-	HSTR_PUSH_NUMBER(L, "position", info.position);
-	HSTR_PUSH_BOOL(L, "hasAudio", info.hasAudio);
-	HSTR_PUSH_STRING(L, "error", info.error);
-	HSTR_PUSH_NUMBER(L, "droppedFrames", info.droppedFrames);
+	LuaPushNamedString(L, "state", video::ToString(info.state));
+	LuaPushNamedNumber(L, "width", info.width);
+	LuaPushNamedNumber(L, "height", info.height);
+	LuaPushNamedNumber(L, "duration", info.duration);
+	LuaPushNamedNumber(L, "position", info.position);
+	LuaPushNamedBool(L, "hasAudio", info.hasAudio);
+	LuaPushNamedString(L, "error", info.error);
+	LuaPushNamedNumber(L, "droppedFrames", info.droppedFrames);
 	return 1;
 }
 
