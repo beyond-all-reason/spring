@@ -137,28 +137,35 @@ void CKeyCodes::Reset()
 	}
 
 	// Key state modifier keys
-	//AddPair("numlock", SDLK_NUMLOCK);
-	//AddPair("capslock", SDLK_CAPSLOCK);
-	//AddPair("scrollock", SDLK_SCROLLOCK);
+	AddPair("numlock",   SDLK_NUMLOCKCLEAR);
+	AddPair("capslock",  SDLK_CAPSLOCK);
+	AddPair("scrollock", SDLK_SCROLLLOCK);
 	AddPair("shift", SDLK_LSHIFT);
 	AddPair("ctrl",  SDLK_LCTRL);
 	AddPair("alt",   SDLK_LALT);
 	AddPair("meta",  SDLK_LGUI);
-	// these can not be used correctly anyway (without special support in other parts of Spring code...)
+	// the plain names above are the left-hand keys, so the right-hand ones
+	// need their own names to be reachable by name at all
+	AddPair("rshift", SDLK_RSHIFT);
+	AddPair("rctrl",  SDLK_RCTRL);
+	AddPair("ralt",   SDLK_RALT);
+	AddPair("rmeta",  SDLK_RGUI);
+	AddPair("mode", SDLK_MODE);         // "Alt Gr" key; binding it still needs support elsewhere
+	// these have no SDL2 equivalent
 	//AddPair("super", SDLK_LSUPER);    // Left "Windows" key
-	//AddPair("mode", SDLK_MODE);       // "Alt Gr" key
 	//AddPair("compose", SDLK_COMPOSE); // Multi-key compose key
 
 	// Miscellaneous function keys
 	AddPair("help", SDLK_HELP);
 	AddPair("printscreen", SDLK_PRINTSCREEN);
 	AddPair("print", SDLK_PRINTSCREEN);
-	//AddPair("sysreq", SDLK_SYSREQ);
+	AddPair("sysreq", SDLK_SYSREQ);
+	AddPair("menu", SDLK_MENU);
+	AddPair("power", SDLK_POWER);       // Power Macintosh power key
+	AddPair("undo", SDLK_UNDO);         // Atari keyboard has Undo
+	// these have no SDL2 equivalent
 	//AddPair("break", SDLK_BREAK);
-	//AddPair("menu", SDLK_MENU);
-	//AddPair("power", SDLK_POWER);     // Power Macintosh power key
 	//AddPair("euro", SDLK_EURO);       // Some european keyboards
-	//AddPair("undo", SDLK_UNDO);       // Atari keyboard has Undo
 
 	for (int i = ACTION_BUTTON_MIN; i <= NUM_BUTTONS; i++) {
 		AddPair("mouse" + IntToString(i), CKeyCodes::GetMouseButtonSymbol(i));
