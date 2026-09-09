@@ -35,6 +35,18 @@ void CMissileLauncher::UpdateWantedDir()
 	}
 }
 
+float3 CMissileLauncher::GetWantedDirFor(const float3& targetVec) const
+{
+	float3 dir = CWeapon::GetWantedDirFor(targetVec);
+
+	if (weaponDef->trajectoryHeight > 0.0f) {
+		dir.y += weaponDef->trajectoryHeight;
+		dir.Normalize();
+	}
+
+	return dir;
+}
+
 void CMissileLauncher::FireImpl(const bool scriptCall)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
