@@ -3,7 +3,9 @@
 #ifndef GROUNDBLOCKINGOBJECTMAP_H
 #define GROUNDBLOCKINGOBJECTMAP_H
 
+#include <algorithm>
 #include <array>
+#include <cstdint>
 #include <vector>
 
 #include "Sim/Objects/SolidObject.h"
@@ -99,6 +101,7 @@ public:
 
 	void Init(unsigned int numSquares) {
 		arrCells.resize(numSquares);
+		cellBits.assign((numSquares + 31) / 32, 0);
 		vecCells.reserve(32);
 		vecIndcs.reserve(32);
 
@@ -117,7 +120,10 @@ public:
 		}
 
 		vecIndcs.clear();
+		std::fill(cellBits.begin(), cellBits.end(), 0u);
 	}
+
+	void PostLoad();
 
 	unsigned int CalcChecksum() const;
 
@@ -171,6 +177,11 @@ public:
 		return {GetArrCell(mapSquare), vecCells.data()};
 	}
 
+	// one bit per map-square, set iff the cell holds any object; lets scans
+	// over many cells skip the empty ones without touching the cells
+	bool CellIsEmpty(unsigned int mapSquare) const { return (((cellBits[mapSquare >> 5] >> (mapSquare & 31)) & 1u) == 0); }
+	const std::vector<uint32_t>& GetCellBits() const { return cellBits; }
+
 private:
 	bool CheckYard(const CSolidObject* yardUnit, const YardMapStatus& mask) const;
 
@@ -186,6 +197,7 @@ private:
 	std::vector<ArrCell> arrCells;
 	std::vector<VecCell> vecCells;
 	std::vector<uint32_t> vecIndcs;
+	std::vector<uint32_t> cellBits;
 };
 
 extern CGroundBlockingObjectMap groundBlockingObjectMap;

@@ -28,7 +28,9 @@ CR_BIND(CGroundBlockingObjectMap, )
 CR_REG_METADATA(CGroundBlockingObjectMap, (
 	CR_MEMBER(arrCells),
 	CR_MEMBER(vecCells),
-	CR_MEMBER(vecIndcs)
+	CR_MEMBER(vecIndcs),
+	CR_IGNORED(cellBits),
+	CR_POSTLOAD(PostLoad)
 ))
 
 
@@ -266,6 +268,18 @@ bool CGroundBlockingObjectMap::CheckYard(const CSolidObject* yardUnit, const Yar
 }
 
 
+// cellBits is derived from arrCells and not serialized, rebuild it
+void CGroundBlockingObjectMap::PostLoad()
+{
+	cellBits.assign((arrCells.size() + 31) / 32, 0);
+
+	for (unsigned int i = 0; i < arrCells.size(); ++i) {
+		if (!arrCells[i].Empty())
+			cellBits[i >> 5] |= (1u << (i & 31));
+	}
+}
+
+
 unsigned int CGroundBlockingObjectMap::CalcChecksum() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -288,8 +302,11 @@ bool CGroundBlockingObjectMap::CellInsertUnique(unsigned int sqr, CSolidObject* 
 
 	if (ac.Contains(o))
 		return false;
-	if (ac.Insert(o))
+	if (ac.Insert(o)) {
+		// first object in this cell (spill-over into the vector part implies a full array part)
+		cellBits[sqr >> 5] |= (1u << (sqr & 31));
 		return true;
+	}
 
 	// array-cell is full, spill over
 	if ((vc = &GetVecCell(sqr)) == &vecCells[0]) {
@@ -312,8 +329,13 @@ bool CGroundBlockingObjectMap::CellErase(unsigned int sqr, CSolidObject* o) {
 	VecCell* vc = nullptr;
 
 	if (ac.Erase(o)) {
-		if (ac.GetVecIndx() == 0)
+		if (ac.GetVecIndx() == 0) {
+			// no vector part to refill from, the cell may have become empty
+			if (ac.Empty())
+				cellBits[sqr >> 5] &= ~(1u << (sqr & 31));
+
 			return true;
+		}
 
 		// never allow a hole between array and vector parts
 		assert(!vecCells[ac.GetVecIndx()].empty());
