@@ -55,7 +55,7 @@ public:
 	virtual bool Mute() = 0;
 	virtual bool IsMuted() const = 0;
 
-	virtual void DeviceChanged(uint32_t sdlDeviceIndex) = 0;
+	virtual void DeviceChanged(uint32_t sdlDeviceIndex, bool added) = 0;
 
 	///change current output device
 	static bool ChangeOutput(bool forceNullSound = false);
