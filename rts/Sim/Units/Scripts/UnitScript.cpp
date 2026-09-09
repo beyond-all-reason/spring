@@ -1505,6 +1505,17 @@ int CUnitScript::GetUnitVal(int val, int p1, int p2, int p3, int p4)
 		return -1;
 	} break;
 
+	case WEAPON_LAUNCH_HEADING: {
+		// get: unit-frame heading of the full shot direction at the last
+		// AimWeapon callin, in COB angle units with the same convention as
+		// AimWeapon's heading argument (see CWeapon::CallAimingScript); the
+		// int->short narrowing wraps deterministically, as in CobInstance
+		if (p1 > 0 && static_cast<size_t>(p1) <= unit->weapons.size())
+			return static_cast<short>(static_cast<int>(unit->weapons[p1 - 1]->launchHeading * RAD2TAANG));
+
+		return 0;
+	} break;
+
 	case WEAPON_PROJECTILE_SPEED: {
 		// get (+)
 		if (p1 > 0 && static_cast<size_t>(p1) <= unit->weapons.size())

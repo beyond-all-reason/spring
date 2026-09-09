@@ -73,6 +73,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(doTargetGroundPos),
 	CR_MEMBER(noAutoTarget),
 	CR_MEMBER(alreadyWarnedAboutMissingPieces),
+	CR_MEMBER(hasAimFromEstimate),
 
 	CR_MEMBER(badTargetCategory),
 	CR_MEMBER(onlyTargetCategory),
@@ -102,6 +103,7 @@ CR_REG_METADATA(CWeapon, (
 	CR_MEMBER(mainDir),
 	CR_MEMBER(wantedDir),
 	CR_MEMBER(lastRequestedDir),
+	CR_MEMBER(launchHeading),
 	CR_MEMBER(salvoError),
 	CR_MEMBER(errorVector),
 	CR_MEMBER(errorVectorAdd),
@@ -160,6 +162,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	doTargetGroundPos(false),
 	noAutoTarget(false),
 	alreadyWarnedAboutMissingPieces(false),
+	hasAimFromEstimate(false),
 
 	badTargetCategory(0),
 	onlyTargetCategory(0xffffffff),
@@ -188,6 +191,7 @@ CWeapon::CWeapon(CUnit* owner, const WeaponDef* def):
 	mainDir(FwdVector),
 	wantedDir(UpVector),
 	lastRequestedDir(-UpVector),
+	launchHeading(0.0f),
 	salvoError(ZeroVector),
 	errorVector(ZeroVector),
 	errorVectorAdd(ZeroVector),
@@ -307,6 +311,36 @@ void CWeapon::UpdateWantedDir()
 	}
 }
 
+float3 CWeapon::GetWantedDirFor(const float3& targetVec) const
+{
+	float3 dir = targetVec;
+	return dir.SafeNormalize();
+}
+
+
+float3 CWeapon::EstimateMuzzlePos(const float3& tgtPos) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	assert(HasAimFromEstimate());
+	const AimFromEstimate& estimate = owner->unitDef->GetWeapon(weaponNum).aimFromEstimate;
+
+	// the direction the aiming script would be asked for, in the unit's frame
+	const float3 worldDir = GetWantedDirFor(tgtPos - owner->GetObjectSpacePos(estimate.pivot));
+	const float3 localDir(worldDir.dot(owner->rightdir), worldDir.dot(owner->updir), worldDir.dot(owner->frontdir));
+
+	return owner->GetObjectSpacePos(estimate.Eval(localDir));
+}
+
+float3 CWeapon::GetAimFromPos(const float3& tgtPos, bool useMuzzle) const
+{
+	if (useMuzzle)
+		return weaponMuzzlePos;
+	if (HasAimFromEstimate())
+		return EstimateMuzzlePos(tgtPos);
+
+	return aimFromPos;
+}
+
 
 float CWeapon::GetPredictedImpactTime(const float3& p) const
 {
@@ -407,20 +441,43 @@ bool CWeapon::CallAimingScript(bool waitForAim)
 	lastRequestedDir = wantedDir;
 	lastAimedFrame = gs->frameNum;
 
-	// transform wantedDir into unit's local coordinate frame so that
-	// heading and pitch are relative to the unit's current orientation,
-	// correctly handling units on sloped terrain
-	const float localX = wantedDir.dot(owner->rightdir);
+	// heading and pitch are given in the unit's frame so that turrets on sloped
+	// terrain aim correctly; the heading is derived from the horizontal part of
+	// the shot direction only. For a steep launch (high-trajectory cannons) the
+	// horizontal part of wantedDir is small and the hull's tilt would otherwise
+	// dominate the yaw, swinging it tens of degrees away from the target azimuth
+	// that CheckTargetAngleConstraint and the scripts' own arc checks reason
+	// about; the script then rejects a target the engine considers in arc and
+	// the unit never fires
+	float3 flatDir = wantedDir;
+	flatDir.y = 0.0f;
+
+	if (flatDir.SqLength() < 1e-6f) {
+		// shooting straight up or down, fall back to the target's azimuth
+		flatDir = currentTargetPos - aimFromPos;
+		flatDir.y = 0.0f;
+	}
+	if (flatDir.SqLength() < 1e-6f)
+		flatDir = owner->frontdir;
+
+	const float localX = flatDir.dot(owner->rightdir);
+	const float localZ = flatDir.dot(owner->frontdir);
 	const float localY = wantedDir.dot(owner->updir);
-	const float localZ = wantedDir.dot(owner->frontdir);
 
 	const float heading = GetHeadingFromVectorF(localX, localZ);
 	const float pitch = math::asin(std::clamp(localY, -1.0f, 1.0f));
 
+	// the unit-frame heading of the full shot direction is the exact turret yaw
+	// that points the barrel along the shot on tilted ground, but it is not
+	// usable for arc checks (see above); offer it to scripts as an optional
+	// extra value, the fourth AimWeapon argument for LUS and the
+	// WEAPON_LAUNCH_HEADING getter for COB, and keep <heading> the azimuth
+	launchHeading = ClampRadPi(-GetHeadingFromVectorF(wantedDir.dot(owner->rightdir), wantedDir.dot(owner->frontdir)));
+
 	// for COB, this sets <angleGood> to AimWeapon's return value when finished
 	// for LUS, there exists a callout to set the <angleGood> member directly
 	// FIXME: convert CSolidObject::heading to radians too.
-	owner->script->AimWeapon(weaponNum, ClampRadPi(-heading), pitch);
+	owner->script->AimWeapon(weaponNum, ClampRadPi(-heading), pitch, launchHeading);
 	return true;
 }
 
@@ -970,12 +1027,18 @@ bool CWeapon::TryTarget(const float3& tgtPos, const SWeaponTarget& trg, bool pre
 	if (!trg.isAutoTarget && !TestRange(tgtPos, trg))
 		return false;
 
+	const float3 srcPos = GetAimFromPos(tgtPos, preFire);
+
 	// no LOF if aim-position is below ground (not in HFLOF, is overridden)
-	if (preFire && (weaponMuzzlePos.y < CGround::GetHeightReal(weaponMuzzlePos.x, weaponMuzzlePos.z)))
+	// before aiming this only applies to the predicted muzzle: like the real
+	// muzzle it ends up inside the terrain when the unit stands against a
+	// cliff, whereas the AimFromWeapon piece may legitimately sit below the
+	// surface inside the hull of a unit on a slope
+	if ((preFire || HasAimFromEstimate()) && (srcPos.y < CGround::GetHeightReal(srcPos.x, srcPos.z)))
 		return false;
 
 	// TODO: add a forcedUserTarget (forced-fire mode enabled with CTRL e.g.) and skip the tests below
-	return (HaveFreeLineOfFire(GetAimFromPos(preFire), tgtPos, trg));
+	return (HaveFreeLineOfFire(srcPos, tgtPos, trg));
 }
 
 float CWeapon::GetShapedWeaponRange(const float3& dir, float maxLength) const
@@ -1138,7 +1201,8 @@ bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		const float tgtDst = tgtPos.SqDistance(srcPos + tgtDir * gndDst);
 
 		// true iff ground does not block the ray of length <length> from <srcPos> along <tgtDir>
-		if ((gndDst > 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
+		// (a distance of 0 means <srcPos> itself is underground; -1 is not possible since length > 0)
+		if ((gndDst >= 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
 			return false;
 
 		unit = nullptr;
@@ -1163,7 +1227,7 @@ bool CWeapon::TryTarget(const SWeaponTarget& trg) const {
 }
 
 
-bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire)
+bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, unsigned int extraAvoidFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tempTargetPos = GetUnitLeadTargetPos(unit);
@@ -1180,15 +1244,15 @@ bool CWeapon::TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFir
 	// if the aimToTgt is (close to) degenerate then enemyHeading value makes no sense,
 	// use the owner's heading instead
 	if unlikely(aimToTgt.SqLength2D() < 1.0f) {
-		return TryTargetHeading(owner->heading - weaponHeading, trg);
+		return TryTargetHeading(owner->heading - weaponHeading, trg, extraAvoidFlags);
 	}
 
 	const short enemyHeading = GetHeadingFromVector(aimToTgt.x, aimToTgt.z);
-	return TryTargetHeading(enemyHeading - weaponHeading, trg);
+	return TryTargetHeading(enemyHeading - weaponHeading, trg, extraAvoidFlags);
 }
 
 
-bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
+bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire, unsigned int extraAvoidFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	AdjustTargetPosToWater(pos, true);
@@ -1197,25 +1261,28 @@ bool CWeapon::TryTargetRotate(float3 pos, bool userTarget, bool manualFire)
 	SWeaponTarget trg(pos, userTarget);
 	trg.isManualFire = manualFire;
 
-	return TryTargetHeading(enemyHeading - weaponHeading, trg);
+	return TryTargetHeading(enemyHeading - weaponHeading, trg, extraAvoidFlags);
 }
 
 
-bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg)
+bool CWeapon::TryTargetHeading(short heading, const SWeaponTarget& trg, unsigned int extraAvoidFlags)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	const float3 tempfrontdir(owner->frontdir);
 	const float3 temprightdir(owner->rightdir);
 	const short tempHeading = owner->heading;
+	const unsigned int tempAvoidFlags = avoidFlags;
 
 	owner->heading = heading;
 	owner->frontdir = GetVectorFromHeading(owner->heading);
 	owner->rightdir = owner->frontdir.cross(owner->updir);
 	auto wvs = SaveWeaponVectors();
 	UpdateWeaponVectors();
+	avoidFlags |= extraAvoidFlags;
 
 	const bool val = TryTarget(trg);
 
+	avoidFlags = tempAvoidFlags;
 	owner->frontdir = tempfrontdir;
 	owner->rightdir = temprightdir;
 	owner->heading = tempHeading;

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef WEAPON_H
-#define WEAPON_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -51,7 +50,15 @@ public:
 	const SWeaponTarget& GetCurrentTarget() const { return currentTarget; }
 	const float3& GetCurrentTargetPos() const { return currentTargetPos; }
 
-	virtual const float3& GetAimFromPos(bool useMuzzle = false) const { return (useMuzzle? weaponMuzzlePos: aimFromPos); }
+	/**
+	 * position line-of-fire tests towards <tgtPos> are traced from: the muzzle when
+	 * about to fire, otherwise the estimated post-aim muzzle position if the unit
+	 * defines one for this weapon (UnitDefWeapon::aimFromEstimate), else aimFromPos
+	 */
+	float3 GetAimFromPos(const float3& tgtPos, bool useMuzzle = false) const;
+	bool HasAimFromEstimate() const { return hasAimFromEstimate; }
+	/// where the muzzle is predicted to be once the script has aimed at <tgtPos>
+	float3 EstimateMuzzlePos(const float3& tgtPos) const;
 
 	bool HasIncomingProjectile(int projID) const { return (std::find(incomingProjectileIDs.begin(), incomingProjectileIDs.end(), projID) != incomingProjectileIDs.end()); }
 	void AddIncomingProjectile(int projID) { incomingProjectileIDs.push_back(projID); }
@@ -67,9 +74,16 @@ public:
 	virtual bool CanFire(bool ignoreAngleGood, bool ignoreTargetType, bool ignoreRequestedDir) const;
 
 	bool TryTarget(const SWeaponTarget& trg) const;
-	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire);
-	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire);
-	bool TryTargetHeading(short heading, const SWeaponTarget& trg);
+	/**
+	 * test the target as if the owner had turned to face it
+	 *
+	 * <extraAvoidFlags> are added to the weapon's avoidFlags for this test only; the
+	 * CommandAI passes Collision::NOMOBILEFRIENDLIES to find out whether a failing
+	 * line of fire is blocked by something that will not move out of the way
+	 */
+	bool TryTargetRotate(const CUnit* unit, bool userTarget, bool manualFire, unsigned int extraAvoidFlags = 0);
+	bool TryTargetRotate(float3 tgtPos, bool userTarget, bool manualFire, unsigned int extraAvoidFlags = 0);
+	bool TryTargetHeading(short heading, const SWeaponTarget& trg, unsigned int extraAvoidFlags = 0);
 
 	bool WantOwnerRotation() const { return onlyForward; }
 public:
@@ -109,6 +123,8 @@ public:
 protected:
 	virtual void FireImpl(const bool scriptCall) {}
 	virtual void UpdateWantedDir();
+	/// direction the aiming script would be asked for to hit <targetVec> (relative to the aim position)
+	virtual float3 GetWantedDirFor(const float3& targetVec) const;
 	virtual float GetPredictedImpactTime(const float3& p) const; //< how long time we predict it take for a projectile to reach target
 
 	ProjectileParams GetProjectileParams();
@@ -179,6 +195,7 @@ public:
 	bool doTargetGroundPos;                 // (used for bombers) target the ground pos under the unit instead of the center aimPos
 	bool noAutoTarget;
 	bool alreadyWarnedAboutMissingPieces;
+	bool hasAimFromEstimate;                // UnitDefWeapon::aimFromEstimate is set for this weapon
 
 	unsigned int badTargetCategory;         // targets in this category get a lot lower targeting priority
 	unsigned int onlyTargetCategory;        // only targets in this category can be targeted (default 0xffffffff)
@@ -207,6 +224,7 @@ public:
 	float3 mainDir;                         // main aiming-direction of weapon
 	float3 wantedDir;                       // norm(currentTargetPos - weaponMuzzlePos)
 	float3 lastRequestedDir;                // last angle we called the script with
+	float launchHeading;                    // unit-frame heading of wantedDir at the last AimWeapon callin (radians, script convention)
 
 	float3 salvoError;                      // error vector for the whole salvo
 	float3 errorVector;
@@ -228,5 +246,3 @@ protected:
 	// (eg. nuke toward a repulsor, or missile toward a shield)
 	std::vector<int> incomingProjectileIDs;
 };
-
-#endif /* WEAPON_H */

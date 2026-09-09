@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _CANNON_H
-#define _CANNON_H
+#pragma once
 
 #include "Weapon.h"
 #include "System/type2.h"
@@ -45,11 +44,8 @@ private:
 	/// tells where to point the gun to hit the point at pos+diff
 	float3 GetWantedDir(const float3& diff);
 	float3 CalcWantedDir(const float3& diff) const;
-
-	const float3& GetAimFromPos(bool useMuzzle = false) const override { return weaponMuzzlePos; }
+	float3 GetWantedDirFor(const float3& targetVec) const override final { return CalcWantedDir(targetVec); }
 
 	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const override final;
 	void FireImpl(const bool scriptCall) override final;
 };
-
-#endif // _CANNON_H

@@ -6,6 +6,7 @@
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/SelectedUnitsHandler.h"
+#include "Game/TraceRay.h"
 #include "Map/Ground.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
@@ -793,8 +794,6 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 		}
 
 		// move sideways (i.e. strafe) to get a shot
-		// note that the close-enough assumption is flawed:
-		// unit may be aiming or otherwise unable to shoot
 		if (owner->unitDef->strafeToAttack) {
 			const int dirSign = Sign(int(moveDir ^= (owner->moveType->progressState == AMoveType::Failed)));
 
@@ -808,9 +807,28 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 			goalDiff += orderTarget->pos;
 
 			SetGoal(goalDiff, owner->pos);
+			return;
 		}
 
-		return;
+		// being in range does not mean we can shoot: no weapon has a firing
+		// solution from here, so decide whether to wait or to keep closing in
+		//
+		// wait if only an allied unit is in the way (it may move out of it, whereas
+		// walking past it would in turn block its shot and make the whole group
+		// creep forward), if we are close enough already or the approach failed
+		//
+		// waiting means stopping: the goal set when the order was given is the
+		// target itself and would otherwise carry us right up to it
+		if (owner->unitDef->stopToAttack || !CanCloseInOnBlockedTarget(targetMidPosDist2D) || !HasStaticallyBlockedLineOfFire(c, orderTgtInfo, targetHeading)) {
+			if (owner->moveType->progressState != AMoveType::Failed)
+				StopMove();
+
+			owner->moveType->KeepPointingTo(orderTarget->midPos, minPointingDist, true);
+			return;
+		}
+
+		// terrain, a feature or an allied structure blocks the shot: close in
+		// on the target like a unit that is still out of range would
 	}
 
 	// not a temporary order or not on hold-position; close in on target more
@@ -879,8 +897,60 @@ void CMobileCAI::ExecuteGroundAttack(Command& c)
 	if (attackVec.SqLength2D() >= Square(owner->maxRange * 0.9f))
 		return;
 
+	// in range, but no weapon has a firing solution from here
 	owner->AttackGround(attackTgtInfo.groundPos, attackTgtInfo.isUserTarget, false);
-	StopMoveAndKeepPointing(attackPos, owner->maxRange * 0.9f, true);
+
+	if (!owner->unitDef->stopToAttack && CanCloseInOnBlockedTarget(attackVec.Length2D()) && HasStaticallyBlockedLineOfFire(c, attackTgtInfo, attackHeading)) {
+		// terrain, a feature or an allied structure blocks the shot: keep
+		// closing in on the point until some weapon can fire at it
+		SetGoal(attackPos, owner->pos);
+		lastCloseInTry = gs->frameNum;
+		return;
+	}
+
+	// wait here (see ExecuteObjectAttack); a failed approach stays failed so
+	// that it is not retried every update
+	if (owner->moveType->progressState != AMoveType::Failed)
+		StopMove();
+
+	owner->moveType->KeepPointingTo(attackPos, std::max(owner->maxRange * 0.9f, 10.0f), true);
+}
+
+bool CMobileCAI::CanCloseInOnBlockedTarget(float targetDist2D) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// gunships get their shot by pitching the nose, not by moving closer
+	if (owner->unitDef->IsHoveringAirUnit())
+		return false;
+
+	// the last approach ended against an obstacle (e.g. the very rock that
+	// blocks the shot); retry only occasionally instead of pushing into it
+	if (owner->moveType->progressState == AMoveType::Failed && gs->frameNum < (lastCloseInTry + BLOCKED_CLOSE_IN_FAILED_RETRY_TICKS))
+		return false;
+
+	// keep some distance so that e.g. artillery does not walk up to a target
+	// whose line of fire is blocked by a wall right around it
+	return (targetDist2D > (owner->maxRange * BLOCKED_CLOSE_IN_MIN_RANGE_FACTOR));
+}
+
+bool CMobileCAI::HasStaticallyBlockedLineOfFire(const Command& c, const SWeaponTarget& trg, short targetHeading) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	for (CWeapon* w: owner->weapons) {
+		if (c.GetID() == CMD_MANUALFIRE && !w->weaponDef->manualfire)
+			continue;
+
+		// same tests as the callers use to decide whether to stop, but with
+		// allied units that can move out of the way taken out of the trace
+		const bool freeLineOfFire = (trg.type == Target_Unit) ?
+			w->TryTargetRotate(trg.unit, trg.isUserTarget, trg.isManualFire, Collision::NOMOBILEFRIENDLIES):
+			w->TryTargetHeading(targetHeading, trg, Collision::NOMOBILEFRIENDLIES);
+
+		if (freeLineOfFire)
+			return false;
+	}
+
+	return true;
 }
 
 void CMobileCAI::ExecuteAttack(Command& c)

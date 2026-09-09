@@ -140,6 +140,9 @@ callIn notes:
   use 'local height = Spring.GetUnitHeight(unitID)' to get the height.
 - TransportDrop takes x,y,z instead of PACKXZ(x,z)
 - AimWeapon for a shield (plasma repulser) takes no arguments instead of 0,0
+- AimWeapon(weaponNum, heading, pitch, launchHeading): launchHeading is the
+  unit-frame heading of the full shot direction (radians), the exact turret yaw
+  for a steep shot on tilted ground; heading is the azimuth, use it for arc checks
 - Shot takes no arguments instead of 0
 - new callins MoveFinished and TurnFinished, see below
 
@@ -614,6 +617,25 @@ void CLuaUnitScript::Call(int fn, float arg1, float arg2, float arg3)
 }
 
 
+void CLuaUnitScript::Call(int fn, float arg1, float arg2, float arg3, float arg4)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (!HasFunction(fn))
+		return;
+
+	LUA_CALL_IN_CHECK(L);
+	lua_checkstack(L, 5);
+
+	PushFunction(fn);
+	lua_pushnumber(L, arg1);
+	lua_pushnumber(L, arg2);
+	lua_pushnumber(L, arg3);
+	lua_pushnumber(L, arg4);
+
+	RunCallIn(fn, 4, 0);
+}
+
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -854,10 +876,10 @@ int CLuaUnitScript::QueryWeapon(int weaponNum)
 }
 
 
-void CLuaUnitScript::AimWeapon(int weaponNum, float heading, float pitch)
+void CLuaUnitScript::AimWeapon(int weaponNum, float heading, float pitch, float launchHeading)
 {
 	ZoneScoped;
-	Call(LUAFN_AimWeapon, weaponNum + LUA_WEAPON_BASE_INDEX, heading, pitch);
+	Call(LUAFN_AimWeapon, weaponNum + LUA_WEAPON_BASE_INDEX, heading, pitch, launchHeading);
 }
 
 

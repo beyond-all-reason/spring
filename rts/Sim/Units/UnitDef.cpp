@@ -24,6 +24,20 @@
 
 /******************************************************************************/
 
+// {pivotX, pivotY, pivotZ, lateral, forward, barrelForward, barrelUp}
+static bool ParseAimFromEstimate(const LuaTable& table, AimFromEstimate& estimate)
+{
+	if (table.GetLength() < 7)
+		return false;
+
+	estimate.pivot = float3(table.GetFloat(1, 0.0f), table.GetFloat(2, 0.0f), table.GetFloat(3, 0.0f));
+	estimate.lateral = table.GetFloat(4, 0.0f);
+	estimate.forward = table.GetFloat(5, 0.0f);
+	estimate.barrelForward = table.GetFloat(6, 0.0f);
+	estimate.barrelUp = table.GetFloat(7, 0.0f);
+	return true;
+}
+
 UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef) {
 	*this = UnitDefWeapon();
 	this->def = weaponDef;
@@ -67,6 +81,17 @@ UnitDefWeapon::UnitDefWeapon(const WeaponDef* weaponDef, const LuaTable& weaponT
 	// 1 = exact solution for non-parabolic shots and 1 accuracy iteration for parabolic shots
 	// 2+ = extra iterations for parabolic shots. Iterations terminate early once 1-frame accuracy is achieved. 
 	accurateLeading = weaponTable.GetInt("accurateLeading", accurateLeading);
+
+	// Where the muzzle will be once the script has aimed, for line-of-fire tests that run
+	// before aiming. Absent = keep testing from the AimFromWeapon piece.
+	const LuaTable& estimateTable = weaponTable.SubTable("aimFromEstimate");
+
+	if (estimateTable.IsValid()) {
+		hasAimFromEstimate = ParseAimFromEstimate(estimateTable, aimFromEstimate);
+
+		if (!hasAimFromEstimate)
+			LOG_L(L_WARNING, "[%s] aimFromEstimate for weapon \"%s\" needs 7 numbers {pivotX, pivotY, pivotZ, lateral, forward, barrelForward, barrelUp}", __func__, weaponDef->name.c_str());
+	}
 }
 
 

@@ -447,9 +447,11 @@ int CCobInstance::QueryWeapon(int weaponNum)
 }
 
 
-void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch)
+void CCobInstance::AimWeapon(int weaponNum, float heading, float pitch, float launchHeading)
 {
 	ZoneScoped;
+	// COB arguments are positional, an extra one would shift the function's
+	// locals; scripts read launchHeading via get WEAPON_LAUNCH_HEADING(weaponNum)
 	std::array<int, 1 + MAX_COB_ARGS> callinArgs;
 
 	callinArgs[0] = 2;

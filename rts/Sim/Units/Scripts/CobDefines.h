@@ -116,4 +116,5 @@ static constexpr int KTAN                    = 137; // get (kiloTangent : 1024*t
 static constexpr int SQRT                    = 138; // get (square root)
 static constexpr int PIECE_HEADING			 = 139; // get
 static constexpr int PIECE_PITCH			 = 140; // get
+static constexpr int WEAPON_LAUNCH_HEADING   = 141; // get WEAPON_LAUNCH_HEADING(weaponNum): unit-frame heading of the full shot direction at the last AimWeapon
 // NOTE: shared variables use codes [1024 - 5119]

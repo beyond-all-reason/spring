@@ -13,6 +13,7 @@ class CUnit;
 class CFeature;
 class CWeapon;
 struct Command;
+struct SWeaponTarget;
 
 class CMobileCAI : public CCommandAI
 {
@@ -108,6 +109,11 @@ protected:
 	static constexpr int MAX_CLOSE_IN_RETRY_TICKS = 30;
 	static constexpr int BUGGER_OFF_TTL = 200;
 
+	/// a unit inside range whose line of fire is blocked stops closing in below this fraction of maxRange
+	static constexpr float BLOCKED_CLOSE_IN_MIN_RANGE_FACTOR = 0.2f;
+	/// and retries an approach that failed (unreachable goal) only this often
+	static constexpr int BLOCKED_CLOSE_IN_FAILED_RETRY_TICKS = 10 * MAX_CLOSE_IN_RETRY_TICKS;
+
 	static constexpr float MAX_USERGOAL_TOLERANCE_DIST = 100.0f;
 	static constexpr float AIRTRANSPORT_DOCKING_RADIUS = 16.0f;
 	static constexpr float AIRTRANSPORT_DOCKING_ANGLE = 50.0f;
@@ -127,6 +133,19 @@ protected:
 private:
 	void ExecuteObjectAttack(Command& c);
 	void ExecuteGroundAttack(Command& c);
+
+	/**
+	 * whether a unit that is inside range of its target but has no firing
+	 * solution may keep closing in instead of stopping and waiting
+	 */
+	bool CanCloseInOnBlockedTarget(float targetDist2D) const;
+	/**
+	 * true iff every weapon eligible for <c> still has no firing solution when
+	 * allied mobile units are ignored, i.e. the line of fire is blocked by
+	 * terrain, features or allied structures rather than by a friend that may
+	 * move out of the way
+	 */
+	bool HasStaticallyBlockedLineOfFire(const Command& c, const SWeaponTarget& trg, short targetHeading) const;
 
 	bool MobileAutoGenerateTarget();
 	bool GenerateAttackCmd();

@@ -596,15 +596,15 @@ local function Wrap_AimWeapon(unitID, callins)
 	--   therefore on the Lua side all weapon indices are ASSUMED to be
 	--   1-based and if LuaConfig::LUA_WEAPON_BASE_INDEX is changed to 0
 	--   no Lua code should need to be updated
-	local function AimWeaponThread(weaponNum, heading, pitch)
-		local bAimReady = AimWeapon(weaponNum, heading, pitch) or false
+	local function AimWeaponThread(weaponNum, heading, pitch, launchHeading)
+		local bAimReady = AimWeapon(weaponNum, heading, pitch, launchHeading) or false
 		local fAimReady = (bAimReady and 1.0) or 0.0
 
 		return sp_SetUnitWeaponState(unitID, weaponNum, "aimReady", fAimReady)
 	end
 
-	callins["AimWeapon"] = function(weaponNum, heading, pitch)
-		return StartThread(AimWeaponThread, weaponNum, heading, pitch)
+	callins["AimWeapon"] = function(weaponNum, heading, pitch, launchHeading)
+		return StartThread(AimWeaponThread, weaponNum, heading, pitch, launchHeading)
 	end
 end
 

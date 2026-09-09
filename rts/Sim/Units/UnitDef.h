@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef UNITDEF_H
-#define UNITDEF_H
+#pragma once
 
 #include <vector>
 
@@ -9,6 +8,7 @@
 #include "Sim/Misc/GuiSoundSet.h"
 #include "Sim/Objects/SolidObject.h"
 #include "Sim/Objects/SolidObjectDef.h"
+#include "Sim/Weapons/AimFromEstimate.h"
 #include "System/float3.h"
 #include "System/UnorderedMap.hpp"
 
@@ -47,6 +47,11 @@ struct UnitDefWeapon {
 	unsigned int accurateLeading = 0;	///< Accurately lead moving targets. The number controls how many calculation iterations are done. 0 = undershoot approaching or retreating targets (default), 1 = sufficient for exact solution for non-parabolic shots and improves parabolic shots, 2+ = extra iterations for parabolic shots
 	unsigned int burstControlWhenOutOfArc = 0; ///< Determines how to handle burst fire, when target is out of arc. 0 = no restrictions (default), 1 = don't fire, 2 = fire in current direction of weapon 
 	float weaponAimAdjustPriority = 1.f;		///< relative importance of picking enemy targets that are in front
+
+	/// predicted post-aim muzzle position used for line-of-fire tests before the weapon has aimed;
+	/// without it the AimFromWeapon piece is tested from as before (see AimFromEstimate.h)
+	AimFromEstimate aimFromEstimate;
+	bool hasAimFromEstimate = false;
 
 
 	static constexpr unsigned int BURST_CONTROL_OUT_OF_ARC_OFF = 0;
@@ -405,5 +410,3 @@ private:
 	SResourcePack realUpkeep;
 	float realBuildTime;
 };
-
-#endif /* UNITDEF_H */
