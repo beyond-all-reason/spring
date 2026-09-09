@@ -25,6 +25,7 @@
 #include "System/Matrix44f.h"
 #include "System/SpringMath.h"
 #include "System/StringUtil.h"
+#include "System/TimeProfiler.h"
 #include "System/Log/ILog.h"
 
 #include <fmt/format.h>
@@ -33,6 +34,7 @@ CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemode
 CONFIG(int, ShadowMapSize).defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE).minimumValue(32).description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
 CONFIG(int, ShadowProjectionMode).defaultValue(CShadowHandler::SHADOWPROMODE_CAM_CENTER);
 CONFIG(bool, ShadowColorMode).defaultValue(true).description("Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)");
+CONFIG(int, ProjectileShadowInterval).defaultValue(1).minimumValue(1).maximumValue(8).description("Redraw the transparent (particle) shadow layer only every Nth draw frame and reuse the previous one in between; the opaque shadow map is still updated every frame. 1 = every frame.");
 
 CShadowHandler shadowHandler;
 
@@ -70,10 +72,12 @@ void CShadowHandler::Init()
 	shadowProMode = configHandler->GetInt("ShadowProjectionMode");
 	//shadowProMode = SHADOWPROMODE_CAM_CENTER;
 	shadowColorMode = configHandler->GetInt("ShadowColorMode");
+	transparentInterval = configHandler->GetInt("ProjectileShadowInterval");
 	shadowGenBits = SHADOWGEN_BIT_NONE;
 
 	shadowsLoaded = false;
 	inShadowPass = false;
+	shadowColorDirty = true;
 
 	shadowDepthTexture = 0;
 	shadowColorTexture = 0;
@@ -111,6 +115,13 @@ void CShadowHandler::Init()
 	if (tmpFirstInit)
 		shadowsSupported = true;
 
+	if (GLAD_GL_ARB_timer_query) {
+		glGenQueries(NUM_GPU_TIME_QUERIES, gpuTimeQueries.data());
+		gpuTimeQueryIssued.fill(false);
+		gpuTimeQueryIdx = 0;
+		gpuTimeQueryActive = false;
+	}
+
 	LoadProjectionMatrix(CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW));
 
 	if (shadowConfig > 0)
@@ -119,6 +130,11 @@ void CShadowHandler::Init()
 
 void CShadowHandler::Kill()
 {
+	if (gpuTimeQueries[0] != 0) {
+		glDeleteQueries(NUM_GPU_TIME_QUERIES, gpuTimeQueries.data());
+		gpuTimeQueries.fill(0);
+	}
+
 	FreeFBOAndTextures();
 	shaderHandler->ReleaseProgramObjects("[ShadowHandler]");
 	shadowGenProgs.fill(nullptr);
@@ -272,6 +288,7 @@ void CShadowHandler::LoadShadowGenShaders()
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenVertMapProg.glsl", versionDefs[0] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_VERTEX_SHADER));
 		po->AttachShaderObject(sh->CreateShaderObject("GLSL/ShadowGenFragProg.glsl"   , versionDefs[1] + shadowGenProgDefines[SHADOWGEN_PROGRAM_MAP] + extraDefs, GL_FRAGMENT_SHADER));
 		po->BindAttribLocation("vertexPos", 0);
+		po->BindAttribLocation("patchSquare", SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB);
 		po->Link();
 		po->Enable();
 		po->SetUniform("alphaMaskTex", 0);
@@ -281,7 +298,6 @@ void CShadowHandler::LoadShadowGenShaders()
 			static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
 					   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
 		);
-		po->SetUniform("texSquare", 0, 0);
 		po->Disable();
 		po->Validate();
 
@@ -297,7 +313,6 @@ void CShadowHandler::LoadShadowGenShaders()
 				static_cast<float>(mapDims.mapx * SQUARE_SIZE), static_cast<float>(mapDims.mapy * SQUARE_SIZE),
 						   1.0f / (mapDims.mapx * SQUARE_SIZE),            1.0f / (mapDims.mapy * SQUARE_SIZE)
 			);
-			po->SetUniform("texSquare", 0, 0);
 			po->Disable();
 			po->Validate();
 		}
@@ -433,6 +448,44 @@ bool CShadowHandler::InitFBOAndTextures()
 	return status;
 }
 
+void CShadowHandler::BeginGpuTimer()
+{
+	if (gpuTimeQueries[0] == 0 || !globalRendering->drawDebug)
+		return;
+
+	static TimerNameRegistrar tnr("Draw::World::CreateShadows::GPU");
+	constexpr auto nameHash = hashString("Draw::World::CreateShadows::GPU");
+
+	// the slot being reused was issued NUM_GPU_TIME_QUERIES frames ago;
+	// harvest it if the GPU is done, otherwise the sample is just dropped
+	const uint32_t query = gpuTimeQueries[gpuTimeQueryIdx];
+
+	if (gpuTimeQueryIssued[gpuTimeQueryIdx]) {
+		GLuint available = 0;
+		glGetQueryObjectuiv(query, GL_QUERY_RESULT_AVAILABLE, &available);
+
+		if (available != 0) {
+			GLuint64 elapsedNs = 0;
+			glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsedNs);
+			CTimeProfiler::GetInstance().AddTime(nameHash, spring_gettime(), spring_time::fromNanoSecs(elapsedNs));
+		}
+	}
+
+	glBeginQuery(GL_TIME_ELAPSED, query);
+	gpuTimeQueryIssued[gpuTimeQueryIdx] = true;
+	gpuTimeQueryActive = true;
+}
+
+void CShadowHandler::EndGpuTimer()
+{
+	if (!gpuTimeQueryActive)
+		return;
+
+	glEndQuery(GL_TIME_ELAPSED);
+	gpuTimeQueryActive = false;
+	gpuTimeQueryIdx = (gpuTimeQueryIdx + 1) % NUM_GPU_TIME_QUERIES;
+}
+
 void CShadowHandler::DrawShadowPasses()
 {
 	inShadowPass = true;
@@ -441,11 +494,21 @@ void CShadowHandler::DrawShadowPasses()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	eventHandler.DrawWorldShadow();
+	if (eventHandler.HasDrawWorldShadowClients()) {
+		eventHandler.DrawWorldShadow();
 
-	EnableColorOutput(true);
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+		// whatever the callin wrote to the color buffer is discarded, as it
+		// always was (the buffer only holds the transparent-shadow layer)
+		if (updateTransparent) {
+			EnableColorOutput(true);
+			glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+			glClear(GL_COLOR_BUFFER_BIT);
+			shadowColorDirty = false;
+		}
+	}
+
+	// depth-only until the transparent pass; the depth buffer (and, when
+	// needed, the color buffer) was cleared in CreateShadows already
 	EnableColorOutput(false);
 
 	if ((shadowGenBits & SHADOWGEN_BIT_TREE) != 0) {
@@ -480,9 +543,13 @@ void CShadowHandler::DrawShadowPasses()
 	}
 
 	//transparent pass, comes last
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
-		projectileDrawer->DrawShadowTransparent();
-		eventHandler.DrawShadowPassTransparent();
+	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0 && updateTransparent) {
+		shadowColorDirty |= projectileDrawer->DrawShadowTransparent();
+
+		if (eventHandler.HasDrawShadowPassTransparentClients()) {
+			eventHandler.DrawShadowPassTransparent();
+			shadowColorDirty = true;
+		}
 	}
 
 	glPopAttrib();
@@ -631,6 +698,7 @@ void CShadowHandler::CreateShadows()
 	//   context switches (which are one of the slowest OpenGL operations!)
 	//   together with VP restoration
 	smOpaqFBO.Bind();
+	BeginGpuTimer();
 
 	glDisable(GL_BLEND);
 	glDisable(GL_LIGHTING);
@@ -641,7 +709,28 @@ void CShadowHandler::CreateShadows()
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
+
+	{
+		// single combined clear; the color buffer only holds transparent
+		// shadows and stays all-white unless something drew into it last
+		// pass, so skip touching it (and its bandwidth) when it is clean
+		// (with DrawWorldShadow listeners it is cleared after that callin
+		// instead, see DrawShadowPasses)
+		GLbitfield clearBits = GL_DEPTH_BUFFER_BIT;
+
+		// on frames that skip the transparent pass the previous layer is kept
+		updateTransparent = (transparentInterval <= 1) || ((globalRendering->drawFrame % transparentInterval) == 0);
+
+		if (shadowColorDirty && updateTransparent && !eventHandler.HasDrawWorldShadowClients()) {
+			EnableColorOutput(true);
+			glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+			clearBits |= GL_COLOR_BUFFER_BIT;
+			shadowColorDirty = false;
+		}
+
+		glClear(clearBits);
+		EnableColorOutput(false);
+	}
 
 
 	//flickers without it. Why?
@@ -653,13 +742,17 @@ void CShadowHandler::CreateShadows()
 		DrawShadowPasses();
 
 	CCameraHandler::SetActiveCamera(prvCam->GetCamType());
-	prvCam->Update();
+	// only the GL matrices need restoring; the camera itself was fully
+	// updated earlier this frame (Game::UpdateUnsynced) and is unchanged
+	prvCam->Update({false, false, false, false, false});
 
 
 	glShadeModel(GL_SMOOTH);
 
 	//revert to default, EnableColorOutput(true) is not enough
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	EndGpuTimer();
 }
 
 void CShadowHandler::EnableColorOutput(bool enable) const

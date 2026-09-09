@@ -4,6 +4,7 @@
 #define SHADOW_HANDLER_H
 
 #include <array>
+#include <cstdint>
 #include <limits>
 
 #include "Rendering/GL/FBO.h"
@@ -66,6 +67,12 @@ public:
 		SHADOWMAT_TYPE_DRAWING = 1,
 	};
 
+	// generic vertex attribute through which SHADOWGEN_PROGRAM_MAP receives
+	// the big-square coordinates of the terrain patch being drawn (mesh
+	// drawers either set it as a constant per patch or feed it from an
+	// instanced array); 0 and 1 are taken by the patch/border vertex data
+	static constexpr uint32_t SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB = 2;
+
 	Shader::IProgramObject* GetShadowGenProg(ShadowGenProgram p) {
 		return shadowGenProgs[p];
 	}
@@ -98,6 +105,8 @@ private:
 	bool InitFBOAndTextures();
 
 	void DrawShadowPasses();
+	void BeginGpuTimer();
+	void EndGpuTimer();
 	void LoadProjectionMatrix(const CCamera* shadowCam);
 	void LoadShadowGenShaders();
 
@@ -122,6 +131,15 @@ private:
 	bool inShadowPass = false;
 	bool debugFrustum = false;
 
+	// whether anything wrote to the (transparent-shadow) color buffer during
+	// the last pass; if not it is still all-white and need not be cleared
+	bool shadowColorDirty = true;
+
+	// transparent (particle) shadows are redrawn every Nth frame and kept
+	// in the color buffer in between (ProjectileShadowInterval)
+	int transparentInterval = 1;
+	bool updateTransparent = true;
+
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;
 
@@ -140,6 +158,15 @@ private:
 
 	uint32_t shadowDepthTexture;
 	uint32_t shadowColorTexture;
+
+	// GL_TIME_ELAPSED queries around the whole shadow pass, sampled only
+	// while the profiler is active (/debug) and read back a few frames
+	// later so they never stall; shows up as Draw::World::CreateShadows::GPU
+	static constexpr uint32_t NUM_GPU_TIME_QUERIES = 4;
+	std::array<uint32_t, NUM_GPU_TIME_QUERIES> gpuTimeQueries = {};
+	std::array<bool, NUM_GPU_TIME_QUERIES> gpuTimeQueryIssued = {};
+	uint32_t gpuTimeQueryIdx = 0;
+	bool gpuTimeQueryActive = false;
 
 	FBO smOpaqFBO;
 

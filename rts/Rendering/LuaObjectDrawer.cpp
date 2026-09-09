@@ -629,6 +629,10 @@ bool LuaObjectDrawer::AddOpaqueMaterialObject(CSolidObject* obj, LuaObjType objT
 {
 	LuaObjectMaterialData* matData = obj->GetLuaMaterialData();
 
+	// the common case (no Lua material on this object) needs no LOD distance
+	if (!matData->Enabled())
+		return false;
+
 	const LuaMatType matType = GetDrawPassOpaqueMat();
 	const float      lodDist = camera->ProjectedDistance(obj->pos);
 
@@ -639,6 +643,10 @@ bool LuaObjectDrawer::AddAlphaMaterialObject(CSolidObject* obj, LuaObjType objTy
 {
 	LuaObjectMaterialData* matData = obj->GetLuaMaterialData();
 
+	// the common case (no Lua material on this object) needs no LOD distance
+	if (!matData->Enabled())
+		return false;
+
 	const LuaMatType matType = GetDrawPassAlphaMat();
 	const float      lodDist = camera->ProjectedDistance(obj->pos);
 
@@ -648,6 +656,10 @@ bool LuaObjectDrawer::AddAlphaMaterialObject(CSolidObject* obj, LuaObjType objTy
 bool LuaObjectDrawer::AddShadowMaterialObject(CSolidObject* obj, LuaObjType objType)
 {
 	LuaObjectMaterialData* matData = obj->GetLuaMaterialData();
+
+	// the common case (no Lua material on this object) needs no LOD distance
+	if (!matData->Enabled())
+		return false;
 
 	const LuaMatType matType = GetDrawPassShadowMat();
 	const float      lodDist = camera->ProjectedDistance(obj->pos);

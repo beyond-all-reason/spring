@@ -109,8 +109,15 @@ public:
 	Patch& operator=(const Patch&) = delete;
 	Patch& operator=(Patch&&) = default;
 
-	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ);
+	// sharedVertVBO holds the patch-local vertex grid (identical for every
+	// patch, see GetLocalVertices) and is owned by the mesh drawer
+	void Init(CSMFGroundDrawer* drawer, int worldX, int worldZ, const VBO* sharedVertVBO);
 	void Reset();
+
+	// (PATCH_SIZE + 1)^2 grid of patch-local xz-positions with y = 0; the
+	// heights come from the heightmap texture in the shader, so this grid
+	// serves as the vertex buffer of all patches
+	static const std::vector<float3>& GetLocalVertices();
 
 	TriTreeNode* GetBaseLeft()  { return &baseLeft;  }
 	TriTreeNode* GetBaseRight() { return &baseRight; }
@@ -140,7 +147,6 @@ public:
 
 	static void UpdateVisibility(CCamera* cam, std::vector<Patch>& patches, const int numPatchesX);
 private:
-	void UploadVertices();
 	void UploadIndices();
 	void UploadBorderVertices();
 
@@ -201,7 +207,9 @@ private:
 
 	std::array<float, 1 << VARIANCE_DEPTH> varianceTrees[2];
 
-	std::vector<float3> vertices;
+	// see GetLocalVertices
+	inline static std::vector<float3> localVertices;
+
 	std::vector<uint32_t> indices;
 	std::vector<VA_TYPE_C> borderVertices;
 
@@ -211,7 +219,9 @@ private:
 	//   normal-mesh patches can be viewed by *multiple* types!
 	std::array<unsigned int, CCamera::CAMTYPE_VISCUL> lastDrawFrames = {};
 
-	VBO vertVBO;
+	// shared by all patches, owned by CRoamMeshDrawer
+	const VBO* vertVBO = nullptr;
+
 	VBO indxVBO;
 	VBO borderVBO;
 

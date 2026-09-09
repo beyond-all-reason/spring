@@ -62,8 +62,45 @@ private:
 	void Reset(bool shadowPass);
 	void Tessellate(std::vector<Patch>& patches, const CCamera* cam, int viewRadius, bool shadowPass);
 
+	// batched shadow pass (see shadowIndxVBO)
+	void InitShadowVAO();
+	bool AllocShadowIndexRegion(int patchIdx, uint32_t numIndices);
+	void RepackShadowIndices(const std::vector<Patch>& patches);
+	int UploadShadowPatches(const CCamera* cam, std::vector<Patch>& patches);
+	void DrawShadowMeshBatched(const CCamera* cam);
+
 private:
+	struct ShadowIndexRegion {
+		uint32_t offset = 0;   // in indices
+		uint32_t capacity = 0; // in indices
+	};
+
 	CSMFGroundDrawer* smfGroundDrawer;
+
+	// the patch-local vertex grid is the same for every patch; one buffer serves all of them
+	VBO patchVertVBO;
+
+	// Shadow-pass patches are all drawn with a single glMultiDrawElementsIndirect:
+	// their index-lists live in regions of one shared element buffer (regions are
+	// (re)allocated as tessellation changes, with the whole buffer repacked when
+	// the tail runs out or too much of it is garbage) and each draw's baseInstance
+	// selects the patch's square from shadowSquareVBO via an instanced attribute.
+	// Falls back to one draw per patch if the required GL features are missing.
+	bool batchedShadowPass = false;
+
+	// GroundDetail multiplier for the shadow mesh (ROAMShadowMeshDetail)
+	float shadowDetailScale = 1.0f;
+
+	VBO shadowIndxVBO;
+	VBO shadowSquareVBO;
+	VAO shadowVAO;
+
+	std::vector<ShadowIndexRegion> shadowIndexRegions;
+	std::vector<SDrawElementsIndirectCommand> shadowDrawCmds;
+
+	uint32_t shadowIndxUsed = 0;     // regions are packed in [0, used)
+	uint32_t shadowIndxCapacity = 0; // size of shadowIndxVBO, in indices
+	uint32_t shadowIndxGarbage = 0;  // abandoned region space inside [0, used)
 
 	int numPatchesX = 0;
 	int numPatchesY = 0;

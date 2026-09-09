@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Rendering/Models/3DModelDefs.hpp"
+#include "Sim/Objects/WorldObject.h" // DrawFlags
 #include "System/ContainerUtil.h"
 #include "System/ForceInline.hpp"
 
@@ -25,6 +26,12 @@ private:
 	std::array< int, MAX_MODEL_OBJECTS > keys;
 	std::vector< std::vector<TObject*> > bins;
 
+	// per bin, the subset of objects with a non-zero drawFlag; rebuilt once per
+	// frame by UpdateDrawBins() (after the draw flags were updated) so that the
+	// draw passes only visit objects that can actually be drawn this frame
+	// instead of re-scanning every object in every pass
+	std::vector< std::vector<TObject*> > drawBins;
+
 	size_t numObjs = 0;
 	size_t numBins = 0;
 
@@ -40,6 +47,7 @@ public:
 		, objectSelector{std::move(objectSelector_)}
 	{
 		bins.reserve(32);
+		drawBins.reserve(32);
 		Clear();
 	}
 
@@ -56,6 +64,9 @@ public:
 		for (auto& bin : bins) {
 			bin.clear();
 		}
+		for (auto& bin : drawBins) {
+			bin.clear();
+		}
 
 		numObjs = 0;
 		numBins = 0;
@@ -69,8 +80,10 @@ public:
 		if (ki == ke)
 			keys[numBins++] = CalcObjectBinIdx(o);
 
-		if (bins.size() < numBins)
+		if (bins.size() < numBins) {
 			bins.emplace_back();
+			drawBins.emplace_back();
+		}
 
 		auto& bin = bins[ki - kb];
 
@@ -100,12 +113,33 @@ public:
 		numObjs -= spring::VectorErase(bin, const_cast<TObject*>(o));
 		numBins -= (bin.empty());
 
+		// the object may have been drawable this frame
+		spring::VectorErase(drawBins[ki - kb], const_cast<TObject*>(o));
+
 		if (!bin.empty())
 			return;
 
 		// keep empty bin, just remove it from the key-set
 		std::swap(bins[ki - kb], bins[ke - 1 - kb]);
+		std::swap(drawBins[ki - kb], drawBins[ke - 1 - kb]);
 		std::swap(*ki, *(ke - 1));
+	}
+
+	// call once per frame after every object's drawFlag was updated
+	void UpdateDrawBins() {
+		for (size_t i = 0; i < numBins; i++) {
+			const auto& bin = bins[i];
+			auto& drawBin = drawBins[i];
+
+			drawBin.clear();
+
+			for (TObject* o : bin) {
+				if (o->drawFlag == DrawFlags::SO_NODRAW_FLAG)
+					continue;
+
+				drawBin.push_back(o);
+			}
+		}
 	}
 
 	bool empty() const { return numObjs == 0; }
@@ -114,4 +148,6 @@ public:
 	unsigned int GetObjectBinKey(unsigned int idx) const { return keys[idx]; }
 
 	const ObjectBin& GetObjectBin(unsigned int idx) const { return bins[idx]; }
+	// objects of bin idx that have a non-zero drawFlag (see UpdateDrawBins)
+	const ObjectBin& GetDrawObjectBin(unsigned int idx) const { return drawBins[idx]; }
 };

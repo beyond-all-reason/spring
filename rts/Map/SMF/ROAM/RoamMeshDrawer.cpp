@@ -19,6 +19,7 @@
 	#include "Game/UI/MiniMap.h"
 #endif
 
+#include <algorithm>
 #include <cmath>
 
 #include "System/Misc/TracyDefs.h"
@@ -40,6 +41,21 @@ static constexpr int RETESSELLATE_TO_FREE_INVISIBLE_PATCHES = 50;
 static constexpr float MAGIC_RETESSELATE_CAMERA_RATIO = 1.5f;
 static constexpr float MAGIC_TOTAL_CAMDIST_RETESSELATE = 2.5f;
 static constexpr float CAMERA_CHANGE_TRESHOLD = 16.0f;
+
+// shared shadow-pass index buffer: region sizing (in indices)
+static constexpr uint32_t SHADOW_REGION_MIN_CAPACITY = 3 * 1024;
+static constexpr uint32_t SHADOW_REGION_MAX_CAPACITY = PATCH_SIZE * PATCH_SIZE * 2 * 3; // fully split patch
+static constexpr uint32_t SHADOW_BUFFER_MIN_CAPACITY = 64 * 1024;
+
+CONFIG(bool, ROAMBatchedShadowPass)
+	.defaultValue(true)
+	.description("Draw the whole ROAM shadow-pass terrain mesh with a single multi-draw call instead of one draw call per patch (needs GL4-level driver support).");
+
+CONFIG(float, ROAMShadowMeshDetail)
+	.defaultValue(1.0f)
+	.minimumValue(0.1f)
+	.maximumValue(1.0f)
+	.description("Scale applied to GroundDetail for the shadow-pass terrain mesh only; below 1.0 the shadow map is rendered from a coarser terrain mesh (fewer triangles, slightly softer terrain self-shadowing). Read when the mesh drawer is (re)created.");
 
 
 bool CRoamMeshDrawer::forceNextTesselation[MESH_COUNT] = {false, false};
@@ -73,6 +89,12 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 		patchVisFlags[i].resize(numPatchesX * numPatchesY, 0);
 	}
 
+	// every patch of both meshes shares the same (patch-local) vertex grid
+	patchVertVBO = { GL_ARRAY_BUFFER, false, false };
+	patchVertVBO.Bind();
+	patchVertVBO.New(Patch::GetLocalVertices(), GL_STATIC_DRAW);
+	patchVertVBO.Unbind();
+
 	// initialize all terrain patches
 	for (unsigned int i = MESH_NORMAL; i <= MESH_SHADOW; i++) {
 		auto& patches = patchMeshGrid[i];
@@ -81,11 +103,43 @@ CRoamMeshDrawer::CRoamMeshDrawer(CSMFGroundDrawer* gd)
 			for (int x = 0; x < numPatchesX; ++x) {
 				Patch& patch = patches[y * numPatchesX + x];
 
-				patch.Init(smfGroundDrawer, x * PATCH_SIZE, y * PATCH_SIZE);
+				patch.Init(smfGroundDrawer, x * PATCH_SIZE, y * PATCH_SIZE, &patchVertVBO);
 				patch.ComputeVariance();
 			}
 		}
 	}
+
+	shadowDetailScale = configHandler->GetFloat("ROAMShadowMeshDetail");
+
+	batchedShadowPass =
+		configHandler->GetBool("ROAMBatchedShadowPass") &&
+		VAO::IsSupported() &&
+		GLAD_GL_ARB_multi_draw_indirect &&
+		GLAD_GL_ARB_base_instance &&
+		GLAD_GL_ARB_instanced_arrays;
+
+	if (batchedShadowPass) {
+		shadowIndexRegions.resize(numPatchesX * numPatchesY);
+
+		std::vector<int2> patchSquares;
+		patchSquares.reserve(numPatchesX * numPatchesY);
+
+		for (int y = 0; y < numPatchesY; ++y) {
+			for (int x = 0; x < numPatchesX; ++x) {
+				patchSquares.emplace_back(x, y);
+			}
+		}
+
+		shadowSquareVBO = { GL_ARRAY_BUFFER, false, false };
+		shadowSquareVBO.Bind();
+		shadowSquareVBO.New(patchSquares, GL_STATIC_DRAW);
+		shadowSquareVBO.Unbind();
+
+		// the index buffer itself is created by the first repack
+		shadowIndxVBO = { GL_ELEMENT_ARRAY_BUFFER, false, false };
+	}
+
+	LOG("[%s] batched shadow pass: %s", __func__, batchedShadowPass ? "enabled" : "disabled");
 
 	for (unsigned int i = MESH_NORMAL; i < MESH_COUNT; i++) {
 		auto& patches = patchMeshGrid[i];
@@ -197,7 +251,12 @@ void CRoamMeshDrawer::Update()
 
 	Patch::UpdateVisibility(cam, patches, numPatchesX);
 
-	const bool gldUpdated = smfGroundDrawer->GetGroundDetail() != lastGroundDetail[shadowPass];
+	// the shadow mesh may be tessellated at a reduced detail level
+	const int groundDetail = shadowPass ?
+		std::max(1, static_cast<int>(std::lround(smfGroundDrawer->GetGroundDetail() * shadowDetailScale))) :
+		smfGroundDrawer->GetGroundDetail();
+
+	const bool gldUpdated = groundDetail != lastGroundDetail[shadowPass];
 
 	//Early bailout conditions:
 	if ((!forceNextTesselation[shadowPass]) &&
@@ -357,7 +416,7 @@ void CRoamMeshDrawer::Update()
 				debugColors[pi].x = 1.0;
 			#endif
 
-				if (p.Tessellate(playerCameraPosition, smfGroundDrawer->GetGroundDetail(), shadowPass))
+				if (p.Tessellate(playerCameraPosition, groundDetail, shadowPass))
 					continue;
 
 				tessSuccess = false;
@@ -380,7 +439,7 @@ void CRoamMeshDrawer::Update()
 				if (!p.IsVisible(cam))
 					continue;
 
-				p.Tessellate(playerCameraPosition, smfGroundDrawer->GetGroundDetail(), shadowPass);
+				p.Tessellate(playerCameraPosition, groundDetail, shadowPass);
 				actualTesselations++;
 				tesselationsSinceLastReset[shadowPass]++;
 
@@ -416,12 +475,16 @@ void CRoamMeshDrawer::Update()
 	{
 		//SCOPED_TIMER("ROAM::Upload");
 
-		for (Patch& p: patches) {
-			if (!p.IsVisible(cam) || !p.isChanged)
-				continue;
+		if (shadowPass && batchedShadowPass) {
+			actualUploads += UploadShadowPatches(cam, patches);
+		} else {
+			for (Patch& p: patches) {
+				if (!p.IsVisible(cam) || !p.isChanged)
+					continue;
 
-			p.Upload();
-			actualUploads++;
+				p.Upload();
+				actualUploads++;
+			}
 		}
 	}
 #if TESSELATION_DEBUG
@@ -442,7 +505,7 @@ void CRoamMeshDrawer::Update()
 	}
 #endif // TESSELATION_DEBUG
 
-	lastGroundDetail[shadowPass] = smfGroundDrawer->GetGroundDetail();
+	lastGroundDetail[shadowPass] = groundDetail;
 	lastCamPos[shadowPass] = cam->GetPos();
 	lastCamDir[shadowPass] = cam->GetDir();
 	forceNextTesselation[shadowPass] = false;
@@ -465,12 +528,37 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 
 	// SCOPED_TIMER can't have dynamic values in a single call
 	//SCOPED_TIMER(drawPass == DrawPass::Normal ? "Draw::World::Terrain::ROAM" : "Misc::ROAM");
+	if (drawPass == DrawPass::Shadow) {
+		// the shadow mesh has its own tessellation and timers
+		{
+			SCOPED_TIMER("Draw::World::Terrain::ROAM::UpdateShadow");
+			Update();
+		}
+		{
+			SCOPED_TIMER("Draw::World::Terrain::ROAM::DrawShadow");
+			SCOPED_GL_DEBUGGROUP("Draw::World::Terrain::ROAM::DrawShadow");
+
+			if (batchedShadowPass) {
+				DrawShadowMeshBatched(CCameraHandler::GetActiveCamera());
+				return;
+			}
+
+			for (Patch& p: patchMeshGrid[MESH_SHADOW]) {
+				if (!p.IsVisible(CCameraHandler::GetActiveCamera()))
+					continue;
+
+				p.SetSquareTexture(drawPass);
+				p.Draw();
+			}
+		}
+		return;
+	}
+
 	{
 		SCOPED_TIMER("Draw::World::Terrain::ROAM::Update");
 
 		switch (drawPass) {
 			case DrawPass::Normal: { Update(); } break;
-			case DrawPass::Shadow: { Update(); } break;
 			default: {
 				Patch::UpdateVisibility(CCameraHandler::GetActiveCamera(), patchMeshGrid[MESH_NORMAL], numPatchesX);
 			} break;
@@ -480,7 +568,8 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 	{
 		SCOPED_TIMER("Draw::World::Terrain::ROAM::Draw");
 		SCOPED_GL_DEBUGGROUP("Draw::World::Terrain::ROAM::Draw");
-		for (Patch& p: patchMeshGrid[drawPass == DrawPass::Shadow]) {
+
+		for (Patch& p: patchMeshGrid[MESH_NORMAL]) {
 			if (!p.IsVisible(CCameraHandler::GetActiveCamera()))
 				continue;
 
@@ -488,6 +577,184 @@ void CRoamMeshDrawer::DrawMesh(const DrawPass::e& drawPass)
 			p.Draw();
 		}
 	}
+}
+
+
+void CRoamMeshDrawer::InitShadowVAO()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	shadowVAO.Bind();
+
+	shadowIndxVBO.Bind();
+
+	patchVertVBO.Bind();
+	glEnableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
+	patchVertVBO.Unbind();
+
+	// one int2 per patch, selected through each draw command's baseInstance
+	shadowSquareVBO.Bind();
+	glEnableVertexAttribArray(CShadowHandler::SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB);
+	glVertexAttribIPointer(CShadowHandler::SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB, 2, GL_INT, 0, nullptr);
+	glVertexAttribDivisor(CShadowHandler::SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB, 1);
+	shadowSquareVBO.Unbind();
+
+	shadowVAO.Unbind();
+
+	shadowIndxVBO.Unbind();
+
+	glDisableVertexAttribArray(CShadowHandler::SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB);
+	glVertexAttribDivisor(CShadowHandler::SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB, 0);
+	glDisableVertexAttribArray(0);
+}
+
+bool CRoamMeshDrawer::AllocShadowIndexRegion(int patchIdx, uint32_t numIndices)
+{
+	// give the patch room to grow, since tessellation only ever refines
+	// until the next full reset
+	const uint32_t capacity = std::clamp(numIndices * 2, SHADOW_REGION_MIN_CAPACITY, SHADOW_REGION_MAX_CAPACITY);
+
+	if ((shadowIndxUsed + capacity) > shadowIndxCapacity)
+		return false;
+
+	ShadowIndexRegion& region = shadowIndexRegions[patchIdx];
+
+	// the old region is abandoned, not reused
+	shadowIndxGarbage += region.capacity;
+
+	region.offset = shadowIndxUsed;
+	region.capacity = capacity;
+
+	shadowIndxUsed += capacity;
+	return true;
+}
+
+void CRoamMeshDrawer::RepackShadowIndices(const std::vector<Patch>& patches)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int numPatches = patches.size();
+
+	uint32_t numUsed = 0;
+
+	for (int i = 0; i < numPatches; ++i) {
+		const uint32_t numIndices = patches[i].indices.size();
+		const uint32_t capacity = (numIndices == 0) ? 0 : std::clamp(numIndices * 2, SHADOW_REGION_MIN_CAPACITY, SHADOW_REGION_MAX_CAPACITY);
+
+		shadowIndexRegions[i] = { numUsed, capacity };
+		numUsed += capacity;
+	}
+
+	shadowIndxUsed = numUsed;
+	shadowIndxGarbage = 0;
+	// leave tail space so patches that outgrow their region can move without another repack
+	shadowIndxCapacity = std::max(numUsed + numUsed / 2, SHADOW_BUFFER_MIN_CAPACITY);
+
+	// fresh buffer; the old contents are all being re-uploaded anyway
+	shadowIndxVBO = { GL_ELEMENT_ARRAY_BUFFER, false, false };
+	shadowIndxVBO.Bind();
+	shadowIndxVBO.New(shadowIndxCapacity * sizeof(uint32_t), GL_DYNAMIC_DRAW, nullptr);
+
+	for (int i = 0; i < numPatches; ++i) {
+		const auto& indices = patches[i].indices;
+
+		if (indices.empty())
+			continue;
+
+		shadowIndxVBO.SetBufferSubData(shadowIndexRegions[i].offset * sizeof(uint32_t), indices.size() * sizeof(uint32_t), indices.data());
+	}
+
+	shadowIndxVBO.Unbind();
+
+	// the VAO references the element buffer by object, so rebind the new one
+	InitShadowVAO();
+}
+
+int CRoamMeshDrawer::UploadShadowPatches(const CCamera* cam, std::vector<Patch>& patches)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int numPatches = patches.size();
+
+	bool repack = (shadowIndxGarbage > (shadowIndxCapacity / 2));
+
+	// move every changed patch whose index-list no longer fits its region to
+	// the tail of the buffer; if the tail is exhausted everything is repacked
+	for (int i = 0; i < numPatches && !repack; ++i) {
+		const Patch& p = patches[i];
+
+		if (!p.IsVisible(cam) || !p.isChanged)
+			continue;
+		if (p.indices.size() <= shadowIndexRegions[i].capacity)
+			continue;
+
+		repack = !AllocShadowIndexRegion(i, p.indices.size());
+	}
+
+	if (repack)
+		RepackShadowIndices(patches);
+
+	int numUploads = 0;
+
+	if (!repack) {
+		// a repack already uploaded every patch
+		shadowIndxVBO.Bind();
+
+		for (int i = 0; i < numPatches; ++i) {
+			const Patch& p = patches[i];
+
+			if (!p.IsVisible(cam) || !p.isChanged || p.indices.empty())
+				continue;
+
+			assert(p.indices.size() <= shadowIndexRegions[i].capacity);
+			shadowIndxVBO.SetBufferSubData(shadowIndexRegions[i].offset * sizeof(uint32_t), p.indices.size() * sizeof(uint32_t), p.indices.data());
+		}
+
+		shadowIndxVBO.Unbind();
+	}
+
+	// border geometry still lives in per-patch buffers (only map-edge
+	// patches have any); done in a separate loop since it (re)binds VAOs
+	for (int i = 0; i < numPatches; ++i) {
+		Patch& p = patches[i];
+
+		if (!p.IsVisible(cam) || !p.isChanged)
+			continue;
+
+		p.UploadBorderVertices();
+		p.isChanged = false;
+		numUploads++;
+	}
+
+	return numUploads;
+}
+
+void CRoamMeshDrawer::DrawShadowMeshBatched(const CCamera* cam)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const auto& patches = patchMeshGrid[MESH_SHADOW];
+	const int numPatches = patches.size();
+
+	shadowDrawCmds.clear();
+
+	for (int i = 0; i < numPatches; ++i) {
+		const Patch& p = patches[i];
+
+		if (!p.IsVisible(cam) || p.indices.empty())
+			continue;
+
+		const ShadowIndexRegion& region = shadowIndexRegions[i];
+		// never read past the patch's region, whatever the CPU-side list says
+		const uint32_t numIndices = std::min(static_cast<uint32_t>(p.indices.size()), region.capacity);
+
+		shadowDrawCmds.emplace_back(numIndices, 1u, region.offset, 0u, static_cast<uint32_t>(i));
+	}
+
+	if (shadowDrawCmds.empty())
+		return;
+
+	shadowVAO.Bind();
+	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, shadowDrawCmds.data(), shadowDrawCmds.size(), sizeof(SDrawElementsIndirectCommand));
+	shadowVAO.Unbind();
 }
 
 void CRoamMeshDrawer::DrawBorderMesh(const DrawPass::e& drawPass)

@@ -118,38 +118,44 @@ Patch::~Patch()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	//not really needed
-	vertVBO = {};
 	indxVBO = {};
 	borderVBO = {};
 }
 
-void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ)
+const std::vector<float3>& Patch::GetLocalVertices()
+{
+	if (localVertices.empty()) {
+		localVertices.resize((PATCH_SIZE + 1) * (PATCH_SIZE + 1));
+
+		unsigned int index = 0;
+		for (int z = 0; z <= PATCH_SIZE; z++) {
+			for (int x = 0; x <= PATCH_SIZE; x++) {
+				localVertices[index].x = x * SQUARE_SIZE;
+				localVertices[index].y = 0.0f;
+				localVertices[index].z = z * SQUARE_SIZE;
+				index++;
+			}
+		}
+	}
+
+	return localVertices;
+}
+
+void Patch::Init(CSMFGroundDrawer* _drawer, int patchX, int patchZ, const VBO* sharedVertVBO)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	coors = { patchX, patchZ };
 
 	smfGroundDrawer = _drawer;
+	vertVBO = sharedVertVBO;
 
-	vertVBO   = { GL_ARRAY_BUFFER        , false, false };
 	indxVBO   = { GL_ELEMENT_ARRAY_BUFFER, false, false };
 	borderVBO = { GL_ARRAY_BUFFER        , false, false };
 
-	vertices.resize((PATCH_SIZE + 1) * (PATCH_SIZE + 1));
-
-	// initialize vertices
-	unsigned int index = 0;
-	for (int z = 0; z <= PATCH_SIZE; z++) {
-		for (int x = 0; x <= PATCH_SIZE; x++) {
-			vertices[index].x = x * SQUARE_SIZE;
-			vertices[index].y = 0.0f;
-			vertices[index].z = z * SQUARE_SIZE;
-			index++;
-		}
-	}
+	GetLocalVertices();
 
 	Reset();
 	UpdateHeightMap();
-	UploadVertices();
 }
 
 void Patch::Reset()
@@ -185,14 +191,6 @@ void Patch::UpdateHeightMap(const SRectangle& rect)
 	isDirty = true;
 }
 
-
-void Patch::UploadVertices()
-{
-	RECOIL_DETAILED_TRACY_ZONE;
-	vertVBO.Bind();
-	vertVBO.New(vertices, GL_STATIC_DRAW);
-	vertVBO.Unbind();
-}
 
 namespace {
 	template<typename T>
@@ -240,7 +238,7 @@ void Patch::InitMainVAO() const
 	mainVAO.Bind();
 
 	indxVBO.Bind();
-	vertVBO.Bind();
+	vertVBO->Bind();
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribDivisor(0, 0);
@@ -250,7 +248,7 @@ void Patch::InitMainVAO() const
 	mainVAO.Unbind();
 
 	indxVBO.Unbind();
-	vertVBO.Unbind();
+	vertVBO->Unbind();
 
 	glDisableVertexAttribArray(0);
 }
@@ -679,9 +677,9 @@ void Patch::RecursGenBorderVertices(
 		return;
 
 	if (tri->IsLeaf()) {
-		const float3& v1 = vertices[(apex.x + apex.y * (PATCH_SIZE + 1))];
-		const float3& v2 = vertices[(left.x + left.y * (PATCH_SIZE + 1))];
-		const float3& v3 = vertices[(rght.x + rght.y * (PATCH_SIZE + 1))];
+		const float3& v1 = localVertices[(apex.x + apex.y * (PATCH_SIZE + 1))];
+		const float3& v2 = localVertices[(left.x + left.y * (PATCH_SIZE + 1))];
+		const float3& v3 = localVertices[(rght.x + rght.y * (PATCH_SIZE + 1))];
 
 		static constexpr unsigned char white[] = {255, 255, 255, 255};
 		static constexpr unsigned char trans[] = {255, 255, 255,   0};

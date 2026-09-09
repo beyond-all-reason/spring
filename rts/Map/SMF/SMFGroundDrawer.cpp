@@ -439,9 +439,10 @@ void CSMFGroundDrawer::SetupBigSquare(const DrawPass::e& drawPass, const int big
 		}
 	}
 	else {
-		if (shadowShader && shadowShader->IsBound()) {
-			shadowShader->SetUniform("texSquare", bigSquareX, bigSquareY);
-		}
+		// the shadow-gen map shader reads the square from a generic vertex
+		// attribute (no uniform lookup); this sets its constant value for
+		// draws whose VAO has no array enabled at that index
+		glVertexAttribI2i(CShadowHandler::SHADOWGEN_MAP_PATCH_SQUARE_ATTRIB, bigSquareX, bigSquareY);
 	}
 }
 

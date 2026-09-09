@@ -6,10 +6,13 @@ precision mediump float;
 #endif
 
 in vec3 vertexPos;
+// big-square (1024x1024 elmo) coordinates of the patch being drawn; either a
+// constant generic attribute set per patch, or a per-draw instanced array when
+// the whole shadow-pass mesh is submitted with one multi-draw call
+in ivec2 patchSquare;
 
 uniform sampler2D heightMapTex;
 uniform float borderMinHeight;
-uniform ivec2 texSquare;
 uniform vec4 mapSize; // mapSize, 1.0/mapSize
 
 const float SMF_TEXSQR_SIZE = 1024.0;
@@ -27,7 +30,7 @@ float HeightAtWorldPos(vec2 wxz){
 
 void main() {
 	vec4 vertexWorldPos = vec4(vertexPos, 1.0);
-	vertexWorldPos.xz += vec2(texSquare) * SMF_TEXSQR_SIZE;
+	vertexWorldPos.xz += vec2(patchSquare) * SMF_TEXSQR_SIZE;
 	vertexWorldPos.y = mix(borderMinHeight, HeightAtWorldPos(vertexWorldPos.xz), float(vertexWorldPos.y == 0.0));
 	/*
 	if (vertexWorldPos.y == 0.0)

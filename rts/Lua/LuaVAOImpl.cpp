@@ -9,6 +9,7 @@
 #include "lib/sol2/sol.hpp"
 
 #include "System/SafeUtil.h"
+#include "System/TimeProfiler.h"
 #include "Rendering/GL/VBO.h"
 #include "Rendering/GL/VAO.h"
 #include "Rendering/Models/3DModel.hpp"
@@ -536,6 +537,14 @@ void LuaVAOImpl::RemoveFromSubmission(int idx)
  */
 void LuaVAOImpl::Submit()
 {
+	// NB: the multi-draw below costs a fixed ~2.5us per call on NVIDIA drivers
+	// regardless of the command count, VAO, buffers or restart-index state (it
+	// is the first draw after returning from Lua); only fewer calls reduce it
+	SCOPED_TIMER("Lua::VAO::Submit");
+
+	if (submitCmds.empty())
+		return;
+
 	glEnable(GL_PRIMITIVE_RESTART);
 	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
 
