@@ -4435,8 +4435,8 @@ int LuaUnsyncedCtrl::AiIntentFloat(lua_State* L) {
 		return 0;
 
 	const int teamID = luaL_checkint(L, 1);
-	const int topic = lua_israwnumber(L, 2) ? lua_toint(L, 2) : -1;
-	const int objID = lua_israwnumber(L, 3) ? lua_toint(L, 3) : -1;
+	const int topic = luaL_checkint(L, 2);
+	const int objID = lua_israwnumber(L, 3) ? lua_toint(L, 3) : lua_isboolean(L, 4) ? lua_toboolean(L, 4) : -1;
 	const float value = lua_isnoneornil(L, 4) ? 0.f : lua_isboolean(L, 4) ? lua_toboolean(L, 4) : luaL_checkfloat(L, 4);
 
 	eoh->Intent(teamID, topic, objID, value);
@@ -4465,13 +4465,16 @@ int LuaUnsyncedCtrl::AiIntentArray(lua_State* L) {
 
 	for (lua_pushnil(L); lua_next(L, 4) != 0; lua_pop(L, 1)) {
 
-		if (!lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+		float value;
+		if (lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		} else if (lua_isboolean(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_toboolean(L, LUA_TABLE_VALUE_INDEX);
+		} else {
 			luaL_error(L, "[%s()] incorrect value type", __func__);
 			lua_pop(L, 2);
 			return 0;
 		}
-
-		const float value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
 		values.push_back(value);
 	}
 
@@ -4508,14 +4511,18 @@ int LuaUnsyncedCtrl::AiIntentDict(lua_State* L) {
 			return 0;
 		}
 
-		if (!lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+		float value;
+		if (lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		} else if (lua_isboolean(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_toboolean(L, LUA_TABLE_VALUE_INDEX);
+		} else {
 			luaL_error(L, "[%s()] incorrect value type", __func__);
 			lua_pop(L, 2);
 			return 0;
 		}
 
 		const int key = lua_toint(L, LUA_TABLE_KEY_INDEX);
-		const float value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
 		keys.push_back(key);
 		values.push_back(value);
 	}
@@ -4538,12 +4545,12 @@ int LuaUnsyncedCtrl::AiIntentUnitDefs(lua_State* L) {
 
 	const int aiTeam = luaL_checkint(L, 1);
 	const int topic = luaL_checkint(L, 2);
-	const int waveId = luaL_checkint(L, 3);
+	const int objId = luaL_checkint(L, 3);
 
 	luaL_checktype(L, 4, LUA_TTABLE);
 
-	std::vector<int> unitDefs;
-	std::vector<float> weights;
+	std::vector<int> keys;
+	std::vector<float> values;
 
 	for (lua_pushnil(L); lua_next(L, 4) != 0; lua_pop(L, 1)) {
 
@@ -4570,17 +4577,17 @@ int LuaUnsyncedCtrl::AiIntentUnitDefs(lua_State* L) {
 		}
 
 		if (!lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
-			luaL_error(L, "[%s()] incorrect weight type", __func__);
+			luaL_error(L, "[%s()] incorrect value type", __func__);
 			lua_pop(L, 2);
 			return 0;
 		}
 
-		const float weight = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
-		unitDefs.push_back(unitDef->id);
-		weights.push_back(weight);
+		const float value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		keys.push_back(unitDef->id);
+		values.push_back(value);
 	}
 
-	eoh->Intent(aiTeam, topic, waveId, unitDefs, weights);
+	eoh->Intent(aiTeam, topic, objId, keys, values);
 
 	return 0;
 }
