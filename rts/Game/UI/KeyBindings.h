@@ -79,6 +79,7 @@ class CKeyBindings : public CommandReceiver
 		bool AddKeySymbol(const std::string& keysym, const std::string& code);
 
 		static bool RemoveCommandFromList(ActionList& al, const std::string& command);
+		static bool RemoveCommandFromList(ActionList& al, const CKeyChain& kc, const std::string& command);
 
 		bool FileSave(FILE* file) const;
 
