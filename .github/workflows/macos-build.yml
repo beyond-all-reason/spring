@@ -1,0 +1,120 @@
+# Compile-only gate for Apple Silicon.
+#
+# This builds the subset of targets that currently compile on macOS with
+# Homebrew GCC. Its purpose is to stop already-merged portability fixes from
+# silently regressing, not to produce release artifacts.
+#
+# The engine binaries (spring, spring-headless, spring-dedicated) and unitsync
+# are deliberately absent: they still need fixes that are in review. Targets get
+# added to the list below as those land, so the list doubles as a record of how
+# much of the engine builds on macOS.
+#
+# macOS 15 is the floor for the platform because of SDL availability, so the
+# runner is pinned rather than tracking macos-latest.
+#
+# GCC is used rather than Apple Clang for parity with the Linux and Windows
+# toolchains, which matters for simulation consistency.
+
+name: Build macOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'doc/**'
+
+jobs:
+  build-macos:
+    name: Build arm64-macos targets
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Engine version naming uses git describe, so it needs full history.
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew install \
+            ccache \
+            cmake \
+            devil \
+            freetype \
+            gcc \
+            libvorbis \
+            minizip \
+            pkg-config \
+            sdl2 \
+            sevenzip
+
+      - name: Select Homebrew GCC
+        id: toolchain
+        run: |
+          cc=$(printf '%s\n' "$(brew --prefix)"/bin/gcc-[0-9]* | sort -V | tail -1)
+          cxx=${cc/gcc-/g++-}
+          "$cc" --version | head -1
+          echo "cc=$cc" >> "$GITHUB_OUTPUT"
+          echo "cxx=$cxx" >> "$GITHUB_OUTPUT"
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ccache
+          key: ccache-arm64-macos-${{ github.sha }}
+          restore-keys: ccache-arm64-macos-
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_C_COMPILER="${{ steps.toolchain.outputs.cc }}" \
+            -DCMAKE_CXX_COMPILER="${{ steps.toolchain.outputs.cxx }}" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Build
+        run: |
+          cmake --build build --parallel "$(sysctl -n hw.ncpu)" --target \
+            7zip \
+            CUtils \
+            GameHeadless \
+            IrrXML \
+            TracyClient \
+            assimp \
+            basecontent \
+            dirchange \
+            engineSim \
+            engineSystemNet \
+            fastgltf \
+            fmt \
+            gflags_nothreads_static \
+            glad \
+            headlessStubs \
+            lua \
+            luasocket \
+            lunasvg \
+            mimalloc-static \
+            nowide \
+            plutovg \
+            pr-downloader \
+            pr-downloader_cli \
+            rgetc1 \
+            rmlui_core \
+            simdjson \
+            smiley \
+            smmalloc \
+            squish \
+            streflop \
+            svg2png
+
+      - name: Report ccache statistics
+        if: always()
+        run: ccache --show-stats

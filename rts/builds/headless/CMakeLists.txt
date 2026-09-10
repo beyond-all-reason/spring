@@ -60,6 +60,10 @@ target_link_libraries(GameHeadless PRIVATE
 	nowide::nowide
 	fmt::fmt
 )
+# create_headless_target_from() copies sources but not dependencies, so this has
+# to be repeated from Game, which compiles the same GameVersion.cpp.
+add_dependencies(GameHeadless generateVersionFiles)
+
 ### Build the executable
 add_executable(engine-headless ${engineSources} ${ENGINE_ICON})
 target_link_libraries(engine-headless no-sound ${engineHeadlessLibraries} GameHeadless no-sound)
