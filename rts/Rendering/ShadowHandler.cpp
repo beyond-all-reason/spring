@@ -34,8 +34,6 @@ CONFIG(int, Shadows).defaultValue(2).headlessValue(-1).minimumValue(-1).safemode
 CONFIG(int, ShadowMapSize).defaultValue(CShadowHandler::DEF_SHADOWMAP_SIZE).minimumValue(32).description("Sets the resolution of shadows. Higher numbers increase quality at the cost of performance.");
 CONFIG(int, ShadowProjectionMode).defaultValue(CShadowHandler::SHADOWPROMODE_CAM_CENTER);
 CONFIG(bool, ShadowColorMode).defaultValue(true).description("Whether the colorbuffer of shadowmap FBO is RGB vs greyscale(to conserve some VRAM)");
-CONFIG(int, ProjectileShadowMinInterval).defaultValue(66).minimumValue(0).maximumValue(500).description("Minimum time in milliseconds between two redraws of the transparent (particle) shadow layer; in between the previous layer is reused. The opaque shadow map is still updated every frame. 0 = redraw every frame. Uses wall-clock time so slow frames always get a fresh layer while fast frames are capped (e.g. 33 = at most 30 updates per second).");
-
 CShadowHandler shadowHandler;
 
 void CShadowHandler::Reload(const char* argv)
@@ -72,8 +70,6 @@ void CShadowHandler::Init()
 	shadowProMode = configHandler->GetInt("ShadowProjectionMode");
 	//shadowProMode = SHADOWPROMODE_CAM_CENTER;
 	shadowColorMode = configHandler->GetInt("ShadowColorMode");
-	transparentMinInterval = configHandler->GetInt("ProjectileShadowMinInterval");
-	lastTransparentUpdate = spring_notime;
 	shadowGenBits = SHADOWGEN_BIT_NONE;
 
 	shadowsLoaded = false;
@@ -500,12 +496,10 @@ void CShadowHandler::DrawShadowPasses()
 
 		// whatever the callin wrote to the color buffer is discarded, as it
 		// always was (the buffer only holds the transparent-shadow layer)
-		if (updateTransparent) {
-			EnableColorOutput(true);
-			glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-			shadowColorDirty = false;
-		}
+		EnableColorOutput(true);
+		glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		shadowColorDirty = false;
 	}
 
 	// depth-only until the transparent pass; the depth buffer (and, when
@@ -544,7 +538,7 @@ void CShadowHandler::DrawShadowPasses()
 	}
 
 	//transparent pass, comes last
-	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0 && updateTransparent) {
+	if ((shadowGenBits & SHADOWGEN_BIT_PROJ) != 0) {
 		shadowColorDirty |= projectileDrawer->DrawShadowTransparent();
 
 		if (eventHandler.HasDrawShadowPassTransparentClients()) {
@@ -719,17 +713,7 @@ void CShadowHandler::CreateShadows()
 		// instead, see DrawShadowPasses)
 		GLbitfield clearBits = GL_DEPTH_BUFFER_BIT;
 
-		// on frames that skip the transparent pass the previous layer is kept
-		{
-			const spring_time now = spring_gettime();
-
-			updateTransparent = (transparentMinInterval <= 0) || ((now - lastTransparentUpdate).toMilliSecsf() >= transparentMinInterval);
-
-			if (updateTransparent)
-				lastTransparentUpdate = now;
-		}
-
-		if (shadowColorDirty && updateTransparent && !eventHandler.HasDrawWorldShadowClients()) {
+		if (shadowColorDirty && !eventHandler.HasDrawWorldShadowClients()) {
 			EnableColorOutput(true);
 			glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 			clearBits |= GL_COLOR_BUFFER_BIT;

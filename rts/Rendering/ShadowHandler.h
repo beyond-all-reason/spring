@@ -10,7 +10,6 @@
 #include "Rendering/GL/FBO.h"
 #include "System/float4.h"
 #include "System/Matrix44f.h"
-#include "System/Misc/SpringTime.h"
 
 namespace Shader {
 	struct IProgramObject;
@@ -135,13 +134,6 @@ private:
 	// whether anything wrote to the (transparent-shadow) color buffer during
 	// the last pass; if not it is still all-white and need not be cleared
 	bool shadowColorDirty = true;
-
-	// transparent (particle) shadows are redrawn at most once per
-	// ProjectileShadowMinInterval milliseconds (wall-clock, so slow frames
-	// always redraw) and kept in the color buffer in between
-	int transparentMinInterval = 0;
-	spring_time lastTransparentUpdate = spring_notime;
-	bool updateTransparent = true;
 
 	inline static bool firstInit = true;
 	inline static bool shadowsSupported = false;
