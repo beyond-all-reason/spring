@@ -68,6 +68,7 @@ CR_REG_METADATA(CCommandAI, (
 	CR_MEMBER(lastUserCommand),
 	CR_MEMBER(selfDCountdown),
 	CR_MEMBER(lastFinishCommand),
+	CR_MEMBER(finishCommandBudget),
 
 	CR_MEMBER(owner),
 
@@ -87,6 +88,7 @@ CCommandAI::CCommandAI():
 	lastUserCommand(-1000),
 	selfDCountdown(0),
 	lastFinishCommand(0),
+	finishCommandBudget(0),
 	owner(NULL),
 	orderTarget(0),
 	targetDied(false),
@@ -101,6 +103,7 @@ CCommandAI::CCommandAI(CUnit* owner):
 	lastUserCommand(-1000),
 	selfDCountdown(0),
 	lastFinishCommand(0),
+	finishCommandBudget(0),
 	owner(owner),
 	orderTarget(0),
 	targetDied(false),
@@ -1687,11 +1690,18 @@ void CCommandAI::FinishCommand()
 		eventHandler.UnitIdle(owner);
 	}
 
-	// avoid infinite loops
-	if (lastFinishCommand == gs->frameNum)
+	// avoid infinite loops: allow as many re-entries per frame as there were
+	// orders queued when the first one finished, so a run of orders that end
+	// as soon as they start (dead or crashing targets) is worked through in
+	// one update, while repeat orders re-pushing themselves still terminate
+	if (lastFinishCommand != gs->frameNum) {
+		lastFinishCommand = gs->frameNum;
+		finishCommandBudget = static_cast<int>(commandQue.size());
+	} else if (finishCommandBudget <= 0) {
 		return;
-
-	lastFinishCommand = gs->frameNum;
+	} else {
+		finishCommandBudget--;
+	}
 
 	if (owner->IsStunned())
 		return;
