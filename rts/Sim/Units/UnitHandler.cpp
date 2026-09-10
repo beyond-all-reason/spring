@@ -336,12 +336,97 @@ void CUnitHandler::UpdateUnitMoveTypes()
 
 void CUnitHandler::UpdateUnitLosStates()
 {
-	ZoneScopedC(tracy::Color::Goldenrod);
-	for (CUnit* unit: activeUnits) {
-		for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
-			unit->UpdateLosStatus(at);
-		}
-	}
+    SCOPED_TIMER("Sim::Unit::UpdateLosStatus"); 
+
+    struct LosUpdateData {
+        CUnit* unit;
+        int allyTeam;
+        unsigned short diffBits;
+
+        bool operator<(const LosUpdateData& other) const {
+            if (unit == nullptr || other.unit == nullptr) {
+                 if (unit != other.unit)
+                    return (unit < other.unit);
+                 return (allyTeam < other.allyTeam);
+            }
+            if (unit->id != other.unit->id)
+                return (unit->id < other.unit->id);
+            return (allyTeam < other.allyTeam);
+        }
+    };
+
+    std::vector<std::vector<LosUpdateData>> deferredLosUpdatesPerThread(ThreadPool::GetMaxThreads());
+    for (auto& innerVec : deferredLosUpdatesPerThread) {
+        innerVec.clear();
+    }
+
+    constexpr size_t losUpdateChunkSize = 32;
+
+    {
+        ZoneScopedN("Parallel LOS Calculation (Chunked)");
+        for_mt_chunk(0, activeUnits.size(), [&](const int i) {
+            CUnit* unit = activeUnits[i];
+            const int tid = ThreadPool::GetThreadNum();
+            auto& threadDeferredUpdates = deferredLosUpdatesPerThread[tid];
+
+            for (int at = 0; at < teamHandler.ActiveAllyTeams(); ++at) {
+                const unsigned short currStatus = unit->losStatus[at];
+
+                if ((currStatus & LOS_ALL_MASK_BITS) == LOS_ALL_MASK_BITS) {
+                    continue;
+                }
+
+                const unsigned short newStatus = unit->CalcLosStatus(at);
+                const unsigned short diffBits = (currStatus ^ newStatus);
+
+                unit->losStatus[at] = newStatus;
+
+                if (diffBits != 0) {
+                    threadDeferredUpdates.push_back({unit, at, diffBits});
+                }
+            }
+        }, losUpdateChunkSize);
+    }
+
+    {
+       ZoneScopedN("Deferred Event Processing (Gather, Sort, Fire)");
+
+       std::vector<LosUpdateData> allDeferredUpdates;
+       size_t totalUpdates = 0;
+       for (const auto& threadUpdates : deferredLosUpdatesPerThread) {
+           totalUpdates += threadUpdates.size();
+       }
+       allDeferredUpdates.reserve(totalUpdates);
+
+       for (const auto& threadUpdates : deferredLosUpdatesPerThread) {
+           allDeferredUpdates.insert(allDeferredUpdates.end(), threadUpdates.begin(), threadUpdates.end());
+       }
+
+       std::sort(allDeferredUpdates.begin(), allDeferredUpdates.end());
+
+       for (const auto& updateData : allDeferredUpdates) {
+                CUnit* unit = updateData.unit;
+                const int at = updateData.allyTeam;
+                const unsigned short diffBits = updateData.diffBits;
+                const unsigned short newStatus = unit->losStatus[at];
+
+                if (diffBits & LOS_INLOS) {
+                    if (newStatus & LOS_INLOS) {
+                        eventHandler.UnitEnteredLos(unit, at);
+                    } else {
+                        eventHandler.UnitLeftLos(unit, at);
+                    }
+                }
+
+                if (diffBits & LOS_INRADAR) {
+                    if (newStatus & LOS_INRADAR) {
+                        eventHandler.UnitEnteredRadar(unit, at);
+                    } else {
+                        eventHandler.UnitLeftRadar(unit, at);
+                    }
+                }
+            }
+        }
 }
 
 
@@ -512,4 +597,3 @@ unsigned int CUnitHandler::CalcMaxUnits() const
 
 	return n;
 }
-
