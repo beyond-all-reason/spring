@@ -8,6 +8,7 @@
 #include "LuaTextures.h"
 #include "LuaAtlasTextures.h"
 #include "Game/Camera.h"
+#include "Game/GlobalUnsynced.h"
 #include "Map/BaseGroundDrawer.h"
 #include "Map/ReadMap.h"
 #include "Rendering/Fonts/glFont.h"
@@ -28,6 +29,7 @@
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Sim/Features/FeatureDef.h"
 #include "Sim/Features/FeatureDefHandler.h"
+#include "Sim/Misc/TeamHandler.h"
 #include "Sim/Units/UnitDef.h"
 #include "Sim/Units/UnitDefHandler.h"
 #include "System/Matrix44f.h"
@@ -297,6 +299,43 @@ bool ParseUnitTexture(LuaMatTexture& texUnit, const std::string& texture)
 
 
 
+// "$info:los:2", "$info_airlos_0", etc; an info-texture tracking a specific
+// allyteam; the caller matches the prefix, accepting "$extra" as an alias of
+// "$info" like the pre-existing single-separator form does
+static bool ParseAllyTeamInfoTexture(LuaMatTexture& texUnit, const std::string& texName, size_t firstSepIdx, size_t lastSepIdx)
+{
+	if (infoTextureHandler == nullptr)
+		return false;
+
+	const char* startPtr = texName.c_str() + lastSepIdx + 1;
+	char* endPtr = nullptr;
+	const int allyTeam = (int)strtol(startPtr, &endPtr, 10);
+
+	if (endPtr == startPtr || *endPtr != '\0')
+		return false;
+	if (!teamHandler.IsValidAllyTeam(allyTeam))
+		return false;
+
+	// a handle can always request the allyteam it is viewing; any other
+	// allyteam requires full read access (fullview spectators, global-LOS)
+	lua_State* L = reinterpret_cast<lua_State*>(texUnit.state);
+
+	if (allyTeam != gu->myAllyTeam && !(L != nullptr && CLuaHandle::GetHandleFullRead(L)))
+		return false;
+
+	CInfoTexture* itex = infoTextureHandler->GetInfoTexture(texName.substr(firstSepIdx + 1, lastSepIdx - firstSepIdx - 1), allyTeam);
+
+	if (itex == nullptr)
+		return false;
+
+	texUnit.type = LuaMatTexture::LUATEX_INFOTEX_SUFFIX;
+	texUnit.data = itex;
+
+	// NB: deliberately not cached in luaMatTextures; the access check
+	// above is per-handle while that cache is shared between handles
+	return true;
+}
+
 static bool ParseNamedSubTexture(LuaMatTexture& texUnit, const std::string& texName)
 {
 	const size_t texNameHash = hashString(texName.c_str());
@@ -351,6 +390,23 @@ static bool ParseNamedSubTexture(LuaMatTexture& texUnit, const std::string& texN
 
 		default: {
 		} break;
+	}
+
+	// "$info:<name>:<allyTeamID>" -- info-textures tracking a specific
+	// allyteam have two separators, so the prefix hashed above was e.g.
+	// "$info:los"; retry against the first separator only
+	const size_t priSepIdx = texName.find_first_of(":_");
+
+	if (priSepIdx != sepIdx && priSepIdx != std::string::npos) {
+		switch (hashString(texName.c_str(), priSepIdx)) {
+			case hashString("$info"):
+			case hashString("$extra"): {
+				return ParseAllyTeamInfoTexture(texUnit, texName, priSepIdx, sepIdx);
+			} break;
+
+			default: {
+			} break;
+		}
 	}
 
 	return false;

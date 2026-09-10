@@ -16,8 +16,9 @@
 
 
 
-CRadarTexture::CRadarTexture()
-: CModernInfoTexture("radar")
+CRadarTexture::CRadarTexture(int _allyTeam)
+: CModernInfoTexture(_allyTeam < 0 ? "radar" : "radar_" + std::to_string(_allyTeam))
+, allyTeam(_allyTeam)
 {
 	texSize = losHandler->radar.size;
 
@@ -55,7 +56,7 @@ CRadarTexture::CRadarTexture()
 		}
 	)";
 
-	shader = shaderHandler->CreateProgramObject("[CRadarTexture]", "CRadarTexture");
+	shader = shaderHandler->CreateProgramObject("[CRadarTexture]", name);
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode,   "", GL_VERTEX_SHADER));
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(fragmentCode, "", GL_FRAGMENT_SHADER));
 	shader->Link();
@@ -95,13 +96,15 @@ CRadarTexture::CRadarTexture()
 CRadarTexture::~CRadarTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	shaderHandler->ReleaseProgramObject("[CRadarTexture]", "CRadarTexture");
+	shaderHandler->ReleaseProgramObject("[CRadarTexture]", name);
 }
 
 void CRadarTexture::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (losHandler->GetGlobalLOS(gu->myAllyTeam)) {
+	const int losAllyTeam = (allyTeam < 0) ? gu->myAllyTeam : allyTeam;
+
+	if (losHandler->GetGlobalLOS(losAllyTeam)) {
 		fbo.Bind();
 		glViewport(0, 0, texSize.x, texSize.y);
 		glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
@@ -114,9 +117,9 @@ void CRadarTexture::Update()
 		return;
 	}
 
-	const int jammerAllyTeam = modInfo.separateJammers ? gu->myAllyTeam : 0;
+	const int jammerAllyTeam = modInfo.separateJammers ? losAllyTeam : 0;
 
-	const auto& myRadar  = losHandler->radar.losMaps[gu->myAllyTeam].GetLosMap();
+	const auto& myRadar  = losHandler->radar.losMaps[losAllyTeam].GetLosMap();
 	const auto& myJammer = losHandler->jammer.losMaps[jammerAllyTeam].GetLosMap();
 
 	auto binding1 = uploadTexRadar.ScopedBind(1);
@@ -131,7 +134,13 @@ void CRadarTexture::Update()
 		Blending(GL_FALSE)
 	);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, infoTextureHandler->GetInfoTexture("los")->GetTexture());
+	// sample the los-texture tracking the same allyteam as this texture
+	CInfoTexture* losTex = (allyTeam < 0)
+		? infoTextureHandler->GetInfoTexture("los")
+		: infoTextureHandler->GetInfoTexture("los", allyTeam);
+
+	assert(losTex != nullptr);
+	glBindTexture(GL_TEXTURE_2D, losTex->GetTexture());
 	RunFullScreenPass();
 
 	// cleanup

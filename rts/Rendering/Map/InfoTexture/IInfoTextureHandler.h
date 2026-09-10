@@ -57,6 +57,11 @@ public:
 public:
 	virtual const CInfoTexture* GetInfoTextureConst(const std::string& name) const = 0;
 	virtual       CInfoTexture* GetInfoTexture     (const std::string& name)       = 0;
+
+	// returns an info-texture tracking the given allyteam instead of
+	// gu->myAllyTeam, created on first request; only supported for the
+	// LOS-derived textures ("los", "airlos", "radar"), nullptr otherwise
+	virtual       CInfoTexture* GetInfoTexture     (const std::string& name, int allyTeam) = 0;
 };
 
 extern std::unique_ptr<IInfoTextureHandler> infoTextureHandler;

@@ -15,7 +15,8 @@ namespace Shader {
 class CLosTexture : public CModernInfoTexture
 {
 public:
-	CLosTexture();
+	// allyTeam < 0 tracks gu->myAllyTeam, otherwise the given allyteam
+	CLosTexture(int allyTeam = -1);
 	~CLosTexture() override;
 
 public:
@@ -23,6 +24,7 @@ public:
 	bool IsUpdateNeeded() override { return true; }
 private:
 	GL::Texture2D uploadTex;
+	const int allyTeam;
 };
 
 #endif // _LOS_TEXTURE_H

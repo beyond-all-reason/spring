@@ -16,7 +16,8 @@ namespace Shader {
 class CRadarTexture : public CModernInfoTexture
 {
 public:
-	CRadarTexture();
+	// allyTeam < 0 tracks gu->myAllyTeam, otherwise the given allyteam
+	CRadarTexture(int allyTeam = -1);
 	~CRadarTexture() override;
 
 public:
@@ -25,6 +26,7 @@ public:
 private:
 	GL::Texture2D uploadTexRadar;
 	GL::Texture2D uploadTexJammer;
+	const int allyTeam;
 };
 
 #endif // _RADAR_TEXTURE_H

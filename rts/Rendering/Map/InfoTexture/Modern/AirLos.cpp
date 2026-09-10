@@ -13,8 +13,9 @@
 #include "System/Misc/TracyDefs.h"
 
 
-CAirLosTexture::CAirLosTexture()
-: CModernInfoTexture("airlos")
+CAirLosTexture::CAirLosTexture(int _allyTeam)
+: CModernInfoTexture(_allyTeam < 0 ? "airlos" : "airlos_" + std::to_string(_allyTeam))
+, allyTeam(_allyTeam)
 {
 	texSize = losHandler->airLos.size;
 
@@ -44,7 +45,7 @@ CAirLosTexture::CAirLosTexture()
 		}
 	)";
 
-	shader = shaderHandler->CreateProgramObject("[CAirLosTexture]", "CAirLosTexture");
+	shader = shaderHandler->CreateProgramObject("[CAirLosTexture]", name);
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode,   "", GL_VERTEX_SHADER));
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(fragmentCode, "", GL_FRAGMENT_SHADER));
 	shader->Link();
@@ -81,13 +82,15 @@ CAirLosTexture::CAirLosTexture()
 CAirLosTexture::~CAirLosTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	shaderHandler->ReleaseProgramObject("[CAirLosTexture]", "CAirLosTexture");
+	shaderHandler->ReleaseProgramObject("[CAirLosTexture]", name);
 }
 
 void CAirLosTexture::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (losHandler->GetGlobalLOS(gu->myAllyTeam)) {
+	const int losAllyTeam = (allyTeam < 0) ? gu->myAllyTeam : allyTeam;
+
+	if (losHandler->GetGlobalLOS(losAllyTeam)) {
 		fbo.Bind();
 		glViewport(0, 0, texSize.x, texSize.y);
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -100,7 +103,7 @@ void CAirLosTexture::Update()
 		return;
 	}
 
-	const auto& myAirLos = losHandler->airLos.losMaps[gu->myAllyTeam].GetLosMap();
+	const auto& myAirLos = losHandler->airLos.losMaps[losAllyTeam].GetLosMap();
 	{
 		auto binding = uploadTex.ScopedBind();
 		uploadTex.UploadImage(myAirLos.data());

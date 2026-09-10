@@ -39,6 +39,7 @@ public:
 public:
 	const CInfoTexture* GetInfoTextureConst(const std::string& name) const override;
 	      CInfoTexture* GetInfoTexture     (const std::string& name)       override;
+	      CInfoTexture* GetInfoTexture     (const std::string& name, int allyTeam) override;
 
 protected:
 	friend class CModernInfoTexture;
@@ -50,6 +51,20 @@ protected:
 	bool firstUpdate =  true;
 
 	spring::unordered_map<std::string, CModernInfoTexture*> infoTextures;
+
+	// lazily created per-allyteam variants, keyed by "<name>_<allyTeam>";
+	// kept separate from infoTextures so they do not show up as modes, and
+	// updated on-demand when requested (at most once per draw-frame)
+	// rather than in the per-frame update loop, so they cost nothing
+	// while not in use
+	struct AllyTeamInfoTexture {
+		CModernInfoTexture* tex = nullptr;
+		unsigned int lastUpdateFrame = 0;
+	};
+
+	void UpdateAllyTeamInfoTexture(CModernInfoTexture* itex) const;
+
+	spring::unordered_map<std::string, AllyTeamInfoTexture> allyTeamInfoTextures;
 
 	// special; always non-NULL at runtime
 	CInfoTextureCombiner* infoTex = nullptr;
@@ -79,4 +94,5 @@ public:
 public:
 	const CInfoTexture* GetInfoTextureConst(const std::string& name) const override { return nullptr; }
 	      CInfoTexture* GetInfoTexture(const std::string& name)            override { return nullptr; }
+	      CInfoTexture* GetInfoTexture(const std::string& name, int allyTeam) override { return nullptr; }
 };

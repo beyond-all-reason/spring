@@ -15,7 +15,8 @@ namespace Shader {
 class CAirLosTexture : public CModernInfoTexture
 {
 public:
-	CAirLosTexture();
+	// allyTeam < 0 tracks gu->myAllyTeam, otherwise the given allyteam
+	CAirLosTexture(int allyTeam = -1);
 	~CAirLosTexture();
 
 public:
@@ -23,6 +24,7 @@ public:
 	bool IsUpdateNeeded() override { return true; }
 private:
 	GL::Texture2D uploadTex;
+	const int allyTeam;
 };
 
 #endif // _AIRLOS_TEXTURE_H

@@ -12,8 +12,9 @@
 
 #include "System/Misc/TracyDefs.h"
 
-CLosTexture::CLosTexture()
-: CModernInfoTexture("los")
+CLosTexture::CLosTexture(int _allyTeam)
+: CModernInfoTexture(_allyTeam < 0 ? "los" : "los_" + std::to_string(_allyTeam))
+, allyTeam(_allyTeam)
 {
 	texSize = losHandler->los.size;
 
@@ -43,7 +44,7 @@ CLosTexture::CLosTexture()
 		}
 	)";
 
-	shader = shaderHandler->CreateProgramObject("[CLosTexture]", "CLosTexture");
+	shader = shaderHandler->CreateProgramObject("[CLosTexture]", name);
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(vertexCode,   "", GL_VERTEX_SHADER));
 	shader->AttachShaderObject(shaderHandler->CreateShaderObject(fragmentCode, "", GL_FRAGMENT_SHADER));
 	shader->Link();
@@ -80,13 +81,15 @@ CLosTexture::CLosTexture()
 CLosTexture::~CLosTexture()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	shaderHandler->ReleaseProgramObject("[CLosTexture]", "CLosTexture");
+	shaderHandler->ReleaseProgramObject("[CLosTexture]", name);
 }
 
 void CLosTexture::Update()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (losHandler->GetGlobalLOS(gu->myAllyTeam)) {
+	const int losAllyTeam = (allyTeam < 0) ? gu->myAllyTeam : allyTeam;
+
+	if (losHandler->GetGlobalLOS(losAllyTeam)) {
 		fbo.Bind();
 		glViewport(0, 0, texSize.x, texSize.y);
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -102,7 +105,7 @@ void CLosTexture::Update()
 	static std::vector<uint8_t> infoTexMem;
 	infoTexMem.resize(texSize.x * texSize.y);
 
-	const auto& myLos = losHandler->los.losMaps[gu->myAllyTeam].GetLosMap();
+	const auto& myLos = losHandler->los.losMaps[losAllyTeam].GetLosMap();
 	assert(myLos.size() == texSize.x * texSize.y);
 
 	auto binding = uploadTex.ScopedBind();
