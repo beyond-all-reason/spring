@@ -35,7 +35,30 @@ bool CGameInputReceiver::KeyPressed(int keyCode, int scanCode, bool isRepeat)
 	curKeyCodeChain.push_back(kc, spring_gettime(), isRepeat);
 	curScanCodeChain.push_back(ks, spring_gettime(), isRepeat);
 
-	lastActionList = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+	// --- NEW: modifier-only handling ---
+	ActionList modOnlyPresses;
+
+	if (kc.IsModifier()) {
+		auto modActions = keyBindings.GetModActionList();
+
+		for (auto& a : modActions) {
+			auto it = std::find_if(activeModOnly.begin(), activeModOnly.end(),
+								[&](const Action& existing) {
+									return existing.bindingIndex  == a.bindingIndex ;
+								});
+
+			if (it == activeModOnly.end()) {
+				modOnlyPresses.push_back(a);   // collect for unified handling
+				activeModOnly.push_back(a);
+			}
+		}
+	}
+	// -----------------------------------
+
+	// Build lastActionList as [mod-only presses] + [normal presses]
+	lastActionList = modOnlyPresses;
+	ActionList normal = keyBindings.GetActionList(curKeyCodeChain, curScanCodeChain);
+	lastActionList.insert(lastActionList.end(), normal.begin(), normal.end());
 
 	if (RmlGui::ProcessKeyPressed(keyCode, scanCode, isRepeat))
 		return false;
@@ -64,8 +87,35 @@ bool CGameInputReceiver::KeyReleased(int keyCode, int scanCode)
 	if (gameTextInput.ConsumeReleasedKey(keyCode, scanCode))
 		return false;
 
+	// --- NEW: modifier-only handling ---
+	ActionList releasedMods;
+	const CKeySet kc(keyCode, CKeySet::KSKeyCode);
+
+	if (kc.IsModifier()) {
+		auto modActions = keyBindings.GetModActionList();
+
+		for (auto it = activeModOnly.begin(); it != activeModOnly.end(); ) {
+			// check if this active action is still present in the current modActions
+			auto found = std::find_if(modActions.begin(), modActions.end(),
+									[&](const Action& a) {
+										return a.bindingIndex  == it->bindingIndex ;
+									});
+
+			if (found == modActions.end()) {
+				releasedMods.push_back(*it);   // collect for unified handling
+				it = activeModOnly.erase(it);
+			} else {
+				++it;
+			}
+		}
+	}
+	// -----------------------------------
+
+    // Build lastActionList as [mod-only releases] + [normal releases]
 	// update actionlist for lua consumer
-	lastActionList = keyBindings.GetActionList(keyCode, scanCode);
+    lastActionList = releasedMods;
+    ActionList normal = keyBindings.GetActionList(keyCode, scanCode);
+    lastActionList.insert(lastActionList.end(), normal.begin(), normal.end());
 
 	if (luaInputReceiver->KeyReleased(keyCode, scanCode))
 		return false;

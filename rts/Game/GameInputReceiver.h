@@ -22,6 +22,7 @@ public:
 	ActionList lastActionList;
 private:
 	bool TryOnPressActions(bool isRepeat);
+	ActionList activeModOnly;
 
 	CTimedKeyChain curKeyCodeChain;
 	CTimedKeyChain curScanCodeChain;

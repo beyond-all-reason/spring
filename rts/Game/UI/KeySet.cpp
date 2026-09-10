@@ -153,15 +153,16 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 	Reset();
 
 	std::string s = StringToLower(token);
+	bool sawModifier = false;
 
-	// parse the modifiers
+	// parse the modifiers down to base
 	while (!s.empty()) {
 		if (ParseModifier(s, "up+",    "u+")) { LOG_L(L_DEPRECATED, "KeySet: Up modifier is deprecated"); } else
 		if (ParseModifier(s, "any+",   "*+")) { modifiers |= KS_ANYMOD; } else
-		if (ParseModifier(s, "alt+",   "a+")) { modifiers |= KS_ALT; } else
-		if (ParseModifier(s, "ctrl+",  "c+")) { modifiers |= KS_CTRL; } else
-		if (ParseModifier(s, "meta+",  "m+")) { modifiers |= KS_META; } else
-		if (ParseModifier(s, "shift+", "s+")) { modifiers |= KS_SHIFT; } else {
+		if (ParseModifier(s, "alt+",   "a+")) { modifiers |= KS_ALT;   sawModifier = true;} else
+		if (ParseModifier(s, "ctrl+",  "c+")) { modifiers |= KS_CTRL;  sawModifier = true;} else
+		if (ParseModifier(s, "meta+",  "m+")) { modifiers |= KS_META;  sawModifier = true;} else
+		if (ParseModifier(s, "shift+", "s+")) { modifiers |= KS_SHIFT; sawModifier = true;} else {
 			break;
 		}
 	}
@@ -176,6 +177,7 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 	if ((s.size() >= 2) && (s[0] == '\'') && (s[s.size() - 1] == '\''))
 		s = s.substr(1, s.size() - 2);
 
+	//parse base
 	if (s.find("0x") == 0) {
 		type = KSKeyCode;
 
@@ -207,13 +209,23 @@ bool CKeySet::Parse(const std::string& token, bool showerror)
 		if (showerror) LOG_L(L_ERROR, "KeySet: Bad keysym: %s", s.c_str());
 		return false;
 	}
+	
+	// mod only chords: receive KS_MODONLY flag
+	if(sawModifier) {
+		switch (key) {
+			case SDLK_LALT:   modifiers = (modifiers | KS_ALT   | KS_MODONLY) & ~KS_ANYMOD; break;
+			case SDLK_LCTRL:  modifiers = (modifiers | KS_CTRL  | KS_MODONLY) & ~KS_ANYMOD; break;
+			case SDLK_LSHIFT: modifiers = (modifiers | KS_SHIFT | KS_MODONLY) & ~KS_ANYMOD; break;
+			default: if (IsModifier()) {modifiers |= KS_ANYMOD;} // legacy fallback for other modifier chords
+		}
+	}
+	else if (IsModifier()) {modifiers |= KS_ANYMOD;} // single modifier binds path
+	// else if KS_ANYMOD and sawModifier, KS_ANDMOD?
 
-	if (IsModifier())
-		modifiers |= KS_ANYMOD;
-
+	//keyset with KS_ANYMOD keeps base, clears modifier flags for processing
 	if (AnyMod())
 		ClearModifiers();
-	
+
 	return true;
 }
 

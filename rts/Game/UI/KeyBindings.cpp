@@ -331,6 +331,18 @@ void FilterByKeychain(const ActionList & in, const CKeyChain & kc, ActionList & 
 			out.push_back(action);
 }
 
+ActionList CKeyBindings::GetModActionList() const
+{
+    ActionList out;
+    unsigned char currentMods = CKeySet::GetCurrentModifiers();
+
+    for (const auto& [required, actions] : modOnlyBindings) {
+        if ((currentMods & required) == required) {
+            out.insert(out.end(), actions.begin(), actions.end());
+        }
+    }
+    return out;
+}
 
 void MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& actionListB, ActionList & out)
 {
@@ -425,6 +437,7 @@ ActionList CKeyBindings::GetActionList(const CKeyChain& kc) const
 	if (kc.empty())
 		return out;
 
+	// normal + any lookups...
 	const auto & al = GetActionList(kc.back(), false);
 	FilterByKeychain(al, kc, out);
 
@@ -655,6 +668,22 @@ bool CKeyBindings::Bind(const std::string& keystr, const std::string& line)
 	if (statefulCommands.find(action.command) != statefulCommands.end())
 		ks.SetAnyBit();
 
+	// Handle mod-only chords separately
+	if (ks.Mod() & CKeySet::KS_MODONLY) {
+		unsigned char required = ks.Mod() & ~CKeySet::KS_MODONLY;
+		ActionList& al = modOnlyBindings[required];
+
+		auto it = std::find_if(al.begin(), al.end(), [&action](const Action& a) {
+			return action.line == a.line;
+		});
+
+		if (it == al.end()) {
+			action.bindingIndex = ++bindingsCount;
+			al.push_back(action);
+		}
+		return true;
+	}
+	// If not mod-only, fall back to normal binding maps
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
 	AddActionToKeyMap(bindings, action);
 

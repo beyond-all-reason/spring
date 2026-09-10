@@ -36,7 +36,8 @@ class CKeySet {
 			KS_META    = (1 << 2),
 			KS_SHIFT   = (1 << 3),
 			KS_ANYMOD  = (1 << 4),
-			//KS_RELEASE = (1 << 5) Deprecated, need rework for enabling separate release bindings
+			KS_MODONLY = (1 << 5), // new: indicates a modifier-only chord
+    		//KS_RELEASE = (1 << 6) Deprecated, need rework for enabling separate release bindings
 		};
 
 		int  Key()     const { return key; }
