@@ -486,6 +486,12 @@ void CMoveMath::FloodFillRangeIsBlocked(const MoveDef& moveDef, const CSolidObje
 }
 
 bool CMoveMath::RangeHasExitOnly(int xmin, int xmax, int zmin, int zmax, const ObjectCollisionMapHelper& object) {
+	// Reject the scan outright when no coarse block overlapping the footprint
+	// holds an exit-only square — the overwhelmingly common case, since
+	// EXIT_ONLY only ever exists under a factory yardmap.
+	if (!yardmapStatusEffectsMap.RangeMayHaveExitOnly(xmin, xmax, zmin, zmax))
+		return false;
+
 	for (int z = zmin; z <= zmax; z += FOOTPRINT_ZSTEP) {
 		for (int x = xmin; x <= xmax; x += FOOTPRINT_XSTEP)
 			if (object.IsExitOnlyAt(x, z)) return true;
