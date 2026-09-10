@@ -17,7 +17,7 @@
 
 [[nodiscard]] constexpr uint32_t hashString(const std::string& str, uint32_t hash = 5381u) noexcept { return hashString(str.c_str(), str.length(), hash); }
 
-[[nodiscard]] constexpr uint32_t operator"" _hs(const char* str, std::size_t) noexcept {
+[[nodiscard]] constexpr uint32_t operator""_hs(const char* str, std::size_t) noexcept {
 	return hashString(str);
 }
 

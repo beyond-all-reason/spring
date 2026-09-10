@@ -138,6 +138,7 @@ void CModInfo::ResetState()
 		qtMaxNodesSearchedRelativeToMapOpenNodes = 0.25;
 
 		enableSmoothMesh = true;
+		forcedMapGravityStrength.reset();
 		smoothMeshResDivider = 2;
 		smoothMeshSmoothRadius = 40;
 		quadFieldQuadSizeInElmos = 128;
@@ -180,7 +181,7 @@ void CModInfo::Init(const std::string& modFileName)
 	parser.Execute();
 
 	if (!parser.IsValid())
-		LOG_L(L_ERROR, "[ModInfo::%s] error \"%s\" loading mod-rules, using defaults", __func__, parser.GetErrorLog().c_str());
+		throw content_error(fmt::format("Failed to load gamedata/modrules.lua: {}", parser.GetErrorLog()));
 
 	const LuaTable& root = parser.GetRoot();
 
@@ -199,6 +200,8 @@ void CModInfo::Init(const std::string& modFileName)
 		qtMaxNodesSearchedRelativeToMapOpenNodes = system.GetFloat("qtMaxNodesSearchedRelativeToMapOpenNodes", qtMaxNodesSearchedRelativeToMapOpenNodes);
 
 		enableSmoothMesh = system.GetBool("enableSmoothMesh", enableSmoothMesh);
+		if (system.GetType("forcedMapGravityStrength") == LuaTable::NUMBER)
+			forcedMapGravityStrength = system.GetFloat("forcedMapGravityStrength", 0.0f);
 		smoothMeshResDivider = system.GetInt("smoothMeshResDivider", smoothMeshResDivider);
 		smoothMeshSmoothRadius = system.GetInt("smoothMeshSmoothRadius", smoothMeshSmoothRadius);
 

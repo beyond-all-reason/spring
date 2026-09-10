@@ -1,5 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include "System/RangesCompat.h"
 #include <string>
 #include <fstream>
 #include <vector>
@@ -687,15 +688,15 @@ void DumpState(int newMinFrameNum, int newMaxFrameNum, int newFramePeriod, std::
 		const CTeam* t = teamHandler.Team(a);
 
 		file << "\t\tteamID: " << t->teamNum << " (controller: " << t->GetControllerName() << ")\n";
-		for (const auto &[resourceID, value] : std::views::enumerate(t->res))
+		for (const auto &[resourceID, value] : spring::views::enumerate(t->res))
 			file << "\t\t\tstored[" << resourceID << "]: " << TapFloats(value);
-		for (const auto &[resourceID, value] : std::views::enumerate(t->resStorage))
+		for (const auto &[resourceID, value] : spring::views::enumerate(t->resStorage))
 			file << "\t\t\tmaxStorage[" << resourceID << "]: " << TapFloats(value);
-		for (const auto &[resourceID, value] : std::views::enumerate(t->resPull))
+		for (const auto &[resourceID, value] : spring::views::enumerate(t->resPull))
 			file << "\t\t\tpull[" << resourceID << "]: " << TapFloats(value);
-		for (const auto &[resourceID, value] : std::views::enumerate(t->resIncome))
+		for (const auto &[resourceID, value] : spring::views::enumerate(t->resIncome))
 			file << "\t\t\tincome[" << resourceID << "]: " << TapFloats(value);
-		for (const auto &[resourceID, value] : std::views::enumerate(t->resExpense))
+		for (const auto &[resourceID, value] : spring::views::enumerate(t->resExpense))
 			file << "\t\t\texpense[" << resourceID << "]: " << TapFloats(value);
 	}
 	#endif

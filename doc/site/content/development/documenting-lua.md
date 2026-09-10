@@ -97,8 +97,7 @@ All files under `/rts/Lua/Library/` are directly copied into the library when th
 - `integer`
 - `table<,>`
 
-{: .note }
-
+> [!NOTE]
 > Literals (e.g. `true`, `false`, `5`) are also available as types. `true` is useful in the case where a table is being used as a set, e.g.
 >
 > ```
@@ -134,8 +133,7 @@ An array type is expressed as `type[]`.
 - Specify return type with `@return type name Description...`
 - For multiple returns use one per line.
 
-{: .warning }
-
+> [!WARNING]
 > `@return` must specify the type _before_ the name, whereas `@param` takes the name before the type.
 
 ````cpp
@@ -155,6 +153,19 @@ An array type is expressed as `type[]`.
  * @returns integer result The sum of `a` and `b`.
  */
 ````
+
+#### Aliases
+
+If a function is exported to two Lua functions, you can give it two `@function` tags:
+
+```cpp
+/***
+ * @function Spring.GetLocalPlayerID
+ * @function Spring.GetMyPlayerID
+ * @return integer playerID
+ */
+int LuaUnsyncedRead::GetLocalPlayerID(lua_State* L)
+```
 
 ### Class
 

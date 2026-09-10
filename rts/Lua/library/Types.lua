@@ -110,6 +110,94 @@
 ---@field oldHeight number? Camera distance from the ground, cannot be changed. (rot)
 
 --------------------------------------------------------------------------------
+-- Object IDs
+--------------------------------------------------------------------------------
+
+---Identifier of a unit currently present in the simulation.
+---
+---IDs are drawn from a pool and are recycled, so the ID of a dead unit may
+---later be handed out to a different unit.
+---
+---@alias UnitID integer
+
+---Identifier of a unit definition, i.e. an index into `UnitDefs`.
+---
+---Valid IDs start at `1`; `0` is not a valid unit definition.
+---
+---@alias UnitDefID integer
+
+---Identifier of a feature currently present in the simulation.
+---
+---IDs are drawn from a pool and are recycled, so the ID of a destroyed feature
+---may later be handed out to a different feature.
+---
+---@alias FeatureID integer
+
+---Identifier of a feature definition, i.e. an index into `FeatureDefs`.
+---
+---@alias FeatureDefID integer
+
+---Identifier of a solid object, i.e. either a unit or a feature.
+---
+---Unit and feature IDs live in separate ranges, so which of the two is meant
+---follows from context: `Spring.UnitRendering` functions take a unit ID where
+---`Spring.FeatureRendering` functions take a feature ID, and callins that pass
+---an object ID pass the type alongside it.
+---
+---@alias ObjectID UnitID|FeatureID
+
+---Identifier of a projectile currently present in the simulation.
+---
+---Synced and unsynced projectiles are numbered independently.
+---
+---@alias ProjectileID integer
+
+---Identifier of a weapon definition, i.e. an index into `WeaponDefs`,
+---or a negated `CSolidObject::DamageType`
+---
+---@alias WeaponDefID integer
+
+---Identifier of a ground decal.
+---
+---@alias DecalID integer
+
+--------------------------------------------------------------------------------
+-- Player and team IDs
+--------------------------------------------------------------------------------
+
+---Identifier of a team.
+---
+---Teams are numbered from `0`; `Spring.GetGaiaTeamID` returns the Gaia team.
+---
+---@alias TeamID integer
+
+---Identifier of an allyteam.
+---
+---Allyteams are numbered from `0`.
+---
+---@alias AllyTeamID integer
+
+---Identifier of a player.
+---
+---Players are numbered from `0`. Note that a player is a human client, which is
+---not the same thing as a team.
+---
+---@alias PlayerID integer
+
+--------------------------------------------------------------------------------
+-- Unit groups
+--------------------------------------------------------------------------------
+
+---Identifier of a unit (control) group.
+---
+---Groups are per-team. IDs `0` to `9` are the hot-key groups that players can
+---create and select directly; IDs from `10` up are "special" groups that can
+---only be created programmatically. Interfaces that accept or return a group
+---for a unit use `-1` to mean "no group".
+---
+---@alias GroupID integer
+
+--------------------------------------------------------------------------------
 -- Resources
 --------------------------------------------------------------------------------
 

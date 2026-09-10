@@ -262,7 +262,7 @@ Transform Lerp(Transform t0, Transform t1, float a) {
 
 void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 {
-	bool staticModel = (matrixMode > 0);
+	bool staticModel = (matrixMode == MATMODE_STATIC || matrixMode == MATMODE_ARRAY);
 
 	vec4 piecePos = vec4(pos, 1.0);
 	vec4 normal4 = vec4(normal, 0.0);
@@ -271,7 +271,10 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 	
 	Transform tx;
 	if (staticModel) {
-		tx = transforms[instData.x + bID0];
+		// pieces always come from the bind-pose block (instData.w). In ARRAY_MATMODE
+		// instData.x is the per-instance world transform, not the bind pose; for static
+		// model submits instData.x == instData.w anyway, so instData.w is correct for both.
+		tx = transforms[instData.w + bID0];
 	} else {
 		// do interpolation
 		tx = Lerp(
@@ -327,16 +330,20 @@ void GetModelSpaceVertex(out vec4 msPosition, out vec3 msNormal)
 
 void main(void)
 {
-	bool staticModel = (matrixMode > 0);
-
 	vec4 modelPos;
 	vec3 modelNormal;
 	GetModelSpaceVertex(modelPos, modelNormal);
 
-	if (staticModel) {
+	if (matrixMode == MATMODE_ARRAY) {
+		// static instanced: per-instance world transform read from the SSBO (no interpolation)
+		Transform wtx = transforms[instData.x + 0u];
+		worldPos = ApplyTransform(wtx, modelPos);
+		wtx.trSc = vec4(0, 0, 0, 1); //nullify the translation part for the normal
+		worldNormal = ApplyTransform(wtx, modelNormal);
+	} else if (matrixMode == MATMODE_STATIC) {
 		worldPos = staticModelMatrix * modelPos;
 		worldNormal = mat3(staticModelMatrix) * modelNormal;
-	} else {
+	} else { // MATMODE_NORMAL
 		// do interpolation
 		Transform tx = Lerp(
 			transforms[instData.x + 0u],

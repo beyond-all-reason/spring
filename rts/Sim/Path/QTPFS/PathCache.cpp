@@ -40,9 +40,8 @@ static void GetRectangleCollisionVolume(const SRectangle& r, CollisionVolume& v,
 	rm.z = ((r.z1 + r.z2) * SQUARE_SIZE) >> 1;
 	rm.y = 0.0f;
 
-	#define CV CollisionVolume
+	using CV = CollisionVolume;
 	v.InitShape(vScales, ZeroVector, CV::COLVOL_TYPE_BOX, CV::COLVOL_HITTEST_CONT, CV::COLVOL_AXIS_Y);
-	#undef CV
 }
 
 bool QTPFS::PathCache::MarkDeadPaths(const SRectangle& r, const NodeLayer& nodeLayer) {

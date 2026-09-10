@@ -174,3 +174,5 @@ build-*
 # IDE
 /.idea
 .kilo
+
+/.i-understand-git-submodules.txt

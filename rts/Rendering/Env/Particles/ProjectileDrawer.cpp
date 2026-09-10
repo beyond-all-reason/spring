@@ -36,6 +36,7 @@
 #include "Sim/Weapons/WeaponDef.h"
 #include "System/Config/ConfigHandler.h"
 #include "System/EventHandler.h"
+#include "System/RadixSort.h"
 #include "System/Exceptions.h"
 #include "System/Log/ILog.h"
 #include "System/SafeUtil.h"
@@ -45,15 +46,116 @@
 #include "System/Misc/TracyDefs.h"
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
+CONFIG(float, ProjectileReflectionMinRadius).defaultValue(0.0f).minimumValue(0.0f).description("Alpha particles with a draw radius (in elmos) smaller than this are skipped in water reflection passes; 0 draws all of them. Small particles are barely visible in reflections, so culling them there is cheap visually and saves a large part of the reflection pass on effect-heavy frames.");
+CONFIG(bool, ProjectileDrawThreadedFill).defaultValue(true).safemodeValue(false).description("Generate alpha-particle geometry on the ThreadPool workers instead of the render thread. Draw order is preserved; the few particle types whose Draw is not thread-safe stay on the render thread.");
+CONFIG(bool, ProjectileDrawReuseWaterPasses).defaultValue(true).safemodeValue(false).description("When water is visible, reuse the below-water pass' alpha particle geometry for the above-water pass instead of regenerating and re-uploading it. The two passes contain identical geometry by construction; disable to force a full refill per pass.");
 
-static uint32_t sortCamType = 0;
-static bool CProjectileDrawOrderSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::forward_as_tuple(p2->drawOrder, p1->GetSortDist(sortCamType), p1) > std::forward_as_tuple(p1->drawOrder, p2->GetSortDist(sortCamType), p2);
+// sort keys are snapshotted into SortableParticle at fill time, so sorting
+// works on a contiguous array instead of dereferencing two CProjectile
+// pointers (= two likely cache misses) per comparison
+using SortableParticle = CProjectileDrawer::SortableParticle;
+
+// maps a float to an unsigned int with the same ordering (for non-NaN),
+// inverted so that LARGER distances get SMALLER keys (back-to-front when
+// sorting ascending)
+static inline uint32_t DistanceSortKey(float dist) noexcept
+{
+	uint32_t u = std::bit_cast<uint32_t>(dist);
+	u ^= static_cast<uint32_t>(static_cast<int32_t>(u) >> 31) | 0x80000000u;
+	return ~u;
 }
 
-static bool CProjectileSortingPredicate(const CProjectile* p1, const CProjectile* p2) noexcept {
-	return std::forward_as_tuple(p1->GetSortDist(sortCamType), p1) > std::forward_as_tuple(p2->GetSortDist(sortCamType), p2);
-};
+// ascending == draw order: drawOrder asc (high 32 bits), distance desc
+static inline uint64_t ParticleSortKey(const CProjectile* p, uint32_t camType, bool useDrawOrder) noexcept
+{
+	const uint64_t orderKey = useDrawOrder ? (static_cast<uint32_t>(p->drawOrder) ^ 0x80000000u) : 0u;
+	return (orderKey << 32) | DistanceSortKey(p->GetSortDist(camType));
+}
+
+// The actual ordering is done by RadixSortByKey (System/RadixSort.h) on the
+// packed key: linear, input-independent cost, and stable, so equal-key
+// particles (exactly coincident ones) keep their fill order, which is frame
+// coherent. The previous comparison sort tiebroke them by pointer address.
+
+// with fewer particles per chunk the for_mt dispatch overhead exceeds the
+// quad-generation work being distributed
+static constexpr size_t MT_FILL_MIN_CHUNK_SIZE = 96;
+
+// Runs p->Draw() over a particle list, generating quads on the ThreadPool
+// workers: the list is split into contiguous chunks, each chunk fills its own
+// scratch buffer, and the scratch buffers are merged into the primary buffer
+// in chunk order, so the emitted geometry is byte-identical to a serial fill.
+// Particles with mtDrawSafe == false (immediate GL calls, Lua callins) split
+// the list into segments and are drawn serially, in their exact position.
+template<typename GetParticle>
+static void FillParticleGeometry(std::vector<TypedRenderBuffer<VA_TYPE_PROJ>>& scratchBufs, size_t count, bool threaded, GetParticle&& getParticle)
+{
+	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
+
+	size_t segStart = 0;
+	for (size_t i = 0; i <= count; ++i) {
+		CProjectile* boundaryProj = (i < count) ? getParticle(i) : nullptr;
+		if (boundaryProj != nullptr && boundaryProj->mtDrawSafe)
+			continue;
+
+		// [segStart, i) is a contiguous run of MT-safe particles.
+		// Per-particle draw cost varies wildly (a smoke trail emits dozens of
+		// quads, a small flash one), so oversubscribe chunks 4x relative to
+		// the worker count; the pool load-balances them and no single heavy
+		// chunk gates the whole dispatch.
+		const size_t segLen = i - segStart;
+		const size_t numChunks = threaded ? std::min<size_t>(ThreadPool::GetNumThreads() * 4, segLen / MT_FILL_MIN_CHUNK_SIZE) : 1;
+
+		if (numChunks < 2) {
+			for (size_t j = segStart; j < i; ++j)
+				getParticle(j)->Draw();
+		} else {
+			// main thread only: buffer (de)registration is not thread-safe
+			if (scratchBufs.size() < numChunks)
+				scratchBufs.resize(numChunks);
+
+			const size_t chunkSize = (segLen + numChunks - 1) / numChunks;
+			const size_t segEnd = i;
+
+			for_mt(0, static_cast<int>(numChunks), [&scratchBufs, &getParticle, segStart, segEnd, chunkSize](int ci) {
+				ZoneScopedN("ProjectileDrawer::DrawAlpha(MTChunk)");
+				auto& scratch = scratchBufs[ci];
+				scratch.Clear();
+
+				CExpGenSpawnable::SetGeomFillTarget(&scratch);
+				const size_t jb = segStart + ci * chunkSize;
+				const size_t je = std::min(jb + chunkSize, segEnd);
+				for (size_t j = jb; j < je; ++j)
+					getParticle(j)->Draw();
+				CExpGenSpawnable::SetGeomFillTarget(nullptr);
+			});
+
+			{
+				// merge in chunk order to preserve the back-to-front particle order
+				ZoneScopedN("ProjectileDrawer::DrawAlpha(MTMerge)");
+				for (size_t ci = 0; ci < numChunks; ++ci) {
+					auto& scratch = scratchBufs[ci];
+					const auto& verts = scratch.GetElems();
+					const auto& indcs = scratch.GetIndcs();
+
+					if (verts.empty())
+						continue;
+
+					const auto vertBias = static_cast<int32_t>(rb.GetBaseVertex());
+					rb.AddVertices(verts.begin(), verts.end());
+					rb.AddIndices(indcs.begin(), indcs.end(), vertBias);
+				}
+			}
+		}
+
+		// the boundary particle itself is not MT-safe; draw it serially in its
+		// exact sorted position
+		if (boundaryProj != nullptr)
+			boundaryProj->Draw();
+
+		segStart = i + 1;
+	}
+}
 
 CProjectileDrawer* projectileDrawer = nullptr;
 
@@ -350,8 +452,10 @@ void CProjectileDrawer::Kill() {
 
 	renderProjectiles.clear();
 
-	for (auto& dp : drawParticles)
-		dp.clear();
+	sortedParticles.clear();
+	sortScratch.clear();
+	unsortedParticles.clear();
+	mtFillBuffers.clear();
 
 	perlinFB.Kill();
 
@@ -372,11 +476,27 @@ void CProjectileDrawer::UpdateDrawFlags()
 {
 	ZoneScopedN("ProjectileDrawer::UpdateDrawFlags");
 
-	for_mt(0, renderProjectiles.size(), [this](int i) {
+	// water reflections are distorted enough that small particles contribute
+	// next to nothing visually; skipping them avoids most of the reflection
+	// pass' fill/sort/quad-generation cost on effect-heavy frames
+	const float reflMinRadius = configHandler->GetFloat("ProjectileReflectionMinRadius");
+
+	// per-frame invariants, hoisted out of the per-particle loop (notably
+	// IWater::GetWater()->CanDrawReflectionPass(), a virtual call that was
+	// previously made once per particle)
+	const bool drawReflPass = IWater::GetWater()->CanDrawReflectionPass();
+	const bool drawShadowPass = (shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_PROJ) != 0;
+	const float timeOffset = globalRendering->timeOffset;
+
+	const CCamera* camPlayer = CCameraHandler::GetCamera(CCamera::CAMTYPE_PLAYER);
+	const CCamera* camUWRefl = CCameraHandler::GetCamera(CCamera::CAMTYPE_UWREFL);
+	const CCamera* camShadow = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
+
+	for_mt(0, renderProjectiles.size(), [this, reflMinRadius, drawReflPass, drawShadowPass, timeOffset, camPlayer, camUWRefl, camShadow](int i) {
 		CProjectile* p = renderProjectiles[i];
 		const bool hasModel = (p->model != nullptr);
 
-		p->drawPos = p->GetDrawPos(globalRendering->timeOffset);
+		p->drawPos = p->GetDrawPos(timeOffset);
 
 		p->previousDrawFlag = p->drawFlag;
 		p->ResetDrawFlag();
@@ -386,52 +506,42 @@ void CProjectileDrawer::UpdateDrawFlags()
 
 		p->SetDrawFlag(DrawFlags::SO_DRICON_FLAG); //reuse as a minimap draw indication
 
-		for (uint32_t camType = CCamera::CAMTYPE_PLAYER; camType < CCamera::CAMTYPE_ENVMAP; ++camType) {
-			if (camType == CCamera::CAMTYPE_UWREFL && !IWater::GetWater()->CanDrawReflectionPass())
-				continue;
+		const float drawRadius = p->GetDrawRadius();
 
-			if (camType == CCamera::CAMTYPE_SHADOW && !p->castShadow)
-				continue;
+		if (camPlayer->InView(p->drawPos, drawRadius)) {
+			p->SetSortDist(CCamera::CAMTYPE_PLAYER, camPlayer->ProjectedDistance(p->drawPos));
 
-			if (camType == CCamera::CAMTYPE_SHADOW && ((shadowHandler.shadowGenBits & CShadowHandler::SHADOWGEN_BIT_PROJ) == 0))
-				continue;
+			if (hasModel)
+				p->AddDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
+			else
+				p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
 
-			const CCamera* cam = CCameraHandler::GetCamera(camType);
-			if (!cam->InView(p->drawPos, p->GetDrawRadius()))
-				continue;
+			if (p->drawPos.y - drawRadius < 0.0f)
+				p->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
 
-			p->SetSortDist(camType, cam->ProjectedDistance(p->drawPos));
+			// Special case of piece projectile, since it has a model and fire particle
+			if (p->piece)
+				p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+		}
 
-			switch (camType)
-			{
-				case CCamera::CAMTYPE_PLAYER: {
-					if (hasModel)
-						p->AddDrawFlag(DrawFlags::SO_OPAQUE_FLAG);
-					else
-						p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
+		if (drawReflPass && (hasModel || drawRadius >= reflMinRadius) && camUWRefl->InView(p->drawPos, drawRadius)) {
+			p->SetSortDist(CCamera::CAMTYPE_UWREFL, camUWRefl->ProjectedDistance(p->drawPos));
 
-					if (p->drawPos.y - p->GetDrawRadius() < 0.0f)
-						p->AddDrawFlag(DrawFlags::SO_REFRAC_FLAG);
+			if (CModelDrawerHelper::ObjectVisibleReflection(p->drawPos, camUWRefl->GetPos(), drawRadius))
+				p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
+		}
 
-					// Special case of piece projectile, since it has a model and fire particle
-					if (p->piece)
-						p->AddDrawFlag(DrawFlags::SO_ALPHAF_FLAG);
-				} break;
-				case CCamera::CAMTYPE_UWREFL: {
-					if (CModelDrawerHelper::ObjectVisibleReflection(p->drawPos, cam->GetPos(), p->GetDrawRadius()))
-						p->AddDrawFlag(DrawFlags::SO_REFLEC_FLAG);
-				} break;
-				case CCamera::CAMTYPE_SHADOW: {
-					if unlikely(hasModel)
-						p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-					else
-						p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+		if (drawShadowPass && p->castShadow && camShadow->InView(p->drawPos, drawRadius)) {
+			p->SetSortDist(CCamera::CAMTYPE_SHADOW, camShadow->ProjectedDistance(p->drawPos));
 
-					// Special case of piece projectile, since it has a model and fire particle
-					if (p->piece)
-						p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
-				} break;
-			}
+			if unlikely(hasModel)
+				p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
+			else
+				p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+
+			// Special case of piece projectile, since it has a model and fire particle
+			if (p->piece)
+				p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
 		}
 	});
 
@@ -753,45 +863,67 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool
 	};
 	const auto& clipPlane = clipPlanes[1U * drawBelowWater + 2U * drawAboveWater];
 
-	const uint8_t thisPassMask =
-		(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
-		(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
-		(drawRefraction * DrawFlags::SO_REFRAC_FLAG);
+	// The main view draws alpha particles twice per frame when water is
+	// visible: a below-water pass, then an above-water pass once the water
+	// surface has been drawn. Both passes contain the same particles viewed
+	// from the same camera; only the clip plane differs. Fill and upload the
+	// geometry once in the below-water pass and re-submit the saved range in
+	// the above-water pass. The water reflection/refraction passes that run
+	// in between fill the buffer for their own camera/mask and consume their
+	// own ranges, so the saved range stays valid for the whole frame.
+	const bool mainPass = !drawReflection && !drawRefraction;
+	const bool reuseWanted = configHandler->GetBool("ProjectileDrawReuseWaterPasses");
 
-	for (auto& dp : drawParticles)
-		dp.clear();
+	// the above-water main pass and the water refraction pass both view the
+	// same particles from the player camera; both can re-submit the geometry
+	// saved by the below-water pass with their own clip plane instead of
+	// refilling. (Refraction previously filled only the underwater-flagged
+	// subset; submitting the full range is visually equivalent because the
+	// clip plane discards everything above the surface.) The reflection pass
+	// uses the mirrored camera and must keep building its own billboards.
+	const bool reuseAbove = mainPass && drawAboveWater && !drawBelowWater;
+	const bool reuseRefraction = drawRefraction && !drawReflection;
+	const bool reusePass = reuseWanted && (reuseAbove || reuseRefraction) && (alphaRangeDrawFrame == globalRendering->drawFrame);
 
-	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(DP)");
-		for (CProjectile* p : renderProjectiles) {
-			if (!ShouldDrawProjectile(p, thisPassMask))
-				continue;
+	if (!reusePass) {
+		const uint8_t thisPassMask =
+			(1 - (drawReflection || drawRefraction)) * DrawFlags::SO_ALPHAF_FLAG +
+			(drawReflection * DrawFlags::SO_REFLEC_FLAG) +
+			(drawRefraction * DrawFlags::SO_REFRAC_FLAG);
 
-			drawParticles[drawSorted && p->drawSorted].emplace_back(p);
+		sortedParticles.clear();
+		unsortedParticles.clear();
+
+		const uint32_t sortCamType = camera->GetCamType();
+		const bool useDrawOrder = wantDrawOrder;
+
+		{
+			ZoneScopedN("ProjectileDrawer::DrawAlpha(DP)");
+			for (CProjectile* p : renderProjectiles) {
+				if (!ShouldDrawProjectile(p, thisPassMask))
+					continue;
+
+				if (drawSorted && p->drawSorted)
+					sortedParticles.emplace_back(SortableParticle{ ParticleSortKey(p, sortCamType, useDrawOrder), p });
+				else
+					unsortedParticles.emplace_back(p);
+			}
 		}
-	}
 
-	// set static variable to facilite sorting
-	sortCamType = camera->GetCamType();
-
-	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(SO)");
-		if (wantDrawOrder)
-			std::sort(drawParticles[true].begin(), drawParticles[true].end(), CProjectileDrawOrderSortingPredicate);
-		else
-			std::sort(drawParticles[true].begin(), drawParticles[true].end(), CProjectileSortingPredicate);
-	}
-
-	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(DS)");
-		for (auto p : drawParticles[ true]) {
-			p->Draw();
+		{
+			ZoneScopedN("ProjectileDrawer::DrawAlpha(SO)");
+			RadixSortByKey(sortedParticles, sortScratch, [](const SortableParticle& sp) noexcept { return sp.sortKey; });
 		}
-	}
-	{
-		ZoneScopedN("ProjectileDrawer::DrawAlpha(DU)");
-		for (auto p : drawParticles[false]) {
-			p->Draw();
+
+		const bool threadedFill = configHandler->GetBool("ProjectileDrawThreadedFill") && ThreadPool::HasThreads();
+
+		{
+			ZoneScopedN("ProjectileDrawer::DrawAlpha(DS)");
+			FillParticleGeometry(mtFillBuffers, sortedParticles.size(), threadedFill, [this](size_t j) { return sortedParticles[j].proj; });
+		}
+		{
+			ZoneScopedN("ProjectileDrawer::DrawAlpha(DU)");
+			FillParticleGeometry(mtFillBuffers, unsortedParticles.size(), threadedFill, [this](size_t j) { return unsortedParticles[j]; });
 		}
 	}
 
@@ -810,7 +942,18 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool
 		eventHandler.DrawWorldPreParticles(drawAboveWater, drawBelowWater, drawReflection, drawRefraction);
 
 		auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
-		if (!rb.ShouldSubmit())
+
+		if (reuseWanted && mainPass && drawBelowWater && !drawAboveWater) {
+			// an above-water pass will follow this frame; remember what to re-draw
+			const auto pendingRange = rb.GetPendingElemsRange();
+			alphaRangeStart = pendingRange.first;
+			alphaRangeCount = pendingRange.second;
+			alphaRangeDrawFrame = globalRendering->drawFrame;
+		}
+
+		const bool haveRangeToRedraw = (reusePass && alphaRangeCount > 0);
+
+		if (!haveRangeToRedraw && !rb.ShouldSubmit())
 			return;
 
 		const bool needSoften = (wantSoften > 0) && !drawReflection && !drawRefraction;
@@ -835,7 +978,16 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool
 		fxShader->SetUniform("fogColor", sky->fogColor.x, sky->fogColor.y, sky->fogColor.z);
 		fxShader->SetUniform("fogParams", sky->fogStart * camPlayer->GetFarPlaneDist(), sky->fogEnd * camPlayer->GetFarPlaneDist());
 
-		rb.DrawElements(GL_TRIANGLES);
+		if (reusePass) {
+			rb.DrawElementsRange(GL_TRIANGLES, alphaRangeStart, alphaRangeCount);
+			// consume anything appended since the range was saved (e.g. by the
+			// DrawWorldPreParticles handlers above), so it cannot leak into a
+			// later submit running a different shader
+			if (rb.ShouldSubmit())
+				rb.DrawElements(GL_TRIANGLES);
+		} else {
+			rb.DrawElements(GL_TRIANGLES);
+		}
 
 		fxShader->Disable();
 
@@ -890,12 +1042,22 @@ void CProjectileDrawer::DrawShadowTransparent()
 
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
-	// draw the model-less projectiles
+	// draw the model-less projectiles; the multiplicative shadow blend is
+	// order-independent, so the list needs no sorting. unsortedParticles is
+	// only otherwise used inside DrawAlpha, which runs later in the frame and
+	// clears it first.
+	unsortedParticles.clear();
 	for (CProjectile* p : renderProjectiles) {
 		if (!ShouldDrawProjectile(p, DrawFlags::SO_SHTRAN_FLAG))
 			continue;
 
-		p->Draw();
+		unsortedParticles.emplace_back(p);
+	}
+
+	{
+		ZoneScopedN("ProjectileDrawer::DrawShadowTransparent(Fill)");
+		const bool threadedFill = configHandler->GetBool("ProjectileDrawThreadedFill") && ThreadPool::HasThreads();
+		FillParticleGeometry(mtFillBuffers, unsortedParticles.size(), threadedFill, [this](size_t j) { return unsortedParticles[j]; });
 	}
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();

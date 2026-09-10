@@ -115,11 +115,28 @@ namespace Rml::SolLua
 
 	void SolLuaEventListener::OnDetach(Rml::Element* element)
 	{
-		delete this;
+		// Mark as detached but don't delete immediately.
+		// Deletion will happen when ProcessEvent completes or on next ProcessEvent call.
+		m_detached = true;
+		m_element = nullptr;
 	}
 
 	void SolLuaEventListener::ProcessEvent(Rml::Event& event)
 	{
+		// If we were detached, delete ourselves now that it's safe
+		if (m_detached)
+		{
+			delete this;
+			return;
+		}
+
+		// Check if element is still valid (may have been destroyed during event processing)
+		if (m_element == nullptr)
+			return;
+
+		if (m_element->GetContext() == nullptr)
+			return;
+
 		auto document = dynamic_cast<SolLuaDocument*>(m_element->GetOwnerDocument());
 		if (document != nullptr && m_func.valid())
 		{
@@ -139,6 +156,10 @@ namespace Rml::SolLua
 				ErrorHandler(m_func.lua_state(), std::move(result));
 			}
 		}
+
+		// After processing, check if we were detached during the callback
+		if (m_detached)
+			delete this;
 	}
 
 } // namespace Rml::SolLua

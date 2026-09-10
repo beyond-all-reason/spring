@@ -33,6 +33,7 @@
 
 #include "../plugin/SolLuaDataModel.h"
 #include "../plugin/SolLuaDocument.h"
+#include "Rml/Backends/RmlUi_Backend.h"
 #include "sol2/sol.hpp"
 
 #include <memory>
@@ -427,7 +428,12 @@ void bind_context(sol::table& namespace_table, SolLuaPlugin* slp)
 		 * @function RmlUi.Context:Render
 		 * @return boolean
 		 */
-		"Render", &Rml::Context::Render,
+		"Render", [](Rml::Context& self) {
+			RmlGui::BeginFrame();
+			bool result = self.Render();
+			RmlGui::PresentFrame();
+			return result;
+		},
 		/***
 		 * Closes all documents currently loaded with the context.
 		 * @function RmlUi.Context:UnloadAllDocuments

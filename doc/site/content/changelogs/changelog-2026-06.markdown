@@ -1,11 +1,9 @@
 +++
-title = "Running changelog"
-[cascade]
-  [cascade.params]
-    type = "docs"
+title = "Release 2026.06"
+aliases = ['/changelogs/changelog-2026-06']
 +++
 
-This is the bleeding-edge changelog since version 2025.06, for **pre-release 2026.06**.
+This is the changelog since version 2025.06 until **version 2026.06.12**, which was released on 2026-07-14.
 
 ## Caveats
 
@@ -45,34 +43,6 @@ This is the bleeding-edge changelog since version 2025.06, for **pre-release 202
 - added `wupget:MiniMapGeometryChanged(x, y, sizeX, sizeY, prevX, prevY, prevSizeX, prevSizeY)` unsynced callin. In pixels.
 - added `wupget:MiniMapStateChanged(isMinimized, isMaximized, isSlaved)` unsynced callin.
 
-### Lua environment sandboxing
-- LuaSocket no longer inits before Lua sandboxing.
-- unsynced LuaRules (incl. unsynced LuaGaia) now has access to `io` and `os` libraries.
-- unsynced LuaRules (incl. unsynced LuaGaia) now has access to the `debug` library by default (no longer requires devmode).
-
-### Custom teamcolor palette
-- add `Spring.SetCustomPaletteColor(paletteID, r, g, b) → nil`. Sets a palette color for shader use. See below.
-- add `Spring.GetCustomPaletteColor(paletteID) → r, g, b`.
-- add `Engine.maxCustomPaletteID`, the highest available palette ID.
-- add `Spring.SetUnitPaletteIndex(unitID, paletteID?) → nil`. Assigns a paletteID to a unit. Use nil to reset to the default palette.
-- add `Spring.GetUnitPaletteIndex(unitID) → paletteID?`.
-- add `Spring.SetFeaturePaletteIndex(featureID, paletteID?)`.
-- add `Spring.GetFeaturePaletteIndex(featureID) → paletteID?`.
-- the `teamColor` array in shaders now has much more room and contains both teamcolors and colors of the custom palette, as per above.
-- the actual teamID is now available as the fifth byte (first byte of the second 4-byte composite) in model uniform data.
-- note that the value of the palette index is different than what is seen from Lua. Units with no custom paletteID have the index point to an entry that contains their team color.
-- the basecontent teamcolor shader takes the above changes into account. Existing custom shaders that use `instData.z & 0xFF` for teamID should keep working as long as the palette feature isn't used, to support it properly the constant needs to be `0x7FF` instead.
-- projectiles, and ghosts (buildings out of sight and queued things) unchanged, they still just draw teamcolor naively and cannot use a shader.
-
-### Replay path getters
-- add `Spring.GetReplayFilePath() → string?`, returns path of replay being watched.
-- add `Spring.GetReplayRecordingFilePath() → string?`, returns path of replay to be produced. Note that this is just a prospective file path (nothing is written until the match ends), and that it possible to record a replay of a replay.
-
-### Build commands
-- builders now perform an extra block check immediately when a build command reaches the front of the queue. This is in addition to the existing periodic (≈ 0.4 Hz) block check. A block check cancels a build command if the build site is hard-blocked ("red squares", as opposed to "yellow squares" with reclaimables/mobiles).
-- add `Spring.SetEngineBuildSquareRendering(bool) → nil`, for disabling the native rendering of the footprint grid when a build command is selected.
-- add `wupget:DrawBuildSquare(unitDefID, x, z, facing, statuses) → nil` unsynced callin, fires when a build command is selected. Statuses is a 1D array for the status of each tile: 0 blocked (red), 1 occupied (yellow), 2 reclaimable (yellow), 3 open (green). This fires even if native drawing is enabled.
-
 ### Misc
 
 - UTF-8 file paths are now supported.
@@ -80,12 +50,8 @@ This is the bleeding-edge changelog since version 2025.06, for **pre-release 202
 - `/aicontrol` is now blocked by default. Call `/aiCtrl PlayerName` or `/aiCtrlByNum 123` to enable.
 - `script:AimWeapon` now receives unit-relative heading and pitch, rather than world-space. This means units angled on slopes will receive different values.
 - heading cast to radians will now return \[-pi; +pi) rather than \[0; tau).
-- `VFS.GetAvailableAIs()` returned entries now have a new `isLuaAI` boolean.
-- add `Platform.architecture`, string. Usually "x86_64", with some ongoing work to support "arm64".
 - add `Spring.SetCheatingEnabled(bool)`.
 - add `Spring.SetGodMode(bool? controlAllies, bool? controlEnemies)`.
-- add `Spring.GetClosestEnemyUnit(x, y, z, range = inf) → unitID?` to LuaUI.
-- add `Spring.GetClosestEnemyUnit(x, y, z, range = inf, allyTeamID, bool useLoS = true, bool spherical = false, bool requireEnemyToSeePos = false) → unitID?` to LuaRules.
 - large QTPFS perf improvements.
 - always output logs to stdout.
 - add boolean `Platform.isHeadless`.
@@ -95,3 +61,6 @@ This is the bleeding-edge changelog since version 2025.06, for **pre-release 202
 
 - fix logs sometimes not getting flushed on exit
 - fix `CMD[20]` and `CMD[105]` returning legacy aliases for those commands rather than their standard names.
+- fix an archive scanner pool crash.
+- fix AI commands not being validated.
+- fix Windows reporting hardware incorrectly.

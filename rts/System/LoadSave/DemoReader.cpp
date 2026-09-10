@@ -5,8 +5,9 @@
 #include "Game/GameVersion.h"
 #include "Sim/Misc/GlobalConstants.h"
 
-#ifndef TOOLS
 #include "DemoFileExtension.h"
+
+#ifndef TOOLS
 #include "System/Config/ConfigHandler.h"
 CONFIG(bool, DisableDemoVersionCheck).defaultValue(false).description("Allow to play every replay file (may crash / cause undefined behaviour in replays)");
 #endif

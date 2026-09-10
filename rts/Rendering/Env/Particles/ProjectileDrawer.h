@@ -167,8 +167,35 @@ private:
 	/// projectiles with a model, binned by model type and textures
 	std::array<ModelRenderContainer<CProjectile>, MODELTYPE_CNT> modelRenderers;
 
-	/// used to render particle effects in back-to-front order. {unsorted, sorted}
-	std::array<std::vector<CProjectile*>, 2> drawParticles;
+public:
+	struct SortableParticle {
+		// drawOrder and view distance packed into one integer so that an
+		// ascending sort yields the draw order (drawOrder asc, distance desc)
+		uint64_t sortKey;
+		CProjectile* proj;
+	};
+
+private:
+	/// alpha particles drawn back-to-front; sort keys are snapshotted at fill
+	/// time so sorting works on a contiguous 16-byte array instead of chasing
+	/// projectile pointers
+	std::vector<SortableParticle> sortedParticles;
+	/// ping-pong buffer for the radix sort passes
+	std::vector<SortableParticle> sortScratch;
+	/// alpha particles that opt out of sorting, drawn after the sorted ones
+	std::vector<CProjectile*> unsortedParticles;
+
+	/// per-chunk scratch buffers for the multithreaded alpha-pass geometry
+	/// fill; only their CPU-side arrays are ever used (no GL objects). Grown
+	/// on the main thread only, since (de)registration in the RenderBuffer
+	/// registry is not thread-safe.
+	std::vector<TypedRenderBuffer<VA_TYPE_PROJ>> mtFillBuffers;
+
+	/// geometry range submitted by the below-water alpha pass, re-drawn by the
+	/// above-water pass of the same frame instead of refilling the buffer
+	size_t alphaRangeStart = 0;
+	size_t alphaRangeCount = 0;
+	unsigned int alphaRangeDrawFrame = 0;
 
 	bool drawSorted = true;
 

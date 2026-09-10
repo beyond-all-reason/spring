@@ -159,16 +159,16 @@ void CSimpleParticleSystem::Draw()
 	}
 
 	// !directional
+	zdir = camera->GetForward();
+	xdir = camera->GetRight();
+	ydir = camera->GetUp();
+
 	for (int i = 0; i < numParticles; i++) {
 		const Particle* p = &particles[i];
 
 		if (p->life >= 1.0f)
 			continue;
 
-		zdir = camera->GetForward();
-		xdir = camera->GetRight();
-		ydir = camera->GetUp();
-		
 		DoParticleDraw(xdir, ydir, zdir, p);
 	}
 }

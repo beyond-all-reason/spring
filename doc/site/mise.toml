@@ -1,3 +1,6 @@
+[settings.npm]
+	package_manager = "npm"
+
 [tools]
 	# We only install tools required for each task on each task, unless all tasks use a tool here
 	# For CI when we need to install and cache all tools, see mise.ci.toml
@@ -17,7 +20,7 @@
 	lua_doc_gen_dest = "$RECOIL_LUA_LIBRARY_DIR/generated"
 	site_dir = 'doc/site'
 	site_temp_dir = "{{vars.site_dir}}/temp"
-	lua_doc_paths = 'rts/{Lua,Rml/SolLua}/**/*.cpp'
+	lua_doc_paths = 'rts/{Lua,Rml/SolLua,Sim/Units/Scripts}/**/*.cpp'
 	lua_pages_dir = "{{vars.site_dir}}/content/docs/lua-api"
 	emmylua_cli_template = "{{vars.site_dir}}/emmylua-doc-cli-template"
 	latest_release_data = 'data/latest_release.json'
@@ -101,7 +104,7 @@
 
 	[tasks.lua_library]
 	description = "Generate Lua Docs"
-	tools."npm:lua-doc-extractor" = "{{env.LUA_DOC_EXTRACTOR_VERSION}}"
+	tools."npm:lua-doc-extractor" = { version = "{{env.LUA_DOC_EXTRACTOR_VERSION}}", allow_low_downloads = true }
 	dir = "../../"
 	run = [
 		"lua-doc-extractor --src \"{{vars.lua_doc_paths}}\" --dest {{vars.lua_doc_gen_dest}} --repo \"${LUA_DOC_EXTRACTOR_SOURCE_REF}\""

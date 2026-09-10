@@ -177,6 +177,7 @@ class LuaOpenGL {
 		static int GetViewRange(lua_State* L);
 
 		static int DrawMiniMap(lua_State* L);
+		static int DrawMiniMapIcons(lua_State* L);
 		static int SlaveMiniMap(lua_State* L);
 		static int ConfigMiniMap(lua_State* L);
 
@@ -231,6 +232,7 @@ class LuaOpenGL {
 		static int DeleteTextureFBO(lua_State* L);
 		static int TextureInfo(lua_State* L);
 		static int CopyToTexture(lua_State* L);
+		static int CopyImageSubData(lua_State* L);
 		static int RenderToTexture(lua_State* L);
 		static int GenerateMipmap(lua_State* L);
 		static int ActiveTexture(lua_State* L);

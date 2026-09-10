@@ -10,8 +10,11 @@
 #include <zlib.h>
 
 #include "demofile.h"
-#include "System/Config/ConfigHandler.h"
 #include "System/StringUtil.h"
+
+// Tools do not link the config subsystem, and accept any extension anyway.
+#ifndef TOOLS
+#include "System/Config/ConfigHandler.h"
 
 CONFIG(std::string, DemoFileExtension).defaultValue("sdfz").description("Comma-separated list of replay file extensions. The first entry is used when recording; all entries are accepted when loading. Set by the lobby (e.g. 'barreplay,sdfz' for BAR).");
 
@@ -32,6 +35,7 @@ std::vector<std::string> GetDemoFileExtensions()
 		extensions.emplace_back("sdfz");
 	return extensions;
 }
+#endif
 
 bool IsDemoExtension(const std::string& ext)
 {

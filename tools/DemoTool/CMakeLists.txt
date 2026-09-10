@@ -42,6 +42,7 @@ set(demoToolSpringSources
 	${ENGINE_SRC_ROOT_DIR}/System/Sync/SHA512.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/StringUtil.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Net/RawPacket.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoFileExtension.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoReader.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/Demo.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Log/Backend.cpp

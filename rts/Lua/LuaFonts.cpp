@@ -192,6 +192,15 @@ int LuaFonts::meta_index(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Load a font from a file.
+ *
+ * @function gl.LoadFont
+ * @param fontFile string
+ * @param size integer?
+ * @param outlineWidth integer?
+ * @param outlineWeight number?
+ * @return LuaFont font
+ */
 int LuaFonts::LoadFont(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -208,6 +217,11 @@ int LuaFonts::LoadFont(lua_State* L)
 }
 
 
+/*** Delete a font object.
+ *
+ * @function gl.DeleteFont
+ * @param font LuaFont
+ */
 int LuaFonts::DeleteFont(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -261,6 +275,15 @@ int LuaFonts::ClearFallbackFonts(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Draws text in screen space at the given position.
+ *
+ * @function LuaFont:Print
+ * @param text string
+ * @param x number
+ * @param y number
+ * @param size number? Defaults to the font's point size.
+ * @param options string? Flag characters for alignment, outline, shadow, scaling, etc. (e.g. `"co"` for center and outline).
+ */
 int LuaFonts::Print(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -309,6 +332,16 @@ int LuaFonts::Print(lua_State* L)
 	return 0;
 }
 
+/*** Draws text in world space at the given position.
+ *
+ * @function LuaFont:PrintWorld
+ * @param text string
+ * @param x number
+ * @param y number
+ * @param z number
+ * @param size number? Defaults to the font's point size.
+ * @param options string? Flag characters for alignment, outline, shadow, scaling, etc. (e.g. `"co"` for center and outline).
+ */
 int LuaFonts::PrintWorld(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -388,6 +421,10 @@ int LuaFonts::Begin(lua_State* L)
 	return 0;
 }
 
+/*** Ends a font command block started with `LuaFont:Begin`.
+ *
+ * @function LuaFont:End
+ */
 int LuaFonts::End(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -426,6 +463,16 @@ int LuaFonts::SubmitBuffered(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Wraps text to fit within a maximum width (and optional max height), in-place.
+ *
+ * @function LuaFont:WrapText
+ * @param text string
+ * @param maxWidth number
+ * @param maxHeight number? Defaults to an engine-defined maximum height.
+ * @param size number? Defaults to the font's point size.
+ * @return string wrappedText
+ * @return integer lineCount
+ */
 int LuaFonts::WrapText(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -447,6 +494,12 @@ int LuaFonts::WrapText(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Returns the horizontal extent of a string for this font at its current size.
+ *
+ * @function LuaFont:GetTextWidth
+ * @param text string
+ * @return number width
+ */
 int LuaFonts::GetTextWidth(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -457,6 +510,14 @@ int LuaFonts::GetTextWidth(lua_State* L)
 }
 
 
+/*** Returns layout metrics for a string: total height, descender depth, and line count.
+ *
+ * @function LuaFont:GetTextHeight
+ * @param text string
+ * @return number height
+ * @return number descender
+ * @return integer lines
+ */
 int LuaFonts::GetTextHeight(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -508,10 +569,26 @@ static int SetTextColorShared(lua_State* L, bool outline)
 	return 0;
 }
 
+/*** Sets the RGBA color used when drawing text (fill).
+ *
+ * @function LuaFont:SetTextColor
+ * @param color table Four-component RGBA array (`{r, g, b, a}`), or pass `r`, `g`, `b`, and optional `a` as separate numbers (requires at least three numeric components after the font).
+ */
 int LuaFonts::SetTextColor(lua_State* L) { return (SetTextColorShared(L, false)); }
+
+/*** Sets the RGBA color used for text outline when outline rendering is enabled.
+ *
+ * @function LuaFont:SetOutlineColor
+ * @param color table Four-component RGBA array (`{r, g, b, a}`), or pass `r`, `g`, `b`, and optional `a` as separate numbers (requires at least three numeric components after the font).
+ */
 int LuaFonts::SetOutlineColor(lua_State* L) { return (SetTextColorShared(L, true)); }
 
 
+/*** When enabled, outline color is derived automatically instead of using `SetOutlineColor`.
+ *
+ * @function LuaFont:SetAutoOutlineColor
+ * @param enabled boolean
+ */
 int LuaFonts::SetAutoOutlineColor(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;

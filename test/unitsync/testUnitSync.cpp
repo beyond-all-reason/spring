@@ -350,4 +350,12 @@ TEST_CASE("UnitSync")
 	if ((errmsg = us::GetNextError()) == nullptr) {
 		FAIL_CHECK("No error on GetWritableDataDirectory before init"); // there's an error cause we called GetWritableDataDirectory() after UnInit()!
 	}
+
+	// Exercise repeated initialization and shutdown.
+	for (int cycle = 0; cycle < 2; ++cycle) {
+		CHECK(us::Init(false, 0) != 0);
+		CHECK_ERROR_MESSAGE(errmsg);
+		us::UnInit();
+		CHECK_ERROR_MESSAGE(errmsg);
+	}
 }

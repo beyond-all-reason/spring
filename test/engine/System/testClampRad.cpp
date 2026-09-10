@@ -8,6 +8,19 @@
 
 #include <catch_amalgamated.hpp>
 
+// COB scripts encode angles as TA units where a full turn is COBSCALE (65536),
+// so any angle past a half turn exceeds the range of a signed short and is meant
+// to wrap around (it is a circular 16-bit angle). Truncating the scaled value to
+// int first is well defined for the bounded angles the sim feeds in, and the
+// following int->short narrowing performs that modular wrap deterministically.
+// Converting straight from float to short would be undefined behaviour once the
+// value leaves short's range, and produced different results on arm64 vs x86,
+// desyncing multiplayer.
+static inline short RadAngleToCobShort(float radAngle)
+{
+	return static_cast<short>(static_cast<int>(radAngle * RAD2TAANG));
+}
+
 InitSpringTime ist;
 
 TEST_CASE("ClampRad")
@@ -43,10 +56,10 @@ TEST_CASE("ClampRad")
 	CHECK_FALSE(std::signbit(ClampRad(0.0f)));
 
 	// Test TAANG2RAD conversion to short for [0, 2pi)
-	CHECK(static_cast<short>(ClampRad(0.0f) * RAD2TAANG) == short(0));
-	CHECK(static_cast<short>(ClampRad(+std::nextafterf(math::TWOPI, -std::numeric_limits<float>::infinity())) * RAD2TAANG) == short(-1));
-	CHECK(static_cast<short>(ClampRad(+std::nextafterf(       0.0f, +std::numeric_limits<float>::infinity())) * RAD2TAANG) == short( 0));
-	CHECK(static_cast<short>(ClampRad(+std::nextafterf(TAANG2RAD  , +std::numeric_limits<float>::infinity())) * RAD2TAANG) == short(+1));
+	CHECK(RadAngleToCobShort(ClampRad(0.0f)) == short(0));
+	CHECK(RadAngleToCobShort(ClampRad(+std::nextafterf(math::TWOPI, -std::numeric_limits<float>::infinity()))) == short(-1));
+	CHECK(RadAngleToCobShort(ClampRad(+std::nextafterf(       0.0f, +std::numeric_limits<float>::infinity()))) == short( 0));
+	CHECK(RadAngleToCobShort(ClampRad(+std::nextafterf(TAANG2RAD  , +std::numeric_limits<float>::infinity()))) == short(+1));
 }
 
 TEST_CASE("ClampRadPi")
@@ -76,8 +89,8 @@ TEST_CASE("ClampRadPi")
 	CHECK_FALSE(std::signbit(ClampRadPi(0.0f)));
 
 	// Test TAANG2RAD conversion to short for [-pi, pi)
-	CHECK(static_cast<short>(ClampRadPi(-(math::PI)) * RAD2TAANG) == short(-32768));
-	CHECK(static_cast<short>(ClampRadPi(+std::nextafterf(math::PI, -std::numeric_limits<float>::infinity())) * RAD2TAANG) == short(32767));
-	CHECK(static_cast<short>(ClampRadPi((math::PI)) * RAD2TAANG) == short(-32768));
+	CHECK(RadAngleToCobShort(ClampRadPi(-(math::PI))) == short(-32768));
+	CHECK(RadAngleToCobShort(ClampRadPi(+std::nextafterf(math::PI, -std::numeric_limits<float>::infinity()))) == short(32767));
+	CHECK(RadAngleToCobShort(ClampRadPi((math::PI))) == short(-32768));
 }
 

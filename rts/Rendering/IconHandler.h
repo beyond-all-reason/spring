@@ -27,16 +27,18 @@ namespace icon {
 			, size{ 0.0f }
 			, distance{ 1.0f }
 			, distSqr{ 1.0f }
+			, drawOrder{ 0.0f }
 			, radiusAdjust{ false }
 			, srcTexCoords{}
 			, texCoords{}
 		{}
-		explicit IconData(const std::string& name_, const std::string& fileName_, float size_, float distance_, uint32_t atlasIndex_, bool radiusAdjust_, const float4& srcTexCoords_)
+		explicit IconData(const std::string& name_, const std::string& fileName_, float size_, float distance_, uint32_t atlasIndex_, bool radiusAdjust_, const float4& srcTexCoords_, float drawOrder_ = 0.0f)
 			: name{ name_ }
 			, fileName{ fileName_ }
 			, size{ size_ }
 			, distance{ distance_ }
 			, distSqr{ distance_ * distance_ }
+			, drawOrder{ drawOrder_ }
 			, radiusAdjust{ radiusAdjust_ }
 			, srcTexCoords{ srcTexCoords_ }
 			, texCoords{ 0.0f, 0.0f, 1.0f, 1.0f, atlasIndex_ }
@@ -46,6 +48,7 @@ namespace icon {
 		const auto& GetSize() const { return size; }
 		const auto& GetDistance() const { return distance; }
 		const auto& GetDistanceSq() const { return distSqr; }
+		const auto& GetDrawOrder() const { return drawOrder; }
 		const auto& GetRadiusAdjust() const { return radiusAdjust; }
 		const auto& GetSrcTexCoords() const { return srcTexCoords; }
 		const auto& GetTexCoords() const { return texCoords; }
@@ -62,6 +65,7 @@ namespace icon {
 		float size;
 		float distance;
 		float distSqr;
+		float drawOrder;
 
 		bool radiusAdjust;
 		float4 srcTexCoords;
@@ -88,7 +92,8 @@ namespace icon {
 				float size,
 				float distance,
 				bool radAdj,
-				float u0, float v0, float u1, float v1
+				float u0, float v0, float u1, float v1,
+				float drawOrder = 0.0f
 			);
 
 			bool FreeIcon(const std::string& iconName);
@@ -103,6 +108,8 @@ namespace icon {
 			size_t GetIconIdxOrDefault(const std::string& iconName) const;
 			std::pair<bool, spring::unordered_map<std::string, size_t>::const_iterator> FindIconIdx(const std::string& iconName) const;
 			size_t GetDefaultIconIdx() const { return defaultIconIdx; }
+			/// true when any icon defines a nonzero drawOrder; sorting is skipped entirely otherwise
+			bool HasDrawOrders() const { return (drawOrderIconCount > 0); }
 
 			const auto& GetAtlasTextureIDs() const { return atlasTextureIDs; }
 			auto GetAtlasTextureID(size_t i) const { return atlasTextureIDs[i]; }
@@ -120,6 +127,7 @@ namespace icon {
 			std::vector<IconData> iconsData;
 
 			size_t defaultIconIdx = INVALID_ICON_INDEX;
+			size_t drawOrderIconCount = 0;
 
 			std::array<uint32_t, 2> atlasTextureIDs = {};
 			std::array<int2, 2> atlasTextureSizes = {};

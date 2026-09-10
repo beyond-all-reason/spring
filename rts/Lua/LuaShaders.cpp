@@ -793,6 +793,7 @@ int LuaShaders::CreateShader(lua_State* L)
  *
  * @function gl.DeleteShader
  * @param shaderID integer
+ * @return boolean? deleted `nil` if `shaderID` is `nil`.
  */
 int LuaShaders::DeleteShader(lua_State* L)
 {
@@ -990,6 +991,17 @@ int LuaShaders::GetUniformLocation(lua_State* L)
 	return 1;
 }
 
+/***
+ * Returns the subroutine index for a shader program.
+ *
+ * @function gl.GetSubroutineIndex
+ * @param shaderID integer
+ * @param shaderType integer
+ * @param name string
+ * @return integer? index
+ *
+ * Returns no value when shader support is unavailable or `shaderID` is invalid.
+ */
 int LuaShaders::GetSubroutineIndex(lua_State* L)
 {
 	if (!IS_GL_FUNCTION_AVAILABLE(glGetSubroutineIndex))
@@ -1038,7 +1050,25 @@ namespace {
 	}
 }
 
+/***
+ * Writes user-defined model uniforms for a unit.
+ *
+ * @function gl.SetUnitBufferUniforms
+ * @param unitID UnitID
+ * @param values number[]
+ * @param offset integer?
+ * @return integer count
+ */
 int LuaShaders::SetUnitBufferUniforms(lua_State* L) { return SetObjectBufferUniforms<CUnit>(L, __func__); }
+/***
+ * Writes user-defined model uniforms for a feature.
+ *
+ * @function gl.SetFeatureBufferUniforms
+ * @param featureID FeatureID
+ * @param values number[]
+ * @param offset integer?
+ * @return integer count
+ */
 int LuaShaders::SetFeatureBufferUniforms(lua_State* L) { return SetObjectBufferUniforms<CFeature>(L, __func__); }
 
 
@@ -1051,6 +1081,7 @@ int LuaShaders::SetFeatureBufferUniforms(lua_State* L) { return SetObjectBufferU
  * shader. Shader must be activated before setting uniforms.
  *
  * @function gl.Uniform
+ * @function gl.UniformFloat Alias of Uniform
  * @param locationID GL|string uniformName
  * @param f1 number
  * @param f2 number?
@@ -1292,6 +1323,13 @@ int LuaShaders::UniformMatrix(lua_State* L)
 	return 0;
 }
 
+/***
+ * Selects a subroutine for the active shader program.
+ *
+ * @function gl.UniformSubroutine
+ * @param shaderType integer
+ * @param index integer
+ */
 int LuaShaders::UniformSubroutine(lua_State* L)
 {
 	if (!IS_GL_FUNCTION_AVAILABLE(glUniformSubroutinesuiv))
@@ -1313,7 +1351,7 @@ int LuaShaders::UniformSubroutine(lua_State* L)
  *
  * Return the GLSL compliant definition of UniformMatricesBuffer(idx=0) or UniformParamsBuffer(idx=1) structure.
  *
- * @param index number
+ * @param index integer
  * @return string glslDefinition
  */
 int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
@@ -1335,7 +1373,7 @@ int LuaShaders::GetEngineUniformBufferDef(lua_State* L)
  *
  * Return the GLSL compliant definition of ModelUniformData structure (per Unit/Feature buffer available on GPU)
  *
- * @param index number
+ * @param index integer
  * @return string glslDefinition
  */
 int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
@@ -1353,9 +1391,9 @@ int LuaShaders::GetEngineModelUniformDataDef(lua_State* L)
  *
  * Return the current size values of ModelUniformData structure (per Unit/Feature buffer available on GPU)
  *
- * @param index number
- * @return number sizeInElements
- * @return number sizeInBytesOnCPU
+ * @param index integer
+ * @return integer sizeInElements
+ * @return integer sizeInBytesOnCPU
 
  */
 int LuaShaders::GetEngineModelUniformDataSize(lua_State* L)
@@ -1374,8 +1412,8 @@ int LuaShaders::GetEngineModelUniformDataSize(lua_State* L)
  *
  * @function gl.SetGeometryShaderParameter
  * @param shaderID integer
- * @param key number
- * @param value number
+ * @param key GL
+ * @param value integer
  * @return nil
  */
 int LuaShaders::SetGeometryShaderParameter(lua_State* L)

@@ -21,15 +21,15 @@ public:
         postLoad.publish();
     }
 
-    [[nodiscard]] auto OnUpdate() ENTT_NOEXCEPT {
+    [[nodiscard]] auto OnUpdate() noexcept {
         return entt::sink{update};
     }
 
-    [[nodiscard]] auto OnPreLoad() ENTT_NOEXCEPT {
+    [[nodiscard]] auto OnPreLoad() noexcept {
         return entt::sink{preLoad};
     }
 
-    [[nodiscard]] auto OnPostLoad() ENTT_NOEXCEPT {
+    [[nodiscard]] auto OnPostLoad() noexcept {
         return entt::sink{postLoad};
     }
 

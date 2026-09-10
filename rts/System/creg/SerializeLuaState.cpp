@@ -1042,7 +1042,7 @@ void creg_lua_State::PostLoad()
 	}
 
 	size_t savedpc_offset = * (size_t *) &savedpc;
-	savedpc = GetProtoFromCallInfo(ci)->code + savedpc_offset;
+	savedpc = GetProtoFromCallInfo(ci - 1)->code + savedpc_offset;
 }
 
 

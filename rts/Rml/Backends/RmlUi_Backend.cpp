@@ -115,6 +115,9 @@ public:
 
 	RmlGui::SVG::DynamicSVGPlugin* svgPlugin;
 	Rml::UniquePtr<Rml::ElementInstancerGeneric<RmlGui::ElementLuaTexture>> element_lua_texture_instancer;
+
+	// Deferred element deletion: elements removed during event processing are kept alive here
+	std::vector<Rml::ElementPtr> pending_deletes;
 };
 
 static Rml::UniquePtr<BackendState> state;
@@ -122,6 +125,14 @@ static Rml::UniquePtr<BackendState> state;
 bool RmlInitialized()
 {
 	return state && state->initialized;
+}
+
+// Deferred element deletion helper - called from Lua bindings
+// Elements are kept alive until RmlGui::Update() clears them
+void AddPendingDelete(Rml::ElementPtr element)
+{
+	if (RmlInitialized() && element)
+		state->pending_deletes.push_back(std::move(element));
 }
 
 bool RmlGui::Initialize()
@@ -380,6 +391,9 @@ void RmlGui::Update()
 		}
 		state->contexts_to_remove.clear();
 	}
+
+	// Clear deferred element deletions - safe point outside event processing
+	state->pending_deletes.clear();
 }
 
 void RmlGui::RenderFrame()
