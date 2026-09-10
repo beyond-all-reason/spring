@@ -51,6 +51,7 @@ static constexpr int CMD_CAPTURE             = 130;
 static constexpr int CMD_AUTOREPAIRLEVEL     = 135;
 static constexpr int CMD_IDLEMODE            = 145;
 static constexpr int CMD_FAILED              = 150;
+static constexpr int CMD_REMOVE_RANGE        = 155;
 
 static constexpr int CMDTYPE_ICON                      =  0;  // expect 0 parameters in return
 static constexpr int CMDTYPE_ICON_MODE                 =  5;  // expect 1 parameter in return (number selected mode)
