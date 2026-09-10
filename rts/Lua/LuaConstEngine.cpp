@@ -43,8 +43,8 @@
  * @field commitsNumber string Number of commits after the latest named release, non-zero indicates a "dev" build
  * @field buildFlags string Gets additional engine buildflags, e.g. "Debug" or "Sync-Debug"
  * @field featureSupport FeatureSupport Table containing various engine features as keys; use for cross-version compat
- * @field wordSize number Indicates the build type always 64 these days
- * @field gameSpeed number Number of simulation gameframes per second
+ * @field wordSize integer Indicates the build type always 64 these days
+ * @field gameSpeed integer Number of simulation gameframes per second
  * @field textColorCodes TextColorCode Table containing keys that represent the color code operations during font rendering
  */
 

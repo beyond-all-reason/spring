@@ -357,6 +357,7 @@ decltype(glad_glTexCoord2fv) glad_glTexCoord2fv = nullptr;
 decltype(glad_glTexCoord2i) glad_glTexCoord2i = nullptr;
 decltype(glad_glTexCoord3f) glad_glTexCoord3f = nullptr;
 decltype(glad_glTexCoord4f) glad_glTexCoord4f = nullptr;
+decltype(glad_glTexCoord4fv) glad_glTexCoord4fv = nullptr;
 decltype(glad_glTexCoordPointer) glad_glTexCoordPointer = nullptr;
 decltype(glad_glTexEnvf) glad_glTexEnvf = nullptr;
 decltype(glad_glTexEnvfv) glad_glTexEnvfv = nullptr;
@@ -796,6 +797,7 @@ int gladLoadGL(void) {
     glad_glTexCoord2i = MakeStubImpl(glad_glTexCoord2i);
     glad_glTexCoord3f = MakeStubImpl(glad_glTexCoord3f);
     glad_glTexCoord4f = MakeStubImpl(glad_glTexCoord4f);
+    glad_glTexCoord4fv = MakeStubImpl(glad_glTexCoord4fv);
     glad_glTexCoordPointer = MakeStubImpl(glad_glTexCoordPointer);
     glad_glTexEnvf = MakeStubImpl(glad_glTexEnvf);
     glad_glTexEnvfv = MakeStubImpl(glad_glTexEnvfv);

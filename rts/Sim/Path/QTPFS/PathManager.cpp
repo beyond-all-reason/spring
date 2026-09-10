@@ -177,7 +177,7 @@ QTPFS::PathManager::PathManager() {
 	UnsyncedPathSearch::InitStatic();
 	ExternallyManagedPathSearch::InitStatic();
 
-	assert(registry.alive() == 0);
+	assert(registry.storage<entt::entity>().free_list() == 0);
 
 	// reserve entity 0 so it can't be used picked up by a path by accident.
 	systemEntity = registry.create();
@@ -198,7 +198,7 @@ QTPFS::PathManager::~PathManager() {
 
 	// print out and clear anything still left in the registry
 	// due to delayed path deletion there may be some entities still around.
-	registry.each([this](auto entity) {
+	for ( auto entity : registry.storage<QTPFS::entity>() ) {
 		bool isPath = registry.all_of<IPath>(entity);
 		bool isUnsyncedPath = registry.all_of<UnsyncedIPath>(entity);
 		bool isExternallyManagedSyncedPath = registry.all_of<ExternallyManagedSyncedIPath>(entity);
@@ -231,7 +231,7 @@ QTPFS::PathManager::~PathManager() {
 			LOG("%s: ExternallyManagedPathSearch %x still active!", __func__, entt::to_integral(entity));
 			DestroyPathSearchEntity(entity);
 		}
-	});
+	};
 
 	nodeLayerUpdatePriorityOrder.clear();
 	for (unsigned int layerNum = 0; layerNum < nodeLayers.size(); layerNum++) {
@@ -267,9 +267,9 @@ QTPFS::PathManager::~PathManager() {
 	// make sure this is destroyed last to ensure entity 0 will be first picked up next time.
 	registry.destroy(systemEntity);
 
-	LOG("%s: %d entities still active!", __func__, int(registry.alive()));
+	LOG("%s: %d entities still active!", __func__, int(registry.storage<entt::entity>().free_list()));
 
-	assert(registry.alive() == 0);
+	assert(registry.storage<entt::entity>().free_list() == 0);
 
 	registry.clear();
 }
@@ -1686,13 +1686,16 @@ unsigned int QTPFS::PathManager::ExecuteImmediateSearch(unsigned int pathId){
 				registry.remove<PathIsTemp>(pathEntity);
 				registry.remove<PathIsDirty>(pathEntity);
 			} else {
-				DeletePathEntity(pathEntity);
 				pathId = 0;
 			}
 		}
 	}
 
-	RemovePathSearch(pathEntity);
+	// If successful, just remove the path search, otherwise delete the path entity and its search.
+	if (pathId > 0)
+		RemovePathSearch(pathEntity);
+	else
+		DeletePathEntity(pathEntity);
 
 	return pathId;
 }

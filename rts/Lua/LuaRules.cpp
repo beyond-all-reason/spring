@@ -70,6 +70,7 @@ int CLuaRules::GetInitSelectTeam() const
 }
 
 
+
 /******************************************************************************
  * Lua Rules
  *
@@ -91,11 +92,13 @@ bool CLuaRules::AddUnsyncedCode(lua_State* L)
 {
 	lua_getglobal(L, "Spring");
 
+	/*** @field Spring.UnitRendering ObjectRenderingTable */
 	lua_pushliteral(L, "UnitRendering");
 	lua_createtable(L, 0, 17);
 	LuaObjectRendering<LUAOBJ_UNIT>::PushEntries(L);
 	lua_rawset(L, -3);
 
+	/*** @field Spring.FeatureRendering ObjectRenderingTable */
 	lua_pushliteral(L, "FeatureRendering");
 	lua_createtable(L, 0, 17);
 	LuaObjectRendering<LUAOBJ_FEATURE>::PushEntries(L);
@@ -114,6 +117,11 @@ bool CLuaRules::AddUnsyncedCode(lua_State* L)
 // LuaRules Call-Outs
 //
 
+/***
+ *
+ * @function Script.PermitHelperAIs
+ * @param permit boolean
+ */
 int CLuaRules::PermitHelperAIs(lua_State* L)
 {
 	if (!lua_isboolean(L, 1)) {

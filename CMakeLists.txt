@@ -100,13 +100,12 @@ endif (APPLE)
 ### Compiler flags and defines based on build type
 include(TestCXXFlags)
 
-## 32bit or 64bit?
+## 64-bit architecture check
 set(MARCH_FLAG ${MARCH} CACHE STRING "CPU optimization (use `generic` for generic optimization)")
-if    (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(MARCH_BITS 64 CACHE INTERNAL "" FORCE)
-else  (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	message(FATAL_ERROR "RecoilEngine does not support 32 bits." )
-endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
+if    (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+	message(FATAL_ERROR "RecoilEngine requires a 64-bit build environment.")
+endif (NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+set(MARCH_BITS 64 CACHE INTERNAL "" FORCE)
 
 # Detect architecture
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|armv8|ARM64|AARCH64")
@@ -119,9 +118,8 @@ else()
 	message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}. Only ARM64 and x86-64 are supported.")
 endif()
 
-message(STATUS "Building Spring on ${MARCH_BITS}bit environment")
-set(BUILD_BITS "${MARCH_BITS}" CACHE STRING "Target arch machine type")
-message(STATUS "Targetting ${BUILD_BITS}bit")
+message(STATUS "Building Spring on a 64-bit environment")
+set(BUILD_BITS 64 CACHE INTERNAL "Target architecture bitness" FORCE)
 
 
 ### Install paths (relative to CMAKE_INSTALL_PREFIX)
@@ -489,12 +487,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 		set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mno-avx -mno-fma -mno-fma4 -mno-xop -mno-lwp")
 		set(FALLBACK_SSE_FLAGS "${FALLBACK_SSE_FLAGS} -mno-avx2")
 
-		if (MARCH_BITS EQUAL 64)
-			set(FALLBACK_MARCH "x86-64")
-		else (MARCH_BITS EQUAL 64)
-			set(FALLBACK_MARCH "i686")
-		endif (MARCH_BITS EQUAL 64)
-
+		set(FALLBACK_MARCH "x86-64")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${FALLBACK_MARCH} -mtune=generic ${FALLBACK_SSE_FLAGS}")
 	endif (NOT MARCH_FLAG STREQUAL "generic")
 
@@ -581,22 +574,10 @@ else  (MSVC)
 	#set(CMAKE_CXX_FLAGS_DEBUG          "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3") #cmake has -g it by default
 	#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ggdb3") #cmake has -g it by default
 
-	if (MARCH_BITS EQUAL 64 AND BUILD_BITS EQUAL 32)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
-	endif (MARCH_BITS EQUAL 64 AND BUILD_BITS EQUAL 32)
 
 	if     (MINGW)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -Wl,--enable-auto-import")
 		set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++ -Wl,--enable-auto-import")
-		if    (BUILD_BITS EQUAL 32)
-			# Increase memory limit from 2GB to 3GB on 32bit Windows and 2GB->4GB on 64bit Windows (assuming spring.exe is 32bit)
-			# http://msdn.microsoft.com/en-us/library/windows/desktop/aa366778(v=vs.85).aspx
-			message(STATUS "Enable IMAGE_FILE_LARGE_ADDRESS_AWARE (>2GB memory limit)")
-			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--large-address-aware")
-		else (BUILD_BITS EQUAL 32)
-			message(WARNING "The 64bit version of spring on windows is experimental and may not sync with regular builds")
-		endif (BUILD_BITS EQUAL 32)
 	endif  (MINGW)
 endif (MSVC)
 
@@ -715,8 +696,11 @@ add_subdirectory(rts)
 
 # Unit tests
 # this has to be in root CMakeLists.txt
-enable_testing()
-add_subdirectory(test)
+option(BUILD_TESTING "Build engine tests" ON)
+if (BUILD_TESTING)
+	enable_testing()
+	add_subdirectory(test)
+endif ()
 
 if (INSTALL_PORTABLE)
 	install(DIRECTORY DESTINATION games)

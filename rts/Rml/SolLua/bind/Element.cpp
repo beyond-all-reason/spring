@@ -36,6 +36,8 @@
 
 #include <unordered_map>
 
+// Forward declaration for deferred element deletion
+extern void AddPendingDelete(Rml::ElementPtr element);
 
 namespace Rml::SolLua
 {
@@ -46,6 +48,24 @@ namespace Rml::SolLua
 		{
 			auto e = new SolLuaEventListener{ func, &self };
 			self.AddEventListener(event, e, in_capture_phase);
+		}
+
+		void setInnerRMLSafe(Rml::Element& self, const Rml::String& rml)
+		{
+			// Manually remove all DOM children and defer their deletion
+			// This prevents use-after-free when Lua holds references to children
+			while (self.GetNumChildren())
+			{
+				Rml::Element* child = self.GetChild(0);
+				// RemoveChild returns an ElementPtr which owns the child
+				Rml::ElementPtr removed = self.RemoveChild(child);
+				// Store it for deferred deletion
+				AddPendingDelete(std::move(removed));
+			}
+
+			// Now set the new content
+			if (!rml.empty())
+				self.SetInnerRML(rml);
 		}
 
 		void addEventListener(Rml::Element& self, const Rml::String& event, const Rml::String& code, sol::this_state s)
@@ -453,7 +473,7 @@ namespace Rml::SolLua
 			/***
 			 * Is a screen-space point within this element?
 			 * @function RmlUi.Element:IsPointWithinElement
-			 * @param point RmlUi.Vector2i
+			 * @param point RmlUi.Vector2f
 			 * @return boolean
 			 */
 			"IsPointWithinElement", &Rml::Element::IsPointWithinElement,
@@ -497,7 +517,7 @@ namespace Rml::SolLua
 			/*** @field RmlUi.Element.id string ID of this element, in the context of `<span id="foo">`. */
 			"id", sol::property(&Rml::Element::GetId, &Rml::Element::SetId),
 			/*** @field RmlUi.Element.inner_rml string Gets or sets the inner RML (markup) content of the element. */
-			"inner_rml", sol::property(sol::resolve<Rml::String() const>(&Rml::Element::GetInnerRML), &Rml::Element::SetInnerRML),
+			"inner_rml", sol::property(sol::resolve<Rml::String() const>(&Rml::Element::GetInnerRML), &functions::setInnerRMLSafe),
 			/*** @field RmlUi.Element.scroll_left integer Gets or sets the number of pixels that the content of the element is scrolled from the left. */
 			"scroll_left", sol::property(&Rml::Element::GetScrollLeft, &Rml::Element::SetScrollLeft),
 			/*** @field RmlUi.Element.scroll_top integer Gets or sets the number of pixels that the content of the element is scrolled from the top. */

@@ -14,8 +14,6 @@
 #include <filesystem>
 #include <variant>
 
-#include <unistd.h>
-
 #include <fmt/printf.h>
 #include <fmt/format.h>
 
@@ -47,6 +45,7 @@
 		#undef CreateDirectory
 	#endif
 #else
+	#include <unistd.h>
 	#include <sys/types.h>
 	#include <dirent.h>
 #endif // _WIN32

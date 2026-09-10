@@ -4,6 +4,7 @@
 #include "MapInfo.h"
 
 #include "Sim/Misc/GlobalConstants.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Rendering/GlobalRendering.h"
 
 #include "Lua/LuaParser.h"
@@ -97,7 +98,7 @@ void CMapInfo::ReadGlobal()
 	map.hardness      = topTable.GetFloat("maphardness", 100.0f);
 	map.notDeformable = topTable.GetBool("notDeformable", false);
 
-	map.gravity = topTable.GetFloat("gravity", 130.0f);
+	map.gravity = modInfo.forcedMapGravityStrength.value_or(topTable.GetFloat("gravity", 130.0f));
 	map.gravity = std::max(0.001f, map.gravity);
 	map.gravity = -map.gravity / (GAME_SPEED * GAME_SPEED);
 

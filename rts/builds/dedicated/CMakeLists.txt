@@ -102,6 +102,7 @@ set(system_files
 	${ENGINE_SRC_ROOT_DIR}/System/Config/ConfigSource.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Config/ConfigVariable.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/Demo.cpp
+	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoFileExtension.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoReader.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/LoadSave/DemoRecorder.cpp
 	${ENGINE_SRC_ROOT_DIR}/System/Log/Backend.cpp

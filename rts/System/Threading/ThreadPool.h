@@ -224,7 +224,10 @@ public:
 	}
 
 	uint32_t GetId() const { return id; }
-	uint64_t GetDeltaTime(const spring_time t) const { return (std::max(ts.load(), uint64_t(t.toNanoSecsi())) - ts); }
+	uint64_t GetDeltaTime(const spring_time t0) const {
+		const uint64_t t1 = ts.load();
+		return (std::max(t1, uint64_t(t0.toNanoSecsi())) - t1);
+	}
 
 	void UpdateId() { id = lastId.fetch_add(1); }
 	void SetTimeStamp(const spring_time t) { ts = t.toNanoSecsi(); }

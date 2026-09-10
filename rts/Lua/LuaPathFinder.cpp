@@ -211,6 +211,18 @@ static void CreatePathMetatable(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/***
+ * @function Spring.RequestPath
+ * @param moveID integer|string
+ * @param startX number
+ * @param startY number
+ * @param startZ number
+ * @param endX number
+ * @param endY number
+ * @param endZ number
+ * @param radius number?
+ * @return userdata? path
+ */
 int LuaPathFinder::RequestPath(lua_State* L)
 {
 	const MoveDef* moveDef = nullptr;
@@ -250,6 +262,13 @@ int LuaPathFinder::RequestPath(lua_State* L)
 
 
 
+/***
+ * @function Spring.InitPathNodeCostsArray
+ * @param overlayIndex integer
+ * @param sizeX integer
+ * @param sizeZ integer
+ * @return boolean success
+ */
 int LuaPathFinder::InitPathNodeCostsArray(lua_State* L)
 {
 	const unsigned int overlayIndex = luaL_checkint(L, 1);
@@ -282,6 +301,11 @@ int LuaPathFinder::InitPathNodeCostsArray(lua_State* L)
 	return 1;
 }
 
+/***
+ * @function Spring.FreePathNodeCostsArray
+ * @param overlayIndex integer
+ * @return boolean success
+ */
 int LuaPathFinder::FreePathNodeCostsArray(lua_State* L)
 {
 	const unsigned int overlayIndex = luaL_checkint(L, 1);
@@ -315,6 +339,11 @@ int LuaPathFinder::FreePathNodeCostsArray(lua_State* L)
 
 
 
+/***
+ * @function Spring.SetPathNodeCosts
+ * @param overlayIndex integer
+ * @return boolean success
+ */
 int LuaPathFinder::SetPathNodeCosts(lua_State* L)
 {
 	const unsigned int overlayIndex = luaL_checkint(L, 1);
@@ -339,6 +368,11 @@ int LuaPathFinder::SetPathNodeCosts(lua_State* L)
 	return 1;
 }
 
+/***
+ * @function Spring.GetPathNodeCosts
+ * @param overlayIndex integer
+ * @return boolean|table costs
+ */
 int LuaPathFinder::GetPathNodeCosts(lua_State* L)
 {
 	const unsigned int overlayIndex = luaL_checkint(L, 1);
@@ -370,6 +404,13 @@ int LuaPathFinder::GetPathNodeCosts(lua_State* L)
 
 
 
+/***
+ * @function Spring.SetPathNodeCost
+ * @param overlayIndex integer
+ * @param costIndex integer 0-based index in the overlay
+ * @param cost number
+ * @return boolean success
+ */
 int LuaPathFinder::SetPathNodeCost(lua_State* L)
 {
 	const unsigned int overlayIndex = luaL_checkint(L, 1);
@@ -400,6 +441,12 @@ int LuaPathFinder::SetPathNodeCost(lua_State* L)
 	return 1;
 }
 
+/***
+ * @function Spring.GetPathNodeCost
+ * @param nodeX integer Heightmap node X coordinate
+ * @param nodeZ integer Heightmap node Z coordinate
+ * @return number cost
+ */
 int LuaPathFinder::GetPathNodeCost(lua_State* L)
 {
 	const unsigned int hmx = luaL_checkint(L, 1);

@@ -811,6 +811,12 @@ bool CEventHandler::CommandNotify(const Command& cmd)
 	return ControlReverseIterateDefTrue(listCommandNotify, &CEventClient::CommandNotify, cmd);
 }
 
+void CEventHandler::KeyBindingsChanged()
+{
+	ZoneScoped;
+	ITERATE_EVENTCLIENTLIST_NA(KeyBindingsChanged);
+}
+
 bool CEventHandler::KeyMapChanged()
 {
 	ZoneScoped;

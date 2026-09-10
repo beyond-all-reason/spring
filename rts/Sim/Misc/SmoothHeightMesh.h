@@ -42,6 +42,7 @@ public:
 
 	float GetHeight(float x, float y);
 	float GetHeightAboveWater(float x, float y);
+	float GetHeightSmooth(float x, float y);
 	float SetHeight(int index, float h);
 	float AddHeight(int index, float h);
 	float SetMaxHeight(int index, float h);

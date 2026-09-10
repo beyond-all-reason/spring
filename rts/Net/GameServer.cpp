@@ -205,6 +205,8 @@ void CGameServer::Initialize()
 		if (demoReader != nullptr) {
 			const size_t demoPlayers = demoReader->GetFileHeader().numPlayers;
 			players.resize(std::max(demoPlayers, playerStartData.size()));
+			for (size_t n = 0; n < demoPlayers; ++n)
+				players[n].isFromDemo = true;
 			if (players.size() >= MAX_PLAYERS)
 				Message(spring::format("Too many Players (%d) in the demo", players.size()));
 		}
@@ -404,7 +406,6 @@ void CGameServer::SkipTo(int targetFrameNum)
 {
 	const bool wasPaused = isPaused;
 
-	if (!gameHasStarted) { return; }
 	if (serverFrameNum >= targetFrameNum) { return; }
 	if (demoReader == nullptr) { return; }
 
@@ -412,13 +413,16 @@ void CGameServer::SkipTo(int targetFrameNum)
 	CommandMessage endMsg("skip end", SERVER_PLAYER);
 	Broadcast(std::shared_ptr<const netcode::RawPacket>(startMsg.Pack()));
 
+	if (!gameHasStarted)
+		StartGame(true); // this skips the countdown
+
 	// fast-read and send demo data
 	//
 	// note that we must maintain <modGameTime> ourselves
 	// since we do we NOT go through ::Update when skipping
 	while (SendDemoData(targetFrameNum)) {
 		gameTime = GetDemoTime();
-		modGameTime = demoReader->GetModGameTime() + 0.001f;
+		modGameTime = demoReader->GetNextDemoReadTime() + 0.001f;
 
 		if (udpListener == nullptr) { continue; }
 		if ((serverFrameNum % 20) != 0) { continue; }
@@ -2194,6 +2198,9 @@ void CGameServer::CheckForGameStart(bool forced)
 	bool anyReady = false;
 
 	for (size_t a = static_cast<size_t>(myGameSetup->numDemoPlayers); a < players.size(); a++) {
+		if (players[a].isFromDemo)
+			continue;
+
 		if (players[a].myState == GameParticipant::UNCONNECTED && serverStartTime + spring_secs(30) < spring_gettime()) {
 			// autostart the game when 30 seconds have passed and everyone who managed to connect is ready
 			continue;
@@ -3092,6 +3099,12 @@ unsigned CGameServer::BindConnection(
 
 			Broadcast(CBaseNetProtocol::Get().SendJoinTeam(newPlayerNumber, newPlayerTeam));
 		}
+	}
+
+	// inform player of the current frame
+	if (gameHasStarted) {
+		CBaseNetProtocol::PacketType progressPacket = CBaseNetProtocol::Get().SendCurrentFrameProgress(serverFrameNum);
+		newPlayer.SendData(progressPacket);
 	}
 
 	// finally send player all packets he missed until now

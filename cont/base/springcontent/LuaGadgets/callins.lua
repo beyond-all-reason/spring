@@ -192,6 +192,7 @@ CALLIN_LIST = {
 	"GroupChanged",
 
 	-- moved from LuaUI
+	"KeyBindingsChanged",
 	"KeyPress",
 	"KeyRelease",
 	"TextInput",

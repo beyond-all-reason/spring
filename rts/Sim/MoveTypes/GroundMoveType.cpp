@@ -146,8 +146,11 @@ CR_REG_METADATA(CGroundMoveType, (
 	CR_MEMBER(forceFromStaticCollidees),
 
 	CR_MEMBER(pathID),
-	CR_MEMBER(nextPathId),
-	CR_MEMBER(deletePathId),
+	// The ECS registry is not persisted across save/load, so a saved entity ID will collide with
+	// a newly-allocated entity in the fresh registry, causing FollowPath to destroy the wrong path
+	// or swap to an invalid one.
+	CR_IGNORED(nextPathId),
+	CR_IGNORED(deletePathId),
 
 	CR_MEMBER(numIdlingUpdates),
 	CR_MEMBER(numIdlingSlowUpdates),
@@ -1619,6 +1622,11 @@ void CGroundMoveType::UpdateSkid()
 		}
 	}
 
+	// always update <oldPos> here so that <speed> does not make
+	// extreme jumps when the unit transitions from skidding back
+	// to non-skidding
+	oldPos = owner->pos;
+
 	// finally update speed.w
 	owner->SetSpeed(spd);
 	// translate before rotate, match terrain normal if not in air
@@ -1634,12 +1642,6 @@ void CGroundMoveType::UpdateSkid()
 	}
 
 	AdjustPosToWaterLine();
-
-	// always update <oldPos> here so that <speed> does not make
-	// extreme jumps when the unit transitions from skidding back
-	// to non-skidding
-	oldPos = owner->pos;
-
 	ASSERT_SANE_OWNER_SPEED(spd);
 	ASSERT_SYNCED(owner->midPos);
 }

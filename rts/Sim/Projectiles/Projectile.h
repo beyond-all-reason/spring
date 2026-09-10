@@ -116,6 +116,10 @@ public:
 
 	bool castShadow = false;
 	bool drawSorted = true;
+	// false for the few classes whose Draw() touches shared state (immediate
+	// GL calls, Lua callins); they are drawn serially by the alpha pass while
+	// everything else fills geometry multithreaded
+	bool mtDrawSafe = true;
 
 	bool blockPreciseCol = false;
 

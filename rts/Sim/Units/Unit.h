@@ -116,12 +116,6 @@ public:
 
 	bool AllowedReclaim(CUnit* builder) const;
 
-	bool UseMetal(float metal);
-	void AddMetal(float metal, bool useIncomeMultiplier = true);
-	bool UseEnergy(float energy);
-	void AddEnergy(float energy, bool useIncomeMultiplier = true);
-	bool AddHarvestedMetal(float metal);
-
 	void SetStorage(const SResourcePack& newstorage);
 	bool HaveResources(const SResourcePack& res) const;
 	bool UseResources(const SResourcePack& res);

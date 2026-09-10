@@ -33,6 +33,7 @@ CIconHandler iconHandler;
 void CIconHandler::Kill()
 {
 	defaultIconIdx = INVALID_ICON_INDEX;
+	drawOrderIconCount = 0;
 
 	glDeleteTextures(2, atlasTextureIDs.data());
 	atlasTextureIDs = { 0 };
@@ -191,7 +192,8 @@ void CIconHandler::LoadIcons(const std::string& filename)
 			iconTable.GetFloat("u0", 0.0f),
 			iconTable.GetFloat("v0", 0.0f),
 			iconTable.GetFloat("u1", 1.0f),
-			iconTable.GetFloat("v1", 1.0f)
+			iconTable.GetFloat("v1", 1.0f),
+			iconTable.GetFloat("drawOrder", 0.0f)
 		);
 	}
 
@@ -208,7 +210,8 @@ bool CIconHandler::AddIcon(
 	float size,
 	float distance,
 	bool radAdj,
-	float u0, float v0, float u1, float v1
+	float u0, float v0, float u1, float v1,
+	float drawOrder
 ) {
 	auto it = iconsMap.find(iconName);
 	if (it != iconsMap.end()) {
@@ -225,8 +228,11 @@ bool CIconHandler::AddIcon(
 		distance,
 		atlasIndex,
 		radAdj,
-		float4{u0, v0, u1, v1}
+		float4{u0, v0, u1, v1},
+		drawOrder
 	};
+
+	drawOrderIconCount += (drawOrder != 0.0f);
 
 	// do basic check instead of the full load procedure
 	return CFileHandler::FileExists(texFileName, SPRING_VFS_ALL);
@@ -246,6 +252,8 @@ bool CIconHandler::FreeIcon(const std::string& iconName)
 	if (const auto& ai = iconsData[it->second].GetAtlasIndex(); ai > 0) {
 		atlasNeedsUpdate.set(ai);
 	}
+
+	drawOrderIconCount -= (iconsData[it->second].GetDrawOrder() != 0.0f);
 
 	iconsData[it->second] = IconData{};
 	it->second = defaultIconIdx;

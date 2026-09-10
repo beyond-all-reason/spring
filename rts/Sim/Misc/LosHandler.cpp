@@ -951,22 +951,24 @@ bool CLosHandler::InRadar(const float3 pos, int allyTeam) const
 bool CLosHandler::InRadar(const CUnit* unit, int allyTeam) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// unit is discoverable by sonar
+	// first attempt to discover with sonar:
+	// unit is discoverable by sonar only if not sonarStealth or not sonarJammed
 	if (unit->IsInWater()) {
 		if ((!unit->sonarStealth || unit->beingBuilt) &&
 		    sonar.InSight(unit->pos, allyTeam) &&
-		    !InJammer(unit, allyTeam))
+		    !InSonarJammer(unit, allyTeam))
 			return true;
 	}
 
-	// unit is completely submerged, only sonar can see it
+	// unit is InWater and UnderWater, but was not previously caught by sonar, skip it
 	if (unit->IsUnderWater())
 		return false;
 
-	// radar stealth
+	// then attempt to discover with radar
+	// unit is radar stealth, can't be discovered
 	if (unit->stealth && !unit->beingBuilt)
 		return false;
-
+	// use radar jamming, not sonar jamming here
 	return (radar.InSight(unit->pos, allyTeam) && !InJammer(unit, allyTeam));
 }
 
@@ -976,12 +978,8 @@ bool CLosHandler::InJammer(const float3 pos, int allyTeam) const
 	RECOIL_DETAILED_TRACY_ZONE;
 	const int jammerAlly = modInfo.separateJammers ? allyTeam : 0;
 
-	if (pos.y < 0.0f)
-		return sonarJammer.InSight(pos, jammerAlly);
-
 	return jammer.InSight(pos, jammerAlly);
 }
-
 
 bool CLosHandler::InJammer(const CUnit* unit, int allyTeam) const
 {
@@ -990,11 +988,27 @@ bool CLosHandler::InJammer(const CUnit* unit, int allyTeam) const
 		return false;
 
 	//TODO handle ingame alliances
+	const int jammerAlly = modInfo.separateJammers ? unit->allyteam : 0;
+	
+	return jammer.InSight(unit->pos, jammerAlly);
+}
 
+bool CLosHandler::InSonarJammer(const float3 pos, int allyTeam) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int jammerAlly = modInfo.separateJammers ? allyTeam : 0;
+
+	return sonarJammer.InSight(pos, jammerAlly);
+}
+
+bool CLosHandler::InSonarJammer(const CUnit* unit, int allyTeam) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	if (allyTeam == unit->allyteam)
+		return false;
+	
+	//TODO handle ingame alliances
 	const int jammerAlly = modInfo.separateJammers ? unit->allyteam : 0;
 
-	if (unit->IsUnderWater()) {
-		return sonarJammer.InSight(unit->pos, jammerAlly);
-	}
-	return jammer.InSight(unit->pos, jammerAlly);
+	return sonarJammer.InSight(unit->pos, jammerAlly);
 }

@@ -12,6 +12,7 @@
 // shared with spring:
 #include "lib/lua/include/LuaInclude.h"
 #include "Game/GameVersion.h"
+#include "Lua/LuaMemPool.h"
 #include "Lua/LuaParser.h"
 #include "Map/MapParser.h"
 #include "Map/ReadMap.h"
@@ -421,6 +422,7 @@ EXPORT(void) UnInit()
 	try {
 		_Cleanup();
 		FileSystemInitializer::Cleanup();
+		LuaMemPool::KillStatic();
 		ConfigHandler::Deallocate();
 		DataDirLocater::FreeInstance();
 	}
@@ -2371,4 +2373,3 @@ EXPORT(const char*) GetMacAddrHash() {
 	memcpy(macAddrBuf.data(), macAddrHash.data(), std::min(macAddrHash.size(), macAddrBuf.size()));
 	return (macAddrBuf.data());
 }
-

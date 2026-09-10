@@ -1084,15 +1084,15 @@ int LuaVFS::PackS32(lua_State* L) { return PackType<std::int32_t>(L); }
 
 /***
  * Convert signed 32-bit float(s) to binary string.
- * @function VFS.PackS32 
- * @param ... integer Numbers to pack.
- * @return string
+ * @function VFS.PackF32
+ * @param ... number Numbers to pack.
+ * @return string?
  */
 /***
  * Convert signed 32-bit float(s) to binary string.
- * @function VFS.PackS32 
- * @param numbers integer[] Numbers to pack.
- * @return string
+ * @function VFS.PackF32
+ * @param numbers number[] Numbers to pack.
+ * @return string?
  */
 int LuaVFS::PackF32(lua_State* L) { return PackType<float>(L); }
 

@@ -39,6 +39,8 @@ CONFIG(bool,  CamSpringEdgeRotate).defaultValue(false).description("Rotate camer
 CONFIG(float, CamSpringFastScaleMouseMove).defaultValue(3.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while moving mouse.");
 CONFIG(float, CamSpringFastScaleMousewheelMove).defaultValue(2.0f / 10.0f).description("Scaling for CameraMoveFastMult in spring camera mode while scrolling with mouse.");
 CONFIG(int,   CamSpringTrackMapHeightMode).defaultValue(HeightTracking::Terrain).description("Camera height is influenced by terrain height. 0=Static 1=Terrain 2=Smoothmesh");
+CONFIG(float, CamSpringSmoothMeshBlendMinDist).defaultValue(150.0f).description("Zoom distance below which smoothmesh height tracking mode (2) follows the raw terrain.");
+CONFIG(float, CamSpringSmoothMeshBlendMaxDist).defaultValue(600.0f).description("Zoom distance above which smoothmesh height tracking mode (2) fully follows the smooth mesh.");
 
 
 CSpringController::CSpringController()
@@ -51,7 +53,7 @@ CSpringController::CSpringController()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	enabled = configHandler->GetBool("CamSpringEnabled");
-	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringMinZoomDistance", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode"});
+	configHandler->NotifyOnChange(this, {"CamSpringScrollSpeed", "CamSpringFOV", "CamSpringMinZoomDistance", "CamSpringZoomInToMousePos", "CamSpringZoomOutFromMousePos", "CamSpringFastScaleMousewheelMove", "CamSpringFastScaleMouseMove", "CamSpringEdgeRotate", "CamSpringLockCardinalDirections", "CamSpringTrackMapHeightMode", "CamSpringSmoothMeshBlendMinDist", "CamSpringSmoothMeshBlendMaxDist"});
 	ConfigUpdate();
 }
 
@@ -75,9 +77,11 @@ void CSpringController::ConfigUpdate()
 	doRotate = configHandler->GetBool("CamSpringEdgeRotate");
 	lockCardinalDirections = configHandler->GetBool("CamSpringLockCardinalDirections");
 	trackMapHeight = configHandler->GetInt("CamSpringTrackMapHeightMode");
+	meshBlendMinDist = configHandler->GetFloat("CamSpringSmoothMeshBlendMinDist");
+	meshBlendMaxDist = std::max(configHandler->GetFloat("CamSpringSmoothMeshBlendMaxDist"), meshBlendMinDist + 1.0f);
 
 	if (trackMapHeight == HeightTracking::Smooth && !modInfo.enableSmoothMesh) {
-		LOG_L(L_ERROR, "Smooth mesh disabled");
+		LOG_L(L_WARNING, "[CSpringController] smoothmesh height tracking (mode 2) requested but the game disabled the smooth mesh, falling back to terrain tracking");
 		trackMapHeight = HeightTracking::Terrain;
 	}
 }
@@ -88,7 +92,7 @@ void CSpringController::ConfigNotify(const std::string & key, const std::string 
 	ConfigUpdate();
 }
 
-void CSpringController::SmoothCamHeight(const float3& prevPos) {
+void CSpringController::FreezeCamHeight() {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!pos.IsInBounds()) {
 		return;
@@ -103,12 +107,8 @@ void CSpringController::SmoothCamHeight(const float3& prevPos) {
 	// when there's a hill blocking the view
 	const float3 newGroundPos = camPos + dir * distToGround;
 	if (distToGround > 0.0f && newGroundPos.IsInBounds()) {
-		const float camHeightDiff = (trackMapHeight == HeightTracking::Smooth) ?
-			smoothGround.GetHeight(pos.x, pos.z) - smoothGround.GetHeight(prevPos.x, prevPos.z) :
-			0.0f;
-
 		pos = newGroundPos;
-		curDist = distToGround + (dir * camHeightDiff).Length() * Sign(camHeightDiff);
+		curDist = distToGround;
 	}
 }
 
@@ -126,8 +126,6 @@ void CSpringController::KeyMove(float3 move)
 		return;
 	}
 
-	const float3 prevPos = pos;
-
 	move *= 200.0f;
 	const float3 flatForward = (dir * XZVector).ANormalize();
 	pos += (camera->GetRight() * move.x + flatForward * move.y) * pixelSize * 2.0f * scrollSpeed;
@@ -138,13 +136,17 @@ void CSpringController::KeyMove(float3 move)
 		// - 'pos'      point of focus on the ground
 		// - 'curDist'  camera distance
 		break;
+	case HeightTracking::Smooth:
+		// No pre-step needed here: Update() runs immediately below and applies
+		// smooth-mesh focus height via GetFocusSurfaceHeight(). FreezeCamHeight()
+		// is only required for Disabled mode, where we must raycast/recompute
+		// focus and distance before Update() to avoid resnapping.
+		break;
 	case HeightTracking::Disabled:
 		// freezing camera height requires raycasting from current
 		// camera position and recalculating
 		// point of focus and distance
-		[[fallthrough]];
-	case HeightTracking::Smooth:
-		SmoothCamHeight(prevPos);
+		FreezeCamHeight();
 		break;
 	}
 
@@ -318,16 +320,74 @@ float CSpringController::ZoomOut(const float3& curCamPos, const float3& newDir, 
 
 
 
-float CSpringController::GetFocusSurfaceHeight(float x, float z) const
+float CSpringController::GetFocusSurfaceHeight(float x, float z, float dist) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return CGround::GetHeightReal(x, z, false);
+	const float groundHeight = CGround::GetHeightReal(x, z, false);
+
+	if (trackMapHeight != HeightTracking::Smooth)
+		return groundHeight;
+
+	// fade to the raw ground at close zoom, the mesh hovers high near cliffs
+	// and would otherwise limit zoom-in depth and panning speed there
+	const float meshBlend = smoothstep(meshBlendMinDist, meshBlendMaxDist, dist);
+	return mix(groundHeight, smoothGround.GetHeightSmooth(x, z), meshBlend);
 }
 
 float CSpringController::DistanceToFocusSurface(const float3& from) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return DistanceToGround(from, dir, pos.y);
+	const float groundDist = DistanceToGround(from, dir, pos.y);
+
+	if (trackMapHeight != HeightTracking::Smooth || groundDist <= 0.0f)
+		return groundDist;
+
+	// intersect the view ray with the focus surface; using the ground distance
+	// would lift the camera by the mesh-ground gap on every zoom step
+	const auto heightAboveSurface = [&](float t) {
+		const float3 p = from + dir * t;
+		return p.y - GetFocusSurfaceHeight(p.x, p.z, t);
+	};
+
+	if (heightAboveSurface(0.0f) <= 0.0f)
+		return groundDist; // camera below the surface
+
+	if (heightAboveSurface(groundDist) >= 0.0f)
+		return groundDist; // ground above the surface
+
+	// March to bracket the first crossing, then bisect. The march has to be fine
+	// enough not to step over a near crossing on grazing rays (which can dip below
+	// the surface and back out several times), otherwise we would bracket a farther
+	// crossing and lock the camera onto the wrong hill. This runs once per zoom
+	// action, not per frame, so a generous step count is cheap.
+	constexpr int NUM_MARCH_STEPS = 16;
+	constexpr int NUM_BISECTION_STEPS = 16;
+	const float step = groundDist / NUM_MARCH_STEPS;
+
+	float above = 0.0f;
+	float below = groundDist;
+
+	for (int i = 1; i < NUM_MARCH_STEPS; ++i) {
+		const float t = step * i;
+
+		if (heightAboveSurface(t) > 0.0f) {
+			above = t;
+		} else {
+			below = t;
+			break;
+		}
+	}
+
+	for (int i = 0; i < NUM_BISECTION_STEPS; ++i) {
+		const float mid = (above + below) * 0.5f;
+
+		if (heightAboveSurface(mid) > 0.0f)
+			above = mid;
+		else
+			below = mid;
+	}
+
+	return (above + below) * 0.5f;
 }
 
 
@@ -337,13 +397,13 @@ void CSpringController::Update()
 
 	pos.x = std::clamp(pos.x, 0.01f, mapDims.mapx * SQUARE_SIZE - 0.01f);
 	pos.z = std::clamp(pos.z, 0.01f, mapDims.mapy * SQUARE_SIZE - 0.01f);
-	pos.y = GetFocusSurfaceHeight(pos.x, pos.z); // always focus on the ground
+	curDist = std::clamp(curDist, minDist, maxDist);
+	pos.y = GetFocusSurfaceHeight(pos.x, pos.z, curDist); // always focus on the ground
 	rot.x = std::clamp(rot.x, math::PI * 0.51f, math::PI * 0.99f);
 
 	// camera->SetRot(float3(rot.x, GetAzimuth(), rot.z));
 	dir = CCamera::GetFwdFromRot(this->GetRot());
 
-	curDist = std::clamp(curDist, minDist, maxDist);
 	pixelSize = (camera->GetTanHalfFov() * 2.0f) / globalRendering->viewSizeY * curDist * 2.0f;
 }
 

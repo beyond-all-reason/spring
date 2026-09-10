@@ -673,6 +673,12 @@ bool CLuaUI::GetLuaCmdDescList(lua_State* L, int index, vector<SCommandDescripti
 // Lua Callbacks
 //
 
+/***
+ * @function Spring.SetShockFrontFactors
+ * @param minArea number?
+ * @param minPower number?
+ * @param distAdj number?
+ */
 int CLuaUI::SetShockFrontFactors(lua_State* L)
 {
 	luaUI->haveShockFront = true;

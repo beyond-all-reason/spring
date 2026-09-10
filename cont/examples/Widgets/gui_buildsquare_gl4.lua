@@ -140,16 +140,7 @@ flat in float v_status;
 out vec4 fragColor;
 
 void main() {
-	float pulse = 0.85 + 0.15 * sin(timeInfo.x * 4.0);
-
-	vec3 col = v_color.rgb * pulse;
-	float alpha = v_color.a * pulse;
-
-	if (v_status < 0.5) {
-		col = mix(col, vec3(1.0, 0.2, 0.2), 0.3 * sin(timeInfo.x * 8.0 + 1.0));
-	}
-
-	fragColor = vec4(col, alpha);
+	fragColor = v_color;
 }
 ]]
 

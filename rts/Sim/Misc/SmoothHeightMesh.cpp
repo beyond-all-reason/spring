@@ -58,6 +58,29 @@ static float Interpolate(float x, float y, const int maxx, const int maxy, const
 	return mix(hi1, hi2, dy);
 }
 
+
+// C1-continuous, unlike Interpolate whose gradient jumps at cell borders
+static float SampleBicubic(float x, float y, const int maxx, const int maxy, const float res, const float* heightmap)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	x = std::clamp(x / res, 0.0f, (float)maxx);
+	y = std::clamp(y / res, 0.0f, (float)maxy);
+	const int sx = std::min((int)x, maxx - 1);
+	const int sy = std::min((int)y, maxy - 1);
+	const float dx = (x - sx);
+	const float dy = (y - sy);
+
+	// gather the read-only 4x4 neighbourhood around the cell, clamped at the edges
+	float patch[4][4];
+	for (int j = 0; j < 4; ++j) {
+		const float* row = &heightmap[std::clamp(sy + j - 1, 0, maxy - 1) * maxx];
+		for (int i = 0; i < 4; ++i)
+			patch[j][i] = row[std::clamp(sx + i - 1, 0, maxx - 1)];
+	}
+
+	return InterpolateBicubic(patch, dx, dy);
+}
+
 void SmoothHeightMesh::Init(int2 max, int res, int smoothRad)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -133,6 +156,13 @@ float SmoothHeightMesh::GetHeightAboveWater(float x, float y)
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!mesh.empty());
 	return std::max(0.0f, Interpolate(x, y, maxx, maxy, fresolution, &mesh[0]));
+}
+
+float SmoothHeightMesh::GetHeightSmooth(float x, float y)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	assert(!mesh.empty());
+	return SampleBicubic(x, y, maxx, maxy, fresolution, &mesh[0]);
 }
 
 float SmoothHeightMesh::SetHeight(int index, float h)

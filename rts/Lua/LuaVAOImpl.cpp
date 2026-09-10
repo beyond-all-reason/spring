@@ -368,11 +368,11 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 /***
  *
  * @function VAO:DrawArrays
- * @param glEnum number primitivesMode
- * @param vertexCount number?
- * @param vertexFirst number?
- * @param instanceCount number?
- * @param instanceFirst number?
+ * @param glEnum GL primitivesMode
+ * @param vertexCount integer?
+ * @param vertexFirst integer?
+ * @param instanceCount integer?
+ * @param instanceFirst integer?
  * @return nil
  */
 void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::optional<int> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt)
@@ -405,12 +405,12 @@ void LuaVAOImpl::DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::o
 /***
  *
  * @function VAO:DrawElements
- * @param glEnum number primitivesMode
- * @param drawCount number?
- * @param baseIndex number?
- * @param instanceCount number?
- * @param baseVertex number?
- * @param baseInstance number?
+ * @param glEnum GL primitivesMode
+ * @param drawCount integer?
+ * @param baseIndex integer?
+ * @param instanceCount integer?
+ * @param baseVertex integer?
+ * @param baseInstance integer?
  * @return nil
  */
 void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<int> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt)
@@ -467,8 +467,8 @@ void LuaVAOImpl::ClearSubmission()
 /***
  *
  * @function VAO:AddUnitsToSubmission
- * @param unitIDs number|number[]
- * @return number submittedCount
+ * @param unitIDs UnitID|UnitID[]
+ * @return integer submittedCount
  */
 int LuaVAOImpl::AddUnitsToSubmission(int id) { return AddObjectsToSubmissionImpl<CUnit>(id); }
 int LuaVAOImpl::AddUnitsToSubmission(const sol::stack_table& ids) { return  AddObjectsToSubmissionImpl<CUnit>(ids); }
@@ -477,8 +477,8 @@ int LuaVAOImpl::AddUnitsToSubmission(const sol::stack_table& ids) { return  AddO
 /***
  *
  * @function VAO:AddFeaturesToSubmission
- * @param featureIDs number|number[]
- * @return number submittedCount
+ * @param featureIDs FeatureID|FeatureID[]
+ * @return integer submittedCount
  */
 int LuaVAOImpl::AddFeaturesToSubmission(int id) { return AddObjectsToSubmissionImpl<CFeature>(id); }
 int LuaVAOImpl::AddFeaturesToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<CFeature>(ids); }
@@ -487,8 +487,8 @@ int LuaVAOImpl::AddFeaturesToSubmission(const sol::stack_table& ids) { return Ad
 /***
  *
  * @function VAO:AddUnitDefsToSubmission
- * @param unitDefIDs number|number[]
- * @return number submittedCount
+ * @param unitDefIDs UnitDefID|UnitDefID[]
+ * @return integer submittedCount
  */
 int LuaVAOImpl::AddUnitDefsToSubmission(int id) { return AddObjectsToSubmissionImpl<UnitDef>(id); }
 int LuaVAOImpl::AddUnitDefsToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<UnitDef>(ids); }
@@ -497,8 +497,8 @@ int LuaVAOImpl::AddUnitDefsToSubmission(const sol::stack_table& ids) { return Ad
 /***
  *
  * @function VAO:AddFeatureDefsToSubmission
- * @param featureDefIDs number|number[]
- * @return number submittedCount
+ * @param featureDefIDs FeatureDefID|FeatureDefID[]
+ * @return integer submittedCount
  */
 int LuaVAOImpl::AddFeatureDefsToSubmission(int id) { return AddObjectsToSubmissionImpl<FeatureDef>(id); }
 int LuaVAOImpl::AddFeatureDefsToSubmission(const sol::stack_table& ids) { return AddObjectsToSubmissionImpl<FeatureDef>(ids); }
@@ -507,7 +507,7 @@ int LuaVAOImpl::AddFeatureDefsToSubmission(const sol::stack_table& ids) { return
 /***
  *
  * @function VAO:RemoveFromSubmission
- * @param index number
+ * @param index integer
  * @return nil
  */
 void LuaVAOImpl::RemoveFromSubmission(int idx)
@@ -517,13 +517,15 @@ void LuaVAOImpl::RemoveFromSubmission(int idx)
 		return;
 	}
 
-	if (idx != submitCmds.size() - 1)
+	// swap-remove; every remaining command already satisfies baseInstance == index,
+	// so only the moved command needs its baseInstance fixed up
+	if (idx != submitCmds.size() - 1) {
 		submitCmds[idx] = submitCmds.back();
+		submitCmds[idx].baseInstance = static_cast<uint32_t>(idx);
+	}
 
 	submitCmds.pop_back();
-	for (baseInstance = 0; baseInstance < submitCmds.size(); ++baseInstance) {
-		submitCmds[baseInstance].baseInstance = baseInstance;
-	}
+	baseInstance = static_cast<uint32_t>(submitCmds.size());
 }
 
 

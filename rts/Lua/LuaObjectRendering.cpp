@@ -1,5 +1,16 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+
+/***
+Object rendering API — controls LOD, materials, and custom draw for units/features.
+Registered as `Spring.UnitRendering` and `Spring.FeatureRendering`.
+@see rts/Lua/LuaObjectRendering.cpp
+*/
+
+/***
+@class ObjectRenderingTable
+*/
+
 #include "LuaObjectRendering.h"
 #include "LuaMaterial.h"
 
@@ -122,6 +133,13 @@ void LuaObjectRenderingImpl::PushFunction(lua_State* L, int (*fnPntr)(lua_State*
 
 
 
+/*** Get the number of LOD levels and the current LOD.
+ *
+ * @function ObjectRenderingTable.GetLODCount
+ * @param objectID ObjectID
+ * @return integer lodCount
+ * @return integer currentLOD
+ */
 int LuaObjectRenderingImpl::GetLODCount(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -137,6 +155,13 @@ int LuaObjectRenderingImpl::GetLODCount(lua_State* L)
 	return 2;
 }
 
+/*** Set the number of LOD levels.
+ *
+ * @function ObjectRenderingTable.SetLODCount
+ * @param objectID ObjectID
+ * @param lodCount integer
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetLODCount(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -167,6 +192,14 @@ static int SetLODLengthCommon(lua_State* L, CSolidObject* obj, float scale)
 	return 0;
 }
 
+/*** Set the LOD transition length for a given level.
+ *
+ * @function ObjectRenderingTable.SetLODLength
+ * @param objectID ObjectID
+ * @param lodLevel integer
+ * @param lodLength number
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetLODLength(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -174,6 +207,14 @@ int LuaObjectRenderingImpl::SetLODLength(lua_State* L)
 	return (SetLODLengthCommon(L, ParseSolidObject(L, __func__, 1, GetObjectType()), 1.0f));
 }
 
+/*** Set the LOD transition distance for a given level (scaled for 45-degree FOV).
+ *
+ * @function ObjectRenderingTable.SetLODDistance
+ * @param objectID ObjectID
+ * @param lodLevel integer
+ * @param lodDistance number
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetLODDistance(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -187,6 +228,15 @@ int LuaObjectRenderingImpl::SetLODDistance(lua_State* L)
 
 /******************************************************************************/
 
+/*** Set a display list for a piece at a given LOD and material.
+ *
+ * @function ObjectRenderingTable.SetPieceList
+ * @param objectID ObjectID
+ * @param lodLevel integer
+ * @param piece integer
+ * @param ... any
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetPieceList(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -334,6 +384,14 @@ static LuaMatRef ParseMaterial(lua_State* L, int index, LuaMatType matType) {
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Get a material reference for a LOD level.
+ *
+ * @function ObjectRenderingTable.GetMaterial
+ * @param objectID ObjectID
+ * @param lodLevel integer
+ * @param materialName string
+ * @return userdata matRef
+ */
 int LuaObjectRenderingImpl::GetMaterial(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -356,6 +414,15 @@ int LuaObjectRenderingImpl::GetMaterial(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 
+/*** Set a material for a LOD level.
+ *
+ * @function ObjectRenderingTable.SetMaterial
+ * @param objectID ObjectID
+ * @param lodLevel integer
+ * @param materialName string
+ * @param materialTable table
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetMaterial(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -392,6 +459,14 @@ int LuaObjectRenderingImpl::SetMaterial(lua_State* L)
 }
 
 
+/*** Set the last LOD level that uses a given material.
+ *
+ * @function ObjectRenderingTable.SetMaterialLastLOD
+ * @param objectID ObjectID
+ * @param materialName string
+ * @param lastLOD integer
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetMaterialLastLOD(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -410,6 +485,15 @@ int LuaObjectRenderingImpl::SetMaterialLastLOD(lua_State* L)
 	return 0;
 }
 
+/*** Set display lists for a material.
+ *
+ * @function ObjectRenderingTable.SetMaterialDisplayLists
+ * @param objectID ObjectID
+ * @param lodLevel integer
+ * @param materialName string
+ * @param displayListTable table
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetMaterialDisplayLists(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -498,7 +582,17 @@ static int SetMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::Pa
 	return 1;
 }
 
+/*** @function ObjectRenderingTable.SetDeferredMaterialUniform
+ * @param objectID ObjectID
+ * @param ... any uniform values
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetDeferredMaterialUniform(lua_State* L) { return (SetMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_DFR)); }
+/*** @function ObjectRenderingTable.SetForwardMaterialUniform
+ * @param objectID ObjectID
+ * @param ... any uniform values
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetForwardMaterialUniform(lua_State* L) { return (SetMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_FWD)); }
 
 
@@ -537,7 +631,17 @@ static int ClearMaterialUniform(lua_State* L, LuaObjType objType, LuaMatShader::
 	return 1;
 }
 
+/*** @function ObjectRenderingTable.ClearDeferredMaterialUniform
+ * @param objectID ObjectID
+ * @param ... any uniform indices
+ * @return nil
+ */
 int LuaObjectRenderingImpl::ClearDeferredMaterialUniform(lua_State* L) { return (ClearMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_FWD)); }
+/*** @function ObjectRenderingTable.ClearForwardMaterialUniform
+ * @param objectID ObjectID
+ * @param ... any uniform indices
+ * @return nil
+ */
 int LuaObjectRenderingImpl::ClearForwardMaterialUniform(lua_State* L) { return (ClearMaterialUniform(L, GetObjectType(), LuaMatShader::LUASHADER_PASS_DFR)); }
 
 
@@ -559,18 +663,39 @@ static int SetObjectLuaDraw(lua_State* L, ObjectType* obj)
 }
 
 
+/*** Enable or disable custom Lua drawing for a unit.
+ *
+ * @function ObjectRenderingTable.SetUnitLuaDraw
+ * @param unitID UnitID
+ * @param enable boolean
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetUnitLuaDraw(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (SetObjectLuaDraw<CSolidObject>(L, unitHandler.GetUnit(luaL_checkint(L, 1))));
 }
 
+/*** Enable or disable custom Lua drawing for a feature.
+ *
+ * @function ObjectRenderingTable.SetFeatureLuaDraw
+ * @param featureID FeatureID
+ * @param enable boolean
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetFeatureLuaDraw(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	return (SetObjectLuaDraw<CSolidObject>(L, featureHandler.GetFeature(luaL_checkint(L, 1))));
 }
 
+/*** Enable or disable custom Lua drawing for a projectile.
+ *
+ * @function ObjectRenderingTable.SetProjectileLuaDraw
+ * @param projectileID ProjectileID
+ * @param enable boolean
+ * @return nil
+ */
 int LuaObjectRenderingImpl::SetProjectileLuaDraw(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -602,6 +727,12 @@ static void PrintObjectLOD(const CSolidObject* obj, int lod)
 }
 
 
+/*** Print debug info about the object's material data.
+ *
+ * @function ObjectRenderingTable.Debug
+ * @param objectID ObjectID
+ * @return nil
+ */
 int LuaObjectRenderingImpl::Debug(lua_State* L)
 {
 	RECOIL_DETAILED_TRACY_ZONE;

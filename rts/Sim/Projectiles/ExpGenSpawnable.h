@@ -35,6 +35,11 @@ public:
 	//Memory handled in projectileHandler
 	static CExpGenSpawnable* CreateSpawnable(int spawnableID);
 	static TypedRenderBuffer<VA_TYPE_PROJ>& GetPrimaryRenderBuffer();
+
+	// while set (per thread), AddEffectsQuad geometry lands in the given
+	// buffer instead of the shared primary one; used by the multithreaded
+	// alpha-pass fill in CProjectileDrawer. Pass nullptr to restore.
+	static void SetGeomFillTarget(TypedRenderBuffer<VA_TYPE_PROJ>* target);
 protected:
 	CExpGenSpawnable();
 

@@ -295,24 +295,15 @@ namespace QTPFS {
 			points.clear();
 			points.resize(n);
 		}
-		void CopyPoints(const IPath& p) {
-			AllocPoints(p.NumPoints());
 
-			for (unsigned int n = 0; n < p.NumPoints(); n++) {
-				points[n] = p.GetPoint(n);
-			}
-		}
+		void CopyPoints(const IPath& p) { points = p.points; }
+
 		void AllocNodes(unsigned int n) {
 			nodes.clear();
 			nodes.resize(n);
 		}
-		void CopyNodes(const IPath& p) {
-			AllocNodes(p.nodes.size());
 
-			for (unsigned int n = 0; n < p.nodes.size(); n++) {
-				nodes[n] = p.GetNode(n);
-			}
-		}
+		void CopyNodes(const IPath& p) { nodes = p.nodes; }
 
 		// Function is for debugging and logging purposes only
 		uint32_t CalculateHash() const {
@@ -345,15 +336,15 @@ namespace QTPFS {
 		spring_time GetSearchTime() const { return searchTime; }
 
 		// Incomplete paths need to be rebuilt from time to time as the owner makes progress.
-		unsigned int GetRepathTriggerIndex() const { return repathAtPointIndex; }
+		uint32_t GetRepathTriggerIndex() const { return repathAtPointIndex; }
 		void SetRepathTriggerIndex(unsigned int index) { repathAtPointIndex = index; }
 
 		void ClearGetRepathTriggerIndex() { repathAtPointIndex = 0; }
 
-		float3 GetGoalPosition() const { return goalPosition; }
+		const float3& GetGoalPosition() const { return goalPosition; }
 		void SetGoalPosition(float3 point) { goalPosition = point; }
 
-		unsigned int GetFirstNodeIdOfCleanPath() const { return firstNodeIdOfCleanPath; }
+		uint32_t GetFirstNodeIdOfCleanPath() const { return firstNodeIdOfCleanPath; }
 		void SetFirstNodeIdOfCleanPath(int nodeId) { firstNodeIdOfCleanPath = nodeId; }
 
 		bool IsRawPath() const { return isRawPath; }

@@ -31,6 +31,7 @@
 		#undef DeleteFile
 		#undef SendMessage
 		#undef GetCharWidth
+		#undef MemoryBarrier
 		#undef far
 		#undef near
 		#undef FAR

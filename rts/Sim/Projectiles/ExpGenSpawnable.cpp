@@ -138,9 +138,21 @@ bool CExpGenSpawnable::GetMemberInfo(SExpGenSpawnableMemberInfo& memberInfo)
 	return false;
 }
 
+// per-thread geometry destination override for the multithreaded alpha-pass
+// fill; null (the default) routes everything to the shared primary buffer
+static thread_local TypedRenderBuffer<VA_TYPE_PROJ>* geomFillTarget = nullptr;
+
+void CExpGenSpawnable::SetGeomFillTarget(TypedRenderBuffer<VA_TYPE_PROJ>* target)
+{
+	geomFillTarget = target;
+}
+
 TypedRenderBuffer<VA_TYPE_PROJ>& CExpGenSpawnable::GetPrimaryRenderBuffer()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (geomFillTarget != nullptr)
+		return *geomFillTarget;
+
 	return RenderBuffer::GetTypedRenderBuffer<VA_TYPE_PROJ>();
 }
 

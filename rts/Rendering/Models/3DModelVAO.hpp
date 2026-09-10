@@ -71,6 +71,9 @@ public:
 	bool AddToSubmission(const CFeature* feature);
 
 	bool AddToSubmission(const UnitDef* unitDef, uint16_t paletteIndex);
+
+	bool AddStaticInstance(const S3DModel* model, uint32_t worldTransformOffset, uint16_t paletteIndex);
+
 	void Submit(GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
 
 	bool SubmitImmediately(const S3DModel* model, uint16_t paletteIndex, GLenum mode = GL_TRIANGLES, bool bindUnbind = false);
@@ -101,6 +104,17 @@ private:
 		uint32_t indexStart,
 		uint32_t indexCount,
 		uint16_t paletteIndex
+	);
+	// build one SInstanceData from already-resolved offsets and queue it for the next Submit();
+	// returns false (drawing nothing) if the world transform or bind pose is unavailable.
+	bool EmplaceInstance(
+		uint32_t indexStart,
+		uint32_t indexCount,
+		uint32_t traIndex,
+		uint16_t paletteIndex,
+		uint16_t numPieces,
+		uint32_t uniIndex,
+		uint32_t bposeIndex
 	);
 	void EnableAttribs(bool inst) const;
 	void DisableAttribs() const;

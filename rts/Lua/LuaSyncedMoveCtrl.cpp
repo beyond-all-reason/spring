@@ -139,7 +139,7 @@ static inline DerivedMoveType* ParseDerivedMoveType(lua_State* L, const char* ca
 
 /***
  * @function MoveCtrl.IsEnabled
- * @param unitID integer
+ * @param unitID UnitID
  * @return boolean? isEnabled
  */
 int LuaSyncedMoveCtrl::IsEnabled(lua_State* L)
@@ -156,7 +156,7 @@ int LuaSyncedMoveCtrl::IsEnabled(lua_State* L)
 
 /***
  * @function MoveCtrl.Enable
- * @param unitID integer
+ * @param unitID UnitID
  */
 int LuaSyncedMoveCtrl::Enable(lua_State* L)
 {
@@ -172,7 +172,7 @@ int LuaSyncedMoveCtrl::Enable(lua_State* L)
 
 /***
  * @function MoveCtrl.Disable
- * @param unitID integer
+ * @param unitID UnitID
  */
 int LuaSyncedMoveCtrl::Disable(lua_State* L)
 {
@@ -190,7 +190,7 @@ int LuaSyncedMoveCtrl::Disable(lua_State* L)
 
 /***
  * @function MoveCtrl.SetTag
- * @param unitID integer
+ * @param unitID UnitID
  * @param tag integer
  */
 int LuaSyncedMoveCtrl::SetTag(lua_State* L)
@@ -208,6 +208,7 @@ int LuaSyncedMoveCtrl::SetTag(lua_State* L)
 /***
  * @function MoveCtrl.GetTag
  * @param tag integer?
+ * @return integer? tag `nil` if the unit is not using a script move type.
  */
 int LuaSyncedMoveCtrl::GetTag(lua_State* L)
 {
@@ -227,7 +228,7 @@ int LuaSyncedMoveCtrl::GetTag(lua_State* L)
 
 /***
  * @function MoveCtrl.SetProgressState
- * @param unitID integer
+ * @param unitID UnitID
  * @param state
  * | 0 # Done
  * | 1 # Active
@@ -277,7 +278,7 @@ int LuaSyncedMoveCtrl::SetProgressState(lua_State* L)
 
 /***
  * @function MoveCtrl.SetExtrapolate
- * @param unitID integer
+ * @param unitID UnitID
  * @param extrapolate boolean
  */
 int LuaSyncedMoveCtrl::SetExtrapolate(lua_State* L)
@@ -296,7 +297,7 @@ int LuaSyncedMoveCtrl::SetExtrapolate(lua_State* L)
 
 /***
  * @function MoveCtrl.SetPhysics
- * @param unitID integer
+ * @param unitID UnitID
  * @param posX number Position X component.
  * @param posY number Position Y component.
  * @param posZ number Position Z component.
@@ -327,7 +328,7 @@ int LuaSyncedMoveCtrl::SetPhysics(lua_State* L)
 
 /***
  * @function MoveCtrl.SetPosition
- * @param unitID integer
+ * @param unitID UnitID
  * @param posX number Position X component.
  * @param posY number Position Y component.
  * @param posZ number Position Z component.
@@ -350,7 +351,7 @@ int LuaSyncedMoveCtrl::SetPosition(lua_State* L)
 
 /***
  * @function MoveCtrl.SetVelocity
- * @param unitID integer
+ * @param unitID UnitID
  * @param velX number Velocity X component.
  * @param velY number Velocity Y component.
  * @param velZ number Velocity Z component.
@@ -373,7 +374,7 @@ int LuaSyncedMoveCtrl::SetVelocity(lua_State* L)
 
 /***
  * @function MoveCtrl.SetRelativeVelocity
- * @param unitID integer
+ * @param unitID UnitID
  * @param relVelX number Relative velocity X component.
  * @param relVelY number Relative velocity Y component.
  * @param relVelZ number Relative velocity Z component.
@@ -396,7 +397,7 @@ int LuaSyncedMoveCtrl::SetRelativeVelocity(lua_State* L)
 
 /***
  * @function MoveCtrl.SetRotation
- * @param unitID integer
+ * @param unitID UnitID
  * @param rotX number Rotation X component.
  * @param rotY number Rotation Y component.
  * @param rotZ number Rotation Z component.
@@ -430,7 +431,7 @@ int LuaSyncedMoveCtrl::SetRotationOffset(lua_State* L)
 
 /***
  * @function MoveCtrl.SetRotationVelocity
- * @param unitID integer
+ * @param unitID UnitID
  * @param rotVelX number Rotation velocity X component.
  * @param rotVelY number Rotation velocity Y component.
  * @param rotVelZ number Rotation velocity Z component.
@@ -452,7 +453,7 @@ int LuaSyncedMoveCtrl::SetRotationVelocity(lua_State* L)
 
 /***
  * @function MoveCtrl.SetHeading
- * @param unitID integer
+ * @param unitID UnitID
  * @param heading Heading
  */
 int LuaSyncedMoveCtrl::SetHeading(lua_State* L)
@@ -473,7 +474,7 @@ int LuaSyncedMoveCtrl::SetHeading(lua_State* L)
 
 /***
  * @function MoveCtrl.SetTrackSlope
- * @param unitID integer
+ * @param unitID UnitID
  * @param trackSlope boolean
  */
 int LuaSyncedMoveCtrl::SetTrackSlope(lua_State* L)
@@ -490,7 +491,7 @@ int LuaSyncedMoveCtrl::SetTrackSlope(lua_State* L)
 
 /***
  * @function MoveCtrl.SetTrackGround
- * @param unitID integer
+ * @param unitID UnitID
  * @param trackGround boolean
  */
 int LuaSyncedMoveCtrl::SetTrackGround(lua_State* L)
@@ -507,7 +508,7 @@ int LuaSyncedMoveCtrl::SetTrackGround(lua_State* L)
 
 /***
  * @function MoveCtrl.SetTrackLimits
- * @param unitID integer
+ * @param unitID UnitID
  * @param trackLimits boolean
  */
 int LuaSyncedMoveCtrl::SetTrackLimits(lua_State* L)
@@ -524,7 +525,7 @@ int LuaSyncedMoveCtrl::SetTrackLimits(lua_State* L)
 
 /***
  * @function MoveCtrl.SetGroundOffset
- * @param unitID integer
+ * @param unitID UnitID
  * @param groundOffset number
  */
 int LuaSyncedMoveCtrl::SetGroundOffset(lua_State* L)
@@ -541,7 +542,7 @@ int LuaSyncedMoveCtrl::SetGroundOffset(lua_State* L)
 
 /***
  * @function MoveCtrl.SetGravity
- * @param unitID integer
+ * @param unitID UnitID
  * @param gravityFactor number
  */
 int LuaSyncedMoveCtrl::SetGravity(lua_State* L)
@@ -558,7 +559,7 @@ int LuaSyncedMoveCtrl::SetGravity(lua_State* L)
 
 /***
  * @function MoveCtrl.SetDrag
- * @param unitID integer
+ * @param unitID UnitID
  * @param drag number
  */
 int LuaSyncedMoveCtrl::SetDrag(lua_State* L)
@@ -575,7 +576,7 @@ int LuaSyncedMoveCtrl::SetDrag(lua_State* L)
 
 /***
  * @function MoveCtrl.SetWindFactor
- * @param unitID integer
+ * @param unitID UnitID
  * @param windFactor number
  */
 int LuaSyncedMoveCtrl::SetWindFactor(lua_State* L)
@@ -592,7 +593,7 @@ int LuaSyncedMoveCtrl::SetWindFactor(lua_State* L)
 
 /***
  * @function MoveCtrl.SetLimits
- * @param unitID integer
+ * @param unitID UnitID
  * @param minX number Minimum position X component.
  * @param minY number Minimum position Y component.
  * @param minZ number Minimum position Z component.
@@ -617,7 +618,7 @@ int LuaSyncedMoveCtrl::SetLimits(lua_State* L)
 
 /***
  * @function MoveCtrl.SetNoBlocking
- * @param unitID integer
+ * @param unitID UnitID
  * @param noBlocking boolean
  */
 int LuaSyncedMoveCtrl::SetNoBlocking(lua_State* L)
@@ -640,7 +641,7 @@ int LuaSyncedMoveCtrl::SetSlopeStop(lua_State* L) { return 0; }
 
 /***
  * @function MoveCtrl.SetCollideStop
- * @param unitID integer
+ * @param unitID UnitID
  * @param collideStop boolean
  */
 int LuaSyncedMoveCtrl::SetCollideStop(lua_State* L)
@@ -657,7 +658,7 @@ int LuaSyncedMoveCtrl::SetCollideStop(lua_State* L)
 
 /***
  * @function MoveCtrl.SetLimitsStop
- * @param unitID integer
+ * @param unitID UnitID
  * @param limitsStop boolean
  */
 int LuaSyncedMoveCtrl::SetLimitsStop(lua_State* L)
@@ -727,15 +728,15 @@ static inline bool SetMoveTypeValue(lua_State* L, AMoveType* moveType, int keyId
  * 
  * Overload 1:
  * @param <MoveTypeTable> boolean
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  *
  * Overload 2:
  * @param <NumberKey> number
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  *
  * Overload 3:
  * @param <BooleanKey> boolean
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller)
 {
@@ -796,13 +797,13 @@ static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller
 
 /***
  * @function MoveCtrl.SetGunshipMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param moveType HoverAirMoveType
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetGunshipMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | GenericMoveTypeBooleanKey
  * | "collide"
@@ -811,11 +812,11 @@ static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller
  * | "useSmoothMesh"
  * | "bankingAllowed"
  * @param value boolean
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetGunshipMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | GenericMoveTypeNumberKey
  * | "wantedHeight"
@@ -827,7 +828,7 @@ static int SetMoveTypeData(lua_State* L, AMoveType* moveType, const char* caller
  * | "currentPitch"
  * | "maxDrift"
  * @param value number
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
 {
@@ -858,24 +859,24 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
 
 /***
  * @function MoveCtrl.SetAirMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param moveType StrafeAirMoveType
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetAirMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | GenericMoveTypeBooleanKey
  * | "collide"
  * | "useSmoothMesh"
  * | "loopbackAttack"
   * @param value boolean
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetAirMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | GenericMoveTypeNumberKey
  * | "wantedHeight" 
@@ -892,15 +893,15 @@ int LuaSyncedMoveCtrl::SetGunshipMoveTypeData(lua_State* L)
  * | "attackSafetyDistance" 
  * | "myGravity" 
  * @param value number
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetAirMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | "maneuverBlockTime"
  * @param value integer
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 int LuaSyncedMoveCtrl::SetAirMoveTypeData(lua_State* L)
 {
@@ -927,24 +928,24 @@ int LuaSyncedMoveCtrl::SetAirMoveTypeData(lua_State* L)
 
 /***
  * @function MoveCtrl.SetGroundMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param moveType GroundMoveType
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetGroundMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | GenericMoveTypeBooleanKey
  * | "atGoal"
  * | "atEndOfPath"
  * | "pushResistant"
  * @param value boolean
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetGroundMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | GenericMoveTypeNumberKey
  * | "turnRate"
@@ -957,15 +958,15 @@ int LuaSyncedMoveCtrl::SetAirMoveTypeData(lua_State* L)
  * | "maxReverseSpeed"
  * | "sqSkidSpeedMult"
  * @param value number
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 /***
  * @function MoveCtrl.SetGroundMoveTypeData
- * @param unitID integer
+ * @param unitID UnitID
  * @param key
  * | "minScriptChangeHeading"
  * @param value integer
- * @return number numAssignedValues
+ * @return integer numAssignedValues
  */
 int LuaSyncedMoveCtrl::SetGroundMoveTypeData(lua_State* L)
 {
@@ -979,7 +980,7 @@ int LuaSyncedMoveCtrl::SetGroundMoveTypeData(lua_State* L)
 
 /***
  * @function MoveCtrl.SetMoveDef
- * @param unitID integer
+ * @param unitID UnitID
  * @param moveDef integer|string Name or path type of the MoveDef.
  * @return boolean success `true` if the `MoveDef` was set, `false` if `unitID` or `moveDef` were invalid, or if the unit does not support a `MoveDef`.
  */
