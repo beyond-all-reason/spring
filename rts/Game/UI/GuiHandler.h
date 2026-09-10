@@ -28,6 +28,14 @@ class CGuiHandler : public CInputReceiver {
 public:
 	CGuiHandler();
 
+	enum BuildModifier : uint32_t {
+		MOD_NONE       = 0,
+		MOD_LINE       = 1 << 0,
+		MOD_BOX        = 1 << 1,
+		MOD_CIRCLE     = 1 << 2,
+		MOD_HOLLOW_BOX = 1 << 3,
+		MOD_AXIS_LOCK  = 1 << 5,
+	};
 	void Update();
 
 	void Draw();
@@ -46,6 +54,7 @@ public:
 		MouseRelease(x, y, button, camera->GetPos(), mouse->dir);
 	}
 	void MouseRelease(int x, int y, int button, const float3& cameraPos, const float3& mouseDir);
+	
 	bool IsAbove(int x, int y);
 	std::string GetTooltip(int x, int y);
 	std::string GetBuildTooltip() const;
@@ -67,6 +76,7 @@ public:
 
 	bool LoadConfig(const std::string& cfg);
 	bool LoadDefaultConfig() { return (LoadConfig(DEFAULT_GUI_CONFIG)); }
+	void ConfigCommand(const std::string& line);
 	bool ReloadConfigFromFile(const std::string& fileName);
 	bool ReloadConfigFromString(const std::string& cfg);
 
@@ -84,6 +94,10 @@ public:
 
 	bool GetGatherMode() const { return gatherMode; }
 	void SetGatherMode(bool value) { gatherMode = value; }
+
+    void EnableBuildModifier(BuildModifier m) {activeBuildModifiers |= m;}
+	void DisableBuildModifier(BuildModifier m) {activeBuildModifiers &= ~m;}
+	static BuildModifier ParseBuildModifier(const std::string& arg);
 
 	bool GetOutlineFonts() const { return outlineFonts; }
 
@@ -171,6 +185,8 @@ private:
 	int  GetIconPosCommand(int slot) const;
 	int  ParseIconSlot(const std::string& text) const;
 
+	
+
 
 public:
 	int inCommand = -1;
@@ -184,6 +200,9 @@ private:
 	int defaultCmdMemory = -1;
 	int explicitCommand = -1;
 	int curIconCommand = -1;
+
+	uint32_t activeBuildModifiers = MOD_NONE; // bitmask of active modifiers
+	bool useLegacyBuildUI = true;
 
 	int actionOffset = 0;
 

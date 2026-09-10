@@ -40,6 +40,7 @@ class CKeyBindings : public CommandReceiver
 		void Print() const;
 		void LoadDefaults();
 
+		ActionList GetModActionList() const;
 		ActionList GetActionList() const;
 		ActionList GetActionList(int keyCode, int scanCode) const;
 		ActionList GetActionList(int keyCode, int scanCode, unsigned char modifiers) const;
@@ -88,6 +89,7 @@ class CKeyBindings : public CommandReceiver
 
 		KeyMap codeBindings;
 		KeyMap scanBindings;
+		std::unordered_map<unsigned char, ActionList> modOnlyBindings;
 		ActionMap hotkeys;
 		std::vector<std::string> loadStack;
 		int bindingsCount;

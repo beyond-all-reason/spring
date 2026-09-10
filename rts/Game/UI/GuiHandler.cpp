@@ -61,6 +61,7 @@
 
 CONFIG(bool, MiniMapMarker).defaultValue(true).headlessValue(false);
 CONFIG(bool, InvertQueueKey).defaultValue(false);
+CONFIG(bool, useLegacyBuildUI).defaultValue(true);
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -80,6 +81,7 @@ CGuiHandler::CGuiHandler()
 
 	miniMapMarker = configHandler->GetBool("MiniMapMarker");
 	invertQueueKey = configHandler->GetBool("InvertQueueKey");
+	useLegacyBuildUI = configHandler->GetBool("useLegacyBuildUI");
 
 
 	autoShowMetal = mapInfo->gui.autoShowMetal;
@@ -139,6 +141,20 @@ void CGuiHandler::LoadDefaults()
 	frontByEnds = false;
 }
 
+void CGuiHandler::ConfigCommand(const std::string& line) {
+    const auto& words = CSimpleParser::Tokenize(line, 1);
+    if (words.empty())
+        return;
+
+    switch (hashStringLower(words[0].c_str())) {
+        case hashString("legacybuildui"): {
+            useLegacyBuildUI = (words.size() >= 2)
+                ? !!atoi(words[1].c_str())
+                : !useLegacyBuildUI;
+			LOG_L(L_WARNING, "[GuiHandler::ConfigCommand] legacybuildui set to %d", useLegacyBuildUI);
+        } break;
+    }
+}
 
 static bool SafeAtoF(float& var, const std::string& value)
 {
@@ -1316,6 +1332,19 @@ void CGuiHandler::MouseRelease(int x, int y, int button, const float3& cameraPos
 	FinishCommand(button);
 }
 
+CGuiHandler::BuildModifier CGuiHandler::ParseBuildModifier(const std::string& argIn)
+{
+    const std::string arg = StringToLower(argIn);
+    static const spring::unordered_map<std::string, BuildModifier> modMap = {
+        {"line",       MOD_LINE},
+        {"box",        MOD_BOX},
+        {"circle",     MOD_CIRCLE},
+        {"hollow_box", MOD_HOLLOW_BOX},
+        {"axis_lock",  MOD_AXIS_LOCK},
+    };
+    const auto it = modMap.find(arg);
+    return (it != modMap.end()) ? it->second : MOD_NONE;
+}
 
 bool CGuiHandler::SetActiveCommand(int cmdIndex, bool rightMouseButton)
 {
@@ -2238,7 +2267,14 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 
 			const BuildInfo bi(unitdef, cameraPos + mouseDir * dist, buildFacing);
 
-			if (GetQueueKeystate() && (button == SDL_BUTTON_LEFT)) {
+			const bool legacyMultiBuild =
+    			useLegacyBuildUI && GetQueueKeystate() && (button == SDL_BUTTON_LEFT);
+			const bool actionMultiBuild =
+				!useLegacyBuildUI && (button == SDL_BUTTON_LEFT) && (
+					(guihandler->activeBuildModifiers & (MOD_LINE | MOD_CIRCLE | MOD_BOX | MOD_HOLLOW_BOX)) != 0
+				);
+				
+			if (legacyMultiBuild || actionMultiBuild) {
 				const float3 camTracePos = mouse->buttons[SDL_BUTTON_LEFT].camPos;
 				const float3 camTraceDir = mouse->buttons[SDL_BUTTON_LEFT].dir;
 
@@ -2259,19 +2295,30 @@ Command CGuiHandler::GetCommand(int mouseX, int mouseY, int buttonHint, bool pre
 				// TODO: maybe also check out-of-range for immobile builder?
 				if (!CGameHelper::TestUnitBuildSquare(buildInfos[0], feature, gu->myAllyTeam, false))
 					return defaultRet;
-
+				buildCommands.clear();
+				return CheckCommand(buildInfos.back().CreateCommand(CreateOptions(button)));
 			}
 
+			// handle multi-command batching if not preview
+			unsigned char baseOpts = CreateOptions(button);
 			if (!preview) {
-				// only issue if more than one entry, i.e. user created some
-				// kind of line/area queue (caller handles the last command)
-				for (auto beg = buildInfos.cbegin(), end = --buildInfos.cend(); beg != end; ++beg) {
-					GiveCommand(beg->CreateCommand(CreateOptions(button)));
+				bool shiftHeld = GetQueueKeystate();
+				for (auto it = buildInfos.cbegin(), end = --buildInfos.cend(); it != end; ++it) {
+					unsigned char opts = baseOpts;
+					// First command clears previous commands if shift isn't held; otherwise append with shift
+					if (it == buildInfos.cbegin() && !shiftHeld) {
+						opts &= ~SHIFT_KEY;   // clear once
+					} else {
+						opts |= SHIFT_KEY;    // append
+					}
+					GiveCommand(it->CreateCommand(opts));
 				}
 			}
-
+			// finalize: last command always acts as append in multibuild
+			unsigned char lastOpts = baseOpts;
+			lastOpts |= SHIFT_KEY;  // batching branch also appends last
 			buildCommands.clear();
-			return CheckCommand((buildInfos.back()).CreateCommand(CreateOptions(button)));
+			return CheckCommand(buildInfos.back().CreateCommand(lastOpts));
 		}
 
 		case CMDTYPE_ICON_UNIT: {
@@ -2512,63 +2559,167 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 	buildInfos.clear();
 	buildInfos.reserve(16);
 
-	if (GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
-		const CUnit* unit = nullptr;
-		const CFeature* feature = nullptr;
+	if (useLegacyBuildUI) {
+		if (GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
+			const CUnit* unit = nullptr;
+			const CFeature* feature = nullptr;
 
-		TraceRay::GuiTraceRay(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, nullptr, unit, feature, startInfo.def->floatOnWater);
+			TraceRay::GuiTraceRay(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, nullptr, unit, feature, startInfo.def->floatOnWater);
 
-		if (unit != nullptr) {
-			other.def = unit->unitDef;
-			other.pos = unit->pos;
-			other.buildFacing = unit->buildFacing;
+			if (unit != nullptr) {
+				other.def = unit->unitDef;
+				other.pos = unit->pos;
+				other.buildFacing = unit->buildFacing;
+			} else {
+				const Command c = CGameHelper::GetBuildCommand(cameraPos, mouseDir);
+
+				if (c.GetID() < 0 && c.GetNumParams() == 4) {
+					other.pos = c.GetPos(0);
+					other.def = unitDefHandler->GetUnitDefByID(-c.GetID());
+					other.buildFacing = int(c.GetParam(3));
+				}
+			}
+		}
+
+		if (other.def && GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
+			// circle build around building
+			const int oxsize = other.GetXSize() * SQUARE_SIZE;
+			const int ozsize = other.GetZSize() * SQUARE_SIZE;
+			const int xsize = startInfo.GetXSize() * SQUARE_SIZE;
+			const int zsize = startInfo.GetZSize() * SQUARE_SIZE;
+
+			start = end = CGameHelper::Pos2BuildPos(other, false);
+			start.x -= oxsize / 2;
+			start.z -= ozsize / 2;
+			end.x += oxsize / 2;
+			end.z += ozsize / 2;
+
+			const int nvert = 1 + (oxsize / xsize);
+			const int nhori = 1 + (ozsize / xsize);
+
+			FillRowOfBuildPos(startInfo, end.x   + zsize / 2, start.z + xsize / 2,      0,  xsize, nhori, 3, true, buildInfos);
+			FillRowOfBuildPos(startInfo, end.x   - xsize / 2, end.z   + zsize / 2, -xsize,      0, nvert, 2, true, buildInfos);
+			FillRowOfBuildPos(startInfo, start.x - zsize / 2, end.z   - xsize / 2,      0, -xsize, nhori, 1, true, buildInfos);
+			FillRowOfBuildPos(startInfo, start.x + xsize / 2, start.z - zsize / 2,  xsize,      0, nvert, 0, true, buildInfos);
 		} else {
-			const Command c = CGameHelper::GetBuildCommand(cameraPos, mouseDir);
+			// rectangle or line
+			const float3 delta = end - start;
 
-			if (c.GetID() < 0 && c.GetNumParams() == 4) {
-				other.pos = c.GetPos(0);
-				other.def = unitDefHandler->GetUnitDefByID(-c.GetID());
-				other.buildFacing = int(c.GetParam(3));
+			const float xsize = SQUARE_SIZE * (startInfo.GetXSize() + buildSpacing * 2);
+			const float zsize = SQUARE_SIZE * (startInfo.GetZSize() + buildSpacing * 2);
+
+			const int xnum = (int)((math::fabs(delta.x) + xsize * 1.4f)/xsize);
+			const int znum = (int)((math::fabs(delta.z) + zsize * 1.4f)/zsize);
+
+			float xstep = (int)((0 < delta.x) ? xsize : -xsize);
+			float zstep = (int)((0 < delta.z) ? zsize : -zsize);
+
+			if (KeyInput::GetKeyModState(KMOD_ALT)) {
+				// build a (filled or hollow) rectangle
+				if (KeyInput::GetKeyModState(KMOD_CTRL)) {
+					if ((1 < xnum) && (1 < znum)) {
+						// go "down" on the "left" side
+						FillRowOfBuildPos(startInfo, start.x                     , start.z + zstep             ,      0,  zstep, znum - 1, 0, false, buildInfos);
+						// go "right" on the "bottom" side
+						FillRowOfBuildPos(startInfo, start.x + xstep             , start.z + (znum - 1) * zstep,  xstep,      0, xnum - 1, 0, false, buildInfos);
+						// go "up" on the "right" side
+						FillRowOfBuildPos(startInfo, start.x + (xnum - 1) * xstep, start.z + (znum - 2) * zstep,      0, -zstep, znum - 1, 0, false, buildInfos);
+						// go "left" on the "top" side
+						FillRowOfBuildPos(startInfo, start.x + (xnum - 2) * xstep, start.z                     , -xstep,      0, xnum - 1, 0, false, buildInfos);
+					} else if (1 == xnum) {
+						FillRowOfBuildPos(startInfo, start.x, start.z, 0, zstep, znum, 0, false, buildInfos);
+					} else if (1 == znum) {
+						FillRowOfBuildPos(startInfo, start.x, start.z, xstep, 0, xnum, 0, false, buildInfos);
+					}
+				} else {
+					// filled
+					int zn = 0;
+					for (float z = start.z; zn < znum; ++zn) {
+						if (zn & 1) {
+							// every odd line "right" to "left"
+							FillRowOfBuildPos(startInfo, start.x + (xnum - 1) * xstep, z, -xstep, 0, xnum, 0, false, buildInfos);
+						} else {
+							// every even line "left" to "right"
+							FillRowOfBuildPos(startInfo, start.x                     , z,  xstep, 0, xnum, 0, false, buildInfos);
+						}
+						z += zstep;
+					}
+				}
+			} else {
+				// build a line
+				const bool xDominatesZ = (math::fabs(delta.x) > math::fabs(delta.z));
+
+				if (xDominatesZ) {
+					zstep = KeyInput::GetKeyModState(KMOD_CTRL) ? 0 : xstep * delta.z / (delta.x ? delta.x : 1);
+				} else {
+					xstep = KeyInput::GetKeyModState(KMOD_CTRL) ? 0 : zstep * delta.x / (delta.z ? delta.z : 1);
+				}
+
+				FillRowOfBuildPos(startInfo, start.x, start.z, xstep, zstep, xDominatesZ ? xnum : znum, 0, false, buildInfos);
 			}
 		}
 	}
+	else{
+		const bool circleMode = (activeBuildModifiers & MOD_CIRCLE);
+		// Circle build: first resolve anchor (unit or ghost) under cursor
+		if (circleMode) {
+			const CUnit* unit = nullptr;
+			const CFeature* feature = nullptr;
 
-	if (other.def && GetQueueKeystate() && KeyInput::GetKeyModState(KMOD_CTRL)) {
-		// circle build around building
-		const int oxsize = other.GetXSize() * SQUARE_SIZE;
-		const int ozsize = other.GetZSize() * SQUARE_SIZE;
-		const int xsize = startInfo.GetXSize() * SQUARE_SIZE;
-		const int zsize = startInfo.GetZSize() * SQUARE_SIZE;
+			TraceRay::GuiTraceRay(cameraPos, mouseDir, camera->GetFarPlaneDist() * 1.4f, nullptr, unit, feature, startInfo.def->floatOnWater);
 
-		start = end = CGameHelper::Pos2BuildPos(other, false);
-		start.x -= oxsize / 2;
-		start.z -= ozsize / 2;
-		end.x += oxsize / 2;
-		end.z += ozsize / 2;
+			if (unit != nullptr) {
+				other.def = unit->unitDef;
+				other.pos = unit->pos;
+				other.buildFacing = unit->buildFacing;
+			} else {
+				const Command c = CGameHelper::GetBuildCommand(cameraPos, mouseDir);
 
-		const int nvert = 1 + (oxsize / xsize);
-		const int nhori = 1 + (ozsize / xsize);
+				if (c.GetID() < 0 && c.GetNumParams() == 4) {
+					other.pos = c.GetPos(0);
+					other.def = unitDefHandler->GetUnitDefByID(-c.GetID());
+					other.buildFacing = int(c.GetParam(3));
+				}
+			}
+		}
+		// Circle build: if anchor found, circle build around building
+		if (other.def && circleMode) {
+			const int oxsize = other.GetXSize() * SQUARE_SIZE;
+			const int ozsize = other.GetZSize() * SQUARE_SIZE;
+			const int xsize = startInfo.GetXSize() * SQUARE_SIZE;
+			const int zsize = startInfo.GetZSize() * SQUARE_SIZE;
 
-		FillRowOfBuildPos(startInfo, end.x   + zsize / 2, start.z + xsize / 2,      0,  xsize, nhori, 3, true, buildInfos);
-		FillRowOfBuildPos(startInfo, end.x   - xsize / 2, end.z   + zsize / 2, -xsize,      0, nvert, 2, true, buildInfos);
-		FillRowOfBuildPos(startInfo, start.x - zsize / 2, end.z   - xsize / 2,      0, -xsize, nhori, 1, true, buildInfos);
-		FillRowOfBuildPos(startInfo, start.x + xsize / 2, start.z - zsize / 2,  xsize,      0, nvert, 0, true, buildInfos);
-	} else {
-		// rectangle or line
-		const float3 delta = end - start;
+			start = end = CGameHelper::Pos2BuildPos(other, false);
+			start.x -= oxsize / 2;
+			start.z -= ozsize / 2;
+			end.x += oxsize / 2;
+			end.z += ozsize / 2;
 
-		const float xsize = SQUARE_SIZE * (startInfo.GetXSize() + buildSpacing * 2);
-		const float zsize = SQUARE_SIZE * (startInfo.GetZSize() + buildSpacing * 2);
+			const int nvert = 1 + (oxsize / xsize);
+			const int nhori = 1 + (ozsize / xsize);
 
-		const int xnum = (int)((math::fabs(delta.x) + xsize * 1.4f)/xsize);
-		const int znum = (int)((math::fabs(delta.z) + zsize * 1.4f)/zsize);
+			FillRowOfBuildPos(startInfo, end.x   + zsize / 2, start.z + xsize / 2,      0,  xsize, nhori, 3, true, buildInfos);
+			FillRowOfBuildPos(startInfo, end.x   - xsize / 2, end.z   + zsize / 2, -xsize,      0, nvert, 2, true, buildInfos);
+			FillRowOfBuildPos(startInfo, start.x - zsize / 2, end.z   - xsize / 2,      0, -xsize, nhori, 1, true, buildInfos);
+			FillRowOfBuildPos(startInfo, start.x + xsize / 2, start.z - zsize / 2,  xsize,      0, nvert, 0, true, buildInfos);
+		} else if (!(activeBuildModifiers & (MOD_BOX | MOD_HOLLOW_BOX | MOD_LINE))) {
+        	// single build
+			FillRowOfBuildPos(startInfo, end.x, end.z, 0, 0, 1, 0, false, buildInfos);
+			//FillRowOfBuildPos(startInfo, start.x, start.z, 0, 0, 1, 0, false, buildInfos);
+		} else {
+			// sizing math
+			const float3 delta = end - start;
 
-		float xstep = (int)((0 < delta.x) ? xsize : -xsize);
-		float zstep = (int)((0 < delta.z) ? zsize : -zsize);
+			const float xsize = SQUARE_SIZE * (startInfo.GetXSize() + buildSpacing * 2);
+			const float zsize = SQUARE_SIZE * (startInfo.GetZSize() + buildSpacing * 2);
 
-		if (KeyInput::GetKeyModState(KMOD_ALT)) {
-			// build a (filled or hollow) rectangle
-			if (KeyInput::GetKeyModState(KMOD_CTRL)) {
+			const int xnum = (int)((math::fabs(delta.x) + xsize * 1.4f)/xsize);
+			const int znum = (int)((math::fabs(delta.z) + zsize * 1.4f)/zsize);
+
+			float xstep = (int)((0 < delta.x) ? xsize : -xsize);
+			float zstep = (int)((0 < delta.z) ? zsize : -zsize);
+
+			if (activeBuildModifiers & MOD_HOLLOW_BOX) {
 				if ((1 < xnum) && (1 < znum)) {
 					// go "down" on the "left" side
 					FillRowOfBuildPos(startInfo, start.x                     , start.z + zstep             ,      0,  zstep, znum - 1, 0, false, buildInfos);
@@ -2583,8 +2734,7 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 				} else if (1 == znum) {
 					FillRowOfBuildPos(startInfo, start.x, start.z, xstep, 0, xnum, 0, false, buildInfos);
 				}
-			} else {
-				// filled
+			} else if (activeBuildModifiers & MOD_BOX) {
 				int zn = 0;
 				for (float z = start.z; zn < znum; ++zn) {
 					if (zn & 1) {
@@ -2597,23 +2747,21 @@ size_t CGuiHandler::GetBuildPositions(const BuildInfo& startInfo, const BuildInf
 					z += zstep;
 				}
 			}
-		} else {
-			// build a line
-			const bool xDominatesZ = (math::fabs(delta.x) > math::fabs(delta.z));
-
-			if (xDominatesZ) {
-				zstep = KeyInput::GetKeyModState(KMOD_CTRL) ? 0 : xstep * delta.z / (delta.x ? delta.x : 1);
-			} else {
-				xstep = KeyInput::GetKeyModState(KMOD_CTRL) ? 0 : zstep * delta.x / (delta.z ? delta.z : 1);
+			else {
+				// angled line transform
+				const bool xDominatesZ = (math::fabs(delta.x) > math::fabs(delta.z));
+				const bool axisLock    = (activeBuildModifiers & MOD_AXIS_LOCK) != 0;
+				if (xDominatesZ) {
+					zstep = axisLock  ? 0 : xstep * delta.z / (delta.x ? delta.x : 1);
+				} else {
+					xstep = axisLock  ? 0 : zstep * delta.x / (delta.z ? delta.z : 1);
+				}
+				FillRowOfBuildPos(startInfo, start.x, start.z, xstep, zstep, xDominatesZ ? xnum : znum, 0, false, buildInfos);
 			}
-
-			FillRowOfBuildPos(startInfo, start.x, start.z, xstep, zstep, xDominatesZ ? xnum : znum, 0, false, buildInfos);
 		}
 	}
-
 	return (buildInfos.size());
 }
-
 
 void CGuiHandler::ProcessFrontPositions(float3& pos0, const float3& pos1)
 {
@@ -3821,7 +3969,14 @@ void CGuiHandler::DrawMapStuff(bool onMiniMap)
 				const float3 cPos = tracePos + traceDir * rayTraceDist;
 
 				const CMouseHandler::ButtonPressEvt& bp = mouse->buttons[SDL_BUTTON_LEFT];
-				if (GetQueueKeystate() && bp.pressed) {
+				const bool legacyMultiBuild =
+					useLegacyBuildUI && GetQueueKeystate() && bp.pressed;
+
+				const bool actionMultiBuild =
+					!useLegacyBuildUI && bp.pressed && (
+						(guihandler->activeBuildModifiers & (MOD_LINE | MOD_CIRCLE | MOD_BOX | MOD_HOLLOW_BOX)) != 0
+					);
+				if (legacyMultiBuild || actionMultiBuild) {
 					const float bpDist = CGround::LineGroundWaterCol(bp.camPos, bp.dir, maxTraceDist, buildeeDef->floatOnWater, false);
 					const float3 bPos = bp.camPos + bp.dir * bpDist;
 					const BuildInfo cInfo = BuildInfo(buildeeDef, cPos, buildFacing);

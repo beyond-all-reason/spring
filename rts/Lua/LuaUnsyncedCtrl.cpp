@@ -265,6 +265,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetMouseCursor);
 	REGISTER_LUA_CFUNC(WarpMouse);
+	REGISTER_LUA_CFUNC(EmulateMousePress);
+	REGISTER_LUA_CFUNC(EmulateMouseRelease);
 
 	REGISTER_LUA_CFUNC(SetClipboard);
 
@@ -3165,6 +3167,40 @@ int LuaUnsyncedCtrl::SetCustomCommandDrawData(lua_State* L)
  * Mouse
  * @section mouse
 ******************************************************************************/
+
+/*** @function Spring.EmulateMousePress
+ * @param x number  (screen X coordinate, origin top‑left)
+ * @param y number  (screen Y coordinate, origin top‑left)
+ * @param button number (1=left, 2=middle, 3=right)
+ * @return nil
+ */
+int LuaUnsyncedCtrl::EmulateMousePress(lua_State* L) {
+    const int x = luaL_checkint(L, 1);
+    const int y = globalRendering->viewSizeY - luaL_checkint(L, 2) - 1;
+    const int button = luaL_checkint(L, 3);
+
+    if (mouse != nullptr) {
+        mouse->MousePress(x, y, button);
+    }
+    return 0;
+}
+
+/*** @function Spring.EmulateMouseRelease
+ * @param x number  (screen X coordinate, origin top‑left)
+ * @param y number  (screen Y coordinate, origin top‑left)
+ * @param button number (1=left, 2=middle, 3=right)
+ * @return nil
+ */
+int LuaUnsyncedCtrl::EmulateMouseRelease(lua_State* L) {
+    const int x = luaL_checkint(L, 1);
+    const int y = globalRendering->viewSizeY - luaL_checkint(L, 2) - 1;
+    const int button = luaL_checkint(L, 3);
+
+    if (mouse != nullptr) {
+        mouse->MouseRelease(x, y, button);
+    }
+    return 0;
+}
 
 
 /*** @function Spring.WarpMouse
