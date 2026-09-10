@@ -703,12 +703,13 @@ bool CKeyBindings::UnBindKeyset(const std::string& keystr)
 	if (debugEnabled)
 		LOG("[CKeyBindings::%s] keystr=%s", __func__, keystr.c_str());
 
-	CKeySet ks;
-	if (!ks.Parse(keystr)) {
+	CKeyChain kc;
+	if (!ParseKeyChain(keystr, &kc) || kc.empty()) {
 		LOG_L(L_WARNING, "UnBindKeyset: could not parse key: %s", keystr.c_str());
 		return false;
 	}
 
+	const CKeySet& ks = kc.back();
 	KeyMap& bindings = ks.IsKeyCode() ? codeBindings : scanBindings;
 
 	const auto it = bindings.find(ks);
@@ -718,7 +719,18 @@ bool CKeyBindings::UnBindKeyset(const std::string& keystr)
 		buildHotkeyMap = true;
 	}
 
-	return true;
+	/* the bucket is keyed by the last keyset, so it also holds
+	 * longer chains ending in this key; only drop what was named */
+	ActionList& al = it->second;
+	const auto removedCount = std::erase_if(al, [&kc](const auto& x) { return x.keyChain == kc; });
+
+	if (al.empty())
+		bindings.erase(it);
+
+	if (removedCount > 0)
+		buildHotkeyMap = true;
+
+	return removedCount > 0;
 }
 
 
