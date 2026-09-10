@@ -1496,6 +1496,12 @@ void CCommandAI::ExecuteAttack(Command& c)
 			FinishCommand();
 			return;
 		}
+		// the flyer we were attacking started crashing; nothing left to do for this order
+		if (orderTarget != nullptr && orderTarget->unitDef->canfly && orderTarget->IsCrashing()) {
+			owner->DropCurrentAttackTarget();
+			FinishCommand();
+			return;
+		}
 		if (!(c.GetOpts() & ALT_KEY) && SkipParalyzeTarget(orderTarget)) {
 			FinishCommand();
 			return;
@@ -1513,6 +1519,12 @@ void CCommandAI::ExecuteAttack(Command& c)
 				return;
 			}
 			if (targetUnit->GetTransporter() != nullptr && !modInfo.targetableTransportedUnits) {
+				FinishCommand();
+				return;
+			}
+			// a crashing flyer is not an available target (weapons refuse it
+			// unless fireAtCrashing); skip the order instead of holding it
+			if (targetUnit->unitDef->canfly && targetUnit->IsCrashing()) {
 				FinishCommand();
 				return;
 			}
@@ -1853,7 +1865,18 @@ void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& 
 	const auto hasTarget = [&](const Command& c) { return (c.GetNumParams() == 1 && (c.GetID() == CMD_FIGHT || c.GetID() == CMD_ATTACK)); };
 	const auto removeCmd = [&](const Command& c) { return (hasTarget(c) && pred(unitHandler.GetUnit(c.GetParam(0)))); };
 
+	const bool frontRemoved = (!commandQue.empty() && removeCmd(commandQue.front()));
+
 	commandQue.erase(std::remove_if(commandQue.begin(), commandQue.end(), removeCmd), commandQue.end());
+
+	// the order being executed was erased without FinishCommand; clear its
+	// execution state so the next queued order starts fresh instead of being
+	// judged against the old target (or never initialised at all)
+	if (frontRemoved) {
+		inCommand = CMD_STOP;
+		targetDied = false;
+		SetOrderTarget(nullptr);
+	}
 }
 
 void CCommandAI::StopAttackingAllyTeam(int ally)

@@ -922,6 +922,12 @@ void CMobileCAI::ExecuteAttack(Command& c)
 					StopMoveAndFinishCommand();
 					return;
 				}
+				// a crashing flyer cannot be attacked (weapons refuse it unless
+				// fireAtCrashing); skip the order like AirCAI does
+				if (targetUnit->unitDef->canfly && targetUnit->IsCrashing()) {
+					StopMoveAndFinishCommand();
+					return;
+				}
 
 				const float3 tgtErrPos = targetUnit->GetErrorPos(owner->allyteam, false);
 				const float3 tgtPosDir = (tgtErrPos - owner->pos).Normalize();
@@ -950,6 +956,12 @@ void CMobileCAI::ExecuteAttack(Command& c)
 	// NOTE: unit should actually just continue to target area!
 	if (targetDied || (c.GetNumParams() == 1 && UpdateTargetLostTimer(int(c.GetParam(0))) == 0)) {
 		// cancel keeppointingto
+		StopMoveAndFinishCommand();
+		return;
+	}
+	// the flyer we were attacking started crashing; nothing left to do for this order
+	if (orderTarget != nullptr && orderTarget->unitDef->canfly && orderTarget->IsCrashing()) {
+		owner->DropCurrentAttackTarget();
 		StopMoveAndFinishCommand();
 		return;
 	}
