@@ -1,10 +1,11 @@
 # Runs the Beyond All Reason "synctest" (/luarules synctest) against an engine
 # commit on all supported platforms (amd64-linux, arm64-linux, amd64-windows).
 #
-# This workflow looks up the most recent successful "Build Engine v2" run for
-# the target commit and downloads platform-specific artifacts. If no such run
-# exists, the workflow fails fast.
-# TODO: trigger after every engine build
+# Runs automatically after every "Build Engine v2" run finishes (via
+# workflow_run), testing the exact commit that was built and reusing that run's
+# artifacts. It can also be dispatched manually against an arbitrary commit, in
+# which case it looks up the most recent successful "Build Engine v2" run for
+# that commit and fails fast if none exists.
 #
 # The cross-platform-check job compares hashes across architectures and is
 # intended as a merge-blocking required check.
@@ -13,6 +14,12 @@
 name: Sync test
 
 on:
+  # Fires when an engine build completes (push to master, PRs, or a manual
+  # engine-build dispatch). workflow_run only ever uses the copy of this file on
+  # the default branch, so this trigger takes effect once merged there.
+  workflow_run:
+    workflows: ["Build Engine v2"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       commit:
@@ -38,6 +45,9 @@ env:
 
 jobs:
   setup:
+    # On a workflow_run trigger, only proceed if the engine build succeeded —
+    # there are no artifacts to test otherwise. Manual dispatches always run.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -66,7 +76,16 @@ jobs:
           INPUT_COMMIT: ${{ inputs.commit }}
           REPO: ${{ github.repository }}
           DEFAULT_SHA: ${{ github.sha }}
+          # Non-empty only on a workflow_run trigger: the commit that was built.
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
+          if [ -n "${WORKFLOW_RUN_SHA:-}" ]; then
+            # Triggered by a completed engine build — test exactly that commit.
+            echo "Target commit from engine build: $WORKFLOW_RUN_SHA"
+            echo "sha=$WORKFLOW_RUN_SHA" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           target="${INPUT_COMMIT:-$DEFAULT_SHA}"
 
           # Normalize whatever the user pasted (full sha, short sha, branch, tag)
@@ -80,7 +99,16 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           TARGET_SHA: ${{ steps.resolve.outputs.sha }}
+          # Non-empty only on a workflow_run trigger: the run that just built.
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
+          if [ -n "${WORKFLOW_RUN_ID:-}" ]; then
+            # The run that triggered us IS the engine build — use its artifacts.
+            echo "Using triggering engine-build run $WORKFLOW_RUN_ID"
+            echo "run_id=$WORKFLOW_RUN_ID" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           run_id=$(gh api \
             "repos/$REPO/actions/workflows/engine-build.yml/runs?head_sha=$TARGET_SHA&status=success" \
             --jq '.workflow_runs[0].id')
@@ -102,10 +130,10 @@ jobs:
         include: ${{ fromJSON(needs.setup.outputs.platforms) }}
     steps:
       - name: Checkout workflow definition and test inputs
-        # Uses the ref picked in the dispatch UI (github.sha), NOT the target
-        # commit — so the startscript and any other test assets come from the
-        # workflow-definition ref. The target commit only controls which engine
-        # artifact gets downloaded below.
+        # Uses github.sha, NOT the target commit — so the startscript and any
+        # other test assets come from the workflow-definition ref (the dispatch
+        # picker, or the default branch on a workflow_run trigger). The target
+        # commit only controls which engine artifact gets downloaded below.
         uses: actions/checkout@v4
 
       - name: Download engine artifact (${{ matrix.platform }})
@@ -211,7 +239,9 @@ jobs:
   # hashes diverge between architectures (cross-platform desync detection).
   # This job is intended to be a required/merge-blocking status check.
   cross-platform-check:
-    if: ${{ !cancelled() }}
+    # Run whenever setup ran (pass or fail of the legs), but skip entirely when
+    # setup was skipped — i.e. a workflow_run for a failed engine build.
+    if: ${{ !cancelled() && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     needs: [setup, synctest]
     runs-on: ubuntu-latest
     timeout-minutes: 5
