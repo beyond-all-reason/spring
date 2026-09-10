@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Rendering/Models/3DModelDefs.hpp"
+#include "Rendering/Env/NanoParticles/NanoParticleDefs.h"
 #include "Rendering/Env/Particles/Classes/FlyingPiece.h"
 #include "System/float3.h"
 #include "System/FreeListMap.h"
@@ -77,7 +78,11 @@ public:
 		const int2 renderParams
 	);
 	void AddNanoParticle(const float3, const float3, const UnitDef*, int team, bool highPriority);
-	void AddNanoParticle(const float3, const float3, const UnitDef*, int team, float radius, bool inverse, bool highPriority);
+	/* `spawnParams` only reaches the standalone nano particle effect; legacy nano
+	 * projectiles ignore it, as they have nowhere to put the extra context. */
+	void AddNanoParticle(const float3, const float3, const UnitDef*, int team, float radius, bool inverse, bool highPriority, const NanoParticles::SpawnParams& spawnParams = {});
+	static SColor GetNanoParticleColor(const UnitDef* unitDef, int teamNum);
+	bool AllowNanoParticleSpawn(bool highPriority) const;
 
 public:
 	int maxParticles = 0;

@@ -656,6 +656,12 @@ void CEventHandler::Update()
 	ITERATE_EVENTCLIENTLIST_NA(Update);
 }
 
+void CEventHandler::NanoParticleUpdate(const std::vector<NanoParticles::Event>& events)
+{
+	ZoneScopedN("NanoParticles::LuaUpdate");
+	ITERATE_EVENTCLIENTLIST(NanoParticleUpdate, events);
+}
+
 
 
 void CEventHandler::SunChanged()

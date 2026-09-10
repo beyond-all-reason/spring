@@ -12,6 +12,7 @@
 #include "Sim/Projectiles/Projectile.h"
 
 struct CExplosionParams;
+namespace NanoParticles { struct Event; }
 class CWeapon;
 struct Command;
 struct BuildInfo;
@@ -41,6 +42,8 @@ class CEventHandler
 		bool IsManaged(const std::string& ciName) const;
 		bool IsUnsynced(const std::string& ciName) const;
 		bool IsController(const std::string& ciName) const;
+		/// Lets the nano particle effect skip building batches nobody listens to.
+		bool HasNanoParticleUpdateClients() const { return !listNanoParticleUpdate.empty(); }
 
 
 	public:
@@ -222,6 +225,7 @@ class CEventHandler
 
 		void UnsyncedHeightMapUpdate(const SRectangle& rect);
 		void Update();
+		void NanoParticleUpdate(const std::vector<NanoParticles::Event>& events);
 
 		void KeyBindingsChanged();
 		bool KeyMapChanged();

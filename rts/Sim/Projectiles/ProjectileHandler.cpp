@@ -17,6 +17,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/QuadField.h"
 #include "Sim/Misc/TeamHandler.h"
+#include "Rendering/Env/NanoParticles/NanoParticleSystem.h"
 #include "Rendering/Env/Particles/Classes/NanoProjectile.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Units/Unit.h"
@@ -38,6 +39,11 @@
 // reserve 5% of maxNanoParticles for important stuff such as capture and reclaim other teams' units
 #define NORMAL_NANO_PRIO 0.95f
 #define HIGH_NANO_PRIO 1.0f
+
+// spread of an emission that did not come with a spread radius of its own
+static constexpr float NANO_SPRAY_JITTER = 0.15f;
+// elmos per frame a legacy nano projectile covers
+static constexpr float NANO_PROJECTILE_SPEED = 3.0f;
 
 
 CONFIG(int, MaxParticles).defaultValue(10000).headlessValue(0).minimumValue(0);
@@ -675,10 +681,7 @@ void CProjectileHandler::AddNanoParticle(
 	bool highPriority
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float priority = mix(NORMAL_NANO_PRIO, HIGH_NANO_PRIO, highPriority);
-	const float emitProb = 1.0f - GetNanoParticleSaturation(priority);
-
-	if (emitProb < guRNG.NextFloat())
+	if (!AllowNanoParticleSpawn(highPriority))
 		return;
 	if (!unitDef->showNanoSpray)
 		return;
@@ -687,8 +690,33 @@ void CProjectileHandler::AddNanoParticle(
 	const float l = fastmath::apxsqrt2(dif.SqLength());
 
 	dif /= l;
-	dif += (guRNG.NextVector() * 0.15f);
 
+	if (NanoParticles::system.Enabled()) {
+		NanoParticles::system.SpawnSpray(startPos, dif, l, NANO_SPRAY_JITTER, GetNanoParticleColor(unitDef, teamNum), teamNum, unitDef->buildSpeed, false);
+		return;
+	}
+
+	dif += (guRNG.NextVector() * NANO_SPRAY_JITTER);
+
+	projMemPool.alloc<CNanoProjectile>(startPos, dif, int(l), GetNanoParticleColor(unitDef, teamNum));
+}
+
+bool CProjectileHandler::AllowNanoParticleSpawn(bool highPriority) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// the standalone effect budgets its own spawns; see NanoParticles::System::AllowSpawn
+	if (NanoParticles::system.Enabled())
+		return NanoParticles::system.AllowSpawn(highPriority);
+
+	const float priority = mix(NORMAL_NANO_PRIO, HIGH_NANO_PRIO, highPriority);
+	const float emitProb = 1.0f - GetNanoParticleSaturation(priority);
+
+	return (emitProb >= guRNG.NextFloat());
+}
+
+SColor CProjectileHandler::GetNanoParticleColor(const UnitDef* unitDef, int teamNum)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
 	const     float3 udColor = unitDef->nanoColor;
 	constexpr float  udAlpha = 20 / 256.0f; // denom=255 is not constexpr-able
 
@@ -700,7 +728,7 @@ void CProjectileHandler::AddNanoParticle(
 		{tColor[0], tColor[1], tColor[2],  tAlpha},
 	};
 
-	projMemPool.alloc<CNanoProjectile>(startPos, dif, int(l), colors[globalRendering->teamNanospray]);
+	return colors[globalRendering->teamNanospray];
 }
 
 void CProjectileHandler::AddNanoParticle(
@@ -710,38 +738,34 @@ void CProjectileHandler::AddNanoParticle(
 	int teamNum,
 	float radius,
 	bool inverse,
-	bool highPriority
+	bool highPriority,
+	const NanoParticles::SpawnParams& spawnParams
 ) {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const float priority = mix(NORMAL_NANO_PRIO, HIGH_NANO_PRIO, highPriority);
-	const float emitProb = 1.0f - GetNanoParticleSaturation(priority);
-
-	if (emitProb < guRNG.NextFloat())
+	if (!AllowNanoParticleSpawn(highPriority))
 		return;
 	if (!unitDef->showNanoSpray)
 		return;
 
 	float3 dif = endPos - startPos;
 	const float len = fastmath::apxsqrt2(dif.SqLength());
+	const float jitterFraction = radius / len;
 
 	dif /= len;
-	dif += (guRNG.NextVector() * (radius / len));
 
-	const     float3 udColor = unitDef->nanoColor;
-	constexpr float  udAlpha = 20 / 256.0f;
+	if (NanoParticles::system.Enabled()) {
+		NanoParticles::system.SpawnSpray(startPos, dif, len, jitterFraction, GetNanoParticleColor(unitDef, teamNum), teamNum, unitDef->buildSpeed, inverse, spawnParams);
+		return;
+	}
 
-	const     uint8_t* tColor = (teamHandler.Team(teamNum))->color;
-	constexpr uint8_t  tAlpha = udAlpha * 256;
+	dif += (guRNG.NextVector() * jitterFraction);
 
-	const SColor colors[2] = {
-		{udColor.r, udColor.g, udColor.b, udAlpha},
-		{tColor[0], tColor[1], tColor[2],  tAlpha},
-	};
+	const SColor color = GetNanoParticleColor(unitDef, teamNum);
 
 	if (!inverse) {
-		projMemPool.alloc<CNanoProjectile>(startPos, dif * 3.0f, int(len / 3.0f), colors[globalRendering->teamNanospray]);
+		projMemPool.alloc<CNanoProjectile>(startPos, dif * NANO_PROJECTILE_SPEED, int(len / NANO_PROJECTILE_SPEED), color);
 	} else {
-		projMemPool.alloc<CNanoProjectile>(startPos + dif * len, -dif * 3.0f, int(len / 3.0f), colors[globalRendering->teamNanospray]);
+		projMemPool.alloc<CNanoProjectile>(startPos + dif * len, -dif * NANO_PROJECTILE_SPEED, int(len / NANO_PROJECTILE_SPEED), color);
 	}
 }
 

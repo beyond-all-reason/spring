@@ -32,6 +32,7 @@
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
+#include "Rendering/Env/NanoParticles/NanoParticleDefs.h"
 #include "Sim/Projectiles/Projectile.h"
 #include "Sim/Projectiles/WeaponProjectiles/WeaponProjectile.h"
 #include "Sim/Features/FeatureDef.h"
@@ -2643,6 +2644,69 @@ void CLuaHandle::SunChanged()
 
 	// call the routine
 	RunCallIn(L, cmdStr, 0, 0);
+}
+
+/*** Batched nano particle lifecycle changes.
+ *
+ * Only sent while the `NanoParticlesGL4` and `NanoParticlesUpdateLuaUI`
+ * springsettings are both on, and only for the sampled fraction of particles
+ * set by `NanoParticlesUpdateLuaUISampleRate` - one event per particle per
+ * frame would overwhelm any consumer. Intended for deferred-lighting widgets.
+ *
+ * Events are passed as one flat numeric array to keep the marshalling cost
+ * down. Each event occupies 13 consecutive entries:
+ * `{operation, lightID, px, py, pz, vx, vy, vz, remainingLife, r, g, b, builderBuildSpeed}`.
+ *
+ * Operations are 1 = spawn, 2 = update, 3 = remove, 4 = reset.
+ *
+ * A particle's lifetime is fixed when it spawns, so `remainingLife` is exact and
+ * consumers are expected to expire their own state from it; operation 3 is
+ * reserved and currently never sent. A reset means every previously reported
+ * lightID is gone and any state keyed on them should be dropped; it is always
+ * the first event of its batch.
+ *
+ * Particles are not projectiles and have no projectile ID; `lightID` is unique,
+ * negative, and only valid until the particle expires or a reset arrives.
+ *
+ * @function Callins:NanoParticleUpdate
+ * @param events number[] Flat event records.
+ * @param eventCount integer Number of records in `events`.
+ * @param gameFrame integer Current simulation frame.
+ */
+void CLuaHandle::NanoParticleUpdate(const std::vector<NanoParticles::Event>& events)
+{
+	ZoneScopedN("NanoParticles::LuaUpdate:CallIn");
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 5, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	constexpr int EVENT_STRIDE = 13;
+
+	lua_createtable(L, static_cast<int>(events.size()) * EVENT_STRIDE, 0);
+
+	int tableIndex = 1;
+	for (const NanoParticles::Event& event: events) {
+		lua_pushinteger(L, static_cast<int>(event.type)); lua_rawseti(L, -2, tableIndex++);
+		lua_pushinteger(L, event.lightID);                lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.pos.x);                  lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.pos.y);                  lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.pos.z);                  lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.velocity.x);             lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.velocity.y);             lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.velocity.z);             lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.remainingLife);          lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.color.x);                lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.color.y);                lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.color.z);                lua_rawseti(L, -2, tableIndex++);
+		lua_pushnumber (L, event.builderBuildSpeed);      lua_rawseti(L, -2, tableIndex++);
+	}
+
+	lua_pushinteger(L, static_cast<int>(events.size()));
+	lua_pushinteger(L, gs->frameNum);
+
+	RunCallIn(L, cmdStr, 3, 0);
 }
 
 /*** Used to set the default command when a unit is selected.

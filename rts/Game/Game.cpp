@@ -40,6 +40,7 @@
 #include "Rendering/Fonts/glFont.h"
 #include "Rendering/CommandDrawer.h"
 #include "Rendering/LineDrawer.h"
+#include "Rendering/Env/NanoParticles/NanoParticleSystem.h"
 #include "Rendering/GlobalRendering.h"
 #include "Rendering/DebugDrawerAI.h"
 #include "Rendering/HUDDrawer.h"
@@ -686,6 +687,7 @@ void CGame::PostLoadSimulation(LuaParser* defsParser)
 	unitHandler.Init();
 	featureHandler.Init();
 	projectileHandler.Init();
+	NanoParticles::Init();
 	CLosHandler::InitStatic();
 
 	readMap->InitHeightMapDigestVectors(losHandler->los.size);
@@ -1059,6 +1061,7 @@ void CGame::KillSimulation()
 	featureHandler.Kill(); // depends on unitHandler (via ~CFeature)
 	unitHandler.Kill();
 	projectileHandler.Kill();
+	NanoParticles::Kill();
 
 	LOG("[Game::%s][3]", __func__);
 	IPathManager::FreeInstance(pathManager);
@@ -1776,6 +1779,7 @@ void CGame::SimFrame() {
 		unitHandler.Update();
 		pathManager->Update();
 		projectileHandler.Update();
+		NanoParticles::system.Update();
 		featureHandler.Update();
 		{
 			/* The default GAME_SPEED is 30, which doesn't divide 1000 well,

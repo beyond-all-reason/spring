@@ -30,6 +30,7 @@
 #include "Rendering/ShadowHandler.h"
 #include "Rendering/DebugVisibilityDrawer.h"
 #include "Rendering/Map/InfoTexture/IInfoTextureHandler.h"
+#include "Rendering/Env/NanoParticles/NanoParticleRenderer.h"
 #include "Rendering/Env/Particles/ProjectileDrawer.h"
 #include "Rendering/Units/UnitDrawer.h"
 #include "Rendering/GL/myGL.h"
@@ -2000,6 +2001,8 @@ void CMiniMap::DrawWorldStuff() const
 
 	// draw the projectiles
 	if (drawProjectiles) {
+		// shares the projectile minimap buffer, so it has to fill before the submit
+		NanoParticles::DrawOnMinimap();
 		projectileDrawer->DrawProjectilesMiniMap();
 	}
 

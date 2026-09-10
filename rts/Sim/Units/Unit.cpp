@@ -54,6 +54,9 @@
 #include "Sim/MoveTypes/MoveType.h"
 #include "Sim/MoveTypes/MoveTypeFactory.h"
 #include "Sim/MoveTypes/ScriptMoveType.h"
+#include "Rendering/Env/NanoParticles/NanoParticleConfig.h"
+#include "Rendering/Env/NanoParticles/NanoParticleEmitter.h"
+#include "Rendering/Env/NanoParticles/NanoParticleSystem.h"
 #include "Sim/Projectiles/FlareProjectile.h"
 #include "Sim/Projectiles/ProjectileMemPool.h"
 #include "Sim/Projectiles/WeaponProjectiles/MissileProjectile.h"
@@ -2094,9 +2097,17 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 			return false;
 		}
 
+		const bool trackReclaimBurst = NanoParticles::GetConfig().reclaimBurst && NanoParticles::system.Enabled();
+
+		if (trackReclaimBurst)
+			NanoParticles::emitter.RecordReclaimContributor(this, builder);
+
 		// turn reclaimee into nanoframe (even living units)
 		if (modInfo.reclaimUnitMethod == 0)
 			TurnIntoNanoframe();
+
+		// captured before buildProgress is overwritten below
+		const float reclaimBurstMetal = trackReclaimBurst ? cost.metal * buildProgress : 0.0f;
 
 		// reduce health & resources
 		health = postHealth;
@@ -2104,6 +2115,9 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 
 		// reclaim finished?
 		if (killMe || buildProgress <= 0.0f || health <= 0.0f) {
+			if (trackReclaimBurst)
+				NanoParticles::emitter.EmitReclaimBurst(this, builder, reclaimBurstMetal);
+
 			health = 0.0f;
 			buildProgress = 0.0f;
 			KillUnit(builder, false, true, -CSolidObject::DAMAGE_RECLAIMED);

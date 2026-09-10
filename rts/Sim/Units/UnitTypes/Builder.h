@@ -51,7 +51,7 @@ public:
 	bool ScriptStartBuilding(float3 pos, bool silent);
 
 	void HelpTerraform(CBuilder* unit);
-	void CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority = false);
+	void CreateNanoParticle(const float3& goal, float radius, bool inverse, bool highPriority = false, const CUnit* targetUnit = nullptr, bool fadeWhenTargetComplete = false);
 	void SetResurrectTarget(CFeature* feature);
 	void SetCaptureTarget(CUnit* unit);
 
