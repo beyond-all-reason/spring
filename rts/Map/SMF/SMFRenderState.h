@@ -38,6 +38,7 @@ public:
 	virtual bool HasValidShader(const DrawPass::e& drawPass) const = 0;
 	virtual bool CanDrawForward(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
 	virtual bool CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
+	virtual bool CanDrawCombined(const CSMFGroundDrawer* smfGroundDrawer) const = 0;
 
 	virtual void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
 	virtual void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) = 0;
@@ -61,6 +62,7 @@ public:
 	bool HasValidShader(const DrawPass::e& drawPass) const override { return true; }
 	bool CanDrawForward(const CSMFGroundDrawer* smfGroundDrawer) const override { return false; }
 	bool CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const override { return false; }
+	bool CanDrawCombined(const CSMFGroundDrawer* smfGroundDrawer) const override { return false; }
 
 	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override {}
@@ -90,6 +92,7 @@ public:
 	bool HasValidShader(const DrawPass::e& drawPass) const override;
 	bool CanDrawForward(const CSMFGroundDrawer* smfGroundDrawer) const override { return true; }
 	bool CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer) const override;
+	bool CanDrawCombined(const CSMFGroundDrawer* smfGroundDrawer) const override;
 
 	void Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
 	void Disable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) override;
@@ -102,7 +105,8 @@ public:
 		GLSL_SHADER_FWD_STD = 0,
 		GLSL_SHADER_FWD_ADV = 1,
 		GLSL_SHADER_DFR_ADV = 2,
-		GLSL_SHADER_COUNT   = 3,
+		GLSL_SHADER_CMB_ADV = 3, // deferred + forward color in one pass
+		GLSL_SHADER_COUNT   = 4,
 	};
 
 private:
@@ -113,4 +117,6 @@ private:
 
 	// if true, shader programs for this state are Lua-defined
 	bool useLuaShaders;
+	// if true, the Lua deferred program also writes the forward color
+	bool luaCombinedShader = false;
 };

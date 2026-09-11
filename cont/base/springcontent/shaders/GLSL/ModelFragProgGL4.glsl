@@ -81,7 +81,7 @@ vec3 GetShadowMult(vec3 shadowCoord, float NdotL) {
 }
 
 #if (DEFERRED_MODE == 1)
-	out vec4 fragColor[GBUFFER_ZVALTEX_IDX];
+	out vec4 fragColor[GBUFFER_MISCTEX_IDX + 1];
 #else
 	out vec4 fragColor;
 #endif

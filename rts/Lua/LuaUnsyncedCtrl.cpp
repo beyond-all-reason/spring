@@ -2005,6 +2005,7 @@ int LuaUnsyncedCtrl::SetModelLightTrackingState(lua_State* L)
  *
  * @param standardShaderID integer
  * @param deferredShaderID integer
+ * @param combinedShader boolean? (Default: `false`) Declares that the deferred program also writes the lit forward color to fragment output 5, with non-zero alpha where ground is opaque (the composite skips zero-alpha pixels). With `AllowCombinedMapRendering` the ground is then rasterized only once (no forward pass, `DrawGroundPreForward` is not called, and on void maps the alpha test reads output 0's alpha); otherwise the flag is ignored and both programs run as before.
  * @return nil
  */
 int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
@@ -2020,6 +2021,8 @@ int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
 	for (unsigned int i = 0; i < 2; i++) {
 		luaMapShaderData.shaderIDs[i] = shaders.GetProgramName(lua_tonumber(L, i + 1));
 	}
+
+	luaMapShaderData.combinedShader = luaL_optboolean(L, 3, false);
 
 	groundDrawer->SetLuaShader(&luaMapShaderData);
 	return 0;

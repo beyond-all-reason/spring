@@ -110,8 +110,12 @@ uniform vec2 infoTexGen;     // 1.0/(pwr2map{x,z} * SQUARE_SIZE)
 	uniform sampler2D parallaxHeightTex;
 #endif
 
-#ifdef DEFERRED_MODE
+#if defined(DEFERRED_MODE)
 	out vec4 fragData[GBUFFER_MISCTEX_IDX + 1];
+#elif defined(SMF_COMBINED_PASS)
+	// single rasterization, the forward color sits next to the G-buffer data
+	out vec4 fragData[GBUFFER_COLORTEX_IDX + 1];
+	#define fragColor fragData[GBUFFER_COLORTEX_IDX]
 #else
 	out vec4 fragColor;
 #endif
@@ -424,8 +428,13 @@ void main() {
 	#endif // SMF_ADV_SHADING
 
 
-#ifdef DEFERRED_MODE
+#if defined(DEFERRED_MODE) || defined(SMF_COMBINED_PASS)
+	#ifdef SMF_COMBINED_PASS
+	// carry the forward alpha so the void-{ground,water} alpha test cuts every output
+	fragData[GBUFFER_NORMTEX_IDX] = vec4((normal + vec3(1.0, 1.0, 1.0)) * 0.5, fragColor.a);
+	#else
 	fragData[GBUFFER_NORMTEX_IDX] = vec4((normal + vec3(1.0, 1.0, 1.0)) * 0.5, 1.0);
+	#endif
 	fragData[GBUFFER_DIFFTEX_IDX] = diffuseCol + detailCol;
 	fragData[GBUFFER_SPECTEX_IDX] = specularCol;
 	fragData[GBUFFER_EMITTEX_IDX] = emissionCol;
@@ -433,7 +442,8 @@ void main() {
 
 	// linearly transform the eye-space depths, might be more useful?
 	// gl_FragDepth = gl_FragCoord.z / gl_FragCoord.w;
-#else
+#endif
+#ifndef DEFERRED_MODE
 	fragColor.rgb = mix(gl_Fog.color.rgb, fragColor.rgb, fogFactor);
 #endif
 }

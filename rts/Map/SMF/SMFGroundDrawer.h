@@ -41,7 +41,7 @@ public:
 	friend class CSMFReadMap;
 
 	void Draw(const DrawPass::e& drawPass);
-	void DrawDeferredPass(const DrawPass::e& drawPass, bool alphaTest);
+	void DrawDeferredPass(const DrawPass::e& drawPass, bool alphaTest, bool combined = false);
 	void DrawForwardPass(const DrawPass::e& drawPass, bool alphaTest);
 	void DrawShadowPass();
 
@@ -67,6 +67,8 @@ public:
 	const CSMFReadMap* GetReadMap() const { return smfMap; }
 	      CSMFReadMap* GetReadMap()       { return smfMap; }
 
+	bool UseCombinedRendering() const { return combinedAllowed; }
+
 	const GL::GeometryBuffer* GetGeometryBuffer() const { return &geomBuffer; }
 	      GL::GeometryBuffer* GetGeometryBuffer()       { return &geomBuffer; }
 
@@ -78,10 +80,14 @@ private:
 
 	inline void DrawBorder(const DrawPass::e drawPass);
 
+	bool CanDrawCombinedPass(const DrawPass::e& drawPass);
+	void DrawCompositePass();
+
 	bool HaveLuaRenderState() const;
 	bool UpdateGeometryBuffer(bool init);
 
 	bool alwaysDispatchEvents = false;
+	bool combinedAllowed = false;
 protected:
 	CSMFReadMap* smfMap;
 	IMeshDrawer* meshDrawer;
@@ -99,6 +105,7 @@ protected:
 
 	Shader::IProgramObject* borderShader = nullptr;
 	Shader::IProgramObject* shadowShader = nullptr;
+	Shader::IProgramObject* compositeShader = nullptr;
 };
 
 #endif // _SMF_GROUND_DRAWER_H_

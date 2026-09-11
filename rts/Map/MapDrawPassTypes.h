@@ -9,6 +9,7 @@ struct DrawPass {
 		WaterRefraction,
 		TerrainReflection,
 		TerrainDeferred,
+		TerrainCombined, // deferred pass that also produces the forward color
 	};
 };
 

@@ -28,6 +28,8 @@ void GL::GeometryBuffer::Init(bool ctor) {
 	bound = false;
 	msaa |= configHandler->GetBool("AllowMultiSampledFrameBuffers");
 	msaa &= globalRendering->supportMSAAFrameBuffer;
+	// composite passes sample the color attachment with a plain sampler2D
+	hasColorTex &= !msaa;
 }
 
 void GL::GeometryBuffer::Kill(bool dtor) {
@@ -76,6 +78,9 @@ void GL::GeometryBuffer::DetachTextures(const bool init) {
 
 	// detach only actually attached textures, ATI drivers might crash
 	for (unsigned int i = 0; i < (ATTACHMENT_COUNT - 1); ++i) {
+		if (bufferTextureIDs[i] == 0)
+			continue;
+
 		buffer.Detach(GL_COLOR_ATTACHMENT0_EXT + i);
 	}
 
@@ -119,6 +124,9 @@ bool GL::GeometryBuffer::Create(const int2 size) {
 	const unsigned int texTarget = GetTextureTarget();
 
 	for (unsigned int n = 0; n < ATTACHMENT_COUNT; n++) {
+		if (n == ATTACHMENT_COLORTEX && !hasColorTex)
+			continue;
+
 		glGenTextures(1, &bufferTextureIDs[n]);
 		glBindTexture(texTarget, bufferTextureIDs[n]);
 
@@ -153,7 +161,8 @@ bool GL::GeometryBuffer::Create(const int2 size) {
 	glBindTexture(GetTextureTarget(), 0);
 	// define the attachments we are going to draw into
 	// note: the depth-texture attachment does not count
-	// here and will be GL_NONE implicitly!
+	// here and will be GL_NONE implicitly, same as any
+	// skipped attachment slot!
 	glDrawBuffers(ATTACHMENT_COUNT - 1, &bufferAttachments[0]);
 
 	// FBO must have been valid from point of construction

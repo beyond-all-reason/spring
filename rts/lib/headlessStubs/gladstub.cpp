@@ -155,6 +155,7 @@ decltype(glad_glColor4fv) glad_glColor4fv = nullptr;
 decltype(glad_glColor4ub) glad_glColor4ub = nullptr;
 decltype(glad_glColor4ubv) glad_glColor4ubv = nullptr;
 decltype(glad_glColorMask) glad_glColorMask = nullptr;
+decltype(glad_glColorMaski) glad_glColorMaski = nullptr;
 decltype(glad_glColorPointer) glad_glColorPointer = nullptr;
 decltype(glad_glCompileShader) glad_glCompileShader = nullptr;
 decltype(glad_glCompressedTexImage2D) glad_glCompressedTexImage2D = nullptr;
@@ -595,6 +596,7 @@ int gladLoadGL(void) {
     glad_glColor4ub = MakeStubImpl(glad_glColor4ub);
     glad_glColor4ubv = MakeStubImpl(glad_glColor4ubv);
     glad_glColorMask = MakeStubImpl(glad_glColorMask);
+    glad_glColorMaski = MakeStubImpl(glad_glColorMaski);
     glad_glColorPointer = MakeStubImpl(glad_glColorPointer);
     glad_glCompileShader = MakeStubImpl(glad_glCompileShader);
     glad_glCompressedTexImage2D = MakeStubImpl(glad_glCompressedTexImage2D);

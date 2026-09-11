@@ -18,6 +18,9 @@ struct LuaMapShaderData {
 	// [0] := standard program from gl.CreateShader
 	// [1] := deferred program from gl.CreateShader
 	unsigned int shaderIDs[2];
+
+	// if true, [1] also writes the lit forward color (see AllowCombinedMapRendering)
+	bool combinedShader = false;
 };
 
 class CBaseGroundDrawer

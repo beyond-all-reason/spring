@@ -38,7 +38,8 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 	const std::string names[GLSL_SHADER_COUNT] = {
 		"SMFShaderGLSL-Forward-Std",
 		"SMFShaderGLSL-Forward-Adv",
-		"SMFShaderGLSL-Deferred-Adv"
+		"SMFShaderGLSL-Deferred-Adv",
+		"SMFShaderGLSL-Combined-Adv"
 	};
 	const std::string defs =
 		("#define SMF_TEXSQUARE_SIZE " + FloatToString(                  SMF_TEXSQUARE_SIZE) + "\n") +
@@ -52,7 +53,10 @@ bool SMFRenderStateGLSL::Init(const CSMFGroundDrawer* smfGroundDrawer) {
 			glslShaders[n]->Release();
 		}
 	} else {
-		for (uint32_t n = GLSL_SHADER_FWD_STD; n < GLSL_SHADER_COUNT; n++) {
+		// the combined shader is only ever used when combined rendering is enabled
+		const uint32_t lastShader = smfGroundDrawer->UseCombinedRendering() ? GLSL_SHADER_CMB_ADV : GLSL_SHADER_DFR_ADV;
+
+		for (uint32_t n = GLSL_SHADER_FWD_STD; n <= lastShader; n++) {
 			// load from VFS files
 			glslShaders[n] = shaderHandler->CreateProgramObject("[SMFGroundDrawer::VFS]", names[n]);
 			glslShaders[n]->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFVertProg.glsl", defs, GL_VERTEX_SHADER));
@@ -95,6 +99,8 @@ void SMFRenderStateGLSL::Update(
 			glslShaders[n]->LoadFromID(luaMapShaderData->shaderIDs[n - 1]);
 		}
 
+		luaCombinedShader = luaMapShaderData->combinedShader;
+
 		// currShader is null from Init() (GLSL_SHADER_FWD_STD is never created for
 		// the Lua state), so re-evaluate it now that program IDs changed; otherwise
 		// HasValidShader(Normal) stays false and a forward-only Lua map shader is
@@ -108,7 +114,9 @@ void SMFRenderStateGLSL::Update(
 		const int2 normTexSize = smfMap->GetTextureSize(MAP_BASE_NORMALS_TEX);
 		// const int2 specTexSize = smfMap->GetTextureSize(MAP_SSMF_SPECULAR_TEX);
 
-		for (uint32_t n = GLSL_SHADER_FWD_STD; n <= GLSL_SHADER_DFR_ADV; n++) {
+		const uint32_t lastShader = smfGroundDrawer->UseCombinedRendering() ? GLSL_SHADER_CMB_ADV : GLSL_SHADER_DFR_ADV;
+
+		for (uint32_t n = GLSL_SHADER_FWD_STD; n <= lastShader; n++) {
 			const bool isAdv = (n != GLSL_SHADER_FWD_STD);
 
 			if (isAdv) {
@@ -130,13 +138,14 @@ void SMFRenderStateGLSL::Update(
 			glslShaders[n]->SetFlag("HAVE_SHADOWS", false);
 			glslShaders[n]->SetFlag("HAVE_INFOTEX", false);
 
-			if (n == GLSL_SHADER_DFR_ADV) {
-				glslShaders[n]->SetFlag("DEFERRED_MODE", true);
+			if (n == GLSL_SHADER_DFR_ADV || n == GLSL_SHADER_CMB_ADV) {
+				glslShaders[n]->SetFlag((n == GLSL_SHADER_DFR_ADV) ? "DEFERRED_MODE" : "SMF_COMBINED_PASS", true);
 				glslShaders[n]->SetFlag("GBUFFER_NORMTEX_IDX", GL::GeometryBuffer::ATTACHMENT_NORMTEX);
 				glslShaders[n]->SetFlag("GBUFFER_DIFFTEX_IDX", GL::GeometryBuffer::ATTACHMENT_DIFFTEX);
 				glslShaders[n]->SetFlag("GBUFFER_SPECTEX_IDX", GL::GeometryBuffer::ATTACHMENT_SPECTEX);
 				glslShaders[n]->SetFlag("GBUFFER_EMITTEX_IDX", GL::GeometryBuffer::ATTACHMENT_EMITTEX);
 				glslShaders[n]->SetFlag("GBUFFER_MISCTEX_IDX", GL::GeometryBuffer::ATTACHMENT_MISCTEX);
+				glslShaders[n]->SetFlag("GBUFFER_COLORTEX_IDX", GL::GeometryBuffer::ATTACHMENT_COLORTEX);
 				glslShaders[n]->SetFlag("GBUFFER_ZVALTEX_IDX", GL::GeometryBuffer::ATTACHMENT_ZVALTEX);
 			}
 
@@ -210,6 +219,16 @@ bool SMFRenderStateGLSL::CanDrawDeferred(const CSMFGroundDrawer* smfGroundDrawer
 	return CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_DFR_ADV);
 }
 
+bool SMFRenderStateGLSL::CanDrawCombined(const CSMFGroundDrawer* smfGroundDrawer) const
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// Lua shaders have to declare combined support (Spring.SetMapShader)
+	if (useLuaShaders)
+		return (luaCombinedShader && CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_DFR_ADV));
+
+	return CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_CMB_ADV);
+}
+
 void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const DrawPass::e& drawPass) {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (useLuaShaders) {
@@ -220,7 +239,9 @@ void SMFRenderStateGLSL::Enable(const CSMFGroundDrawer* smfGroundDrawer, const D
 		return;
 	}
 
-	const auto shaderStage = (drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_FWD_ADV;
+	const auto shaderStage =
+		(drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV :
+		(drawPass == DrawPass::TerrainCombined) ? GLSL_SHADER_CMB_ADV : GLSL_SHADER_FWD_ADV;
 	const bool isAdv = CanUseAdvShading(smfGroundDrawer, shaderStage);
 
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
@@ -286,7 +307,9 @@ void SMFRenderStateGLSL::Disable(const CSMFGroundDrawer* smfGroundDrawer, const 
 
 	currShader->Disable();
 
-	const auto shaderStage = (drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_FWD_ADV;
+	const auto shaderStage =
+		(drawPass == DrawPass::TerrainDeferred) ? GLSL_SHADER_DFR_ADV :
+		(drawPass == DrawPass::TerrainCombined) ? GLSL_SHADER_CMB_ADV : GLSL_SHADER_FWD_ADV;
 	const bool isAdv = CanUseAdvShading(smfGroundDrawer, shaderStage);
 
 	const CSMFReadMap* smfMap = smfGroundDrawer->GetReadMap();
@@ -338,6 +361,12 @@ void SMFRenderStateGLSL::SetCurrentShader(const CSMFGroundDrawer* smfGroundDrawe
 		return;
 	}
 
+	if (drawPass == DrawPass::TerrainCombined) {
+		// Lua shaders have no separate combined program, their deferred one writes the color too
+		currShader = glslShaders[useLuaShaders ? GLSL_SHADER_DFR_ADV : GLSL_SHADER_CMB_ADV];
+		return;
+	}
+
 	if (CanUseAdvShading(smfGroundDrawer, GLSL_SHADER_FWD_ADV))
 		currShader = glslShaders[GLSL_SHADER_FWD_ADV];
 	else
@@ -350,6 +379,9 @@ void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 	assert(currShader && !currShader->IsBound());
 
 	for (uint32_t n = GLSL_SHADER_FWD_ADV; n < GLSL_SHADER_COUNT; n++) {
+		if (glslShaders[n] == nullptr)
+			continue;
+
 		glslShaders[n]->Enable();
 		glslShaders[n]->SetUniform4v("lightDir", &ISky::GetSky()->GetLight()->GetLightDir().x);
 		glslShaders[n]->SetUniform("groundShadowDensity", sunLighting->groundShadowDensity);
@@ -363,5 +395,5 @@ void SMFRenderStateGLSL::UpdateShaderSkyUniforms()
 bool SMFRenderStateGLSL::CanUseAdvShading(const CSMFGroundDrawer* smfGroundDrawer, ShaderStage shStage) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	return smfGroundDrawer->UseAdvShading() && glslShaders[shStage]->IsValid();
+	return smfGroundDrawer->UseAdvShading() && glslShaders[shStage] != nullptr && glslShaders[shStage]->IsValid();
 }

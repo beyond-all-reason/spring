@@ -10,16 +10,17 @@ namespace GL {
 	struct GeometryBuffer {
 	public:
 		enum {
-			ATTACHMENT_NORMTEX = 0, // shading (not geometric) normals
-			ATTACHMENT_DIFFTEX = 1, // diffuse texture fragments
-			ATTACHMENT_SPECTEX = 2, // specular texture fragments
-			ATTACHMENT_EMITTEX = 3, // emissive texture fragments
-			ATTACHMENT_MISCTEX = 4, // custom data for LuaObjectRendering shaders
-			ATTACHMENT_ZVALTEX = 5, // fragment depth-values (must be last)
-			ATTACHMENT_COUNT   = 6,
+			ATTACHMENT_NORMTEX  = 0, // shading (not geometric) normals
+			ATTACHMENT_DIFFTEX  = 1, // diffuse texture fragments
+			ATTACHMENT_SPECTEX  = 2, // specular texture fragments
+			ATTACHMENT_EMITTEX  = 3, // emissive texture fragments
+			ATTACHMENT_MISCTEX  = 4, // custom data for LuaObjectRendering shaders
+			ATTACHMENT_COLORTEX = 5, // lit forward color (optional)
+			ATTACHMENT_ZVALTEX  = 6, // fragment depth-values (must be last)
+			ATTACHMENT_COUNT    = 7,
 		};
 
-		GeometryBuffer(const char* id): name(id) { Init(true); }
+		GeometryBuffer(const char* id, bool colorTex = false): name(id), hasColorTex(colorTex) { Init(true); }
 		~GeometryBuffer() { Kill(true); }
 
 		void Init(bool ctor);
@@ -33,6 +34,7 @@ namespace GL {
 		static void LoadViewport();
 
 		bool HasAttachments() const { return (bufferTextureIDs[0] != 0); }
+		bool HasColorTexture() const { return hasColorTex; }
 		bool Valid() const { return (buffer.IsValid()); }
 		bool Create(const int2 size);
 		bool Update(const bool init);
@@ -68,6 +70,7 @@ namespace GL {
 		bool dead = false;
 		bool bound = false;
 		bool msaa = false;
+		bool hasColorTex = false;
 	};
 }
 

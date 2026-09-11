@@ -45,6 +45,7 @@ CONFIG(int, MaxDynamicMapLights)
 
 CONFIG(bool, AdvMapShading).defaultValue(true).safemodeValue(false).description("Enable shaders for terrain rendering.");
 CONFIG(bool, AllowDeferredMapRendering).defaultValue(false).safemodeValue(false).description("Enable rendering the map to the map deferred buffers.");
+CONFIG(bool, AllowCombinedMapRendering).defaultValue(false).safemodeValue(false).description("Rasterize the map only once when both forward and deferred map rendering are enabled: the deferred pass also produces the lit forward color, which is composited into the main framebuffer instead of drawing the mesh a second time. Requires AllowDeferredMapRendering. Trade-offs: ground-interior pixels are not multi-sampled (unit and feature silhouettes against the ground keep their MSAA), and the G-buffer diffuse contains what is on screen, info-texture overlay included, instead of the plain albedo.");
 CONFIG(bool, AllowDrawMapPostDeferredEvents).defaultValue(false).description("Enable DrawGroundPostDeferred Lua callin.");
 CONFIG(bool, AllowDrawMapDeferredEvents).defaultValue(false).description("Enable DrawGroundDeferred Lua callin.");
 
@@ -66,9 +67,10 @@ namespace Shader {
 CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	: smfMap(rm)
 	, meshDrawer(nullptr)
-	, geomBuffer{"GROUNDDRAWER-GBUFFER"}
+	, geomBuffer{"GROUNDDRAWER-GBUFFER", configHandler->GetBool("AllowCombinedMapRendering")}
 {
 	alwaysDispatchEvents = configHandler->GetBool("AlwaysSendDrawGroundEvents");
+	combinedAllowed = configHandler->GetBool("AllowCombinedMapRendering");
 	drawerMode = (configHandler->GetInt("ROAM") != 0)? SMF_MESHDRAWER_ROAM: SMF_MESHDRAWER_BASIC;
 	groundDetail = configHandler->GetInt("GroundDetail");
 
@@ -98,6 +100,20 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	borderShader->Disable();
 
 	borderShader->Validate();
+
+	if (combinedAllowed) {
+		compositeShader = shaderHandler->CreateProgramObject("[SMFGroundDrawer]", "Composite");
+		compositeShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFCompositeVertProg.glsl", "", GL_VERTEX_SHADER));
+		compositeShader->AttachShaderObject(shaderHandler->CreateShaderObject("GLSL/SMFCompositeFragProg.glsl", "", GL_FRAGMENT_SHADER));
+		compositeShader->Link();
+
+		compositeShader->Enable();
+		compositeShader->SetUniform("colorTex", 0);
+		compositeShader->SetUniform("depthTex", 1);
+		compositeShader->Disable();
+
+		compositeShader->Validate();
+	}
 
 	drawForward = true;
 	drawDeferred = geomBuffer.Valid();
@@ -134,6 +150,9 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	smfRenderStates = { nullptr };
 
 	shaderHandler->ReleaseProgramObject("[SMFGroundDrawer]", "Border");
+
+	if (compositeShader != nullptr)
+		shaderHandler->ReleaseProgramObject("[SMFGroundDrawer]", "Composite");
 
 	spring::SafeDelete(groundTextures);
 	spring::SafeDelete(meshDrawer);
@@ -200,7 +219,7 @@ bool CSMFGroundDrawer::HaveLuaRenderState() const
 
 
 
-void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaTest)
+void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaTest, bool combined)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!geomBuffer.Valid())
@@ -227,6 +246,9 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		return;
 	}
 
+	// combined shaders also write the forward color, the composite then replaces the forward pass
+	const DrawPass::e shaderPass = combined ? DrawPass::TerrainCombined : DrawPass::TerrainDeferred;
+
 	GL::GeometryBuffer::LoadViewport();
 
 	{
@@ -234,10 +256,11 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		geomBuffer.SetDepthRange(1.0f, 0.0f);
 		geomBuffer.Clear();
 
-		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, DrawPass::TerrainDeferred);
-		smfRenderStates[RENDER_STATE_SEL]->Enable(this, DrawPass::TerrainDeferred);
+		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, shaderPass);
+		smfRenderStates[RENDER_STATE_SEL]->Enable(this, shaderPass);
 
 		if (alphaTest) {
+			// combined shaders carry the forward alpha in output 0
 			glEnable(GL_ALPHA_TEST);
 			glAlphaFunc(GL_GREATER, mapInfo->map.voidAlphaMin);
 		}
@@ -254,8 +277,17 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 		smfRenderStates[RENDER_STATE_SEL]->Disable(this, drawPass);
 		smfRenderStates[RENDER_STATE_SEL]->SetCurrentShader(this, DrawPass::Normal);
 
-		if (deferredEvents)
+		if (deferredEvents) {
+			// Lua G-buffer geometry (e.g. map edge extensions) does not write the
+			// color attachment; keep it clear so the composite skips those pixels
+			if (combined)
+				glColorMaski(GL::GeometryBuffer::ATTACHMENT_COLORTEX, GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
 			eventHandler.DrawGroundDeferred();
+
+			if (combined)
+				glColorMaski(GL::GeometryBuffer::ATTACHMENT_COLORTEX, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		}
 
 		geomBuffer.SetDepthRange(0.0f, 1.0f);
 		geomBuffer.UnBind();
@@ -270,6 +302,15 @@ void CSMFGroundDrawer::DrawDeferredPass(const DrawPass::e& drawPass, bool alphaT
 	// send event if no forward pass will follow; must be done after the unbind
 	if (!drawForward || postDeferredEvents)
 		eventHandler.DrawGroundPostDeferred();
+
+	if (!combined)
+		return;
+
+	// the composite replaces the forward mesh pass, so DrawGroundPreForward is skipped
+	DrawCompositePass();
+
+	if (alwaysDispatchEvents || HaveLuaRenderState())
+		eventHandler.DrawGroundPostForward();
 }
 
 void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTest)
@@ -305,6 +346,48 @@ void CSMFGroundDrawer::DrawForwardPass(const DrawPass::e& drawPass, bool alphaTe
 		eventHandler.DrawGroundPostForward();
 }
 
+bool CSMFGroundDrawer::CanDrawCombinedPass(const DrawPass::e& drawPass)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	// the composite can not replicate wireframe drawing
+	if (!combinedAllowed || wireframe || drawPass != DrawPass::Normal)
+		return false;
+	// no color attachment exists when the buffer is multi-sampled
+	if (!geomBuffer.Valid() || !geomBuffer.HasColorTexture() || !compositeShader->IsValid())
+		return false;
+
+	// one render state must serve both passes (Lua shaders can mix with the default state)
+	ISMFRenderState* fwdState = SelectRenderState(drawPass);
+	ISMFRenderState* dfrState = SelectRenderState(DrawPass::TerrainDeferred);
+
+	return (fwdState == dfrState && dfrState->CanDrawCombined(this));
+}
+
+void CSMFGroundDrawer::DrawCompositePass()
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, geomBuffer.GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_ZVALTEX));
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, geomBuffer.GetBufferTexture(GL::GeometryBuffer::ATTACHMENT_COLORTEX));
+
+	compositeShader->Enable();
+
+	glBegin(GL_QUADS);
+	glVertex2f(-1.0f, -1.0f);
+	glVertex2f( 1.0f, -1.0f);
+	glVertex2f( 1.0f,  1.0f);
+	glVertex2f(-1.0f,  1.0f);
+	glEnd();
+
+	compositeShader->Disable();
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
@@ -319,15 +402,19 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
+	const bool alphaTest = mapRendering->voidGround || (mapRendering->voidWater && drawPass != DrawPass::WaterReflection);
+	// rasterize only once if the deferred pass can also produce the forward color
+	const bool combinedPass = drawDeferred && drawForward && CanDrawCombinedPass(drawPass);
+
 	if (drawDeferred) {
 		// do the deferred pass first, will allow us to re-use
 		// its output at some future point and eventually draw
 		// the entire map deferred
-		DrawDeferredPass(drawPass, mapRendering->voidGround || (mapRendering->voidWater && drawPass != DrawPass::WaterReflection));
+		DrawDeferredPass(drawPass, alphaTest, combinedPass);
 	}
 
-	if (drawForward) {
-		DrawForwardPass(drawPass, mapRendering->voidGround || (mapRendering->voidWater && drawPass != DrawPass::WaterReflection));
+	if (drawForward && !combinedPass) {
+		DrawForwardPass(drawPass, alphaTest);
 	}
 
 	glDisable(GL_CULL_FACE);
