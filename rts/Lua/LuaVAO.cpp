@@ -32,6 +32,7 @@ bool LuaVAOs::PushEntries(lua_State* L)
 
 		"DrawArrays", &LuaVAOImpl::DrawArrays,
 		"DrawElements", &LuaVAOImpl::DrawElements,
+		"DrawElementsIndirect", &LuaVAOImpl::DrawElementsIndirect,
 
 		"ClearSubmission", &LuaVAOImpl::ClearSubmission,
 		"AddUnitsToSubmission", sol::overload(

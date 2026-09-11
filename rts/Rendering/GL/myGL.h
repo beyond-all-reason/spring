@@ -140,6 +140,8 @@ struct SDrawElementsIndirectCommand {
 	uint32_t baseVertex;
 	uint32_t baseInstance;
 };
+// Layout must match OpenGL's DrawElementsIndirectCommand
+static_assert(sizeof(SDrawElementsIndirectCommand) == 5 * sizeof(uint32_t));
 
 struct SInstanceData {
 	SInstanceData() = default;

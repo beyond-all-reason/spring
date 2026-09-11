@@ -35,6 +35,7 @@ public:
 
 	void DrawArrays(GLenum mode, sol::optional<int> vertCountOpt, sol::optional<int> vertexFirstOpt, sol::optional<int> instanceCountOpt, sol::optional<int> instanceFirstOpt);
 	void DrawElements(GLenum mode, sol::optional<int> indCountOpt, sol::optional<int> indElemOffsetOpt, sol::optional<int> instanceCountOpt, sol::optional<int> baseVertexOpt, sol::optional<int> instanceFirstOpt);
+	void DrawElementsIndirect(GLenum mode, const LuaVBOImplSP& commandLuaVBO, sol::optional<int> commandOffsetBytesOpt, sol::optional<int> drawCountOpt, sol::optional<int> strideBytesOpt);
 
 	void ClearSubmission();
 	int AddUnitsToSubmission(int id);

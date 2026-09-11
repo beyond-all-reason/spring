@@ -1,6 +1,7 @@
 #include "LuaVAOImpl.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <type_traits>
 
 #include <fmt/format.h>
@@ -224,9 +225,9 @@ void LuaVAOImpl::CheckDrawPrimitiveType(GLenum mode) const
 void LuaVAOImpl::CondInitVAO()
 {
 	if (vao &&
-		(vertLuaVBO && vertLuaVBO->GetId() == oldVertVBOId) &&
-		(indxLuaVBO && indxLuaVBO->GetId() == oldIndxVBOId) &&
-		(instLuaVBO && instLuaVBO->GetId() == oldInstVBOId))
+		(!vertLuaVBO || vertLuaVBO->GetId() == oldVertVBOId) &&
+		(!indxLuaVBO || indxLuaVBO->GetId() == oldIndxVBOId) &&
+		(!instLuaVBO || instLuaVBO->GetId() == oldInstVBOId))
 		return; //already init and all VBOs still have same IDs
 
 	vao = nullptr;
@@ -452,6 +453,85 @@ void LuaVAOImpl::DrawElements(GLenum mode, sol::optional<int> indCountOpt, sol::
 	}
 	#undef INT2PTR
 
+	vao->Unbind();
+
+	glDisable(GL_PRIMITIVE_RESTART);
+}
+
+
+/***
+ * Draws indexed primitives using commands read directly from a GPU buffer.
+ *
+ * Each command has the OpenGL `DrawElementsIndirectCommand` layout:
+ * `{ uint count, uint instanceCount, uint firstIndex, int baseVertex, uint baseInstance }`.
+ * `firstIndex` is an element offset into the attached index buffer, not a byte offset.
+ *
+ * If a compute shader wrote the command buffer, call `gl.MemoryBarrier` or pass
+ * `GL.COMMAND_BARRIER_BIT` to `gl.DispatchCompute` before drawing. If compute
+ * also wrote instance data, include `GL.SHADER_STORAGE_BARRIER_BIT` when the
+ * vertex shader reads it as an SSBO, or `GL.VERTEX_ATTRIB_ARRAY_BARRIER_BIT`
+ * when the VAO reads it as vertex attributes.
+ *
+ * @function VAO:DrawElementsIndirect
+ * @param glEnum number primitivesMode
+ * @param commandVBO VBO
+ * @param commandOffsetBytes number? Byte offset of the first command. Defaults to 0.
+ * @param drawCount number? Number of commands to execute. Defaults to 1.
+ * @param strideBytes number? Byte stride between commands. 0 means tightly packed. Defaults to 0.
+ * @return nil
+ */
+void LuaVAOImpl::DrawElementsIndirect(GLenum mode, const LuaVBOImplSP& commandLuaVBO, sol::optional<int> commandOffsetBytesOpt, sol::optional<int> drawCountOpt, sol::optional<int> strideBytesOpt)
+{
+	if (!commandLuaVBO || !commandLuaVBO->vbo)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: The command VBO is undefined", __func__);
+
+	if (!indxLuaVBO)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you successfully call vao:AttachIndexBuffer()?", __func__);
+
+	const int commandOffsetBytes = commandOffsetBytesOpt.value_or(0);
+	const int drawCount = drawCountOpt.value_or(1);
+	const int strideBytes = strideBytesOpt.value_or(0);
+	constexpr uint32_t commandAlignment = sizeof(uint32_t);
+	constexpr uint64_t commandSize = sizeof(SDrawElementsIndirectCommand);
+
+	if (commandOffsetBytes < 0)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Negative command buffer byte offset %d is requested", __func__, commandOffsetBytes);
+
+	if ((commandOffsetBytes % commandAlignment) != 0)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Command buffer byte offset %d is not aligned to %u bytes", __func__, commandOffsetBytes, commandAlignment);
+
+	if (drawCount <= 0)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Non-positive command count %d is requested", __func__, drawCount);
+
+	if (strideBytes < 0)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Negative command stride %d is requested", __func__, strideBytes);
+
+	if (strideBytes != 0 && (strideBytes < commandSize || (strideBytes % commandAlignment) != 0))
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Command stride %d must be at least %llu bytes and aligned to %u bytes", __func__, strideBytes, static_cast<unsigned long long>(commandSize), commandAlignment);
+
+	const uint64_t effectiveStride = (strideBytes == 0) ? commandSize : strideBytes;
+	const uint64_t requiredBufferSize = static_cast<uint64_t>(commandOffsetBytes) + (static_cast<uint64_t>(drawCount) - 1u) * effectiveStride + commandSize;
+
+	if (requiredBufferSize > commandLuaVBO->bufferSizeInBytes)
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s]: Indirect commands require %llu bytes, exceeding the command buffer size of %u bytes", __func__, static_cast<unsigned long long>(requiredBufferSize), commandLuaVBO->bufferSizeInBytes);
+
+	if (vertLuaVBO)
+		vertLuaVBO->UpdateModelsVBOElementCount();
+	indxLuaVBO->UpdateModelsVBOElementCount();
+
+	CheckDrawPrimitiveType(mode);
+	CondInitVAO();
+
+	const GLenum indexType = indxLuaVBO->bufferAttribDefsVec[0].second.type;
+	const auto commandOffset = reinterpret_cast<const void*>(static_cast<uintptr_t>(commandOffsetBytes));
+
+	glEnable(GL_PRIMITIVE_RESTART);
+	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
+
+	vao->Bind();
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, commandLuaVBO->GetId());
+	glMultiDrawElementsIndirect(mode, indexType, commandOffset, drawCount, strideBytes);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	vao->Unbind();
 
 	glDisable(GL_PRIMITIVE_RESTART);
