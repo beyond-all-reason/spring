@@ -3402,10 +3402,13 @@ void CGuiHandler::DrawOptionLEDs(const IconInfo& icon)
 
 		glRectf(startx, starty, startx + xs, starty + ys);
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-		glRectf(startx, starty, startx + xs, starty + ys);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glBegin(GL_LINE_LOOP);
+			glVertex2f(startx     , starty     );
+			glVertex2f(startx     , starty + ys);
+			glVertex2f(startx + xs, starty + ys);
+			glVertex2f(startx + xs, starty     );
+		glEnd();
 	}
 }
 

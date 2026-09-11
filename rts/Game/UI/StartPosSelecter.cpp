@@ -139,23 +139,31 @@ void CStartPosSelecter::Draw()
 	const float mx =                               float(mouse->lastx)  * globalRendering->pixelX;
 	const float my = (globalRendering->viewSizeY - float(mouse->lasty)) * globalRendering->pixelY;
 
-	{
-		gleDrawQuadC(readyBox, InBox(mx, my, readyBox)? SColor{0.7f, 0.2f, 0.2f, guiAlpha}: SColor{0.7f, 0.7f, 0.2f, guiAlpha}, rb);
-
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	}
+	const SColor boxColor = InBox(mx, my, readyBox)? SColor{0.7f, 0.2f, 0.2f, guiAlpha}: SColor{0.7f, 0.7f, 0.2f, guiAlpha};
 
 	{
-		gleDrawQuadC(readyBox, InBox(mx, my, readyBox)? SColor{0.7f, 0.2f, 0.2f, guiAlpha}: SColor{0.7f, 0.7f, 0.2f, guiAlpha}, rb);
+		// filled box
+		gleDrawQuadC(readyBox, boxColor, rb);
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-	{
 		shader.Enable();
 		rb.DrawElements(GL_TRIANGLES);
 		shader.Disable();
+	}
+
+	{
+		// outline on top of it, brightening the edges
+		rb.AddQuadLines(
+			{ {readyBox.x1, readyBox.y1, 0.0f}, boxColor },
+			{ {readyBox.x2, readyBox.y1, 0.0f}, boxColor },
+			{ {readyBox.x2, readyBox.y2, 0.0f}, boxColor },
+			{ {readyBox.x1, readyBox.y2, 0.0f}, boxColor }
+		);
+
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		shader.Enable();
+		rb.DrawElements(GL_LINES);
+		shader.Disable();
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	{
