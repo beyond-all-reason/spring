@@ -22,6 +22,17 @@ inline short int GetHeadingFromFacing(const int facing)
 	}
 }
 
+// headings are circular 16-bit integer angles, so sums of them are meant to wrap.
+// float->short is UB once out of range, so the float side has to be in range
+// already; the assert catches a caller that is not in debug builds.
+inline short int FloatToHeading(const float angle)
+{
+	assert(angle >= static_cast<float>(std::numeric_limits<short int>::min())
+		&& angle <= static_cast<float>(std::numeric_limits<short int>::max()));
+
+	return static_cast<short int>(angle);
+}
+
 inline int GetFacingFromHeading(const short int heading)
 {
 	if (heading >= 0) {

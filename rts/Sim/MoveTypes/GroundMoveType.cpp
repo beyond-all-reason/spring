@@ -3322,8 +3322,9 @@ bool CGroundMoveType::UpdateDirectControl()
 		ChangeSpeed(0.0f, false, true);
 	}
 
-	if (unitCon.left ) { ChangeHeading(owner->heading + turnRate); turnSign =  1.0f; }
-	if (unitCon.right) { ChangeHeading(owner->heading - turnRate); turnSign = -1.0f; }
+	const short unitTurnRate = FloatToHeading(turnRate);
+	if (unitCon.left ) { ChangeHeading(owner->heading + unitTurnRate); turnSign =  1.0f; }
+	if (unitCon.right) { ChangeHeading(owner->heading - unitTurnRate); turnSign = -1.0f; }
 
 	// local client is controlling us
 	if (selfCon.GetControllee() == owner)
