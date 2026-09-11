@@ -1183,6 +1183,8 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 		}
 	}
 
+	AddCommandDependency(newCmd);
+
 	if (facBuildQueue) {
 		facCAI->InsertBuildCommand(insertIt, newCmd);
 
