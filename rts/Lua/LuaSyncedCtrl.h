@@ -123,6 +123,7 @@ class LuaSyncedCtrl
 		static int SetUnitFuel(lua_State* L);
 		static int GetUnitAttackMovementState(lua_State* L);
 		static int GetUnitAttackWeaponState(lua_State* L);
+		static int TestUnitAttackMovementPosition(lua_State* L);
 		static int SetUnitAttackMovement(lua_State* L);
 		static int SetUnitMoveGoal(lua_State* L);
 		static int SetUnitLandGoal(lua_State* L);

@@ -228,6 +228,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitMoveGoal);
 	REGISTER_LUA_CFUNC(GetUnitAttackMovementState);
 	REGISTER_LUA_CFUNC(GetUnitAttackWeaponState);
+	REGISTER_LUA_CFUNC(TestUnitAttackMovementPosition);
 	REGISTER_LUA_CFUNC(SetUnitAttackMovement);
 	REGISTER_LUA_CFUNC(SetUnitLandGoal);
 	REGISTER_LUA_CFUNC(ClearUnitGoal);
@@ -4026,6 +4027,10 @@ int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
  * them for this query only. Bits mean ignore that category: noGround skips
  * terrain; noFriendlies skips allies. The weapon's stored flags and actual
  * firing behavior are never changed. Range/target tests are always performed.
+ * noMobileFriendlies and noStaticFriendlies independently exclude allies by
+ * UnitDef movement capability (not velocity, stun or MoveCtrl state). These
+ * query-only exclusions also exclude cloaked/neutral allies of that subtype;
+ * legacy eight-bit masks retain their independent category behavior.
  * Reasons describe the first failed test: clear, notChecked, invalidTarget,
  * range (including angle constraints), terrain, friendly, neutral, feature,
  * or blocked (unclassified). They do not enumerate all simultaneous blockers.
@@ -4035,6 +4040,9 @@ int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
  * clear does not guarantee a hit, aim readiness, reload completion or firing.
  * No extra traces are run to classify a failure. Object rotation and heading
  * are separate hypothetical orientations and may return different reasons.
+ * Blocker identities belong to this query only; non-object reasons return nil.
+ * They identify the first object rejected in native scan order, not necessarily
+ * the nearest obstacle or every obstacle. Re-query with filters for mixed cases.
  * @function Spring.GetUnitAttackWeaponState
  * @param unitID integer Same unit as the active callback
  * @param weaponNum integer 1-based weapon index
@@ -4046,6 +4054,10 @@ int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
  * @return number? targetBorder Absolute target-border factor
  * @return string? rotateReason notChecked for a ground target
  * @return string? headingReason
+ * @return string? rotateBlockerType "unit" or "feature"
+ * @return integer? rotateBlockerID The first object blocking rotation
+ * @return string? headingBlockerType "unit" or "feature"
+ * @return integer? headingBlockerID The first object blocking heading
  * @see SyncedCallins:AttackCommandMovement
  */
 int LuaSyncedCtrl::GetUnitAttackWeaponState(lua_State* L)
@@ -4053,6 +4065,41 @@ int LuaSyncedCtrl::GetUnitAttackWeaponState(lua_State* L)
 	CUnit* unit = ParseUnit(L, __func__, 1);
 	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
 	return (cai != nullptr) ? cai->GetAttackWeaponState(L) : 0;
+}
+
+/*** Test the active attack target from a candidate unit position and heading.
+ * Synced only, inside AttackCommandMovement for this controlled unit. Uses the
+ * native target, lead, range, target-border and line/arc tests. Position is the
+ * unit's base position (not the muzzle); heading uses Spring's signed units.
+ * Uses the native hypothetical-heading basis with the current up direction,
+ * piece pose, velocity and underwater state. No movement or AimWeapon/BlockShot;
+ * no prediction of future animation, terrain alignment, water transitions or paths.
+ * Use this to compare sidestep candidates, then validate movement separately.
+ * With useMuzzle=true, tests the current muzzle and the native pre-fire
+ * underground-muzzle check instead of the native pre-aim source. Neither mode
+ * tests reload or aim readiness, and clear does not guarantee a future shot.
+ * Avoidance masks and blocker identities have GetUnitAttackWeaponState semantics.
+ * @function Spring.TestUnitAttackMovementPosition
+ * @param unitID integer Same unit as the active callback
+ * @param weaponNum integer 1-based weapon index
+ * @param x number Candidate unit base position, within map bounds
+ * @param y number Candidate base height, finite
+ * @param z number Candidate unit base position, within map bounds
+ * @param heading integer Signed heading, -32768 through 32767
+ * @param avoidFlags integer? Query-only avoidance mask; omitted uses weapon flags
+ * @param useMuzzle boolean? Default false
+ * @return boolean? eligible False for the native manual-fire exclusion
+ * @return boolean? clear
+ * @return string? reason
+ * @return string? blockerType "unit" or "feature", otherwise nil
+ * @return integer? blockerID Source of this failure, otherwise nil
+ * @see Spring.GetUnitAttackWeaponState
+ */
+int LuaSyncedCtrl::TestUnitAttackMovementPosition(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->TestAttackMovementPosition(L) : 0;
 }
 
 /*** Apply a native movement primitive during AttackCommandMovement.

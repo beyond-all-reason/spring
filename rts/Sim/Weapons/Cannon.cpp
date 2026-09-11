@@ -60,7 +60,7 @@ void CCannon::UpdateRange(const float val)
 TargetCheckResult CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
+	const int traceFlags = (avoidFlagsOverride < 0) ? (avoidFlags & 255) : avoidFlagsOverride;
 	// assume we can still fire at partially submerged targets
 	if (!weaponDef->waterweapon && TargetUnderWater(tgtPos, trg))
 		return TargetCheckResult::InvalidTarget;
@@ -261,4 +261,3 @@ float CCannon::GetStaticRange2D(const float2& baseConsts, const float2& projCons
 
 	return (CalcRange2D({baseConsts.y, 0.7071067f, 100.0f}, projConsts, {wdRangeBoostFact, wdHeightBoostFact}));
 }
-

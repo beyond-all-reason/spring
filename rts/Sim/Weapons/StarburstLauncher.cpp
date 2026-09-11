@@ -51,7 +51,7 @@ void CStarburstLauncher::FireImpl(const bool scriptCall)
 TargetCheckResult CStarburstLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
+	const int traceFlags = (avoidFlagsOverride < 0) ? (avoidFlags & 255) : avoidFlagsOverride;
 	return (TraceRay::TestCone(srcPos, weaponDef->fixedLauncher? weaponDir: UpVector, 100.0f, 0.0f, owner->allyteam, traceFlags, owner));
 }
 

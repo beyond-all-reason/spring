@@ -27,6 +27,7 @@ end
 local endFrame = tonumber(options.attackmovementendframe) or 36000
 local cases, created, features = {}, {}, {}
 local active, shooter, target, observed
+local blockerIDs, mobileBlocker, staticBlocker
 local completed = 0
 local validReasons = {
 	clear = true,
@@ -68,14 +69,32 @@ local function startCase(case)
 		Spring.DestroyFeature(id)
 	end
 	created, features = {}, {}
+	blockerIDs, mobileBlocker, staticBlocker = {}, nil, nil
 	terrain(200, 1536, 1536, 3072, 3072)
 	active, observed = case, false
 	shooter = create(case.weapon, 2048, 2048, 0)
 	target = create("armbanth", 2048, 2248, 1)
 	if case.blocker == "terrain" then
 		terrain(1000, 1920, 2104, 2176, 2184)
+	elseif case.blocker == "static" or case.blocker == "mobileStatic" or case.blocker == "staticMobile" then
+		local names = case.blocker == "static" and { "armfus" }
+			or case.blocker == "mobileStatic" and { "armbanth", "armfus" }
+			or { "armfus", "armbanth" }
+		for i, name in ipairs(names) do
+			local offset = #names == 1 and 0 or (i == 1 and -20 or 20)
+			local id = create(name, 2048, (case.weapon == "armmerl" and 2048 or 2148) + offset, 0)
+			Spring.SetUnitCollisionVolumeData(id, 200, 1200, 200, 0, 500, 0, 2, 1, 1)
+			blockerIDs[id] = true
+			if name == "armfus" then
+				staticBlocker = id
+			else
+				mobileBlocker = id
+			end
+		end
 	elseif case.blocker == "friendly" or case.blocker == "neutral" or case.blocker == "mixed" then
 		local blocker = create("armbanth", 2048, case.weapon == "armmerl" and 2048 or 2148, 0)
+		blockerIDs[blocker] = true
+		mobileBlocker = blocker
 		Spring.SetUnitCollisionVolumeData(blocker, 200, 1200, 200, 0, 500, 0, 2, 1, 1)
 		if case.blocker == "mixed" then
 			terrain(1000, 1920, 2104, 2176, 2184)
@@ -90,6 +109,7 @@ local function startCase(case)
 		local id =
 			assert(Spring.CreateFeature("armbanth_dead", 2048, 200, case.weapon == "armmerl" and 2048 or 2148, 0, 0))
 		features[#features + 1] = id
+		blockerIDs[id] = true
 		Spring.SetFeatureCollisionVolumeData(id, 200, 1200, 200, 0, 500, 0, 2, 1, 1)
 	end
 end
@@ -102,7 +122,17 @@ function gadget:Initialize()
 	Spring.SetGlobalLos(0, true)
 	Spring.SetGlobalLos(1, true)
 	for _, weapon in ipairs({ "corak", "cormort", "corstorm", "corban", "armmerl" }) do
-		for _, blocker in ipairs({ "clear", "friendly", "neutral", "feature", "terrain", "mixed" }) do
+		for _, blocker in ipairs({
+			"clear",
+			"friendly",
+			"neutral",
+			"feature",
+			"terrain",
+			"mixed",
+			"static",
+			"mobileStatic",
+			"staticMobile",
+		}) do
 			if not (weapon == "armmerl" and (blocker == "terrain" or blocker == "mixed")) then
 				for _, ground in ipairs({ false, true }) do
 					cases[#cases + 1] = { weapon = weapon, blocker = blocker, ground = ground }
@@ -120,28 +150,125 @@ function gadget:AttackCommandMovement(unitID)
 	assert(state.object == not active.ground)
 	local native = { Spring.GetUnitAttackWeaponState(unitID, 1) }
 	local storedFlags = Spring.GetUnitWeaponState(unitID, 1, "avoidFlags")
-	local eligible, rotate, heading, _, _, rotateReason, headingReason = Spring.GetUnitAttackWeaponState(unitID, 1, 0)
+	-- High bits in legacy stored flags were previously ignored. They must not
+	-- opt native firing/default queries into the new query-only filters.
+	Spring.SetUnitWeaponState(unitID, 1, "avoidFlags", storedFlags + 768)
+	local legacyHighBits = { Spring.GetUnitAttackWeaponState(unitID, 1) }
+	Spring.SetUnitWeaponState(unitID, 1, "avoidFlags", storedFlags)
+	for i = 1, 11 do
+		assert(native[i] == legacyHighBits[i], "stored flags enabled query-only filter")
+	end
+	local all = { Spring.GetUnitAttackWeaponState(unitID, 1, 0) }
+	local eligible, rotate, heading, _, _, rotateReason, headingReason = unpack(all, 1, 7)
 	local flags = Game.collisionFlags
-	local friendly =
-		{ Spring.GetUnitAttackWeaponState(unitID, 1, flags.noGround + flags.noNeutrals + flags.noFeatures + flags.noCloaked) }
+	local friendly = {
+		Spring.GetUnitAttackWeaponState(
+			unitID,
+			1,
+			flags.noGround + flags.noNeutrals + flags.noFeatures + flags.noCloaked
+		),
+	}
 	local ground = { Spring.GetUnitAttackWeaponState(unitID, 1, flags.noUnits + flags.noFeatures + flags.noCloaked) }
+	local friendlyMask = flags.noGround + flags.noNeutrals + flags.noFeatures + flags.noCloaked
+	local onlyStatic = { Spring.GetUnitAttackWeaponState(unitID, 1, friendlyMask + flags.noMobileFriendlies) }
+	local onlyMobile = { Spring.GetUnitAttackWeaponState(unitID, 1, friendlyMask + flags.noStaticFriendlies) }
+	local neither = {
+		Spring.GetUnitAttackWeaponState(unitID, 1, friendlyMask + flags.noStaticFriendlies + flags.noMobileFriendlies),
+	}
+	local x, y, z = Spring.GetUnitPosition(unitID)
+	local unitHeading = Spring.GetUnitHeading(unitID)
+	local vectors = { Spring.GetUnitWeaponVectors(unitID, 1) }
+	local here = { Spring.TestUnitAttackMovementPosition(unitID, 1, x, y, z, 0, 0) }
+	assert(here[1] and here[2] == all[3] and here[3] == all[7], "candidate at native heading disagrees")
+	assert(here[4] == all[10] and here[5] == all[11], "candidate blocker disagrees")
+	-- Exercise an alternate position and yaw, then verify no pose/query leakage.
+	-- The broad matrix volumes reach the ground target itself. Use a narrow
+	-- blocker for the sidestep check so a genuinely clear route can exist.
+	local sidestepCase = active.blocker == "friendly" or active.blocker == "static" or active.blocker == "feature"
+	local setVolume = active.blocker == "feature" and Spring.SetFeatureCollisionVolumeData
+		or Spring.SetUnitCollisionVolumeData
+	if sidestepCase then
+		for id in pairs(blockerIDs) do
+			setVolume(
+				id,
+				active.weapon == "armmerl" and 200 or 40,
+				1200,
+				active.weapon == "armmerl" and 200 or 20,
+				0,
+				500,
+				0,
+				2,
+				1,
+				1
+			)
+		end
+		local blocked = { Spring.TestUnitAttackMovementPosition(unitID, 1, x, y, z, 0, 0) }
+		assert(not blocked[2] and blocked[5] ~= nil, "narrow blocker must still obstruct original pose")
+	end
+	local side = { Spring.TestUnitAttackMovementPosition(unitID, 1, x + 160, y, z + 300, -16384, 0) }
+	if sidestepCase then
+		assert(
+			side[2] and side[3] == "clear" and side[4] == nil and side[5] == nil,
+			"sidestep should clear obstruction: " .. tostring(side[3])
+		)
+		for id in pairs(blockerIDs) do
+			setVolume(id, 200, 1200, 200, 0, 500, 0, 2, 1, 1)
+		end
+	end
+	Spring.TestUnitAttackMovementPosition(unitID, 1, x, y, z, 0, 0, true)
+	local far = { Spring.TestUnitAttackMovementPosition(unitID, 1, 100, y, 100, 0, 0) }
+	assert(far[3] == "range" and far[4] == nil and far[5] == nil, "candidate must test range")
+	local nx, ny, nz = Spring.GetUnitPosition(unitID)
+	assert(x == nx and y == ny and z == nz and Spring.GetUnitHeading(unitID) == unitHeading, "candidate moved unit")
+	local afterVectors = { Spring.GetUnitWeaponVectors(unitID, 1) }
+	for i = 1, #vectors do
+		assert(vectors[i] == afterVectors[i], "candidate changed weapon vectors")
+	end
 	local after = { Spring.GetUnitAttackWeaponState(unitID, 1) }
 	assert(storedFlags == Spring.GetUnitWeaponState(unitID, 1, "avoidFlags"))
-	for i = 1, #native do
+	for i = 1, 11 do
 		assert(native[i] == after[i], "filter leaked into native query")
 	end
 	local reasonIndex = active.ground and 7 or 6
-	local friendlyExpected = (active.blocker == "friendly" or active.blocker == "mixed") and "friendly" or "clear"
+	local friendlyExpected = (active.blocker ~= "neutral" and (mobileBlocker or staticBlocker)) and "friendly"
+		or "clear"
 	local groundExpected = (active.blocker == "terrain" or active.blocker == "mixed") and "terrain" or "clear"
 	assert(friendly[reasonIndex] == friendlyExpected, "friendly-only: " .. tostring(friendly[reasonIndex]))
 	assert(ground[reasonIndex] == groundExpected, "terrain-only: " .. tostring(ground[reasonIndex]))
+	assert(onlyStatic[reasonIndex] == (staticBlocker and "friendly" or "clear"), "static-only filter")
+	assert(
+		onlyMobile[reasonIndex] == ((mobileBlocker and active.blocker ~= "neutral") and "friendly" or "clear"),
+		"mobile-only filter"
+	)
+	assert(neither[reasonIndex] == "clear", "both friendly subtypes excluded")
+	for _, result in ipairs({ native, all, friendly, ground, onlyStatic, onlyMobile, neither, after }) do
+		for _, pair in ipairs({ { 6, 8 }, { 7, 10 } }) do
+			local reason, kind, id = result[pair[1]], result[pair[2]], result[pair[2] + 1]
+			if reason == "friendly" or reason == "neutral" or reason == "feature" then
+				assert(
+					kind == (reason == "feature" and "feature" or "unit") and blockerIDs[id],
+					"missing/wrong source: " .. tostring(reason)
+				)
+			else
+				assert(kind == nil and id == nil, "stale source for " .. tostring(reason))
+			end
+		end
+	end
+	local idIndex = active.ground and 11 or 9
+	if staticBlocker then
+		assert(onlyStatic[idIndex] == staticBlocker)
+	end
+	if mobileBlocker and active.blocker ~= "neutral" then
+		assert(onlyMobile[idIndex] == mobileBlocker)
+	end
 	assert(eligible and validReasons[rotateReason] and validReasons[headingReason])
 	assert(heading == (headingReason == "clear"))
 	if not active.ground then
 		assert(rotate == (rotateReason == "clear"))
 	end
 	local reason = active.ground and headingReason or rotateReason
-	if reason == (active.blocker == "mixed" and "terrain" or active.blocker) then
+	local expected = staticBlocker and "friendly" or (active.blocker == "mixed" and "terrain" or active.blocker)
+	if reason == expected then
 		observed = true
 	end
 	Spring.Echo(
@@ -153,6 +280,12 @@ function gadget:AttackCommandMovement(unitID)
 		headingReason
 	)
 	assert(not pcall(Spring.GetUnitAttackWeaponState, unitID, 0))
+	assert(not pcall(Spring.GetUnitAttackWeaponState, unitID, 1, 1024))
+	assert(not pcall(Spring.TestUnitAttackMovementPosition, unitID, 0, x, y, z, 0))
+	assert(not pcall(Spring.TestUnitAttackMovementPosition, unitID, 1, x, y, z, 32768))
+	assert(not pcall(Spring.TestUnitAttackMovementPosition, unitID, 1, 0 / 0, y, z, 0))
+	assert(not pcall(Spring.TestUnitAttackMovementPosition, unitID, 1, x, math.huge, z, 0))
+	assert(not pcall(Spring.TestUnitAttackMovementPosition, target, 1, x, y, z, 0))
 	assert(not pcall(Spring.GetUnitAttackMovementState, target))
 	return true
 end
@@ -209,6 +342,7 @@ function gadget:GameFrame(frame)
 				active.weapon .. ": expected " .. active.blocker .. (active.ground and " ground" or " unit")
 			)
 			assert(not pcall(Spring.GetUnitAttackMovementState, shooter))
+			assert(not pcall(Spring.TestUnitAttackMovementPosition, shooter, 1, 2048, 200, 2048, 0))
 			completed = completed + 1
 		end
 	else

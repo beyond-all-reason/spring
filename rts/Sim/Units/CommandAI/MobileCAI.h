@@ -47,6 +47,8 @@ public:
 	const Command& CheckAttackMovementContext(lua_State* L) const;
 	int GetAttackMovementState(lua_State* L);
 	int GetAttackWeaponState(lua_State* L);
+	int TestAttackMovementPosition(lua_State* L);
+	bool IsAttackMovementContextValid() const;
 	int SetAttackMovement(lua_State* L);
 	bool CallAttackMovement(Command& c);
 	void ExecuteStop(Command& c) override;

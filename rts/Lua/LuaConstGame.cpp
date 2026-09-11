@@ -298,9 +298,11 @@ bool LuaConstGame::PushEntries(lua_State* L)
 	{
 		// weapon avoidance and projectile collision flags
 		lua_pushliteral(L, "collisionFlags");
-		lua_createtable(L, 0, 9);
+		lua_createtable(L, 0, 11);
 			LuaPushNamedNumber(L, "noEnemies"   , Collision::NOENEMIES   );
 			LuaPushNamedNumber(L, "noFriendlies", Collision::NOFRIENDLIES);
+			LuaPushNamedNumber(L, "noMobileFriendlies", Collision::NOMOBILEFRIENDLIES);
+			LuaPushNamedNumber(L, "noStaticFriendlies", Collision::NOSTATICFRIENDLIES);
 			LuaPushNamedNumber(L, "noFeatures"  , Collision::NOFEATURES  );
 			LuaPushNamedNumber(L, "noNeutrals"  , Collision::NONEUTRALS  );
 			LuaPushNamedNumber(L, "noFireBases" , Collision::NOFIREBASES );
@@ -344,4 +346,3 @@ bool LuaConstGame::PushEntries(lua_State* L)
 
 	return true;
 }
-

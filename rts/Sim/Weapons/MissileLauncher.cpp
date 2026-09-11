@@ -71,7 +71,7 @@ void CMissileLauncher::FireImpl(const bool scriptCall)
 TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
+	const int traceFlags = (avoidFlagsOverride < 0) ? (avoidFlags & 255) : avoidFlagsOverride;
 	// high-trajectory missiles use curved path rather than linear ground intersection
 	if (weaponDef->trajectoryHeight <= 0.0f)
 		return (CWeapon::HaveFreeLineOfFire(srcPos, tgtPos, trg, avoidFlagsOverride));
@@ -223,6 +223,8 @@ TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, con
 			for (const CUnit* u : quad.teamUnits[owner->allyteam]) {
 				if (u == owner)
 					continue;
+				if (u->allyteam == owner->allyteam && Collision::SkipFriendly(u, traceFlags))
+					continue;
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
 
@@ -243,12 +245,12 @@ TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, con
 						if (mheight[i] > mheight[i - 1]) {
 							// do chord check backwards
 							if (CCollisionHandler::DetectHit(u, objTransform, srcPos, hitPos, &cq, true)) {
-								return TargetCheckResult::Friendly;
+								return {TargetCheckResult::Friendly, TargetCheckResult::ObjectType::Unit, u->id};
 							}
 						} else {
 							// do chord check forwards
 							if (CCollisionHandler::DetectHit(u, objTransform, hitPos, tgtPos, &cq, true)) {
-								return TargetCheckResult::Friendly;
+								return {TargetCheckResult::Friendly, TargetCheckResult::ObjectType::Unit, u->id};
 							}
 							
 						}
@@ -265,6 +267,8 @@ TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, con
 				if (!u->IsNeutral())
 					continue;
 				if (u == owner)
+					continue;
+				if (u->allyteam == owner->allyteam && Collision::SkipFriendly(u, traceFlags))
 					continue;
 				if (!u->HasCollidableStateBit(CSolidObject::CSTATE_BIT_QUADMAPRAYS))
 					continue;
@@ -286,13 +290,13 @@ TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, con
 						if (mheight[i] > mheight[i - 1]) {
 							// do chord check backwards
 							if (CCollisionHandler::DetectHit(u, objTransform, srcPos, hitPos, &cq, true)) {
-								return TargetCheckResult::Neutral;
+								return {TargetCheckResult::Neutral, TargetCheckResult::ObjectType::Unit, u->id};
 							}
 						}
 						else {
 							// do chord check forwards
 							if (CCollisionHandler::DetectHit(u, objTransform, hitPos, tgtPos, &cq, true)) {
-								return TargetCheckResult::Neutral;
+								return {TargetCheckResult::Neutral, TargetCheckResult::ObjectType::Unit, u->id};
 							}
 
 						}
@@ -325,13 +329,13 @@ TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, con
 						if (mheight[i] > mheight[i - 1]) {
 							// do chord check backwards
 							if (CCollisionHandler::DetectHit(f, objTransform, srcPos, hitPos, &cq, true)) {
-								return TargetCheckResult::Feature;
+								return {TargetCheckResult::Feature, TargetCheckResult::ObjectType::Feature, f->id};
 							}
 						}
 						else {
 							// do chord check forwards
 							if (CCollisionHandler::DetectHit(f, objTransform, hitPos, tgtPos, &cq, true)) {
-								return TargetCheckResult::Feature;
+								return {TargetCheckResult::Feature, TargetCheckResult::ObjectType::Feature, f->id};
 							}
 
 						}
@@ -344,4 +348,3 @@ TargetCheckResult CMissileLauncher::HaveFreeLineOfFire(const float3& srcPos, con
 
 	return TargetCheckResult::Clear;
 }
-

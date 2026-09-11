@@ -1118,7 +1118,7 @@ bool CWeapon::TestRange(const float3& tgtPos, const SWeaponTarget& trg) const
 TargetCheckResult CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const int traceFlags = (avoidFlagsOverride < 0) ? avoidFlags : avoidFlagsOverride;
+	const int traceFlags = (avoidFlagsOverride < 0) ? (avoidFlags & 255) : avoidFlagsOverride;
 	float3 tgtDir = tgtPos - srcPos;
 
 	const float length = tgtDir.LengthNormalize();
@@ -1152,15 +1152,16 @@ TargetCheckResult CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3
 	// must nerf TraceRay since it scans for enemies and ground if the
 	// flags are omitted, unlike TestCone which is restricted to A/N/F
 	if (spread < 0.001f) {
-		if (TraceRay::TraceRay(srcPos, tgtDir, length, traceFlags | Collision::NOENEMIES | Collision::NOGROUND, owner, unit, feature) >= length)
+		if (TraceRay::TraceRay(srcPos, tgtDir, length, traceFlags | Collision::NOENEMIES | Collision::NOGROUND, owner, unit, feature, nullptr, traceFlags) >= length)
 			return TargetCheckResult::Clear;
 		if (feature != nullptr)
-			return TargetCheckResult::Feature;
+			return {TargetCheckResult::Feature, TargetCheckResult::ObjectType::Feature, feature->id};
 		if (unit != nullptr) {
 			if (unit->allyteam == owner->allyteam && (traceFlags & Collision::NOFRIENDLIES) == 0)
-				return TargetCheckResult::Friendly;
+				return {TargetCheckResult::Friendly, TargetCheckResult::ObjectType::Unit, unit->id};
 			if (unit->IsNeutral() && (traceFlags & Collision::NONEUTRALS) == 0)
-				return TargetCheckResult::Neutral;
+				return {TargetCheckResult::Neutral, TargetCheckResult::ObjectType::Unit, unit->id};
+			return {TargetCheckResult::Blocked, TargetCheckResult::ObjectType::Unit, unit->id};
 		}
 		return TargetCheckResult::Blocked;
 	}
@@ -1235,6 +1236,34 @@ TargetCheckResult CWeapon::TryTargetHeading(short heading, const SWeaponTarget& 
 	LoadWeaponVectors(wvs);
 
 	return val;
+}
+
+
+TargetCheckResult CWeapon::TryTargetAt(const float3& pos, short heading, const SWeaponTarget& trg, int avoidFlagsOverride, bool useMuzzle)
+{
+	// As in TryTargetHeading, only the temporary weapon coordinate system is
+	// changed. No Move/SetPosition, quadfield update, script call-in or RNG use.
+	// Keep the current up direction, velocity and underwater state: this tests a
+	// translated current pose, not the unit's future simulation state.
+	const float3 savedPos = owner->pos;
+	const float3 savedFront = owner->frontdir;
+	const float3 savedRight = owner->rightdir;
+	const short savedHeading = owner->heading;
+	const auto savedVectors = SaveWeaponVectors();
+
+	owner->pos = pos;
+	owner->heading = heading;
+	owner->frontdir = GetVectorFromHeading(heading);
+	owner->rightdir = owner->frontdir.cross(owner->updir);
+	UpdateWeaponVectors();
+	const auto result = TryTarget(GetLeadTargetPos(trg), trg, useMuzzle, avoidFlagsOverride);
+
+	LoadWeaponVectors(savedVectors);
+	owner->pos = savedPos;
+	owner->frontdir = savedFront;
+	owner->rightdir = savedRight;
+	owner->heading = savedHeading;
+	return result;
 }
 
 

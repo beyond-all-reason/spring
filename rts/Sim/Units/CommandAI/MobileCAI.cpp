@@ -4,6 +4,7 @@
 #include "MobileCAI.h"
 
 #include <string_view>
+#include <cmath>
 
 #include "LuaInclude.h"
 #include "ExternalAI/EngineOutHandler.h"
@@ -713,15 +714,26 @@ namespace {
 		CMobileCAI* cai;
 		Command command;
 		CUnit* target;
+		bool targetDead;
 	};
 	thread_local AttackMovementScope* attackMovementScope = nullptr;
+
+	int ParseAttackAvoidFlags(lua_State* L, int index)
+	{
+		if (lua_isnoneornil(L, index))
+			return -1;
+		const auto flags = luaL_checknumber(L, index);
+		if (!std::isfinite(flags) || flags < 0 || flags > 1023 || flags != int(flags))
+			luaL_error(L, "invalid avoidance flags");
+		return int(flags);
+	}
 }
 
 bool CMobileCAI::CallAttackMovement(Command& c)
 {
 	if (owner->isDead || !eventHandler.HasAttackCommandMovement())
 		return false;
-	AttackMovementScope scope{this, c, orderTarget};
+	AttackMovementScope scope{this, c, orderTarget, orderTarget != nullptr && orderTarget->isDead};
 	auto* previous = attackMovementScope;
 	attackMovementScope = &scope;
 	const bool handled = eventHandler.AttackCommandMovement(owner, scope.command);
@@ -737,10 +749,21 @@ const Command& CMobileCAI::CheckAttackMovementContext(lua_State* L) const
 	if (attackMovementScope == nullptr || attackMovementScope->cai != this)
 		luaL_error(L, "Attack movement APIs are only valid inside this unit's AttackCommandMovement");
 	const Command& c = attackMovementScope->command;
-	if (owner->isDead || orderTarget != attackMovementScope->target || commandQue.empty() || commandQue.front().GetTag() != c.GetTag() || commandQue.front().GetID() != c.GetID())
+	if (!IsAttackMovementContextValid())
 		luaL_error(L, "attack command changed during AttackCommandMovement");
 
 	return c;
+}
+
+bool CMobileCAI::IsAttackMovementContextValid() const
+{
+	return attackMovementScope != nullptr && attackMovementScope->cai == this &&
+		!owner->isDead && orderTarget == attackMovementScope->target && !commandQue.empty() &&
+		// Native AI can enter with a dead target (e.g. fireAtKilled). Only a
+		// death during this callback invalidates an otherwise identical target.
+		(orderTarget == nullptr || orderTarget->isDead == attackMovementScope->targetDead) &&
+		commandQue.front().GetTag() == attackMovementScope->command.GetTag() &&
+		commandQue.front().GetID() == attackMovementScope->command.GetID();
 }
 
 int CMobileCAI::GetAttackMovementState(lua_State* L)
@@ -789,9 +812,7 @@ int CMobileCAI::GetAttackWeaponState(lua_State* L)
 	target.isManualFire = object && manual;
 
 	const int index = luaL_checkint(L, 2) - 1;
-	const int avoidFlags = lua_isnoneornil(L, 3) ? -1 : luaL_checkint(L, 3);
-	if (!lua_isnoneornil(L, 3) && (avoidFlags < 0 || avoidFlags > 255))
-		return luaL_error(L, "invalid avoidance flags");
+	const int avoidFlags = ParseAttackAvoidFlags(L, 3);
 	if (index < 0 || index >= static_cast<int>(owner->weapons.size()))
 		return luaL_error(L, "invalid weapon index");
 	CWeapon* w = owner->weapons[index];
@@ -810,7 +831,54 @@ int CMobileCAI::GetAttackWeaponState(lua_State* L)
 	lua_pushnumber(L, math::fabs(w->weaponDef->targetBorder));
 	lua_pushstring(L, TargetCheckResultName(rotateResult));
 	lua_pushstring(L, TargetCheckResultName(headingResult));
-	return 7;
+	const auto pushBlocker = [L](const TargetCheckResult& result) {
+		if (result.objectType == TargetCheckResult::ObjectType::None) {
+			lua_pushnil(L);
+			lua_pushnil(L);
+		} else {
+			lua_pushstring(L, result.objectType == TargetCheckResult::ObjectType::Unit ? "unit" : "feature");
+			lua_pushnumber(L, result.objectID);
+		}
+	};
+	pushBlocker(rotateResult);
+	pushBlocker(headingResult);
+	return 11;
+}
+
+int CMobileCAI::TestAttackMovementPosition(lua_State* L)
+{
+	const Command& c = CheckAttackMovementContext(L);
+	const int index = luaL_checkint(L, 2) - 1;
+	if (index < 0 || index >= static_cast<int>(owner->weapons.size()))
+		return luaL_error(L, "invalid weapon index");
+	const float3 pos(luaL_checkfloat(L, 3), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5));
+	const auto heading = luaL_checknumber(L, 6);
+	const int avoidFlags = ParseAttackAvoidFlags(L, 7);
+	if (!pos.IsInBounds() || !std::isfinite(pos.y) || !std::isfinite(heading) || heading < -32768 || heading > 32767 || heading != int(heading))
+		return luaL_error(L, "invalid candidate position or heading");
+	if (!lua_isnoneornil(L, 8) && !lua_isboolean(L, 8))
+		return luaL_error(L, "useMuzzle must be a boolean");
+	const bool object = (orderTarget != nullptr);
+	const bool manual = object && c.GetID() == CMD_MANUALFIRE;
+	CWeapon* weapon = owner->weapons[index];
+	if (manual && !weapon->weaponDef->manualfire) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	SWeaponTarget target = object ? SWeaponTarget(orderTarget, !c.IsInternalOrder()) : SWeaponTarget(c.GetPos(0), !c.IsInternalOrder());
+	target.isManualFire = manual;
+	const auto result = weapon->TryTargetAt(pos, short(heading), target, avoidFlags, lua_toboolean(L, 8));
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, result == TargetCheckResult::Clear);
+	lua_pushstring(L, TargetCheckResultName(result));
+	if (result.objectType == TargetCheckResult::ObjectType::None) {
+		lua_pushnil(L);
+		lua_pushnil(L);
+	} else {
+		lua_pushstring(L, result.objectType == TargetCheckResult::ObjectType::Unit ? "unit" : "feature");
+		lua_pushnumber(L, result.objectID);
+	}
+	return 5;
 }
 
 int CMobileCAI::SetAttackMovement(lua_State* L)

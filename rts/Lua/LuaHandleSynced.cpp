@@ -1737,6 +1737,8 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
  * behavior, unless the callback invalidated the command, owner or order target.
  * Only one of targetID and x/y/z is populated. This is not a shot-fired event.
  * Movement API effects are not rolled back when returning false or on errors.
+ * Dispatch stops at the first handler returning true, or at invalidation,
+ * including across LuaRules and LuaGaia. Later handlers do not run that update.
  * @function SyncedCallins:AttackCommandMovement
  * @param unitID integer
  * @param cmdTag integer
@@ -1749,6 +1751,7 @@ bool CSyncedLuaHandle::ShieldPreDamaged(
  * @return boolean handled
  * @see Spring.GetUnitAttackMovementState
  * @see Spring.GetUnitAttackWeaponState
+ * @see Spring.TestUnitAttackMovementPosition
  * @see Spring.SetUnitAttackMovement
  */
 bool CSyncedLuaHandle::AttackCommandMovement(const CUnit* unit, const Command& cmd)
