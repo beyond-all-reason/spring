@@ -61,7 +61,11 @@ CONFIG(int, TeamHighlight)
 	.minimumValue(CTeamHighlight::HIGHLIGHT_FIRST)
 	.maximumValue(CTeamHighlight::HIGHLIGHT_LAST);
 
-CONFIG(bool, UseNetMessageSmoothingBuffer).defaultValue(true).description("Buffer network packets for a few frames in an attempt to reduce lag from packet time variance. Introduces a fixed lag.");
+CONFIG(int, UseNetMessageSmoothingBuffer)
+	.defaultValue(1)
+	.minimumValue(0)
+	.maximumValue(2)
+	.description("Buffer network packets for a few frames in an attempt to reduce lag from packet time variance. Introduces a fixed lag.");
 
 CONFIG(bool, LuaWritableConfigFile).defaultValue(true);
 CONFIG(bool, VFSCacheArchiveFiles).defaultValue(true);
@@ -96,7 +100,7 @@ void GlobalConfig::Init()
 	if (linkIncomingMaxPacketRate > 0 && linkIncomingSustainedBandwidth <= 0)
 		linkIncomingSustainedBandwidth = linkIncomingPeakBandwidth = 1024 * 1024;
 
-	useNetMessageSmoothingBuffer = configHandler->GetBool("UseNetMessageSmoothingBuffer");
+	useNetMessageSmoothingBuffer = configHandler->GetInt("UseNetMessageSmoothingBuffer");
 	luaWritableConfigFile = configHandler->GetBool("LuaWritableConfigFile");
 	vfsCacheArchiveFiles = configHandler->GetBool("VFSCacheArchiveFiles");
 

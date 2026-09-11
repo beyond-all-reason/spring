@@ -188,10 +188,16 @@ public:
 	/// Prevents spectator msgs from being seen by players
 	bool noSpectatorChat = false;
 
-	// to smooth out SimFrame calls
+	// to smooth out SimFrame calls (Used for globalConfig.useNetMessageSmoothingBuffer < 2)
 	float msgProcTimeLeft = 0.0f;  ///< How many SimFrame() calls we still may do.
 	float consumeSpeedMult = 1.0f; ///< How fast we should eat NETMSG_NEWFRAMEs.
 
+	// to smooth out SimFrame calls (Used for globalConfig.useNetMessageSmoothingBuffer == 2)
+	spring_time expectedFrameTime;
+	float lastFrameOffset = 1.0f;
+	float targetOffset = 1.0f;
+	float volatilityScore = 1.0f;
+	spring_time nextFrameTargetProcessTime;
 
 	#if 0
 	int skipStartFrame = 0;

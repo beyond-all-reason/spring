@@ -2022,7 +2022,7 @@
     "declarationLine": 58,
     "description": "Buffer network packets for a few frames in an attempt to reduce lag from packet time variance. Introduces a fixed lag.",
     "defaultValue": 1,
-    "type": "bool"
+    "type": "int"
   },
   "UsePBO": {
     "declarationFile": "/spring/rts/Rendering/GL/VBO.cpp",

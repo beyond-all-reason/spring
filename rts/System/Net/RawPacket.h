@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "System/Misc/NonCopyable.h"
+#include "System/Misc/SpringTime.h"
 #include "System/SafeVector.h"
 
 namespace netcode
@@ -67,6 +68,8 @@ public:
 
 		length = p.length;
 		p.length = 0;
+
+		receiveTime = p.receiveTime;
 
 		return *this;
 	}
@@ -126,6 +129,7 @@ public:
 public:
 	uint8_t id = 0;
 	uint8_t* data = nullptr;
+	spring_time receiveTime = spring_gettime();
 
 	uint32_t pos = 0;
 	uint32_t length = 0;

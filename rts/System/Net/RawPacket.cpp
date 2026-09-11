@@ -6,6 +6,7 @@
 #include "RawPacket.h"
 
 #include "System/Log/ILog.h"
+#include "System/Misc/SpringTime.h"
 
 namespace netcode
 {
@@ -15,6 +16,7 @@ RawPacket::RawPacket(const uint8_t* const tdata, const uint32_t newLength): leng
 	if (length > 0) {
 		data = new uint8_t[length];
 		memcpy(data, tdata, length);
+		receiveTime = spring_gettime();
 	} else {
 		LOG_L(L_ERROR, "[%s] tried to pack a zero-length packet", __func__);
 		// TODO handle error

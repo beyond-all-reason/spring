@@ -705,15 +705,24 @@ void UDPConnection::Flush(const bool forced)
 	// if the packet is tiny, reduce the send frequency further
 	const int requiredLength = ((200 >> netLossFactor) - spring_tomsecs(curTime - lastChunkCreatedTime)) / 10;
 
+	bool containsNewFrame = false;
+
+	for (auto pi = outgoingData.begin(); (pi != outgoingData.end()); ++pi) {
+		if ((*pi)->data[0] == NETMSG_KEYFRAME || (*pi)->data[0] == NETMSG_NEWFRAME) {
+			containsNewFrame = true;
+			break;
+		}
+	}
+
 	int outgoingLength = 0;
 
-	if (!waitMore) {
+	if (containsNewFrame || !waitMore) {
 		for (auto pi = outgoingData.begin(); (pi != outgoingData.end()) && (outgoingLength <= requiredLength); ++pi) {
 			outgoingLength += (*pi)->length;
 		}
 	}
 
-	if (forced || (!waitMore && outgoingLength > requiredLength)) {
+	if (forced || containsNewFrame || (!waitMore && outgoingLength > requiredLength)) {
 		std::uint8_t buffer[udpMaxPacketSize];
 		unsigned pos = 0;
 

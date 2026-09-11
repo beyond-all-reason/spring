@@ -90,7 +90,7 @@ public:
 	 * messages for smoothing network jitter at the cost of increased
 	 * latency (running further behind the server)
 	 */
-	bool useNetMessageSmoothingBuffer = true;
+	int useNetMessageSmoothingBuffer = 1;
 
 	/**
 	 * @brief luaWritableConfigFile

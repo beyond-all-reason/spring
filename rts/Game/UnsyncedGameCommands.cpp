@@ -1770,9 +1770,9 @@ public:
 
 	bool Execute(const UnsyncedAction& action) const final {
 		const char* fmt = "net-message smoothing %s";
-		const char* strs[] = {"disabled", "enabled"};
+		const char* strs[] = {"moderate", "generous", "aggressive"};
 
-		LOG(fmt, strs[globalConfig.useNetMessageSmoothingBuffer = !globalConfig.useNetMessageSmoothingBuffer]);
+		LOG(fmt, strs[globalConfig.useNetMessageSmoothingBuffer = (globalConfig.useNetMessageSmoothingBuffer + 1) % 3]);
 		return true;
 	}
 };
