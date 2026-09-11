@@ -54,7 +54,7 @@ public:
 	void Init();
 	void Kill();
 
-	void ParseExplosionTables();
+	void ParseExplosionTables(bool fatalErrors);
 	void ReloadGenerators(const std::string&);
 
 	unsigned int LoadCustomGeneratorID(const char* tag) { return (LoadGeneratorID(tag, CEG_PREFIX_STRING)); }

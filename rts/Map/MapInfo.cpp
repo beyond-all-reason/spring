@@ -57,7 +57,7 @@ CMapInfo::CMapInfo(const std::string& mapFileName, const string& mapHumanName): 
 	LuaTable resTable;
 
 	if (!resParser.Execute())
-		LOG_L(L_ERROR, "[%s] error executing resource-parser: \"%s\"", __func__, resParser.GetErrorLog().c_str());
+		throw content_error("Failed to load gamedata/resources.lua: " + resParser.GetErrorLog());
 
 	resTable = resParser.GetRoot();
 	resTableRoot = &resTable;

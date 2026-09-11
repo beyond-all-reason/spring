@@ -42,7 +42,7 @@ public:
 	void PrintDebugInfo() override;
 	bool SoundThreadQuit() const override { return false; }
 	bool CanLoadSoundDefs() const override { return true; }
-	bool LoadSoundDefsImpl(LuaParser* defsParser) override { return false; }
+	bool LoadSoundDefsImpl(const LuaTable& soundDefs, const std::string& fileName) override { return false; }
 
 	const float3& GetListenerPos() const override { return ZeroVector; }
 

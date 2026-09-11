@@ -774,7 +774,13 @@ int LuaUnsyncedCtrl::LoadSoundDef(lua_State* L)
 {
 	LuaParser soundDefsParser(luaL_checksstring(L, 1), SPRING_VFS_ZIP_FIRST, SPRING_VFS_ZIP_FIRST);
 
-	const bool retval = sound->LoadSoundDefs(&soundDefsParser);
+	bool retval = false;
+	if (soundDefsParser.Execute()) {
+		const LuaTable soundDefs = soundDefsParser.GetRoot();
+		retval = sound->LoadSoundDefs(soundDefs, soundDefsParser.fileName);
+	} else {
+		LOG_L(L_WARNING, "[%s] could not load %s: %s", __func__, soundDefsParser.fileName.c_str(), soundDefsParser.GetErrorLog().c_str());
+	}
 	const bool synced = CLuaHandle::GetHandleSynced(L);
 
 	lua_pushboolean(L, retval && !synced);

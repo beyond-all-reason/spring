@@ -3,6 +3,7 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -408,18 +409,18 @@ void CGLTFParser::Load(S3DModel& model, const std::string& modelFilePath)
 	if (!CFileHandler::FileExists(metaFileName, SPRING_VFS_ZIP))
 		metaFileName = modelPath + modelName + ".lua";
 
+	std::optional<LuaParser> metaFileParser;
+	LuaTable modelTable;
+
 	if (!CFileHandler::FileExists(metaFileName, SPRING_VFS_ZIP)) {
 		LOG_SL(LOG_SECTION_MODEL, L_INFO, "No meta-file found for the GLTF model '%s'.", metaFileName.c_str());
+	} else {
+		metaFileParser.emplace(metaFileName, SPRING_VFS_ZIP, SPRING_VFS_ZIP);
+		if (!metaFileParser->Execute())
+			throw content_error("Failed to load " + metaFileName + ": " + metaFileParser->GetErrorLog());
+
+		modelTable = metaFileParser->GetRoot();
 	}
-
-	LuaParser metaFileParser(metaFileName, SPRING_VFS_ZIP, SPRING_VFS_ZIP);
-
-	if (!metaFileParser.Execute()) {
-		LOG_SL(LOG_SECTION_MODEL, L_INFO, "Error parsing the meta-file '%s': %s.", metaFileName.c_str(), metaFileParser.GetErrorLog().c_str());
-	}
-
-	// get the (root-level) model table
-	const auto modelTable = metaFileParser.GetRoot();
 
 	if (!modelTable.IsValid()) {
 		LOG_SL(LOG_SECTION_MODEL, L_INFO, "No valid model metadata in '%s' or no meta-file", metaFileName.c_str());
