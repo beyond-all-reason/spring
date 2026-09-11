@@ -251,6 +251,9 @@ void CUnitDrawerData::Update()
 			updateBody(unit);
 	}
 
+	for (auto& mr : modelRenderers)
+		mr.UpdateDrawBins();
+
 	UpdateLiveGhostTransforms();
 
 	if ((useDistToGroundForIcons = (camHandler->GetCurrentController()).GetUseDistToGroundForIcons())) {

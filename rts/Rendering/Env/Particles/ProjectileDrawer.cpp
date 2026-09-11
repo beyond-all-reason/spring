@@ -47,6 +47,7 @@
 
 CONFIG(int, SoftParticles).defaultValue(1).safemodeValue(0).description("Soften up CEG particles on clipping edges");
 CONFIG(float, ProjectileReflectionMinRadius).defaultValue(0.0f).minimumValue(0.0f).description("Alpha particles with a draw radius (in elmos) smaller than this are skipped in water reflection passes; 0 draws all of them. Small particles are barely visible in reflections, so culling them there is cheap visually and saves a large part of the reflection pass on effect-heavy frames.");
+CONFIG(float, ProjectileShadowMinPixels).defaultValue(2.0f).minimumValue(0.0f).description("Model-less particles whose draw radius covers fewer than this many screen pixels (at their distance from the camera) do not cast transparent shadows; 0 lets every shadow-casting particle cast one. Such shadows are invisible anyway but each costs quad generation and a draw in the shadow pass.");
 CONFIG(bool, ProjectileDrawThreadedFill).defaultValue(true).safemodeValue(false).description("Generate alpha-particle geometry on the ThreadPool workers instead of the render thread. Draw order is preserved; the few particle types whose Draw is not thread-safe stay on the render thread.");
 CONFIG(bool, ProjectileDrawReuseWaterPasses).defaultValue(true).safemodeValue(false).description("When water is visible, reuse the below-water pass' alpha particle geometry for the above-water pass instead of regenerating and re-uploading it. The two passes contain identical geometry by construction; disable to force a full refill per pass.");
 
@@ -191,6 +192,9 @@ TypedRenderBuffer<VA_TYPE_C>& CProjectileDrawer::GetMiniMapPointsRB() { return p
 void CProjectileDrawer::Init() {
 	RECOIL_DETAILED_TRACY_ZONE;
 	eventHandler.AddClient(this);
+
+	configHandler->NotifyOnChange(this, { "ProjectileDrawThreadedFill", "ProjectileReflectionMinRadius", "ProjectileShadowMinPixels" });
+	ConfigNotify("", "");
 
 	loadscreen->SetLoadMessage("Creating Projectile Textures");
 
@@ -455,7 +459,11 @@ void CProjectileDrawer::Kill() {
 	sortedParticles.clear();
 	sortScratch.clear();
 	unsortedParticles.clear();
+	shadowParticleBuckets.clear();
+	shadowParticles.clear();
 	mtFillBuffers.clear();
+
+	configHandler->RemoveObserver(this);
 
 	perlinFB.Kill();
 
@@ -479,7 +487,7 @@ void CProjectileDrawer::UpdateDrawFlags()
 	// water reflections are distorted enough that small particles contribute
 	// next to nothing visually; skipping them avoids most of the reflection
 	// pass' fill/sort/quad-generation cost on effect-heavy frames
-	const float reflMinRadius = configHandler->GetFloat("ProjectileReflectionMinRadius");
+	// (reflMinRadius is a cached config value, see ConfigNotify)
 
 	// per-frame invariants, hoisted out of the per-particle loop (notably
 	// IWater::GetWater()->CanDrawReflectionPass(), a virtual call that was
@@ -492,7 +500,19 @@ void CProjectileDrawer::UpdateDrawFlags()
 	const CCamera* camUWRefl = CCameraHandler::GetCamera(CCamera::CAMTYPE_UWREFL);
 	const CCamera* camShadow = CCameraHandler::GetCamera(CCamera::CAMTYPE_SHADOW);
 
-	for_mt(0, renderProjectiles.size(), [this, reflMinRadius, drawReflPass, drawShadowPass, timeOffset, camPlayer, camUWRefl, camShadow](int i) {
+	// world length covered by one screen pixel at distance 1 from the player camera
+	const float playerLPPScale = std::max(camPlayer->GetLPPScale(), 1e-6f);
+
+	// transparent shadow casters are gathered here, per worker, while the
+	// projectiles are being visited anyway; merged below (order is irrelevant,
+	// the shadow blend is multiplicative)
+	if (shadowParticleBuckets.size() < static_cast<size_t>(ThreadPool::GetNumThreads()))
+		shadowParticleBuckets.resize(ThreadPool::GetNumThreads());
+
+	for (auto& bucket : shadowParticleBuckets)
+		bucket.clear();
+
+	for_mt(0, renderProjectiles.size(), [this, drawReflPass, drawShadowPass, timeOffset, camPlayer, camUWRefl, camShadow, playerLPPScale](int i) {
 		CProjectile* p = renderProjectiles[i];
 		const bool hasModel = (p->model != nullptr);
 
@@ -534,17 +554,39 @@ void CProjectileDrawer::UpdateDrawFlags()
 		if (drawShadowPass && p->castShadow && camShadow->InView(p->drawPos, drawRadius)) {
 			p->SetSortDist(CCamera::CAMTYPE_SHADOW, camShadow->ProjectedDistance(p->drawPos));
 
+			// a particle's shadow can only be as large on screen as the particle
+			// itself would be at its distance from the viewer; below a few pixels
+			// it is invisible but still costs a full quad-generation + draw
+			const bool shadowVisible = hasModel || (shadowMinPixels <= 0.0f) ||
+				(drawRadius >= shadowMinPixels * std::max(1.0f, camPlayer->ProjectedDistance(p->drawPos)) * playerLPPScale);
+
 			if unlikely(hasModel)
 				p->AddDrawFlag(DrawFlags::SO_SHOPAQ_FLAG);
-			else
+			else if (shadowVisible)
 				p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
 
 			// Special case of piece projectile, since it has a model and fire particle
-			if (p->piece)
+			if (p->piece && shadowVisible)
 				p->AddDrawFlag(DrawFlags::SO_SHTRAN_FLAG);
+
+			if (p->HasDrawFlag(DrawFlags::SO_SHTRAN_FLAG))
+				shadowParticleBuckets[ThreadPool::GetThreadNum()].push_back(p);
 		}
 	});
 
+	shadowParticles.clear();
+
+	for (auto& bucket : shadowParticleBuckets) {
+		shadowParticles.insert(shadowParticles.end(), bucket.begin(), bucket.end());
+		bucket.clear();
+	}
+}
+
+void CProjectileDrawer::ConfigNotify(const std::string& key, const std::string& value)
+{
+	threadedFillEnabled = configHandler->GetBool("ProjectileDrawThreadedFill");
+	reflMinRadius = configHandler->GetFloat("ProjectileReflectionMinRadius");
+	shadowMinPixels = configHandler->GetFloat("ProjectileShadowMinPixels");
 }
 
 bool CProjectileDrawer::CheckSoftenExt()
@@ -915,7 +957,7 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool
 			RadixSortByKey(sortedParticles, sortScratch, [](const SortableParticle& sp) noexcept { return sp.sortKey; });
 		}
 
-		const bool threadedFill = configHandler->GetBool("ProjectileDrawThreadedFill") && ThreadPool::HasThreads();
+		const bool threadedFill = threadedFillEnabled && ThreadPool::HasThreads();
 
 		{
 			ZoneScopedN("ProjectileDrawer::DrawAlpha(DS)");
@@ -1002,6 +1044,18 @@ void CProjectileDrawer::DrawAlpha(bool drawAboveWater, bool drawBelowWater, bool
 void CProjectileDrawer::DrawShadowOpaque()
 {
 	ZoneScopedN("ProjectileDrawer::DrawShadowOpaque");
+
+	// nothing to draw most of the time: skip the shader and render-state setup
+	bool anyObjects = false;
+
+	for (int modelType = MODELTYPE_3DO; modelType < MODELTYPE_CNT; modelType++) {
+		anyObjects |= !modelRenderers[modelType].empty();
+		anyObjects |= !projectileHandler.flyingPieces[modelType].empty();
+	}
+
+	if (!anyObjects)
+		return;
+
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(CShadowHandler::SHADOWGEN_PROGRAM_PROJECTILE);
 
 	po->Enable();
@@ -1035,34 +1089,26 @@ void CProjectileDrawer::DrawShadowOpaque()
 	po->Disable();
 }
 
-void CProjectileDrawer::DrawShadowTransparent()
+bool CProjectileDrawer::DrawShadowTransparent()
 {
-	ZoneScopedN("ProjectileDrawer::DrawShadowTransparent");
+	SCOPED_TIMER("Draw::World::CreateShadows::Particles");
 	// Method #1 here: https://wickedengine.net/2018/01/18/easy-transparent-shadow-maps/
 
 	// 1) Render opaque objects into depth stencil texture from light's point of view - done elsewhere
 
 	// draw the model-less projectiles; the multiplicative shadow blend is
-	// order-independent, so the list needs no sorting. unsortedParticles is
-	// only otherwise used inside DrawAlpha, which runs later in the frame and
-	// clears it first.
-	unsortedParticles.clear();
-	for (CProjectile* p : renderProjectiles) {
-		if (!ShouldDrawProjectile(p, DrawFlags::SO_SHTRAN_FLAG))
-			continue;
-
-		unsortedParticles.emplace_back(p);
-	}
-
+	// order-independent, so the list needs no sorting. shadowParticles was
+	// collected by UpdateDrawFlags earlier this frame (no sim frame runs in
+	// between, so the pointers are still valid).
 	{
-		ZoneScopedN("ProjectileDrawer::DrawShadowTransparent(Fill)");
-		const bool threadedFill = configHandler->GetBool("ProjectileDrawThreadedFill") && ThreadPool::HasThreads();
-		FillParticleGeometry(mtFillBuffers, unsortedParticles.size(), threadedFill, [this](size_t j) { return unsortedParticles[j]; });
+		SCOPED_TIMER("Draw::World::CreateShadows::Particles::Fill");
+		const bool threadedFill = threadedFillEnabled && ThreadPool::HasThreads();
+		FillParticleGeometry(mtFillBuffers, shadowParticles.size(), threadedFill, [this](size_t j) { return shadowParticles[j]; });
 	}
 
 	auto& rb = CExpGenSpawnable::GetPrimaryRenderBuffer();
 	if (!rb.ShouldSubmit())
-		return;
+		return false;
 
 	// 2) Bind render target for shadow color filter: R11G11B10 works good
 	shadowHandler.EnableColorOutput(true);
@@ -1100,6 +1146,7 @@ void CProjectileDrawer::DrawShadowTransparent()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//shadowHandler.EnableColorOutput(false);
+	return true;
 }
 
 

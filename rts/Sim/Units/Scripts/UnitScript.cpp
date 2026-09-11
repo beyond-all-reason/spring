@@ -690,12 +690,13 @@ bool CUnitScript::EmitAbsSFX(int sfxType, const float3& absPos, const float3& ab
 			);
 		} break;
 
-		// damaged unit smoke
+		// damaged unit smoke; hundreds of these puffs exist during battles and
+		// their faint shadows are not worth the per-particle shadow-pass cost
 		case SFX_WHITE_SMOKE: {
-			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.5f);
+			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.5f)->castShadow = false;
 		} break;
 		case SFX_BLACK_SMOKE: {
-			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.6f);
+			projMemPool.alloc<CSmokeProjectile>(unit, absPos, guRNG.NextVector() * 0.5f + UpVector * 1.1f, 60, 4, 0.5f, 0.6f)->castShadow = false;
 		} break;
 
 		case SFX_VTOL: {

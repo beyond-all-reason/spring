@@ -103,6 +103,9 @@ void CFeatureDrawerData::Update()
 			UpdateCommon(f);
 		}
 	}
+
+	for (auto& mr : modelRenderers)
+		mr.UpdateDrawBins();
 }
 
 bool CFeatureDrawerData::IsAlpha(const CFeature* co) const

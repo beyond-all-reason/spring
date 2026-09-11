@@ -33,6 +33,11 @@ class CEventHandler
 			return (std::find(handles.begin(), handles.end(), ec) != handles.end());
 		}
 
+		// lets the shadow pass skip work (and know whether Lua could
+		// have written to its buffers) when nobody listens to these
+		bool HasDrawWorldShadowClients() const { return !listDrawWorldShadow.empty(); }
+		bool HasDrawShadowPassTransparentClients() const { return !listDrawShadowPassTransparent.empty(); }
+
 		bool InsertEvent(CEventClient* ec, const std::string& ciName);
 		bool RemoveEvent(CEventClient* ec, const std::string& ciName);
 

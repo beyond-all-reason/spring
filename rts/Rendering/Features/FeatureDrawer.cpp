@@ -204,7 +204,7 @@ void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		if (mdlRenderer.GetObjectBin(i).empty())
+		if (mdlRenderer.GetDrawObjectBin(i).empty())
 			continue;
 
 		// only need to bind the atlas once for 3DO's, but KISS
@@ -214,7 +214,7 @@ void CFeatureDrawerLegacy::DrawObjectsShadow(int modelType) const
 		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
 		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o : mdlRenderer.GetDrawObjectBin(i)) {
 			DrawFeatureShadow(o);
 		}
 
@@ -233,12 +233,12 @@ void CFeatureDrawerLegacy::DrawOpaqueObjects(int modelType, bool drawReflection,
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		if (mdlRenderer.GetObjectBin(i).empty())
+		if (mdlRenderer.GetDrawObjectBin(i).empty())
 			continue;
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o : mdlRenderer.GetDrawObjectBin(i)) {
 			DrawOpaqueFeature(o, thisPassMask);
 		}
 	}
@@ -255,12 +255,12 @@ void CFeatureDrawerLegacy::DrawAlphaObjects(int modelType, bool drawReflection, 
 	const auto& mdlRenderer = modelDrawerData->GetModelRenderer(modelType);
 
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		if (mdlRenderer.GetObjectBin(i).empty())
+		if (mdlRenderer.GetDrawObjectBin(i).empty())
 			continue;
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o : mdlRenderer.GetDrawObjectBin(i)) {
 			DrawAlphaFeature(o, thisPassMask);
 		}
 	}
@@ -312,20 +312,30 @@ void CFeatureDrawerGL4::DrawObjectsShadow(int modelType) const
 	smv.Bind();
 
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		if (mdlRenderer.GetObjectBin(i).empty())
+		if (mdlRenderer.GetDrawObjectBin(i).empty())
 			continue;
 
-		const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
-		CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
+		const auto& bin = mdlRenderer.GetDrawObjectBin(i);
 
-		const auto& bin = mdlRenderer.GetObjectBin(i);
+		// bind the bin's texture lazily; most bins have no shadow-visible
+		// object in a given frame and would otherwise pay for the (un)bind
+		bool texBound = false;
 
 		for (auto* o : bin) {
 			if (!ShouldDrawFeatureShadow(o))
 				continue;
 
+			if (!texBound) {
+				const auto* texMat = textureHandlerS3O.GetTexture(mdlRenderer.GetObjectBinKey(i));
+				CModelDrawerHelper::modelDrawerHelpers[modelType]->BindShadowTex(texMat);
+				texBound = true;
+			}
+
 			smv.AddToSubmission(o);
 		}
+
+		if (!texBound)
+			continue;
 
 		smv.Submit(GL_TRIANGLES, false);
 
@@ -352,12 +362,12 @@ void CFeatureDrawerGL4::DrawOpaqueObjects(int modelType, bool drawReflection, bo
 	smv.Bind();
 
 	for (unsigned int i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		if (mdlRenderer.GetObjectBin(i).empty())
+		if (mdlRenderer.GetDrawObjectBin(i).empty())
 			continue;
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		for (auto* o : mdlRenderer.GetObjectBin(i)) {
+		for (auto* o : mdlRenderer.GetDrawObjectBin(i)) {
 			if (!ShouldDrawOpaqueFeature(o, thisPassMask))
 				continue;
 
@@ -387,12 +397,12 @@ void CFeatureDrawerGL4::DrawAlphaObjects(int modelType, bool drawReflection, boo
 
 	//main cloaked alpha pass
 	for (uint32_t i = 0, n = mdlRenderer.GetNumObjectBins(); i < n; i++) {
-		if (mdlRenderer.GetObjectBin(i).empty())
+		if (mdlRenderer.GetDrawObjectBin(i).empty())
 			continue;
 
 		CModelDrawerHelper::BindModelTypeTexture(modelType, mdlRenderer.GetObjectBinKey(i));
 
-		const auto& bin = mdlRenderer.GetObjectBin(i);
+		const auto& bin = mdlRenderer.GetDrawObjectBin(i);
 
 		for (auto* o : bin) {
 			if (!ShouldDrawAlphaFeature(o, thisPassMask))

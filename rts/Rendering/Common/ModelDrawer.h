@@ -420,8 +420,13 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 	else
 		shadowGenProgram = CShadowHandler::SHADOWGEN_PROGRAM_MODEL_GL4;
 
+	constexpr static auto zone_name_eng = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawShadowPass::Engine");
+	constexpr static auto zone_name_lua = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawShadowPass::Lua");
+	constexpr static auto zone_name_mat = spring::Concat(spring::TypeToCharN<TDrawer>().str, "::DrawShadowPass::LuaMat");
+
 	Shader::IProgramObject* po = shadowHandler.GetShadowGenProg(shadowGenProgram);
 	if (po && po->IsValid()) {
+		SCOPED_TIMER(zone_name_eng.str);
 		po->Enable();
 
 		// 3DO's have clockwise-wound faces and
@@ -440,17 +445,23 @@ inline void CModelDrawerBase<TDrawerData, TDrawer>::DrawShadowPassImpl() const
 		po->Disable();
 	}
 
-	DrawShadowObjectsLua();
+	{
+		SCOPED_TIMER(zone_name_lua.str);
+		DrawShadowObjectsLua();
+	}
 
 	if constexpr (legacy) {
 		glDisable(GL_ALPHA_TEST);
 		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
-	ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
-	// draw all custom'ed units that were bypassed in the loop above
-	LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
-	LuaObjectDrawer::DrawShadowMaterialObjects(lot, /*deferredPass*/false);
+	{
+		SCOPED_TIMER(zone_name_mat.str);
+		ScopedModelDrawerImpl<CModelDrawerBase<TDrawerData, TDrawer>> smdi(true, false, false);
+		// draw all custom'ed units that were bypassed in the loop above
+		LuaObjectDrawer::SetDrawPassGlobalLODFactor(lot);
+		LuaObjectDrawer::DrawShadowMaterialObjects(lot, /*deferredPass*/false);
+	}
 }
 
 template<typename TDrawerData, typename TDrawer>
