@@ -1142,7 +1142,8 @@ bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		const float tgtDst = tgtPos.SqDistance(srcPos + tgtDir * gndDst);
 
 		// true iff ground does not block the ray of length <length> from <srcPos> along <tgtDir>
-		// A surface source pointing into terrain can still hit at distance 0.
+		// Unlike CCannon's approximate trajectory scan, this ray trace uses the terrain surface.
+		// A surface source pointing into terrain can hit at distance 0, so keep >= 0 and the AoE exception.
 		if ((gndDst >= 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
 			return false;
 

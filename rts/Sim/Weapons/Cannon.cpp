@@ -98,6 +98,9 @@ bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		-1.0f;
 	const float angleSpread = (AccuracyExperience() + SprayAngleExperience()) * 0.6f * 0.9f;
 
+	// Unlike CWeapon's ray trace, this scan uses approximate cell-center terrain heights.
+	// A zero-distance hit can therefore report an above-ground source as blocked; keep > 0.
+	// The GetHeightReal check above rejects sources that are actually underground.
 	if (groundDist > 0.0f)
 		return false;
 
