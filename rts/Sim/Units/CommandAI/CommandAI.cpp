@@ -1000,6 +1000,7 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 		ClearTargetLock((commandQue.empty())? Command(CMD_STOP): commandQue.front());
 		ClearCommandDependencies();
 		SetOrderTarget(nullptr);
+		targetDied = false;
 
 		// if c is an attack command, the actual order-target
 		// gets set via ExecuteAttack (called from SlowUpdate
