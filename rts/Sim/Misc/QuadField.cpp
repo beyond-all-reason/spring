@@ -1,6 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
 #include <algorithm>
+#include <cmath>
 
 #include "QuadField.h"
 #include "Map/ReadMap.h"
@@ -9,6 +10,7 @@
 #include "Sim/Misc/GlobalConstants.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "System/ContainerUtil.h"
+#include "System/Log/ILog.h"
 #include "System/Threading/ThreadPool.h"
 
 #ifndef UNIT_TEST
@@ -201,6 +203,16 @@ void CQuadField::GetQuadsOnRay(QuadFieldQuery& qfq, const float3& start, const f
 	dir.AssertNaNs();
 	start.AssertNaNs();
 
+	// callers may pass invalid lengths (see https://github.com/beyond-all-reason/RecoilEngine/issues/3018),
+	// which violates the preconditions of std::clamp(t0, 0.0f, length) below and aborts on
+	// hardened builds (_GLIBCXX_ASSERTIONS). Clamp to 0 instead, which routes execution
+	// into the "special case" below and turns this into a zero-length ray query.
+	if (!std::isfinite(length) || length < 0.0f) {
+		LOG_L(L_ERROR, "[CQuadField::%s] invalid ray length %f (start=(%g,%g,%g) dir=(%g,%g,%g)), clamping to 0"
+			, __func__, length, start.x, start.y, start.z, dir.x, dir.y, dir.z);
+		length = 0.0f;
+	}
+
 	auto& queryQuads = *(qfq.quads = tempQuads[qfq.threadOwner].ReserveVector());
 
 	const float3 to = start + (dir * length);
@@ -288,6 +300,13 @@ void CQuadField::GetQuadsOnWideRay(QuadFieldQuery& qfq, const float3& start, con
 	RECOIL_DETAILED_TRACY_ZONE;
 	dir.AssertNaNs();
 	start.AssertNaNs();
+
+	// same rationale as GetQuadsOnRay above (see https://github.com/beyond-all-reason/RecoilEngine/issues/3018)
+	if (!std::isfinite(length) || length < 0.0f) {
+		LOG_L(L_ERROR, "[CQuadField::%s] invalid ray length %f (start=(%g,%g,%g) dir=(%g,%g,%g)), clamping to 0"
+			, __func__, length, start.x, start.y, start.z, dir.x, dir.y, dir.z);
+		length = 0.0f;
+	}
 
 	const float3 baseTo = start + (dir * length);
 
