@@ -12,9 +12,11 @@ This is the bleeding-edge changelog since version 2026.07, for **pre-release 202
 `Spring.GetUnitWeaponHaveFreeLineOfFire`) no longer report a free line when the ray starts
 below the terrain. `LineGroundCol` returns a hit distance of 0 for such a ray and `TraceRay`
 discarded that as "no hit", so a weapon whose muzzle or aim-from piece was inside a cliff
-believed it could shoot through it, stopped, and never fired. Cannons had the same problem
-with their trajectory trace and now reject a source below the interpolated terrain height
-outright, the test the fire-time check already applies to the muzzle.
+believed it could shoot through it, stopped, and never fired. Both the base weapon and cannon
+line-of-fire checks now reject a source below the interpolated terrain height when ground
+avoidance is enabled, even if the target is within explosion range. This matches the existing
+pre-fire muzzle check; the base weapon's explosion-range exception remains for surface sources
+and ground hits farther along the shot.
 * The underground test of `LineGroundCol` (also behind `Spring.TraceRayGround*`) compares the
 ray origin against the interpolated terrain height instead of the corner vertex of its
 heightmap square. Next to a steep cliff that vertex could sit far above an origin that was

@@ -60,6 +60,10 @@ void CCannon::UpdateRange(const float val)
 bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// Use real terrain height: the trajectory scan's approximate height can be above a clear source.
+	if ((avoidFlags & Collision::NOGROUND) == 0 && srcPos.y < CGround::GetHeightReal(srcPos))
+		return false;
+
 	// assume we can still fire at partially submerged targets
 	if (!weaponDef->waterweapon && TargetUnderWater(tgtPos, trg))
 		return false;
@@ -76,12 +80,6 @@ bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		return true;
 
 	const float xzTargetDist = targetVec.LengthNormalize();
-
-	// a source below the terrain (e.g. a muzzle inside a cliff) blocks the shot at its origin;
-	// TrajectoryGroundCol reports this as distance 0 too, but against GetApproximateHeight, which
-	// on rough ground can lie above a source that is clear of the interpolated surface
-	if ((avoidFlags & Collision::NOGROUND) == 0 && srcPos.y < CGround::GetHeightReal(srcPos))
-		return false;
 
 	// linear parabolic coefficient is the ratio of vertical velocity to horizontal velocity, with slight adjustment due to acceleration being applied in discrete steps.
 	// quadratic parabolic coefficient is the ratio of gravity to (horizontal velocity)^2

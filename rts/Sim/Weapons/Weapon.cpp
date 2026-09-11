@@ -1118,6 +1118,10 @@ bool CWeapon::TestRange(const float3& tgtPos, const SWeaponTarget& trg) const
 bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// Match the pre-fire muzzle check before considering the ground-hit AoE exception.
+	if ((avoidFlags & Collision::NOGROUND) == 0 && srcPos.y < CGround::GetHeightReal(srcPos))
+		return false;
+
 	float3 tgtDir = tgtPos - srcPos;
 
 	const float length = tgtDir.LengthNormalize();
@@ -1138,7 +1142,7 @@ bool CWeapon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		const float tgtDst = tgtPos.SqDistance(srcPos + tgtDir * gndDst);
 
 		// true iff ground does not block the ray of length <length> from <srcPos> along <tgtDir>
-		// (a distance of 0 means <srcPos> itself is underground; -1 is not possible since length > 0)
+		// A surface source pointing into terrain can still hit at distance 0.
 		if ((gndDst >= 0.0f) && (tgtDst > Square(damages->damageAreaOfEffect)))
 			return false;
 
