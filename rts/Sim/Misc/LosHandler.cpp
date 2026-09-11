@@ -695,6 +695,9 @@ void CLosHandler::InitStatic()
 void CLosHandler::KillStatic(bool reload)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (losHandler == nullptr)
+		return;
+
 	losHandler->Kill();
 
 	if (reload)
