@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef EVENT_CLIENT_H
-#define EVENT_CLIENT_H
+#pragma once
 
 #include <algorithm>
 #include <map>
@@ -142,6 +141,7 @@ class CEventClient
 
 		virtual void UnitIdle(const CUnit* unit) {}
 		virtual void UnitCommand(const CUnit* unit, const Command& command, int playerNum, bool fromSynced, bool fromLua) {}
+		virtual void UnitCommandEnded(const CUnit* unit, const Command& command, const char* reason) {}
 		virtual void UnitCmdDone(const CUnit* unit, const Command& command                                              ) {}
 		virtual void UnitDamaged(
 			const CUnit* unit,
@@ -210,6 +210,7 @@ class CEventClient
 		virtual bool Explosion(int weaponID, const WeaponDef* weaponDef, const CExplosionParams& params) { return false; }
 
 
+		virtual bool AttackCommandMovement(const CUnit* unit, const Command& cmd) { return false; }
 		virtual bool CommandFallback(const CUnit* unit, const Command& cmd) { return false; }
 		virtual bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua) { return true; }
 
@@ -392,6 +393,3 @@ class CEventClient
 		virtual void MetalMapChanged(const int x, const int z) {}
 		/// @}
 };
-
-
-#endif /* EVENT_CLIENT_H */

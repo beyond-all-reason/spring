@@ -1,9 +1,10 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _TRACE_RAY_H
-#define _TRACE_RAY_H
+#pragma once
 
 #include <vector>
+
+#include "Sim/Misc/TargetCheckResult.h"
 
 class float3;
 class CUnit;
@@ -23,8 +24,12 @@ namespace Collision {
 		NONONTARGETS = 1 << 5, // ignored by raytraces; not added to avoidFlags
 		NOGROUND     = 1 << 6,
 		NOCLOAKED    = 1 << 7,
+		// Query-only subdivisions of friendlies. Never stored in weapon flags.
+		NOMOBILEFRIENDLIES = 1 << 8,
+		NOSTATICFRIENDLIES = 1 << 9,
 		NOUNITS      = NOENEMIES | NOFRIENDLIES | NONEUTRALS
 	};
+	bool SkipFriendly(const CUnit* unit, int traceFlags);
 }
 
 namespace TraceRay {
@@ -41,7 +46,8 @@ namespace TraceRay {
 		const CUnit* owner,
 		CUnit*& hitUnit,
 		CFeature*& hitFeature,
-		CollisionQuery* hitColQuery = nullptr
+		CollisionQuery* hitColQuery = nullptr,
+		int queryFlags = 0
 	);
 	float TraceRay(
 		const float3& pos,
@@ -52,7 +58,8 @@ namespace TraceRay {
 		const CUnit* owner,
 		CUnit*& hitUnit,
 		CFeature*& hitFeature,
-		CollisionQuery* hitColQuery
+		CollisionQuery* hitColQuery,
+		int queryFlags = 0
 	);
 
 	void TraceRayShields(
@@ -76,10 +83,10 @@ namespace TraceRay {
 	);
 
 	/**
-	 * @return true if there is an object (allied/neutral unit, feature)
-	 * within the firing cone of \<owner\> (that might be hit)
+	 * @return Clear if unobstructed, otherwise the first blocker category
+	 * within the firing cone of \<owner\>.
 	 */
-	bool TestCone(
+	TargetCheckResult TestCone(
 		const float3& from,
 		const float3& dir,
 		float length,
@@ -89,10 +96,10 @@ namespace TraceRay {
 		CUnit* owner);
 
 	/**
-	 * @return true if there is an object (allied/neutral unit, feature)
-	 *  within the firing trajectory of \<owner\> (that might be hit)
+	 * @return Clear if unobstructed, otherwise the first blocker category
+	 * within the firing trajectory of \<owner\>.
 	 */
-	bool TestTrajectoryCone(
+	TargetCheckResult TestTrajectoryCone(
 		const float3& from,
 		const float3& dir,
 		float length,
@@ -103,5 +110,3 @@ namespace TraceRay {
 		int traceFlags,
 		CUnit* owner);
 }
-
-#endif // _TRACE_RAY_H

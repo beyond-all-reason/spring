@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef LUA_HANDLE_SYNCED
-#define LUA_HANDLE_SYNCED
+#pragma once
 
 #include <string>
 
@@ -54,6 +53,7 @@ class CSyncedLuaHandle : public CLuaHandle
 	friend class CSplitLuaHandle;
 
 	public: // call-ins
+		bool AttackCommandMovement(const CUnit* unit, const Command& cmd) override;
 		bool CommandFallback(const CUnit* unit, const Command& cmd) override;
 		bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua) override;
 
@@ -282,6 +282,3 @@ class CSplitLuaHandle
 		friend class CGameStateCollector;
 		static LuaRulesParams::Params gameParams;
 };
-
-
-#endif /* LUA_HANDLE_SYNCED */

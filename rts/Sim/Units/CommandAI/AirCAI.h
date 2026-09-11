@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef AIR_CAI_H
-#define AIR_CAI_H
+#pragma once
 
 #include "MobileCAI.h"
 
@@ -22,7 +21,7 @@ public:
 	void SlowUpdate() override;
 	void GiveCommandReal(const Command& c, bool fromSynced = true) override;
 	void AddUnit(CUnit* unit);
-	void FinishCommand() override;
+	void FinishCommand(CommandEndReason reason = CommandEndReason::Completed) override;
 	void BuggerOff(const float3& pos, float radius) override;
 //	void StopMove();
 
@@ -51,5 +50,3 @@ private:
 	int lastPC1;
 	int lastPC2;
 };
-
-#endif // AIR_CAI_H

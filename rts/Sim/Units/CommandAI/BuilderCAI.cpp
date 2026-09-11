@@ -556,11 +556,11 @@ void CBuilderCAI::ReclaimFeature(CFeature* f)
 }
 
 
-void CBuilderCAI::FinishCommand()
+void CBuilderCAI::FinishCommand(CommandEndReason reason)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	buildRetries = 0;
-	CMobileCAI::FinishCommand();
+	CMobileCAI::FinishCommand(reason);
 }
 
 

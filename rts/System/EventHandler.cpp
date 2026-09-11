@@ -5,6 +5,8 @@
 #include "Game/GameHelper.h"
 #include "Lua/LuaCallInCheck.h"
 #include "Lua/LuaOpenGL.h"  // FIXME -- should be moved
+#include "Sim/Units/CommandAI/MobileCAI.h"
+#include "Sim/Units/Unit.h"
 
 #include "System/Config/ConfigHandler.h"
 #include "System/Platform/Threading.h"
@@ -388,6 +390,20 @@ bool CEventHandler::TerraformComplete(const CUnit* unit, const CUnit* build)
 	return ControlIterateDefFalse(listTerraformComplete, &CEventClient::TerraformComplete, unit, build);
 }
 
+
+bool CEventHandler::AttackCommandMovement(const CUnit* unit, const Command& cmd)
+{
+	const auto* cai = static_cast<const CMobileCAI*>(unit->commandAI);
+	for (size_t i = 0; i < listAttackCommandMovement.size(); ) {
+		CEventClient* ec = listAttackCommandMovement[i];
+		// One movement owner across LuaRules/LuaGaia, just as within a gadget
+		// handler. Never dispatch a stale command to another client after edits.
+		if (ec->AttackCommandMovement(unit, cmd) || !cai->IsAttackMovementContextValid())
+			return true;
+		i += (i < listAttackCommandMovement.size() && ec == listAttackCommandMovement[i]);
+	}
+	return false;
+}
 
 bool CEventHandler::MoveCtrlNotify(const CUnit* unit, int data)
 {

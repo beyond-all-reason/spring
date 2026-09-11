@@ -52,6 +52,7 @@
 
 	SETUP_EVENT(UnitIdle,       MANAGED_BIT)
 	SETUP_EVENT(UnitCommand,    MANAGED_BIT)
+	SETUP_EVENT(UnitCommandEnded, MANAGED_BIT)
 	SETUP_EVENT(UnitCmdDone,    MANAGED_BIT)
 	SETUP_EVENT(UnitDamaged,    MANAGED_BIT)
 	SETUP_EVENT(UnitStunned,    MANAGED_BIT)
@@ -190,6 +191,7 @@
 
 	SETUP_EVENT(SyncedActionFallback, MANAGED_BIT | CONTROL_BIT)
 
+	SETUP_EVENT(AttackCommandMovement, MANAGED_BIT | CONTROL_BIT)
 	SETUP_EVENT(CommandFallback,          MANAGED_BIT | CONTROL_BIT)
 	SETUP_EVENT(AllowCommand,             MANAGED_BIT | CONTROL_BIT)
 	SETUP_EVENT(AllowUnitCreation,        MANAGED_BIT | CONTROL_BIT)

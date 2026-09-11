@@ -1,0 +1,20 @@
+[GAME]
+{
+ MapName=Quicksilver Remake 1.24;
+ GameType=Beyond All Reason attack-movement;
+ IsHost=1;
+ HostIP=127.0.0.1;
+ HostPort=18452;
+ MyPlayerName=AttackValidator;
+ StartPosType=3;
+ NumPlayers=1;
+ NumUsers=1;
+ NumTeams=2;
+ NumAllyTeams=2;
+ [PLAYER0] { Name=AttackValidator; Team=0; Spectator=0; }
+ [TEAM0] { TeamLeader=0; AllyTeam=0; Side=Armada; RGBColor=0 0 1; StartPosX=512; StartPosZ=512; }
+ [TEAM1] { TeamLeader=0; AllyTeam=1; Side=Cortex; RGBColor=1 0 0; StartPosX=4096; StartPosZ=4096; }
+ [ALLYTEAM0] { NumAllies=0; }
+ [ALLYTEAM1] { NumAllies=0; }
+ [MODOPTIONS] { maxspeed=1000; minspeed=1; deathmode=never; startpostype=2; attackmovementmode=lua; attackmovementvalidation=ended; }
+}

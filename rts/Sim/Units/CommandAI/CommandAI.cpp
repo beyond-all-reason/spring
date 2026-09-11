@@ -1004,10 +1004,12 @@ void CCommandAI::GiveAllowedCommand(const Command& c, bool fromSynced)
 		// if c is an attack command, the actual order-target
 		// gets set via ExecuteAttack (called from SlowUpdate
 		// at the end of this function)
+		const bool hadCommand = !commandQue.empty();
+		const Command previous = hadCommand ? commandQue.front() : Command(CMD_STOP);
 		commandQue.clear();
-		assert(commandQue.empty());
-
 		inCommand = CMD_STOP;
+		if (hadCommand)
+			NotifyCommandEnded(previous, CommandEndReason::Interrupted);
 	}
 
 	AddCommandDependency(c);
@@ -1078,20 +1080,27 @@ void CCommandAI::GiveWaitCommand(const Command& c)
 	}
 	else if (c.GetOpts() & SHIFT_KEY) {
 		if (commandQue.back().GetID() == CMD_WAIT) {
+			const bool endedActive = commandQue.size() == 1;
+			const Command previous = commandQue.back();
 			waitCommandsAI.RemoveWaitCommand(owner, commandQue.back());
 			commandQue.pop_back();
+			if (endedActive)
+				NotifyCommandEnded(previous, CommandEndReason::Removed);
 		} else {
 			commandQue.push_back(c);
 			return;
 		}
 	}
 	else if (commandQue.front().GetID() == CMD_WAIT) {
+		const Command previous = commandQue.front();
 		waitCommandsAI.RemoveWaitCommand(owner, commandQue.front());
 		commandQue.pop_front();
+		NotifyCommandEnded(previous, CommandEndReason::Removed);
 		return;
 	}
 	else {
 		// shutdown the current order
+		const Command previous = commandQue.front();
 		owner->DropCurrentAttackTarget();
 		StopMove();
 
@@ -1099,6 +1108,7 @@ void CCommandAI::GiveWaitCommand(const Command& c)
 		targetDied = false;
 
 		commandQue.push_front(c);
+		NotifyCommandEnded(previous, CommandEndReason::Interrupted);
 		return;
 	}
 
@@ -1193,7 +1203,9 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	}
 
 	// shutdown the current order if the insertion is at the beginning
-	if (!queue->empty() && (insertIt == queue->begin())) {
+	const bool interrupted = !queue->empty() && (insertIt == queue->begin());
+	const Command previous = interrupted ? queue->front() : Command(CMD_STOP);
+	if (interrupted) {
 		inCommand = CMD_STOP;
 		targetDied = false;
 
@@ -1205,6 +1217,8 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 	}
 
 	queue->insert(insertIt, newCmd);
+	if (interrupted)
+		NotifyCommandEnded(previous, CommandEndReason::Interrupted);
 
 	if (owner->IsStunned())
 		return;
@@ -1213,7 +1227,7 @@ void CCommandAI::ExecuteInsert(const Command& c, bool fromSynced)
 }
 
 
-void CCommandAI::ExecuteRemove(const Command& c)
+void CCommandAI::ExecuteRemove(const Command& c, CommandEndReason reason)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	CCommandQueue* queue = &commandQue;
@@ -1282,7 +1296,7 @@ void CCommandAI::ExecuteRemove(const Command& c)
 				if (!facCAI && (ci == queue->begin())) {
 					if (!active) {
 						active = true;
-						FinishCommand();
+						FinishCommand(reason);
 						ci = queue->begin();
 						break;
 					}
@@ -1376,6 +1390,8 @@ int CCommandAI::CancelCommands(const Command& c, CCommandQueue& q, bool& first)
 		if (ci == q.end())
 			return cancelCount;
 
+		const bool endedActive = (&q == &commandQue && ci == q.begin());
+		const Command previous = *ci;
 		first = first || (ci == q.begin());
 		cancelCount++;
 
@@ -1393,6 +1409,8 @@ int CCommandAI::CancelCommands(const Command& c, CCommandQueue& q, bool& first)
 
 		++lastErase; // STL: erase the range [first, last)
 		q.erase(firstErase, lastErase);
+		if (endedActive)
+			NotifyCommandEnded(previous, CommandEndReason::Removed);
 
 		if (c.GetID() >= 0)
 			return cancelCount; // only delete one non-build order
@@ -1647,7 +1665,7 @@ void CCommandAI::DependentDied(CObject* o)
 				Command &c = *qit;
 				int cpos;
 				if (c.IsObjectCommand(cpos) && (c.GetParam(cpos) == CSolidObject::GetDeletingRefID())) {
-					ExecuteRemove(Command(CMD_REMOVE, 0, curTag = c.GetTag()));
+					ExecuteRemove(Command(CMD_REMOVE, 0, curTag = c.GetTag()), CommandEndReason::TargetLost);
 					break;
 				}
 			}
@@ -1657,7 +1675,20 @@ void CCommandAI::DependentDied(CObject* o)
 
 
 
-void CCommandAI::FinishCommand()
+void CCommandAI::NotifyCommandEnded(const Command& cmd, CommandEndReason reason)
+{
+	const char* name = "completed";
+	switch (reason) {
+		case CommandEndReason::Completed: break;
+		case CommandEndReason::Removed: name = "removed"; break;
+		case CommandEndReason::TargetLost: name = "targetLost"; break;
+		case CommandEndReason::Interrupted: name = "interrupted"; break;
+	}
+	eventHandler.UnitCommandEnded(owner, cmd, name);
+}
+
+
+void CCommandAI::FinishCommand(CommandEndReason reason)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	assert(!commandQue.empty());
@@ -1677,6 +1708,7 @@ void CCommandAI::FinishCommand()
 
 	SetOrderTarget(nullptr);
 	eoh->CommandFinished(*owner, cmd);
+	NotifyCommandEnded(cmd, reason);
 	eventHandler.UnitCmdDone(owner, cmd);
 	ClearTargetLock(cmd);
 
@@ -1853,7 +1885,11 @@ void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& 
 	const auto hasTarget = [&](const Command& c) { return (c.GetNumParams() == 1 && (c.GetID() == CMD_FIGHT || c.GetID() == CMD_ATTACK)); };
 	const auto removeCmd = [&](const Command& c) { return (hasTarget(c) && pred(unitHandler.GetUnit(c.GetParam(0)))); };
 
+	const bool endedActive = !commandQue.empty() && removeCmd(commandQue.front());
+	const Command previous = endedActive ? commandQue.front() : Command(CMD_STOP);
 	commandQue.erase(std::remove_if(commandQue.begin(), commandQue.end(), removeCmd), commandQue.end());
+	if (endedActive)
+		NotifyCommandEnded(previous, CommandEndReason::Removed);
 }
 
 void CCommandAI::StopAttackingAllyTeam(int ally)

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef MELEEWEAPON_H
-#define MELEEWEAPON_H
+#pragma once
 
 #include "Weapon.h"
 
@@ -12,8 +11,6 @@ public:
 	CMeleeWeapon(CUnit* owner = nullptr, const WeaponDef* def = nullptr): CWeapon(owner, def) {}
 
 private:
-	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const override final { return true; }
+	TargetCheckResult HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg, int avoidFlagsOverride = -1) const override final { return TargetCheckResult::Clear; }
 	void FireImpl(const bool scriptCall) override final;
 };
-
-#endif /* MELEEWEAPON_H */

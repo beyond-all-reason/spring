@@ -2,6 +2,11 @@
 
 
 #include "MobileCAI.h"
+
+#include <string_view>
+#include <cmath>
+
+#include "LuaInclude.h"
 #include "ExternalAI/EngineOutHandler.h"
 #include "Game/GameHelper.h"
 #include "Game/GlobalUnsynced.h"
@@ -590,14 +595,14 @@ bool CMobileCAI::IsValidTarget(const CUnit* enemy, CWeapon* weapon) const {
 	// test if given weapon belonging to owner can target
 	// the enemy unit; indicates an auto-targeting context
 	if (weapon != nullptr)
-		return (weapon->TestTarget(enemy->pos, {enemy}) && (owner->moveState != MOVESTATE_HOLDPOS || weapon->TryTargetRotate(enemy, false, false)));
+		return (weapon->TestTarget(enemy->pos, {enemy}) && (owner->moveState != MOVESTATE_HOLDPOS || weapon->TryTargetRotate(enemy, false, false) == TargetCheckResult::Clear));
 
 	// test if any of owner's weapons can target the enemy unit
 	if (owner->weapons.empty())
 		return false;
 
 	for (CWeapon* w: owner->weapons) {
-		if (w->TestTarget(enemy->pos, SWeaponTarget(enemy)) && (owner->moveState != MOVESTATE_HOLDPOS || w->TryTargetRotate(enemy, false, false)))
+		if (w->TestTarget(enemy->pos, SWeaponTarget(enemy)) && (owner->moveState != MOVESTATE_HOLDPOS || w->TryTargetRotate(enemy, false, false) == TargetCheckResult::Clear))
 			return true;
 	}
 
@@ -702,9 +707,233 @@ void CMobileCAI::ExecuteStop(Command& c)
 
 
 
+// Movement operations are only valid during this unit's movement call-in.
+// A copied command survives command-queue edits made by a gadget.
+namespace {
+	struct AttackMovementScope {
+		CMobileCAI* cai;
+		Command command;
+		CUnit* target;
+		bool targetDead;
+	};
+	thread_local AttackMovementScope* attackMovementScope = nullptr;
+
+	int ParseAttackAvoidFlags(lua_State* L, int index)
+	{
+		if (lua_isnoneornil(L, index))
+			return -1;
+		const auto flags = luaL_checknumber(L, index);
+		if (!std::isfinite(flags) || flags < 0 || flags > 1023 || flags != int(flags))
+			luaL_error(L, "invalid avoidance flags");
+		return int(flags);
+	}
+}
+
+bool CMobileCAI::CallAttackMovement(Command& c)
+{
+	if (owner->isDead || !eventHandler.HasAttackCommandMovement())
+		return false;
+	AttackMovementScope scope{this, c, orderTarget, orderTarget != nullptr && orderTarget->isDead};
+	auto* previous = attackMovementScope;
+	attackMovementScope = &scope;
+	const bool handled = eventHandler.AttackCommandMovement(owner, scope.command);
+	attackMovementScope = previous;
+	// Do not touch the original command reference after Lua replaced its queue.
+	return handled || owner->isDead || orderTarget != scope.target || commandQue.empty() ||
+		commandQue.front().GetTag() != scope.command.GetTag() ||
+		commandQue.front().GetID() != scope.command.GetID();
+}
+
+const Command& CMobileCAI::CheckAttackMovementContext(lua_State* L) const
+{
+	if (attackMovementScope == nullptr || attackMovementScope->cai != this)
+		luaL_error(L, "Attack movement APIs are only valid inside this unit's AttackCommandMovement");
+	const Command& c = attackMovementScope->command;
+	if (!IsAttackMovementContextValid())
+		luaL_error(L, "attack command changed during AttackCommandMovement");
+
+	return c;
+}
+
+bool CMobileCAI::IsAttackMovementContextValid() const
+{
+	return attackMovementScope != nullptr && attackMovementScope->cai == this &&
+		!owner->isDead && orderTarget == attackMovementScope->target && !commandQue.empty() &&
+		// Native AI can enter with a dead target (e.g. fireAtKilled). Only a
+		// death during this callback invalidates an otherwise identical target.
+		(orderTarget == nullptr || orderTarget->isDead == attackMovementScope->targetDead) &&
+		commandQue.front().GetTag() == attackMovementScope->command.GetTag() &&
+		commandQue.front().GetID() == attackMovementScope->command.GetID();
+}
+
+int CMobileCAI::GetAttackMovementState(lua_State* L)
+{
+	const Command& c = CheckAttackMovementContext(L);
+	const bool object = (orderTarget != nullptr);
+	const bool manual = (c.GetID() == CMD_MANUALFIRE);
+	const float3 targetPos = object ? float3(orderTarget->midPos) : c.GetPos(0);
+	const float3 diff = object ? owner->midPos - targetPos : targetPos - owner->pos;
+
+	lua_createtable(L, 0, 19);
+	const auto number = [L](const char* k, double v) { lua_pushnumber(L, v); lua_setfield(L, -2, k); };
+	const auto boolean = [L](const char* k, bool v) { lua_pushboolean(L, v); lua_setfield(L, -2, k); };
+	boolean("object", object);
+	boolean("manual", manual);
+	boolean("skipParalyze", object && !owner->weapons.empty() && !(c.GetOpts() & ALT_KEY) && SkipParalyzeTarget(orderTarget));
+	boolean("temporary", tempOrder);
+	boolean("holdPosition", owner->moveState == MOVESTATE_HOLDPOS);
+	boolean("hovering", owner->unitDef->IsHoveringAirUnit());
+	boolean("stopToAttack", owner->unitDef->stopToAttack);
+	boolean("strafeToAttack", owner->unitDef->strafeToAttack);
+	boolean("targetBehind", object && diff.dot(orderTarget->speed) < 0.0f);
+	number("numWeapons", owner->weapons.size());
+	number("distance", diff.Length2D());
+	number("distanceSq", diff.SqLength2D());
+	number("range90", owner->maxRange * 0.9f);
+	number("range90Sq", Square(owner->maxRange * 0.9f));
+	number("frame", gs->frameNum);
+	number("lastCloseInTry", lastCloseInTry);
+	number("retryTicks", MAX_CLOSE_IN_RETRY_TICKS);
+	if (object) {
+		number("goalDistanceSq", orderTarget->GetErrorPos(owner->allyteam, false).SqDistance2D(owner->moveType->goalPos));
+		number("goalThresholdSq", Square(10.0f + orderTarget->pos.distance2D(owner->pos) * 0.2f));
+	}
+	return 1;
+}
+
+int CMobileCAI::GetAttackWeaponState(lua_State* L)
+{
+	const Command& c = CheckAttackMovementContext(L);
+	const bool object = (orderTarget != nullptr);
+	const bool manual = (c.GetID() == CMD_MANUALFIRE);
+	const float3 targetPos = object ? float3(orderTarget->midPos) : c.GetPos(0);
+	const float3 diff = object ? owner->midPos - targetPos : targetPos - owner->pos;
+	SWeaponTarget target = object ? SWeaponTarget(orderTarget, !c.IsInternalOrder()) : SWeaponTarget(targetPos, !c.IsInternalOrder());
+	target.isManualFire = object && manual;
+
+	const int index = luaL_checkint(L, 2) - 1;
+	const int avoidFlags = ParseAttackAvoidFlags(L, 3);
+	if (index < 0 || index >= static_cast<int>(owner->weapons.size()))
+		return luaL_error(L, "invalid weapon index");
+	CWeapon* w = owner->weapons[index];
+	// Match the native manual-fire filter before running any targeting test.
+	if (object && manual && !w->weaponDef->manualfire) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	const short heading = GetHeadingFromVector(object ? -diff.x : diff.x, object ? -diff.z : diff.z);
+	const auto rotateResult = object ? w->TryTargetRotate(target.unit, target.isUserTarget, target.isManualFire, avoidFlags) : TargetCheckResult::NotChecked;
+	const auto headingResult = w->TryTargetHeading(heading, target, avoidFlags);
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, rotateResult == TargetCheckResult::Clear);
+	lua_pushboolean(L, headingResult == TargetCheckResult::Clear);
+	lua_pushboolean(L, w->WantOwnerRotation());
+	lua_pushnumber(L, math::fabs(w->weaponDef->targetBorder));
+	lua_pushstring(L, TargetCheckResultName(rotateResult));
+	lua_pushstring(L, TargetCheckResultName(headingResult));
+	const auto pushBlocker = [L](const TargetCheckResult& result) {
+		if (result.objectType == TargetCheckResult::ObjectType::None) {
+			lua_pushnil(L);
+			lua_pushnil(L);
+		} else {
+			lua_pushstring(L, result.objectType == TargetCheckResult::ObjectType::Unit ? "unit" : "feature");
+			lua_pushnumber(L, result.objectID);
+		}
+	};
+	pushBlocker(rotateResult);
+	pushBlocker(headingResult);
+	return 11;
+}
+
+int CMobileCAI::TestAttackMovementPosition(lua_State* L)
+{
+	const Command& c = CheckAttackMovementContext(L);
+	const int index = luaL_checkint(L, 2) - 1;
+	if (index < 0 || index >= static_cast<int>(owner->weapons.size()))
+		return luaL_error(L, "invalid weapon index");
+	const float3 pos(luaL_checkfloat(L, 3), luaL_checkfloat(L, 4), luaL_checkfloat(L, 5));
+	const auto heading = luaL_checknumber(L, 6);
+	const int avoidFlags = ParseAttackAvoidFlags(L, 7);
+	if (!pos.IsInBounds() || !std::isfinite(pos.y) || !std::isfinite(heading) || heading < -32768 || heading > 32767 || heading != int(heading))
+		return luaL_error(L, "invalid candidate position or heading");
+	if (!lua_isnoneornil(L, 8) && !lua_isboolean(L, 8))
+		return luaL_error(L, "useMuzzle must be a boolean");
+	const bool object = (orderTarget != nullptr);
+	const bool manual = object && c.GetID() == CMD_MANUALFIRE;
+	CWeapon* weapon = owner->weapons[index];
+	if (manual && !weapon->weaponDef->manualfire) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	SWeaponTarget target = object ? SWeaponTarget(orderTarget, !c.IsInternalOrder()) : SWeaponTarget(c.GetPos(0), !c.IsInternalOrder());
+	target.isManualFire = manual;
+	const auto result = weapon->TryTargetAt(pos, short(heading), target, avoidFlags, lua_toboolean(L, 8));
+	lua_pushboolean(L, true);
+	lua_pushboolean(L, result == TargetCheckResult::Clear);
+	lua_pushstring(L, TargetCheckResultName(result));
+	if (result.objectType == TargetCheckResult::ObjectType::None) {
+		lua_pushnil(L);
+		lua_pushnil(L);
+	} else {
+		lua_pushstring(L, result.objectType == TargetCheckResult::ObjectType::Unit ? "unit" : "feature");
+		lua_pushnumber(L, result.objectID);
+	}
+	return 5;
+}
+
+int CMobileCAI::SetAttackMovement(lua_State* L)
+{
+	const Command& c = CheckAttackMovementContext(L);
+	const std::string_view op = luaL_checkstring(L, 2);
+	const bool object = (orderTarget != nullptr);
+	const bool manual = (c.GetID() == CMD_MANUALFIRE);
+	const float3 targetPos = object ? float3(orderTarget->midPos) : c.GetPos(0);
+	const float3 diff = object ? owner->midPos - targetPos : targetPos - owner->pos;
+	const float minPointingDist = object ? std::min(1.0f * owner->losRadius, owner->maxRange * 0.9f) : owner->maxRange * 0.9f;
+	SWeaponTarget target = object ? SWeaponTarget(orderTarget, !c.IsInternalOrder()) : SWeaponTarget(targetPos, !c.IsInternalOrder());
+	target.isManualFire = object && manual;
+
+	if (op == "stop") { StopMove(); return 0; }
+	if (op == "finish") { StopMoveAndFinishCommand(); return 0; }
+	if (op == "point") { owner->moveType->KeepPointingTo(targetPos, minPointingDist, true); return 0; }
+	if (op == "stopPoint") { StopMoveAndKeepPointing(targetPos, minPointingDist, true); return 0; }
+	if (op == "attack") {
+		const bool accepted = object ? owner->AttackUnit(target.unit, target.isUserTarget, manual) : owner->AttackGround(targetPos, target.isUserTarget, manual);
+		lua_pushboolean(L, accepted);
+		return 1;
+	}
+	if (op == "chase" && object) {
+		SetGoal(owner->pos + (orderTarget->speed * 80), owner->pos, SQUARE_SIZE, orderTarget->speed.w * 1.1f);
+		return 0;
+	}
+	if (op == "strafe" && object) {
+		const int dirSign = Sign(int(moveDir ^= (owner->moveType->progressState == AMoveType::Failed)));
+		constexpr float sin = 0.6f;
+		constexpr float cos = 0.8f;
+		float3 goalDiff;
+		goalDiff.x = diff.dot(float3(cos, 0.0f, -sin * dirSign));
+		goalDiff.z = diff.dot(float3(sin * dirSign, 0.0f, cos));
+		goalDiff *= (diff.Length2D() < owner->maxRange * 0.3f) ? 1.0f / cos : cos;
+		goalDiff += orderTarget->pos;
+		SetGoal(goalDiff, owner->pos);
+		return 0;
+	}
+	if (op == "approach" && object) {
+		const float edgeFactor = luaL_checknumber(L, 3);
+		const float3 errPos = orderTarget->GetErrorPos(owner->allyteam, false);
+		const float3 norm = (errPos - owner->pos).Normalize();
+		SetGoal(errPos - norm * CalcTargetRadius(orderTarget, orderTarget->radius, edgeFactor * 0.8f), owner->pos);
+		return 0;
+	}
+	if (op == "closeInFrame") { lastCloseInTry = gs->frameNum; return 0; }
+	return luaL_error(L, "unknown attack movement operation");
+}
+
 void CMobileCAI::ExecuteObjectAttack(Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (CallAttackMovement(c))
+		return;
 	bool tryTargetRotate  = false;
 	bool tryTargetHeading = false;
 	bool tryOwnerRotation = false; // if a weapon doesn't swivel to aim we've got to know about it to rotate the owner instead
@@ -742,8 +971,8 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 		if (c.GetID() == CMD_MANUALFIRE && !w->weaponDef->manualfire)
 			continue;
 
-		tryTargetRotate  = w->TryTargetRotate(orderTgtInfo.unit, orderTgtInfo.isUserTarget, orderTgtInfo.isManualFire);
-		tryTargetHeading = w->TryTargetHeading(targetHeading, orderTgtInfo);
+		tryTargetRotate  = w->TryTargetRotate(orderTgtInfo.unit, orderTgtInfo.isUserTarget, orderTgtInfo.isManualFire) == TargetCheckResult::Clear;
+		tryTargetHeading = w->TryTargetHeading(targetHeading, orderTgtInfo) == TargetCheckResult::Clear;
 
 		edgeFactor = math::fabs(w->weaponDef->targetBorder);
 
@@ -835,6 +1064,8 @@ void CMobileCAI::ExecuteObjectAttack(Command& c)
 void CMobileCAI::ExecuteGroundAttack(Command& c)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	if (CallAttackMovement(c))
+		return;
 	const float3 attackPos = c.GetPos(0);
 	const float3 attackVec = attackPos - owner->pos;
 	const short  attackHeading = GetHeadingFromVector(attackVec.x, attackVec.z);
@@ -858,7 +1089,7 @@ void CMobileCAI::ExecuteGroundAttack(Command& c)
 		//   we call TryTargetHeading which is less restrictive than TryTarget
 		//   (eg. the former succeeds even if the unit has not already aligned
 		//   itself with <attackVec>)
-		if (!w->TryTargetHeading(attackHeading, attackTgtInfo))
+		if (w->TryTargetHeading(attackHeading, attackTgtInfo) != TargetCheckResult::Clear)
 			continue;
 
 		if (owner->AttackGround(attackTgtInfo.groundPos, attackTgtInfo.isUserTarget, false)) {
@@ -950,7 +1181,7 @@ void CMobileCAI::ExecuteAttack(Command& c)
 	// NOTE: unit should actually just continue to target area!
 	if (targetDied || (c.GetNumParams() == 1 && UpdateTargetLostTimer(int(c.GetParam(0))) == 0)) {
 		// cancel keeppointingto
-		StopMoveAndFinishCommand();
+		StopMoveAndFinishCommand(CommandEndReason::TargetLost);
 		return;
 	}
 
@@ -1136,7 +1367,7 @@ void CMobileCAI::NonMoving()
 	buggerOffAttempts++;
 }
 
-void CMobileCAI::FinishCommand()
+void CMobileCAI::FinishCommand(CommandEndReason reason)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	SetTransportee(nullptr);
@@ -1147,7 +1378,7 @@ void CMobileCAI::FinishCommand()
 	tempOrder = false;
 
 	StopSlowGuard();
-	CCommandAI::FinishCommand();
+	CCommandAI::FinishCommand(reason);
 
 	if (owner->unitDef->IsTransportUnit()) {
 		CHoverAirMoveType* am = dynamic_cast<CHoverAirMoveType*>(owner->moveType);

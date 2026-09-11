@@ -142,6 +142,21 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
+function gadgetHandler:UnitCommandEnded(...)
+	for _, g in r_ipairs(self.UnitCommandEndedList) do
+		g:UnitCommandEnded(...)
+	end
+end
+
+function gadgetHandler:AttackCommandMovement(...)
+	for _, g in r_ipairs(self.AttackCommandMovementList) do
+		if g:AttackCommandMovement(...) == true then
+			return true
+		end
+	end
+	return false
+end
+
 function gadgetHandler:Initialize()
   local syncedHandler = Script.GetSynced()
 

@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef EVENT_HANDLER_H
-#define EVENT_HANDLER_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -91,6 +90,7 @@ class CEventHandler
 
 		void UnitIdle(const CUnit* unit);
 		void UnitCommand(const CUnit* unit, const Command& command, int playerNum, bool fromSynced, bool fromLua);
+		void UnitCommandEnded(const CUnit* unit, const Command& command, const char* reason);
 		void UnitCmdDone(const CUnit* unit, const Command& command                                              );
 		void UnitDamaged(
 			const CUnit* unit,
@@ -147,6 +147,8 @@ class CEventHandler
 		void StockpileChanged(const CUnit* unit,
 		                      const CWeapon* weapon, int oldCount);
 
+		bool AttackCommandMovement(const CUnit* unit, const Command& cmd);
+		bool HasAttackCommandMovement() const { return !listAttackCommandMovement.empty(); }
 		bool CommandFallback(const CUnit* unit, const Command& cmd);
 		bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua);
 
@@ -550,6 +552,12 @@ inline void CEventHandler::UnitCommand(const CUnit* unit, const Command& command
 	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitCommand, unit, command, playerNum, fromSynced, fromLua)
 }
 
+inline void CEventHandler::UnitCommandEnded(const CUnit* unit, const Command& command, const char* reason)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitCommandEnded, unit, command, reason)
+}
+
+
 inline void CEventHandler::UnitCmdDone(const CUnit* unit, const Command& command)
 {
 	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitCmdDone, unit, command)
@@ -800,5 +808,3 @@ inline void CEventHandler::RenderProjectileDestroyed(const CProjectile* proj)
 #undef UNIT_CALLIN_NO_PARAM
 #undef UNIT_CALLIN_INT_PARAMS
 #undef UNIT_CALLIN_LOS_PARAM
-
-#endif /* EVENT_HANDLER_H */

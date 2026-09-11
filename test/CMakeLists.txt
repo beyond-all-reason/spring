@@ -94,6 +94,10 @@ macro (add_spring_test target sources libraries flags)
 	#install(TARGETS test_${target} DESTINATION ${BINDIR})
 endmacro()
 
+set(test_name TargetCheckResult)
+set(test_src "${CMAKE_CURRENT_SOURCE_DIR}/engine/Sim/Misc/testTargetCheckResult.cpp" ${test_Common_sources})
+add_spring_test(${test_name} "${test_src}" "" "-DNOT_USING_CREG -DNOT_USING_STREFLOP -DBUILDING_AI")
+
 ################################################################################
 ### UDPListener
 # disabled for travis: https://springrts.com/mantis/view.php?id=5014

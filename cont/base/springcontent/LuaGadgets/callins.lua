@@ -54,6 +54,7 @@ CALLIN_LIST = {
 	"RenderUnitDestroyed",
 	"UnitExperience",
 	"UnitIdle",
+	"UnitCommandEnded",
 	"UnitCmdDone",
 	"UnitPreDamaged",
 	"UnitDamaged",
@@ -123,6 +124,7 @@ CALLIN_LIST = {
 	"AllowWeaponInterceptTarget",
 
 	"Explosion",
+	"AttackCommandMovement",
 	"CommandFallback",
 	"MoveCtrlNotify",
 	"TerraformComplete",

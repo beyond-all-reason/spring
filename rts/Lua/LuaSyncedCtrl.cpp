@@ -68,6 +68,7 @@
 #include "Sim/Units/UnitTypes/Factory.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "Sim/Units/CommandAI/CommandAI.h"
+#include "Sim/Units/CommandAI/MobileCAI.h"
 #include "Sim/Units/CommandAI/FactoryCAI.h"
 #include "Sim/Units/UnitTypes/ExtractorBuilding.h"
 #include "Sim/Weapons/PlasmaRepulser.h"
@@ -225,6 +226,10 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitTravel);
 	REGISTER_LUA_CFUNC(SetUnitFuel);
 	REGISTER_LUA_CFUNC(SetUnitMoveGoal);
+	REGISTER_LUA_CFUNC(GetUnitAttackMovementState);
+	REGISTER_LUA_CFUNC(GetUnitAttackWeaponState);
+	REGISTER_LUA_CFUNC(TestUnitAttackMovementPosition);
+	REGISTER_LUA_CFUNC(SetUnitAttackMovement);
 	REGISTER_LUA_CFUNC(SetUnitLandGoal);
 	REGISTER_LUA_CFUNC(ClearUnitGoal);
 	REGISTER_LUA_CFUNC(SetUnitNeutral);
@@ -3994,6 +3999,132 @@ int LuaSyncedCtrl::SetUnitPosErrorParams(lua_State* L)
 
 	return 0;
 }
+
+
+/*** Read the native inputs for this unit's active AttackCommandMovement callback.
+ * Synced only and only valid during the callback for the same controlled unit.
+ * The state includes object, manual, skipParalyze, temporary, holdPosition,
+ * hovering, stopToAttack, strafeToAttack, targetBehind, numWeapons, distance,
+ * distanceSq, range90, range90Sq, frame, lastCloseInTry and retryTicks.
+ * Object attacks also include goalDistanceSq and goalThresholdSq.
+ * range90 values and goal thresholds expose the legacy movement policy for
+ * equivalent Lua ports; they do not constrain when the callback runs.
+ * @function Spring.GetUnitAttackMovementState
+ * @param unitID integer
+ * @return table? state Nil for an inaccessible unit or unsupported command AI
+ * @see SyncedCallins:AttackCommandMovement
+ */
+int LuaSyncedCtrl::GetUnitAttackMovementState(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->GetAttackMovementState(L) : 0;
+}
+
+/*** Run the native rotation/heading tests for an active attack-movement callback.
+ * Uses the weapon's actual native line/arc test. Omit avoidFlags to use its
+ * existing avoidance flags, or supply a Game.collisionFlags bitmask to replace
+ * them for this query only. Bits mean ignore that category: noGround skips
+ * terrain; noFriendlies skips allies. The weapon's stored flags and actual
+ * firing behavior are never changed. Range/target tests are always performed.
+ * noMobileFriendlies and noStaticFriendlies independently exclude allies by
+ * UnitDef movement capability (not velocity, stun or MoveCtrl state). These
+ * query-only exclusions also exclude cloaked/neutral allies of that subtype;
+ * legacy eight-bit masks retain their independent category behavior.
+ * Reasons describe the first failed test: clear, notChecked, invalidTarget,
+ * range (including angle constraints), terrain, friendly, neutral, feature,
+ * or blocked (unclassified). They do not enumerate all simultaneous blockers.
+ * Native pre-aim avoidance ignores enemies as a category. Ray tests can still
+ * include them via the independent cloaked category; use noCloaked for strict
+ * friendly-only or terrain-only masks (noUnits does not include noCloaked).
+ * clear does not guarantee a hit, aim readiness, reload completion or firing.
+ * No extra traces are run to classify a failure. Object rotation and heading
+ * are separate hypothetical orientations and may return different reasons.
+ * Blocker identities belong to this query only; non-object reasons return nil.
+ * They identify the first object rejected in native scan order, not necessarily
+ * the nearest obstacle or every obstacle. Re-query with filters for mixed cases.
+ * @function Spring.GetUnitAttackWeaponState
+ * @param unitID integer Same unit as the active callback
+ * @param weaponNum integer 1-based weapon index
+ * @param avoidFlags integer? Query-only avoidance mask (0 checks all native categories)
+ * @return boolean? eligible False if excluded by the native manual-fire filter
+ * @return boolean? rotate Native TryTargetRotate result; false for ground targets
+ * @return boolean? heading Native TryTargetHeading result
+ * @return boolean? ownerRotation Weapon requires chassis rotation
+ * @return number? targetBorder Absolute target-border factor
+ * @return string? rotateReason notChecked for a ground target
+ * @return string? headingReason
+ * @return string? rotateBlockerType "unit" or "feature"
+ * @return integer? rotateBlockerID The first object blocking rotation
+ * @return string? headingBlockerType "unit" or "feature"
+ * @return integer? headingBlockerID The first object blocking heading
+ * @see SyncedCallins:AttackCommandMovement
+ */
+int LuaSyncedCtrl::GetUnitAttackWeaponState(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->GetAttackWeaponState(L) : 0;
+}
+
+/*** Test the active attack target from a candidate unit position and heading.
+ * Synced only, inside AttackCommandMovement for this controlled unit. Uses the
+ * native target, lead, range, target-border and line/arc tests. Position is the
+ * unit's base position (not the muzzle); heading uses Spring's signed units.
+ * Uses the native hypothetical-heading basis with the current up direction,
+ * piece pose, velocity and underwater state. No movement or AimWeapon/BlockShot;
+ * no prediction of future animation, terrain alignment, water transitions or paths.
+ * Use this to compare sidestep candidates, then validate movement separately.
+ * With useMuzzle=true, tests the current muzzle and the native pre-fire
+ * underground-muzzle check instead of the native pre-aim source. Neither mode
+ * tests reload or aim readiness, and clear does not guarantee a future shot.
+ * Avoidance masks and blocker identities have GetUnitAttackWeaponState semantics.
+ * @function Spring.TestUnitAttackMovementPosition
+ * @param unitID integer Same unit as the active callback
+ * @param weaponNum integer 1-based weapon index
+ * @param x number Candidate unit base position, within map bounds
+ * @param y number Candidate base height, finite
+ * @param z number Candidate unit base position, within map bounds
+ * @param heading integer Signed heading, -32768 through 32767
+ * @param avoidFlags integer? Query-only avoidance mask; omitted uses weapon flags
+ * @param useMuzzle boolean? Default false
+ * @return boolean? eligible False for the native manual-fire exclusion
+ * @return boolean? clear
+ * @return string? reason
+ * @return string? blockerType "unit" or "feature", otherwise nil
+ * @return integer? blockerID Source of this failure, otherwise nil
+ * @see Spring.GetUnitAttackWeaponState
+ */
+int LuaSyncedCtrl::TestUnitAttackMovementPosition(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->TestAttackMovementPosition(L) : 0;
+}
+
+/*** Apply a native movement primitive during AttackCommandMovement.
+ * Operations: stop, finish (stop and finish command), point, stopPoint,
+ * attack (assign the command target), chase, strafe, approach, closeInFrame.
+ * chase/strafe/approach require an object target. approach takes a third,
+ * numeric targetBorder argument. point/stopPoint retain the native pointing
+ * radius; other movement policies can use SetUnitMoveGoal and return true.
+ * finish can invalidate this callback's command; subsequent API calls reject
+ * a changed command, owner or order target. Effects are immediate, not rolled
+ * back if the callback later returns false or raises an error.
+ * @function Spring.SetUnitAttackMovement
+ * @param unitID integer Same unit as the active callback
+ * @param operation string
+ * @param targetBorder number? Required for approach
+ * @return boolean? accepted Only returned for attack; this does not mean a shot fired
+ * @see SyncedCallins:AttackCommandMovement
+ */
+int LuaSyncedCtrl::SetUnitAttackMovement(lua_State* L)
+{
+	CUnit* unit = ParseUnit(L, __func__, 1);
+	auto* cai = (unit != nullptr) ? dynamic_cast<CMobileCAI*>(unit->commandAI) : nullptr;
+	return (cai != nullptr) ? cai->SetAttackMovement(L) : 0;
+}
+
 
 
 /*** Used by default commands to get in build-, attackrange etc.
