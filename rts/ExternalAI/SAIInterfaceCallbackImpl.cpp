@@ -13,6 +13,7 @@
 #include "ExternalAI/Interface/ELevelOfSupport.h"     // for ABI version
 #include "ExternalAI/Interface/AISEvents.h"           // for ABI version
 #include "ExternalAI/Interface/AISCommands.h"         // for ABI version
+#include "ExternalAI/Interface/AISIntents.h"          // for ABI version
 #include "ExternalAI/Interface/SSkirmishAILibrary.h"  // for ABI version
 #include "ExternalAI/Interface/SAIInterfaceLibrary.h" // for ABI version and AI_INTERFACE_PROPERTY_*
 #include "System/SafeCStrings.h"

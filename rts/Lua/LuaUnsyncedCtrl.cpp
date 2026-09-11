@@ -309,6 +309,10 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(ForceTesselationUpdate);
 
 	REGISTER_LUA_CFUNC(SendSkirmishAIMessage);
+	REGISTER_LUA_CFUNC(AiIntentFloat);
+	REGISTER_LUA_CFUNC(AiIntentArray);
+	REGISTER_LUA_CFUNC(AiIntentDict);
+	REGISTER_LUA_CFUNC(AiIntentUnitDefs);
 
 	REGISTER_LUA_CFUNC(SetLogSectionFilterLevel);
 
@@ -673,12 +677,12 @@ int LuaUnsyncedCtrl::SendMessage(lua_State* L)
 
 /*** @function Spring.SendMessageToSpectators
  * @param message string ``"`<PLAYER#>`"`` where `#` is a player ID.
- * 
+ *
  * This will be replaced with the player's name. e.g.
  * ```lua
  * Spring.SendMessage("`<PLAYER1>` did something") -- "ProRusher did something"
  * ```
- * 
+ *
  * @return nil
  */
 int LuaUnsyncedCtrl::SendMessageToSpectators(lua_State* L)
@@ -1276,7 +1280,7 @@ int LuaUnsyncedCtrl::SetCameraOffset(lua_State* L)
  * @function Spring.SetCameraState
  *
  * @param cameraState CameraState The fields must be consistent with the name/mode and current/new camera mode.
- * 
+ *
  * @param transitionTime number? (Default: `0`) in nanoseconds
  *
  * @param transitionTimeFactor number?
@@ -1380,7 +1384,7 @@ int LuaUnsyncedCtrl::SetDollyCameraPosition(lua_State* L)
  *
  * @class ControlPoint
  * @x_helper
- * 
+ *
  * @field [1] number x
  * @field [2] number y
  * @field [3] number z
@@ -2247,12 +2251,12 @@ int LuaUnsyncedCtrl::SetUnitNoMinimap(lua_State* L)
  */
 int LuaUnsyncedCtrl::SetMiniMapRotation(lua_State* L)
 {
-	
+
 	const float radians = luaL_checkfloat(L, 1);
-	
+
 	if (minimap == nullptr)
 		return 0;
-	
+
 	if (minimap->minimapCanFlip)
 		return 0;
 
@@ -4419,6 +4423,174 @@ int LuaUnsyncedCtrl::SendSkirmishAIMessage(lua_State* L) {
 	return 2;
 }
 
+/*** @function Spring.AiIntentFloat
+ * @param teamID number
+ * @param topic number
+ * @param objID number?
+ * @param value number?|boolean?
+ * @return nil
+ */
+int LuaUnsyncedCtrl::AiIntentFloat(lua_State* L) {
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int teamID = luaL_checkint(L, 1);
+	const int topic = luaL_checkint(L, 2);
+	const int objID = lua_israwnumber(L, 3) ? lua_toint(L, 3) : lua_isboolean(L, 3) ? lua_toboolean(L, 3) : -1;
+	const float value = lua_isnoneornil(L, 4) ? 0.f : lua_isboolean(L, 4) ? lua_toboolean(L, 4) : luaL_checkfloat(L, 4);
+
+	eoh->Intent(teamID, topic, objID, value);
+
+	return 0;
+}
+
+/*** @function Spring.AiIntentArray
+ * @param teamID number
+ * @param topic number
+ * @param objID number
+ * @param values table
+ * @return nil
+ */
+int LuaUnsyncedCtrl::AiIntentArray(lua_State* L) {
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int teamID = luaL_checkint(L, 1);
+	const int topic = luaL_checkint(L, 2);
+	const int objID = luaL_checkint(L, 3);
+
+	luaL_checktype(L, 4, LUA_TTABLE);
+
+	std::vector<float> values;
+
+	for (lua_pushnil(L); lua_next(L, 4) != 0; lua_pop(L, 1)) {
+
+		float value;
+		if (lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		} else if (lua_isboolean(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_toboolean(L, LUA_TABLE_VALUE_INDEX);
+		} else {
+			luaL_error(L, "[%s()] incorrect value type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+		values.push_back(value);
+	}
+
+	eoh->Intent(teamID, topic, objID, values);
+
+	return 0;
+}
+
+/*** @function Spring.AiIntentDict
+ * @param teamID number
+ * @param topic number
+ * @param objID number
+ * @param keyValues table
+ * @return nil
+ */
+int LuaUnsyncedCtrl::AiIntentDict(lua_State* L) {
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int teamID = luaL_checkint(L, 1);
+	const int topic = luaL_checkint(L, 2);
+	const int objID = luaL_checkint(L, 3);
+
+	luaL_checktype(L, 4, LUA_TTABLE);
+
+	std::vector<int> keys;
+	std::vector<float> values;
+
+	for (lua_pushnil(L); lua_next(L, 4) != 0; lua_pop(L, 1)) {
+
+		if (!lua_israwnumber(L, LUA_TABLE_KEY_INDEX)) {
+			luaL_error(L, "[%s()] incorrect key type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		float value;
+		if (lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		} else if (lua_isboolean(L, LUA_TABLE_VALUE_INDEX)) {
+			value = lua_toboolean(L, LUA_TABLE_VALUE_INDEX);
+		} else {
+			luaL_error(L, "[%s()] incorrect value type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		const int key = lua_toint(L, LUA_TABLE_KEY_INDEX);
+		keys.push_back(key);
+		values.push_back(value);
+	}
+
+	eoh->Intent(teamID, topic, objID, keys, values);
+
+	return 0;
+}
+
+/*** @function Spring.AiIntentUnitDefs
+ * @param teamID number
+ * @param topic number
+ * @param objID number
+ * @param unitDefToValue table
+ * @return nil
+ */
+int LuaUnsyncedCtrl::AiIntentUnitDefs(lua_State* L) {
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	const int aiTeam = luaL_checkint(L, 1);
+	const int topic = luaL_checkint(L, 2);
+	const int objId = luaL_checkint(L, 3);
+
+	luaL_checktype(L, 4, LUA_TTABLE);
+
+	std::vector<int> keys;
+	std::vector<float> values;
+
+	for (lua_pushnil(L); lua_next(L, 4) != 0; lua_pop(L, 1)) {
+
+		const UnitDef* unitDef = nullptr;
+
+		if (lua_israwstring(L, LUA_TABLE_KEY_INDEX)) {
+			unitDef = unitDefHandler->GetUnitDefByName(lua_tostring(L, LUA_TABLE_KEY_INDEX));
+		} else if (lua_israwnumber(L, LUA_TABLE_KEY_INDEX)) {
+			unitDef = unitDefHandler->GetUnitDefByID(lua_toint(L, LUA_TABLE_KEY_INDEX));
+		} else {
+			luaL_error(L, "[%s()] incorrect unitDef type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		if (unitDef == nullptr) {
+			if (lua_israwstring(L, LUA_TABLE_KEY_INDEX)) {
+				luaL_error(L, "[%s()]: bad unitDef name: %s", __func__, lua_tostring(L, LUA_TABLE_KEY_INDEX));
+			} else {
+				luaL_error(L, "[%s()]: bad unitDef ID: %d", __func__, lua_toint(L, LUA_TABLE_KEY_INDEX));
+			}
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		if (!lua_israwnumber(L, LUA_TABLE_VALUE_INDEX)) {
+			luaL_error(L, "[%s()] incorrect value type", __func__);
+			lua_pop(L, 2);
+			return 0;
+		}
+
+		const float value = lua_tonumber(L, LUA_TABLE_VALUE_INDEX);
+		keys.push_back(unitDef->id);
+		values.push_back(value);
+	}
+
+	eoh->Intent(aiTeam, topic, objId, keys, values);
+
+	return 0;
+}
 
 /******************************************************************************
  * Developers

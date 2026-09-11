@@ -80,6 +80,13 @@ public:
 	/// send a raw string from unsynced Lua to one or all active skirmish AI's
 	bool SendLuaMessages(int aiTeam, const char* inData, std::vector<const char*>& outData);
 
+	void Intent(int teamId, int topic, int objId, int value);
+	void Intent(int teamId, int topic, int objId, float value);
+	void Intent(int teamId, int topic, int objId, const std::vector<int>& data);
+	void Intent(int teamId, int topic, int objId, const std::vector<float>& data);
+	void Intent(int teamId, int topic, int objId, const std::vector<int>& keys, const std::vector<int>& values);
+	void Intent(int teamId, int topic, int objId, const std::vector<int>& keys, const std::vector<float>& values);
+
 
 	// Skirmish AI stuff
 	void CreateSkirmishAI(const uint8_t skirmishAIId, bool savedGame);

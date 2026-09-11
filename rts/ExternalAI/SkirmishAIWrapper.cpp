@@ -11,6 +11,7 @@
 
 #include "Interface/AISEvents.h"
 #include "Interface/AISCommands.h"
+#include "Interface/AISIntents.h"
 #include "Interface/SSkirmishAILibrary.h"
 
 #include "Sim/Units/Unit.h"
@@ -453,6 +454,40 @@ void CSkirmishAIWrapper::SeismicPing(
 	HandleEvent(EVENT_SEISMIC_PING, &evtData);
 }
 
+void CSkirmishAIWrapper::Intent(int topic, int objId, int value) {
+	const SIntIntent intent = {topic, objId, value};
+	HandleIntent(INTENT_INT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, float value) {
+	const SFloatIntent intent = {topic, objId, value};
+	HandleIntent(INTENT_FLOAT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<int>& data) {
+	const SArrayIntIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
+	HandleIntent(INTENT_ARRAY_INT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId, const std::vector<float>& data) {
+	const SArrayFloatIntent intent = {topic, objId, (unsigned int)data.size(), data.data()};
+	HandleIntent(INTENT_ARRAY_FLOAT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId,
+	const std::vector<int>& keys, const std::vector<int>& values)
+{
+	const SDictIntIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), values.data()};
+	HandleIntent(INTENT_DICT_INT, &intent);
+}
+
+void CSkirmishAIWrapper::Intent(int topic, int objId,
+	const std::vector<int>& keys, const std::vector<float>& values)
+{
+	const SDictFloatIntent intent = {topic, objId, (unsigned int)keys.size(), keys.data(), values.data()};
+	HandleIntent(INTENT_DICT_FLOAT, &intent);
+}
+
 
 int CSkirmishAIWrapper::HandleEvent(int topic, const void* data) const {
 	ScopedTimer timer(GetTimerNameHash());
@@ -464,3 +499,12 @@ int CSkirmishAIWrapper::HandleEvent(int topic, const void* data) const {
 	return 0;
 }
 
+
+int CSkirmishAIWrapper::HandleIntent(int topic, const void* data) const {
+	ScopedTimer timer(GetTimerNameHash());
+
+	if (!blockEvents)
+		return library->HandleIntent(skirmishAIId, topic, data);
+
+	return 0;
+}

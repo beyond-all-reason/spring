@@ -173,6 +173,21 @@ sharedLib_t CInterface::LoadSkirmishAILib(
 		reportInterfaceFunctionError(libFilePath, funcName);
 	}
 
+
+	funcName = "handleIntent";
+	funcAddr = sharedLib_findAddress(sharedLib, funcName.c_str());
+
+	skirmishAILibrary->handleIntent = (int (CALLING_CONV *)(
+		int skirmishAIId,
+		int topicId,
+		const void* data
+	)) funcAddr;
+
+	if (skirmishAILibrary->handleIntent == nullptr) {
+		// do nothing: it is not a requirement to handle game intents
+		//reportInterfaceFunctionError(libFilePath, funcName);
+	}
+
 	return sharedLib;
 }
 

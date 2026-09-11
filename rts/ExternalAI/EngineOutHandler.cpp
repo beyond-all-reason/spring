@@ -519,6 +519,40 @@ bool CEngineOutHandler::SendLuaMessages(int aiTeam, const char* inData, std::vec
 }
 
 
+void CEngineOutHandler::Intent(int teamId, int topic, int objId, int value) {
+	AI_SCOPED_TIMER();
+	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, value), teamId);
+}
+
+void CEngineOutHandler::Intent(int teamId, int topic, int objId, float value) {
+	AI_SCOPED_TIMER();
+	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, value), teamId);
+}
+
+void CEngineOutHandler::Intent(int teamId, int topic, int objId, const std::vector<int>& data) {
+	AI_SCOPED_TIMER();
+	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, data), teamId);
+}
+
+void CEngineOutHandler::Intent(int teamId, int topic, int objId, const std::vector<float>& data) {
+	AI_SCOPED_TIMER();
+	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, data), teamId);
+}
+
+void CEngineOutHandler::Intent(int teamId, int topic, int objId,
+	const std::vector<int>& keys, const std::vector<int>& values)
+{
+	AI_SCOPED_TIMER();
+	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, keys, values), teamId);
+}
+
+void CEngineOutHandler::Intent(int teamId, int topic, int objId,
+	const std::vector<int>& keys, const std::vector<float>& values)
+{
+	AI_SCOPED_TIMER();
+	DO_FOR_TEAM_SKIRMISH_AIS(Intent(topic, objId, keys, values), teamId);
+}
+
 
 void CEngineOutHandler::CreateSkirmishAI(const uint8_t skirmishAIId, bool savedGame) {
 	SCOPED_TIMER("AI");
@@ -587,4 +621,3 @@ void CEngineOutHandler::DestroySkirmishAI(const uint8_t skirmishAIId) {
 	// will trigger SkirmishAIHandler::RemoveSkirmishAI
 	clientNet->Send(CBaseNetProtocol::Get().SendAIStateChanged(gu->myPlayerNum, skirmishAIId, SKIRMAISTATE_DEAD));
 }
-
