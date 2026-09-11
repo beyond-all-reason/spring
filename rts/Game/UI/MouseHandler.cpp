@@ -883,15 +883,21 @@ void CMouseHandler::HideMouse()
 void CMouseHandler::ToggleMiddleClickScroll()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (locked) {
-		ShowMouse();
-	} else {
-		HideMouse();
-	}
-
 	locked = !locked;
 	mmbScroll = !mmbScroll;
 	ignoreMove = mmbScroll;
+
+	if (locked) {
+		HideMouse();
+	} else {
+		ShowMouse();
+
+		const int2 cursorPos = GetViewMouseCenter();
+		lastx = cursorPos.x;
+		lasty = cursorPos.y;
+		mouseInput->SetWarpPos(cursorPos);
+		UpdateCursorCameraDir();
+	}
 }
 
 
