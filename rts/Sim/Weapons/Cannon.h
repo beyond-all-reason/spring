@@ -46,7 +46,7 @@ private:
 	float3 GetWantedDir(const float3& diff);
 	float3 CalcWantedDir(const float3& diff) const;
 
-	const float3& GetAimFromPos(bool useMuzzle = false) const override { return weaponMuzzlePos; }
+	const float3& GetAimFromPos(bool useMuzzle = false) const override { return (useMuzzle ? weaponMuzzlePos : aimFromPos); }
 
 	bool HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const override final;
 	void FireImpl(const bool scriptCall) override final;
