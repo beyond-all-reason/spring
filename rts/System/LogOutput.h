@@ -4,7 +4,7 @@
 #define LOG_OUTPUT_H
 
 #include <string>
-#include <vector>
+#include <optional>
 
 
 /**
@@ -51,6 +51,27 @@ public:
 	void Initialize();
 	bool IsInitialized() const { return (!filePath.empty()); }
 
+	/**
+	 * @brief clear the log file currently being written
+	 *
+	 * Flushes and replaces the log file with an empty one.
+	 * Returns true on success.
+	 *
+	 * Must only be called after Initialize().
+	 */
+	bool ClearLog();
+
+	/**
+	 * @brief rotate the log file
+	 *
+	 * Moves the current log file into the "log/" subfolder under
+	 * the same naming scheme used at startup, then opens a fresh empty
+	 * log file. Returns true on success.
+	 *
+	 * Must only be called after Initialize().
+	 */
+	bool RotateLog();
+
 
 	/**
 	 * Log()s system information (CPU, 32/64bit, gcc/boost version, ...)
@@ -70,12 +91,12 @@ private:
 	static std::string CreateFilePath(const std::string& fileName);
 
 	/**
-	 * @brief moves the log file of the last run
+	 * @brief rotate the current log file into the archive directory
 	 *
-	 * Moves the log file of the last run, to preserve it,
-	 *
+	 * If the file sink is already active, it is reopened on a fresh log file.
+	 * Returns the filename of the archived file.
 	 */
-	void RotateLogFile() const;
+	std::optional <std::string> RotateLogFile() const;
 
 
 	std::string fileName;

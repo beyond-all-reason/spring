@@ -34,6 +34,10 @@ namespace log_file {
 			return outStream;
 		}
 
+		void SetOutStream(FILE* newStream) {
+			outStream = newStream;
+		}
+
 		bool IsLogging(int level, const char* section) const {
 			return ((level >= minLevel) && (sections.empty() || (sections.find("," + std::string(section) + ",") != std::string::npos)));
 		}
@@ -79,6 +83,7 @@ namespace log_file {
 	using LogFilePair = LogFilesContainer::LogFilePair;
 	using LogFilesMap = LogFilesContainer::LogFilesMap;
 
+	constexpr auto kLogFilePred = [](const LogFilePair& a, const LogFilePair& b) { return (a.first < b.first); };
 
 	inline LogFilesMap& getLogFiles() {
 		static LogFilesContainer logFilesContainer;
@@ -187,6 +192,28 @@ namespace log_file {
 }
 
 
+static FILE* log_file_openLogFile(const char* filePath, const char* mode, bool writeByteOrderMark) {
+	FILE* tmpStream = nowide::fopen(filePath, mode);
+
+	if (tmpStream == nullptr)
+		return nullptr;
+
+	if (writeByteOrderMark)
+		fwrite("\xEF\xBB\xBF", 1, 3, tmpStream); // Write the 3-byte UTF-8 byte order mark
+
+	setvbuf(tmpStream, nullptr, _IOFBF, std::min(BUFSIZ, 8192)); // limit buffer to 8kB
+	return tmpStream;
+}
+
+static FILE* log_file_openFreshLogFile(const char* filePath) {
+	return log_file_openLogFile(filePath, "wb", true);
+}
+
+static FILE* log_file_reopenExistingLogFile(const char* filePath) {
+	return log_file_openLogFile(filePath, "ab", false);
+}
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -211,15 +238,12 @@ void log_file_addLogFile(
 	if (iter != logFiles.end() && iter->first == filePathStr)
 		return;
 
-	FILE* tmpStream = nowide::fopen(filePath, "wb");
+	FILE* tmpStream = log_file_openFreshLogFile(filePath);
 
 	if (tmpStream == nullptr) {
 		LOG_L(L_ERROR, "[%s] failed to open log file \"%s\" for writing", __func__, filePath);
 		return;
 	}
-
-	fwrite("\xEF\xBB\xBF", 1, 3, tmpStream); // Write the 3-byte UTF-8 byte order mark
-	setvbuf(tmpStream, nullptr, _IOFBF, std::min(BUFSIZ, 8192)); // limit buffer to 8kB
 
 	logFiles.emplace_back(filePathStr, log_file::LogFileDetails(tmpStream, sectionsStr, minLevel, flushLevel));
 
@@ -278,6 +302,87 @@ FILE* log_file_getLogFileStream(const char* filePath) {
 	}
 
 	return nullptr;
+}
+
+
+int log_file_truncateLogFile(const char* filePath) {
+	assert(filePath != nullptr);
+
+	auto& logFiles = log_file::getLogFiles();
+
+	const auto iter = std::lower_bound(logFiles.begin(), logFiles.end(), log_file::LogFilePair{filePath, nullptr}, log_file::kLogFilePred);
+
+	if (iter == logFiles.end() || iter->first != filePath)
+		return 0;
+
+	// flush & close current stream so the truncate is observed by the OS
+	if (FILE* oldStream = iter->second.GetOutStream(); oldStream != nullptr) {
+		fflush(oldStream);
+		fclose(oldStream);
+		iter->second.SetOutStream(nullptr);
+	}
+
+	FILE* newStream = log_file_openFreshLogFile(filePath);
+
+	if (newStream == nullptr) {
+		LOG_L(L_ERROR, "[%s] failed to reopen log file \"%s\" after truncate", __func__, filePath);
+		// drop the entry so subsequent writes do not target a closed stream
+		logFiles.erase(iter);
+		return -1;
+	}
+
+	iter->second.SetOutStream(newStream);
+	return 1;
+}
+
+
+int log_file_rotateLogFile(const char* filePath, const char* archivePath) {
+	assert(filePath != nullptr);
+	assert(archivePath != nullptr);
+
+	auto& logFiles = log_file::getLogFiles();
+
+	const auto iter = std::lower_bound(logFiles.begin(), logFiles.end(), log_file::LogFilePair{filePath, nullptr}, log_file::kLogFilePred);
+
+	const bool isRegistered = (iter != logFiles.end() && iter->first == filePath);
+
+	if (isRegistered && iter->second.GetOutStream() != nullptr) {
+		FILE* oldStream = iter->second.GetOutStream();
+		fflush(oldStream);
+		fclose(oldStream);
+		iter->second.SetOutStream(nullptr);
+	}
+
+	if (nowide::rename(filePath, archivePath) != 0) {
+		LOG_L(L_ERROR, "[%s] failed to rename \"%s\" to \"%s\"", __func__, filePath, archivePath);
+
+		if (isRegistered) {
+			FILE* reopenedStream = log_file_reopenExistingLogFile(filePath);
+
+			if (reopenedStream == nullptr) {
+				LOG_L(L_ERROR, "[%s] failed to reopen log file \"%s\" after rotate", __func__, filePath);
+				logFiles.erase(iter);
+			} else {
+				iter->second.SetOutStream(reopenedStream);
+			}
+		}
+
+		return -1;
+	}
+
+	if (!isRegistered)
+		return 1;
+
+	FILE* newStream = log_file_openFreshLogFile(filePath);
+
+	if (newStream == nullptr) {
+		LOG_L(L_ERROR, "[%s] failed to reopen log file \"%s\" after rotate", __func__, filePath);
+		logFiles.erase(iter);
+		return -1;
+	}
+
+	iter->second.SetOutStream(newStream);
+	return 1;
 }
 
 

@@ -204,6 +204,8 @@ class LuaUnsyncedCtrl {
 		static int SendSkirmishAIMessage(lua_State* L);
 
 		static int SetLogSectionFilterLevel(lua_State* L);
+		static int ClearLog(lua_State* L);
+		static int RotateLog(lua_State* L);
 
 		static int ClearWatchDogTimer(lua_State* L);
 		static int GarbageCollectCtrl(lua_State* L);

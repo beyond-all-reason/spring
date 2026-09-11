@@ -13,13 +13,13 @@
 #include "System/Log/LogUtil.h"
 #include "System/Platform/Misc.h"
 #include "System/Platform/Threading.h"
+#include "System/TimeUtil.h"
 #include "System/UnorderedMap.hpp"
 
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <ranges>
-#include <nowide/cstdio.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -138,25 +138,29 @@ std::string CLogOutput::CreateFilePath(const std::string& fileName)
 }
 
 
-void CLogOutput::RotateLogFile() const
+std::optional <std::string> CLogOutput::RotateLogFile() const
 {
 	if (!FileSystem::FileExists(filePath))
-		return;
+		return {};
 
 	const auto baseDir = FileSystem::GetDirectory(filePath);
 	// logArchiveDir: /absolute/writeable/data/dir/log/
 	const std::string logArchiveDir = FileSystem::Concatenate({ baseDir, "log/"});
-	const std::string archivedLogFile = logArchiveDir + FileSystem::GetFileModificationDate(filePath) + "_" + fileName;
+	const std::string archivedLogFile = logArchiveDir + CTimeUtil::GetCurrentTimeStr() + "_" + fileName;
 
 	// create the log archive dir if it does not exist yet
-	if (!FileSystem::DirExists(logArchiveDir))
-		FileSystem::CreateDirectory(logArchiveDir);
+	if (!FileSystem::DirExists(logArchiveDir) && !FileSystem::CreateDirectory(logArchiveDir)) {
+		std::cerr << "Failed creating log archive directory" << std::endl;
+		return {};
+	}
 
 	// move the old log to the archive dir
-	if (nowide::rename(filePath.c_str(), archivedLogFile.c_str()) != 0) {
-		// no log here yet
+	if (log_file_rotateLogFile(filePath.c_str(), archivedLogFile.c_str()) <= 0) {
 		std::cerr << "Failed rotating the log file" << std::endl;
+		return {};
 	}
+
+	return archivedLogFile;
 }
 
 
@@ -282,3 +286,37 @@ void CLogOutput::LogExceptionInfo(const char* src, const char* msg)
 	LOG_L(L_ERROR, "[%s] exception \"%s\"", src, msg);
 }
 
+bool CLogOutput::ClearLog()
+{
+	// defensive, not actually supposed to ever happen
+	if (!IsInitialized()) {
+		LOG_L(L_WARNING, "[%s] log output not yet initialized", __func__);
+		return false;
+	}
+
+	const int rc = log_file_truncateLogFile(filePath.c_str());
+	if (rc <= 0) {
+		LOG_L(L_ERROR, "[%s] failed to truncate log file \"%s\"", __func__, filePath.c_str());
+		return false;
+	}
+
+	LOG("The log file \"%s\" was cleared.", filePath.c_str());
+	return true;
+}
+
+bool CLogOutput::RotateLog()
+{
+	if (!IsInitialized()) {
+		LOG_L(L_WARNING, "[%s] log output not yet initialized", __func__);
+		return false;
+	}
+
+	const auto rotatedFilePath = RotateLogFile();
+	if (!rotatedFilePath) {
+		LOG_L(L_ERROR, "[%s] failed to rotate log file \"%s\"", __func__, filePath.c_str());
+		return false;
+	}
+
+	LOG("The log file was rotated to \"%s\".", rotatedFilePath->c_str());
+	return true;
+}

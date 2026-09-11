@@ -78,6 +78,7 @@
 #include "System/GlobalConfig.h"
 #include "System/Log/DefaultFilter.h"
 #include "System/Log/ILog.h"
+#include "System/LogOutput.h"
 #include "System/Net/PackPacket.h"
 #include "System/Platform/Misc.h"
 #include "System/SafeUtil.h"
@@ -311,6 +312,8 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SendSkirmishAIMessage);
 
 	REGISTER_LUA_CFUNC(SetLogSectionFilterLevel);
+	REGISTER_LUA_CFUNC(ClearLog);
+	REGISTER_LUA_CFUNC(RotateLog);
 
 	REGISTER_LUA_CFUNC(ClearWatchDogTimer);
 	REGISTER_LUA_CFUNC(GarbageCollectCtrl);
@@ -4439,6 +4442,32 @@ int LuaUnsyncedCtrl::SetLogSectionFilterLevel(lua_State* L) {
 
 	log_frontend_register_runtime_section(loglevel, luaL_checkstring(L, 1));
 	return 0;
+}
+
+/*** Clears the engine log file (`infolog.txt`).
+ *
+ * Flushes and truncates the current log file in place.
+ *
+ * @function Spring.ClearLog
+ * @return boolean success
+ */
+int LuaUnsyncedCtrl::ClearLog(lua_State* L) {
+	lua_pushboolean(L, logOutput.ClearLog());
+	return 1;
+}
+
+/*** Rotates the engine log file.
+ *
+ * Moves the current log file into the `log/` subfolder (using the same
+ * naming scheme as the `RotateLogFiles` config option), then flushes
+ * and opens a fresh empty log file.
+ *
+ * @function Spring.RotateLog
+ * @return boolean success
+ */
+int LuaUnsyncedCtrl::RotateLog(lua_State* L) {
+	lua_pushboolean(L, logOutput.RotateLog());
+	return 1;
 }
 
 /*** @function Spring.GarbageCollectCtrl

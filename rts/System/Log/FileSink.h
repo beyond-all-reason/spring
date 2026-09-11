@@ -41,6 +41,25 @@ void log_file_removeLogFile(const char* filePath);
 
 void log_file_removeAllLogFiles();
 
+/**
+ * Truncate the registered log file at @p filePath, leaving the sink active.
+ *
+ * The current stream is flushed and closed, the file on disk is replaced
+ * with a fresh empty one (3-byte UTF-8 BOM written), and a new stream
+ * is opened with the same buffering settings. Returns 1 on success,
+ * 0 if no such log file is registered, -1 if reopening the file failed
+ * (in which case the sink entry is removed to avoid dangling streams).
+ */
+int log_file_truncateLogFile(const char* filePath);
+
+/**
+ * Rotate @p filePath by moving it to @p archivePath. If @p filePath is a
+ * registered log file, its stream is flushed and closed before the move and
+ * replaced with a fresh empty stream afterwards. Returns 1 on success, -1 if
+ * rename or reopen failed.
+ */
+int log_file_rotateLogFile(const char* filePath, const char* archivePath);
+
 ///@}
 
 #ifdef __cplusplus

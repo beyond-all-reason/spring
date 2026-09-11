@@ -202,6 +202,8 @@ bool CLuaMenu::LoadUnsyncedCtrlFunctions(lua_State* L)
 
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, SetLogSectionFilterLevel);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, ClearLog);
+	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, RotateLog);
 
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Restart);
 	REGISTER_SCOPED_LUA_CFUNC(LuaUnsyncedCtrl, Reload);
