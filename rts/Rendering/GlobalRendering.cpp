@@ -782,6 +782,12 @@ void CGlobalRendering::CheckGLExtensions()
 	if (underExternalDebug)
 		return;
 
+	// In an OpenGL CORE profile context these ARB extensions are not advertised
+	// by name (they were folded into GL 1.3/2.0/3.0 long ago) but their
+	// functionality is guaranteed by the spec. Skip the legacy-extension check.
+	if (globalRenderingInfo.glContextIsCore)
+		return;
+
 	char extMsg[ 128] = {0};
 	char errMsg[2048] = {0};
 	char* ptr = &extMsg[0];
