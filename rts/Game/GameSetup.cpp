@@ -202,6 +202,8 @@ void CGameSetup::ResetState()
 	maxSpeed = 0.0f;
 	minSpeed = 0.0f;
 
+	interplayerSecrets = false;
+
 	startPosType = StartPos_Fixed;
 
 
@@ -632,6 +634,7 @@ bool CGameSetup::Init(const std::string& buf)
 	file.GetDef(maxUnitsPerTeam, "32000", "GAME\\ModOptions\\MaxUnits");
 	file.GetDef(disableMapDamage,    "0", "GAME\\ModOptions\\DisableMapDamage");
 	file.GetDef(ghostedBuildings,    "1", "GAME\\ModOptions\\GhostedBuildings");
+	file.GetDef(interplayerSecrets,  "0", "GAME\\ModOptions\\InterplayerSecrets");
 
 	file.GetDef(maxSpeed, "20.", "GAME\\ModOptions\\MaxSpeed");
 	file.GetDef(minSpeed, "0.1", "GAME\\ModOptions\\MinSpeed");

@@ -40,7 +40,7 @@ public:
 	void SendPlayerJoined(uchar playerNum, const std::string& name);
 	void SendPlayerLeft(uchar playerNum, uchar reason);
 	void SendPlayerReady(uchar playerNum, uchar readyState);
-	void SendPlayerChat(uchar playerNum, uchar destination, const std::string& msg);
+	void SendPlayerChat(uchar playerNum, uchar destination, const std::string& msg, bool isSecret);
 	void SendPlayerDefeated(uchar playerNum);
 
 	void Message(const std::string& message);

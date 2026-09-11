@@ -77,6 +77,8 @@ public:
 
 		restrictedUnits = std::move(gs.restrictedUnits);
 
+		interplayerSecrets = gs.interplayerSecrets;
+
 		mapOptions = std::move(gs.mapOptions);
 		modOptions = std::move(gs.modOptions);
 		return *this;
@@ -218,6 +220,8 @@ public:
 	std::string setupText;
 	std::string reloadScript;
 	std::string demoName;
+
+	bool interplayerSecrets;
 
 	inline static bool forceOnlyLocal = false;
 private:

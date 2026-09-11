@@ -93,6 +93,15 @@ local options =
     type   = 'bool',
     def    = false,
   },
+
+  {
+    key    = 'InterplayerSecrets',
+    name   = 'Allow Interplayer Secrets',
+    desc   = 'Enables player sending of secret chat messages to other players',
+    type   = 'bool',
+    def    = false,
+  },
+
 --[[
 -- the following options can create problems and were never used by interface programs, thus are commented out for the moment
 

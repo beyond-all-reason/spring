@@ -8,9 +8,10 @@
 
 #include "System/Misc/TracyDefs.h"
 
-ChatMessage::ChatMessage(int from, int dest, const std::string& chat)
+ChatMessage::ChatMessage(int from, int dest, const std::string& chat, bool isSecret)
 	: fromPlayer(from)
 	, destination(dest)
+	, isSecret(isSecret)
 {
 	// restrict all (player and autohost) chat-messages before they get Pack()'ed
 	msg.resize(std::min(chat.size(), MAX_MSG_SIZE));
@@ -25,7 +26,7 @@ ChatMessage::ChatMessage(int from, int dest, const std::string& chat)
 ChatMessage::ChatMessage(std::shared_ptr<const netcode::RawPacket> data)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	assert(data->data[0] == NETMSG_CHAT);
+	assert(data->data[0] == NETMSG_CHAT || data->data[0] == NETMSG_SECRET_CHAT);
 	assert(data->length <= (4 * sizeof(uint8_t) + MAX_MSG_SIZE + 1));
 
 	netcode::UnpackPacket packet(data, 2);
@@ -39,6 +40,8 @@ ChatMessage::ChatMessage(std::shared_ptr<const netcode::RawPacket> data)
 
 	fromPlayer = from;
 	destination = dest;
+
+	isSecret = (data->data[0] == NETMSG_SECRET_CHAT);
 }
 
 const netcode::RawPacket* ChatMessage::Pack() const
@@ -52,7 +55,7 @@ const netcode::RawPacket* ChatMessage::Pack() const
 
 	assert(packetSize <= (headerSize + MAX_MSG_SIZE + 1));
 
-	netcode::PackPacket* buffer = new netcode::PackPacket(packetSize, NETMSG_CHAT);
+	netcode::PackPacket* buffer = new netcode::PackPacket(packetSize, isSecret ? NETMSG_SECRET_CHAT : NETMSG_CHAT);
 
 	*buffer << packetSize;
 	*buffer << static_cast<uint8_t>(fromPlayer);

@@ -85,7 +85,7 @@ public:
 	void AddTraffic(int playerID, int packetCode, int length);
 
 	/// Send a message to other players (allows prefixed messages with e.g. "a:...")
-	void SendNetChat(std::string message, int destination = -1);
+	void SendNetChat(std::string message, int destination = -1, bool isSecret = false);
 
 	bool ProcessCommandText(const std::string& command);
 	bool ProcessAction(const Action& action, bool isRepeat = false);

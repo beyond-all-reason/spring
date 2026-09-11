@@ -75,6 +75,7 @@ CONFIG(bool, WhiteListAdditionalPlayers).defaultValue(true);
 CONFIG(bool, ServerRecordDemos).defaultValue(false).dedicatedValue(true);
 CONFIG(bool, ServerLogInfoMessages).defaultValue(false);
 CONFIG(bool, ServerLogDebugMessages).defaultValue(false);
+CONFIG(bool, InterplayerSecretsForbidden).defaultValue(true);
 CONFIG(std::string, AutohostIP).defaultValue("127.0.0.1");
 
 
@@ -163,6 +164,7 @@ void CGameServer::Initialize()
 	whiteListAdditionalPlayers = configHandler->GetBool("WhiteListAdditionalPlayers");
 	logInfoMessages = configHandler->GetBool("ServerLogInfoMessages");
 	logDebugMessages = configHandler->GetBool("ServerLogDebugMessages");
+	allowInterplayerSecrets = myGameSetup->interplayerSecrets && !configHandler->GetBool("InterplayerSecretsForbidden");
 
 	rng.Seed((myGameData->GetSetupText()).length());
 
@@ -347,11 +349,16 @@ void CGameServer::StripGameSetupText(GameData* gameData)
 	TdfParser::TdfSection* gameSec = rootSec->sections["game"];
 
 	for (const auto& sectionPair: gameSec->sections) {
-		if (!StringStartsWith(StringToLower(sectionPair.first), "player"))
-			continue;
+		const auto sectionNameLower = StringToLower(sectionPair.first);
+		if (StringStartsWith(sectionNameLower, "player")) {
+			TdfParser::TdfSection* playerSec = sectionPair.second;
+			playerSec->remove("password", false);
+		}
+		else if (!allowInterplayerSecrets && StringStartsWith(sectionNameLower, "modoptions")) {
+			TdfParser::TdfSection* modconfigSec = sectionPair.second;
+			modconfigSec->remove("interplayersecrets", false);
+		}
 
-		TdfParser::TdfSection* playerSec = sectionPair.second;
-		playerSec->remove("password", false);
 	}
 
 	std::ostringstream strbuf;
@@ -562,6 +569,22 @@ void CGameServer::Broadcast(std::shared_ptr<const netcode::RawPacket> packet)
 
 	if (demoRecorder != nullptr)
 		demoRecorder->SaveToDemo(packet->data, packet->length, GetDemoTime());
+}
+
+void CGameServer::SendSecret(const ChatMessage& msg)
+{
+	const int fromPlayer = msg.fromPlayer;
+	const int toPlayer   = msg.destination;
+
+	if (toPlayer < 0 || toPlayer >= players.size())
+		return;
+
+	// Allows the server to send.
+	// Usually it would use PrivateMessage -> SendSystemMessage instead, but may be needed
+	// in some situations like if autohost wants to send secret messages to players.
+	if (fromPlayer == SERVER_PLAYER || ( allowInterplayerSecrets && !players[fromPlayer].IsSpectator() && !players[toPlayer].IsSpectator() )) {
+		players[toPlayer].SendData(std::shared_ptr<const RawPacket>(msg.Pack()));
+	}
 }
 
 void CGameServer::Message(const std::string& message, bool broadcast, bool internal)
@@ -853,10 +876,10 @@ void CGameServer::Update()
 
 		if (!msg.empty()) {
 			if (msg.at(0) != '/') { // normal chat message
-				GotChatMessage(ChatMessage(SERVER_PLAYER, ChatMessage::TO_EVERYONE, msg));
+				GotChatMessage(ChatMessage(SERVER_PLAYER, ChatMessage::TO_EVERYONE, msg, false));
 			}
 			else if (msg.at(0) == '/' && msg.size() > 1 && msg.at(1) == '/') { // chatmessage with prefixed '/'
-				GotChatMessage(ChatMessage(SERVER_PLAYER, ChatMessage::TO_EVERYONE, msg.substr(1)));
+				GotChatMessage(ChatMessage(SERVER_PLAYER, ChatMessage::TO_EVERYONE, msg.substr(1), false));
 			}
 			else if (msg.size() > 1) { // command
 				PushAction(Action(msg.substr(1)), true);
@@ -1148,6 +1171,7 @@ void CGameServer::ProcessPacket(const unsigned playerNum, std::shared_ptr<const 
 			Broadcast(CBaseNetProtocol::Get().SendPathCheckSum(playerNum, playerCheckSum));
 		} break;
 
+		case NETMSG_SECRET_CHAT:
 		case NETMSG_CHAT: {
 			try {
 				ChatMessage msg(packet);
@@ -3124,8 +3148,10 @@ void CGameServer::GotChatMessage(const ChatMessage& msg)
 	// silently drop empty chat messages
 	if (msg.msg.empty())
 		return;
-
-	Broadcast(std::shared_ptr<const RawPacket>(msg.Pack()));
+	if (msg.isSecret)
+		SendSecret(msg);
+	else
+		Broadcast(std::shared_ptr<const RawPacket>(msg.Pack()));
 
 	if (hostif == nullptr)
 		return;
@@ -3134,7 +3160,9 @@ void CGameServer::GotChatMessage(const ChatMessage& msg)
 	if (msg.fromPlayer < 0 || msg.fromPlayer == SERVER_PLAYER)
 		return;
 
-	hostif->SendPlayerChat(msg.fromPlayer, msg.destination, msg.msg);
+	// do not forward interplayer secrets to autohost if they're not allowed.
+	if (!msg.isSecret || allowInterplayerSecrets || msg.destination == SERVER_PLAYER)
+		hostif->SendPlayerChat(msg.fromPlayer, msg.destination, msg.msg, msg.isSecret);
 }
 
 

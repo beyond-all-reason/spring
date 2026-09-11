@@ -14,7 +14,7 @@ namespace netcode {
 class ChatMessage
 {
 public:
-	ChatMessage(int from, int dest, const std::string& chat);
+	ChatMessage(int from, int dest, const std::string& chat, bool isSecret);
 	ChatMessage(std::shared_ptr<const netcode::RawPacket> packet);
 
 	const netcode::RawPacket* Pack() const;
@@ -28,6 +28,8 @@ public:
 	int fromPlayer = -1;
 	/// can be TO_ALLIES, TO_SPECTATORS, TO_EVERYONE, or a player number
 	int destination = -1;
+
+	bool isSecret = false;
 
 	std::string msg;
 };

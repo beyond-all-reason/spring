@@ -138,6 +138,20 @@ enum EVENT
 	PLAYER_DEFEATED = 14,
 
 	/**
+	 * Player has sent a secret chat message
+	 *
+	 *   (uint8 playernumber, uint8 destination, char[] text)
+	 *
+	 * Message should not be:
+	 *  * Logged into public destinations
+	 *  * Forwarded to all players.
+	 *  * Sent to spectators.
+	 *
+	 * destination works like PLAYER_CHAT but will only be sent to TO_SERVER and specific playerIds for now.
+	 */
+	PLAYER_SECRET_CHAT = 15,
+
+	/**
 	 * Message sent by Lua script
 	 *
 	 *   (uint8 magic = 50, uint16 msgsize, uint8 playernumber, uint16 script, uint8 uiMode, uint8[msgsize - 8] data)
@@ -318,12 +332,12 @@ void AutohostInterface::SendPlayerReady(uchar playerNum, uchar readyState)
 	Send(asio::buffer(&msg, 3 * sizeof(uchar)));
 }
 
-void AutohostInterface::SendPlayerChat(uchar playerNum, uchar destination, const std::string& chatmsg)
+void AutohostInterface::SendPlayerChat(uchar playerNum, uchar destination, const std::string& chatmsg, bool isSecret)
 {
 	if (autohost.is_open()) {
 		const auto msgsize = 3 * sizeof(uchar) + chatmsg.size();
 		std::vector<std::uint8_t> buffer(msgsize);
-		buffer[0] = PLAYER_CHAT;
+		buffer[0] = isSecret ? PLAYER_SECRET_CHAT : PLAYER_CHAT;
 		buffer[1] = playerNum;
 		buffer[2] = destination;
 		std::copy(chatmsg.begin(), chatmsg.end(), &buffer[3]);

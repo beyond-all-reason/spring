@@ -31,6 +31,7 @@ class LuaUnsyncedCtrl {
 		static int SendAllyChat(lua_State* L);
 		static int SendSpectatorChat(lua_State* L);
 		static int SendPrivateChat(lua_State* L);
+		static int SendSecretChat(lua_State* L);
 
 		static int LoadSoundDef(lua_State* L);
 		static int PlaySoundFile(lua_State* L);

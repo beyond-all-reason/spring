@@ -584,6 +584,43 @@ public:
 
 
 
+class SaySecretByPlayerIDActionExecutor : public IUnsyncedActionExecutor {
+public:
+	SaySecretByPlayerIDActionExecutor() : IUnsyncedActionExecutor("SByNum", "Say a secret to a specific player, by player-ID") {
+	}
+
+	bool Execute(const UnsyncedAction& action) const final {
+		auto args = CSimpleParser::Tokenize(action.GetArgs(), 1);
+
+		if (args.size() == 0) {
+			LOG_L(L_WARNING, "/SByNum: wrong syntax (which is '/SByNum %%playerid')");
+			return true;
+		}
+
+		bool parseFailure;
+		const int playerID = StringToInt(args[0], &parseFailure);
+
+		if (parseFailure) {
+			LOG_L(L_WARNING, "/SByNum: wrong syntax (which is '/SByNum %%playerid')");
+			return true;
+		}
+
+		if (!gameSetup->interplayerSecrets && playerID != SERVER_PLAYER) {
+			LOG_L(L_WARNING, "Sending secrets to other players disallowed by game configuration");
+		}
+		else if (playerID == SERVER_PLAYER || playerHandler.IsValidPlayer(playerID)) {
+			std::string message = (args.size() == 2) ? std::move(args[1]) : "";
+			game->SendNetChat(std::move(message), playerID, true);
+		} else {
+			LOG_L(L_WARNING, "Player-ID invalid: %i", playerID);
+		}
+
+		return true;
+	}
+};
+
+
+
 class EchoActionExecutor : public IUnsyncedActionExecutor {
 public:
 	EchoActionExecutor() : IUnsyncedActionExecutor("Echo", "Write a string to the log file") {
@@ -4067,6 +4104,7 @@ void UnsyncedGameCommands::AddDefaultActionExecutors()
 	AddActionExecutor(AllocActionExecutor<SayActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SayPrivateByPlayerIDActionExecutor>());
+	AddActionExecutor(AllocActionExecutor<SaySecretByPlayerIDActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<EchoActionExecutor>());
 	AddActionExecutor(AllocActionExecutor<SetActionExecutor>(true));
 	AddActionExecutor(AllocActionExecutor<SetActionExecutor>(false));

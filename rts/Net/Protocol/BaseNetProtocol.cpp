@@ -626,6 +626,7 @@ CBaseNetProtocol::CBaseNetProtocol()
 	proto->AddType(NETMSG_SETPLAYERNUM, 2);
 	proto->AddType(NETMSG_PLAYERNAME, -1);
 	proto->AddType(NETMSG_CHAT, -1);
+	proto->AddType(NETMSG_SECRET_CHAT, -1);
 	proto->AddType(NETMSG_RANDSEED, 5);
 	proto->AddType(NETMSG_GAMEID, 17);
 	proto->AddType(NETMSG_PATH_CHECKSUM, 1 + 1 + sizeof(uint32_t));

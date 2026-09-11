@@ -96,6 +96,9 @@ enum NETMSG {
 
 	NETMSG_PING = 78, // uint8_t playerNum, uint8_t pingTag, float localTime
 
+	NETMSG_SECRET_CHAT     = 79,  // uint8_t from, dest; std::string message; (same as NETMSG_CHAT, but secret, the servers should not log it into public destinations, and should also send just to the destination players.)
+				      // it can't be sent to group destinations or spectators, and it also can't be sent to players unless AllowInterplayerSecrets.
+
 	NETMSG_LAST //max types of netmessages, internal only
 };
 
