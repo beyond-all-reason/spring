@@ -316,7 +316,9 @@ float TraceRay(
 		// ground intersection
 		const float groundLength = CGround::LineGroundCol(pos, pos + dir * traceLength);
 
-		if (traceLength > groundLength && groundLength > 0.0f) {
+		// a return value of 0 means the ray starts underground (or on the surface pointing into
+		// it), which blocks it at the origin; only -1 signals that the ground was not hit at all
+		if (traceLength > groundLength && groundLength >= 0.0f) {
 			traceLength = groundLength;
 
 			hitUnit = nullptr;

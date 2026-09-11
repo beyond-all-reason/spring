@@ -242,10 +242,11 @@ float CGround::LineGroundCol(float3 from, float3 to, bool synced)
 	if (synced) {
 		// TODO: do this in unsynced too?
 		// check if our start position is underground (assume ground is unpassable for cannons etc.)
-		const int sx = from.x / SQUARE_SIZE;
-		const int sz = from.z / SQUARE_SIZE;
-
-		if (from.y <= hm[sz * mapDims.mapxp1 + sx])
+		// compare against the interpolated surface rather than the corner vertex of the square:
+		// next to a steep rise that vertex can sit far above a start point that is well clear of
+		// the ground, and a start exactly on the surface is not underground (LineGroundSquareCol
+		// reports a hit at distance 0 for it if the ray points into the ground)
+		if (from.y < InterpolateCornerHeight(from.x, from.z, hm))
 			return 0.0f + skippedDist;
 	}
 

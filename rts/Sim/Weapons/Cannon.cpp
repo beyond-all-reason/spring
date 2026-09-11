@@ -60,6 +60,10 @@ void CCannon::UpdateRange(const float val)
 bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, const SWeaponTarget& trg) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	// Use real terrain height: the trajectory scan's approximate height can be above a clear source.
+	if ((avoidFlags & Collision::NOGROUND) == 0 && srcPos.y < CGround::GetHeightReal(srcPos))
+		return false;
+
 	// assume we can still fire at partially submerged targets
 	if (!weaponDef->waterweapon && TargetUnderWater(tgtPos, trg))
 		return false;
@@ -94,6 +98,9 @@ bool CCannon::HaveFreeLineOfFire(const float3& srcPos, const float3& tgtPos, con
 		-1.0f;
 	const float angleSpread = (AccuracyExperience() + SprayAngleExperience()) * 0.6f * 0.9f;
 
+	// This scan uses approximate cell-center terrain heights, so a zero-distance hit
+	// can report an above-ground source as blocked. Keep > 0; the GetHeightReal check
+	// above rejects sources that are actually underground.
 	if (groundDist > 0.0f)
 		return false;
 
@@ -260,4 +267,3 @@ float CCannon::GetStaticRange2D(const float2& baseConsts, const float2& projCons
 
 	return (CalcRange2D({baseConsts.y, 0.7071067f, 100.0f}, projConsts, {wdRangeBoostFact, wdHeightBoostFact}));
 }
-
