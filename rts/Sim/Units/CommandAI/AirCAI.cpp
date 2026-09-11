@@ -431,6 +431,12 @@ void CAirCAI::ExecuteAttack(Command& c)
 				StopMoveAndFinishCommand();
 				return;
 			}
+			// a queued attack on a flyer that is already crashing cannot be carried
+			// out; skip it now instead of waiting for the next SlowUpdate to notice
+			if (targetUnit->unitDef->canfly && targetUnit->IsCrashing()) {
+				StopMoveAndFinishCommand();
+				return;
+			}
 
 			SetGoal(targetUnit->pos, owner->pos, cancelDistance);
 			SetOrderTarget(targetUnit);
