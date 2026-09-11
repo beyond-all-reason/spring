@@ -7,6 +7,7 @@
 #include "LuaInclude.h"
 #include "LuaHandle.h"
 #include "LuaHashString.h"
+#include "LuaIO.h"
 #include "LuaMenu.h"
 #include "LuaOpenGLUtils.h"
 #include "LuaParser.h"
@@ -2724,6 +2725,9 @@ int LuaUnsyncedCtrl::SetUnitDefImage(lua_State* L)
 int LuaUnsyncedCtrl::ExtractModArchiveFile(lua_State* L)
 {
 	const string path = luaL_checkstring(L, 1);
+
+	if (!LuaIO::SafeWritePath(path))
+		luaL_error(L, "[%s] invalid access: %s", __func__, path.c_str());
 
 	CFileHandler vfsFile(path, SPRING_VFS_ZIP);
 	CFileHandler rawFile(path, SPRING_VFS_RAW);

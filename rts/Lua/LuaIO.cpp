@@ -78,6 +78,16 @@ bool LuaIO::SafeReadPath(const std::string& path)
 bool LuaIO::SafeWritePath(const std::string& path)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
+	#ifdef _WIN32
+	// reject NTFS streams and path components Win32 silently normalizes
+	for (std::size_t i = 0; i < path.size(); ++i) {
+		if (path[i] == ':' ||
+		    ((path[i] == '.' || path[i] == ' ') &&
+		     (i + 1 == path.size() || path[i + 1] == '/' || path[i + 1] == '\\')))
+			return false;
+	}
+	#endif
+
 	const std::array<std::string, 5> exeFiles = {"exe", "dll", "so", "bat", "com"};
 	const std::string ext = FileSystem::GetExtensionLowerCase(path);
 
@@ -100,7 +110,8 @@ FILE* LuaIO::fopen(lua_State* L, const char* path, const char* mode)
 		errno = EINVAL;
 		return nullptr;
 	}
-	if (!IsSafePath(path)) {
+	const bool writeMode = (modeStr.find_first_of("wa+") != std::string::npos);
+	if (!IsSafePath(path) || (writeMode && !SafeWritePath(path))) {
 		errno = EPERM; //EACCESS?
 		return nullptr;
 	}
