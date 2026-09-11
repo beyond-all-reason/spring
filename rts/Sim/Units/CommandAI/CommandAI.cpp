@@ -1546,9 +1546,8 @@ void CCommandAI::SlowUpdate()
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (gs->paused) // Commands issued may invoke SlowUpdate when paused
 		return;
-	if (commandQue.empty()) {
+	if (commandQue.empty())
 		return;
-	}
 
 	Command& c = commandQue.front();
 
@@ -1589,6 +1588,24 @@ void CCommandAI::SlowUpdate()
 		return;
 
 	FinishCommand();
+}
+
+
+// The intent here is for units to call this each frame in Unit::Update(). SlowUpdate() is run before Update(), so
+// this is not expected to impact the existing behaviour of unit SlowUpdate().
+void CCommandAI::CheckForAndAttemptNewCommand() {
+
+	// Infinite loop protection.
+	if (lastFinishCommand == gs->frameNum)
+		return;
+
+	// If we don't have a command and there's one in the queue then try and start it.
+	if (inCommand == CMD_STOP) {
+		// Only try to process a new command once per frame. Letting this get set by FinishCommand() will cause
+		// SlowUpdate() to trigger twice in a single frame.
+		lastFinishCommand = gs->frameNum;
+		SlowUpdate();
+	}
 }
 
 

@@ -691,6 +691,8 @@ void CUnit::Update()
 		return;
 	}
 
+	commandAI->CheckForAndAttemptNewCommand();
+
 	restTime += 1;
 }
 
