@@ -1000,22 +1000,38 @@ void CMobileCAI::SetGoal(const float3& pos, const float3& /*curPos*/, float goal
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// check if owner already has a move order to this position with the same radius
-	if (owner->moveType->IsMovingTowards(pos, goalRadius, true))
-		return;
+	if (owner->moveType->IsMovingTowards(pos, goalRadius, true)) {
+		// a goal that a previous command gave (e.g. one replaced by a queue edit) now
+		// belongs to the active command, so that removing it stops the unit (see
+		// ExecuteRemove); a goal set from Lua (tag 0) is left alone
+		if (moveGoalCmdTag != 0)
+			moveGoalCmdTag = ActiveCmdTag();
 
-	// give new move order
+		return;
+	}
+
+	// give new move order, owned by the active command
 	owner->moveType->StartMoving(pos, goalRadius);
+	moveGoalCmdTag = ActiveCmdTag();
 }
 
 void CMobileCAI::SetGoal(const float3& pos, const float3& /*curPos*/, float goalRadius, float speed)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	// check if owner already has a move order to this position with the same radius
-	if (owner->moveType->IsMovingTowards(pos, goalRadius, true))
-		return;
+	if (owner->moveType->IsMovingTowards(pos, goalRadius, true)) {
+		// a goal that a previous command gave (e.g. one replaced by a queue edit) now
+		// belongs to the active command, so that removing it stops the unit (see
+		// ExecuteRemove); a goal set from Lua (tag 0) is left alone
+		if (moveGoalCmdTag != 0)
+			moveGoalCmdTag = ActiveCmdTag();
 
-	// give new move order
+		return;
+	}
+
+	// give new move order, owned by the active command
 	owner->moveType->StartMoving(pos, goalRadius, speed);
+	moveGoalCmdTag = ActiveCmdTag();
 }
 
 bool CMobileCAI::SetFrontMoveCommandPos(const float3& pos)

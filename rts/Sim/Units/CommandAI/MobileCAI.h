@@ -27,6 +27,7 @@ public:
 	virtual void BuggerOff(const float3& pos, float radius) override;
 
 	bool SetFrontMoveCommandPos(const float3& pos);
+	unsigned int ActiveCmdTag() const { return commandQue.empty() ? 0 : commandQue.front().GetTag(); }
 
 	void StopMove() override;
 	void StopMoveAndKeepPointing(const float3& p, const float r, bool b);
