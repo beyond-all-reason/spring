@@ -189,60 +189,90 @@ void CSMFReadMap::LoadMinimap()
 	}
 }
 
+// dedupe because reading the same file twice isn't thread safe (i think)
+static bool HasDuplicateNames(const std::vector<const std::string*>& names)
+{
+	for (size_t i = 0; i < names.size(); i++) {
+		for (size_t j = i + 1; j < names.size(); j++) {
+			if (!names[i]->empty() && *names[i] == *names[j])
+				return true;
+		}
+	}
+
+	return false;
+}
+
 void CSMFReadMap::CreateSpecularTex()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!haveSpecularTexture)
 		return;
 
-	{
-		CBitmap specularTexBM;
+	// load all textures in parallel
+	enum {
+		SPECULAR_TEX = 0,
+		SKY_REFLECT_MOD_TEX,
+		BLEND_NORMALS_TEX,
+		LIGHT_EMISSION_TEX,
+		PARALLAX_HEIGHT_TEX,
+	};
+	const int numTextures = 5;
 
-		// maps wants specular lighting, but no moderation
-		if (!specularTexBM.Load(mapInfo->smf.specularTexName)) {
-			LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF specularTex %s. Creating fallback texture", __func__, mapInfo->smf.specularTexName.c_str());
-			specularTexBM.AllocDummy(SColor(255, 255, 255, 255));
-		}
+	const std::vector<const std::string*> texNames = {
+		&mapInfo->smf.specularTexName,
+		&mapInfo->smf.skyReflectModTexName,
+		&mapInfo->smf.blendNormalsTexName,
+		&mapInfo->smf.lightEmissionTexName,
+		&mapInfo->smf.parallaxHeightTexName,
+	};
 
-		specularTex.SetRawTexID(specularTexBM.CreateTexture());
-		specularTex.SetRawSize(int2(specularTexBM.xsize, specularTexBM.ysize));
-	}
+	std::vector<CBitmap> texBitmaps(numTextures);
+	std::vector<uint8_t> texLoaded(numTextures, 0); // uint8 over bool for concurrency
 
-	{
-		CBitmap skyReflectModTexBM;
+	const auto loadTex = [&texNames, &texBitmaps, &texLoaded](const int i) {
+		if (texNames[i]->empty())
+			return;
 
-		// no default 1x1 textures for these
-		if (skyReflectModTexBM.Load(mapInfo->smf.skyReflectModTexName)) {
-			skyReflectModTex.SetRawTexID(skyReflectModTexBM.CreateTexture());
-			skyReflectModTex.SetRawSize(int2(skyReflectModTexBM.xsize, skyReflectModTexBM.ysize));
-		}
-	}
+		texLoaded[i] = texBitmaps[i].Load(*texNames[i]);
+	};
 
-	{
-		CBitmap blendNormalsTexBM;
-
-		if (blendNormalsTexBM.Load(mapInfo->smf.blendNormalsTexName)) {
-			blendNormalsTex.SetRawTexID(blendNormalsTexBM.CreateTexture());
-			blendNormalsTex.SetRawSize(int2(blendNormalsTexBM.xsize, blendNormalsTexBM.ysize));
-		}
-	}
-
-	{
-		CBitmap lightEmissionTexBM;
-
-		if (lightEmissionTexBM.Load(mapInfo->smf.lightEmissionTexName)) {
-			lightEmissionTex.SetRawTexID(lightEmissionTexBM.CreateTexture());
-			lightEmissionTex.SetRawSize(int2(lightEmissionTexBM.xsize, lightEmissionTexBM.ysize));
+	if (!HasDuplicateNames(texNames)) {
+		for_mt(0, numTextures, loadTex);
+	} else {
+		// fallback to sequential load
+		for (int i = 0; i < numTextures; i++) {
+			loadTex(i);
 		}
 	}
 
-	{
-		CBitmap parallaxHeightTexBM;
+	// maps wants specular lighting, but no moderation
+	if (!texLoaded[SPECULAR_TEX]) {
+		LOG_L(L_WARNING, "[CSMFReadMap::%s] Invalid SMF specularTex %s. Creating fallback texture", __func__, mapInfo->smf.specularTexName.c_str());
+		texBitmaps[SPECULAR_TEX].AllocDummy(SColor(255, 255, 255, 255));
+	}
 
-		if (parallaxHeightTexBM.Load(mapInfo->smf.parallaxHeightTexName)) {
-			parallaxHeightTex.SetRawTexID(parallaxHeightTexBM.CreateTexture());
-			parallaxHeightTex.SetRawSize(int2(parallaxHeightTexBM.xsize, parallaxHeightTexBM.ysize));
-		}
+	specularTex.SetRawTexID(texBitmaps[SPECULAR_TEX].CreateTexture());
+	specularTex.SetRawSize(int2(texBitmaps[SPECULAR_TEX].xsize, texBitmaps[SPECULAR_TEX].ysize));
+
+	// no default 1x1 textures for these
+	if (texLoaded[SKY_REFLECT_MOD_TEX]) {
+		skyReflectModTex.SetRawTexID(texBitmaps[SKY_REFLECT_MOD_TEX].CreateTexture());
+		skyReflectModTex.SetRawSize(int2(texBitmaps[SKY_REFLECT_MOD_TEX].xsize, texBitmaps[SKY_REFLECT_MOD_TEX].ysize));
+	}
+
+	if (texLoaded[BLEND_NORMALS_TEX]) {
+		blendNormalsTex.SetRawTexID(texBitmaps[BLEND_NORMALS_TEX].CreateTexture());
+		blendNormalsTex.SetRawSize(int2(texBitmaps[BLEND_NORMALS_TEX].xsize, texBitmaps[BLEND_NORMALS_TEX].ysize));
+	}
+
+	if (texLoaded[LIGHT_EMISSION_TEX]) {
+		lightEmissionTex.SetRawTexID(texBitmaps[LIGHT_EMISSION_TEX].CreateTexture());
+		lightEmissionTex.SetRawSize(int2(texBitmaps[LIGHT_EMISSION_TEX].xsize, texBitmaps[LIGHT_EMISSION_TEX].ysize));
+	}
+
+	if (texLoaded[PARALLAX_HEIGHT_TEX]) {
+		parallaxHeightTex.SetRawTexID(texBitmaps[PARALLAX_HEIGHT_TEX].CreateTexture());
+		parallaxHeightTex.SetRawSize(int2(texBitmaps[PARALLAX_HEIGHT_TEX].xsize, texBitmaps[PARALLAX_HEIGHT_TEX].ysize));
 	}
 }
 
