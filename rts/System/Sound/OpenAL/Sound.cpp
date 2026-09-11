@@ -345,11 +345,15 @@ bool CSound::Mute()
 	return mute;
 }
 
-void CSound::DeviceChanged(uint32_t sdlDeviceIndex)
+void CSound::DeviceChanged(uint32_t sdlDeviceIndex, bool added)
 {
 	// handles SDL_AUDIODEVICEREMOVED and SDL_AUDIODEVICEADDED
 
-	if (!hasAlcSoftLoopBack || sdlDeviceIndex != sdlDeviceID)
+	if (!hasAlcSoftLoopBack)
+		return;
+
+	// sdlDeviceIndex is an instance id for REMOVED events but a device index for ADDED ones
+	if (added ? (sdlDeviceID != 0) : (sdlDeviceIndex != sdlDeviceID))
 		return;
 
 	LOG("[Sound::%s] SDL failed to handle device change, reopening", __func__);

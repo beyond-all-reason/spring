@@ -57,7 +57,7 @@ public:
 	bool Mute() override;
 	bool IsMuted() const override { return mute; }
 
-	void DeviceChanged(uint32_t sdlDeviceIndex) override;
+	void DeviceChanged(uint32_t sdlDeviceIndex, bool added) override;
 
 	void Iconified(bool state) override;
 
