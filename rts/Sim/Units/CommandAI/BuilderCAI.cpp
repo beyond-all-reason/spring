@@ -611,6 +611,9 @@ void CBuilderCAI::ExecuteBuildCmd(Command& c)
 
 		// <build> is never parsed (except in PostLoad) so just copy it
 		build = bi;
+		// snap to the position the build will actually use, so the early check
+		// below tests the same footprint the rest of this function does
+		build.pos = CGameHelper::Pos2BuildPos(build, true);
 		inCommand = c.GetID();
 
 		// One-time early check: if repeating the order (or first run), skip immediately if now blocked
