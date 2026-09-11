@@ -4,6 +4,7 @@
 #define EVENT_CLIENT_H
 
 #include <algorithm>
+#include <optional>
 #include <map>
 #include <typeinfo>
 #include <string>
@@ -38,6 +39,18 @@ class LuaMaterial;
 struct WeaponDef;
 struct SResourcePack;
 namespace NanoParticles { struct Event; }
+
+// The distinct layouts a build-drag can produce, as answered to the GetBuildShape
+// event. A shape is described purely by its geometry; how one gets picked
+// (modifier keys, the callin) is up to whoever answers.
+enum class BuildPosShape {
+	Single,        // a single building
+	CardinalLine,  // a line locked to its dominant (x or z) axis
+	FreeAngleLine, // a free-angle line following the drag direction
+	Flood,         // a solid, filled rectangle
+	HollowBox,     // only the outline (perimeter) of a rectangle
+	Surround,      // a ring around an existing building under the cursor, degenerates to Single if no target
+};
 
 #ifndef zipFile
 	// might be defined through zip.h already
@@ -331,6 +344,10 @@ class CEventClient
 		virtual std::string WorldTooltip(const CUnit* unit,
 		                                 const CFeature* feature,
 		                                 const float3* groundPos);
+
+		virtual std::optional<BuildPosShape> GetBuildShape(int unitDefID, int facing,
+		                                                   const float3& startPos,
+		                                                   const float3& endPos);
 
 		virtual bool MapDrawCmd(int playerID, int type,
 		                        const float3* pos0,

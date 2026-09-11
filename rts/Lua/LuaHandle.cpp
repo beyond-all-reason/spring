@@ -3935,6 +3935,69 @@ string CLuaHandle::WorldTooltip(const CUnit* unit,
 	return retval;
 }
 
+/*** Asked while placing a building to decide the shape a build-drag traces out.
+ *
+ * Modifier key state can be read via `Spring.GetModKeyState`.
+ *
+ * @function Callins:GetBuildShape
+ * @param unitDefID integer The unitDef of the building being placed.
+ * @param facing FacingInteger The current build facing.
+ * @param startX number World x of the drag start position (equals the end position while not dragging).
+ * @param startY number World y of the drag start position.
+ * @param startZ number World z of the drag start position.
+ * @param endX number World x of the drag end position (under the cursor).
+ * @param endY number World y of the drag end position.
+ * @param endZ number World z of the drag end position.
+ * @return string? shape One of "single", "cardinalline", "freeangleline",
+ * "flood", "hollowbox" or "surround". The latter rings either an existing
+ * building or a queued build order under the cursor; without such a target
+ * it degrades to a single building.
+ * Return nil (or an unknown name) for the default modifier-key behaviour.
+ */
+
+// Shape names accepted from the GetBuildShape callin. An unknown name parses to
+// nullopt, so a garbled reply degrades to the default behaviour instead of surprising.
+static std::optional<BuildPosShape> ParseBuildPosShapeName(const std::string& name)
+{
+	const std::string s = StringToLower(name);
+
+	if (s == "single")        return BuildPosShape::Single;
+	if (s == "cardinalline")  return BuildPosShape::CardinalLine;
+	if (s == "freeangleline") return BuildPosShape::FreeAngleLine;
+	if (s == "flood")         return BuildPosShape::Flood;
+	if (s == "hollowbox")     return BuildPosShape::HollowBox;
+	if (s == "surround")      return BuildPosShape::Surround;
+
+	return std::nullopt;
+}
+
+std::optional<BuildPosShape> CLuaHandle::GetBuildShape(int unitDefID, int facing, const float3& startPos, const float3& endPos)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	LUA_CALL_IN_CHECK(L, std::nullopt);
+	luaL_checkstack(L, 10, __func__);
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return std::nullopt;
+
+	lua_pushnumber(L, unitDefID);
+	lua_pushnumber(L, facing);
+	lua_pushnumber(L, startPos.x);
+	lua_pushnumber(L, startPos.y);
+	lua_pushnumber(L, startPos.z);
+	lua_pushnumber(L, endPos.x);
+	lua_pushnumber(L, endPos.y);
+	lua_pushnumber(L, endPos.z);
+
+	// call the routine
+	if (!RunCallIn(L, cmdStr, 8, 1))
+		return std::nullopt;
+
+	const std::string retval = luaL_optstring(L, -1, "");
+	lua_pop(L, 1);
+	return ParseBuildPosShapeName(retval);
+}
+
 /***
  * @function Callins:MapDrawCmd
  * @param playerID PlayerID

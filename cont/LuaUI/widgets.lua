@@ -117,6 +117,7 @@ local flexCallIns = {
   'PlayerRemoved',
   'ShockFront',
   'WorldTooltip',
+  'GetBuildShape',
   'MapDrawCmd',
   'DefaultCommand',
   'UnitCreated',
@@ -1795,6 +1796,17 @@ function widgetHandler:WorldTooltip(ttType, ...)
     local tt = w:WorldTooltip(ttType, ...)
     if ((type(tt) == 'string') and (#tt > 0)) then
       return tt
+    end
+  end
+  return
+end
+
+
+function widgetHandler:GetBuildShape(...)
+  for _,w in ipairs(self.GetBuildShapeList) do
+    local shape = w:GetBuildShape(...)
+    if ((type(shape) == 'string') and (#shape > 0)) then
+      return shape
     end
   end
   return

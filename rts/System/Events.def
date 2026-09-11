@@ -134,6 +134,7 @@
 	SETUP_EVENT(GroupChanged,        MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(GameSetup,           MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
 	SETUP_EVENT(WorldTooltip,        MANAGED_BIT | UNSYNCED_BIT)
+	SETUP_EVENT(GetBuildShape,       MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
 	SETUP_EVENT(MapDrawCmd,          MANAGED_BIT | UNSYNCED_BIT | CONTROL_BIT)
 
 	SETUP_EVENT(SunChanged,     MANAGED_BIT | UNSYNCED_BIT) //FIXME make synced? (whole dynSun code needs to then)

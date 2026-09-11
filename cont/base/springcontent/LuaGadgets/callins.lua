@@ -176,6 +176,7 @@ CALLIN_LIST = {
 	"RecvSkirmishAIMessage",
 
 	"DefaultCommand",
+	"GetBuildShape",
 	"ActiveCommandChanged",
 	"CameraRotationChanged",
 	"CameraPositionChanged",

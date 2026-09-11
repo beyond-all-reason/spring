@@ -102,6 +102,10 @@ std::string CEventClient::WorldTooltip(const CUnit* unit,
                                  const CFeature* feature,
                                  const float3* groundPos) { return ""; }
 
+std::optional<BuildPosShape> CEventClient::GetBuildShape(int unitDefID, int facing,
+                                  const float3& startPos,
+                                  const float3& endPos) { return std::nullopt; }
+
 bool CEventClient::MapDrawCmd(int playerID, int type,
                         const float3* pos0,
                         const float3* pos1,

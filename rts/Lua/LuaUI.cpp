@@ -164,6 +164,7 @@ CLuaUI::CLuaUI()
 
 	// update extra call-ins
 	UpdateCallIn(L, "WorldTooltip");
+	UpdateCallIn(L, "GetBuildShape");
 	UpdateCallIn(L, "MapDrawCmd");
 	UpdateCallIn(L, "DrawBuildSquare");
 

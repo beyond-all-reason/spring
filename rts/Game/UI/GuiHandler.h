@@ -3,6 +3,7 @@
 #ifndef GUI_HANDLER_H
 #define GUI_HANDLER_H
 
+#include <optional>
 #include <vector>
 
 #include "KeySet.h"
@@ -11,6 +12,7 @@
 #include "Game/Camera.h"
 #include "Sim/Units/BuildInfo.h"
 #include "Sim/Units/CommandAI/Command.h"
+#include "System/EventClient.h" // BuildPosShape
 #include "System/SpringMath.h" // FACING
 
 #define DEFAULT_GUI_CONFIG "ctrlpanel.txt"
@@ -60,7 +62,7 @@ public:
 	}
 	Command GetCommand(int mouseX, int mouseY, int buttonHint, bool preview, const float3& cameraPos, const float3& mouseDir);
 	/// startInfo.def has to be endInfo.def
-	size_t GetBuildPositions(const BuildInfo& startInfo, const BuildInfo& endInfo, const float3& cameraPos, const float3& mouseDir);
+	size_t GetBuildPositions(const BuildInfo& startInfo, const BuildInfo& endInfo, const float3& cameraPos, const float3& mouseDir, std::optional<BuildPosShape> queriedShape);
 
 	bool EnableLuaUI(bool enableCommand);
 	bool DisableLuaUI(bool layoutIcons = true);

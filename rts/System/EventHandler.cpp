@@ -918,6 +918,19 @@ std::string CEventHandler::WorldTooltip(const CUnit* unit, const CFeature* featu
 	return ControlReverseIterateDefString(listWorldTooltip, &CEventClient::WorldTooltip, unit, feature, groundPos);
 }
 
+std::optional<BuildPosShape> CEventHandler::GetBuildShape(int unitDefID, int facing, const float3& startPos, const float3& endPos)
+{
+	ZoneScoped;
+	for (size_t i = 0; i < listGetBuildShape.size(); i++) {
+		CEventClient* ec = listGetBuildShape[listGetBuildShape.size() - 1 - i];
+
+		if (const auto shape = ec->GetBuildShape(unitDefID, facing, startPos, endPos); shape.has_value())
+			return shape;
+	}
+
+	return std::nullopt;
+}
+
 
 bool CEventHandler::AddConsoleLine(const std::string& msg, const std::string& section, int level)
 {

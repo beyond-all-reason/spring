@@ -1844,6 +1844,15 @@ function gadgetHandler:DefaultCommand(type, id, cmd)
   end
 end
 
+function gadgetHandler:GetBuildShape(...)
+  for _,g in r_ipairs(self.GetBuildShapeList) do
+    local shape = g:GetBuildShape(...)
+    if ((type(shape) == 'string') and (#shape > 0)) then
+      return shape
+    end
+  end
+end
+
 function gadgetHandler:ActiveCommandChanged(id, cmdType)
   for _,g in r_ipairs(self.ActiveCommandChangedList) do
     g:ActiveCommandChanged(id, cmdType)
