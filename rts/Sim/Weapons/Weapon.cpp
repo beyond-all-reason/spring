@@ -300,11 +300,13 @@ void CWeapon::UpdateWeaponVectors()
 void CWeapon::UpdateWantedDir()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	if (!onlyForward) {
-		wantedDir = (currentTargetPos - aimFromPos).SafeNormalize();
-	} else {
-		wantedDir = owner->frontdir;
-	}
+	wantedDir = CalcWantedDir(currentTargetPos - aimFromPos);
+}
+
+
+float3 CWeapon::CalcWantedDir(const float3& targetVec) const
+{
+	return onlyForward ? float3(owner->frontdir) : float3(targetVec).SafeNormalize();
 }
 
 
@@ -362,9 +364,9 @@ void CWeapon::UpdateAim()
 bool CWeapon::CheckAimingAngle() const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// check fire angle constraints
-	// TODO: write a per-weapontype CheckAim()?
-	const float3 worldTargetDir = (currentTargetPos - owner->pos).SafeNormalize();
+	// Turret constraints must use the same launch direction as AimWeapon.
+	// Fixed weapons still constrain the target relative to the owner's front.
+	const float3 worldTargetDir = onlyForward ? (currentTargetPos - owner->pos).SafeNormalize() : wantedDir;
 	const float3 worldMainDir = owner->GetObjectSpaceVec(mainDir);
 
 	// weapon finished a previously started AimWeapon thread and wants to
@@ -1110,8 +1112,16 @@ bool CWeapon::TestRange(const float3& tgtPos, const SWeaponTarget& trg) const
 	if (targetDist > (weaponRange * weaponRange))
 		return false;
 
-	// NOTE: mainDir is in unit-space
-	return (CheckTargetAngleConstraint((tgtPos - aimFromPos).SafeNormalize(), owner->GetObjectSpaceVec(mainDir)));
+	// Unrestricted turrets do not need a launch-direction calculation.
+	if (!onlyForward && maxMainDirAngleDif <= -1.0f)
+		return true;
+
+	// Use the candidate's launch direction, not wantedDir (which belongs to
+	// the current target). mainDir is unit-local, so transforming it to world
+	// space makes this the same frame used by AimWeapon, including hull tilt.
+	const float3 targetVec = tgtPos - aimFromPos;
+	const float3 aimDir = onlyForward ? float3(targetVec).SafeNormalize() : CalcWantedDir(targetVec);
+	return (CheckTargetAngleConstraint(aimDir, owner->GetObjectSpaceVec(mainDir)));
 }
 
 

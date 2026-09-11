@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef WEAPON_H
-#define WEAPON_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -109,6 +108,8 @@ public:
 protected:
 	virtual void FireImpl(const bool scriptCall) {}
 	virtual void UpdateWantedDir();
+	/// World-space launch direction for a candidate target offset from aimFromPos.
+	virtual float3 CalcWantedDir(const float3& targetVec) const;
 	virtual float GetPredictedImpactTime(const float3& p) const; //< how long time we predict it take for a projectile to reach target
 
 	ProjectileParams GetProjectileParams();
@@ -228,5 +229,3 @@ protected:
 	// (eg. nuke toward a repulsor, or missile toward a shield)
 	std::vector<int> incomingProjectileIDs;
 };
-
-#endif /* WEAPON_H */
