@@ -76,6 +76,7 @@ CR_REG_METADATA(CCommandAI, (
 	CR_MEMBER(repeatOrders),
 	CR_MEMBER(lastSelectedCommandPage),
 	CR_MEMBER(inCommand),
+	CR_MEMBER(moveGoalCmdTag),
 	CR_MEMBER(commandDeathDependences),
 	CR_MEMBER(targetLostTimer),
 
@@ -1288,9 +1289,14 @@ void CCommandAI::ExecuteRemove(const Command& c)
 						// deleted); FinishCommand() alone leaves the move-type heading for
 						// the goal this command set, so a mobile attacker that was still
 						// closing in on a target that just died walks on to the target's
-						// last position with an empty queue; stop unless the next command
-						// is a move command, which sets its own goal right away
-						if (queue->size() < 2 || !(queue->begin() + 1)->IsMoveCommand())
+						// last position with an empty queue
+						//
+						// only touch the goal if this command gave it (a goal set from Lua
+						// is left alone), and as in ExecuteMove do not stop-and-restart when
+						// the next command moves the unit anyway
+						const bool nextMoves = (queue->size() >= 2 && (queue->begin() + 1)->IsMoveCommand());
+
+						if (OwnsMoveGoal(qc.GetTag()) && !nextMoves)
 							StopMove();
 
 						FinishCommand();
@@ -1310,6 +1316,13 @@ void CCommandAI::ExecuteRemove(const Command& c)
 	}
 
 	repeatOrders = prevRepeat;
+}
+
+
+bool CCommandAI::OwnsMoveGoal(unsigned int cmdTag) const
+{
+	// the move-type may since have been stopped, or given another goal from Lua
+	return (cmdTag != 0 && cmdTag == moveGoalCmdTag && owner->moveType->progressState == AMoveType::Active);
 }
 
 

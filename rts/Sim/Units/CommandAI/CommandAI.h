@@ -55,6 +55,8 @@ public:
 
 	virtual void BuggerOff(const float3& pos, float radius) {}
 	virtual void StopMove() {}
+	/// true if the move-type is still executing a goal that the command with this tag gave it
+	bool OwnsMoveGoal(unsigned int cmdTag) const;
 
 	void StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred);
 	void StopAttackingAllyTeam(int ally);
@@ -132,6 +134,10 @@ public:
 	bool repeatOrders;
 	int lastSelectedCommandPage;
 	int inCommand;
+
+	/// tag of the command that gave the move-type its current goal (CMobileCAI::SetGoal),
+	/// 0 if the goal was set from Lua instead (Spring.SetUnitMoveGoal)
+	unsigned int moveGoalCmdTag = 0;
 protected:
 	bool HandleBuildOptionInsertion(int cmdId);
 	bool HandleBuildOptionRemoval(int cmdId);

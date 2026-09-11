@@ -4028,6 +4028,8 @@ int LuaSyncedCtrl::SetUnitMoveGoal(lua_State* L)
 		unit->moveType->StartMoving(pos, radius, speed);
 	}
 
+	// the goal no longer belongs to the active command (see CCommandAI::ExecuteRemove)
+	unit->commandAI->moveGoalCmdTag = 0;
 	return 0;
 }
 
