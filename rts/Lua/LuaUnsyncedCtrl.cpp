@@ -4436,7 +4436,7 @@ int LuaUnsyncedCtrl::AiIntentFloat(lua_State* L) {
 
 	const int teamID = luaL_checkint(L, 1);
 	const int topic = luaL_checkint(L, 2);
-	const int objID = lua_israwnumber(L, 3) ? lua_toint(L, 3) : lua_isboolean(L, 4) ? lua_toboolean(L, 4) : -1;
+	const int objID = lua_israwnumber(L, 3) ? lua_toint(L, 3) : lua_isboolean(L, 3) ? lua_toboolean(L, 3) : -1;
 	const float value = lua_isnoneornil(L, 4) ? 0.f : lua_isboolean(L, 4) ? lua_toboolean(L, 4) : luaL_checkfloat(L, 4);
 
 	eoh->Intent(teamID, topic, objID, value);
