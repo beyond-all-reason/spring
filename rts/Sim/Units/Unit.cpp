@@ -719,6 +719,30 @@ void CUnit::UpdateWeapons()
 	}
 }
 
+
+void CUnit::StartBurst(const CWeapon* weapon)
+{
+	script->FireWeapon(weapon->weaponNum);
+	eventHandler.UnitWeaponBurstStart(this, weapon);
+}
+
+
+void CUnit::EndBurst(const CWeapon* weapon)
+{
+	script->EndBurst(weapon->weaponNum);
+	eventHandler.UnitWeaponBurstEnd(this, weapon);
+}
+
+
+void CUnit::WeaponFired(CWeapon* weapon)
+{
+	eventHandler.UnitWeaponFired(this, weapon);
+
+	const bool searchForNewTarget = (weapon->salvoLeft == 0) && (weapon->GetCurrentTarget() == curTarget);
+	commandAI->WeaponFired(weapon, searchForNewTarget);
+}
+
+
 void CUnit::UpdateTransportees()
 {
 	RECOIL_DETAILED_TRACY_ZONE;

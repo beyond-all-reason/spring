@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef LUA_HANDLE_SYNCED
-#define LUA_HANDLE_SYNCED
+#pragma once
 
 #include <string>
 
@@ -167,6 +166,10 @@ class CSyncedLuaHandle : public CLuaHandle
 		static int SetWatchProjectileDef(lua_State* L);
 		static int GetWatchAllowTargetDef(lua_State* L);
 		static int SetWatchAllowTargetDef(lua_State* L);
+		static int GetWatchWeaponBurstDef(lua_State* L);
+		static int SetWatchWeaponBurstDef(lua_State* L);
+		static int GetWatchWeaponFiredDef(lua_State* L);
+		static int SetWatchWeaponFiredDef(lua_State* L);
 
 		static int GetWatchWeaponDef(lua_State* L);
 		static int SetWatchWeaponDef(lua_State* L) {
@@ -282,6 +285,3 @@ class CSplitLuaHandle
 		friend class CGameStateCollector;
 		static LuaRulesParams::Params gameParams;
 };
-
-
-#endif /* LUA_HANDLE_SYNCED */

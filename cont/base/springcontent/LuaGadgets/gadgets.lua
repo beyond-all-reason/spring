@@ -1685,6 +1685,24 @@ function gadgetHandler:StockpileChanged(unitID, unitDefID, unitTeam,
   end
 end
 
+function gadgetHandler:UnitWeaponBurstStart(unitID, unitDefID, unitTeam, weaponNum)
+  for _,g in r_ipairs(self.UnitWeaponBurstStartList) do
+    g:UnitWeaponBurstStart(unitID, unitDefID, unitTeam, weaponNum)
+  end
+end
+
+function gadgetHandler:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam, weaponNum)
+  for _,g in r_ipairs(self.UnitWeaponBurstEndList) do
+    g:UnitWeaponBurstEnd(unitID, unitDefID, unitTeam, weaponNum)
+  end
+end
+
+function gadgetHandler:UnitWeaponFired(unitID, unitDefID, unitTeam, weaponNum)
+  for _,g in r_ipairs(self.UnitWeaponFiredList) do
+    g:UnitWeaponFired(unitID, unitDefID, unitTeam, weaponNum)
+  end
+end
+
 function gadgetHandler:UnitHarvestStorageFull(unitID, unitDefID, unitTeam)
   for _,g in r_ipairs(self.UnitHarvestStorageFullList) do
     g:UnitHarvestStorageFull(unitID, unitDefID, unitTeam)

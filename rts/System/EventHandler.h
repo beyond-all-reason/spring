@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef EVENT_HANDLER_H
-#define EVENT_HANDLER_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -146,6 +145,9 @@ class CEventHandler
 
 		void StockpileChanged(const CUnit* unit,
 		                      const CWeapon* weapon, int oldCount);
+		void UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon);
+		void UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon);
+		void UnitWeaponFired(const CUnit* unit, const CWeapon* weapon);
 
 		bool CommandFallback(const CUnit* unit, const Command& cmd);
 		bool AllowCommand(const CUnit* unit, const Command& cmd, int playerNum, bool fromSynced, bool fromLua);
@@ -364,7 +366,6 @@ class CEventHandler
 		                EventClientList* list, int props);
 		void ListInsert(EventClientList& ciList, CEventClient* ec);
 		void ListRemove(EventClientList& ciList, CEventClient* ec);
-
 	private:
 		CEventClient* mouseOwner;
 
@@ -746,6 +747,24 @@ inline void CEventHandler::StockpileChanged(const CUnit* unit,
 }
 
 
+inline void CEventHandler::UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitWeaponBurstStart, unit, weapon)
+}
+
+
+inline void CEventHandler::UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitWeaponBurstEnd, unit, weapon)
+}
+
+
+inline void CEventHandler::UnitWeaponFired(const CUnit* unit, const CWeapon* weapon)
+{
+	ITERATE_UNIT_ALLYTEAM_EVENTCLIENTLIST(UnitWeaponFired, unit, weapon)
+}
+
+
 inline void CEventHandler::DefaultCommand(const CUnit* unit, const CFeature* feature, int& cmd)
 {
 	const size_t count = listDefaultCommand.size();
@@ -800,5 +819,3 @@ inline void CEventHandler::RenderProjectileDestroyed(const CProjectile* proj)
 #undef UNIT_CALLIN_NO_PARAM
 #undef UNIT_CALLIN_INT_PARAMS
 #undef UNIT_CALLIN_LOS_PARAM
-
-#endif /* EVENT_HANDLER_H */

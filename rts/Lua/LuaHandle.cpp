@@ -2359,6 +2359,131 @@ void CLuaHandle::StockpileChanged(const CUnit* unit,
 }
 
 
+/*** Called immediately when a weapon burst starts.
+ *
+ * This marks initialization of the engine burst state and can run before the first shot
+ * when the weapon has a windup. It does not guarantee a matching
+ * `UnitWeaponBurstEnd`: for example, the unit can be destroyed or Lua can modify the
+ * weapon state before the burst completes.
+ *
+ * @function Callins:UnitWeaponBurstStart
+ *
+ * @param unitID integer
+ * @param unitDefID integer
+ * @param unitTeam integer
+ * @param weaponNum integer
+ *
+ * @see Script.SetWatchWeaponBurst
+ */
+void CLuaHandle::UnitWeaponBurstStart(const CUnit* unit, const CWeapon* weapon)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int weaponDefID = weapon->weaponDef->id;
+
+	if (weaponDefID < 0 || static_cast<size_t>(weaponDefID) >= watchWeaponBurstDefs.size())
+		return;
+	if (!watchWeaponBurstDefs[weaponDefID])
+		return;
+
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 6, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, weapon->weaponNum + LUA_WEAPON_BASE_INDEX);
+
+	RunCallIn(L, cmdStr, 4, 0);
+}
+
+
+/*** Called immediately when a weapon burst ends.
+ *
+ * @function Callins:UnitWeaponBurstEnd
+ *
+ * @param unitID integer
+ * @param unitDefID integer
+ * @param unitTeam integer
+ * @param weaponNum integer
+ *
+ * @see Script.SetWatchWeaponBurst
+ */
+void CLuaHandle::UnitWeaponBurstEnd(const CUnit* unit, const CWeapon* weapon)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int weaponDefID = weapon->weaponDef->id;
+
+	if (weaponDefID < 0 || static_cast<size_t>(weaponDefID) >= watchWeaponBurstDefs.size())
+		return;
+	if (!watchWeaponBurstDefs[weaponDefID])
+		return;
+
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 6, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, weapon->weaponNum + LUA_WEAPON_BASE_INDEX);
+
+	RunCallIn(L, cmdStr, 4, 0);
+}
+
+
+/*** Called immediately after a weapon fires one shot of its burst.
+ *
+ * Runs once after all projectiles for that shot have been fired, before command-AI
+ * notification and `UnitWeaponBurstEnd`. A skipped shot does not trigger this event.
+ * Unlike `ProjectileCreated`, this reports a firing step, not individual projectiles
+ * or hits. Continuous beam weapons can fire one such step per simulation frame.
+ * Direct unit-script `EmitSfx` firing outside the burst path is not reported.
+ *
+ * This is an immediate notification, independent of cloak state. Games should defer
+ * command-queue mutations until a later game-frame call-in.
+ *
+ * @function Callins:UnitWeaponFired
+ *
+ * @param unitID integer
+ * @param unitDefID integer
+ * @param unitTeam integer
+ * @param weaponNum integer
+ *
+ * @see Script.SetWatchWeaponFired
+ */
+void CLuaHandle::UnitWeaponFired(const CUnit* unit, const CWeapon* weapon)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	const int weaponDefID = weapon->weaponDef->id;
+
+	if (weaponDefID < 0 || static_cast<size_t>(weaponDefID) >= watchWeaponFiredDefs.size())
+		return;
+	if (!watchWeaponFiredDefs[weaponDefID])
+		return;
+
+	LUA_CALL_IN_CHECK(L);
+	luaL_checkstack(L, 6, __func__);
+
+	static const LuaHashString cmdStr(__func__);
+	if (!cmdStr.GetGlobalFunc(L))
+		return;
+
+	lua_pushnumber(L, unit->id);
+	lua_pushnumber(L, unit->unitDef->id);
+	lua_pushnumber(L, unit->team);
+	lua_pushnumber(L, weapon->weaponNum + LUA_WEAPON_BASE_INDEX);
+
+	RunCallIn(L, cmdStr, 4, 0);
+}
+
+
 
 /*** Receives messages from unsynced sent via `Spring.SendLuaRulesMsg` or `Spring.SendLuaUIMsg`.
  *

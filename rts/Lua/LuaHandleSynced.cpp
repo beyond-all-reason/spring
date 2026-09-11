@@ -434,6 +434,8 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 	watchExplosionDefs.resize(weaponDefHandler->NumWeaponDefs(), false);
 	watchProjectileDefs.resize(weaponDefHandler->NumWeaponDefs() + 1, false); // last bit controls piece-projectiles
 	watchAllowTargetDefs.resize(weaponDefHandler->NumWeaponDefs(), false);
+	watchWeaponBurstDefs.resize(weaponDefHandler->NumWeaponDefs(), false);
+	watchWeaponFiredDefs.resize(weaponDefHandler->NumWeaponDefs(), false);
 
 	// load the standard libraries
 	LuaLibs::OpenSynced(L, true);
@@ -485,6 +487,10 @@ bool CSyncedLuaHandle::Init(std::string code, const std::string& file)
 		LuaPushNamedCFunc(L, "SetWatchProjectile",   SetWatchProjectileDef);
 		LuaPushNamedCFunc(L, "GetWatchAllowTarget",  GetWatchAllowTargetDef);
 		LuaPushNamedCFunc(L, "SetWatchAllowTarget",  SetWatchAllowTargetDef);
+		LuaPushNamedCFunc(L, "GetWatchWeaponBurst",  GetWatchWeaponBurstDef);
+		LuaPushNamedCFunc(L, "SetWatchWeaponBurst",  SetWatchWeaponBurstDef);
+		LuaPushNamedCFunc(L, "GetWatchWeaponFired",  GetWatchWeaponFiredDef);
+		LuaPushNamedCFunc(L, "SetWatchWeaponFired",  SetWatchWeaponFiredDef);
 		LuaPushNamedCFunc(L, "GetWatchWeapon",       GetWatchWeaponDef);
 		LuaPushNamedCFunc(L, "SetWatchWeapon",       SetWatchWeaponDef);
 	lua_pop(L, 1);
@@ -2257,6 +2263,32 @@ GetWatchDef(Unsynced, Explosion)
 GetWatchDef(Synced, Projectile)
 
 
+/*** Query whether burst callins are registered for a weaponDefID.
+ *
+ * @function Script.GetWatchWeaponBurst
+ *
+ * @param weaponDefID integer
+ * @return boolean watched `true` if burst callins are registered, otherwise `false`.
+ *
+ * @see Script.SetWatchWeaponBurst
+ */
+
+GetWatchDef(Synced, WeaponBurst)
+
+
+/*** Query whether shot callins are registered for a weaponDefID.
+ *
+ * @function Script.GetWatchWeaponFired
+ *
+ * @param weaponDefID integer
+ * @return boolean watched `true` if shot callins are registered, otherwise `false`.
+ *
+ * @see Script.SetWatchWeaponFired
+ */
+
+GetWatchDef(Synced, WeaponFired)
+
+
 /*** Query whether weapon targeting callins are registered for a weaponDefID.
  *
  * @function Script.GetWatchAllowTarget
@@ -2351,6 +2383,35 @@ SetWatchDef(Unsynced, Explosion)
  */
 
 SetWatchDef(Synced, Projectile)
+
+
+/*** Register or deregister weaponDefID for `UnitWeaponBurstStart` and `UnitWeaponBurstEnd`.
+ *
+ * @function Script.SetWatchWeaponBurst
+ *
+ * @param weaponDefID integer
+ * @param watch boolean Whether to register or deregister.
+ *
+ * @see Script.GetWatchWeaponBurst
+ * @see Callins:UnitWeaponBurstStart
+ * @see Callins:UnitWeaponBurstEnd
+ */
+
+SetWatchDef(Synced, WeaponBurst)
+
+
+/*** Register or deregister weaponDefID for `UnitWeaponFired`.
+ *
+ * @function Script.SetWatchWeaponFired
+ *
+ * @param weaponDefID integer
+ * @param watch boolean Whether to register or deregister.
+ *
+ * @see Script.GetWatchWeaponFired
+ * @see Callins:UnitWeaponFired
+ */
+
+SetWatchDef(Synced, WeaponFired)
 
 
 /*** Register or deregister weaponDefID for weapon targeting callins.
