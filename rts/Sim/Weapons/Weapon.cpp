@@ -596,15 +596,11 @@ void CWeapon::UpdateSalvo()
 		Fire(false);
 	}
 
-	if (projectilesPerShot > 0)
-		eventHandler.UnitWeaponFired(owner, this);
-
 	// Rock the unit in the direction of fire
 	if (owner->script->HasRockUnit())
 		owner->script->WorldRockUnit((-wantedDir).SafeNormalize2D());
 
-	const bool searchForNewTarget = (salvoLeft == 0) && (currentTarget == owner->curTarget);
-	owner->commandAI->WeaponFired(this, searchForNewTarget);
+	owner->WeaponFired(this);
 
 	if (salvoLeft == 0) {
 		owner->EndBurst(this);

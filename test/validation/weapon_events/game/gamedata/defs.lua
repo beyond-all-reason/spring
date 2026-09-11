@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: GPL-2.0-or-later
 local units, weapons = {}, {}
-for _, name in ipairs({ "single", "multi", "cancel", "blocked", "silent", "onlyfired", "beam" }) do
+for _, name in ipairs({ "single", "multi", "cancel", "blocked", "silent", "onlyfired", "beam", "zero" }) do
 	weapons[name] = {
 		name = name,
 		weaponType = name == "beam" and "BeamLaser" or "Cannon",
@@ -11,7 +11,7 @@ for _, name in ipairs({ "single", "multi", "cancel", "blocked", "silent", "onlyf
 		weaponVelocity = 600,
 		burst = (name == "multi" or name == "cancel") and 3 or 1,
 		burstrate = 0.2,
-		projectiles = name == "multi" and 4 or 1,
+		projectiles = name == "zero" and 0 or name == "multi" and 4 or 1,
 		beamtime = 0.1,
 		weaponTimer = 5,
 		avoidFriendly = false,

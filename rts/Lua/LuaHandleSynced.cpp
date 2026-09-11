@@ -2180,16 +2180,6 @@ int CSyncedLuaHandle::GetWatchWeaponDef(lua_State* L) {
 		watched |= luaL_checkboolean(L, -1);
 		lua_pop(L, 1);
 	}
-	{
-		GetWatchWeaponBurstDef(L);
-		watched |= luaL_checkboolean(L, -1);
-		lua_pop(L, 1);
-	}
-	{
-		GetWatchWeaponFiredDef(L);
-		watched |= luaL_checkboolean(L, -1);
-		lua_pop(L, 1);
-	}
 
 	lua_pushboolean(L, watched);
 	return 1;
@@ -2237,11 +2227,7 @@ GetWatchDef(Synced, Feature)
  *
  * Same as calling:
  * ```lua
- * Script.GetWatchExplosion(weaponDefID)
- * or Script.GetWatchProjectile(weaponDefID)
- * or Script.GetWatchAllowTarget(weaponDefID)
- * or Script.GetWatchWeaponBurst(weaponDefID)
- * or Script.GetWatchWeaponFired(weaponDefID)
+ * Script.GetWatchExplosion(weaponDefID) or Script.GetWatchProjectile(weaponDefID) or Script.GetWatchAllowTarget(weaponDefID)
  * ```
  *
  * @param weaponDefID WeaponDefID
@@ -2356,8 +2342,6 @@ SetWatchDef(Synced, Feature)
  * Script.SetWatchExplosion(weaponDefID)
  * Script.SetWatchProjectile(weaponDefID)
  * Script.SetWatchAllowTarget(weaponDefID)
- * Script.SetWatchWeaponBurst(weaponDefID)
- * Script.SetWatchWeaponFired(weaponDefID)
  * ```
  *
  * Generally it's better to use those methods to avoid registering uneeded callins.
@@ -2369,8 +2353,6 @@ SetWatchDef(Synced, Feature)
  * @see Script.SetWatchExplosion
  * @see Script.SetWatchProjectile
  * @see Script.SetWatchAllowTarget
- * @see Script.SetWatchWeaponBurst
- * @see Script.SetWatchWeaponFired
  */
 
 /*** Register or deregister weaponDefID for explosion callins.

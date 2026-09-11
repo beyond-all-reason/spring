@@ -20,7 +20,8 @@ The synced gadget exercises the real weapon update and base gadget-handler paths
 - One-shot firing with cloak intent disabled, and firing from cloak.
 - A dropped target before the last burst shot: two fired events and one end.
 - A script-blocked initial shot: no start, fired, or end event.
-- Independent shot/burst watch flags, defaults, and aggregate watch accessors.
+- Independent shot/burst watch flags, defaults, and unchanged legacy watch accessors.
+- A zero-projectile shot: one fired event and no projectile or script Shot calls.
 - A continuous beam: one fired event per engine firing step.
 - Callback identity and ordering: projectiles precede the fired event, which
   precedes burst end.

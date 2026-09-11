@@ -7,7 +7,7 @@ if not gadgetHandler:IsSyncedCode() then
 end
 
 local cases, failure = {}, false
-local names = { "single", "multi", "cancel", "blocked", "silent", "onlyfired", "beam" }
+local names = { "single", "multi", "cancel", "blocked", "silent", "onlyfired", "beam", "zero" }
 local function check(ok, message)
 	if not ok then
 		failure = true
@@ -23,14 +23,23 @@ function gadget:Initialize()
 	for _, name in ipairs(names) do
 		local wd = WeaponDefNames[name].id
 		check(not Script.GetWatchWeaponFired(wd), "shot watch defaults off")
-		Script.SetWatchWeaponFired(wd, true)
-		check(Script.GetWatchWeapon(wd), "aggregate getter includes shot watch")
-		check(not Script.GetWatchWeaponBurst(wd), "shot watch leaves burst watch off")
-		Script.SetWatchWeapon(wd, false)
-		check(not Script.GetWatchWeaponFired(wd), "aggregate setter disables shot watch")
+		check(not Script.GetWatchWeaponBurst(wd), "burst watch defaults off")
 		Script.SetWatchWeapon(wd, true)
-		check(Script.GetWatchWeaponFired(wd), "aggregate setter enables shot watch")
+		check(Script.GetWatchWeapon(wd), "legacy setter enables legacy watches")
+		check(not Script.GetWatchWeaponFired(wd), "legacy setter leaves shot watch off")
+		check(not Script.GetWatchWeaponBurst(wd), "legacy setter leaves burst watch off")
 		Script.SetWatchWeapon(wd, false)
+		Script.SetWatchWeaponFired(wd, true)
+		check(not Script.GetWatchWeapon(wd), "legacy getter excludes shot watch")
+		check(not Script.GetWatchWeaponBurst(wd), "shot watch leaves burst watch off")
+		Script.SetWatchWeaponFired(wd, false)
+		Script.SetWatchWeaponBurst(wd, true)
+		check(not Script.GetWatchWeapon(wd), "legacy getter excludes burst watch")
+		check(not Script.GetWatchWeaponFired(wd), "burst watch leaves shot watch off")
+		Script.SetWatchWeaponFired(wd, true)
+		Script.SetWatchWeapon(wd, false)
+		check(Script.GetWatchWeaponFired(wd), "legacy setter leaves shot watch on")
+		check(Script.GetWatchWeaponBurst(wd), "legacy setter leaves burst watch on")
 		Script.SetWatchWeaponFired(wd, name ~= "silent")
 		Script.SetWatchWeaponBurst(wd, name ~= "onlyfired")
 		Script.SetWatchProjectile(wd, true)
@@ -123,7 +132,7 @@ function gadget:UnitWeaponFired(u, ud, team, weapon)
 	end
 	case.fired = case.fired + 1
 	check(case.ends == 0, "shot precedes burst end")
-	local perShot = case.name == "multi" and 4 or 1
+	local perShot = case.name == "zero" and 0 or case.name == "multi" and 4 or 1
 	check(case.scriptShots == case.fired * perShot, "shot event follows all script Shot calls")
 	if case.name ~= "beam" then
 		check(case.projectiles == case.fired * perShot, "shot event follows all projectiles")
@@ -152,7 +161,10 @@ function gadget:GameFramePost(frame)
 		check(case.ends == (bursts and 0 or 1), case.name .. " end count")
 		check(case.fired == (case.name == "silent" and 0 or shots), case.name .. " fired count")
 		if case.name ~= "beam" then
-			check(case.projectiles == shots * (case.name == "multi" and 4 or 1), case.name .. " projectile count")
+			check(
+				case.projectiles == shots * (case.name == "zero" and 0 or case.name == "multi" and 4 or 1),
+				case.name .. " projectile count"
+			)
 		end
 		Spring.Echo(
 			string.format(
