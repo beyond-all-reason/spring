@@ -24,15 +24,16 @@ CR_BIND_DERIVED(CMissileLauncher, CWeapon, )
 CR_REG_METADATA(CMissileLauncher, )
 
 
-void CMissileLauncher::UpdateWantedDir()
+float3 CMissileLauncher::CalcWantedDir(const float3& targetVec) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	CWeapon::UpdateWantedDir();
+	float3 aimDir = CWeapon::CalcWantedDir(targetVec);
 
 	if (weaponDef->trajectoryHeight > 0.0f) {
-		wantedDir.y += weaponDef->trajectoryHeight;
-		wantedDir.Normalize();
+		aimDir.y += weaponDef->trajectoryHeight;
+		aimDir.Normalize();
 	}
+	return aimDir;
 }
 
 void CMissileLauncher::FireImpl(const bool scriptCall)
