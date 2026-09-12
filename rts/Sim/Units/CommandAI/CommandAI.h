@@ -1,7 +1,6 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
-#ifndef _COMMAND_AI_H
-#define _COMMAND_AI_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -56,7 +55,7 @@ public:
 	virtual void BuggerOff(const float3& pos, float radius) {}
 	virtual void StopMove() {}
 
-	void StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred);
+	void StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred, bool includeManualFire = false);
 	void StopAttackingAllyTeam(int ally);
 
 	/**
@@ -176,5 +175,3 @@ inline void CCommandAI::SetOrderTarget(CUnit* o) {
 		AddDeathDependence(reinterpret_cast<CObject*>(orderTarget), DEPENDENCE_ORDERTARGET);
 	}
 }
-
-#endif // _COMMAND_AI_H

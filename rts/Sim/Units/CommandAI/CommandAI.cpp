@@ -1847,10 +1847,12 @@ bool CCommandAI::SkipParalyzeTarget(const CUnit* target) const
 }
 
 
-void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred)
+void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& pred, bool includeManualFire)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	const auto hasTarget = [&](const Command& c) { return (c.GetNumParams() == 1 && (c.GetID() == CMD_FIGHT || c.GetID() == CMD_ATTACK)); };
+	const auto hasTarget = [&](const Command& c) {
+		return (c.GetNumParams() == 1 && (c.GetID() == CMD_FIGHT || c.GetID() == CMD_ATTACK || (includeManualFire && c.GetID() == CMD_MANUALFIRE)));
+	};
 	const auto removeCmd = [&](const Command& c) { return (hasTarget(c) && pred(unitHandler.GetUnit(c.GetParam(0)))); };
 
 	const bool frontRemoved = (!commandQue.empty() && removeCmd(commandQue.front()));
