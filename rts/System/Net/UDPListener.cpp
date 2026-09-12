@@ -54,7 +54,7 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 		if ((port < 0) || (port > 65535))
 			throw std::range_error("Port is out of range [0, 65535]: " + std::to_string(port));
 
-		sock.reset(new ip::udp::socket(netservice));
+		sock.reset(new ip::udp::socket(netcontext));
 		sock->open(ip::udp::v6(), err); // test IP v6 support
 
 		const bool supportsIPv6 = !err;
@@ -107,7 +107,7 @@ std::string UDPListener::TryBindSocket(int port, std::shared_ptr<asio::ip::udp::
 
 void UDPListener::Update(int loopSleepTime) {
 	if (loopSleepTime == 0)
-		netservice.poll();
+		netcontext.poll();
 	else {
 		fd_set rset;
 		FD_ZERO(&rset);

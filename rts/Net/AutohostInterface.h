@@ -57,7 +57,7 @@ public:
 	std::string GetChatMessage();
 
 private:
-	void Send(asio::mutable_buffers_1 sendBuffer);
+	void Send(asio::mutable_buffer sendBuffer);
 
 	/**
 	 * Tries to bind a socket for communication with a UDP server.

@@ -3,7 +3,7 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-#include <asio/io_service.hpp>
+#include <asio/io_context.hpp>
 #include <asio/ip/udp.hpp>
 #include <asio/ip/tcp.hpp>
 
@@ -11,7 +11,7 @@
 namespace netcode
 {
 
-extern asio::io_service netservice;
+extern asio::io_context netcontext;
 
 /**
  * Check if a network error occurred and eventually log it.
@@ -37,10 +37,12 @@ asio::ip::address WrapIP(const std::string& ip,
  * Encapsulates the ip::udp::resolver::resolve(query) function,
  * for sync relevant reasons.
  */
-asio::ip::udp::resolver::iterator WrapResolve(
-		asio::ip::udp::resolver& resolver,
-		asio::ip::udp::resolver::query& query,
-		asio::error_code* err = NULL);
+
+asio::ip::udp::resolver::results_type WrapResolve(
+        asio::ip::udp::resolver& resolver,
+        std::string_view host,
+        std::string_view service,
+        asio::error_code* err = nullptr);
 
 
 asio::ip::address GetAnyAddress(const bool IPv6);

@@ -162,7 +162,7 @@ enum EVENT
 using namespace asio;
 
 AutohostInterface::AutohostInterface(const std::string& remoteIP, int remotePort, const std::string& localIP, int localPort)
-		: autohost(netcode::netservice)
+		: autohost(netcode::netcontext)
 		, initialized(false)
 {
 	std::string errorMsg = AutohostInterface::TryBindSocket(autohost, remoteIP, remotePort, localIP, localPort);
@@ -399,7 +399,7 @@ std::string AutohostInterface::GetChatMessage()
 	return "";
 }
 
-void AutohostInterface::Send(asio::mutable_buffers_1 buffer)
+void AutohostInterface::Send(asio::mutable_buffer buffer)
 {
 	if (autohost.is_open()) {
 		try {

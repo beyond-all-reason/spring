@@ -247,7 +247,7 @@ UDPConnection::UDPConnection(int sourcePort, const std::string& address, const u
 
 	ip::address sourceAddr = GetAnyAddress(addr.address().is_v6());
 	std::shared_ptr<ip::udp::socket> tempSocket(new ip::udp::socket(
-			netcode::netservice, ip::udp::endpoint(sourceAddr, sourcePort)));
+			netcode::netcontext, ip::udp::endpoint(sourceAddr, sourcePort)));
 	mySocket = tempSocket;
 
 	Init();
@@ -439,7 +439,7 @@ void UDPConnection::Update()
 
 	if (!sharedSocket && !closed) {
 		// duplicated code with UDPListener
-		netservice.poll();
+		netcontext.poll();
 
 		size_t bytesAvailable = 0;
 

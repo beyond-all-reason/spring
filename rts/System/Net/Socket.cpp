@@ -11,7 +11,7 @@
 namespace netcode
 {
 
-asio::io_service netservice;
+asio::io_context netcontext;
 
 bool CheckErrorCode(asio::error_code& err)
 {
@@ -36,13 +36,11 @@ asio::ip::udp::endpoint ResolveAddr(const std::string& host, int port, asio::err
 		return ip::udp::endpoint(tempAddr, port);
 
 	auto errBuf = *err; // WrapResolve() might clear err
-	asio::io_service io_service;
-	ip::udp::resolver resolver(io_service);
-	ip::udp::resolver::query query(host, IntToString(port));
-	auto iter = WrapResolve(resolver, query, err);
-	ip::udp::resolver::iterator end;
-	if (!*err && iter != end) {
-		return *iter;
+	asio::io_context io_context;
+	ip::udp::resolver resolver(io_context);
+	auto results = WrapResolve(resolver, host, IntToString(port), err);
+	if (!*err && !results.empty()) {
+		return *results.begin();
 	}
 
 	if (!*err) *err = errBuf;
@@ -56,29 +54,30 @@ asio::ip::address WrapIP(const std::string& ip,
 	asio::ip::address addr;
 
 	if (err == NULL) {
-		addr = asio::ip::address::from_string(ip);
+		addr = asio::ip::make_address(ip);
 	} else {
-		addr = asio::ip::address::from_string(ip, *err);
+		addr = asio::ip::make_address(ip, *err);
 	}
 
 	// (date of note: 08/05/10)
-	// something in from_string() is invalidating the FPU flags
+	// something in make_address() is invalidating the FPU flags
 	// tested on win2k and linux (not happening there)
 	streflop::streflop_init<streflop::Simple>();
 	return addr;
 }
 
-asio::ip::udp::resolver::iterator WrapResolve(
+asio::ip::udp::resolver::results_type WrapResolve(
 		asio::ip::udp::resolver& resolver,
-		asio::ip::udp::resolver::query& query,
-		asio::error_code* err)
+		std::string_view host,
+		std::string_view service,
+		asio::error_code* err) 
 {
-	asio::ip::udp::resolver::iterator resolveIt;
+	asio::ip::udp::resolver::results_type resolveIt;
 
-	if (err == NULL) {
-		resolveIt = resolver.resolve(query);
+	if (err == nullptr) {
+		resolveIt = resolver.resolve(host, service);
 	} else {
-		resolveIt = resolver.resolve(query, *err);
+		resolveIt = resolver.resolve(host, service, *err);
 	}
 
 	// (date of note: 08/22/10)
