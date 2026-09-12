@@ -2824,6 +2824,20 @@ DRAW_CALLIN(DrawWorld)
  */
 DRAW_CALLIN(DrawWorldPreUnit)
 
+/*** Called after opaque units and features, immediately before opaque projectiles.
+ *
+ * Useful for world-space compositing effects that should remain behind projectiles.
+ *
+ * @function Callins:DrawWorldPreProjectiles
+ */
+DRAW_CALLIN(DrawWorldPreProjectiles)
+
+/*** Called after all opaque world objects and immediately before the alpha pass.
+ *
+ * @function Callins:DrawWorldPreAlpha
+ */
+DRAW_CALLIN(DrawWorldPreAlpha)
+
 /*** Called before decals are drawn
  *
  * @function Callins:DrawPreDecals

@@ -1,0 +1,69 @@
+name: Projectile Fog Callins Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/projectile-fog-callins
+    paths:
+      - "rts/Rendering/WorldDrawer.cpp"
+      - "rts/System/Events.def"
+      - "rts/System/EventClient.h"
+      - "rts/System/EventHandler.h"
+      - "rts/System/EventHandler.cpp"
+      - "rts/Lua/LuaHandle.h"
+      - "rts/Lua/LuaHandle.cpp"
+      - "rts/Lua/LuaOpenGL.h"
+      - "cont/LuaUI/callins.lua"
+      - "cont/LuaUI/widgets.lua"
+      - ".github/workflows/projectile-fog-callins-windows.yml"
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Validate committed source diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check HEAD^ HEAD
+          git status --short
+
+      - name: Build Windows amd64 engine
+        shell: bash
+        env:
+          CI: "true"
+        run: |
+          set -euo pipefail
+          chmod +x docker-build-v2/build.sh
+          ./docker-build-v2/build.sh --arch amd64 --jobs 4 windows
+
+      - name: Package ready-to-use engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d build-amd64-windows/install
+          cd build-amd64-windows/install
+          zip -r9 "${GITHUB_WORKSPACE}/RecoilEngine-ProjectileFog-Callins-Windows.zip" .
+
+      - name: Upload Windows engine ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: RecoilEngine-ProjectileFog-Callins-Windows
+          path: RecoilEngine-ProjectileFog-Callins-Windows.zip
+          if-no-files-found: error
+          retention-days: 14

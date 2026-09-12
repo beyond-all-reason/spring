@@ -344,6 +344,8 @@ class CEventClient
 		virtual void DrawGenesis() {}
 		virtual void DrawWorld() {}
 		virtual void DrawWorldPreUnit() {}
+		virtual void DrawWorldPreProjectiles() {}
+		virtual void DrawWorldPreAlpha() {}
 		virtual void DrawPreDecals() {}
 		virtual void DrawWorldPreParticles(bool drawAboveWater, bool drawBelowWater, bool drawReflection, bool drawRefraction) {}
 		virtual void DrawWaterPost() {}

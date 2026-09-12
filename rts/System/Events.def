@@ -143,6 +143,8 @@
 	SETUP_EVENT(DrawGenesis,               MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWorld,                 MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWorldPreUnit,          MANAGED_BIT | UNSYNCED_BIT)
+	SETUP_EVENT(DrawWorldPreProjectiles,   MANAGED_BIT | UNSYNCED_BIT)
+	SETUP_EVENT(DrawWorldPreAlpha,         MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawPreDecals,             MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWorldPreParticles,     MANAGED_BIT | UNSYNCED_BIT)
 	SETUP_EVENT(DrawWaterPost,             MANAGED_BIT | UNSYNCED_BIT)

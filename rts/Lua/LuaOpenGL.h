@@ -63,6 +63,14 @@ class LuaOpenGL {
 		static void ResetDrawWorldPreUnit();
 		static void DisableDrawWorldPreUnit();
 
+		inline static void EnableDrawWorldPreProjectiles() { EnableDrawWorld(); }
+		inline static void ResetDrawWorldPreProjectiles() { ResetDrawWorld(); }
+		inline static void DisableDrawWorldPreProjectiles() { DisableDrawWorld(); }
+
+		inline static void EnableDrawWorldPreAlpha() { EnableDrawWorld(); }
+		inline static void ResetDrawWorldPreAlpha() { ResetDrawWorld(); }
+		inline static void DisableDrawWorldPreAlpha() { DisableDrawWorld(); }
+
 		NOOP_STATE_FUNCS(DrawPreDecals)
 		NOOP_STATE_FUNCS(DrawWorldPreParticles)
 		NOOP_STATE_FUNCS(DrawWaterPost)
