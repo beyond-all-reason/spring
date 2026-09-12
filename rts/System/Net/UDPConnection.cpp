@@ -1,5 +1,9 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#ifndef _WIN32
+#include <poll.h>
+#endif
+
 #include "UDPConnection.h"
 
 #include <cinttypes>
@@ -264,6 +268,14 @@ void UDPConnection::Init()
 {
 	// make sure protocoldef is initialized
 	CBaseNetProtocol::Get();
+
+	// make sure we don't block the main thread with send_to if the send buffer is full
+	if (mySocket != nullptr) {
+		asio::error_code nbErr;
+		mySocket->non_blocking(true, nbErr);
+		if (nbErr)
+			LOG_L(L_WARNING, "[%s] could not set non-blocking mode: %s", __func__, nbErr.message().c_str());
+	}
 
 	lastNakTime = spring_gettime();
 	lastUnackResentTime = spring_gettime();
@@ -698,6 +710,8 @@ void UDPConnection::Flush(const bool forced)
 	if (muted)
 		return;
 
+	drainWaited = false;
+
 	const spring_time curTime = spring_gettime();
 
 	// do not create chunks more than chunksPerSec times per second
@@ -809,6 +823,7 @@ std::string UDPConnection::Statistics() const
 		"\t{%.3fx, %.3fx} relative protocol overhead {up, down}\n",
 		"\t%u incoming chunks dropped, %u outgoing chunks resent\n",
 		"\t%u incoming chunks processed\n",
+		"\t%u outgoing packets dropped on a full send buffer\n",
 	};
 
 	std::string msg = "[UDPConnection::Statistics]\n";
@@ -817,6 +832,7 @@ std::string UDPConnection::Statistics() const
 	msg += spring::format(fmts[2], spring::SafeDivide(sentOverhead * 1.0f, dataSent * 1.0f), spring::SafeDivide(recvOverhead * 1.0f, dataRecv * 1.0f));
 	msg += spring::format(fmts[3], droppedChunks, resentChunks);
 	msg += spring::format(fmts[4], lastInOrder + 1);
+	msg += spring::format(fmts[5], droppedSends);
 	return msg;
 }
 
@@ -1058,10 +1074,35 @@ void UDPConnection::SendPacket(Packet& pkt)
 
 	EMULATE_LATENCY( !EMULATE_PACKET_LOSS( LOSS_COUNTER ) ) {
 		mySocket->send_to(buffer(sendBuffer), addr, flags, err);
+		// a full send buffer surfaces as try_again, give it a moment to drain.
+		// once per flush pass, so a flush with multiple packets doesn't wait multiple times
+		if (err && err.value() == asio::error::try_again && !drainWaited) {
+			drainWaited = true;
+			/* Balance between too many resends (lower)
+			 * and main thread stalls (higher) */ 
+			constexpr int drainWaitMs = 5;
+#ifdef _WIN32
+			WSAPOLLFD pfd = {(SOCKET)mySocket->native_handle(), POLLWRNORM, 0};
+			if (WSAPoll(&pfd, 1, drainWaitMs) > 0)
+#else
+			struct pollfd pfd = {mySocket->native_handle(), POLLOUT, 0};
+			if (poll(&pfd, 1, drainWaitMs) > 0)
+#endif
+			{
+				err.clear();
+				mySocket->send_to(buffer(sendBuffer), addr, flags, err);
+			}
+		}
 	}
 
 	if (CheckErrorCode(err))
 		return;
+
+	// a dropped packet is not a sent packet
+	if (err) {
+		droppedSends += 1;
+		return;
+	}
 
 	dataSent += sendBuffer.size();
 	sentPackets += 1;
