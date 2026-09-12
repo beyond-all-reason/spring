@@ -180,7 +180,7 @@ bool QTPFS::NodeLayer::Update(UpdateThreadData& threadData, bool isInitialUpdate
 	unsigned int recIdx =  0;
 	for (unsigned int hmz = r.z1; hmz < r.z2; ++hmz) {
 		for (unsigned int hmx = r.x1; hmx < r.x2; ++hmx, ++recIdx) {
-			// don't tesselate map edges when footprint extends across them in IsBlocked*
+			// don't tessellate map edges when footprint extends across them in IsBlocked*
 			const int chmx = std::clamp(int(hmx), md->xsizeh, mapDims.mapxm1 + (-md->xsizeh));
 			const int chmz = std::clamp(int(hmz), md->zsizeh, mapDims.mapym1 + (-md->zsizeh));
 

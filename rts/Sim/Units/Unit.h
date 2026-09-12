@@ -358,7 +358,7 @@ public:
 	// last time this unit fired a weapon
 	int lastFireWeapon = 0;
 
-	// if we arent built on for a while start decaying
+	// if we aren't built on for a while start decaying
 	int lastNanoAdd = 0;
 	int lastFlareDrop = 0;
 

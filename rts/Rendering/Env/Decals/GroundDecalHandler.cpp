@@ -1475,7 +1475,7 @@ void CGroundDecalHandler::CompactDecalsVector(int frameNum)
 #endif
 
 	// temporary store the id --> DecalOwner relationship,
-	// for the convinience to restore decalOwners correctness,
+	// for the convenience to restore decalOwners correctness,
 	// after the compaction is complete
 	spring::unordered_map<uint32_t, DecalOwner> tmpOwnerToId;
 

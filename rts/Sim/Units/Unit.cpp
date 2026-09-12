@@ -2137,7 +2137,7 @@ bool CUnit::AddBuildPower(CUnit* builder, float amount)
 bool CUnit::AllowedReclaim(CUnit* builder) const
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// Don't allow the reclaim if the unit is finished and we arent allowed to reclaim it
+	// Don't allow the reclaim if the unit is finished and we aren't allowed to reclaim it
 	if (!beingBuilt) {
 		if (allyteam == builder->allyteam) {
 			if ((team != builder->team) && (!modInfo.reclaimAllowAllies)) return false;

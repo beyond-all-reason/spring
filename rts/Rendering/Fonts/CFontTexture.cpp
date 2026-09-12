@@ -177,7 +177,7 @@ public:
 			FcConfigEnableHome(FcFalse);
 			config = FcConfigCreate();
 
-			// we cant directly use the usual fontconfig methods because those won't let us have both first our cache
+			// we can't directly use the usual fontconfig methods because those won't let us have both first our cache
 			// and system fonts included. also linux actually has system config files that can be used by fontconfig.
 
 			#ifdef _WIN32

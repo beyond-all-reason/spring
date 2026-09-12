@@ -1398,7 +1398,7 @@ public:
 		bool _setUserInputPrefix
 	): IUnsyncedActionExecutor(
 		"Chat" + _commandPostfix,
-		"Starts waiting for intput to be sent to " + _commandPostfix
+		"Starts waiting for input to be sent to " + _commandPostfix
 	),
 		userInputPrefix(_userInputPrefix),
 		setUserInputPrefix(_setUserInputPrefix)
@@ -1874,7 +1874,7 @@ public:
 
 class HideInterfaceActionExecutor : public IUnsyncedActionExecutor {
 public:
-	HideInterfaceActionExecutor() : IUnsyncedActionExecutor("HideInterface", "Hide/Show the GUI controlls") {
+	HideInterfaceActionExecutor() : IUnsyncedActionExecutor("HideInterface", "Hide/Show the GUI controls") {
 	}
 
 	bool Execute(const UnsyncedAction& action) const final {

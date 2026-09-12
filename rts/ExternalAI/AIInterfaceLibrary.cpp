@@ -49,7 +49,7 @@ void CAIInterfaceLibrary::InitStatic() {
 	const int ret = sAIInterfaceLibrary.initStatic(interfaceId, &callback);
 	const char* fmt =
 		"Initializing AI Interface library from file \"%s\"."
-		" The call to initStatic() returned unsuccessfuly.";
+		" The call to initStatic() returned unsuccessfully.";
 
 	if (ret == 0) {
 		initialized = true;
@@ -70,7 +70,7 @@ void CAIInterfaceLibrary::ReleaseStatic() {
 		const int ret = sAIInterfaceLibrary.releaseStatic();
 		const char* fmt =
 			"Releasing AI Interface Library from file \"%s\"."
-			" The call to releaseStatic() returned unsuccessfuly.";
+			" The call to releaseStatic() returned unsuccessfully.";
 
 		if (ret != 0) {
 			// releasing the library failed!

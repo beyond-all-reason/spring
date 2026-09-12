@@ -445,7 +445,7 @@ void QTPFS::PathManager::Load() {
 		//   the map or the mod changes then the checksum does
 		//   (should!) as well and we get a cache-miss
 		//   this value is also combined with the tree-sums to
-		//   make it depend on the tesselation code specifics
+		//   make it depend on the tessellation code specifics
 		// FIXME:
 		//   assumption is invalid now (Lua inits before we do)
 		pfsCheckSum = 0;
@@ -1147,7 +1147,7 @@ bool QTPFS::PathManager::ExecuteSearch(
 	// TODO: make a function?
 	if (path->GetOwner() != nullptr)
 	{
-		// Always clear incase the situation has changed since the last frame, if a partial search
+		// Always clear in case the situation has changed since the last frame, if a partial search
 		// was intended, but not carried out. For example, a full-path share wait.
 		search->doPartialSearch = false;
 

@@ -122,18 +122,18 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 // Notes for LOAM (Lazy Optimally Adapting Meshes).
 // Dear reader, consider yourself a rubber ducky.
 
-// 1. a dirty patch can be retesselated by just running tessellate
-// --needs the ability to 'resume' tesselation
-// --after retesselation, only update the vertex buffers of the stuff that changed
+// 1. a dirty patch can be retessellated by just running tessellate
+// --needs the ability to 'resume' tessellation
+// --after retessellation, only update the vertex buffers of the stuff that changed
 
-// 2. when a patch goes out of view, dont force a reset on the whole thing
+// 2. when a patch goes out of view, don't force a reset on the whole thing
 
 // 3. visibility checking needs some serious rework, and the groundwork for that is already laid out above
 //  -- 3x as many shadow patches rendered as regular!
 
 // MT roam is not appreciably faster than ST roam, gut it
 // MT roam easily runs out of pool space, and crashes due to:
-// not guaranteed that two threads do not tesselate patches that dont share neighbours
+// not guaranteed that two threads do not tessellate patches that don't share neighbours
 // unbalanced use of trinodepools
 // wasteful of RAM
 // Easy to run out of, completely nondeterministic that a resized pool will not fuck up
@@ -141,10 +141,10 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 // we need to get rid of the malloc errors that come from MT roam
 
 // Why do we even keep a separate set of meshes for shadow and regular?
-// we could easily half the load again by reusing the same meshes (especiallally the ram load)
+// we could easily half the load again by reusing the same meshes (especially the ram load)
 // we need to use visible in shadowORmain
 
-// fix pool.resize failing, either by retrying with a tiny bit smaller window, or by stopping tesselation straight up
+// fix pool.resize failing, either by retrying with a tiny bit smaller window, or by stopping tessellation straight up
 
 // How can we retessellate patches entering view sanely?
 // The same way we do it for dirty patches? does this mean that they might be forced to be at a lower resolution?
@@ -152,9 +152,9 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 
 // Tricky cases:
 // going from full view to zoomed in state:
-// theoretically, full view should be tesselated at a low degree, so not all of the trinodepool should be exhausted
+// theoretically, full view should be tessellated at a low degree, so not all of the trinodepool should be exhausted
 // when zooming in further, an increase in detail should be forced , but this 1. further exhausts the tripool, and should not be done too often.
-// we can call retesselate of a patch,
+// we can call retessellate of a patch,
 
 // an exhaustion of the tritreenodepool should instantly trigger a reset and retesselate
 
@@ -173,9 +173,9 @@ CRoamMeshDrawer::~CRoamMeshDrawer()
 // handle bad allocs
 
 // 5. Better zoom handling:
-//  -since the tesselation depends only on the distance from camera
-//  -position doesnt really matter
-//  - if a patch was tesselated with a camera that is more than 2x closer than the last tesselation of that patch, then we should retesselate
+//  -since the tessellation depends only on the distance from camera
+//  -position doesn't really matter
+//  - if a patch was tessellated with a camera that is more than 2x closer than the last tessellation of that patch, then we should retessellate
 //  - I do not know how this relates to the shadow camera, as that still needs quite a bit of work anyway
 //  - maybe just use the shadowcamera for visibility, but actually use the main camera for distance?
 //  - this would also add a 'magic'
@@ -224,7 +224,7 @@ void CRoamMeshDrawer::Update()
 
 #if TESSELATION_DEBUG
 	if (tesselMesh)
-		LOG("Tesselation forced for pass %i in frame %i", shadowPass,globalRendering->drawFrame);
+		LOG("Tessellation forced for pass %i in frame %i", shadowPass,globalRendering->drawFrame);
 #endif //TESSELATION_DEBUG
 
 	{
@@ -336,7 +336,7 @@ void CRoamMeshDrawer::Update()
 	{
 		//SCOPED_TIMER("ROAM::Tessellate");
 
-		// tesselate all the patches patches that are marked for it, but if we run out of trinodes,
+		// tesselate all the patches that are marked for it, but if we run out of trinodes,
 		// then reset all of them and try again
 		bool tessSuccess = true;
 		if (!forceNextTesselation[shadowPass]) {
@@ -363,7 +363,7 @@ void CRoamMeshDrawer::Update()
 				tessSuccess = false;
 
 			#if TESSELATION_DEBUG
-				LOG("Lazy tesselation ran out of trinodes, trying again after a reset #Visible=%i #tesssincelastreset=%i, shadow=%i",
+				LOG("Lazy tessellation ran out of trinodes, trying again after a reset #Visible=%i #tessSinceLastReset=%i, shadow=%i",
 					numPatchesVisible,
 					tesselationsSinceLastReset[shadowPass],
 					shadowPass);
@@ -393,7 +393,7 @@ void CRoamMeshDrawer::Update()
 
 	{
 		//SCOPED_TIMER("ROAM::GenerateIndexArray");
-		//only do for_mt if a full tesselation happened, since only a few patches come into visibility
+		//only do for_mt if a full tessellation happened, since only a few patches come into visibility
 		if (forceNextTesselation[shadowPass]) {
 			for_mt(0, numPatches, [&patches, &cam](const int i) {
 				Patch* p = &patches[i];

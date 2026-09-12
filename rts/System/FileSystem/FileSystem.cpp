@@ -37,7 +37,7 @@
 	#include <nowide/convert.hpp>
 	#include <io.h>
 
-	// Win-API redifines these, which breaks things
+	// Win-API redefines these, which breaks things
 	#if defined(DeleteFile)
 		#undef DeleteFile
 	#endif

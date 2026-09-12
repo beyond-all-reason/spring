@@ -579,7 +579,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
  *
  * @field vertex string?
  * 
- * The "TCS" or Tesselation Control Shader controls how much tessellation a
+ * The "TCS" or Tessellation Control Shader controls how much tessellation a
  * particular patch gets; it also defines the size of a patch, thus allowing it
  * to augment data. It can also filter vertex data taken from the vertex shader.
  * The main purpose of the TCS is to feed the tessellation levels to the
@@ -588,7 +588,7 @@ GLint LuaShaders::GetUniformLocation(LuaShaders::Program* p, const char* name)
  *
  * @field tcs string?
  * 
- * The "TES" or Tesselation Evaluation Shader takes the abstract patch generated
+ * The "TES" or Tessellation Evaluation Shader takes the abstract patch generated
  * by the tessellation primitive generation stage, as well as the actual vertex
  * data for the entire patch, and generates a particular vertex from it. Each
  * TES invocation generates a single vertex. It can also take per-patch data
@@ -1437,9 +1437,9 @@ int LuaShaders::SetGeometryShaderParameter(lua_State* L)
 }
 
 /***
- * Sets the tesselation shader parameters for `shaderID`.
+ * Sets the tessellation shader parameters for `shaderID`.
  *
- * Needed by tesselation shader programs. (Check the opengl
+ * Needed by tessellation shader programs. (Check the opengl
  * `GL_ARB_tessellation_shader` extension for `glProgramParameteri`).
  * 
  * @function gl.SetTesselationShaderParameter

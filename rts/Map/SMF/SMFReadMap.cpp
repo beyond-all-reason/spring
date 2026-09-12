@@ -360,7 +360,7 @@ void CSMFReadMap::CreateDetailTex()
 void CSMFReadMap::CreateShadingTex()
 {
 	RECOIL_DETAILED_TRACY_ZONE;
-	// +1 to accomodate two FBO attachments of same size, not fully correct
+	// +1 to accommodate two FBO attachments of same size, not fully correct
 	shadingTex.SetRawSize(int2(mapDims.mapxp1, mapDims.mapyp1));
 
 	// the shading/normal texture buffers must have PO2 dimensions

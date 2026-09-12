@@ -407,14 +407,14 @@ void Patch::RecursTessellate(TriTreeNode* tri, const int2 left, const int2 right
 		triVariance = (std::min(varianceTrees[varTreeIdx][curNodeIdx], varianceMaxLimit) * PATCH_SIZE * size) * camDistLODFactor;
 	}
 
-	// stop tesselation
+	// stop tessellation
 	if (triVariance <= 1.0f)
 		return;
 
-	// since we can 'retesselate' to a deeper depth, to preserve the trinodepool we will only split if its unsplit
+	// since we can 'retessellate' to a deeper depth, to preserve the trinodepool we will only split if its unsplit
 	if (!tri->IsBranch()) {
 		Split(tri);
-		// we perform the split, and if the result is not a branch (e.g. couldnt split) we bail
+		// we perform the split, and if the result is not a branch (e.g. couldn't split) we bail
 		if(!tri->IsBranch())
 			return;
 	}

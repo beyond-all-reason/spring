@@ -117,7 +117,7 @@ public:
 	bool paralyzer;             ///< weapon will only paralyze not do real damage
 	bool impactOnly;            ///< The weapon damages by impacting, not by exploding
 
-	bool noAutoTarget;          ///< cant target stuff (for antinuke,dgun)
+	bool noAutoTarget;          ///< can't target stuff (for antinuke,dgun)
 	bool manualfire;            ///< if true, slave us to the ManualFire button
 
 	bool sweepFire;

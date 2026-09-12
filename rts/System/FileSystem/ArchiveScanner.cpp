@@ -181,7 +181,7 @@ CArchiveScanner::ArchiveData::ArchiveData(const LuaTable& archiveTable, bool fro
 	//
 	// NOTE when changing this, this function is used both by the code that
 	// reads ArchiveCache.lua and the code that reads modinfo.lua from the mod.
-	// so make sure it doesn't keep adding stuff to the name everytime
+	// so make sure it doesn't keep adding stuff to the name every time
 	// Spring/unitsync is loaded.
 	//
 	const std::string& name = GetNameVersioned();
@@ -724,7 +724,7 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	if (ar == nullptr || !ar->IsOpen()) {
 		LOG_L(L_WARNING, "[AS::%s] unable to open archive \"%s\"", __func__, fullName.c_str());
 
-		// record it as broken, so we don't need to look inside everytime
+		// record it as broken, so we don't need to look inside every time
 		BrokenArchive& ba = GetAddBrokenArchive(lcfn);
 		ba.name = lcfn;
 		ba.path = fpath;
@@ -768,7 +768,7 @@ void CArchiveScanner::ScanArchive(const std::string& fullName, bool doChecksum)
 	if (!CheckCompression(ar.get(), fullName, error)) {
 		LOG_L(L_WARNING, "[AS::%s] failed to scan \"%s\" (%s)", __func__, fullName.c_str(), error.c_str());
 
-		// mark archive as broken, so we don't need to look inside everytime
+		// mark archive as broken, so we don't need to look inside every time
 		BrokenArchive& ba = GetAddBrokenArchive(lcfn);
 		ba.name = lcfn;
 		ba.path = fpath;

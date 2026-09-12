@@ -2243,7 +2243,7 @@ struct SSkirmishAICallback {
 	/** Next tick the weapon can fire again. */
 	int               (CALLING_CONV *Unit_Weapon_getReloadFrame)(int skirmishAIId, int unitId, int weaponId);
 
-	/** Time between succesive fires in ticks. */
+	/** Time between successive fires in ticks. */
 	int               (CALLING_CONV *Unit_Weapon_getReloadTime)(int skirmishAIId, int unitId, int weaponId);
 
 	float             (CALLING_CONV *Unit_Weapon_getRange)(int skirmishAIId, int unitId, int weaponId);

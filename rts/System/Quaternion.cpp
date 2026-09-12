@@ -347,7 +347,7 @@ CQuaternion& CQuaternion::InverseInPlace()
 	if unlikely(sqn < float3::nrm_eps())
 		return *this;
 
-	*this = Conjugate() / sqn; // aparently not math::sqrt(sqn)
+	*this = Conjugate() / sqn; // apparently not math::sqrt(sqn)
 	return *this;
 }
 

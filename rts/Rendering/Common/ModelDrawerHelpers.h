@@ -32,7 +32,7 @@ public:
 	virtual void BindShadowTex(const CS3OTextureHandler::S3OTexMat* textureMat) const = 0;
 	virtual void UnbindShadowTex()  const = 0;
 public:
-	// Auxilary
+	// Auxiliary
 	static bool ObjectVisibleReflection(const float3& objPos, const float3& camPos, float maxRadius);
 
 	static void EnableTexturesCommon();

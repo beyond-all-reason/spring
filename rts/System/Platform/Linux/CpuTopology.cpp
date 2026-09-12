@@ -46,7 +46,7 @@ std::vector<int> get_online_cpus() {
 		char sep;
 		while (ss >> min_cpu) {
 			if ((ss >> sep) && sep == '-') {
-				// Range of CPUs separted by '-'
+				// Range of CPUs separated by '-'
 				if (!(ss >> max_cpu)) {
 					// Should not ever happen (would need to be a malformed online file)
 					if (min_cpu >= MAX_CPUS) {

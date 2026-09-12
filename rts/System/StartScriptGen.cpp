@@ -49,7 +49,7 @@ std::string CreateMinimalSetup(const std::string& game, const std::string& map)
 {
 	TdfParser::TdfSection setup;
 	CreateMinimalSetupSections(setup, ArchiveNameResolver::GetMap(map), ArchiveNameResolver::GetGame(game));
-	// section already present, using this method to get acces to GAME section
+	// section already present, using this method to get access to GAME section
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	TdfParser::TdfSection* modopts = g->construct_subsection("MODOPTIONS");
 	modopts->AddPair("MinimalSetup", 1); //use for ingame detecting this type of start
@@ -66,7 +66,7 @@ std::string CreateDefaultSetup(const std::string& map, const std::string& game, 
 {
 	TdfParser::TdfSection setup;
 	CreateMinimalSetupSections(setup, map, game);
-	// section already present, using this method to get acces to GAME section
+	// section already present, using this method to get access to GAME section
 	TdfParser::TdfSection* g = setup.construct_subsection("GAME");
 	
 

@@ -104,7 +104,7 @@ public:
 	 *
 	 * Unlike the other functions, this is not called on Init(),
 	 * instead we wait for CPreGame to call this. The reason is that the map
-	 * is not known before CPreGame recieves the gamedata from the server.
+	 * is not known before CPreGame receives the gamedata from the server.
 	 */
 	void LoadStartPositions(bool withoutMap = false);
 	/**

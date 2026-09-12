@@ -5213,7 +5213,7 @@ int LuaUnsyncedCtrl::SetGroundDecalTint(lua_State* L)
 /***
  *
  * @function Spring.SetGroundDecalMisc
- * Sets varios secondary parameters of a decal
+ * Sets various secondary parameters of a decal
  * @param decalID DecalID
  * @param dotElimExp number? (Default: curValue) pow(max(dot(decalProjVector, SurfaceNormal), 0.0), dotElimExp), used to reduce decal artifacts on surfaces non-collinear with the projection vector
  * @param refHeight number? (Default: curValue)

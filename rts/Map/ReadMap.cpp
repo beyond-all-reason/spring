@@ -781,7 +781,7 @@ void CReadMap::UpdateSlopemap(const SRectangle& rect, bool initialize)
 }
 
 
-/// split the update into multiple invididual (los-square) chunks
+/// split the update into multiple individual (los-square) chunks
 void CReadMap::HeightMapUpdateLOSCheck(const SRectangle& hgtMapRect)
 {
 	RECOIL_DETAILED_TRACY_ZONE;

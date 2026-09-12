@@ -34,7 +34,7 @@ struct SAIInterfaceCallback {
 	 * if they differ only in the warning part of the ABI version.
 	 * Changes here could indicate that function arguments got changed,
 	 * which could cause a crash, but it could be unimportant changes
-	 * like added comments or code reformatting aswell.
+	 * like added comments or code reformatting as well.
 	 */
 	int               (CALLING_CONV *Engine_AIInterface_ABIVersion_getWarningPart)(int interfaceId);
 

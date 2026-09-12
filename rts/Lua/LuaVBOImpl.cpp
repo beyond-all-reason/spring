@@ -77,7 +77,7 @@ namespace {
 	inline void VBOExistenceCheck(const VBO* vbo, const char* func)
 	{
 		if (!vbo) {
-			LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you succesfully call :Define()?", func);
+			LuaUtils::SolLuaError("[LuaVBOImpl::%s] Buffer definition is invalid. Did you successfully call :Define()?", func);
 		}
 	}
 }

@@ -6637,7 +6637,7 @@ int LuaOpenGL::SaveImage(lua_State* L)
 	const std::string filename = luaL_checkstring(L, 5);
 
 	if (!LuaIO::SafeWritePath(filename) || !LuaIO::IsSimplePath(filename)) {
-		LOG_L(L_WARNING, "gl.SaveImage: tried to write to illegal path localtion");
+		LOG_L(L_WARNING, "gl.SaveImage: tried to write to illegal path location");
 		return 0;
 	}
 	if ((width <= 0) || (height <= 0)) {

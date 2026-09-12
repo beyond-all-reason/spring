@@ -121,10 +121,10 @@ public:
 
 	void UpdateHeightMap(const SRectangle& rect = SRectangle(0, 0, PATCH_SIZE, PATCH_SIZE));
 
-	float3 lastCameraPosition ; //the last camera position this patch was tesselated from
+	float3 lastCameraPosition ; //the last camera position this patch was tessellated from
 
-	//this specifies the manhattan distance from the camera during the last tesselation
-	//note that this can only become lower, as we can only increase tesselation levels while maintaining no cracks
+	//this specifies the manhattan distance from the camera during the last tessellation
+	//note that this can only become lower, as we can only increase tessellation levels while maintaining no cracks
 	float camDistanceLastTesselation;
 
 	// create an approximate mesh
@@ -185,7 +185,7 @@ private:
 	// does the variance-tree need to be recalculated for this Patch?
 	bool isTesselated = false;
 	bool isDirty = true;
-	// Did the tesselation tree change from what we have stored in the VBO?
+	// Did the tessellation tree change from what we have stored in the VBO?
 	bool isChanged = false;
 
 	float varianceMaxLimit = std::numeric_limits<float>::max();

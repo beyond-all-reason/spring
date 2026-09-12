@@ -440,7 +440,7 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	PUSH_GL(GEOMETRY_VERTICES_OUT_EXT);
 
 	/***
-	 * Tesselation control shader parameters
+	 * Tessellation control shader parameters
 	 * @section tesselationcontrolshaderparameters
 	 */
 

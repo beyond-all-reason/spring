@@ -279,7 +279,7 @@ void TrafficDump(CDemoReader& reader, bool trafficStats)
 				std::cout << "STARTPLAYING" << std::endl;
 				break;
 			case NETMSG_STARTPOS:
-				std::cout << "STARTPOS: Playernum: " << (unsigned)buffer[1] << " Team: " << (unsigned)buffer[2] << " Readyness: " << (unsigned)buffer[3] << std::endl;
+				std::cout << "STARTPOS: Playernum: " << (unsigned)buffer[1] << " Team: " << (unsigned)buffer[2] << " Readiness: " << (unsigned)buffer[3] << std::endl;
 				break;
 			case NETMSG_SYSTEMMSG:
 				std::cout << "SYSTEMMSG: Player: " << (unsigned)buffer[3] << " Msg: " << (char*)(buffer+4) << std::endl;

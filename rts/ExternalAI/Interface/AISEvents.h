@@ -178,7 +178,7 @@ struct SUnitIdleEvent {
  * fulfill it. Reasons for this are:
  * - The unit is not able to move
  * - The path to the target location is blocked
- * - The unit can not move on the terain of the target location (for example,
+ * - The unit can not move on the terrain of the target location (for example,
  *   the target is on land, and the unit is a ship)
  */
 struct SUnitMoveFailedEvent {

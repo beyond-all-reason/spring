@@ -258,7 +258,7 @@ bool CSMFMapFile::ReadGrassMap(void *data)
 			ifs.Seek(pos);
 			ifs.Read(data, header.mapx / 4 * header.mapy / 4);
 			/* char; no swabbing. */
-			return true; //we arent interested in other extensions anyway
+			return true; //we aren't interested in other extensions anyway
 		}
 
 		// assumes we can use data as scratch memory

@@ -386,7 +386,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 
 	REGISTER_LUA_CFUNC(SetRadarErrorParams);
 
-	// Unfortunatly classes within classes does not work well in emmylua
+	// Unfortunately classes within classes does not work well in emmylua
 	/*** @field Spring.MoveCtrl MoveCtrl */
 	if (!LuaSyncedMoveCtrl::PushMoveCtrl(L))
 		return false;

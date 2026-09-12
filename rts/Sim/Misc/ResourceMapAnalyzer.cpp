@@ -276,7 +276,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 	}
 
 	// make a list of the indexes of the best spots
-	// (make sure that the list wont be too big)
+	// (make sure that the list won't be too big)
 	if (numberOfValues > 256) {
 		numberOfValues = 256;
 	}
@@ -337,7 +337,7 @@ void CResourceMapAnalyzer::GetResourcePoints() {
 					}
 
 					// make a list of the indexes of the best spots
-					// (make sure that the list wont be too big)
+					// (make sure that the list won't be too big)
 					if (numberOfValues > 256) {
 						numberOfValues = 256;
 					}

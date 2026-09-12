@@ -35,7 +35,7 @@ CONFIG(float, CameraMoveSlowMult)
 CONFIG(int, CamFrameTimeCorrection)
     .defaultValue(0)
 	.minimumValue(0)
-	.description("Sets wether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
+	.description("Sets whether the camera interpolation factor should be the inverse of fps or last draw frame time (0 = lastdrawframetime, 1 = fpsinv)");
 
 
 CCamera::CCamera(uint32_t cameraType, uint32_t projectionType)

@@ -1481,7 +1481,7 @@ float CWeapon::GetSafeInterceptTime(const CUnit* unit, float predictMult) const
 		predictTime = (2 * cc) / (-bb + math::sqrt(temp2 - temp1));
 	}
 	// case 2, aa >0, target speed is greater than projectile speed
-	// no postive solution may exist
+	// no positive solution may exist
 	else if (aa > 0) {
 		// case 2a, check for imaginary solutions
 		if (temp1 >= temp2) {

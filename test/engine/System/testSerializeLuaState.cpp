@@ -8,7 +8,7 @@
 
 static int handlepanic(lua_State* L)
 {
-	throw "lua paniced";
+	throw "lua panicked";
 }
 
 

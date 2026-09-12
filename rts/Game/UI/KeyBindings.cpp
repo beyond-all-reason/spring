@@ -342,7 +342,7 @@ void MergeActionListsByTrigger(const ActionList& actionListA, const ActionList& 
 	// If the user bound same action to both keys and scancodes we want to not
 	// include action duplicates keeping the action with lower bindingIndex.
 	//
-	// A duplicate is an action for which theres a correspondent and only one
+	// A duplicate is an action for which there's a correspondent and only one
 	// identical action present, but bound to a different key.
 	// This is guaranteed by the logic in ::Bind, which also implies it will
 	// invariably be the opposite of the action keytype (scancode<->keycode)

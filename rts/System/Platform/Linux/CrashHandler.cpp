@@ -1007,7 +1007,7 @@ namespace CrashHandler
 
 			// fatal signal, try to clean up
 			Remove();
-			// exit if we cought a critical signal; don't handle any further signals when exiting
+			// exit if we caught a critical signal; don't handle any further signals when exiting
 			ErrorMessageBox(buf, "Spring crashed", MBF_OK | MBF_CRASH);
 		} else {
 			logSinkHandler.SetSinking(true);

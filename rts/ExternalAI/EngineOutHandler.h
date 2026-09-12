@@ -49,7 +49,7 @@ public:
 
 	void Update();
 
-	/** Group should return false if it doenst want the unit for some reason. */
+	/** Group should return false if it doesn't want the unit for some reason. */
 	bool UnitAddedToGroup(const CUnit& unit, const CGroup& group);
 	/** No way to refuse giving up a unit. */
 	void UnitRemovedFromGroup(const CUnit& unit, const CGroup& group);

@@ -31,7 +31,7 @@ namespace QTPFS {
         static constexpr uint32_t DENSE_MASK = (1u << DENSE_BITS) - 1; // 0x0007FFFF
         static constexpr uint32_t GEN_SHIFT  = DENSE_BITS;
 
-        // This ensures the index range for nodes is fully convered.
+        // This ensures the index range for nodes is fully covered.
         static_assert((POOL_TOTAL_SIZE - 1) == DENSE_MASK);
         static_assert(DENSE_BITS + GEN_BITS == sizeof(uint32_t) * 8);
 

@@ -74,7 +74,7 @@ void LuaVAOImpl::AttachBufferImpl(const std::shared_ptr<LuaVBOImpl>& luaVBO, std
 	}
 
 	if (!luaVBO->vbo) {
-		LuaUtils::SolLuaError("[LuaVAOImpl::%s] LuaVBO is invalid. Did you sucessfully call vbo:Define()?", __func__);
+		LuaUtils::SolLuaError("[LuaVAOImpl::%s] LuaVBO is invalid. Did you successfully call vbo:Define()?", __func__);
 	}
 
 	thisLuaVBO = luaVBO;
@@ -313,7 +313,7 @@ LuaVAOImpl::DrawCheckResult LuaVAOImpl::DrawCheck(GLenum mode, const DrawCheckIn
 
 	if (indexed) {
 		if (!indxLuaVBO)
-			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you succesfully call vao:AttachIndexBuffer()?", __func__);
+			LuaUtils::SolLuaError("[LuaVAOImpl::%s]: No index buffer is attached. Did you successfully call vao:AttachIndexBuffer()?", __func__);
 
 		indxLuaVBO->UpdateModelsVBOElementCount(); //need to update elements count because underlyiing VBO could have been updated
 

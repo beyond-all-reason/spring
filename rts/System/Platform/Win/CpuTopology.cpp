@@ -184,7 +184,7 @@ ProcessorMasks GetProcessorMasks() {
 	return processorMasks;
 }
 
-// Notes. We're only interested in L3 cache sizes at the moment becasue we're only using this
+// Notes. We're only interested in L3 cache sizes at the moment because we're only using this
 // information to find a performance core with the most cache to pin the main thread to.
 ProcessorCaches GetProcessorCache() {
 	spring_overrides::PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buffer = NULL;

@@ -164,7 +164,7 @@ bool LuaConstCMD::PushEntries(lua_State* L)
 	/***
 	 * @field CMD.DEATHWAIT 7
 	 *
-	 * Makes the unit suspend processing its commmand queue until the death of a
+	 * Makes the unit suspend processing its command queue until the death of a
 	 * given unit or units in an area.
 	 *
 	 * ## Modes of operation

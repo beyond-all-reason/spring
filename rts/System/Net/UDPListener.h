@@ -18,7 +18,7 @@ class UDPConnection;
  * @brief Class for handling Connections on an UDPSocket
  * Use this class if you want to use a UDPSocket to connect to more than
  * one client.
- * You can Listen for new connections, initiate new ones and send/recieve data
+ * You can Listen for new connections, initiate new ones and send/receive data
  * to/from them.
  */
 class UDPListener : spring::noncopyable

@@ -697,7 +697,7 @@ void TBitmapAction<T, ch>::Blur(int iterations, float weight, int startx, int st
 
 	// note ysize and xsize are swapped
 	CBitmap tmp(nullptr, height, width, ch, bmp->dataType);
-	auto tempAction = BitmapAction::GetBitmapAction(&tmp); // lifetime thing, not used furher
+	auto tempAction = BitmapAction::GetBitmapAction(&tmp); // lifetime thing, not used further
 
 	auto* tempTypedAction = static_cast<TBitmapAction<T, ch>*>(tempAction.get());
 	auto* currTypedAction = this;

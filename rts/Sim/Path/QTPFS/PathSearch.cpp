@@ -191,7 +191,7 @@ void QTPFS::PathSearch::InitializeThread(SearchThreadData* threadData, IPath* pa
 			&& (pathToRepair->GetFirstNodeIdOfCleanPath() > 0)
 			&& (pathToRepair->GetFirstNodeIdOfCleanPath() < (pathToRepair->GetGoodNodeCount() - 1) )
 			&& (pathToRepair->IsFullPath()
-					|| pathToRepair->GetRepathTriggerIndex() == 0 // FIXME: race condtion - should be fixed now
+					|| pathToRepair->GetRepathTriggerIndex() == 0 // FIXME: race condition - should be fixed now
 					|| isRemainingPathLongEnoughForRetrigger(pathToRepair) );
 
 	auto getTgtNode = [this, &fwd, pathToRepair](bool doPathRepair) {
@@ -666,7 +666,7 @@ void QTPFS::PathSearch::SetNodeSearchLimit() {
 
 	// math::SQRT2 is the ratio of the distance between a square's diagonals and it's side. (approx 1.41)
 	// We need to approximate the average distance a QTPFS node presents. Just using the length would leave us quite
-	// short because paths generally don't cross nodes on only orthogonal angles. Using the diagonal lenth may be too
+	// short because paths generally don't cross nodes on only orthogonal angles. Using the diagonal length may be too
 	// much. So let's take the average of the two.
 	constexpr float LENGTH_ADJUST_RATIO = (1.f + math::SQRT2) * 0.5;
 
@@ -1244,7 +1244,7 @@ bool QTPFS::PathSearch::ExecutePathSearch() {
 	havePartPath = (fwd.minSearchNode != fwd.srcSearchNode)
 				// Normally now, we would count this as a part path to avoid units smashing against
 				// walls because elsewhere the pathing cannot fail, but as units can be trapped then
-				// allow them to force their movement. The path manager forces paths incase the unit
+				// allow them to force their movement. The path manager forces paths in case the unit
 				// is trapped in a wreck or something.
 				|| (!nodeLayer->GetPoolNode(fwd.srcSearchNode->GetIndex())->AllSquaresImpassable());
 
@@ -1557,7 +1557,7 @@ void QTPFS::PathSearch::IterateNodeNeighbors(const INode* curNode, unsigned int 
 			continue;
 
 		// Forbid the reverse search from trampling on it's preloaded nodes for path repair, because even though the
-		// search resticted is to an AABB, the remaining existing path can flow in and out of this region. If we
+		// search restricted is to an AABB, the remaining existing path can flow in and out of this region. If we
 		// connect the reverse in this particular scenario, it will create an infinite loop.
 		if ( doPathRepair && (searchDir == SearchThreadData::SEARCH_BACKWARD) && (nextSearchNode->GetStepIndex() > 0) ) {
 			continue;

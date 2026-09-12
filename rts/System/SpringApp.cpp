@@ -8,7 +8,7 @@
 #include <System/GflagsExt.h>
 
 #ifdef _WIN32
-//windows workarrounds
+//windows workarounds
 #undef KeyPress
 #undef KeyRelease
 #else
@@ -504,7 +504,7 @@ void SpringApp::ParseCmdLine(int argc, char* argv[])
 			exit(spring::EXIT_CODE_SUCCESS);
 		}
 		else {
-			printf("[FtLibraryHandler::GenFontConfig] is unsuccesfull\n");
+			printf("[FtLibraryHandler::GenFontConfig] is unsuccessful\n");
 			exit(spring::EXIT_CODE_FAILURE);
 		}
 	}

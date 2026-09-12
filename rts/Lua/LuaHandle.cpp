@@ -139,7 +139,7 @@ static void LUA_ERASE_CONTEXT(const luaContextData* D, const spring::unsynced_se
 
 static int handlepanic(lua_State* L)
 {
-	throw content_error(luaL_optsstring(L, 1, "lua paniced"));
+	throw content_error(luaL_optsstring(L, 1, "lua panicked"));
 }
 
 

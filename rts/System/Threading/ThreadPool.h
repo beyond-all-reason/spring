@@ -813,7 +813,7 @@ static inline void for_mt(int start, int end, int step, F&& f)
 template <typename F>
 static inline auto for_mt_background(int start, int end, int step, F&& f)
 {
-	// mt section delcaration is not needed here because the main thread won't be working on the mt tasks here.
+	// mt section declaration is not needed here because the main thread won't be working on the mt tasks here.
 
 	if (!ThreadPool::HasThreads() || ((end - start) < step)) {
 		for (int i = start; i < end; i += step) {

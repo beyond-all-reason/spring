@@ -113,8 +113,8 @@ public:
 	CQuaternion& operator*=(float f);
 	CQuaternion& operator/=(float f);
 
-	bool operator==(const CQuaternion& rhs) const { return  equals(rhs); } //aproximate
-	bool operator!=(const CQuaternion& rhs) const { return !equals(rhs); } //aproximate
+	bool operator==(const CQuaternion& rhs) const { return  equals(rhs); } //approximate
+	bool operator!=(const CQuaternion& rhs) const { return !equals(rhs); } //approximate
 
 	void AssertNaNs() const;
 private:

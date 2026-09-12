@@ -577,7 +577,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 	wantSplit |= (numDifBinSquares > 0);
 	needSplit |= (numClosedSquares > 0 && numClosedSquares < area());
 
-	// if we are not going to tesselate this node further
+	// if we are not going to tessellate this node further
 	// and there is at least one impassable square inside
 	// it, make sure the pathfinder will not pick us
 	//
@@ -609,7 +609,7 @@ bool QTPFS::QTNode::UpdateMoveCost(
 		nl.IncreaseOpenNodeCounter();
 	}
 
-	// For performance reasons, the maximum node size should match the damage size because mutliple damaged regions
+	// For performance reasons, the maximum node size should match the damage size because multiple damaged regions
 	// that doesn't result in a subdivision will cause the entire node to be re-evaluated over several frames. The
 	// larger the node, the larger the performance impact. This often occurs for impassable terrain or hard terrain
 	// such as metal.

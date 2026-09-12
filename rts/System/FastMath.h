@@ -181,7 +181,7 @@ namespace fastmath {
 	{
 		//return (f >= 0) ? int(f) : int(f+0.000001f)-1;
 		// it's about the same performance as the former code above,
-		// but without arbitratry number shenanigans
+		// but without arbitrary number shenanigans
 		// Perf comparison:
 		// https://quick-bench.com/q/rwmaN33UJ4cTEViBGqQYuVgyyOc
 		T truncX = static_cast<T>(static_cast<int>(f));

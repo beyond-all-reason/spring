@@ -69,7 +69,7 @@ static void TranslateStackTrace(StackTrace& stacktrace, const int logLevel)
 			path[count] = '\0';
 			stackFrame.path = path;
 		} else {
-			// dyld_shared_cache ? whats that ?
+			// dyld_shared_cache ? what's that ?
 			stackFrame.path = "";
 		}
 

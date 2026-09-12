@@ -324,7 +324,7 @@ bool CFeature::AddBuildPower(CUnit* builder, float amount)
 	if (isRepairingBeforeResurrect && (modInfo.reclaimMethod > 1))
 		return false;
 
-	// make sure several units cant reclaim at once on a single feature
+	// make sure several units can't reclaim at once on a single feature
 	if ((modInfo.multiReclaim == 0) && (lastReclaimFrame == gs->frameNum))
 		return true;
 

@@ -171,7 +171,7 @@ namespace Threading {
 
 		const cpu_topology::ThreadPinPolicy chosenPinPolicy = GetChosenThreadPinPolicy();
 
-		// Engine worker thread pool are primarily for multi-threading activies of simulation; though, they are
+		// Engine worker thread pool are primarily for multi-threading activities of simulation; though, they are
 		// available to be used by other system while simulation is not running. As such the policy for pinning worker
 		// threads are to maximise performance of the multi-threaded tasks of simulation, which are a poor fit for
 		// cpu hardware threads (SMT/Hyper-Threading) and low-power cores.

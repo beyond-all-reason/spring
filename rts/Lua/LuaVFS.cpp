@@ -81,7 +81,7 @@
  * ```
  *
  * This raises the question: If both archives have a `texture1.png` then which
- * `texture1.png` is retreived via the VFS? The answer depends on the order the
+ * `texture1.png` is retrieved via the VFS? The answer depends on the order the
  * archives are loaded and the VFS mode (more on modes below). Generally
  * however, each archive loaded overrides any archives loaded before it. The
  * standard order of loading (from first to last) is:
@@ -296,7 +296,7 @@ static int LoadFileWithModes(const std::string& fileName, std::string& data, con
  * almost all cases, this should be left `nil` to preserve the current env.
  *  
  * If the provided, any non-local variables and functions defined in
- * `filename.lua` are then accessable via env. Vise-versa, any variables
+ * `filename.lua` are then accessible via env. Vise-versa, any variables
  * defined in env prior to passing to `VFS.Include` are available to code in the
  * included file. Code running in `filename.lua` will see the contents of env in
  * place of the normal global environment.
@@ -958,7 +958,7 @@ int LuaVFS::CalculateHash(lua_State* L)
 /******************************************************************************/
 /******************************************************************************/
 //
-//  NOTE: Endianess should be handled
+//  NOTE: Endianness should be handled
 //
 
 template <typename T>

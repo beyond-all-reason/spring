@@ -20,7 +20,7 @@ public:
 private:
 	/**
 	 * Removes and returns the first part of the string.
-	 * Using the first of the encountered delimitters: '_', '+', end-of-string
+	 * Using the first of the encountered delimiters: '_', '+', end-of-string
 	 */
 	static std::string ReadToken(std::string& str);
 	/**

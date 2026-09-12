@@ -73,7 +73,7 @@ BOOL CALLING_CONV DllMain(HINSTANCE hInst, DWORD dwReason, LPVOID lpReserved)
 #endif
 
 
-CONFIG(bool, UnitsyncAutoUnLoadMaps).defaultValue(true).description("Automaticly load and unload the required map for some unitsync functions.");
+CONFIG(bool, UnitsyncAutoUnLoadMaps).defaultValue(true).description("Automatically load and unload the required map for some unitsync functions.");
 CONFIG(bool, UnitsyncAutoUnLoadMapsIsSupported).defaultValue(true).readOnly(true).description("Check for support of UnitsyncAutoUnLoadMaps");
 
 

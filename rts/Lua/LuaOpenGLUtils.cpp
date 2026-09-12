@@ -891,7 +891,7 @@ std::tuple<int, int, int> LuaMatTexture::GetSize() const
 		case LUATEX_UNITBUILDPIC: {
 			if (unitDefHandler != nullptr) {
 				const UnitDef* ud = reinterpret_cast<const UnitDef*>(data);
-				CUnitDrawer::GetUnitDefImage(ud); // forced existance
+				CUnitDrawer::GetUnitDefImage(ud); // forced existence
 				const UnitDefImage* bp = ud->buildPic;
 				return ReturnHelper(bp->imageSizeX, bp->imageSizeY);
 			}
