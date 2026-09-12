@@ -228,6 +228,7 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetUnitLandGoal);
 	REGISTER_LUA_CFUNC(ClearUnitGoal);
 	REGISTER_LUA_CFUNC(SetUnitNeutral);
+	REGISTER_LUA_CFUNC(ClearUnitAttackers);
 	REGISTER_LUA_CFUNC(SetUnitTarget);
 	REGISTER_LUA_CFUNC(SetUnitMidAndAimPos);
 	REGISTER_LUA_CFUNC(SetUnitRadiusAndHeight);
@@ -3583,6 +3584,48 @@ int LuaSyncedCtrl::SetUnitNeutral(lua_State* L)
 
 	unit->SetNeutral(luaL_checkboolean(L, 2));
 	return 0;
+}
+
+
+/*** Clear all units' attacks against a unit without changing its neutral state.
+ *
+ * Requires full control because this can change other teams' targets and queues.
+ * Clears current unit and weapon targets, and removes queued unit-targeted
+ * ATTACK, FIGHT and MANUALFIRE commands against this unit. Other targets and
+ * commands are preserved. Does not remove projectiles already in flight or
+ * prevent the unit from being targeted again, including by automatic targeting.
+ * Scans all active units and their command queues, including queued-only attacks.
+ *
+ * @function Spring.ClearUnitAttackers
+ * @param unitID UnitID The unit whose attackers should be cleared.
+ * @return boolean? success True on success; nil for an invalid unit or without full control.
+ */
+int LuaSyncedCtrl::ClearUnitAttackers(lua_State* L)
+{
+	if (!FullCtrl(L))
+		return 0;
+
+	const CUnit* target = ParseUnit(L, __func__, 1);
+	if (target == nullptr)
+		return 0;
+
+	const auto matchesUnit = [target](const CUnit* unit) { return (unit == target); };
+	const auto matchesWeaponTarget = [target](const SWeaponTarget& t) { return (t.type == Target_Unit && t.unit == target); };
+
+	// Queued-only attacks have no target death dependence, so listeners alone
+	// cannot find every order that needs removing.
+	for (CUnit* unit: unitHandler.GetActiveUnits()) {
+		if (matchesWeaponTarget(unit->curTarget))
+			unit->DropCurrentAttackTarget();
+
+		for (CWeapon* weapon: unit->weapons)
+			weapon->StopAttackingTargetIf(matchesWeaponTarget);
+
+		unit->commandAI->StopAttackingTargetIf(matchesUnit, true);
+	}
+
+	lua_pushboolean(L, true);
+	return 1;
 }
 
 
