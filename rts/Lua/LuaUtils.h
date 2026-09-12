@@ -4,6 +4,7 @@
 #define LUA_UTILS_H
 
 #include <cstdint>
+#include <set>
 #include <string>
 
 #include <fmt/printf.h>
@@ -177,6 +178,7 @@ class LuaUtils {
 		static void PushStringVector(lua_State* L, const vector<string>& vec);
 
 		static void PushCommandDesc(lua_State* L, const SCommandDescription& cd);
+		static void PushPresentModes(lua_State* L, const std::set<int>& modes);
 #if !defined UNITSYNC && !defined DEDICATED && !defined BUILDING_AI
 		static int ParseAllegiance(lua_State* L, const char* caller, int index);
 

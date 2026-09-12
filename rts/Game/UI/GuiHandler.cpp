@@ -601,6 +601,7 @@ void CGuiHandler::LayoutIcons(bool useSelectionPage)
 		forceLayoutUpdate = false;
 
 		commands.clear();
+		presentModes.clear();
 	}
 
 	if (luaUI != nullptr && luaUI->WantsEvent("LayoutButtons")) {
@@ -632,6 +633,8 @@ void CGuiHandler::LayoutIcons(bool useSelectionPage)
 	// get the commands to process
 	CSelectedUnitsHandler::AvailableCommandsStruct ac = selectedUnitsHandler.GetAvailableCommands();
 	ConvertCommands(ac.commands);
+
+	presentModes = std::move(ac.presentModes);
 
 	std::vector<SCommandDescription> hidden;
 
@@ -745,6 +748,8 @@ bool CGuiHandler::LayoutCustomIcons(bool useSelectionPage)
 	// get the commands to process
 	CSelectedUnitsHandler::AvailableCommandsStruct ac = selectedUnitsHandler.GetAvailableCommands();
 	std::vector<SCommandDescription> cmds = ac.commands;
+
+	presentModes = std::move(ac.presentModes);
 
 	if (!cmds.empty()) {
 		ConvertCommands(cmds);

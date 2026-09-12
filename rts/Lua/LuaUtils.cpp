@@ -1624,6 +1624,20 @@ void LuaUtils::PushCommandDesc(lua_State* L, const SCommandDescription& cd)
 	lua_settable(L, -3);
 }
 
+
+void LuaUtils::PushPresentModes(lua_State* L, const std::set<int>& modes)
+{
+	lua_checkstack(L, 1 + 1);
+	lua_createtable(L, modes.size(), 0);
+
+	int index = 1;
+
+	for (const int mode: modes) {
+		lua_pushnumber(L, mode);
+		lua_rawseti(L, -2, index++);
+	}
+}
+
 void LuaUtils::LuaStackDumper::PrintStack(lua_State* L, int parseDepth)
 {
 	currPtr = &root;

@@ -3,6 +3,7 @@
 #ifndef GUI_HANDLER_H
 #define GUI_HANDLER_H
 
+#include <set>
 #include <vector>
 
 #include "KeySet.h"
@@ -12,6 +13,7 @@
 #include "Sim/Units/BuildInfo.h"
 #include "Sim/Units/CommandAI/Command.h"
 #include "System/SpringMath.h" // FACING
+#include "System/UnorderedMap.hpp"
 
 #define DEFAULT_GUI_CONFIG "ctrlpanel.txt"
 
@@ -267,6 +269,9 @@ private:
 
 public:
 	std::vector<SCommandDescription> commands;
+	/// per command id, the sorted modes the selection holds; keyed by id so it
+	/// survives the icon filtering and any list a game supplies via LayoutButtons
+	spring::unordered_map<int, std::set<int>> presentModes;
 };
 
 extern CGuiHandler* guihandler;

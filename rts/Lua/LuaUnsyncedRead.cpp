@@ -3756,6 +3756,9 @@ int LuaUnsyncedRead::GetDefaultCommand(lua_State* L)
  *
  * @function Spring.GetActiveCmdDescs
  * @return CommandDescription[] cmdDescs
+ * @return integer[][] presentModes keyed as cmdDescs; for a CMDTYPE_ICON_MODE
+ * command, the sorted modes the selection holds, so more than one entry means
+ * the selected units disagree
  */
 int LuaUnsyncedRead::GetActiveCmdDescs(lua_State* L)
 {
@@ -3777,7 +3780,23 @@ int LuaUnsyncedRead::GetActiveCmdDescs(lua_State* L)
 		LuaUtils::PushCommandDesc(L, cmdDescs[i]);
 		lua_rawseti(L, -2, i + CMD_INDEX_OFFSET);
 	}
-	return 1;
+
+	lua_createtable(L,
+			CMD_INDEX_OFFSET == 1 ? cmdDescCount : 0,
+			CMD_INDEX_OFFSET == 1 ? 0 : cmdDescCount);
+
+	static const std::set<int> noModes;
+
+	for (int i = 0; i < cmdDescCount; i++) {
+		const SCommandDescription& cd = cmdDescs[i];
+		const auto it = guihandler->presentModes.find(cd.id);
+		// the winning descriptor for an id decides whether modes mean anything
+		const bool haveModes = (cd.type == CMDTYPE_ICON_MODE) && (it != guihandler->presentModes.end());
+
+		LuaUtils::PushPresentModes(L, haveModes ? it->second : noModes);
+		lua_rawseti(L, -2, i + CMD_INDEX_OFFSET);
+	}
+	return 2;
 }
 
 

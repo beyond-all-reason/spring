@@ -40,6 +40,9 @@
 #include "System/Sound/ISound.h"
 #include "System/Sound/ISoundChannels.h"
 
+#include <cstdlib>
+#include <set>
+
 #include <SDL_mouse.h>
 #include <SDL_keycode.h>
 
@@ -93,10 +96,10 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 	RECOIL_DETAILED_TRACY_ZONE;
 	possibleCommandsChanged = false;
 
-	int commandPage = 1000;
+	AvailableCommandsStruct ac;
+	ac.commandPage = 1000;
 
 	spring::unordered_map<int, int> states;
-	std::vector<SCommandDescription> commands;
 
 	for (const int unitID: selectedUnits) {
 		const CUnit* u = unitHandler.GetUnit(unitID);
@@ -108,11 +111,33 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 				states[cmdDesc->id] = 0;
 			else
 				states[cmdDesc->id] = cmdDesc->disabled ? 2 : 1;
+
+			if (cmdDesc->type == CMDTYPE_ICON_MODE && !cmdDesc->params.empty())
+				ac.presentModes[cmdDesc->id].insert(atoi(cmdDesc->params[0].c_str()));
 		}
 
-		if (cai->lastSelectedCommandPage < commandPage)
-			commandPage = cai->lastSelectedCommandPage;
+		if (cai->lastSelectedCommandPage < ac.commandPage)
+			ac.commandPage = cai->lastSelectedCommandPage;
 	}
+
+	/* selectedUnits is unordered, so taking any one unit's value would let the
+	 * same selection answer differently between rebuilds; the lowest is stable */
+	const auto PushCommand = [&](const SCommandDescription* cmdDesc) {
+		ac.commands.push_back(*cmdDesc);
+		states[cmdDesc->id] = 0;
+
+		const auto it = ac.presentModes.find(cmdDesc->id);
+
+		if (it == ac.presentModes.end() || it->second.empty())
+			return;
+
+		SCommandDescription& cd = ac.commands.back();
+
+		if (cd.type != CMDTYPE_ICON_MODE || cd.params.empty())
+			return;
+
+		cd.params[0] = IntToString(*it->second.begin());
+	};
 
 	// load the first set (separating build and non-build commands)
 	for (const int unitID: selectedUnits) {
@@ -125,10 +150,8 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 				continue;
 
 			// Prevent duplicates across different units.
-			if (states[cmdDesc->id] > 0) {
-				commands.push_back(*cmdDesc);
-				states[cmdDesc->id] = 0;
-			}
+			if (states[cmdDesc->id] > 0)
+				PushCommand(cmdDesc);
 		}
 	}
 
@@ -141,16 +164,11 @@ CSelectedUnitsHandler::AvailableCommandsStruct CSelectedUnitsHandler::GetAvailab
 			if (buildIconsFirst != (cmdDesc->id >= 0))
 				continue;
 
-			if (states[cmdDesc->id] > 0) {
-				commands.push_back(*cmdDesc);
-				states[cmdDesc->id] = 0;
-			}
+			if (states[cmdDesc->id] > 0)
+				PushCommand(cmdDesc);
 		}
 	}
 
-	AvailableCommandsStruct ac;
-	ac.commandPage = commandPage;
-	ac.commands = commands;
 	return ac;
 }
 

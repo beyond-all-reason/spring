@@ -3,6 +3,7 @@
 #ifndef SELECTED_UNITS_H
 #define SELECTED_UNITS_H
 
+#include <set>
 #include <vector>
 #include <string>
 
@@ -34,6 +35,8 @@ public:
 
 	struct AvailableCommandsStruct {
 		std::vector<SCommandDescription> commands;
+		/// per command id, the params[0] modes the selection holds
+		spring::unordered_map<int, std::set<int>> presentModes;
 		int commandPage;
 	};
 	AvailableCommandsStruct GetAvailableCommands();
