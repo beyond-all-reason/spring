@@ -129,6 +129,7 @@ class LuaUnsyncedCtrl {
 
 //FIXME		static int SetShockFrontFactors(lua_State* L);
 
+		static int UnbindAll(lua_State* L);
 		static int SetConfigInt(lua_State* L);
 		static int SetConfigFloat(lua_State* L);
 		static int SetConfigString(lua_State* L);

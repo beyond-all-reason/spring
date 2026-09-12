@@ -546,6 +546,17 @@ const CKeyBindings::HotkeyList& CKeyBindings::GetHotkeys(const std::string& acti
 	return it->second;
 }
 
+void CKeyBindings::Clear()
+{
+	codeBindings.clear();
+	scanBindings.clear();
+	keyCodes.Reset();
+	scanCodes.Reset();
+	bindingsCount = 0;
+	buildHotkeyMap = true;
+
+}
+
 
 /******************************************************************************/
 
@@ -962,13 +973,15 @@ bool CKeyBindings::ExecuteCommandInternal(const std::string& line)
 		if (!UnBindKeyset(words[1])) { return false; }
 	}
 	else if (command == "unbindall") {
-		codeBindings.clear();
-		scanBindings.clear();
-		keyCodes.Reset();
-		scanCodes.Reset();
-		bindingsCount = 0;
-		buildHotkeyMap = true;
-		Bind("enter", "chat"); // bare minimum
+		Clear();
+
+		Bind("enter", "chat");
+		Bind("enter", "edit_return");
+		Bind("escape", "edit_escape");
+		Bind("backspace", "edit_backspace");
+		Bind("delete", "edit_delete");
+		Bind("left", "edit_prev_char");
+		Bind("right", "edit_next_char");
 
 		if (debugEnabled)
 			LOG("[CKeyBindings::%s] line=%s", __func__, line.c_str());

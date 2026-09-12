@@ -56,6 +56,8 @@ class CKeyBindings : public CommandReceiver
 		int GetFakeMetaKey() const { return fakeMetaKey; }
 		int GetKeyChainTimeout() const { return keyChainTimeout; }
 
+		void Clear();
+
 	protected:
 		void BuildHotkeyMap();
 		// rebuilds the reverse map once, and only if a binding actually changed
