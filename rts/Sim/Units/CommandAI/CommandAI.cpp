@@ -1853,7 +1853,16 @@ void CCommandAI::StopAttackingTargetIf(const std::function<bool(const CUnit*)>& 
 	const auto hasTarget = [&](const Command& c) { return (c.GetNumParams() == 1 && (c.GetID() == CMD_FIGHT || c.GetID() == CMD_ATTACK)); };
 	const auto removeCmd = [&](const Command& c) { return (hasTarget(c) && pred(unitHandler.GetUnit(c.GetParam(0)))); };
 
+	const bool frontRemoved = (!commandQue.empty() && removeCmd(commandQue.front()));
+
 	commandQue.erase(std::remove_if(commandQue.begin(), commandQue.end(), removeCmd), commandQue.end());
+
+	// The next command must not inherit the removed command's target or state.
+	if (frontRemoved) {
+		inCommand = CMD_STOP;
+		targetDied = false;
+		SetOrderTarget(nullptr);
+	}
 }
 
 void CCommandAI::StopAttackingAllyTeam(int ally)
@@ -1861,4 +1870,3 @@ void CCommandAI::StopAttackingAllyTeam(int ally)
 	RECOIL_DETAILED_TRACY_ZONE;
 	StopAttackingTargetIf([&](const CUnit* t) { return (t != nullptr && t->allyteam == ally); });
 }
-
