@@ -536,12 +536,8 @@ void LuaVAOImpl::RemoveFromSubmission(int idx)
  */
 void LuaVAOImpl::Submit()
 {
-	glEnable(GL_PRIMITIVE_RESTART);
-	glPrimitiveRestartIndex(indxLuaVBO->primitiveRestartIndex);
-
+	// model index buffers use triangle lists, so restart only adds driver overhead
 	vao->Bind();
 	glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, submitCmds.data(), submitCmds.size(), sizeof(SDrawElementsIndirectCommand));
 	vao->Unbind();
-
-	glDisable(GL_PRIMITIVE_RESTART);
 }
