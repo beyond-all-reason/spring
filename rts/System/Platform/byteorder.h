@@ -27,6 +27,7 @@
 
 #if defined(__linux__)
 
+	#include <endian.h>
 	#include <string.h> // for memcpy
 	#include <byteswap.h>
 
