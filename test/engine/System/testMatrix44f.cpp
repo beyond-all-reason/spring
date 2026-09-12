@@ -1,5 +1,7 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
 
+#include <cstdint>
+
 #include "System/simd_compat.h"
 #include "System/Matrix44f.h"
 #include "System/float4.h"
@@ -90,18 +92,18 @@ static const int testRuns = 40000000;
 
 /*_noinline*/ static void MatrixVectorSSE(const CMatrix44f& m, const float4& vin, float4* vout)
 {
-	__m128& out = *reinterpret_cast<__m128*>(vout);
-
-	out =                 _mm_mul_ps(_mm_loadu_ps(&m.md[0][0]), _mm_set1_ps(vin.x));
+	__m128 out = _mm_mul_ps(_mm_loadu_ps(&m.md[0][0]), _mm_set1_ps(vin.x));
 	out = _mm_add_ps(out, _mm_mul_ps(_mm_loadu_ps(&m.md[1][0]), _mm_set1_ps(vin.y)));
 	out = _mm_add_ps(out, _mm_mul_ps(_mm_loadu_ps(&m.md[2][0]), _mm_set1_ps(vin.z)));
 	out = _mm_add_ps(out, _mm_mul_ps(_mm_loadu_ps(&m.md[3][0]), _mm_set1_ps(vin.w)));
+
+	_mm_storeu_ps(reinterpret_cast<float*>(vout), out);
 }
 
 
 _noinline static void MatrixMatrixMultiply(CMatrix44f* m1, const CMatrix44f& m2)
 {
-	assert(long(&m1->m[0]) % 16 == 0); // 16byte aligned
+	assert(reinterpret_cast<std::uintptr_t>(&m1->m[0]) % 16 == 0); // 16byte aligned
 
 	__m128& moutc1 = *reinterpret_cast<__m128*>(&m1->md[0]);
 	__m128& moutc2 = *reinterpret_cast<__m128*>(&m1->md[1]);

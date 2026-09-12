@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <chrono>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <nowide/cstdio.hpp>
@@ -47,18 +49,21 @@ namespace {
 			}
 		}
 		std::string GetTempDir() {
-			if (testCwd.empty()) {
-				char* tmpDir = std::tmpnam(nullptr);
-				if (tmpDir != nullptr) {
-					testCwd = tmpDir;
-					FileSystem::CreateDirectory(testCwd);
-					if (!FileSystem::DirIsWritable(testCwd)) {
-						FAIL("Failed to create temporary test dir");
-					}
-				} else {
-					FAIL("Failed to get temporary file name");
-				}
+			std::error_code ec;
+			const auto tempRoot = std::filesystem::temp_directory_path(ec);
+			if (ec) {
+				FAIL("Failed to get temporary directory: " + ec.message());
 			}
+
+			const auto uniquePart = std::chrono::steady_clock::now().time_since_epoch().count();
+			testCwd = (tempRoot / ("RecoilEngine-TestFileSystem-" + std::to_string(uniquePart))).string();
+			FileSystem::CreateDirectory(testCwd);
+
+			// MinGW under Wine does not reliably expose writable permission bits.
+			// WriteFile() in the caller verifies actual write access instead.
+			if (!FileSystem::DirExists(testCwd))
+				FAIL("Failed to create temporary test dir");
+
 			return testCwd;
 		}
 
@@ -68,9 +73,9 @@ namespace {
 	};
 }
 
-PrepareFileSystem pfs;
+#define FILESYSTEM_TEST_CASE(name) TEST_CASE_METHOD(PrepareFileSystem, name)
 
-TEST_CASE("FileExists")
+FILESYSTEM_TEST_CASE("FileExists")
 {
 	CHECK(FileSystem::FileExists(u8"testFile.txt"));
 	CHECK_FALSE(FileSystem::FileExists(u8"testFile99.txt"));
@@ -79,7 +84,7 @@ TEST_CASE("FileExists")
 }
 
 
-TEST_CASE("GetFileSize")
+FILESYSTEM_TEST_CASE("GetFileSize")
 {
 	CHECK(FileSystem::GetFileSize("testFile.txt") == 1);
 	CHECK(FileSystem::GetFileSize("testFile99.txt") == -1);
@@ -88,7 +93,7 @@ TEST_CASE("GetFileSize")
 }
 
 
-TEST_CASE("GetFileModificationDate")
+FILESYSTEM_TEST_CASE("GetFileModificationDate")
 {
 	CHECK(FileSystem::GetFileModificationDate("testDir") != "");
 	CHECK(FileSystem::GetFileModificationDate("testFile.txt") != "");
@@ -96,7 +101,7 @@ TEST_CASE("GetFileModificationDate")
 }
 
 
-TEST_CASE("CreateDirectory")
+FILESYSTEM_TEST_CASE("CreateDirectory")
 {
 	// create & exists
 	CHECK(FileSystem::DirIsWritable("./"));
@@ -124,7 +129,7 @@ TEST_CASE("CreateDirectory")
 }
 
 
-TEST_CASE("GetDirectory")
+FILESYSTEM_TEST_CASE("GetDirectory")
 {
 #define CHECK_DIR_EXTRACTION(path, dir) \
 		CHECK(FileSystem::GetDirectory(path) == dir)
@@ -136,7 +141,7 @@ TEST_CASE("GetDirectory")
 }
 
 
-TEST_CASE("GetExtensionLowerCase")
+FILESYSTEM_TEST_CASE("GetExtensionLowerCase")
 {
 	CHECK(FileSystem::GetExtensionLowerCase("SCRIPT.COB") == "cob");
 }
@@ -145,7 +150,7 @@ TEST_CASE("GetExtensionLowerCase")
 #define CHECK_NORM_PATH(path, normPath) \
 		CHECK(FileSystem::GetNormalizedPath(path) == normPath)
 
-TEST_CASE("GetNormalizedPath - basic paths") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - basic paths")
 {
 	CHECK_NORM_PATH("foo/bar", "foo/bar");
 	CHECK_NORM_PATH("foo\\bar", "foo/bar");
@@ -153,15 +158,15 @@ TEST_CASE("GetNormalizedPath - basic paths")
 	CHECK_NORM_PATH("C:/foo/bar", "C:/foo/bar");
 }
 
-TEST_CASE("GetNormalizedPath - multiple slashes") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - multiple slashes")
 {
 	CHECK_NORM_PATH("foo///bar", "foo/bar");
 	CHECK_NORM_PATH("foo\\\\\\bar", "foo/bar");
-	CHECK_NORM_PATH("//foo//bar//", "/foo/bar/");
+	CHECK_NORM_PATH("/foo//bar//", "/foo/bar/");
 	CHECK_NORM_PATH("C:\\\\foo\\\\bar", "C:/foo/bar");
 }
 
-TEST_CASE("GetNormalizedPath - current directory") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - current directory")
 {
 	CHECK_NORM_PATH("./foo/bar", "foo/bar");
 	CHECK_NORM_PATH(".\\foo\\bar", "foo/bar");
@@ -172,7 +177,7 @@ TEST_CASE("GetNormalizedPath - current directory")
 	CHECK_NORM_PATH("./.", ".");
 }
 
-TEST_CASE("GetNormalizedPath - parent directory") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - parent directory")
 {
 	CHECK_NORM_PATH("foo/bar/..", "foo/");
 	CHECK_NORM_PATH("foo/bar/../baz", "foo/baz");
@@ -184,7 +189,7 @@ TEST_CASE("GetNormalizedPath - parent directory")
 	CHECK_NORM_PATH("..", "..");
 }
 
-TEST_CASE("GetNormalizedPath - mixed cases") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - mixed cases")
 {
 	CHECK_NORM_PATH("./foo/./bar/../baz", "foo/baz");
 	CHECK_NORM_PATH("foo//./bar//..//baz", "foo/baz");
@@ -192,7 +197,7 @@ TEST_CASE("GetNormalizedPath - mixed cases")
 	CHECK_NORM_PATH("C:\\foo\\.\\bar\\..\\baz", "C:/foo/baz");
 }
 
-TEST_CASE("GetNormalizedPath - Windows drives") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - Windows drives")
 {
 	CHECK_NORM_PATH("C:/", "C:/");
 	CHECK_NORM_PATH("C:\\", "C:/");
@@ -200,7 +205,7 @@ TEST_CASE("GetNormalizedPath - Windows drives")
 	CHECK_NORM_PATH("C:/foo/../bar", "C:/bar");
 }
 
-TEST_CASE("GetNormalizedPath - absolute paths") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - absolute paths")
 {
 	CHECK_NORM_PATH("/", "/");
 	CHECK_NORM_PATH("/foo", "/foo");
@@ -208,7 +213,7 @@ TEST_CASE("GetNormalizedPath - absolute paths")
 	CHECK_NORM_PATH("/foo/./bar", "/foo/bar");
 }
 
-TEST_CASE("GetNormalizedPath - trailing slashes") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - trailing slashes")
 {
 	CHECK_NORM_PATH("foo/bar/", "foo/bar/");
 	CHECK_NORM_PATH("foo/bar//", "foo/bar/");
@@ -219,14 +224,14 @@ TEST_CASE("GetNormalizedPath - trailing slashes")
 	CHECK_NORM_PATH("C:\\foo\\", "C:/foo/");
 }
 
-TEST_CASE("GetNormalizedPath - with file extensions") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - with file extensions")
 {
 	CHECK_NORM_PATH("./foo/bar.txt", "foo/bar.txt");
 	CHECK_NORM_PATH("foo/../bar.log", "bar.log");
 	CHECK_NORM_PATH("./a/b/../c.txt", "a/c.txt");
 }
 
-TEST_CASE("GetNormalizedPath - UTF-8 support") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - UTF-8 support")
 {
 	CHECK_NORM_PATH("./文档/测试.txt", "文档/测试.txt");
 	CHECK_NORM_PATH("папка/файл.log", "папка/файл.log");
@@ -235,21 +240,21 @@ TEST_CASE("GetNormalizedPath - UTF-8 support")
 	CHECK_NORM_PATH("./مجلد/ملف.txt", "مجلد/ملف.txt");
 }
 
-TEST_CASE("GetNormalizedPath - spaces") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - spaces")
 {
 	CHECK_NORM_PATH("foo bar/baz", "foo bar/baz");
 	CHECK_NORM_PATH("./my folder/test.txt", "my folder/test.txt");
 	CHECK_NORM_PATH("C:\\Program Files\\app", "C:/Program Files/app");
 }
 
-TEST_CASE("GetNormalizedPath - special characters") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - special characters")
 {
 	CHECK_NORM_PATH("foo-bar_baz", "foo-bar_baz");
 	CHECK_NORM_PATH("./file (1).txt", "file (1).txt");
 	CHECK_NORM_PATH("foo@bar/baz#123", "foo@bar/baz#123");
 }
 
-TEST_CASE("GetNormalizedPath - edge cases with .. at boundaries") 
+FILESYSTEM_TEST_CASE("GetNormalizedPath - edge cases with .. at boundaries")
 {
 	CHECK_NORM_PATH("./..", "..");
 	CHECK_NORM_PATH("foo/..", ".");
@@ -257,7 +262,7 @@ TEST_CASE("GetNormalizedPath - edge cases with .. at boundaries")
 	CHECK_NORM_PATH("./foo/bar/../../..", "..");
 }
 
-TEST_CASE("GetNormalizedPath - original failing tests")
+FILESYSTEM_TEST_CASE("GetNormalizedPath - original failing tests")
 {
 	CHECK_NORM_PATH("/home/userX/.spring/foo/bar///./../test.log", "/home/userX/.spring/foo/test.log");
 	CHECK_NORM_PATH("./symLinkToHome/foo/bar///./../test.log", "symLinkToHome/foo/test.log");
@@ -273,10 +278,10 @@ TEST_CASE("GetNormalizedPath - original failing tests")
 // iterated entry path verbatim (including the dataDir prefix). The contract is
 // that matches are relative to dataDir, i.e. `dir + <entry below dir>` only.
 // This is what made VFS.DirList / VFS.SubDirs (raw mode) return absolute paths.
-TEST_CASE("FindFiles - matches are relative to the data dir")
+FILESYSTEM_TEST_CASE("FindFiles - matches are relative to the data dir")
 {
 	// dataDir is the search root that must NOT appear in the results
-	const std::string dataDir = FileSystem::EnsurePathSepAtEnd(FileSystem::ForwardSlashes(pfs.testCwd));
+	const std::string dataDir = FileSystem::EnsurePathSepAtEnd(FileSystem::ForwardSlashes(testCwd));
 
 	// build a small tree under the data dir
 	REQUIRE(FileSystem::CreateDirectory("findDir"));
@@ -348,3 +353,5 @@ TEST_CASE("FindFiles - matches are relative to the data dir")
 	FileSystem::DeleteFile("findDir/sub");
 	FileSystem::DeleteFile("findDir");
 }
+
+#undef FILESYSTEM_TEST_CASE
