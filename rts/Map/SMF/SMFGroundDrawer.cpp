@@ -59,6 +59,11 @@ CONFIG(bool, AlwaysSendDrawGroundEvents)
 	.defaultValue(false)
 	.description("Always send DrawGround{Pre,Post}{Forward,Deferred} events");
 
+CONFIG(float, GroundShadingRateElmos)
+	.defaultValue(0.0f)
+	.minimumValue(0.0f)
+	.description("Ground footprint in elmos per pixel beyond which distant terrain is shaded at coarser rates (once per 2x2 pixels past twice, once per 4x4 pixels past four times this value). Requires GL_NV_shading_rate_image support (NVIDIA Turing or newer), a no-op elsewhere. 0 disables coarse ground shading.");
+
 namespace Shader {
 	struct IProgramObject;
 }
@@ -71,6 +76,8 @@ CSMFGroundDrawer::CSMFGroundDrawer(CSMFReadMap* rm)
 	alwaysDispatchEvents = configHandler->GetBool("AlwaysSendDrawGroundEvents");
 	drawerMode = (configHandler->GetInt("ROAM") != 0)? SMF_MESHDRAWER_ROAM: SMF_MESHDRAWER_BASIC;
 	groundDetail = configHandler->GetInt("GroundDetail");
+
+	shadingRate.SetElmosPerPixel(configHandler->GetFloat("GroundShadingRateElmos"));
 
 	groundTextures = new CSMFGroundTextures(smfMap);
 	meshDrawer = SwitchMeshDrawer(drawerMode);
@@ -134,6 +141,8 @@ CSMFGroundDrawer::~CSMFGroundDrawer()
 	smfRenderStates = { nullptr };
 
 	shaderHandler->ReleaseProgramObject("[SMFGroundDrawer]", "Border");
+
+	shadingRate.Kill();
 
 	spring::SafeDelete(groundTextures);
 	spring::SafeDelete(meshDrawer);
@@ -319,6 +328,9 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
+	// coarsen distant ground only; units, water and the border keep their full rate
+	const bool coarseShadingRate = (drawPass == DrawPass::Normal && shadingRate.Enable());
+
 	if (drawDeferred) {
 		// do the deferred pass first, will allow us to re-use
 		// its output at some future point and eventually draw
@@ -329,6 +341,9 @@ void CSMFGroundDrawer::Draw(const DrawPass::e& drawPass)
 	if (drawForward) {
 		DrawForwardPass(drawPass, mapRendering->voidGround || (mapRendering->voidWater && drawPass != DrawPass::WaterReflection));
 	}
+
+	if (coarseShadingRate)
+		shadingRate.Disable();
 
 	glDisable(GL_CULL_FACE);
 
@@ -425,6 +440,13 @@ void CSMFGroundDrawer::SetLuaShader(const LuaMapShaderData* luaMapShaderData)
 {
 	RECOIL_DETAILED_TRACY_ZONE;
 	smfRenderStates[RENDER_STATE_LUA]->Update(this, luaMapShaderData);
+}
+
+bool CSMFGroundDrawer::SetGroundShadingRateElmos(float elmosPerPixel)
+{
+	RECOIL_DETAILED_TRACY_ZONE;
+	shadingRate.SetElmosPerPixel(elmosPerPixel);
+	return globalRendering->supportShadingRateImage;
 }
 
 void CSMFGroundDrawer::SetupBigSquare(const DrawPass::e& drawPass, const int bigSquareX, const int bigSquareY)

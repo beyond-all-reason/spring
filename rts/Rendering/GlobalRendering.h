@@ -329,6 +329,8 @@ public:
 	bool supportClipSpaceControl;
 	bool supportSeamlessCubeMaps;
 	bool supportFragDepthLayout;
+	// GLAD_GL_NV_shading_rate_image
+	bool supportShadingRateImage;
 
 	/**
 	 * Shader capabilities

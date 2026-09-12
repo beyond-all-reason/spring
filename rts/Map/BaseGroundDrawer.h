@@ -41,6 +41,7 @@ public:
 	virtual void SetLuaShader(const LuaMapShaderData*) {}
 	virtual void SetDrawForwardPass(bool b) { drawForward = b; }
 	virtual void SetDrawDeferredPass(bool) {}
+	virtual bool SetGroundShadingRateElmos(float) { return false; }
 
 	virtual bool ToggleMapBorder() { drawMapEdges = !drawMapEdges; return drawMapEdges; }
 

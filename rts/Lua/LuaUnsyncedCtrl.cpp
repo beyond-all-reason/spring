@@ -206,6 +206,7 @@ bool LuaUnsyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(SetMapLightTrackingState);
 	REGISTER_LUA_CFUNC(SetModelLightTrackingState);
 	REGISTER_LUA_CFUNC(SetMapShader);
+	REGISTER_LUA_CFUNC(SetGroundShadingRateElmos);
 	REGISTER_LUA_CFUNC(SetMapSquareTexture);
 	REGISTER_LUA_CFUNC(SetMapShadingTexture);
 	REGISTER_LUA_CFUNC(SetSkyBoxTexture);
@@ -2023,6 +2024,25 @@ int LuaUnsyncedCtrl::SetMapShader(lua_State* L)
 
 	groundDrawer->SetLuaShader(&luaMapShaderData);
 	return 0;
+}
+
+
+/*** @function Spring.SetGroundShadingRateElmos
+ *
+ * Sets the ground footprint in elmos per pixel beyond which distant terrain is shaded at coarser rates: once per 2x2 pixels past twice, once per 4x4 pixels past four times the given value. Only has an effect on GPUs with GL_NV_shading_rate_image support (see `Platform.glSupportShadingRateImage`); the initial value comes from the GroundShadingRateElmos config option.
+ *
+ * @param elmosPerPixel number Threshold footprint, 0 disables coarse ground shading.
+ * @return boolean supported Whether the hardware can shade the ground at coarse rates.
+ */
+int LuaUnsyncedCtrl::SetGroundShadingRateElmos(lua_State* L)
+{
+	if (CLuaHandle::GetHandleSynced(L))
+		return 0;
+
+	CBaseGroundDrawer* groundDrawer = readMap->GetGroundDrawer();
+
+	lua_pushboolean(L, groundDrawer->SetGroundShadingRateElmos(std::max(luaL_checkfloat(L, 1), 0.0f)));
+	return 1;
 }
 
 

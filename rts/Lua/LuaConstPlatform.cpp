@@ -123,6 +123,8 @@ bool LuaConstPlatform::PushEntries(lua_State* L)
 	LuaPushNamedBool(L, "glSupportFragDepthLayout" , globalRendering->supportFragDepthLayout);
 	/*** @field Platform.glSupportSeamlessCubeMaps boolean */
 	LuaPushNamedBool(L, "glSupportSeamlessCubeMaps", globalRendering->supportSeamlessCubeMaps);
+	/*** @field Platform.glSupportShadingRateImage boolean Whether the GPU can shade at variable (coarse) rates via GL_NV_shading_rate_image */
+	LuaPushNamedBool(L, "glSupportShadingRateImage", globalRendering->supportShadingRateImage);
 
 	/*** @field Platform.osName string full name of the OS */
 	LuaPushNamedString(L, "osName", Platform::GetOSNameStr());

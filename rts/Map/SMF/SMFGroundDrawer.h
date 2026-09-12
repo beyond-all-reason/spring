@@ -5,6 +5,7 @@
 
 #include "Map/BaseGroundDrawer.h"
 #include "Map/SMF/SMFRenderState.h"
+#include "Map/SMF/SMFShadingRate.h"
 #include "Rendering/GL/GeometryBuffer.h"
 #include "Rendering/GL/LightHandler.h"
 #include "Rendering/GL/RenderBuffersFwd.h"
@@ -50,6 +51,7 @@ public:
 	void SunChanged();
 
 	void SetLuaShader(const LuaMapShaderData*);
+	bool SetGroundShadingRateElmos(float elmosPerPixel) override;
 	void SetDrawDeferredPass(bool b) {
 		if ((drawDeferred = b)) {
 			drawDeferred &= UpdateGeometryBuffer(false);
@@ -96,6 +98,7 @@ protected:
 	std::array<ISMFRenderState*, RENDER_STATE_CNT> smfRenderStates;
 
 	GL::GeometryBuffer geomBuffer;
+	CSMFShadingRate shadingRate;
 
 	Shader::IProgramObject* borderShader = nullptr;
 	Shader::IProgramObject* shadowShader = nullptr;
