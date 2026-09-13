@@ -100,6 +100,7 @@ WEAPONTAG(float, craterAreaOfEffect, damages.craterAreaOfEffect).fallbackName("a
 WEAPONTAG(bool, waterweapon).defaultValue(false).description("Can the projectile travel underwater? Ability to fire underwater controlled separately via `fireSubmersed`");
 WEAPONTAG(bool, submissile).defaultValue(false).description("Torpedo only. Lets torpedoes exit the water and be a missile. Lets underwater launchers shoot out-of-water targets (out-of-water launchers still cannot - use Missile instead of Torpedo for that).");
 WEAPONTAG(bool, fireSubmersed).fallbackName("waterweapon").defaultValue(false).description("Can the weapon fire underwater? Requires `waterweapon`.");
+WEAPONTAG(bool, requireSonarUnderWater).defaultValue(false).description("Require sonar before drawing this weapon's projectile while it is underwater. Only applies when modrules.requireSonarUnderWater is enabled.");
 
 // Targeting
 WEAPONTAG(bool, manualfire).externalName("commandfire").defaultValue(false).description("Does the weapon respond to the manual fire command instead of regular attack?");

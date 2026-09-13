@@ -10,6 +10,7 @@
 #include "Game/CameraHandler.h"
 #include "Game/GlobalUnsynced.h"
 #include "Game/LoadScreen.h"
+#include "Map/Ground.h"
 #include "Lua/LuaParser.h"
 #include "Rendering/GroundFlash.h"
 #include "Rendering/GlobalRendering.h"
@@ -26,6 +27,7 @@
 #include "Rendering/Common/ModelDrawerHelpers.h"
 #include "Sim/Misc/GlobalSynced.h"
 #include "Sim/Misc/LosHandler.h"
+#include "Sim/Misc/ModInfo.h"
 #include "Sim/Misc/TeamHandler.h"
 #include "Sim/Projectiles/ExplosionGenerator.h"
 #include "Sim/Projectiles/ProjectileHandler.h"
@@ -706,7 +708,23 @@ bool CProjectileDrawer::CanDrawProjectile(const CProjectile* pro, int allyTeam)
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto& th = teamHandler;
 	auto& lh = losHandler;
-	return (gu->spectatingFullView || (th.IsValidAllyTeam(allyTeam) && th.Ally(allyTeam, gu->myAllyTeam)) || lh->InLos(pro, gu->myAllyTeam));
+
+	if (gu->spectatingFullView || lh->GetGlobalLOS(gu->myAllyTeam))
+		return true;
+
+	if (th.IsValidAllyTeam(allyTeam) && th.Ally(allyTeam, gu->myAllyTeam))
+		return true;
+
+	if (!lh->InLos(pro, gu->myAllyTeam))
+		return false;
+	
+	if (pro->pos.y > CGround::GetWaterLevel(pro->pos.x, pro->pos.z))
+		return true;
+
+	if (!modInfo.requireSonarUnderWater || (pro->weapon && !static_cast<const CWeaponProjectile*>(pro)->GetWeaponDef()->requireSonarUnderWater))
+		return true;
+
+	return lh->sonar.InSight(pro->pos, gu->myAllyTeam);
 }
 
 bool CProjectileDrawer::ShouldDrawProjectile(const CProjectile* p, uint8_t thisPassMask)

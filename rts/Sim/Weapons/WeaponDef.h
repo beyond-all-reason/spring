@@ -113,6 +113,7 @@ public:
 	bool waterweapon;           ///< can target underwater objects/positions if true
 	bool fireSubmersed;         ///< can fire even when underwater if true
 	bool submissile;            ///< Lets a torpedo travel above water like it does below water
+	bool requireSonarUnderWater; ///< only draw underwater projectiles when sonar is available
 	bool tracks;
 	bool paralyzer;             ///< weapon will only paralyze not do real damage
 	bool impactOnly;            ///< The weapon damages by impacting, not by exploding
